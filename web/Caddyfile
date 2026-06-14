@@ -1,0 +1,21 @@
+# S4WN Web Server Configuration
+# Serves the game engine and static assets
+
+:80 {
+    root * /usr/share/caddy
+    file_server
+
+    # WASM requires proper MIME type
+    header Content-Type application/wasm {
+        path *.wasm
+    }
+
+    # Enable compression for WASM (textual formats compress well)
+    encode gzip zstd
+
+    # Security headers
+    header Cross-Origin-Opener-Policy same-origin
+    header Cross-Origin-Embedder-Policy require-corp {
+        ?path *.html *.js *.wasm
+    }
+}

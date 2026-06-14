@@ -47,13 +47,15 @@ This project is maintained by an AI agent operating on a daily 1-hour sprint cyc
 
 ---
 
-## 🚀 Session 1: Initial Technical Scoping (Instructions for Agent)
-In the first session, the agent is tasked with identifying the appropriate technology stack and sourcing requirements:
+## 🚀 Current Status
 
-1.  Engine Analysis: Determine if a re-implementation or emulation-based approach is most viable.
-2.  Web-Native Architecture: Evaluate WebAssembly (WASM), WebGPU, and Web Audio API for the engine core.
-3.  Tooling: Select a lightweight web server (e.g., Caddy/Nginx) for the final Docker multi-arch build.
-4.  Result: Create TECHNOLOGY_CHOICE.md and initiate a "Hello World" proof-of-concept.
+**Phase 0 — Foundation** (in progress)
+
+- ✅ **TECHNOLOGY_CHOICE.md** — Engine: Rust → WASM, Server: Caddy, Graphics: WebGL2/WebGPU
+- ✅ **Hello World POC** — Rust/WASM engine rendering an animated isometric terrain grid via WebGL2 (42KB .wasm)
+- ✅ **CI/CD Pipeline** — GitHub Actions + Docker Buildx multi-arch (amd64/arm64)
+
+**Next:** Phase 1 — Map rendering and camera controls
 
 ---
 

@@ -1,0 +1,74 @@
+name: S4WN CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build (Rust → WASM)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: wasm32-unknown-unknown
+            rust: stable
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build engine
+        working-directory: engine
+        run: wasm-pack build --target web --out-dir pkg --out-name s4wn_engine --release .
+
+      - name: Run unit tests
+        working-directory: engine
+        run: cargo test --lib
+
+      - name: Upload WASM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: s4wn-engine-wasm
+          path: engine/pkg/
+
+  docker:
+    name: Docker Multi-Arch Image
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download WASM artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: s4wn-engine-wasm
+          path: engine/pkg/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push multi-arch image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false  # Set to true when Docker Hub credentials are configured
+          tags: s4wn:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

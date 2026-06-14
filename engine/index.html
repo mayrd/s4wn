@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S4WN — Siedler 4 Web-Native</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; }
+        body {
+            background: #0a0f1e;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #header {
+            color: #8ab4f8;
+            font-size: 1.2rem;
+            padding: 0.5rem 1rem;
+            text-align: center;
+            opacity: 0.8;
+            letter-spacing: 0.05em;
+        }
+        #canvas-container {
+            width: min(90vw, 90vh, 800px);
+            height: min(90vw, 90vh, 800px);
+            border: 1px solid #1a2540;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #080c1a;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #status {
+            color: #506080;
+            font-size: 0.8rem;
+            padding: 0.3rem 1rem;
+            text-align: center;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">S4WN Engine — Hello World (WASM + WebGL2)</div>
+    <div id="canvas-container">
+        <canvas id="game-canvas"></canvas>
+    </div>
+    <div id="status">Initializing WebAssembly…</div>
+
+    <script type="module">
+        import init, { init as engineInit, render, resize } from './pkg/s4wn_engine.js';
+
+        async function main() {
+            const status = document.getElementById('status');
+
+            try {
+                status.textContent = 'Loading WASM module…';
+                await init();
+
+                status.textContent = 'Initializing WebGL renderer…';
+                const ok = engineInit('game-canvas');
+                if (!ok) {
+                    status.textContent = 'Error: Engine initialization failed';
+                    return;
+                }
+
+                status.textContent = 'S4WN Engine running | Isometric terrain grid rendered via WebGL2';
+
+                // Animation loop
+                function loop(timestamp) {
+                    render(timestamp);
+                    requestAnimationFrame(loop);
+                }
+                requestAnimationFrame(loop);
+
+                // Resize handler
+                window.addEventListener('resize', () => {
+                    resize();
+                });
+
+            } catch (err) {
+                status.textContent = `Error: ${err}`;
+                console.error('S4WN init error:', err);
+            }
+        }
+
+        main();
+    </script>
+</body>
+</html>
