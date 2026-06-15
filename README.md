@@ -100,8 +100,9 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **Lobby UI** — `lobby.html` with animated title/loading screen, room list, create/join/leave, player list, chat
 - ✅ **WebSocket Client Stubs** — `ws_connect()`, `ws_send()`, `ws_receive()`, `ws_state()` WASM bindings
 - ✅ **Server-Authoritative Game State** — `ServerGameState` module (map, buildings, units, resources), action validation, 10 TPS tick loop broadcasting `GameStateSync` to all room members (14 tests)
-- ✅ **~159 tests** passing (129 engine + 30 server)
-- ⏳ Client-side state interpolation — next
+- ✅ **Client-Side Interpolation** — `ClientInterpolator` struct with previous/current snapshot tracking, `interpolation_alpha()` for smooth 60fps rendering, `interpolate_unit_position()` with spawn/death/move handling (8 tests)
+- ✅ **~167 tests** passing (137 engine + 30 server)
+- ⏳ Wire ClientInterpolator into WASM rendering loop — next
 
 ---
 
