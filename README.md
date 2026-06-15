@@ -77,7 +77,11 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **Asset Pipeline** — ARA stream cipher + LZ/Huffman decompression (ported from Settlers.ts)
 - ✅ **Renderer Integration** — Day/night cycle, resource glow visualization
 
-**Next:** Phase 2 — Economy system (resources, buildings, production chains)
+**Phase 2 — Game Logic** (in progress 🔧)
+
+- 🔧 **Economy System** — 16 resource types (9 raw + 7 processed), 14 building types, production chains, resource storage
+- ⬜ Military system (units, combat)
+- ⬜ Settler AI and pathfinding
 
 ---
 

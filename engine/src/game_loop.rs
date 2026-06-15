@@ -23,6 +23,7 @@
 //! - State transitions are purely functional: State → Input → State
 //! - Randomness comes from a seeded PRNG (not system entropy)
 
+use crate::economy::Economy;
 use crate::map::Map;
 
 /// Ticks per second for game logic (Settlers IV uses ~10 TPS)
@@ -31,7 +32,6 @@ pub const TICKS_PER_SECOND: f64 = 10.0;
 pub const TICK_DURATION: f64 = 1.0 / TICKS_PER_SECOND;
 
 /// The game state — data that evolves each tick.
-/// This will grow significantly in Phase 2 (buildings, units, resources, players).
 pub struct GameState {
     /// The world map (immutable terrain, mutable resources)
     pub map: Map,
@@ -41,6 +41,8 @@ pub struct GameState {
     pub game_time: f64,
     /// Seeded random number generator state
     rng_seed: u64,
+    /// Economy system (resources, buildings, production)
+    pub economy: Economy,
 }
 
 impl GameState {
@@ -51,6 +53,21 @@ impl GameState {
             tick_count: 0,
             game_time: 0.0,
             rng_seed: 0xDEADBEEF_CAFE,
+            economy: Economy::new(),
+        }
+    }
+
+    /// Create a new game state with starting resources
+    pub fn with_starting_resources(
+        map: Map,
+        resources: &[(crate::economy::ResourceType, u32)],
+    ) -> Self {
+        GameState {
+            map,
+            tick_count: 0,
+            game_time: 0.0,
+            rng_seed: 0xDEADBEEF_CAFE,
+            economy: Economy::with_starting_resources(resources),
         }
     }
 
@@ -61,7 +78,8 @@ impl GameState {
         // Update PRNG state
         self.rng_seed = next_rng(self.rng_seed);
 
-        // TODO Phase 2: Update economy, units, buildings, pathfinding, etc.
+        // Update economy
+        self.economy.update();
     }
 
     /// Get a seeded pseudo-random value in [0, 1)
@@ -175,6 +193,28 @@ mod tests {
     }
 
     #[test]
+    fn test_game_state_with_economy() {
+        let map = Map::new(8, 8);
+        let state = GameState::new(map);
+        assert_eq!(state.economy.building_count(), 0);
+        assert_eq!(state.economy.storage.total(), 0);
+    }
+
+    #[test]
+    fn test_game_state_with_starting_resources() {
+        let map = Map::new(8, 8);
+        let state = GameState::with_starting_resources(
+            map,
+            &[
+                (crate::economy::ResourceType::Wood, 50),
+                (crate::economy::ResourceType::Stone, 30),
+            ],
+        );
+        assert_eq!(state.economy.storage.get(crate::economy::ResourceType::Wood), 50);
+        assert_eq!(state.economy.storage.get(crate::economy::ResourceType::Stone), 30);
+    }
+
+    #[test]
     fn test_game_loop_frame() {
         let map = Map::new(8, 8);
         let state = GameState::new(map);
@@ -183,17 +223,16 @@ mod tests {
         // First frame initializes timing, no ticks
         assert_eq!(gloop.frame(1.0), 0);
 
-        // 0.3s runs 3 ticks (delta=0.3 < 0.25 clamp? No, clamped to 0.25 = 2 ticks)
-        // Let's use small deltas that don't hit clamping
-        assert_eq!(gloop.frame(1.1), 1); // delta=0.1 → 1 tick
+        // 0.1s → 1 tick
+        assert_eq!(gloop.frame(1.1), 1);
         assert_eq!(gloop.state.tick_count, 1);
 
         // 0.2s → 2 ticks
-        assert_eq!(gloop.frame(1.3), 2); // delta=0.2 → 2 ticks
+        assert_eq!(gloop.frame(1.3), 2);
         assert_eq!(gloop.state.tick_count, 3);
 
         // 0.1s → 1 tick
-        assert_eq!(gloop.frame(1.4), 1); // delta=0.1 → 1 tick
+        assert_eq!(gloop.frame(1.4), 1);
         assert_eq!(gloop.state.tick_count, 4);
     }
 
@@ -243,5 +282,28 @@ mod tests {
             let r = state.random();
             assert!(r >= 0.0 && r < 1.0, "random out of range: {}", r);
         }
+    }
+
+    #[test]
+    fn test_economy_integration() {
+        use crate::economy::{BuildingType, ResourceType};
+
+        let map = Map::new(8, 8);
+        let mut state = GameState::with_starting_resources(
+            map,
+            &[(ResourceType::Wood, 100), (ResourceType::Stone, 50)],
+        );
+
+        // Place a farm
+        state.economy.place_building(BuildingType::Farm, 0, 0);
+
+        // Run enough ticks to build and produce
+        for _ in 0..200 {
+            state.update();
+        }
+
+        // Farm should have produced some grain
+        let grain = state.economy.storage.get(ResourceType::Grain);
+        assert!(grain > 0, "Farm should produce grain after 200 ticks, got {}", grain);
     }
 }

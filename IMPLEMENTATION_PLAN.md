@@ -2,7 +2,7 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 2 — Game Logic (ready to start)
+## Status: Phase 2 — Game Logic (in progress)
 
 Last updated: 2026-06-15
 
@@ -50,9 +50,9 @@ Last updated: 2026-06-15
 - [x] WASM Phase 2 integration: day/night cycle + resource visualization in renderer
 
 ### Phase 2 — Game Logic
-- [ ] Economy system (resources, buildings, production chains)
-- [ ] Military system (units, combat)
-- [ ] Settler AI and pathfinding
+- [x] Economy system (resources, buildings, production chains, storage) — 30 tests
+- [ ] Settler/warfare units and combat
+- [ ] Settler/worker AI and pathfinding
 
 ### Phase 3 — Multiplayer
 - [ ] WebRTC peer-to-peer or WebSocket client-server
@@ -95,6 +95,7 @@ s4wn/
 │   ├── src/map.rs             # Map/tile/terrain/resource system
 │   ├── src/camera.rs          # Isometric camera with pan/zoom
 │   ├── src/game_loop.rs       # Tick-based game loop
+│   ├── src/economy.rs         # Economy: resources, buildings, production chains
 │   ├── src/ara_crypt.rs       # ARA stream cipher (S4 decryption)
 │   ├── src/decompress.rs      # LZ+Huffman decompression (S4 archives)
 │   └── pkg/                   # Built WASM output (gitignored)
@@ -113,6 +114,7 @@ s4wn/
 | 2 | 2026-06-14 | ~60 min | Map module (8 terrain types, procedural gen, resource deposits); Camera module (isometric pan/zoom, touch support); Game loop module (10 TPS tick-based, SplitMix64 PRNG); integrated into lib.rs; 18 unit tests passing; WASM build 70KB; HTML demo with mouse/touch controls |
 | 3 | 2026-06-15 | ~5 min | Recovery: committed and pushed Session 2 work (was lost due to cron error); updated IMPLEMENTATION_PLAN.md |
 | 4 | 2026-06-15 | ~30 min | Asset pipeline: ported ARA stream cipher and LZ+Huffman decompression from Settlers.ts reference (ara_crypt.rs, decompress.rs); wired game loop into renderer with day/night cycle and resource visualization (glowing resource deposits); created docker-compose.yml (fixes #1); 29 tests passing |
+| 5 | 2026-06-15 | ~20 min | Economy system: ResourceType enum (9 raw + 7 processed), BuildingType enum (14 types with costs, inputs, outputs, production intervals), Building struct (construction, production, input/output buffers), ResourceStorage (capacity, cap tracking, spending), Economy manager (tick update, building placement); integrated into GameState + GameLoop; 30 new tests (59 total passing). Updated lib.rs to register economy module. Production chain Wood→Planks tested end-to-end. |
 
 ---
 
@@ -148,10 +150,12 @@ None at the moment.
 
 ## Next Session
 
-- Check for open GitHub issues first
-- Begin Phase 2: Economy system — design resource types, building definitions, production chain data model
-- Consider: how do buildings connect to the map grid? Define the `Building` struct and `ProductionChain` logic
-- Write unit tests for economy calculations (resource production rates, consumption, storage limits)
+- Verify `cargo test` still passes (all 59 tests)
+- Add settler units module (`src/units.rs`): Unit struct, Worker/Soldier types, unit stats, assigned workers for buildings
+- Connect units to economy: buildings need workers to produce; assign settlers to building tasks
+- Implement simple pathfinding (A* on the tile grid) for unit movement
+- Add unit tests for unit creation, assignment, movement
+- Update IMPLEMENTATION_PLAN.md to mark economy as complete if all sub-items done
 
 ---
 
@@ -167,5 +171,5 @@ None at the moment.
 - Target: fully playable in browser, no install required.
 - Hello World POC renders an 8×8 isometric terrain grid with animated elevation via vertex shader — validates the full WASM + WebGL2 pipeline on arm64.
 - Day/night cycle cycles every ~5 real-time minutes; resource deposits glow with a pulsing overlay.
-- **Next session:** Check for open GitHub issues first.
 - **⚠️ Asset Policy (non-negotiable):** Original S4 assets are NEVER used. All graphics/sound must be generated and stored in `assets/`. The ARA+LZH decoder exists solely for structural research and for the map/campaign importer — never to extract and republish Ubisoft artwork.
+- **Economy system (Session 5):** 14 building types with defined production chains. Resource storage caps at 200 base + 100 per warehouse. Production intervals range 15-50 ticks (1.5-5s at 10 TPS). Production chain Wood→Planks tested end-to-end.
