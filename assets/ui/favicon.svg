@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="rgb(160, 120, 30)"/>
+      <stop offset="50%" stop-color="rgb(20, 28, 48)"/>
+      <stop offset="100%" stop-color="rgb(10, 14, 26)"/>
+    </radialGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgb(240, 208, 120)"/>
+      <stop offset="50%" stop-color="rgb(212, 168, 67)"/>
+      <stop offset="100%" stop-color="rgb(160, 120, 30)"/>
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgb(20, 28, 48)"/>
+      <stop offset="100%" stop-color="rgb(10, 14, 26)"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="248" fill="url(#bg)" stroke="rgb(160, 120, 30)" stroke-width="4"/>
+
+  <!-- Hex border -->
+  <polygon points="256,40 443,148 443,364 256,472 69,364 69,148"
+           fill="none" stroke="url(#goldGrad)" stroke-width="3" opacity="0.6"/>
+
+  <!-- Shield shape -->
+  <path d="M256,60 L404,160 L404,330 L256,430 L108,330 L108,160 Z"
+        fill="url(#shieldGrad)" stroke="url(#goldGrad)" stroke-width="4"/>
+
+  <!-- Inner hex -->
+  <polygon points="256,100 360,160 360,280 256,340 152,280 152,160"
+           fill="none" stroke="rgb(212, 168, 67)" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- Settlement icons (small houses) -->
+  <!-- Left house -->
+  <rect x="165" y="195" width="40" height="35" fill="rgb(100, 70, 40)" rx="2"/>
+  <polygon points="160,198 185,165 210,198" fill="rgb(60, 65, 80)"/>
+
+  <!-- Right house -->
+  <rect x="305" y="210" width="36" height="30" fill="rgb(100, 70, 40)" rx="2"/>
+  <polygon points="301,213 323,183 345,213" fill="rgb(60, 65, 80)"/>
+
+  <!-- Center tower -->
+  <rect x="236" y="140" width="40" height="55" fill="rgb(60, 65, 80)" rx="2"/>
+  <polygon points="232,144 256,100 280,144" fill="rgb(160, 120, 30)"/>
+  <rect x="250" y="150" width="12" height="12" fill="rgb(212, 168, 67)" rx="1"/>
+
+  <!-- Flag -->
+  <line x1="276" y1="100" x2="276" y2="70" stroke="rgb(120, 130, 150)" stroke-width="2"/>
+  <polygon points="276,70 305,80 276,90" fill="rgb(212, 168, 67)" opacity="0.8"/>
+
+  <!-- Title "S4WN" -->
+  <text x="256" y="310" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+        font-size="64" font-weight="bold" fill="url(#goldGrad)" filter="url(#glow)"
+        letter-spacing="8">S4WN</text>
+
+  <!-- Subtitle -->
+  <text x="256" y="345" text-anchor="middle" font-family="Georgia, serif"
+        font-size="18" fill="rgb(224, 216, 200)" opacity="0.7" letter-spacing="4">
+    SIEDLER 4 WEB-NATIVE
+  </text>
+
+  <!-- Bottom year -->
+  <text x="256" y="385" text-anchor="middle" font-family="Georgia, serif"
+        font-size="14" fill="rgb(120, 130, 150)" opacity="0.5" letter-spacing="2">
+    2 0 2 6
+  </text>
+</svg>

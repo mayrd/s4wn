@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>S4WN — Siedler 4 Web-Native</title>
+    <link rel="icon" type="image/svg+xml" href="../assets/ui/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/ui/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/ui/apple-touch-icon.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -55,6 +58,13 @@
             background-clip: text;
             text-shadow: none;
             margin-bottom: 0.5rem;
+            animation: logoGlow 3s ease-in-out infinite;
+        }
+
+        .title-logo-img {
+            width: 180px;
+            height: auto;
+            margin-bottom: 1rem;
             animation: logoGlow 3s ease-in-out infinite;
         }
 
@@ -506,6 +516,7 @@
 
     <!-- ── Title / Loading Screen ──────────────────────────────────── -->
     <div id="title-screen">
+        <img class="title-logo-img" src="../assets/ui/logo-loading.png" alt="S4WN Logo">
         <div class="title-logo">S4WN</div>
         <div class="title-subtitle">Siedler 4 Web-Native</div>
         <div class="title-loading">
