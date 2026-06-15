@@ -269,6 +269,56 @@
   }
   .btn-back:hover { background: rgba(200,170,100,0.18); color: #f0dca0; }
 
+  /* ── Resource Bar ───────────────────────────────────────────────────── */
+  #resource-bar {
+    position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
+    z-index: 20;
+    display: flex; gap: 6px; align-items: center;
+    padding: 6px 14px;
+    background: rgba(0,0,0,0.65);
+    border: 1px solid rgba(200,170,100,0.2);
+    border-radius: 8px;
+    font-family: monospace; font-size: 12px;
+    pointer-events: none;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  #resource-bar.visible { opacity: 1; }
+  .res-item { display: flex; align-items: center; gap: 4px; }
+  .res-icon { font-size: 16px; line-height: 1; }
+  .res-count { color: #c8b878; min-width: 3em; text-align: right; }
+  .res-label { color: #777; font-size: 9px; display: none; }
+
+  /* ── New Game Panel ─────────────────────────────────────────────────── */
+  #new-game-panel {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(0,0,0,0.75);
+    display: none; align-items: center; justify-content: center;
+  }
+  #new-game-panel.open { display: flex; }
+  .ng-card {
+    background: #1a1a2e; border: 1px solid rgba(200,170,100,0.3);
+    border-radius: 12px; padding: 28px 32px;
+    width: 400px; max-width: 90vw;
+  }
+  .ng-card h3 { color: #e8d5a0; margin: 0 0 20px; text-align: center; }
+  .ng-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .ng-row label { width: 120px; color: #999; font-size: 13px; }
+  .ng-row select, .ng-row input {
+    flex: 1; padding: 8px 12px; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+    color: #ddd; font-family: inherit; font-size: 13px;
+  }
+  .ng-row select:focus, .ng-row input:focus {
+    border-color: rgba(200,170,100,0.5); outline: none;
+  }
+  .ng-actions { display: flex; gap: 10px; margin-top: 24px; }
+  .ng-actions button { flex: 1; padding: 10px; border-radius: 6px; cursor: pointer;
+    font-family: inherit; font-size: 13px; border: none; transition: all 0.2s; }
+  .btn-start { background: #2a4a2a; color: #8c8; border: 1px solid rgba(255,255,255,0.1); }
+  .btn-start:hover { background: #3a5a3a; color: #afa; }
+  .btn-cancel { background: rgba(255,80,80,0.08); color: #c66; border: 1px solid rgba(255,80,80,0.15); }
+  .btn-cancel:hover { background: rgba(255,80,80,0.18); color: #e88; }
+
   /* ── Minimap ────────────────────────────────────────────────────────── */
   #minimap {
     position: fixed; bottom: 60px; right: 12px;
@@ -293,6 +343,7 @@
     <h2>⚔️ Game Menu</h2>
     <button class="menu-btn" id="btn-load">📂 Load Map</button>
     <button class="menu-btn" id="btn-demo">🗺️ Demo Map</button>
+    <button class="menu-btn" onclick="openNewGame()">🆕 New Game</button>
     <button class="menu-btn" onclick="openSettings()">⚙️ Settings</button>
     <button class="menu-btn secondary" onclick="window.open('https://github.com/mayrd/s4wn','_blank')">
       🔗 GitHub Repository
@@ -350,6 +401,38 @@
   </div>
 </div>
 
+<!-- New Game Panel -->
+<div id="new-game-panel">
+  <div class="ng-card">
+    <h3>🆕 New Game</h3>
+    <div class="ng-row">
+      <label>Player Name</label>
+      <input type="text" id="ng-name" value="Player 1" maxlength="20">
+    </div>
+    <div class="ng-row">
+      <label>Map</label>
+      <select id="ng-map">
+        <option value="island">🏝️ Island</option>
+        <option value="continents">🌍 Continents</option>
+        <option value="rivervalley">🏞️ River Valley</option>
+        <option value="highlands">⛰️ Highlands</option>
+      </select>
+    </div>
+    <div class="ng-row">
+      <label>Difficulty</label>
+      <select id="ng-difficulty">
+        <option value="easy">🟢 Easy</option>
+        <option value="medium" selected>🟡 Medium</option>
+        <option value="hard">🔴 Hard</option>
+      </select>
+    </div>
+    <div class="ng-actions">
+      <button class="btn-start" onclick="startNewGame()">▶ Start Game</button>
+      <button class="btn-cancel" onclick="closeNewGame()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="drop-zone"><div class="msg">📂 Drop .map / .json file here</div></div>
 
 <div id="hud-top-left">
@@ -359,6 +442,8 @@
   <div id="fps">--</div>
   <div id="hud-stats"></div>
 </div>
+
+<div id="resource-bar"><span class="res-placeholder">Loading resources...</span></div>
 
 <div id="tile-tip"></div>
 
@@ -378,7 +463,8 @@ import init, {
     resize,
     on_mouse_down, on_mouse_move, on_mouse_up, on_wheel,
     get_tile_at, get_stats, get_map_data,
-} from './pkg/s4wn_engine.js?v=3';
+    get_resource_counts,
+} from './pkg/s4wn_engine.js?v=4';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -699,6 +785,73 @@ function resetSettings() {
     syncSettingsToUI();
 }
 
+// ── Resource Bar ──────────────────────────────────────────────────────────
+const RESOURCE_ICONS = {
+    Wood: '🪵', Stone: '🪨', Iron: '⛏️', Coal: '⬛',
+    Gold: '🪙', Sulfur: '🟡', Fish: '🐟', Game: '🍖',
+    Grain: '🌾', Planks: '📋', Tools: '🔧', Weapons: '⚔️',
+};
+const RESOURCE_ORDER = ['Wood','Stone','Iron','Coal','Gold','Grain','Fish','Game','Sulfur'];
+
+let lastResourceUpdate = 0;
+function updateResourceBar() {
+    if (!engineReady) return;
+    const now = performance.now();
+    if (now - lastResourceUpdate < 2000) return; // Update every 2s
+    lastResourceUpdate = now;
+
+    try {
+        const raw = get_resource_counts();
+        if (!raw) { lastResourceUpdate = 0; return; }
+        const counts = JSON.parse(raw);
+        let html = '';
+        RESOURCE_ORDER.forEach(name => {
+            const count = counts[name];
+            if (count === undefined) return;
+            const icon = RESOURCE_ICONS[name] || '📦';
+            html += `<div class="res-item" title="${name}: ${count}"><span class="res-icon">${icon}</span><span class="res-count">${count}</span></div>`;
+        });
+        document.getElementById('resource-bar').innerHTML = html || '<span class="res-placeholder">No resources</span>';
+        document.getElementById('resource-bar').classList.add('visible');
+    } catch(e) {
+        // Engine not initialized yet — silently skip
+    }
+}
+
+// ── Game time ──────────────────────────────────────────────────────────────
+function formatGameTime(seconds) {
+    const s = Math.floor(seconds);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+// ── New Game ───────────────────────────────────────────────────────────────
+function openNewGame() {
+    document.getElementById('new-game-panel').classList.add('open');
+}
+
+function closeNewGame() {
+    document.getElementById('new-game-panel').classList.remove('open');
+}
+
+function startNewGame() {
+    const name = document.getElementById('ng-name').value || 'Player 1';
+    const map = document.getElementById('ng-map').value;
+    const difficulty = document.getElementById('ng-difficulty').value;
+    console.log(`New Game: ${name}, map=${map}, difficulty=${difficulty}`);
+    closeNewGame();
+    closeMenu();
+    // Reset game state via WASM — fall back to demo map for now
+    if (engineReady && load_map_json) {
+        // Generate a simple map based on selection
+        const mapName = map.charAt(0).toUpperCase() + map.slice(1);
+        hudMap.textContent = `Map: ${mapName} | Player: ${name} | ${difficulty}`;
+        lastResourceUpdate = 0;
+    }
+}
+
 // ── Main ────────────────────────────────────────────────────────────────
 async function main() {
     try {
@@ -748,8 +901,11 @@ async function main() {
             if (s) {
                 const d = JSON.parse(s);
                 fpsEl.textContent = currentFps + ' FPS';
-                hudStats.textContent = `ticks: ${d.ticks} | ⏱ ${d.game_time}s | 🔍 ${d.zoom}×`;
+                hudStats.textContent = `ticks: ${d.ticks} | ⏱ ${formatGameTime(d.game_time)} | 🔍 ${d.zoom}×`;
             }
+
+            // Resource bar (throttled to every 2s internally)
+            updateResourceBar();
 
             requestAnimationFrame(loop);
         }
