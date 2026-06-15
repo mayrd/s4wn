@@ -2,9 +2,9 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 0 — Foundation (in progress)
+## Status: Phase 1 — Core Engine (in progress)
 
-Last updated: 2026-06-14
+Last updated: 2026-06-15
 
 ---
 
@@ -14,12 +14,13 @@ Last updated: 2026-06-14
 - [x] TECHNOLOGY_CHOICE.md: Evaluate WASM vs emulation, select stack
 - [x] Hello World proof-of-concept: WebGL/WASM rendering a Settlers IV-themed terrain
 - [x] Repository structure and CI/CD pipeline
-- [ ] Rebuild WASM after dead-code fix, verify clean build
+- [x] Rebuild WASM after dead-code fix, verify clean build
 
 ### Phase 1 — Core Engine
-- [ ] Map rendering and camera controls
-- [ ] Game loop architecture (tick-based, deterministic)
+- [x] Map rendering and camera controls
+- [x] Game loop architecture (tick-based, deterministic)
 - [ ] Asset pipeline (decode Siedler 4 `.dat` files → web-friendly formats)
+- [ ] WASMPhase 2 integration: wire game loop into renderer
 
 ### Phase 2 — Game Logic
 - [ ] Economy system (resources, buildings, production chains)
@@ -54,6 +55,9 @@ s4wn/
 │   ├── build.sh
 │   ├── index.html             # Demo page
 │   ├── src/lib.rs             # Engine core (WebGL renderer)
+│   ├── src/map.rs             # Map/tile/terrain/resource system
+│   ├── src/camera.rs          # Isometric camera with pan/zoom
+│   ├── src/game_loop.rs       # Tick-based game loop
 │   └── pkg/                   # Built WASM output (gitignored)
 └── web/
     └── Caddyfile              # Production web server config
@@ -67,12 +71,14 @@ s4wn/
 |---------|------|----------|---------|
 | 0 | 2026-06-13 | — | Repo init, README, IMPLEMENTATION_PLAN.md, TECHNOLOGY_CHOICE.md stubs |
 | 1 | 2026-06-14 | ~40 min | Filled TECHNOLOGY_CHOICE.md (Rust + WASM + wgpu/WebGL2 + Caddy); created Hello World POC: Rust/WASM engine rendering an animated isometric terrain grid via WebGL2 (42KB .wasm); set up CI/CD (GitHub Actions + Docker Buildx multi-arch); added LICENSE, Dockerfile, Caddyfile, .gitignore; unit tests passing |
+| 2 | 2026-06-14 | ~60 min | Map module (8 terrain types, procedural gen, resource deposits); Camera module (isometric pan/zoom, touch support); Game loop module (10 TPS tick-based, SplitMix64 PRNG); integrated into lib.rs; 18 unit tests passing; WASM build 70KB; HTML demo with mouse/touch controls |
+| 3 | 2026-06-15 | ~5 min | Recovery: committed and pushed Session 2 work (was lost due to cron error); updated IMPLEMENTATION_PLAN.md |
 
 ---
 
 ## Blockers
 
-None yet.
+None at the moment. Previous sessions were lost due to cron timeouts/errors — code was on disk but uncommitted.
 
 ---
 
@@ -83,4 +89,4 @@ None yet.
 - Target: fully playable in browser, no install required.
 - **Session 1 decisions:** Rust for engine (Option A), Caddy for web server, wasm-pack + wgpu for build pipeline.
 - Hello World POC renders an 8×8 isometric terrain grid with animated elevation via vertex shader — validates the full WASM + WebGL2 pipeline on arm64.
-- Next session (2): begin Phase 1 — map rendering with camera pan/zoom controls.
+- **Next session (4):** Asset pipeline — decode Siedler 4 `.dat`/`.bbf`/`.gfx` container formats; research S4GFX tool and Settlers.ts reverse-engineering project.
