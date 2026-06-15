@@ -247,6 +247,7 @@ s4wn/
 || 15 | 2026-06-15 | ~20 min | Full-page UI overhaul: rewrote map-viewer.html and engine/index.html with splash screen (animated title → fade → menu), game menu (Load Map, Demo Map), full-page canvas, FPS/stats as in-map HUD overlays, minimap, tile tooltip, keyboard shortcuts. Added load_map_json() WASM binding supporting both Rust and verbose JSON formats. Built optimized WASM package. Fixed dynamic import crash (#8 — cache mismatch on load_map_json export). Fixed issue #9 — bounding-box off-by-one causing panic at map edge (clamped to width-2/height-2). |
 ||| 16 | 2026-06-15 | ~15 min | Authored comprehensive Phase 4 UI & Single Player implementation plan covering splash screen, main menu, settings, new game flow, load game flow, in-game HUD, single-player game start, and full-screen map view. 57 actionable sub-items across 8 UI sections. |
 ||| 17 | 2026-06-15 | ~10 min | Resolved #8: Created S4WN icon/logo suite — SVG favicon + multi-size PNGs (16/32/180/192/512), 512px loading screen logo with heraldic shield design (tribute to Siedler 4 History Edition CD cover), web app manifest. Integrated into all 3 HTML pages (favicon links, splash screen logo, lobby title screen). Added reproducible icon generation script. 137 engine tests passing. |
+||| 18 | 2026-06-15 | ~8 min | Fixed 6 server test compilation errors: set_unit_move_target param names, get_building_mut type/param, remove_room return type. All 167 tests passing (137 engine + 30 server). |
 
 ---
 
@@ -291,14 +292,6 @@ None at the moment.
 - **"Settings" button** → slide-in settings panel with localStorage persistence
 - **Keyboard navigation** (arrow keys + Enter) for menu accessibility
 - Menu open/close animation polish (smooth slide/fade transitions)
-
-### Bug Fix — Server Test Suite (priority: high — discovered Session 17)
-- **Fix 6 compilation errors** in `server/src/game_state.rs` and `server/src/room.rs` (test code only):
-  - `tx`/`ty` variables not found in scope (test helper)
-  - `Building` type import missing in test module
-  - `id` variable naming mismatch
-  - `remove()` returns `Option<Room>`, not `bool`
-- Server binary compiles fine — errors are in test code only
 
 ### Phase 4.5 — In-Game HUD
 - **Resource bar** at top-center: wood/stone/iron/coal/gold/grain with icons + live counts from WASM
