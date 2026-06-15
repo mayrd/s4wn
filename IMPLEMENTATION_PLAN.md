@@ -369,7 +369,8 @@ Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning
 - [x] Pause button → pauses game loop, shows pause overlay
 - [x] Speed controls (1×, 2×, 4× game speed)
 - [x] **Building placement mode** — click building type button → highlight valid terrain tiles → click to place. Wire to WASM `try_place_building()`, show construction progress.
-- [ ] Selection indicator (highlight selected building/unit)
+- [x] Selection indicator (click-select buildings/units on map; info card with HP, production, workers, assigned building, combat target)
+- [ ] Building construction progress visibility (bar under overlay dots, auto-refresh toolbar affordability)
 
 #### 4.6 — Single-Player Game Start (with .map file)
 - [x] `load_map_json()` WASM binding — accepts JSON map data, rebuilds mesh
@@ -468,6 +469,7 @@ s4wn/
 ||| 21 | 2026-06-15 | ~7 min | Phase 4.5 HUD: Added live building/unit population summary to top-left HUD. Imports get_building_summary() and get_unit_summary() from WASM. Displays building counts (complete + constructing) and unit counts (workers + military). Throttled to 2s updates like resource bar. Resets on New Game start. |
 ||| 22 | 2026-06-15 | ~10 min | Phase 4.5 Pause & Speed: Added `speed_multiplier` and `paused` fields to Rust App struct; game ticks scale by speed, skip when paused. Added 5 new WASM exports (set_game_speed, get_game_speed, set_paused, toggle_pause, is_paused). Added pause overlay (⏸ PAUSED with pulse animation) and speed control buttons (1×/2×/4×) to index.html. Keyboard shortcuts: P=toggle pause, 1/2/3=set speed. Rebuilt WASM v5. 137 engine tests passing. |
 ||| 23 | 2026-06-15 | ~10 min | Phase 4.5 Building Placement: Added BuildingType::from_name() and all_names() to economy.rs. Added 3 WASM exports (try_place_building, get_build_cost, list_building_types) with terrain validation, occupancy checks, and cost checking. Building toolbar UI with 14 building type buttons, cost tooltips, emoji icons. Crosshair cursor in placement mode. Keyboard: B to toggle, Esc to cancel. Bumped WASM to v6. 137 engine + 5 server tests passing. |
+||| 24 | 2026-06-15 | ~10 min | Phase 4.5 Selection Indicator: Added get_building_info(idx) and get_unit_info(id) WASM exports returning detailed info (construction, production, workers, HP, state, target). Added selection info card UI with position-aware placement near cursor. Click canvas (non-placement mode) selects building at tile or nearest unit within 1.5 tile radius. Escape closes card. Bumped WASM to v7. 137 engine + 5 server tests passing. |
 
 ---
 
@@ -507,22 +509,19 @@ None at the moment.
 
 ## Next Session
 
-### Phase 4.5 — Selection Indicator (last incomplete HUD item)
-- [ ] **Selection indicator** — click-select buildings/units on map (not in placement mode); show info panel with HP, production progress, assigned workers. Requires new WASM exports: `get_building_info(idx)`, `get_unit_info(id)`. Show floating info card near selected object.
-
 ### Phase 4.5 — Building Construction Progress Visibility
-- [ ] Show construction progress bar under incomplete buildings' overlay dots (use different overlay dot size/color for constructing vs complete)
-- [ ] Auto-refresh build toolbar: disable buttons for unaffordable buildings, show ✓ on affordable ones
+- [ ] **Show construction progress bar** under incomplete buildings' overlay dots (different overlay dot color/size for constructing vs complete buildings)
+- [ ] **Auto-refresh build toolbar**: disable buttons for unaffordable buildings, show ✓ on affordable ones
 
-### Phase 4.3 — New Game Flow (deepen)
-- Wire "Start Game" to actually generate procedural map based on selection (Island/Continents/River Valley/Highlands) using existing `Map::generate_*()` 
-- Difficulty affects starting resources — pass difficulty to WASM as starting resource multiplier
+### Phase 4.6 — Single-Player Game Start (deepen)
+- [ ] Validate map integrity before loading (check all tiles have valid terrain IDs) — currently marked [ ]
+- [ ] Starting resources allocation based on map size + difficulty (pass difficulty to WASM)
+- [ ] Initial HQ placement (auto-placed at map center or player-chosen)
+
+### Phase 4.3 — New Game Flow (wire procedural maps)
+- Wire "Start Game" to actually generate procedural map based on selection (Island/Continents/River Valley/Highlands) using existing `Map::generate_*()`
 - Loading screen with progress bar while WASM initializes map
-
-### Phase 4.4a — S4 .map Validation
-- Validate binary .map integrity: terrain IDs in 0-7, tile count matches width x height
-- Preview panel: terrain distribution + resource count summary before loading
-- Error recovery: report exact byte offset + tile (x,y) on corruption
+- Difficulty affects starting resources — pass as multiplier to WASM
 
 ---
 
