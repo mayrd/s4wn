@@ -130,6 +130,31 @@ None at the moment.
 
 ---
 
+## Delivery Protocol (Mandatory for Every Session)
+
+**Every S4WN run MUST end with these steps — no exceptions:**
+
+1. **Push to GitHub** — `git push` all changes. If push fails, `git pull --rebase` and retry. Never end a session with unpushed commits.
+2. **Update IMPLEMENTATION_PLAN.md:**
+   - Mark completed roadmap items with `[x]`
+   - Append session entry to the Session Log table
+   - Update "Last updated" date and "Status" at the top
+   - Update Open Items & Decisions Needed table
+   - **Write 3-5 concrete next implementation steps** in the "Next Session" section below
+3. **Update README.md** if project status or features changed
+4. **Report** what was accomplished
+
+---
+
+## Next Session
+
+- Check for open GitHub issues first
+- Begin Phase 2: Economy system — design resource types, building definitions, production chain data model
+- Consider: how do buildings connect to the map grid? Define the `Building` struct and `ProductionChain` logic
+- Write unit tests for economy calculations (resource production rates, consumption, storage limits)
+
+---
+
 ## Reference Notes
 
 - The original Siedler 4 uses a custom C++ engine. Assets are stored in `.dat`, `.bbf`, and `.gfx` archive formats.
