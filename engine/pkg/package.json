@@ -1,0 +1,21 @@
+{
+  "name": "s4wn-engine",
+  "type": "module",
+  "description": "Siedler 4 Web-Native game engine",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mayrd/s4wn"
+  },
+  "files": [
+    "s4wn_engine_bg.wasm",
+    "s4wn_engine.js",
+    "s4wn_engine.d.ts"
+  ],
+  "main": "s4wn_engine.js",
+  "types": "s4wn_engine.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

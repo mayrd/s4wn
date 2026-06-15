@@ -1,0 +1,29 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const get_building_summary: () => [number, number];
+export const get_map_data: () => [number, number];
+export const get_resource_counts: () => [number, number];
+export const get_stats: () => [number, number];
+export const get_tile_at: (a: number, b: number) => [number, number];
+export const get_unit_summary: () => [number, number];
+export const init: (a: number, b: number) => [number, number, number];
+export const load_map_json: (a: number, b: number) => [number, number];
+export const on_mouse_down: (a: number, b: number) => void;
+export const on_mouse_move: (a: number, b: number) => void;
+export const on_mouse_up: () => void;
+export const on_wheel: (a: number) => void;
+export const render: (a: number) => void;
+export const resize: () => void;
+export const ws_connect: (a: number, b: number) => number;
+export const ws_receive: () => [number, number];
+export const ws_send: (a: number, b: number) => void;
+export const ws_state: () => [number, number];
+export const __wbindgen_malloc: (a: number, b: number) => number;
+export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+export const __externref_table_alloc: () => number;
+export const __wbindgen_externrefs: WebAssembly.Table;
+export const __wbindgen_free: (a: number, b: number, c: number) => void;
+export const __wbindgen_exn_store: (a: number) => void;
+export const __externref_table_dealloc: (a: number) => void;
+export const __wbindgen_start: () => void;
