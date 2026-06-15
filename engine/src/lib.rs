@@ -19,6 +19,7 @@ pub mod network;
 use camera::Camera;
 use game_loop::{GameLoop, GameState};
 use map::{Map, Terrain};
+use network::{ClientInterpolator, NetworkManager};
 use wasm_bindgen::prelude::*;
 use web_sys::{
     window, HtmlCanvasElement, WebGl2RenderingContext, WebGlBuffer, WebGlProgram, WebGlShader,
@@ -225,6 +226,11 @@ struct App {
     overlay_zoom_loc: web_sys::WebGlUniformLocation,
     overlay_index_count: i32,
     overlay_dirty: bool,
+
+    // Network and client-side interpolation
+    network_manager: NetworkManager,
+    interpolator: ClientInterpolator,
+    last_frame_ms: f64,
 }
 
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
@@ -430,6 +436,9 @@ impl App {
             overlay_zoom_loc,
             overlay_index_count: 0,
             overlay_dirty: true,
+            network_manager: NetworkManager::new(),
+            interpolator: ClientInterpolator::new(0.1), // 10 TPS → 0.1s tick duration
+            last_frame_ms: 0.0,
         })
     }
 
@@ -445,6 +454,17 @@ impl App {
 
         // Run game logic ticks (fixed timestep)
         let _ticks = self.game_loop.frame(elapsed);
+
+        // Store frame time for overlay interpolation
+        self.last_frame_ms = now;
+
+        // Process incoming network messages (feed GameStateSync into interpolator)
+        let messages = self.network_manager.receive();
+        for msg in messages {
+            if let network::NetworkMessage::GameStateSync(snapshot) = msg {
+                self.interpolator.push_snapshot(snapshot, now / 1000.0);
+            }
+        }
 
         // Compute day_phase from game time: cycle ~ 5 minutes of real-time per day
         // Day cycle = 300 seconds / 10 TPS = 3000 ticks per day
@@ -531,9 +551,27 @@ impl App {
         }
 
         // Units: blue workers, red soldiers, green archers
+        let use_interp = self.interpolator.can_interpolate();
+        let alpha = if use_interp {
+            self.interpolator.interpolation_alpha(self.last_frame_ms / 1000.0)
+        } else {
+            0.0
+        };
+
         for unit in self.game_loop.state.economy.units.alive_units() {
-            positions.push(unit.x);
-            positions.push(unit.y);
+            if use_interp {
+                if let Some((ix, iy)) = self.interpolator.interpolate_unit_position(unit.id, alpha) {
+                    positions.push(ix);
+                    positions.push(iy);
+                } else {
+                    // Fall back to actual position if not in snapshots
+                    positions.push(unit.x);
+                    positions.push(unit.y);
+                }
+            } else {
+                positions.push(unit.x);
+                positions.push(unit.y);
+            }
             let c = unit_color(&unit.kind);
             colors.push(c[0]);
             colors.push(c[1]);
