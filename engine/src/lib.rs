@@ -231,6 +231,11 @@ struct App {
     network_manager: NetworkManager,
     interpolator: ClientInterpolator,
     last_frame_ms: f64,
+
+    // Game speed control (1.0 = normal, 2.0 = double, 4.0 = quadruple)
+    speed_multiplier: f64,
+    // Pause state
+    paused: bool,
 }
 
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
@@ -441,6 +446,8 @@ impl App {
             network_manager: NetworkManager::new(),
             interpolator: ClientInterpolator::new(0.1), // 10 TPS → 0.1s tick duration
             last_frame_ms: 0.0,
+            speed_multiplier: 1.0,
+            paused: false,
         })
     }
 
@@ -454,8 +461,14 @@ impl App {
     fn render(&mut self, now: f64) {
         let elapsed = (now - self.start_time) / 1000.0; // seconds
 
-        // Run game logic ticks (fixed timestep)
-        let _ticks = self.game_loop.frame(elapsed);
+        // Run game logic ticks (fixed timestep), scaled by speed, paused check
+        if !self.paused {
+            let scaled_elapsed = elapsed * self.speed_multiplier;
+            let _ticks = self.game_loop.frame(scaled_elapsed);
+        } else {
+            // When paused, reset timing so we don't get a burst of ticks on resume
+            self.game_loop.reset_timing(elapsed);
+        }
 
         // Store frame time for overlay interpolation
         self.last_frame_ms = now;
@@ -1193,6 +1206,63 @@ pub fn ws_receive() -> String {
 #[wasm_bindgen]
 pub fn ws_state() -> String {
     String::from("disconnected")
+}
+
+/// Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
+#[wasm_bindgen]
+pub fn set_game_speed(multiplier: f64) {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.speed_multiplier = multiplier.clamp(0.25, 8.0);
+        }
+    }
+}
+
+/// Get the current game speed multiplier.
+#[wasm_bindgen]
+pub fn get_game_speed() -> f64 {
+    unsafe {
+        if let Some(ref app) = APP {
+            app.speed_multiplier
+        } else {
+            1.0
+        }
+    }
+}
+
+/// Set the game pause state.
+#[wasm_bindgen]
+pub fn set_paused(paused: bool) {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.paused = paused;
+        }
+    }
+}
+
+/// Toggle the game pause state. Returns the new state.
+#[wasm_bindgen]
+pub fn toggle_pause() -> bool {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.paused = !app.paused;
+            app.paused
+        } else {
+            false
+        }
+    }
+}
+
+/// Get the current pause state.
+#[wasm_bindgen]
+pub fn is_paused() -> bool {
+    unsafe {
+        if let Some(ref app) = APP {
+            app.paused
+        } else {
+            false
+        }
+    }
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────────

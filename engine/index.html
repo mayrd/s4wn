@@ -329,6 +329,45 @@
     border-radius: 4px; background: rgba(0,0,0,0.5);
     cursor: pointer;
   }
+  /* ── Pause Overlay ──────────────────────────────────────────────────── */
+  #pause-overlay {
+    position: fixed; inset: 0; z-index: 40;
+    background: rgba(0,0,0,0.55);
+    display: none; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #pause-overlay.active { display: flex; }
+  #pause-overlay .pause-text {
+    font-size: 72px; color: rgba(255,255,255,0.3);
+    font-family: 'Georgia', serif;
+    text-shadow: 0 0 40px rgba(255,255,255,0.1);
+    animation: pulse-pause 2s ease-in-out infinite;
+  }
+  @keyframes pulse-pause {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+  }
+
+  /* ── Speed Controls ─────────────────────────────────────────────────── */
+  #speed-controls {
+    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+    z-index: 20; display: flex; gap: 4px;
+  }
+  #speed-controls .spd-btn {
+    padding: 4px 10px; border-radius: 4px; cursor: pointer;
+    font-family: 'SF Mono', 'Cascadia Code', monospace;
+    font-size: 11px; color: rgba(200,200,200,0.6);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.15s;
+  }
+  #speed-controls .spd-btn:hover {
+    background: rgba(255,255,255,0.1); color: #fff;
+  }
+  #speed-controls .spd-btn.active {
+    background: rgba(200,170,100,0.2); color: #e8d5a0;
+    border-color: rgba(200,170,100,0.4);
+  }
 </style>
 </head>
 <body>
@@ -456,6 +495,16 @@
 
 <canvas id="minimap" width="150" height="150"></canvas>
 <canvas id="game-canvas"></canvas>
+
+<!-- Pause Overlay -->
+<div id="pause-overlay"><div class="pause-text">⏸ PAUSED</div></div>
+
+<!-- Speed Controls -->
+<div id="speed-controls">
+  <button class="spd-btn active" data-speed="1">▶ 1×</button>
+  <button class="spd-btn" data-speed="2">▶▶ 2×</button>
+  <button class="spd-btn" data-speed="4">▶▶▶ 4×</button>
+</div>
 <input type="file" id="fileInput" accept=".json,.map">
 
 <script type="module">
@@ -468,7 +517,10 @@ import init, {
     get_resource_counts,
     get_building_summary,
     get_unit_summary,
-} from './pkg/s4wn_engine.js?v=4';
+    set_game_speed,
+    toggle_pause,
+    is_paused,
+} from './pkg/s4wn_engine.js?v=5';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -511,6 +563,48 @@ function closeMenu() {
     menu.classList.remove('active');
     showMenu = false;
 }
+
+// ── Pause / Speed controls ────────────────────────────────────────────
+function updateSpeedButtons() {
+    const speed = parseFloat(document.querySelector('#speed-controls .spd-btn.active')?.dataset?.speed || 1);
+    document.querySelectorAll('#speed-controls .spd-btn').forEach(btn => {
+        btn.classList.toggle('active', parseFloat(btn.dataset.speed) === speed);
+    });
+}
+
+function setSpeed(speed) {
+    set_game_speed(speed);
+    updateSpeedButtons();
+}
+
+function togglePause() {
+    const paused = toggle_pause();
+    document.getElementById('pause-overlay').classList.toggle('active', paused);
+}
+
+// Speed button click handlers
+document.querySelectorAll('#speed-controls .spd-btn').forEach(btn => {
+    btn.addEventListener('click', () => setSpeed(parseFloat(btn.dataset.speed)));
+});
+
+// Keyboard shortcuts
+window.addEventListener('keydown', (e) => {
+    if (showMenu) return;
+    switch (e.key.toLowerCase()) {
+        case 'p':
+            togglePause();
+            break;
+        case '1':
+            setSpeed(1);
+            break;
+        case '2':
+            setSpeed(2);
+            break;
+        case '3':
+            setSpeed(4);
+            break;
+    }
+});
 
 // ── Map loading ────────────────────────────────────────────────────────
 function triggerLoad() {

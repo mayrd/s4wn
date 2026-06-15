@@ -8,6 +8,11 @@
 export function get_building_summary(): string;
 
 /**
+ * Get the current game speed multiplier.
+ */
+export function get_game_speed(): number;
+
+/**
  * Get the full map as a compact Vec<u8> for minimap rendering.
  * Layout: [width_lo, width_hi, height_lo, height_hi, terrain_byte, terrain_byte, ...]
  * Each tile is one byte (terrain type as u8, matching Terrain enum repr).
@@ -38,6 +43,11 @@ export function get_unit_summary(): string;
  * Returns true on success.
  */
 export function init(canvas_id: string): boolean;
+
+/**
+ * Get the current pause state.
+ */
+export function is_paused(): boolean;
 
 /**
  * Load a map from JSON string (same format as exported by to_json()).
@@ -78,6 +88,21 @@ export function render(timestamp: number): void;
 export function resize(): void;
 
 /**
+ * Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
+ */
+export function set_game_speed(multiplier: number): void;
+
+/**
+ * Set the game pause state.
+ */
+export function set_paused(paused: boolean): void;
+
+/**
+ * Toggle the game pause state. Returns the new state.
+ */
+export function toggle_pause(): boolean;
+
+/**
  * Connect to a game server via WebSocket.
  * Returns true if connection was initiated.
  */
@@ -104,12 +129,14 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly get_building_summary: () => [number, number];
+    readonly get_game_speed: () => number;
     readonly get_map_data: () => [number, number];
     readonly get_resource_counts: () => [number, number];
     readonly get_stats: () => [number, number];
     readonly get_tile_at: (a: number, b: number) => [number, number];
     readonly get_unit_summary: () => [number, number];
     readonly init: (a: number, b: number) => [number, number, number];
+    readonly is_paused: () => number;
     readonly load_map_json: (a: number, b: number) => [number, number];
     readonly on_mouse_down: (a: number, b: number) => void;
     readonly on_mouse_move: (a: number, b: number) => void;
@@ -117,6 +144,9 @@ export interface InitOutput {
     readonly on_wheel: (a: number) => void;
     readonly render: (a: number) => void;
     readonly resize: () => void;
+    readonly set_game_speed: (a: number) => void;
+    readonly set_paused: (a: number) => void;
+    readonly toggle_pause: () => number;
     readonly ws_connect: (a: number, b: number) => number;
     readonly ws_receive: () => [number, number];
     readonly ws_send: (a: number, b: number) => void;

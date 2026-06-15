@@ -19,6 +19,15 @@ export function get_building_summary() {
 }
 
 /**
+ * Get the current game speed multiplier.
+ * @returns {number}
+ */
+export function get_game_speed() {
+    const ret = wasm.get_game_speed();
+    return ret;
+}
+
+/**
  * Get the full map as a compact Vec<u8> for minimap rendering.
  * Layout: [width_lo, width_hi, height_lo, height_hi, terrain_byte, terrain_byte, ...]
  * Each tile is one byte (terrain type as u8, matching Terrain enum repr).
@@ -119,6 +128,15 @@ export function init(canvas_id) {
 }
 
 /**
+ * Get the current pause state.
+ * @returns {boolean}
+ */
+export function is_paused() {
+    const ret = wasm.is_paused();
+    return ret !== 0;
+}
+
+/**
  * Load a map from JSON string (same format as exported by to_json()).
  * Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":null},...]}
  * Also accepts verbose format: {"width":64,"height":64,"tiles":[{"terrain":"Grass","elevation":0.0,"resource":"Iron"},...]}
@@ -187,6 +205,31 @@ export function render(timestamp) {
  */
 export function resize() {
     wasm.resize();
+}
+
+/**
+ * Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
+ * @param {number} multiplier
+ */
+export function set_game_speed(multiplier) {
+    wasm.set_game_speed(multiplier);
+}
+
+/**
+ * Set the game pause state.
+ * @param {boolean} paused
+ */
+export function set_paused(paused) {
+    wasm.set_paused(paused);
+}
+
+/**
+ * Toggle the game pause state. Returns the new state.
+ * @returns {boolean}
+ */
+export function toggle_pause() {
+    const ret = wasm.toggle_pause();
+    return ret !== 0;
 }
 
 /**
