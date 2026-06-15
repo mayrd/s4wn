@@ -272,4 +272,95 @@ Each unit needs animations for all game states. Stored as glTF animation clips.
 | **Total models still needed** | **0** |
 | **Total animations needed** | **17 clips** |
 | **Total triangles (existing)** | **4,104** |
+| **Total textures** | **44** |
 | **Estimated animation data** | **~250 KB (glTF)** |
+
+---
+
+## 18. Texture Assets (44 textures)
+
+All textures procedurally generated, seamless tiling, PNG/RGBA format.
+
+### Terrain Textures (9) — 256×256 PNG
+
+| ID | Name | Type | Format | Notes |
+|----|------|------|--------|-------|
+| TX01 | terrain_grass | Diffuse | PNG 256² | Green with subtle noise variation |
+| TX02 | terrain_forest | Diffuse | PNG 256² | Dark green, dense noise |
+| TX03 | terrain_mountain | Diffuse | PNG 256² | Grey-brown rocky surface |
+| TX04 | terrain_water | Diffuse | PNG 256² | Blue with gentle wave pattern |
+| TX05 | terrain_deepwater | Diffuse | PNG 256² | Dark navy, subtle variation |
+| TX06 | terrain_desert | Diffuse | PNG 256² | Sandy yellow-beige |
+| TX07 | terrain_swamp | Diffuse | PNG 256² | Murky green-brown |
+| TX08 | terrain_snow | Diffuse | PNG 256² | White with subtle blue-grey variation |
+| TX09 | terrain_coast | Diffuse | PNG 256² | Pale sandy-green transition |
+
+### Building Materials (4) — 256×256 PNG
+
+| ID | Name | Type | Format | Notes |
+|----|------|------|--------|-------|
+| TX10 | material_wood | Diffuse | PNG 256² | Brown with grain lines |
+| TX11 | material_stone | Diffuse | PNG 256² | Grey-brown stone blocks |
+| TX12 | material_thatch | Diffuse | PNG 256² | Golden straw with grain |
+| TX13 | material_metal | Diffuse | PNG 256² | Silver-grey metallic |
+
+### Unit Textures (3) — 128×128 PNG
+
+| ID | Name | Type | Format | Notes |
+|----|------|------|--------|-------|
+| TX14 | unit_worker | Diffuse | PNG 128² | Blue fabric texture |
+| TX15 | unit_soldier | Diffuse | PNG 128² | Red fabric texture |
+| TX16 | unit_archer | Diffuse | PNG 128² | Green fabric texture |
+
+### Resource Deposit Textures (8) — 128×128 PNG
+
+| ID | Name | Type | Format | Notes |
+|----|------|------|--------|-------|
+| TX17 | deposit_iron | Diffuse | PNG 128² | Dark reddish-brown with metallic specks |
+| TX18 | deposit_coal | Diffuse | PNG 128² | Near-black with subtle variation |
+| TX19 | deposit_gold | Diffuse | PNG 128² | Yellow-gold with bright specks |
+| TX20 | deposit_stone | Diffuse | PNG 128² | Grey with crystalline specks |
+| TX21 | deposit_sulfur | Diffuse | PNG 128² | Bright yellow with specks |
+| TX22 | deposit_fish | Diffuse | PNG 128² | Blue-grey aquatic |
+| TX23 | deposit_game | Diffuse | PNG 128² | Warm brown animal hide |
+| TX24 | deposit_grain | Diffuse | PNG 128² | Golden wheat |
+
+### Vegetation Textures (3) — 128×128 PNG
+
+| ID | Name | Type | Format | Notes |
+|----|------|------|--------|-------|
+| TX25 | veg_bark | Diffuse | PNG 128² | Brown with vertical grain lines |
+| TX26 | veg_leaves | Diffuse | PNG 128² | Green with dot-cluster detail |
+| TX27 | veg_palm | Diffuse | PNG 128² | Tropical green with leaf detail |
+
+### Special Textures (2)
+
+| ID | Name | Type | Format | Notes |
+|----|------|------|--------|-------|
+| TX28 | water_normal | Normal map | PNG 256² | RGB normal map for water ripples |
+| TX29 | sky_gradient | Gradient | PNG 256×4 | Dawn→noon→dusk→night gradient |
+
+### Resource Icons (11) — 64×64 RGBA PNG
+
+| ID | Name | Type | Format | Notes |
+|----|------|------|--------|-------|
+| TX30 | icon_wood | Icon | RGBA 64² | Circle, transparent background |
+| TX31 | icon_stone | Icon | RGBA 64² | Circle, transparent background |
+| TX32 | icon_iron | Icon | RGBA 64² | Circle, transparent background |
+| TX33 | icon_coal | Icon | RGBA 64² | Circle, transparent background |
+| TX34 | icon_gold | Icon | RGBA 64² | Circle, transparent background |
+| TX35 | icon_sulfur | Icon | RGBA 64² | Circle, transparent background |
+| TX36 | icon_food | Icon | RGBA 64² | Circle, transparent background |
+| TX37 | icon_planks | Icon | RGBA 64² | Circle, transparent background |
+| TX38 | icon_tools | Icon | RGBA 64² | Circle, transparent background |
+| TX39 | icon_weapons | Icon | RGBA 64² | Circle, transparent background |
+| TX40 | icon_beer | Icon | RGBA 64² | Circle, transparent background |
+
+### Particle Textures (4) — 64×64 RGBA PNG
+
+| ID | Name | Type | Format | Notes |
+|----|------|------|--------|-------|
+| TX41 | particle_smoke | Particle | RGBA 64² | Soft grey radial gradient |
+| TX42 | particle_spark | Particle | RGBA 64² | Sharp yellow-orange radial |
+| TX43 | particle_dust | Particle | RGBA 64² | Soft tan radial gradient |
+| TX44 | particle_leaves | Particle | RGBA 64² | Soft green radial gradient |
