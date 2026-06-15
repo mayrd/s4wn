@@ -2,7 +2,7 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 3 — Multiplayer 🔨 (in progress)
+## Status: Phase 3 — Multiplayer 🔨 (nearly complete)
 
 Last updated: 2026-06-15
 
@@ -65,9 +65,10 @@ Last updated: 2026-06-15
 - [x] Economy HUD WASM bindings — `get_resource_counts()`, `get_building_summary()`, `get_unit_summary()`
 - [x] Map export — `Map::to_json()` method for serializing map data
 - [x] Procedural asset generation pipeline — `generate_assets.py` creates 8 terrain tiles, 5 building sprites, 3 unit sprites, 2 UI elements (112KB total)
-- [ ] WebSocket server integration (needs tokio-tungstenite or similar)
-- [ ] Synchronized game state (server-authoritative)
-- [ ] Lobby and matchmaking UI
+- [x] WebSocket server integration — `server/` with tokio-tungstenite, RoomManager, Player, protocol messages, 16 tests
+- [x] Lobby and matchmaking UI — `engine/lobby.html` with room list, create/join/leave, player list, chat
+- [x] WebSocket client stubs — `ws_connect()`, `ws_send()`, `ws_receive()`, `ws_state()` WASM bindings
+- [ ] Synchronized game state (server-authoritative tick + broadcast)
 
 ### Phase 4 — Polish & Release
 - [ ] Mobile UI adaptation
@@ -128,7 +129,8 @@ s4wn/
 | 6 | 2026-06-15 | ~20 min | Units system (src/units.rs): Unit struct with Worker/Soldier/Archer types, HP, speed, attack stats, movement along paths, assignment to buildings; UnitManager for spawning/assigning/removing units; 15 tests. Pathfinding (src/pathfinding.rs): A* on tile grid with terrain-aware movement costs, 10 tests. Worker-building integration: Building.assigned_workers, has_worker(), assign_worker(), Economy.spawn_worker_for(), auto_assign_workers(). Buildings now require workers to produce. Updated 2 existing tests. 84 tests total passing. |
 | 7 | 2026-06-15 | ~15 min | Fixed issue #3 (u_time uniform): unused uniform was optimized away by GLSL compiler → now used for subtle terrain animation. New worker_ai module: auto-assigns idle workers to buildings, pathfinds workers to buildings using A*, transitions to Working on arrival (6 tests). New combat module: soldier/archer AI finds nearest enemies, moves into range, resolves attacks with damage/cooldown, death handling (8 tests). Added idle_workers() iterator to UnitManager. 100 tests passing. Phase 2 nearly complete. |
 || 8 | 2026-06-15 | ~18 min | Combat+worker AI game loop integration: wired WorkerAI and CombatAI into GameState::update(), separated movement ticking (workers via WorkerAI, soldiers via CombatAI). Added 3 integration tests (102 total). Created standalone map-viewer.html (Canvas2D isometric renderer with pan/zoom/touch/drop). Sample island map in assets/. Added UnitManager::all_mut(). Phase 2 complete! |
-| 9 | 2026-06-15 | ~20 min | Phase 3 start: created network.rs module with NetworkMessage enum (10 variants: GameStateSync, BuildingPlace, UnitSpawn, UnitMove, UnitAttack, PlayerJoin, PlayerLeave, Chat, Ping/Pong, Welcome), NetworkManager stub with send/receive/inject, ConnectionState enum, serialization via serde (15 tests). Added building+unit overlay rendering to WebGL (second shader program, colored dots). Added HUD WASM bindings: get_resource_counts(), get_building_summary(), get_unit_summary(). Added Map::to_json(). Generated procedural assets: 8 terrain tiles, 5 building sprites, 3 unit sprites, 2 UI elements. Total ~130 tests. |
+|| 9 | 2026-06-15 | ~20 min | Phase 3 start: created network.rs module with NetworkMessage enum (10 variants: GameStateSync, BuildingPlace, UnitSpawn, UnitMove, UnitAttack, PlayerJoin, PlayerLeave, Chat, Ping/Pong, Welcome), NetworkManager stub with send/receive/inject, ConnectionState enum, serialization via serde (15 tests). Added building+unit overlay rendering to WebGL (second shader program, colored dots). Added HUD WASM bindings: get_resource_counts(), get_building_summary(), get_unit_summary(). Added Map::to_json(). Generated procedural assets: 8 terrain tiles, 5 building sprites, 3 unit sprites, 2 UI elements. Total ~130 tests. |
+|| 10 | 2026-06-15 | ~20 min | WebSocket server: created server/ crate with tokio-tungstenite. Protocol module with NetworkMessage (serde tagged enum), RoomManager with Player/Room/RoomState, full WebSocket server with connection handling, room create/join/leave, chat relay, game start, broadcast. 16 server tests passing. Created lobby.html with title/loading screen (issue #6), room list, create/join/leave UI, player list, chat panel. Added ws_connect/ws_send/ws_receive/ws_state WASM stubs. Updated docker-compose with s4wn-server service, Caddyfile with /ws proxy. 129 engine + 16 server tests passing. |
 
 ---
 
@@ -138,8 +140,19 @@ s4wn/
 |----|-------|--------|-------|
 | #1 | docker-compose.yml | ✅ Closed | Resolved in Session 4 |
 | #3 | Cannot find u_time | ✅ Closed | Fixed in Session 7 — u_time now used in vertex shader |
-| #4 | Asset generation pipeline | 📋 Open | Phase 4; needs AI-driven procedural asset generation |
-| #5 | Basic Map Viewer | ✅ Closed | map-viewer.html created: standalone Canvas2D isometric renderer |
+| #4 | Asset generation pipeline | ✅ Closed | Procedural assets generated in Session 9 |
+| #5 | Basic Map Viewer | ✅ Closed | map-viewer.html created in Session 8 |
+| #6 | Title/Loading Screen | ✅ Closed | lobby.html with animated title screen in Session 10 |
+
+---
+
+## Blockers
+
+None at the moment.
+
+---
+
+## Delivery Protocol (Mandatory for Every Session)
 
 ---
 
@@ -167,27 +180,28 @@ None at the moment.
 
 ## Next Session
 
-- **WebSocket server integration:** Create a server-side WebSocket service in `server/` using tokio-tungstenite:
-  - Auth server handling Welcome/PlayerJoin messages
-  - Game room management (create/join/leave rooms)
-  - Authoritative game state broadcast (GameStateSync messages)
-  - Message relay between players in the same room
-  - Write `server/Cargo.toml` and `server/src/main.rs` with integration tests
-- **Client network integration:** Wire NetworkManager into the game loop via WASM:
-  - Add `wasm-bindgen` WebSocket bindings to NetworkManager
-  - Hook network message polling into `GameState::update()`
-  - Test client↔server message roundtrip
-- **Lobby UI:** Create a minimal HTML lobby interface:
-  - Room creation and joining UI
-  - Player list display
-  - Ready/start controls
-  - Map selection
-- **More building sprites:** Extend `generate_assets.py` to cover all 14 building types:
-  - Quarry, mine, blacksmith, armory, brewery, bakery, butcher, tannery, fishery
-  - Add 16×16 minimap icon variants for each building and unit type
-- **Audio assets (Phase 4):** Scope the audio generation pipeline:
-  - Identify which Web Audio API sounds are needed (UI clicks, building placement, combat, ambient)
-  - Prototype a tool for generating simple SFX with oscillator/filter patterns
+- **Server-authoritative game state:** Implement the server-side game tick loop:
+  - Add a `GameState` struct to the server that mirrors the client's `GameState` (map, economy, units)
+  - Run a 10 TPS tick loop on the server that broadcasts `GameStateSync` to all room members
+  - Validate incoming `BuildingPlace`/`UnitSpawn`/`UnitMove`/`UnitAttack` messages against game rules
+  - Write integration tests for server-side game state updates
+- **Client-side state interpolation:** Wire received `GameStateSync` messages into the WASM engine:
+  - Replace the local game state with server snapshots
+  - Interpolate between snapshots for smooth rendering
+  - Handle input prediction for responsive controls
+- **Map/campaign importer:** Parse original `*.map` / `*.sav` files:
+  - Read terrain data using the ARA+LZH decoder
+  - Map original terrain IDs to our internal `Terrain` enum
+  - Generate a `Map` object from the parsed data
+  - Write tests with sample map data
+- **Audio generation pipeline:** Create procedural sound effects:
+  - Generate UI click sounds, building placement SFX, combat sounds using Web Audio API oscillator patterns
+  - Create ambient nature sounds (wind, water, birds)
+  - Add background music loops
+- **Mobile UI adaptation:** Responsive layout for the lobby and game:
+  - Touch-friendly controls for the game canvas
+  - Collapsible chat panel on small screens
+  - Portrait/landscape orientation handling
 
 ---
 

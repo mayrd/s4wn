@@ -1,5 +1,5 @@
 # S4WN Web Server Configuration
-# Serves the game engine and static assets
+# Serves the game engine, static assets, and proxies WebSocket connections
 
 :80 {
     root * /usr/share/caddy
@@ -8,12 +8,15 @@
     # WASM requires proper MIME type
     header *.wasm Content-Type application/wasm
 
-    # Enable compression for WASM (textual formats compress well)
+    # Enable compression
     encode gzip zstd
 
-    # Security headers
+    # Security headers for WASM multithreading (SharedArrayBuffer)
     header Cross-Origin-Opener-Policy same-origin
     header *.html Cross-Origin-Embedder-Policy require-corp
     header *.js Cross-Origin-Embedder-Policy require-corp
     header *.wasm Cross-Origin-Embedder-Policy require-corp
+
+    # WebSocket game server proxy
+    reverse_proxy /ws* s4wn-server:8080
 }
