@@ -164,6 +164,37 @@ impl BuildingType {
         }
     }
 
+    /// Look up a building type by name.
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "Headquarters" => Some(BuildingType::Headquarters),
+            "Sawmill" => Some(BuildingType::Sawmill),
+            "Quarry" => Some(BuildingType::Quarry),
+            "Mine" => Some(BuildingType::Mine),
+            "Blacksmith" => Some(BuildingType::Blacksmith),
+            "Armory" => Some(BuildingType::Armory),
+            "Brewery" => Some(BuildingType::Brewery),
+            "Bakery" => Some(BuildingType::Bakery),
+            "Butcher" => Some(BuildingType::Butcher),
+            "Tannery" => Some(BuildingType::Tannery),
+            "Farm" => Some(BuildingType::Farm),
+            "Fishery" => Some(BuildingType::Fishery),
+            "Lumberjack" => Some(BuildingType::Lumberjack),
+            "Warehouse" => Some(BuildingType::Warehouse),
+            _ => None,
+        }
+    }
+
+    /// Get all building type names.
+    pub fn all_names() -> Vec<&'static str> {
+        vec![
+            "Headquarters", "Sawmill", "Quarry", "Mine",
+            "Blacksmith", "Armory", "Brewery", "Bakery",
+            "Butcher", "Tannery", "Farm", "Fishery",
+            "Lumberjack", "Warehouse",
+        ]
+    }
+
     /// Resource cost to construct this building
     pub fn build_cost(self) -> &'static [(ResourceType, u32)] {
         match self {

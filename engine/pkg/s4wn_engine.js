@@ -1,6 +1,26 @@
 /* @ts-self-types="./s4wn_engine.d.ts" */
 
 /**
+ * Get build cost for a building type. Returns JSON: {"Wood":3} or {"error":"..."}
+ * @param {string} kind_name
+ * @returns {string}
+ */
+export function get_build_cost(kind_name) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(kind_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.get_build_cost(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
  * Get building summary as a JSON string for the HUD.
  * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"workers":1},...]
  * @returns {string}
@@ -137,6 +157,24 @@ export function is_paused() {
 }
 
 /**
+ * Get a list of all building types as JSON.
+ * Returns: ["Headquarters","Farm","Sawmill",...]
+ * @returns {string}
+ */
+export function list_building_types() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.list_building_types();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Load a map from JSON string (same format as exported by to_json()).
  * Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":null},...]}
  * Also accepts verbose format: {"width":64,"height":64,"tiles":[{"terrain":"Grass","elevation":0.0,"resource":"Iron"},...]}
@@ -230,6 +268,30 @@ export function set_paused(paused) {
 export function toggle_pause() {
     const ret = wasm.toggle_pause();
     return ret !== 0;
+}
+
+/**
+ * Try to place a building on the map.
+ * Takes building type name (e.g. "Farm"), tile x, tile y.
+ * Returns JSON: {"ok":true,"idx":0} or {"error":"message"}
+ * @param {string} kind_name
+ * @param {number} x
+ * @param {number} y
+ * @returns {string}
+ */
+export function try_place_building(kind_name, x, y) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(kind_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.try_place_building(ptr0, len0, x, y);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
 }
 
 /**

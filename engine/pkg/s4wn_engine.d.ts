@@ -2,6 +2,11 @@
 /* eslint-disable */
 
 /**
+ * Get build cost for a building type. Returns JSON: {"Wood":3} or {"error":"..."}
+ */
+export function get_build_cost(kind_name: string): string;
+
+/**
  * Get building summary as a JSON string for the HUD.
  * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"workers":1},...]
  */
@@ -48,6 +53,12 @@ export function init(canvas_id: string): boolean;
  * Get the current pause state.
  */
 export function is_paused(): boolean;
+
+/**
+ * Get a list of all building types as JSON.
+ * Returns: ["Headquarters","Farm","Sawmill",...]
+ */
+export function list_building_types(): string;
 
 /**
  * Load a map from JSON string (same format as exported by to_json()).
@@ -103,6 +114,13 @@ export function set_paused(paused: boolean): void;
 export function toggle_pause(): boolean;
 
 /**
+ * Try to place a building on the map.
+ * Takes building type name (e.g. "Farm"), tile x, tile y.
+ * Returns JSON: {"ok":true,"idx":0} or {"error":"message"}
+ */
+export function try_place_building(kind_name: string, x: number, y: number): string;
+
+/**
  * Connect to a game server via WebSocket.
  * Returns true if connection was initiated.
  */
@@ -128,6 +146,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly get_build_cost: (a: number, b: number) => [number, number];
     readonly get_building_summary: () => [number, number];
     readonly get_game_speed: () => number;
     readonly get_map_data: () => [number, number];
@@ -137,6 +156,7 @@ export interface InitOutput {
     readonly get_unit_summary: () => [number, number];
     readonly init: (a: number, b: number) => [number, number, number];
     readonly is_paused: () => number;
+    readonly list_building_types: () => [number, number];
     readonly load_map_json: (a: number, b: number) => [number, number];
     readonly on_mouse_down: (a: number, b: number) => void;
     readonly on_mouse_move: (a: number, b: number) => void;
@@ -147,6 +167,7 @@ export interface InitOutput {
     readonly set_game_speed: (a: number) => void;
     readonly set_paused: (a: number) => void;
     readonly toggle_pause: () => number;
+    readonly try_place_building: (a: number, b: number, c: number, d: number) => [number, number];
     readonly ws_connect: (a: number, b: number) => number;
     readonly ws_receive: () => [number, number];
     readonly ws_send: (a: number, b: number) => void;

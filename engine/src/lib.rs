@@ -1177,6 +1177,88 @@ pub fn get_unit_summary() -> String {
     String::new()
 }
 
+/// Try to place a building on the map.
+/// Takes building type name (e.g. "Farm"), tile x, tile y.
+/// Returns JSON: {"ok":true,"idx":0} or {"error":"message"}
+#[wasm_bindgen]
+pub fn try_place_building(kind_name: &str, x: usize, y: usize) -> String {
+    use crate::economy::BuildingType;
+    unsafe {
+        if let Some(ref mut app) = APP {
+            // Parse building type name
+            let kind = match BuildingType::from_name(kind_name) {
+                Some(k) => k,
+                None => return format!(r#"{{"error":"Unknown building type: {}"}}"#, kind_name),
+            };
+
+            // Validate tile is within map bounds
+            if x >= app.map.width || y >= app.map.height {
+                return format!(r#"{{"error":"Tile ({},{}) out of bounds"}}"#, x, y);
+            }
+
+            // Validate terrain is buildable (not water, deep water, or mountain)
+            let tile = app.map.get(x, y).unwrap();
+            let buildable = match tile.terrain {
+                Terrain::Water | Terrain::DeepWater | Terrain::Mountain => false,
+                _ => true,
+            };
+            if !buildable {
+                return format!(r#"{{"error":"Cannot build on {} terrain at ({},{})"}}"#, 
+                    match tile.terrain {
+                        Terrain::Water => "water",
+                        Terrain::DeepWater => "deep water",
+                        Terrain::Mountain => "mountain",
+                        _ => "unbuildable",
+                    }, x, y);
+            }
+
+            // Validate tile isn't already occupied by another building
+            let occupied = app.game_loop.state.economy.buildings.iter().any(|b| b.x == x && b.y == y);
+            if occupied {
+                return format!(r#"{{"error":"Tile ({},{}) already has a building"}}"#, x, y);
+            }
+
+            // Try to place the building
+            match app.game_loop.state.economy.try_place_building(kind, x, y) {
+                Some(idx) => {
+                    app.overlay_dirty = true;
+                    return format!(r#"{{"ok":true,"idx":{},"kind":"{}"}}"#, idx, kind.name());
+                }
+                None => {
+                    return format!(r#"{{"error":"Cannot afford {} — insufficient resources"}}"#, kind.name());
+                }
+            }
+        }
+    }
+    format!(r#"{{"error":"Engine not initialized"}}"#)
+}
+
+/// Get build cost for a building type. Returns JSON: {"Wood":3} or {"error":"..."}
+#[wasm_bindgen]
+pub fn get_build_cost(kind_name: &str) -> String {
+    use crate::economy::BuildingType;
+    let kind = match BuildingType::from_name(kind_name) {
+        Some(k) => k,
+        None => return format!(r#"{{"error":"Unknown building type: {}"}}"#, kind_name),
+    };
+    let cost = kind.build_cost();
+    let mut parts = Vec::new();
+    for &(rt, amt) in cost.iter() {
+        parts.push(format!(r#""{}":{}"#, rt.name(), amt));
+    }
+    format!("{{{}}}", parts.join(","))
+}
+
+/// Get a list of all building types as JSON.
+/// Returns: ["Headquarters","Farm","Sawmill",...]
+#[wasm_bindgen]
+pub fn list_building_types() -> String {
+    use crate::economy::BuildingType;
+    let names: Vec<&str> = BuildingType::all_names();
+    let quoted: Vec<String> = names.iter().map(|n| format!(r#""{}""#, n)).collect();
+    format!("[{}]", quoted.join(","))
+}
+
 // ── WebSocket Client API ─────────────────────────────────────────────────────
 
 /// Connect to a game server via WebSocket.
