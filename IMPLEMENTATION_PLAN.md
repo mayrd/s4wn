@@ -26,6 +26,13 @@ Last updated: 2026-06-15
 - If the task pipeline finishes before 55+ minutes, loop back and start the next incomplete IMPLEMENTATION_PLAN item.
 - Only stop early if ALL items are marked complete.
 
+### Asset Policy — ALL Assets Open-Source & Generated
+- **NO original Siedler 4 assets** (sprites, textures, sounds, music) are ever extracted or committed.
+- **All visual/audio assets are generated** — by the agent or by procedural generation — and committed as standard web formats (PNG, WebP, OGG, JSON).
+- **Creative freedom:** Assets do NOT need to match the original game's look; the style should be coherent but independently designed.
+- **Map & campaign import is EXCEPTED:** the engine MUST parse original `*.map` / `*.sav` files for scenario data (terrain, resources, objectives) — but always maps to our own asset IDs, never extracts original graphics.
+- If you encounter a `.dat` / `.bbf` / `.gfx` file during development, use the ARA+LZH decoder only for structural research — never extract and commit its contents.
+
 ---
 
 ## Roadmap
@@ -54,8 +61,11 @@ Last updated: 2026-06-15
 
 ### Phase 4 — Polish & Release
 - [ ] Mobile UI adaptation
-- [ ] Sound and music (Web Audio API)
+- [ ] Sound and music (Web Audio API) — generated, not extracted
 - [ ] Docker multi-arch deployment (linux/amd64, linux/arm64)
+- [ ] Map / campaign importer — parse original `*.map` and `*.sav` scenario data, map to internal asset IDs
+- [ ] Asset generation pipeline — procedural sprites, tile textures, UI elements, sound effects
+- [ ] `assets/` directory populated with all generated game assets
 
 ---
 
@@ -71,6 +81,12 @@ s4wn/
 ├── docker-compose.yml         # Dev/prod Docker Compose config
 ├── .gitignore
 ├── .github/workflows/ci.yml   # CI/CD pipeline
+├── assets/                    # Generated game assets (PNG, WebP, OGG, JSON)
+│   ├── tiles/                 # Terrain tile textures
+│   ├── buildings/             # Building sprites
+│   ├── units/                 # Unit/settler sprites
+│   ├── ui/                    # UI elements, icons, fonts
+│   └── audio/                 # Sound effects, music (generated)
 ├── engine/                    # Rust WASM game engine
 │   ├── Cargo.toml
 │   ├── build.sh
@@ -126,4 +142,5 @@ None at the moment.
 - Target: fully playable in browser, no install required.
 - Hello World POC renders an 8×8 isometric terrain grid with animated elevation via vertex shader — validates the full WASM + WebGL2 pipeline on arm64.
 - Day/night cycle cycles every ~5 real-time minutes; resource deposits glow with a pulsing overlay.
-- **Next session:** Phase 2 — Economy system (resources, buildings, production chains). Check for open GitHub issues first.
+- **Next session:** Check for open GitHub issues first.
+- **⚠️ Asset Policy (non-negotiable):** Original S4 assets are NEVER used. All graphics/sound must be generated and stored in `assets/`. The ARA+LZH decoder exists solely for structural research and for the map/campaign importer — never to extract and republish Ubisoft artwork.

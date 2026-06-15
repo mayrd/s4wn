@@ -28,6 +28,23 @@ This project is maintained by an AI agent operating on a daily 1-hour sprint cyc
 
 ---
 
+## 📦 Asset Policy — 100% Open-Source
+
+**Original Siedler 4 game assets (graphics, sounds, music, sprites) will NOT be used.** All visual and audio assets must be:
+- **Generated or created** by the AI agent or contributors — nothing extracted from the original game
+- **Committed directly into this repository** as open-source (MIT license)
+- **Designed from scratch** — they do NOT need to replicate the original look-and-feel; creative reinterpretation is encouraged
+- **Replaceable** — the engine loads assets from standard web formats (PNG, WebP, OGG, JSON) not from proprietary containers
+
+The only original S4 files the engine MUST support are **maps and campaigns** (`*.map`, `*.sav` savegames):
+- These are user-generated content, not copyrighted Ubisoft artwork
+- They should be **importable or migrated on-the-fly** when a player drops a map/campaign file
+- The `.map`/.`sav` parser reads scenario data (terrain layout, starting resources, objectives, triggers) but references our own generated asset ids — never extracts original sprites or textures
+
+**Raison d'être:** This keeps the project legally clean, fully self-contained, and genuinely open-source — not dependent on extracting proprietary files the user may or may not own.
+
+---
+
 ## 🛠 Technical Stack & Requirements
 * Core: Web-native engine (targeting WebAssembly/JavaScript).
 * Deployment: Dockerized Webserver (serving the game assets and engine).
@@ -49,13 +66,18 @@ This project is maintained by an AI agent operating on a daily 1-hour sprint cyc
 
 ## 🚀 Current Status
 
-**Phase 0 — Foundation** (in progress)
+**Phase 1 — Core Engine** (complete ✅)
 
 - ✅ **TECHNOLOGY_CHOICE.md** — Engine: Rust → WASM, Server: Caddy, Graphics: WebGL2/WebGPU
 - ✅ **Hello World POC** — Rust/WASM engine rendering an animated isometric terrain grid via WebGL2 (42KB .wasm)
 - ✅ **CI/CD Pipeline** — GitHub Actions + Docker Buildx multi-arch (amd64/arm64)
+- ✅ **Map Module** — 8 terrain types, procedural generation, resource deposits
+- ✅ **Camera Module** — Isometric pan/zoom with mouse + touch support
+- ✅ **Game Loop** — Tick-based deterministic, 10 TPS, seeded PRNG (SplitMix64)
+- ✅ **Asset Pipeline** — ARA stream cipher + LZ/Huffman decompression (ported from Settlers.ts)
+- ✅ **Renderer Integration** — Day/night cycle, resource glow visualization
 
-**Next:** Phase 1 — Map rendering and camera controls
+**Next:** Phase 2 — Economy system (resources, buildings, production chains)
 
 ---
 
