@@ -344,6 +344,11 @@ impl UnitManager {
         &self.units
     }
 
+    /// Get all units mutably
+    pub fn all_mut(&mut self) -> &mut [Unit] {
+        &mut self.units
+    }
+
     /// Get all alive units
     pub fn alive_units(&self) -> impl Iterator<Item = &Unit> {
         self.units.iter().filter(|u| u.is_alive())

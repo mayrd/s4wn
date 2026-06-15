@@ -42,14 +42,30 @@ impl CombatAI {
     /// For now, we treat all non-Worker units as potential combatants
     /// and enemies are any unit not of the same "faction" (simplified:
     /// units with odd IDs are player 1, even IDs are player 2 — for testing).
+    ///
+    /// NOTE: This does NOT call units.tick() — worker movement is handled by
+    /// WorkerAI, and soldier movement is handled by chase_target below.
+    /// We only tick attack cooldowns for all units here.
     pub fn update(
         &self,
         units: &mut UnitManager,
         map: &Map,
         dt: f32,
     ) {
-        // Phase 1: Tick movement for all units (already done in UnitManager::tick)
-        units.tick(dt, map);
+        // Tick attack cooldowns for all units
+        for unit in units.all_mut() {
+            unit.tick_attack();
+        }
+
+        // Tick movement for combat units that are moving
+        for unit in units.all_mut() {
+            if !unit.is_alive() || !unit.kind.can_fight() {
+                continue;
+            }
+            if unit.state == UnitState::Moving {
+                let _ = unit.tick_movement(dt, map);
+            }
+        }
 
         // Phase 2: Combat AI for soldiers and archers
         let combatant_ids: Vec<u32> = units

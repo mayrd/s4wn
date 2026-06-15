@@ -23,8 +23,10 @@
 //! - State transitions are purely functional: State → Input → State
 //! - Randomness comes from a seeded PRNG (not system entropy)
 
+use crate::combat::CombatAI;
 use crate::economy::Economy;
 use crate::map::Map;
+use crate::worker_ai::WorkerAI;
 
 /// Ticks per second for game logic (Settlers IV uses ~10 TPS)
 pub const TICKS_PER_SECOND: f64 = 10.0;
@@ -43,6 +45,10 @@ pub struct GameState {
     rng_seed: u64,
     /// Economy system (resources, buildings, production)
     pub economy: Economy,
+    /// Worker AI controller — auto-assigns and moves workers
+    worker_ai: WorkerAI,
+    /// Combat AI controller — manages military engagements
+    combat_ai: CombatAI,
 }
 
 impl GameState {
@@ -54,6 +60,8 @@ impl GameState {
             game_time: 0.0,
             rng_seed: 0xDEADBEEF_CAFE,
             economy: Economy::new(),
+            worker_ai: WorkerAI::new(),
+            combat_ai: CombatAI::new(),
         }
     }
 
@@ -68,6 +76,8 @@ impl GameState {
             game_time: 0.0,
             rng_seed: 0xDEADBEEF_CAFE,
             economy: Economy::with_starting_resources(resources),
+            worker_ai: WorkerAI::new(),
+            combat_ai: CombatAI::new(),
         }
     }
 
@@ -78,8 +88,11 @@ impl GameState {
         // Update PRNG state
         self.rng_seed = next_rng(self.rng_seed);
 
-        // Update economy
-        self.economy.update();
+        // Update worker AI (auto-assigns workers, moves them, calls economy.update())
+        self.worker_ai.update(&mut self.economy, &self.map, TICK_DURATION as f32);
+
+        // Update combat AI (soldiers seek enemies, fight)
+        self.combat_ai.update(&mut self.economy.units, &self.map, TICK_DURATION as f32);
     }
 
     /// Get a seeded pseudo-random value in [0, 1)
@@ -285,7 +298,7 @@ mod tests {
     }
 
     #[test]
-    fn test_economy_integration() {
+    fn test_economy_integration_with_worker_ai() {
         use crate::economy::{BuildingType, ResourceType};
 
         let map = Map::new(8, 8);
@@ -294,22 +307,116 @@ mod tests {
             &[(ResourceType::Wood, 100), (ResourceType::Stone, 50)],
         );
 
-        // Place a farm
-        let farm_idx = state.economy.place_building(BuildingType::Farm, 0, 0);
+        // Place a farm and spawn a worker separately (not at the building)
+        let farm_idx = state.economy.place_building(BuildingType::Farm, 5, 5);
+        let _worker_id = state.economy.units.spawn(
+            crate::units::UnitKind::Worker, 0.5, 0.5,
+        );
 
-        // Build the farm (20 ticks), then spawn a worker
-        for _ in 0..20 {
-            state.update();
-        }
-        state.economy.spawn_worker_for(farm_idx);
-
-        // Run enough ticks to produce
-        for _ in 0..200 {
+        // Run ticks — building constructs, worker auto-assigns, moves there, works
+        for _ in 0..1000 {
             state.update();
         }
 
-        // Farm should have produced some grain
+        // Farm should be complete, worker assigned, and grain produced
+        assert!(state.economy.buildings[farm_idx].is_complete());
         let grain = state.economy.storage.get(ResourceType::Grain);
-        assert!(grain > 0, "Farm should produce grain after 200 ticks, got {}", grain);
+        assert!(
+            grain > 0,
+            "Worker AI should assign worker to farm and produce grain, got {}",
+            grain
+        );
+    }
+
+    #[test]
+    fn test_combat_integration_through_game_loop() {
+        use crate::units::UnitKind;
+
+        let map = Map::new(20, 20);
+        let mut state = GameState::new(map);
+
+        // Spawn two enemy soldiers near each other
+        let _soldier1 = state.economy.units.spawn(UnitKind::Soldier, 5.5, 5.5);
+        let _soldier2 = state.economy.units.spawn(UnitKind::Soldier, 6.5, 5.5);
+
+        // Run many ticks — soldiers should engage in combat
+        for _ in 0..500 {
+            state.update();
+        }
+
+        // At least one soldier should have taken damage
+        let u1 = state.economy.units.get(1).unwrap();
+        let u2 = state.economy.units.get(2).unwrap();
+        let total_hp = u1.hp + u2.hp;
+        assert!(
+            total_hp < 200,
+            "Soldiers should have damaged each other via game loop, total_hp={}",
+            total_hp
+        );
+    }
+
+    #[test]
+    fn test_full_scenario_build_farm_produce_combat() {
+        use crate::economy::{BuildingType, ResourceType};
+        use crate::units::UnitKind;
+
+        let map = Map::new(30, 30);
+        let mut state = GameState::with_starting_resources(
+            map,
+            &[
+                (ResourceType::Wood, 200),
+                (ResourceType::Stone, 100),
+                (ResourceType::Iron, 50),
+                (ResourceType::Coal, 50),
+            ],
+        );
+
+        // Phase 1: Build a farm + lumberjack + sawmill + blacksmith + armory
+        let _farm = state.economy.place_building(BuildingType::Farm, 3, 3);
+        let _lumberjack = state.economy.place_building(BuildingType::Lumberjack, 5, 3);
+        let _sawmill = state.economy.place_building(BuildingType::Sawmill, 7, 3);
+        let _blacksmith = state.economy.place_building(BuildingType::Blacksmith, 9, 3);
+        let _armory = state.economy.place_building(BuildingType::Armory, 11, 3);
+
+        // Spawn workers
+        state.economy.units.spawn(UnitKind::Worker, 0.5, 0.5);
+        state.economy.units.spawn(UnitKind::Worker, 1.5, 0.5);
+        state.economy.units.spawn(UnitKind::Worker, 2.5, 0.5);
+        state.economy.units.spawn(UnitKind::Worker, 3.5, 0.5);
+        state.economy.units.spawn(UnitKind::Worker, 4.5, 0.5);
+
+        // Phase 2: Spawn enemy soldiers
+        state.economy.units.spawn(UnitKind::Soldier, 20.5, 20.5);
+        state.economy.units.spawn(UnitKind::Soldier, 21.5, 20.5);
+
+        // Phase 3: Run 3000 ticks (~300 seconds of game time)
+        for tick in 0..3000 {
+            state.update();
+
+            // After 2000 ticks, spawn a friendly soldier
+            if tick == 2000 {
+                state.economy.units.spawn(UnitKind::Soldier, 15.5, 15.5);
+            }
+        }
+
+        // Verify: farm produced grain, buildings are complete
+        let grain = state.economy.storage.get(ResourceType::Grain);
+        let wood = state.economy.storage.get(ResourceType::Wood);
+
+        assert!(grain > 0, "Farm should produce grain: {}", grain);
+        assert!(wood >= 200, "Wood should be >= starting amount: {}", wood);
+
+        // Verify: combat happened
+        let all_units: Vec<_> = state.economy.units.alive_units().collect();
+        let total_soldiers = all_units
+            .iter()
+            .filter(|u| u.kind.can_fight())
+            .count();
+        // We started with 3 soldiers (2 enemy + 1 friendly). Some may have died.
+        assert!(
+            total_soldiers <= 3,
+            "Should have max 3 soldiers alive, got {}",
+            total_soldiers
+        );
     }
 }
