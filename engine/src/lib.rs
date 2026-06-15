@@ -14,6 +14,7 @@ pub mod units;
 pub mod pathfinding;
 pub mod worker_ai;
 pub mod combat;
+pub mod network;
 
 use camera::Camera;
 use game_loop::{GameLoop, GameState};
@@ -111,6 +112,65 @@ void main() {
 }
 "#;
 
+// ── Overlay Shaders (buildings + units) ───────────────────────────────────────
+
+const OVERLAY_VERTEX_SHADER: &str = r#"
+#version 300 es
+precision highp float;
+
+in vec2 a_overlay_pos;
+in vec3 a_overlay_color;
+in float a_overlay_size;
+
+uniform vec2 u_resolution;
+uniform vec2 u_camera_center;
+uniform float u_zoom;
+
+out vec3 v_overlay_color;
+
+void main() {
+    float x = a_overlay_pos.x;
+    float y = a_overlay_pos.y;
+
+    // Isometric projection (same as terrain)
+    float iso_x = (x - y) * 0.866;
+    float iso_y = (x + y) * 0.5;
+
+    // Camera transform
+    iso_x -= u_camera_center.x;
+    iso_y -= u_camera_center.y;
+    iso_x *= u_zoom;
+    iso_y *= u_zoom;
+
+    // Convert to clip space
+    vec2 clip = (vec2(iso_x, iso_y) / u_resolution) * 2.0;
+    clip.y = -clip.y;
+
+    gl_Position = vec4(clip, 0.0, 1.0);
+    gl_PointSize = a_overlay_size * u_zoom;
+    v_overlay_color = a_overlay_color;
+}
+"#;
+
+const OVERLAY_FRAGMENT_SHADER: &str = r#"
+#version 300 es
+precision highp float;
+
+in vec3 v_overlay_color;
+out vec4 out_color;
+
+void main() {
+    // Draw a soft circle for each point
+    vec2 coord = gl_PointCoord - vec2(0.5);
+    float dist = length(coord);
+    if (dist > 0.5) discard;
+
+    // Soft edge
+    float alpha = 1.0 - smoothstep(0.3, 0.5, dist);
+    out_color = vec4(v_overlay_color, alpha);
+}
+"#;
+
 // ── Application State ─────────────────────────────────────────────────────────
 
 static mut APP: Option<App> = None;
@@ -155,6 +215,18 @@ struct App {
     fps_frame_count: u32,
     fps_last_time: f64,
     current_fps: u32,
+
+    // Overlay (buildings + units) rendering
+    overlay_program: WebGlProgram,
+    overlay_vao: WebGlVertexArrayObject,
+    overlay_pos_buffer: WebGlBuffer,
+    overlay_color_buffer: WebGlBuffer,
+    overlay_size_buffer: WebGlBuffer,
+    overlay_resolution_loc: web_sys::WebGlUniformLocation,
+    overlay_camera_center_loc: web_sys::WebGlUniformLocation,
+    overlay_zoom_loc: web_sys::WebGlUniformLocation,
+    overlay_index_count: i32,
+    overlay_dirty: bool,
 }
 
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
@@ -294,6 +366,31 @@ impl App {
             .get_uniform_location(&program, "u_day_phase")
             .ok_or("Cannot find u_day_phase")?;
 
+        // Compile overlay shaders
+        let overlay_vert = compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, OVERLAY_VERTEX_SHADER)?;
+        let overlay_frag = compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, OVERLAY_FRAGMENT_SHADER)?;
+        let overlay_program = link_program(&gl, &overlay_vert, &overlay_frag)?;
+
+        // Create overlay VAO and buffers
+        let overlay_vao = gl.create_vertex_array().ok_or("Cannot create overlay VAO")?;
+        gl.bind_vertex_array(Some(&overlay_vao));
+
+        let overlay_pos_buffer = upload_f32_buffer(&gl, &[], 0, 2);
+        let overlay_color_buffer = upload_f32_buffer(&gl, &[], 1, 3);
+        let overlay_size_buffer = upload_f32_buffer(&gl, &[], 2, 1);
+
+        gl.bind_vertex_array(None);
+
+        let overlay_resolution_loc = gl
+            .get_uniform_location(&overlay_program, "u_resolution")
+            .ok_or("Cannot find overlay u_resolution")?;
+        let overlay_camera_center_loc = gl
+            .get_uniform_location(&overlay_program, "u_camera_center")
+            .ok_or("Cannot find overlay u_camera_center")?;
+        let overlay_zoom_loc = gl
+            .get_uniform_location(&overlay_program, "u_zoom")
+            .ok_or("Cannot find overlay u_zoom")?;
+
         let start_time = window()
             .and_then(|w| w.performance())
             .map(|p| p.now())
@@ -325,6 +422,16 @@ impl App {
             fps_frame_count: 0,
             fps_last_time: start_time,
             current_fps: 0,
+            overlay_program,
+            overlay_vao,
+            overlay_pos_buffer,
+            overlay_color_buffer,
+            overlay_size_buffer,
+            overlay_resolution_loc,
+            overlay_camera_center_loc,
+            overlay_zoom_loc,
+            overlay_index_count: 0,
+            overlay_dirty: true,
         })
     }
 
@@ -400,6 +507,102 @@ impl App {
             WebGl2RenderingContext::UNSIGNED_SHORT,
             0,
         );
+
+        // ── Overlay: draw buildings and units as colored dots ─────────────
+        self.render_overlay();
+    }
+
+    fn render_overlay(&mut self) {
+        // Build overlay points from game state
+        let mut positions: Vec<f32> = Vec::new();
+        let mut colors: Vec<f32> = Vec::new();
+        let mut sizes: Vec<f32> = Vec::new();
+
+        // Buildings: colored by type
+        for building in self.game_loop.state.economy.buildings.iter() {
+            if !building.is_complete() {
+                continue;
+            }
+            positions.push(building.x as f32 + 0.5);
+            positions.push(building.y as f32 + 0.5);
+            let c = building_color(&building.kind);
+            colors.push(c[0]);
+            colors.push(c[1]);
+            colors.push(c[2]);
+            sizes.push(8.0);
+        }
+
+        // Units: blue workers, red soldiers, green archers
+        for unit in self.game_loop.state.economy.units.alive_units() {
+            positions.push(unit.x);
+            positions.push(unit.y);
+            let c = unit_color(&unit.kind);
+            colors.push(c[0]);
+            colors.push(c[1]);
+            colors.push(c[2]);
+            sizes.push(5.0);
+        }
+
+        if positions.is_empty() {
+            return;
+        }
+
+        let gl = &self.gl;
+
+        // Rebuild overlay buffers if dirty
+        if self.overlay_dirty || true {
+            // always rebuild since game state changes
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.overlay_pos_buffer));
+            unsafe {
+                let view = js_sys::Float32Array::view(&positions);
+                gl.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    &view,
+                    WebGl2RenderingContext::DYNAMIC_DRAW,
+                );
+            }
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.overlay_color_buffer));
+            unsafe {
+                let view = js_sys::Float32Array::view(&colors);
+                gl.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    &view,
+                    WebGl2RenderingContext::DYNAMIC_DRAW,
+                );
+            }
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.overlay_size_buffer));
+            unsafe {
+                let view = js_sys::Float32Array::view(&sizes);
+                gl.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    &view,
+                    WebGl2RenderingContext::DYNAMIC_DRAW,
+                );
+            }
+            self.overlay_index_count = (positions.len() / 2) as i32;
+        }
+
+        gl.use_program(Some(&self.overlay_program));
+
+        let iso_x = (self.camera.center_x - self.camera.center_y) * 0.866;
+        let iso_y = (self.camera.center_x + self.camera.center_y) * 0.5;
+
+        gl.uniform2f(Some(&self.overlay_camera_center_loc), iso_x, iso_y);
+        gl.uniform1f(Some(&self.overlay_zoom_loc), self.camera.zoom);
+
+        let canvas = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap();
+        gl.uniform2f(
+            Some(&self.overlay_resolution_loc),
+            canvas.width() as f32 * 0.5,
+            canvas.height() as f32 * 0.5,
+        );
+
+        gl.enable(WebGl2RenderingContext::BLEND);
+        gl.blend_func(WebGl2RenderingContext::SRC_ALPHA, WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
+
+        gl.bind_vertex_array(Some(&self.overlay_vao));
+        gl.draw_arrays(WebGl2RenderingContext::POINTS, 0, self.overlay_index_count);
+        gl.disable(WebGl2RenderingContext::BLEND);
     }
 
     fn rebuild_mesh(&mut self) {
@@ -514,6 +717,37 @@ fn update_f32_buffer(gl: &WebGl2RenderingContext, data: &[f32]) {
             &view,
             WebGl2RenderingContext::DYNAMIC_DRAW,
         );
+    }
+}
+
+/// Get the color for a building type (RGB, 0.0-1.0).
+fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
+    use crate::economy::BuildingType::*;
+    match kind {
+        Headquarters => [1.0, 0.8, 0.2],   // gold
+        Sawmill => [0.6, 0.4, 0.2],        // brown
+        Quarry => [0.5, 0.5, 0.5],        // grey
+        Mine => [0.4, 0.3, 0.3],          // dark red
+        Blacksmith => [0.8, 0.2, 0.2],    // red
+        Armory => [0.7, 0.1, 0.1],        // dark red
+        Brewery => [0.9, 0.7, 0.2],        // amber
+        Bakery => [0.8, 0.6, 0.3],        // tan
+        Butcher => [0.6, 0.2, 0.2],       // maroon
+        Tannery => [0.5, 0.3, 0.2],       // dark brown
+        Farm => [0.3, 0.7, 0.3],          // green
+        Fishery => [0.2, 0.5, 0.8],       // blue
+        Lumberjack => [0.2, 0.5, 0.2],    // dark green
+        Warehouse => [0.6, 0.5, 0.4],      // taupe
+    }
+}
+
+/// Get the color for a unit kind (RGB, 0.0-1.0).
+fn unit_color(kind: &crate::units::UnitKind) -> [f32; 3] {
+    use crate::units::UnitKind::*;
+    match kind {
+        Worker => [0.2, 0.4, 1.0],   // blue
+        Soldier => [1.0, 0.2, 0.2],  // red
+        Archer => [0.2, 0.8, 0.2],   // green
     }
 }
 
@@ -708,6 +942,79 @@ pub fn get_tile_at(x: f32, y: f32) -> String {
     String::new()
 }
 
+/// Get resource counts as a JSON string for the HUD.
+/// Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Planks":0,...}
+#[wasm_bindgen]
+pub fn get_resource_counts() -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            let storage = &app.game_loop.state.economy.storage;
+            use crate::economy::ResourceType;
+            let mut parts = Vec::new();
+            for i in 0..ResourceType::COUNT {
+                let rt = unsafe { std::mem::transmute::<u8, ResourceType>(i as u8) };
+                parts.push(format!("\"{}\":{}", rt.name(), storage.get(rt)));
+            }
+            return format!("{{{}}}", parts.join(","));
+        }
+    }
+    String::new()
+}
+
+/// Get building summary as a JSON string for the HUD.
+/// Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"workers":1},...]
+#[wasm_bindgen]
+pub fn get_building_summary() -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            let mut parts = Vec::new();
+            for b in app.game_loop.state.economy.buildings.iter() {
+                parts.push(format!(
+                    "{{\"type\":\"{}\",\"x\":{},\"y\":{},\"complete\":{},\"workers\":{}}}",
+                    b.kind.name(),
+                    b.x,
+                    b.y,
+                    b.is_complete(),
+                    b.assigned_workers.len()
+                ));
+            }
+            return format!("[{}]", parts.join(","));
+        }
+    }
+    String::new()
+}
+
+/// Get unit summary as a JSON string for the HUD.
+/// Returns: [{"id":1,"kind":"Worker","x":3.5,"y":3.5,"hp":50,"state":"Working"},...]
+#[wasm_bindgen]
+pub fn get_unit_summary() -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            let mut parts = Vec::new();
+            for u in app.game_loop.state.economy.units.alive_units() {
+                let state_name = match u.state {
+                    crate::units::UnitState::Idle => "Idle",
+                    crate::units::UnitState::Moving => "Moving",
+                    crate::units::UnitState::Working => "Working",
+                    crate::units::UnitState::Fighting => "Fighting",
+                    crate::units::UnitState::Dead => "Dead",
+                };
+                parts.push(format!(
+                    "{{\"id\":{},\"kind\":\"{}\",\"x\":{:.1},\"y\":{:.1},\"hp\":{},\"state\":\"{}\"}}",
+                    u.id,
+                    u.kind.name(),
+                    u.x,
+                    u.y,
+                    u.hp,
+                    state_name
+                ));
+            }
+            return format!("[{}]", parts.join(","));
+        }
+    }
+    String::new()
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -747,6 +1054,37 @@ mod tests {
         // All terrain bytes should be 0-7
         for &byte in &data[4..] {
             assert!(byte <= 7, "terrain byte out of range: {}", byte);
+        }
+    }
+
+    #[test]
+    fn test_overlay_shaders_present() {
+        assert!(OVERLAY_VERTEX_SHADER.contains("a_overlay_pos"));
+        assert!(OVERLAY_FRAGMENT_SHADER.contains("gl_PointCoord"));
+    }
+
+    #[test]
+    fn test_building_color_coverage() {
+        // Ensure all building types have a color
+        use crate::economy::BuildingType::*;
+        for kind in [Headquarters, Sawmill, Quarry, Mine, Blacksmith, Armory,
+                     Brewery, Bakery, Butcher, Tannery, Farm, Fishery,
+                     Lumberjack, Warehouse] {
+            let c = building_color(&kind);
+            assert!(c[0] >= 0.0 && c[0] <= 1.0);
+            assert!(c[1] >= 0.0 && c[1] <= 1.0);
+            assert!(c[2] >= 0.0 && c[2] <= 1.0);
+        }
+    }
+
+    #[test]
+    fn test_unit_color_coverage() {
+        use crate::units::UnitKind::*;
+        for kind in [Worker, Soldier, Archer] {
+            let c = unit_color(&kind);
+            assert!(c[0] >= 0.0 && c[0] <= 1.0);
+            assert!(c[1] >= 0.0 && c[1] <= 1.0);
+            assert!(c[2] >= 0.0 && c[2] <= 1.0);
         }
     }
 }

@@ -2,7 +2,7 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 2 — Game Logic ✅ (complete)
+## Status: Phase 3 — Multiplayer 🔨 (in progress)
 
 Last updated: 2026-06-15
 
@@ -60,9 +60,14 @@ Last updated: 2026-06-15
 - [x] Economy visualization in renderer (map-viewer.html — standalone viewer with terrain+resources)
 
 ### Phase 3 — Multiplayer
-- [ ] WebRTC peer-to-peer or WebSocket client-server
-- [ ] Synchronized game state
-- [ ] Lobby and matchmaking
+- [x] WebSocket network module (`engine/src/network.rs`) — `NetworkMessage` enum, `NetworkManager` stub, `GameStateSnapshot`, serialization via serde, 15 tests
+- [x] Building/unit overlay rendering in WebGL — colored dots for buildings (by type) and units (blue workers, red soldiers, green archers)
+- [x] Economy HUD WASM bindings — `get_resource_counts()`, `get_building_summary()`, `get_unit_summary()`
+- [x] Map export — `Map::to_json()` method for serializing map data
+- [x] Procedural asset generation pipeline — `generate_assets.py` creates 8 terrain tiles, 5 building sprites, 3 unit sprites, 2 UI elements (112KB total)
+- [ ] WebSocket server integration (needs tokio-tungstenite or similar)
+- [ ] Synchronized game state (server-authoritative)
+- [ ] Lobby and matchmaking UI
 
 ### Phase 4 — Polish & Release
 - [ ] Mobile UI adaptation
@@ -122,7 +127,8 @@ s4wn/
 | 5 | 2026-06-15 | ~20 min | Economy system: ResourceType enum (9 raw + 7 processed), BuildingType enum (14 types with costs, inputs, outputs, production intervals), Building struct (construction, production, input/output buffers), ResourceStorage (capacity, cap tracking, spending), Economy manager (tick update, building placement); integrated into GameState + GameLoop; 30 new tests (59 total passing). Updated lib.rs to register economy module. Production chain Wood→Planks tested end-to-end. |
 | 6 | 2026-06-15 | ~20 min | Units system (src/units.rs): Unit struct with Worker/Soldier/Archer types, HP, speed, attack stats, movement along paths, assignment to buildings; UnitManager for spawning/assigning/removing units; 15 tests. Pathfinding (src/pathfinding.rs): A* on tile grid with terrain-aware movement costs, 10 tests. Worker-building integration: Building.assigned_workers, has_worker(), assign_worker(), Economy.spawn_worker_for(), auto_assign_workers(). Buildings now require workers to produce. Updated 2 existing tests. 84 tests total passing. |
 | 7 | 2026-06-15 | ~15 min | Fixed issue #3 (u_time uniform): unused uniform was optimized away by GLSL compiler → now used for subtle terrain animation. New worker_ai module: auto-assigns idle workers to buildings, pathfinds workers to buildings using A*, transitions to Working on arrival (6 tests). New combat module: soldier/archer AI finds nearest enemies, moves into range, resolves attacks with damage/cooldown, death handling (8 tests). Added idle_workers() iterator to UnitManager. 100 tests passing. Phase 2 nearly complete. |
-| 8 | 2026-06-15 | ~18 min | Combat+worker AI game loop integration: wired WorkerAI and CombatAI into GameState::update(), separated movement ticking (workers via WorkerAI, soldiers via CombatAI). Added 3 integration tests (102 total). Created standalone map-viewer.html (Canvas2D isometric renderer with pan/zoom/touch/drop). Sample island map in assets/. Added UnitManager::all_mut(). Phase 2 complete! |
+|| 8 | 2026-06-15 | ~18 min | Combat+worker AI game loop integration: wired WorkerAI and CombatAI into GameState::update(), separated movement ticking (workers via WorkerAI, soldiers via CombatAI). Added 3 integration tests (102 total). Created standalone map-viewer.html (Canvas2D isometric renderer with pan/zoom/touch/drop). Sample island map in assets/. Added UnitManager::all_mut(). Phase 2 complete! |
+| 9 | 2026-06-15 | ~20 min | Phase 3 start: created network.rs module with NetworkMessage enum (10 variants: GameStateSync, BuildingPlace, UnitSpawn, UnitMove, UnitAttack, PlayerJoin, PlayerLeave, Chat, Ping/Pong, Welcome), NetworkManager stub with send/receive/inject, ConnectionState enum, serialization via serde (15 tests). Added building+unit overlay rendering to WebGL (second shader program, colored dots). Added HUD WASM bindings: get_resource_counts(), get_building_summary(), get_unit_summary(). Added Map::to_json(). Generated procedural assets: 8 terrain tiles, 5 building sprites, 3 unit sprites, 2 UI elements. Total ~130 tests. |
 
 ---
 
@@ -161,24 +167,27 @@ None at the moment.
 
 ## Next Session
 
-- **Phase 3 — Multiplayer:** Begin WebSocket client-server prototype. Create `engine/src/network.rs` with:
-  - `NetworkMessage` enum (GameStateSync, UnitSpawn, BuildingPlace, PlayerInput)
-  - `NetworkManager` struct with `send()`/`receive()` methods (stub with serde)
-  - Integrate into GameLoop — frame-based message polling
-  - Write 3-5 tests for message serialization/deserialization
-- **WebGL unit/building rendering:** Add building and unit position overlays to the WebGL renderer in `lib.rs`:
-  - Draw colored dots/rectangles at building positions (color by building type)
-  - Draw small triangles/circles at unit positions (color by unit kind: blue workers, red soldiers, green archers)
-  - Render these as additional draw calls after the terrain mesh
-- **Economy HUD:** Add an HTML overlay showing resource counts and building status:
-  - Expose `get_resource_counts()` and `get_building_summary()` via WASM bindings
-  - Create a small HTML info panel positioned over the canvas
-- **Asset generation pipeline (Issue #4):** Scope the pipeline — determine which assets to generate first:
-  - Terrain tile textures (procedural in shader or Canvas2D → PNG)
-  - Building sprites (simple geometric shapes, 64×64)
-  - Unit sprites (simple geometric shapes, 32×32)
-  - Create `assets/` directory structure with generated PNGs
-- **Map export:** Add `Map::to_json()` method to serialize map data in the format used by map-viewer.html
+- **WebSocket server integration:** Create a server-side WebSocket service in `server/` using tokio-tungstenite:
+  - Auth server handling Welcome/PlayerJoin messages
+  - Game room management (create/join/leave rooms)
+  - Authoritative game state broadcast (GameStateSync messages)
+  - Message relay between players in the same room
+  - Write `server/Cargo.toml` and `server/src/main.rs` with integration tests
+- **Client network integration:** Wire NetworkManager into the game loop via WASM:
+  - Add `wasm-bindgen` WebSocket bindings to NetworkManager
+  - Hook network message polling into `GameState::update()`
+  - Test client↔server message roundtrip
+- **Lobby UI:** Create a minimal HTML lobby interface:
+  - Room creation and joining UI
+  - Player list display
+  - Ready/start controls
+  - Map selection
+- **More building sprites:** Extend `generate_assets.py` to cover all 14 building types:
+  - Quarry, mine, blacksmith, armory, brewery, bakery, butcher, tannery, fishery
+  - Add 16×16 minimap icon variants for each building and unit type
+- **Audio assets (Phase 4):** Scope the audio generation pipeline:
+  - Identify which Web Audio API sounds are needed (UI clicks, building placement, combat, ambient)
+  - Prototype a tool for generating simple SFX with oscillator/filter patterns
 
 ---
 

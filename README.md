@@ -89,7 +89,15 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **Map Viewer** — Standalone Canvas2D isometric viewer with pan/zoom/touch (map-viewer.html)
 - ✅ **102 unit tests** passing
 
-**Phase 3 — Multiplayer** (next)
+**Phase 3 — Multiplayer** (in progress 🔨)
+
+- ✅ **Network Module** — WebSocket-compatible message types, NetworkManager stub, serialization (15 tests)
+- ✅ **Overlay Rendering** — WebGL building (colored by type) and unit (blue/red/green) dot markers
+- ✅ **Economy HUD** — `get_resource_counts()`, `get_building_summary()`, `get_unit_summary()` WASM exports
+- ✅ **Map Export** — `Map::to_json()` serialization method
+- ✅ **Procedural Assets** — 8 terrain tile textures, 5 building sprites, 3 unit sprites, 2 UI elements (112KB)
+- ✅ **~130 tests** passing
+- ⏳ WebSocket server integration — next
 
 ---
 

@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "tiles": [
+    "grass",
+    "water",
+    "sand",
+    "snow",
+    "forest",
+    "mountain",
+    "desert",
+    "swamp"
+  ],
+  "buildings": [
+    "headquarters",
+    "farm",
+    "sawmill",
+    "lumberjack",
+    "warehouse"
+  ],
+  "units": [
+    "worker",
+    "soldier",
+    "archer"
+  ],
+  "ui": [
+    "panel",
+    "button"
+  ]
+}

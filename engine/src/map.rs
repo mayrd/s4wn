@@ -271,6 +271,41 @@ impl Map {
         let h = self.height;
         (0..h).flat_map(move |y| (0..w).map(move |x| (x, y)))
     }
+
+    /// Serialize the map to a JSON string for export/sharing.
+    /// Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":null},...]}
+    /// t = terrain type (u8), e = elevation (f32), r = resource (string or null)
+    pub fn to_json(&self) -> String {
+        let mut tiles = Vec::with_capacity(self.width * self.height);
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let tile = self.get(x, y).unwrap();
+                let terrain = tile.terrain as u8;
+                let elev = tile.elevation;
+                let resource = match tile.resource {
+                    Some(Resource::Iron) => "\"Iron\"",
+                    Some(Resource::Coal) => "\"Coal\"",
+                    Some(Resource::Gold) => "\"Gold\"",
+                    Some(Resource::Stone) => "\"Stone\"",
+                    Some(Resource::Sulfur) => "\"Sulfur\"",
+                    Some(Resource::Fish) => "\"Fish\"",
+                    Some(Resource::Game) => "\"Game\"",
+                    Some(Resource::Grain) => "\"Grain\"",
+                    None => "null",
+                };
+                tiles.push(format!(
+                    "{{\"t\":{},\"e\":{:.3},\"r\":{}}}",
+                    terrain, elev, resource
+                ));
+            }
+        }
+        format!(
+            "{{\"width\":{},\"height\":{},\"tiles\":[{}]}}",
+            self.width,
+            self.height,
+            tiles.join(",")
+        )
+    }
 }
 
 /// Get valid neighbor coordinates (4-directional)
