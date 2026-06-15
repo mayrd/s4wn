@@ -62,7 +62,7 @@ Last updated: 2026-06-15
 > **Goal:** Implement the 4 playable nations from Siedler IV with distinct playstyles,
 > unique buildings/units, and balanced start conditions. All data declared in code.
 
-**Nation Roster (Core 4):**
+**Nation Roster (Core 5):**
 
 | Nation    | Playstyle | Strength | Weakness |
 |-----------|-----------|----------|---------|
@@ -70,101 +70,142 @@ Last updated: 2026-06-15
 | **Vikings**   | Aggressive rusher | Cheap military, fast unit production, naval bonus | Weak economy, high resource consumption |
 | **Mayans**    | Defensive expander | Fast workers, high HP buildings, natural healing | Slow unit production, expensive upgrades |
 | **Trojans**   | Trade & quality | Trade bonus, powerful elite units | Expensive buildings, slow early game |
+| **Dark Tribe**| Terraforming swarm | Terrain control, cheap mass units, auto-spread | No toolmaker, weak individual units, must terraform first |
 
 **Implementation Tasks:**
 
 ##### 2.8.1 — Nation Data Model
 - [ ] `Nation` struct: `id` (u8), `name` (&str), `description` (&str), `color` (RGBA)
-- [ ] `NationType` enum: `Roman`, `Viking`, `Mayan`, `Trojan`
-- [ ] Per-nation building modifiers: cost multiplier, production speed multiplier, HP multiplier
-- [ ] Per-nation unit modifiers: training time, attack, defense, speed
-- [ ] `NationRegistry` — const lookup table with all 4 nations and their modifiers
+- [ ] `NationType` enum: `Roman`, `Viking`, `Mayan`, `Trojan`, `DarkTribe`
+- [ ] `NationRegistry` — const lookup table with all 5 nations and their modifiers
 - [ ] Nation selection integrated into new game setup flow
 
-##### 2.8.2 — Unique Buildings Per Nation
-- [ ] **Romans:** Temple (happiness bonus), Vineyard (wine production, trade good)
-- [ ] **Vikings:** Mead Hall (morale boost, unit training speed), Shipyard (naval unit discount)
-- [ ] **Mayans:** Temple of the Sun (resource blessing, periodic free resource), Herbal Hut (passive unit healing)
-- [ ] **Trojans:** Oracle (line-of-sight reveal, scouting), Grand Market (trade route bonus)
-- [ ] Unique building definitions in `BuildingType` enum with `nation` constraint
-- [ ] Unique building sprites generated and stored in `assets/buildings/<nation>/`
+##### 2.8.2 — Common Buildings (All Nations)
+> **Siedler IV has NO "Headquarters" building.** Settlers are recruited from Residences.
+> Territory expands via military buildings (Barracks, Guard Tower, Fortress).
+> Tools are required to assign workers to buildings.
+> The common building pool is shared across all 5 nations with nation-specific aesthetics.
 
-##### 2.8.2a — Nation-Specific Common Buildings
-> Each nation gets visually and functionally distinct versions of shared building types.
-> Same base function (e.g., Sawmill → produces planks), but different costs, rates, and sprites.
+**Resource Supply Chain (shared across all nations):**
 
-| Building | Romans | Vikings | Mayans | Trojans |
-|----------|--------|---------|--------|---------|
-| **Headquarters** | Villa (stone/timber, elegant) | Longhouse (wood, rustic, weathered) | Step Pyramid (stone, geometric, vines) | Marble Palace (white stone, columns, gold trim) |
-| **Farm** | Latifundium (large rectangular fields, stone walls) | Smallholding (smaller plot, wooden fence, faster cycle) | Chinampa (floating garden, water channels, reed borders) | Irrigated Terrace (terraced hillside, aqueduct, olive trees) |
-| **Lumberjack** | Forest Clearing (orderly stumps, stacked logs) | Timber Camp (rough-hewn, axe in stump, deer hide) | Jungle Cutter (machete lean-to, tropical foliage) | Cedar Grove (tall straight trees, saw pit, stone path) |
-| **Sawmill** | Water Mill (water wheel, stone foundation, planks stacked neatly) | Wind Mill (wooden blades, rough-sawn output, sailcloth) | Stone Mill (obsidian blades, volcanic rock, grinding wheel) | Marble Cutter (stone-cutting frame, polished slabs, chisel rack) |
-| **Stone Mine** | Quarry (square-cut blocks, pulley crane) | Rock Pit (rough boulders, wooden ramp, pickaxe) | Obsidian Mine (dark glassy walls, feather-adorned tools) | Marble Quarry (white cliffs, column sections, sculptor tent) |
-| **Iron Smelter** | Forge (brick furnace, anvil, bellows, sword rack) | Bloomery (clay furnace, charcoal pile, rough ingots) | Copper Kiln (adobe oven, turquoise inlay, ceremonial mask shelf) | Bronze Foundry (lost-wax molds, statue castings, trip hammer) |
-| **Barracks** | Castrum (fortified square, training yard, standards) | Warcamp (tents, shield wall, bonfire, rune stones) | Warrior Temple (carved stele, obsidian spear rack, jaguar pelts) | Citadel (high walls, drill ground, horse stables, banners) |
-| **Warehouse** | Horreum (raised floor, columns, amphorae) | Storehouse (timber frame, thatched roof, barrels) | Granary (stone silo, maize bins, chili-drying racks) | Trade Depot (arched doorways, olive oil jars, coin chest) |
-| **Market** | Forum (open plaza, colonnades, merchant stalls) | Trading Post (wooden pier, ship cargo, fur bales) | Barter Circle (stone ring, feather currency, cocoa bean piles) | Bazaar (domed roof, silk canopies, spice sacks, scales) |
-
-**Implementation:**
-- [ ] One `BuildingDefinition` per nation-variant (36 total common + 8 unique = 44 building definitions)
-- [ ] Nation-specific sprite sheet: `assets/buildings/<nation>/<building>.png`
-- [ ] Generate via `generate_assets.py` — procedural nation-style color palettes (Roman: terracotta/marble, Viking: dark wood/stone, Mayan: adobe/jade, Trojan: white/gold)
-- [ ] Common interface: all Sawmill variants accept `input=Wood[x]`, produce `output=Planks[y]` at `rate=z ticks` — only costs/rates/aesthetics differ
-- [ ] Building tooltip shows nation-specific flavor text (e.g., "Roman Sawmill — water-powered precision. +10% plank yield vs standard.")
-
-##### 2.8.3a — Nation-Specific Settlers (Worker Units)
-> **Goal:** Each nation's worker units are visually and mechanically distinct.
-> Settlers are the backbone of the economy — they build, carry, and produce.
-
-**Worker Variants Per Nation:**
-
-| Nation   | Worker Name  | Visual | Special Ability | Speed | Carry |
-|----------|-------------|--------|-----------------|-------|-------|
-| **Romans**   | Colonus | Tunic, sandals, carries amphora on shoulder | **Discipline:** +10% build speed when adjacent to 2+ other workers | 1.0× | 1.0× |
-| **Vikings**  | Thrall | Furs, bearded, axe at belt, carries bundle on back | **Hardy:** ignores -20% cold/snow terrain speed penalty | 1.1× | 0.9× |
-| **Mayans**   | Tepale | Loincloth, jade necklace, carries basket on head | **Agile:** +15% speed on forest/jungle terrain | 1.0× | 1.1× |
-| **Trojans**  | Doulos | Tunic with geometric pattern, carries tray with both hands | **Efficient:** +20% carry capacity from mines/quarries | 0.9× | 1.2× |
-
-**Worker Tasks (shared across nations):**
-1. **Build** — walks to construction site, performs build animation, adds progress each tick
-2. **Carry** — picks up resource from production building, walks to warehouse/HQ, deposits
-3. **Harvest** — works at farm/lumberjack/mine, produces raw resources each tick
-4. **Repair** — walks to damaged building, repairs HP over time
-5. **Idle** — stands at HQ, awaits assignment
-
-**Worker State Machine:**
-```
-Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning → Idle
-  ↑                                                              |
-  └──────────────────────────────────────────────────────────────┘
-```
+| Category | Building | Input | Output | Tool Required |
+|----------|----------|-------|--------|---------------|
+| **Settler Recruitment** | Residence (Small/Medium/Large) | None | Settlers (capacity: 25/50/100) | None |
+| **Food — Grain** | Farm | None | Grain | None |
+| **Food — Flour** | Mill | Grain | Flour | None |
+| **Food — Bread** | Bakery | Flour + Water | Bread | Rolling Pin |
+| **Food — Fish** | Fishery | None | Fish | Fishing Rod |
+| **Food — Meat** | Butcher | Pig (from Farm w/ Pig upgrade) | Meat | Cleaver |
+| **Food — Water** | Waterworks | None | Water | Bucket |
+| **Wood — Raw** | Forester | None | Wood (replants trees) | None |
+| **Wood — Processed** | Sawmill | Wood | Planks | Saw |
+| **Stone — Raw** | Quarry | None | Stone | Pickaxe |
+| **Iron — Raw** | Iron Mine | None | Iron Ore | Pickaxe |
+| **Coal** | Coal Mine | None | Coal | Pickaxe |
+| **Iron — Smelted** | Smelter | Iron Ore + Coal | Iron Ingots | None |
+| **Gold — Raw** | Gold Mine | None | Gold Ore | Pickaxe |
+| **Gold — Minted** | Mint | Gold Ore + Coal | Coins | None |
+| **Tools** | Toolmaker | Iron Ingots + Wood | Tools (all types) | Hammer |
+| **Weapons** | Armory | Iron Ingots + Coal | Swords, Shields, Bows | Hammer |
+| **Military — Melee** | Barracks | Swords + Shields + Settler | Soldiers | None |
+| **Military — Ranged** | Archery Range | Bows + Settler | Archers | None |
+| **Military — Territory** | Guard Tower / Fortress | Stone + Planks | Territory expansion + garrison | Hammer |
+| **Siege** | Siege Workshop | Iron Ingots + Wood | Catapults / Ballistas | Hammer |
+| **Storage** | Storehouse | — (capacity buffer) | Stores all goods | None |
+| **Ship — Transport** | Shipyard | Wood + Planks | Transport Ship | Saw |
+| **Ship — War** | Warship Dock | Wood + Iron Ingots | Warship | Hammer |
+| **Roads** | Road Layer | Stone | Paved Road (speed bonus) | None |
 
 **Implementation:**
-- [ ] `WorkerVariant` trait or enum with per-nation stats
-- [ ] Build speed modifier applied in `Economy::tick()` when workers are near construction
-- [ ] Terrain speed modifier lookup table (e.g., Snow ×0.8, Forest ×0.9, Road ×1.2)
-- [ ] Carry capacity affects how many resource units a worker transports per trip
-- [ ] Worker sprites: 4 nations × 4 facings × 3 frames (walk/build/carry/idle) = 192 sprite frames
-- [ ] Procedural generation via `generate_assets.py` — small 32×32 sprites in nation-specific color palettes
-- [ ] Worker animations: walk (bob), build (hammer swing), carry (slight lean), idle (breathe)
+- [ ] 25 `BuildingType` variants in enum (shared pool)
+- [ ] Each building stores `input_resources: Vec<(ResourceType, u32)>`, `output_resources: Vec<(ResourceType, u32)>`, `required_tool: Option<ToolType>`
+- [ ] Tool system: buildings stay "unoccupied" until worker with correct tool arrives
+- [ ] Residence tier: Small (2 settlers, 25 max), Medium (4 settlers, 50 max), Large (8 settlers, 100 max)
+- [ ] Construction progress: worker builds for N ticks based on building cost
+- [ ] Territory system: Guard Towers/Fortresses extend player territory radius when garrisoned
 
-**Carrier Logic (Siedler 4 trademark behavior):**
-- Every production building has an output buffer (produced goods waiting for pickup)
-- Workers auto-assign to carry tasks when:
-  - Building output buffer ≥ threshold (default: 1 unit)
-  - A warehouse/HQ with free capacity exists
-- Worker carries goods from building → deposits at nearest storage
-- If no storage has capacity, worker waits (idle at building) — creates visible congestion
-- Roads (future Phase 5) increase worker speed by 20% on road tiles
+##### 2.8.2a — Nation-Specific Unique Buildings
+> Each nation has a distinct flavor building cluster. These define the nation's identity
+> and cannot be built by other nations.
 
-**Assets Needed:**
-| Asset | Count | Format | Notes |
-|-------|-------|--------|-------|
-| Worker sprites (4 nations × 4 dirs × 4 states) | 64 frames | PNG 32×32 | Base + nation palette overlay |
-| Worker portrait (UI) | 4 | PNG 64×64 | For unit selection panel |
-| Worker icon (minimap) | 4 | PNG 8×8 | Nation-colored dots |
-| Carry item overlays | 8 | PNG 16×16 | Log, stone, iron ingot, gold nugget, coal chunk, grain sack, fish, plank — each held above worker sprite |
-| Build animation spark | 1 | PNG 16×16 | Small particle effect at construction site |
+**Romans** — Economy & Balanced Military
+| Building | Function | Input | Output |
+|----------|----------|-------|--------|
+| Temple of Bacchus | Manna production | None | Manna |
+| Vineyard | Wine production | None | Grapes |
+| Wine Press | Wine processing | Grapes | Wine (trade good, morale bonus) |
+| Sanctuary of Minerva | Pioneer/specialist training | Manna | Promotes soldiers, reveals map |
+| Sanctuary of Vulcan | Earthquake magic | Manna (high) | Destroys enemy buildings in radius |
+| Colosseum | Morale + territory bonus | Stone + Planks | Eyecatcher (offensive strength) |
+
+**Vikings** — Aggressive Rush + Naval
+| Building | Function | Input | Output |
+|----------|----------|-------|--------|
+| Mead Hall | Manna production + mead brewing | Honey (from special farm) | Mead + Manna |
+| Apiary | Honey production | None | Honey |
+| Sanctuary of Odin | Vision/sun magic | Manna | Reveals enemy territory, boosts production |
+| Sanctuary of Thor | Thunder magic | Manna (high) | Lightning strikes on enemy buildings |
+| Sanctuary of Freya | Healing magic | Manna | Heals all friendly units in territory |
+| Runestone | Morale + territory bonus | Stone | Eyecatcher |
+
+**Mayans** — Defensive + Farm Economy
+| Building | Function | Input | Output |
+|----------|----------|-------|--------|
+| Temple of Chac | Manna production | None | Manna |
+| Agave Farm | Grows agave (desert only) | None | Agave |
+| Distillery | Tequila production | Agave | Tequila (trade good, morale) |
+| Sanctuary of Kukulkan | Plague magic | Manna (high) | Damages all enemy units in radius |
+| Sanctuary of Quetzalcoatl | Blessing magic | Manna | Boosts farm production 2× for duration |
+| Sanctuary of Huitzilopochtli | War magic | Manna | Temporarily boosts soldier strength |
+| Observatory | Morale + territory bonus | Stone + Planks | Eyecatcher |
+
+**Trojans** — Trade + Elite Units
+| Building | Function | Input | Output |
+|----------|----------|-------|--------|
+| Oracle of Apollo | Manna production | None | Manna |
+| Olive Grove | Grows olives | None | Olives |
+| Oil Press | Olive oil production | Olives | Olive Oil (trade good) |
+| Sanctuary of Artemis | Hunt magic | Manna | Spawns temporary hunter units |
+| Sanctuary of Poseidon | Earthquake magic | Manna (high) | Destroys enemy buildings in radius |
+| Sanctuary of Apollo | Sun magic | Manna | Boosts trade income 2× for duration |
+| Amphitheater | Morale + territory bonus | Stone + Marble | Eyecatcher |
+
+**Dark Tribe** — Terraforming + Swarm (Expansion Pack)
+| Building | Function | Input | Output |
+|----------|----------|-------|--------|
+| Dark Temple | Manna production | None | Manna |
+| Dark Garden | Spreads Dark Grass (terraforms) | Manna | Converts terrain to Dark Grass |
+| Mushroom Farm | Food production (on Dark Grass) | None | Mushrooms |
+| Dark Brewery | Drink production | Mushrooms | Dark Brew (morale, manna regen) |
+| Sanctuary of Morbus | Petrification magic | Manna (high) | Turns enemy units to stone |
+| Sanctuary of Pestilence | Disease magic | Manna | Damages + slows enemy production |
+| Dark Fortress | Territory + elite unit training | Stone + Obsidian | Dark soldiers, territory expansion |
+| Demon Gate | Spawns temporary demon units | Manna (high) | Demon warriors (limited lifetime) |
+
+**Dark Tribe special mechanics:**
+- Cannot build on normal grass — must terraform with Dark Garden first (plants Dark Grass)
+- Dark Grass spreads naturally within territory (like creep)
+- No toolmaker — Dark Tribe uses "Shaman" specialist instead
+- No traditional residences — settlers spawn from Dark Temple when manna is available
+- Units are cheaper but weaker individually; rely on numbers
+
+**Specialists (all nations):**
+| Specialist | Produced At | Tool | Function |
+|------------|-------------|------|----------|
+| Pioneer | Residence + Sanctuary | Hammer | Expands territory (plants flag) |
+| Geologist | Residence + Sanctuary | Pickaxe | Prospecting (finds resource deposits) |
+| Thief | Residence + Sanctuary | Dagger | Steals resources from enemy storehouse |
+| Saboteur | Residence + Sanctuary | Dagger | Destroys enemy buildings |
+| Priest | Temple (nation-specific) | None | Generates manna at temple |
+
+**Implementation:**
+- [ ] `BuildingType` enum extended to ~55 variants (25 common + ~30 unique across 5 nations)
+- [ ] `Nation` constraint on unique buildings: construction menu filters by nation
+- [ ] Manna resource type + mana consumption for magic spells
+- [ ] Dark Grass terrain type (index 8) with natural spread mechanic
+- [ ] Nation-specific sprite sheets: `assets/buildings/{romans,vikings,mayans,trojans,dark}/`
+- [ ] `generate_assets.py` extended for all 5 nation palettes
+- [ ] Territory expansion logic: `GuardTower`/`Fortress`/`DarkFortress` extend border when garrisoned
 
 ##### 2.8.3 — Nation-Specific Unit Specials
 - [ ] **Roman Legionary:** +10% attack in formation (adjacent to other Romans)
@@ -172,7 +213,46 @@ Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning
 - [ ] **Mayan Jaguar Warrior:** stealth detection, +20% defense in forest
 - [ ] **Trojan Phalanx:** +40% defense, -20% movement speed
 - [ ] Special ability enum: `FormationBonus`, `Berserk`, `ForestGuard`, `ShieldWall`
-- [ ] Unit special logic in combat resolution
+##### 2.8.3a — Settlers (Worker Units)
+> **Goal:** Workers are the backbone of the economy. In Siedler IV, workers are generic
+> unnamed "settlers" recruited from Residences. Our version adds nation flavor.
+
+**Settler Tasks:**
+1. **Build** — walks to construction site, adds progress each tick (must hold correct tool)
+2. **Carry** — picks up resource from production building, walks to Storehouse, deposits
+3. **Harvest** — works at farm/forester/mine, produces raw resources each tick
+4. **Repair** — walks to damaged building, repairs HP over time
+5. **Idle** — stands at Residence, awaits assignment
+
+**Settler State Machine:**
+```
+Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning → Idle
+  ↑                                                              |
+  └──────────────────────────────────────────────────────────────┘
+```
+
+**Implementation:**
+- [ ] `SettlerVariant` enum with per-nation cosmetic differences (tunic color, hat, tool style)
+- [ ] Tool dependency: worker must pick up tool from Toolmaker before occupying a building
+- [ ] Build speed affected by: nation modifier, adjacent worker count (Romans: +10%), tool quality
+- [ ] Terrain speed modifier lookup table (Snow ×0.8, Forest ×0.9, Dark Grass ×1.1 for Dark Tribe)
+- [ ] Worker sprites: 5 nations × 4 directions × 3 frames = 60 base sprite frames
+- [ ] Procedural generation via `generate_assets.py` — 32×32 sprites in nation color palettes
+- [ ] Worker animations: walk (bob), build (hammer swing), carry (slight lean), idle (breathe)
+
+**Carrier Logic (Siedler 4 signature mechanic):**
+- Every production building has an output buffer (produced goods waiting for pickup)
+- Workers auto-assign to carry tasks when: building output buffer ≥ threshold (default: 1 unit)
+- Worker carries goods from building → deposits at nearest Storehouse
+- If no Storehouse has capacity, worker waits (idle at building) — creates visible congestion
+- Roads increase worker speed by 20% on road tiles
+
+**Assets Needed:**
+- [ ] Worker sprites: 5 nations × 4 dirs × 4 states = 80 frames (PNG 32×32)
+- [ ] Worker portrait (UI): 5 (PNG 64×64)
+- [ ] Worker icon (minimap): 5 (PNG 8×8)
+- [ ] Carry item overlays: 8 (PNG 16×16) — Log, Stone, Iron Ingot, Gold Nugget, Coal, Grain Sack, Fish, Plank
+- [ ] Build animation particle: 1 (PNG 16×16)
 
 ##### 2.8.4 — Balancing Framework
 - [ ] **Cost balancing matrix:** Compare resource costs across nations — ensure no nation has strictly better units
