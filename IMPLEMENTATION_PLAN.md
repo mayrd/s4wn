@@ -220,8 +220,8 @@ Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning
 - [x] Menu overlay with semi-transparent dark backdrop + blur
 - [x] "Load Map" button → triggers file input dialog
 - [x] "Demo Map" button → starts demo map in fullscreen
-- [ ] "New Game" button with full game setup flow
-- [ ] "Load Game" button → file picker for `.map` / `.sav` files
+- [x] "Load Game" button → file picker for `.map` / `.sav` files
+- [x] "New Game" button → game setup panel (player name, map selection, difficulty selector)
 - [x] "Settings" button → opens settings panel
 - [ ] "Credits" / GitHub link
 - [x] Keyboard navigation (arrow keys + Enter)
@@ -284,9 +284,8 @@ Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning
 - [x] Map info overlay (top-left: map name, dimensions, zoom level)
 - [x] Tile hover tooltip (terrain type, elevation, resource, coordinates)
 - [x] Minimap (bottom-right, clickable to jump camera)
-- [ ] Resource bar (top-center: wood, stone, iron, coal, gold, grain — icons + counts)
-- [ ] Building/unit count summary
-- [ ] Game time display (hh:mm:ss)
+- [x] Resource bar (top-center: wood, stone, iron, coal, gold, grain, fish, game, sulfur — icons + counts)
+- [x] Game time display (hh:mm:ss)
 - [ ] Pause button → pauses game loop, shows pause overlay
 - [ ] Speed controls (1×, 2×, 4× game speed)
 - [ ] Building placement mode: click building type → place on valid terrain
@@ -385,6 +384,7 @@ s4wn/
 ||| 17 | 2026-06-15 | ~10 min | Resolved #8: Created S4WN icon/logo suite — SVG favicon + multi-size PNGs (16/32/180/192/512), 512px loading screen logo with heraldic shield design (tribute to Siedler 4 History Edition CD cover), web app manifest. Integrated into all 3 HTML pages (favicon links, splash screen logo, lobby title screen). Added reproducible icon generation script. 137 engine tests passing. |
 ||| 18 | 2026-06-15 | ~8 min | Fixed 6 server test compilation errors: set_unit_move_target param names, get_building_mut type/param, remove_room return type. All 167 tests passing (137 engine + 30 server). |
 ||| 19 | 2026-06-15 | ~10 min | Settings panel (Phase 4.1/4.2): slide-in panel with zoom speed, terrain detail, master volume, music/SFX toggles. localStorage persistence, Reset to Defaults, keyboard shortcut S, Esc-to-close. Applied to both engine/index.html and map-viewer.html. 167 tests passing. |
+||| 20 | 2026-06-15 | ~10 min | Phase 4.5 HUD: Added resource bar at top-center with emoji icons and live counts from WASM `get_resource_counts()` (Wood, Stone, Iron, Coal, Gold, Grain, Fish, Game, Sulfur). Formatted game_time as hh:mm:ss. Added "New Game" menu button with setup panel (player name, map selection, difficulty). Throttled resource update to every 2s. 167 tests passing. |
 
 ---
 
@@ -424,20 +424,15 @@ None at the moment.
 
 ## Next Session
 
-### Phase 4.1 — Main Menu (remaining items)
-- **"New Game" button** → game setup panel (map selection, difficulty, player name)
-- Menu open/close animation polish (slide/fade transitions)
-- Menu accessible from in-game via bottom-bar ☰ button (currently openMenu only)
+### Phase 4.5 — In-Game HUD (remaining)
+- **Building/unit count summary** — import `get_building_summary()` and `get_unit_summary()`, show counts in HUD
+- **Pause button** — pauses game loop, shows pause overlay; bind to WASM if available, else JS-side
+- **Speed controls** (1×, 2×, 4×) — bind to toggle game speed
 
-### Phase 4.3 — New Game Flow
-- Map selection screen with bundled map thumbnails (Island, Continents, River Valley, Highlands)
-- Difficulty selector (Easy/Medium/Hard affecting starting resources)
-- "Start Game" button transitioning to fullscreen map view
-
-### Phase 4.5 — In-Game HUD
-- **Resource bar** at top-center: wood/stone/iron/coal/gold/grain with icons + live counts from WASM
-- **Game time** display (hh:mm:ss from game_loop tick state)
-- **Pause + speed controls** (1x, 2x, 4x) — bind to WASM `on_pause()`/`on_speed()` functions
+### Phase 4.3 — New Game Flow (deepen)
+- Wire "Start Game" to actually generate a procedural map based on selection (Island/Continents/River Valley/Highlands)
+- Difficulty affects starting resources — pass difficulty to WASM or JS-side initial config
+- Loading screen with progress bar while WASM initializes map
 
 ### Phase 4.4a — S4 .map Validation
 - Validate binary .map integrity: terrain IDs in 0-7, tile count matches width x height
