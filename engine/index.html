@@ -130,6 +130,7 @@
     pointer-events: none; text-align: right; line-height: 1.6;
   }
   #fps { color: #5a8; font-size: 13px; font-weight: 600; }
+  #hud-pop { color: rgba(200,180,140,0.65); font-size: 10px; margin-top: 2px; }
 
   /* ── Tile tooltip ───────────────────────────────────────────────────── */
   #tile-tip {
@@ -437,6 +438,7 @@
 
 <div id="hud-top-left">
   <div id="hud-map"></div>
+  <div id="hud-pop"></div>
 </div>
 <div id="hud-top-right">
   <div id="fps">--</div>
@@ -464,6 +466,8 @@ import init, {
     on_mouse_down, on_mouse_move, on_mouse_up, on_wheel,
     get_tile_at, get_stats, get_map_data,
     get_resource_counts,
+    get_building_summary,
+    get_unit_summary,
 } from './pkg/s4wn_engine.js?v=4';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
@@ -484,6 +488,7 @@ const mctx = minimapEl.getContext('2d');
 const fpsEl = document.getElementById('fps');
 const hudMap = document.getElementById('hud-map');
 const hudStats = document.getElementById('hud-stats');
+const hudPop = document.getElementById('hud-pop');
 const tileTip = document.getElementById('tile-tip');
 const fileInput = document.getElementById('fileInput');
 const dropZone = document.getElementById('drop-zone');
@@ -818,6 +823,38 @@ function updateResourceBar() {
     }
 }
 
+// ── Building / Unit Population ───────────────────────────────────────────
+let lastPopUpdate = 0;
+function updatePopulationSummary() {
+    if (!engineReady) return;
+    const now = performance.now();
+    if (now - lastPopUpdate < 2000) return;
+    lastPopUpdate = now;
+
+    try {
+        const bRaw = get_building_summary();
+        const uRaw = get_unit_summary();
+        if (!bRaw || !uRaw) { lastPopUpdate = 0; return; }
+        const buildings = JSON.parse(bRaw);
+        const units = JSON.parse(uRaw);
+
+        const completeBldgs = buildings.filter(b => b.complete).length;
+        const constructingBldgs = buildings.length - completeBldgs;
+        const workers = units.filter(u => u.kind === 'Worker').length;
+        const soldiers = units.filter(u => u.kind === 'Soldier').length;
+        const archers = units.filter(u => u.kind === 'Archer').length;
+        const military = soldiers + archers;
+
+        let parts = [`🏠 ${completeBldgs}`];
+        if (constructingBldgs > 0) parts.push(`🚧 ${constructingBldgs}`);
+        parts.push(`👷 ${workers}`);
+        if (military > 0) parts.push(`⚔️ ${military}`);
+        hudPop.textContent = parts.join(' · ');
+    } catch(e) {
+        // Silently skip if not yet available
+    }
+}
+
 // ── Game time ──────────────────────────────────────────────────────────────
 function formatGameTime(seconds) {
     const s = Math.floor(seconds);
@@ -849,6 +886,7 @@ function startNewGame() {
         const mapName = map.charAt(0).toUpperCase() + map.slice(1);
         hudMap.textContent = `Map: ${mapName} | Player: ${name} | ${difficulty}`;
         lastResourceUpdate = 0;
+        lastPopUpdate = 0;
     }
 }
 
@@ -906,6 +944,9 @@ async function main() {
 
             // Resource bar (throttled to every 2s internally)
             updateResourceBar();
+
+            // Building/unit population summary
+            updatePopulationSummary();
 
             requestAnimationFrame(loop);
         }
