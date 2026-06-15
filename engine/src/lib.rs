@@ -262,9 +262,11 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
     // Expand a bit to avoid pop-in at edges
     let extra = 2usize;
     let min_x = min_x.saturating_sub(extra);
-    let max_x = (max_x + extra).min(map.width.saturating_sub(1));
+    // Clamp to width-2 / height-2 to leave room for the +1 vertex
+    // needed by the triangle strip (loop goes 0..=cols, 0..=rows)
+    let max_x = (max_x + extra).min(map.width.saturating_sub(2));
     let min_y = min_y.saturating_sub(extra);
-    let max_y = (max_y + extra).min(map.height.saturating_sub(1));
+    let max_y = (max_y + extra).min(map.height.saturating_sub(2));
 
     let rows = max_y - min_y + 1;
     let cols = max_x - min_x + 1;
