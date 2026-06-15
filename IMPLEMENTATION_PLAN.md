@@ -86,20 +86,20 @@ Last updated: 2026-06-15
 - [x] "Demo Map" button → starts demo map in fullscreen
 - [ ] "New Game" button with full game setup flow
 - [ ] "Load Game" button → file picker for `.map` / `.sav` files
-- [ ] "Settings" button → opens settings panel
+- [x] "Settings" button → opens settings panel
 - [ ] "Credits" / GitHub link
-- [ ] Keyboard navigation (arrow keys + Enter)
+- [x] Keyboard navigation (arrow keys + Enter)
 - [ ] Menu open/close animation (slide/fade)
 - [ ] Menu accessible from in-game via ☰ button or Esc
 
 #### 4.2 — Settings Menu
-- [ ] Settings panel (slide-in from right or center modal)
-- [ ] Graphics: zoom sensitivity slider, terrain detail (low/med/high)
-- [ ] Audio: master volume, music on/off, SFX on/off (stubs — no audio yet)
+- [x] Settings panel (slide-in from right or center modal)
+- [x] Graphics: zoom sensitivity slider, terrain detail (low/med/high)
+- [x] Audio: master volume, music on/off, SFX on/off (stubs — no audio yet)
 - [ ] Controls: mouse sensitivity, invert scroll, keyboard bindings display
-- [ ] Settings persisted to localStorage
-- [ ] "Reset to Defaults" button
-- [ ] Back button returns to main menu
+- [x] Settings persisted to localStorage
+- [x] "Reset to Defaults" button
+- [x] Back button returns to main menu
 
 #### 4.3 — New Game Flow
 - [ ] Map selection screen (choose from bundled maps or upload custom)
@@ -248,6 +248,7 @@ s4wn/
 ||| 16 | 2026-06-15 | ~15 min | Authored comprehensive Phase 4 UI & Single Player implementation plan covering splash screen, main menu, settings, new game flow, load game flow, in-game HUD, single-player game start, and full-screen map view. 57 actionable sub-items across 8 UI sections. |
 ||| 17 | 2026-06-15 | ~10 min | Resolved #8: Created S4WN icon/logo suite — SVG favicon + multi-size PNGs (16/32/180/192/512), 512px loading screen logo with heraldic shield design (tribute to Siedler 4 History Edition CD cover), web app manifest. Integrated into all 3 HTML pages (favicon links, splash screen logo, lobby title screen). Added reproducible icon generation script. 137 engine tests passing. |
 ||| 18 | 2026-06-15 | ~8 min | Fixed 6 server test compilation errors: set_unit_move_target param names, get_building_mut type/param, remove_room return type. All 167 tests passing (137 engine + 30 server). |
+||| 19 | 2026-06-15 | ~10 min | Settings panel (Phase 4.1/4.2): slide-in panel with zoom speed, terrain detail, master volume, music/SFX toggles. localStorage persistence, Reset to Defaults, keyboard shortcut S, Esc-to-close. Applied to both engine/index.html and map-viewer.html. 167 tests passing. |
 
 ---
 
@@ -287,26 +288,25 @@ None at the moment.
 
 ## Next Session
 
-### Phase 4.1 — Main Menu Completion (priority: high)
-- **"New Game" button** in menu → opens game setup panel (map selection, difficulty, player name)
-- **"Settings" button** → slide-in settings panel with localStorage persistence
-- **Keyboard navigation** (arrow keys + Enter) for menu accessibility
-- Menu open/close animation polish (smooth slide/fade transitions)
+### Phase 4.1 — Main Menu (remaining items)
+- **"New Game" button** → game setup panel (map selection, difficulty, player name)
+- Menu open/close animation polish (slide/fade transitions)
+- Menu accessible from in-game via bottom-bar ☰ button (currently openMenu only)
+
+### Phase 4.3 — New Game Flow
+- Map selection screen with bundled map thumbnails (Island, Continents, River Valley, Highlands)
+- Difficulty selector (Easy/Medium/Hard affecting starting resources)
+- "Start Game" button transitioning to fullscreen map view
 
 ### Phase 4.5 — In-Game HUD
 - **Resource bar** at top-center: wood/stone/iron/coal/gold/grain with icons + live counts from WASM
-- **Game time** display (hh:mm:ss from game_loop state)
-- **Pause + speed controls** (1×, 2×, 4×) — bind to `on_pause()`/`on_speed()` WASM functions
+- **Game time** display (hh:mm:ss from game_loop tick state)
+- **Pause + speed controls** (1x, 2x, 4x) — bind to WASM `on_pause()`/`on_speed()` functions
 
 ### Phase 4.4a — S4 .map Validation
-- **Validate** binary .map integrity: terrain IDs in 0-7, tile count = width×height
-- **Preview panel**: show terrain distribution + resource counts before loading
-- **Error recovery**: report exact byte offset + tile (x,y) on corruption
-
-### Phase 4.7 — Visual Polish
-- Water animation in fragment shader (time-based wave displacement)
-- Edge-of-map gradient fade (darken tiles near map boundary)
-- Elevation-based terrain darkening (steeper = more shadow)
+- Validate binary .map integrity: terrain IDs in 0-7, tile count matches width x height
+- Preview panel: terrain distribution + resource count summary before loading
+- Error recovery: report exact byte offset + tile (x,y) on corruption
 
 ---
 
