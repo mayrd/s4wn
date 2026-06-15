@@ -213,7 +213,7 @@ impl NetworkManager {
 
     /// Receive all pending messages from the server.
     /// Returns and clears the incoming message queue.
-    pub fn receive(&mut -> Vec<NetworkMessage> {
+    pub fn receive(&mut self) -> Vec<NetworkMessage> {
         std::mem::take(&mut self.incoming)
     }
 
