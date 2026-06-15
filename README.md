@@ -105,6 +105,6 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 ---
 
 AI Agent Configuration:
-* Work Duration: 60 minutes per session.
-* Frequency: Daily.
+* Work Duration: 10-20 minutes per session.
+* Frequency: Hourly.
 * Reporting: Ensure README.md and IMPLEMENTATION_PLAN.md remain accurate to the current state of the project.
