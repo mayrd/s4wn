@@ -1,0 +1,54 @@
+# S4WN — Siedler 4 Web-Native
+# Docker Compose configuration for development and production
+#
+# Usage:
+#   docker compose up -d              # Production (HTTP on 8080)
+#   docker compose up -d --build      # Rebuild and start
+#   docker compose down               # Stop
+#
+# Environment variables:
+#   CADDY_PORT         — HTTP listen port (default: 80)
+#   CADDY_DOMAIN        — Domain for auto-HTTPS (empty = HTTP only)
+#   S4WN_LOG_LEVEL      — Caddy log level: debug, info, warn, error (default: info)
+
+version: "3.9"
+
+services:
+  s4wn:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: s4wn:latest
+    container_name: s4wn
+    restart: unless-stopped
+    
+    ports:
+      # Map container port 80 to host. Use CADDY_PORT env var to customize.
+      - "${CADDY_PORT:-8080}:80"
+      # Optional HTTPS port (only needed when CADDY_DOMAIN is set)
+      - "${CADDY_HTTPS_PORT:-8443}:443"
+    
+    environment:
+      # Caddy auto-HTTPS: set your domain for automatic Let's Encrypt TLS
+      # Leave empty to serve HTTP only
+      - CADDY_DOMAIN=${CADDY_DOMAIN:-}
+    
+    # Uncomment to override the Caddyfile with host-mounted config
+    # volumes:
+    #   - ./web/Caddyfile:/etc/caddy/Caddyfile:ro
+    
+    # Health check built into the Dockerfile uses wget
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    
+    # Resource limits (Raspberry Pi friendly)
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M

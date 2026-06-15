@@ -7,6 +7,8 @@
 pub mod map;
 pub mod camera;
 pub mod game_loop;
+pub mod ara_crypt;
+pub mod decompress;
 
 use camera::Camera;
 use game_loop::{GameLoop, GameState};
@@ -25,14 +27,18 @@ precision highp float;
 in vec2 a_position;
 in vec3 a_color;
 in float a_elevation;
+in float a_has_resource;
 
 uniform vec2 u_resolution;
 uniform float u_time;
 uniform vec2 u_camera_center;
 uniform float u_zoom;
+uniform float u_day_phase;
 
 out vec3 v_color;
 out float v_elevation;
+out float v_has_resource;
+out float v_day_phase;
 
 void main() {
     float x = a_position.x;
@@ -56,6 +62,8 @@ void main() {
     gl_Position = vec4(clip, 0.0, 1.0);
     v_color = a_color;
     v_elevation = elev;
+    v_has_resource = a_has_resource;
+    v_day_phase = u_day_phase;
 }
 "#;
 
@@ -64,11 +72,34 @@ precision highp float;
 
 in vec3 v_color;
 in float v_elevation;
+in float v_has_resource;
+in float v_day_phase;
+
 out vec4 out_color;
 
 void main() {
+    // Elevation-based shade
     float shade = 1.0 - v_elevation * 0.15;
-    out_color = vec4(v_color * shade, 1.0);
+
+    // Day/night cycle: day_phase is 0..1, 0.0=midnight, 0.5=noon
+    // Use a smooth sine wave for daylight
+    float day_light = 0.5 + 0.5 * sin(v_day_phase * 6.2831853);
+    float ambient = 0.2 + day_light * 0.8; // 0.2 min, 1.0 max
+    float warmth = 0.5 + day_light * 0.5; // warmer during day
+
+    vec3 lit = v_color * shade * ambient;
+
+    // Resource glow: tiles with resources get a subtle pulsing overlay
+    if (v_has_resource > 0.5) {
+        float pulse = 0.8 + 0.2 * sin(v_day_phase * 6.2831853 * 2.0);
+        vec3 glow = vec3(0.9, 0.85, 0.3) * 0.15 * pulse;
+        lit = lit + glow;
+    }
+
+    // Add warmth tint
+    lit = mix(lit * 0.7, lit, warmth);
+
+    out_color = vec4(lit, 1.0);
 }
 "#;
 
@@ -83,12 +114,14 @@ struct App {
     position_buffer: WebGlBuffer,
     color_buffer: WebGlBuffer,
     elevation_buffer: WebGlBuffer,
+    resource_buffer: WebGlBuffer,
     index_buffer: WebGlBuffer,
 
     resolution_loc: web_sys::WebGlUniformLocation,
     time_loc: web_sys::WebGlUniformLocation,
     camera_center_loc: web_sys::WebGlUniformLocation,
     zoom_loc: web_sys::WebGlUniformLocation,
+    day_phase_loc: web_sys::WebGlUniformLocation,
 
     index_count: i32,
     start_time: f64,
@@ -122,6 +155,7 @@ struct MeshData {
     positions: Vec<f32>,
     colors: Vec<f32>,
     elevations: Vec<f32>,
+    has_resources: Vec<f32>,
     indices: Vec<u16>,
 }
 
@@ -131,6 +165,7 @@ impl MeshData {
             positions: Vec::new(),
             colors: Vec::new(),
             elevations: Vec::new(),
+            has_resources: Vec::new(),
             indices: Vec::new(),
         }
     }
@@ -166,6 +201,10 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
             mesh.colors.push(c[2]);
 
             mesh.elevations.push(tile.elevation);
+
+            // Resource flag: 1.0 if tile has a resource, 0.0 otherwise
+            let has_res = if tile.resource.is_some() { 1.0f32 } else { 0.0f32 };
+            mesh.has_resources.push(has_res);
 
             // Build triangle strip indices
             if row < rows && col < cols {
@@ -217,6 +256,7 @@ impl App {
         let position_buffer = upload_f32_buffer(&gl, &mesh.positions, 0, 2);
         let color_buffer = upload_f32_buffer(&gl, &mesh.colors, 1, 3);
         let elevation_buffer = upload_f32_buffer(&gl, &mesh.elevations, 2, 1);
+        let resource_buffer = upload_f32_buffer(&gl, &mesh.has_resources, 3, 1);
         let index_buffer = gl.create_buffer().ok_or("Cannot create index buffer")?;
         gl.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, Some(&index_buffer));
         unsafe {
@@ -242,6 +282,9 @@ impl App {
         let zoom_loc = gl
             .get_uniform_location(&program, "u_zoom")
             .ok_or("Cannot find u_zoom")?;
+        let day_phase_loc = gl
+            .get_uniform_location(&program, "u_day_phase")
+            .ok_or("Cannot find u_day_phase")?;
 
         let start_time = window()
             .and_then(|w| w.performance())
@@ -255,11 +298,13 @@ impl App {
             position_buffer,
             color_buffer,
             elevation_buffer,
+            resource_buffer,
             index_buffer,
             resolution_loc,
             time_loc,
             camera_center_loc,
             zoom_loc,
+            day_phase_loc,
             index_count: mesh.indices.len() as i32,
             start_time,
             map: map.clone(),
@@ -287,6 +332,10 @@ impl App {
 
         // Run game logic ticks (fixed timestep)
         let _ticks = self.game_loop.frame(elapsed);
+
+        // Compute day_phase from game time: cycle ~ 5 minutes of real-time per day
+        // Day cycle = 300 seconds / 10 TPS = 3000 ticks per day
+        let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
 
         // Smooth camera
         self.camera.update(0.016); // ~60fps
@@ -327,6 +376,7 @@ impl App {
 
         gl.uniform2f(Some(&self.camera_center_loc), iso_x, iso_y);
         gl.uniform1f(Some(&self.zoom_loc), self.camera.zoom);
+        gl.uniform1f(Some(&self.day_phase_loc), day_phase as f32);
         gl.uniform1f(Some(&self.time_loc), elapsed as f32);
         gl.uniform2f(
             Some(&self.resolution_loc),
@@ -356,6 +406,9 @@ impl App {
 
         gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.elevation_buffer));
         update_f32_buffer(gl, &mesh.elevations);
+
+        gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.resource_buffer));
+        update_f32_buffer(gl, &mesh.has_resources);
 
         gl.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, Some(&self.index_buffer));
         unsafe {
