@@ -183,6 +183,92 @@
 
   #fileInput { display: none; }
 
+  /* ── Settings Panel ────────────────────────────────────────────────── */
+  #settings-panel {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: 320px; max-width: 90vw; z-index: 95;
+    background: linear-gradient(180deg, #0c1225 0%, #080e1c 100%);
+    border-left: 1px solid rgba(200,170,100,0.12);
+    box-shadow: -8px 0 32px rgba(0,0,0,0.5);
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    padding: 28px 24px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  #settings-panel.open { transform: translateX(0); }
+  .settings-backdrop {
+    position: fixed; inset: 0; z-index: 94;
+    background: rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s;
+  }
+  .settings-backdrop.active { opacity: 1; pointer-events: auto; }
+  .settings-header {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .settings-header h3 {
+    font-weight: 300; font-size: 20px;
+    color: #c8b878; letter-spacing: 0.08em;
+  }
+  .settings-close {
+    background: none; border: 1px solid rgba(255,255,255,0.1);
+    color: #888; font-size: 18px; width: 32px; height: 32px;
+    border-radius: 6px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .settings-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .settings-section {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 16px;
+  }
+  .settings-section h4 {
+    font-size: 11px; font-weight: 500;
+    color: #666; text-transform: uppercase;
+    letter-spacing: 0.15em; margin-bottom: 12px;
+  }
+  .setting-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; font-size: 13px; color: #bbb;
+  }
+  .setting-row label { flex-shrink: 0; margin-right: 12px; }
+  .setting-row input[type=range] {
+    flex: 1; height: 4px;
+    accent-color: #c8b878;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+  }
+  .setting-row .setting-val {
+    font-size: 11px; color: #888;
+    min-width: 36px; text-align: right;
+  }
+  .setting-row input[type=checkbox] {
+    accent-color: #c8b878; width: 16px; height: 16px;
+  }
+  .settings-actions {
+    display: flex; gap: 8px; margin-top: auto; padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .settings-actions button {
+    flex: 1; padding: 10px; font-size: 12px;
+    font-family: inherit; letter-spacing: 0.05em;
+    border-radius: 6px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-reset {
+    background: rgba(255,80,80,0.08);
+    border: 1px solid rgba(255,80,80,0.15);
+    color: #c66;
+  }
+  .btn-reset:hover { background: rgba(255,80,80,0.18); color: #e88; }
+  .btn-back {
+    background: rgba(200,170,100,0.08);
+    border: 1px solid rgba(200,170,100,0.2);
+    color: #c8b878;
+  }
+  .btn-back:hover { background: rgba(200,170,100,0.18); color: #f0dca0; }
+
   /* ── Minimap ────────────────────────────────────────────────────────── */
   #minimap {
     position: fixed; bottom: 60px; right: 12px;
@@ -207,10 +293,60 @@
     <h2>⚔️ Game Menu</h2>
     <button class="menu-btn" id="btn-load">📂 Load Map</button>
     <button class="menu-btn" id="btn-demo">🗺️ Demo Map</button>
+    <button class="menu-btn" onclick="openSettings()">⚙️ Settings</button>
     <button class="menu-btn secondary" onclick="window.open('https://github.com/mayrd/s4wn','_blank')">
       🔗 GitHub Repository
     </button>
-    <div class="menu-hint">or press <kbd>L</kbd> to load · <kbd>D</kbd> for demo</div>
+    <div class="menu-hint">or press <kbd>L</kbd> to load · <kbd>D</kbd> for demo · <kbd>S</kbd> for settings</div>
+  </div>
+</div>
+
+<!-- Settings Panel (slide-in from right) -->
+<div class="settings-backdrop" id="settings-backdrop" onclick="closeSettings()"></div>
+<div id="settings-panel">
+  <div class="settings-header">
+    <h3>⚙️ Settings</h3>
+    <button class="settings-close" onclick="closeSettings()">✕</button>
+  </div>
+
+  <div class="settings-section">
+    <h4>🎮 Controls</h4>
+    <div class="setting-row">
+      <label for="set-zoom">Zoom Speed</label>
+      <input type="range" id="set-zoom" min="0.5" max="3" step="0.1" oninput="updateSettingVal('set-zoom')">
+      <span class="setting-val" id="val-set-zoom">1.0</span>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h4>🎨 Graphics</h4>
+    <div class="setting-row">
+      <label for="set-detail">Terrain Detail</label>
+      <input type="range" id="set-detail" min="0" max="2" step="1" oninput="updateSettingVal('set-detail')">
+      <span class="setting-val" id="val-set-detail">Med</span>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h4>🔊 Audio</h4>
+    <div class="setting-row">
+      <label for="set-master-vol">Master Volume</label>
+      <input type="range" id="set-master-vol" min="0" max="100" step="5" oninput="updateSettingVal('set-master-vol')">
+      <span class="setting-val" id="val-set-master-vol">80</span>
+    </div>
+    <div class="setting-row">
+      <label for="set-music">Music</label>
+      <input type="checkbox" id="set-music" onchange="saveSettings()">
+    </div>
+    <div class="setting-row">
+      <label for="set-sfx">Sound Effects</label>
+      <input type="checkbox" id="set-sfx" onchange="saveSettings()">
+    </div>
+  </div>
+
+  <div class="settings-actions">
+    <button class="btn-reset" onclick="resetSettings()">↺ Reset Defaults</button>
+    <button class="btn-back" onclick="closeSettings()">← Back to Game</button>
   </div>
 </div>
 
@@ -349,9 +485,16 @@ document.addEventListener('keydown', (e) => {
         case 'd':
             closeMenu();
             break;
+        case 's':
+            openSettings();
+            break;
         case 'm':
         case 'escape':
-            showMenu ? closeMenu() : openMenu();
+            if (document.getElementById('settings-panel').classList.contains('open')) {
+                closeSettings();
+            } else {
+                showMenu ? closeMenu() : openMenu();
+            }
             break;
     }
 });
@@ -477,6 +620,85 @@ function renderMinimap() {
     minimapEl.style.height = '150px';
 }
 
+// ── Settings ────────────────────────────────────────────────────────────
+const SETTINGS_KEY = 's4wn-settings';
+const SETTINGS_DEFAULTS = {
+    zoomSpeed: 1.0,
+    terrainDetail: 1,   // 0=Low, 1=Med, 2=High
+    masterVolume: 80,
+    musicOn: true,
+    sfxOn: true,
+};
+
+let settings = {};
+
+function loadSettings() {
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        settings = raw ? {...SETTINGS_DEFAULTS, ...JSON.parse(raw)} : {...SETTINGS_DEFAULTS};
+    } catch {
+        settings = {...SETTINGS_DEFAULTS};
+    }
+    syncSettingsToUI();
+}
+
+function saveSettings() {
+    // Read from UI
+    settings.zoomSpeed = parseFloat(document.getElementById('set-zoom').value);
+    settings.terrainDetail = parseInt(document.getElementById('set-detail').value);
+    settings.masterVolume = parseInt(document.getElementById('set-master-vol').value);
+    settings.musicOn = document.getElementById('set-music').checked;
+    settings.sfxOn = document.getElementById('set-sfx').checked;
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function syncSettingsToUI() {
+    document.getElementById('set-zoom').value = settings.zoomSpeed;
+    document.getElementById('set-detail').value = settings.terrainDetail;
+    document.getElementById('set-master-vol').value = settings.masterVolume;
+    document.getElementById('set-music').checked = settings.musicOn;
+    document.getElementById('set-sfx').checked = settings.sfxOn;
+    updateAllSettingVals();
+}
+
+function updateSettingVal(id) {
+    const el = document.getElementById(id);
+    const valEl = document.getElementById('val-' + id);
+    if (!valEl) return;
+    switch (id) {
+        case 'set-zoom':
+            valEl.textContent = parseFloat(el.value).toFixed(1);
+            break;
+        case 'set-detail':
+            valEl.textContent = ['Low', 'Med', 'High'][parseInt(el.value)] || 'Med';
+            break;
+        case 'set-master-vol':
+            valEl.textContent = el.value + '%';
+            break;
+    }
+    saveSettings();
+}
+
+function updateAllSettingVals() {
+    ['set-zoom', 'set-detail', 'set-master-vol'].forEach(updateSettingVal);
+}
+
+function openSettings() {
+    document.getElementById('settings-panel').classList.add('open');
+    document.getElementById('settings-backdrop').classList.add('active');
+}
+
+function closeSettings() {
+    document.getElementById('settings-panel').classList.remove('open');
+    document.getElementById('settings-backdrop').classList.remove('active');
+}
+
+function resetSettings() {
+    settings = {...SETTINGS_DEFAULTS};
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    syncSettingsToUI();
+}
+
 // ── Main ────────────────────────────────────────────────────────────────
 async function main() {
     try {
@@ -501,6 +723,7 @@ async function main() {
 
         engineReady = true;
         hudMap.textContent = 'S4WN Engine | 64×64 isometric map';
+        loadSettings();
 
         // Animation loop
         let fpsFrames = 0, fpsTime = performance.now(), currentFps = 0;
