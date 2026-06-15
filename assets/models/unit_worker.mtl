@@ -1,0 +1,4 @@
+newmtl unit_worker
+Kd 0.200 0.400 1.000
+Ns 0.0
+d 1.0
