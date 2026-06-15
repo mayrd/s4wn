@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Siedler 4 Web-Native game engine"
 license = "MIT"
+repository = "https://github.com/mayrd/s4wn"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -25,8 +26,10 @@ web-sys = { version = "0.3", features = [
     "AngleInstancedArrays",
     "HtmlElement",
     "Element",
-    "Performance",
     "Node",
+    "Performance",
+    "MouseEvent",
+    "WheelEvent",
     "console",
 ] }
 
