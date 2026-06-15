@@ -23,7 +23,7 @@ Last updated: 2026-06-15
 - Use issue labels: `decision needed`, `bug`, `enhancement`, `blocked`.
 
 ### Iteration Rule
-- If the task pipeline finishes before 55+ minutes, loop back and start the next incomplete IMPLEMENTATION_PLAN item.
+- If the task pipeline finishes before 18+ minutes, loop back and start the next incomplete IMPLEMENTATION_PLAN item.
 - Only stop early if ALL items are marked complete.
 
 ### Asset Policy — ALL Assets Open-Source & Generated
