@@ -32,6 +32,11 @@ web-sys = { version = "0.3", features = [
     "Performance",
     "MouseEvent",
     "WheelEvent",
+    "WebSocket",
+    "MessageEvent",
+    "ErrorEvent",
+    "CloseEvent",
+    "BinaryType",
     "console",
 ] }
 

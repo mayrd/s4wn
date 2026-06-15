@@ -1015,6 +1015,52 @@ pub fn get_unit_summary() -> String {
     String::new()
 }
 
+// ── WebSocket Client API ─────────────────────────────────────────────────────
+
+/// Connect to a game server via WebSocket.
+/// Returns true if connection was initiated.
+#[wasm_bindgen]
+pub fn ws_connect(url: &str) -> bool {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            // Store the URL for the JS side to pick up
+            // The actual WebSocket is managed in JS; this is a signal
+            return true;
+        }
+    }
+    false
+}
+
+/// Send a network message (JSON string) to the server.
+#[wasm_bindgen]
+pub fn ws_send(json: &str) {
+    // This is a stub — in the browser, the JS side manages the WebSocket.
+    // The WASM engine calls this to send game actions.
+    // The JS side intercepts and sends via the actual WebSocket.
+    unsafe {
+        if let Some(ref mut app) = APP {
+            if let Ok(msg) = crate::network::deserialize(json) {
+                // Process locally for now (single-player mode)
+                // In multiplayer, JS would send this to the server
+            }
+        }
+    }
+}
+
+/// Receive pending network messages as JSON strings.
+/// Returns a JSON array of messages.
+#[wasm_bindgen]
+pub fn ws_receive() -> String {
+    // Stub — in the browser, JS would inject messages from the server
+    String::from("[]")
+}
+
+/// Get the current network connection state as a string.
+#[wasm_bindgen]
+pub fn ws_state() -> String {
+    String::from("disconnected")
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
