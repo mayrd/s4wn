@@ -47,7 +47,7 @@ Natural rock formations and standalone mineral indicators.
 | ID | Name | Status | Tris | Color | Notes |
 |----|------|--------|------|-------|-------|
 | R01 | rock | 🟡 | 10 | #736B61 | Small boulder, low-poly icosahedron |
-| R02 | rock_large | ⬜ | ~30 | #736B61 | Larger rock cluster, 2-3 boulders |
+| R02 | rock_large | 🟡 | 30 | #807870 | Cluster of 5 jagged boulders, rocky terrain |
 
 ---
 
@@ -191,23 +191,23 @@ Small floating shapes that hover above resource deposits or appear in the HUD.
 
 ---
 
-## 15. Map Decoration — Not Yet Generated (11 models)
+## 15. Map Decoration (11 models)
 
 Additional environmental detail for richer maps.
 
 | ID | Name | Status | Tris | Terrain | Notes |
 |----|------|--------|------|---------|-------|
-| M01 | stump | ⬜ | ~20 | Forest, Grass | Tree stump after logging |
-| M02 | grain_field | ⬜ | ~40 | Grass | Wheat field rows (farm visual) |
-| M03 | flowers | ⬜ | ~15 | Grass | Small flower cluster, 3 varieties |
-| M04 | mushrooms | ⬜ | ~20 | Forest, Swamp | Fungus cluster |
-| M05 | reed | ⬜ | ~25 | Water, Swamp | Cattails/reeds along water edge |
-| M06 | driftwood | ⬜ | ~15 | Coast, Water | Washed-up log on shore |
-| M07 | skull | ⬜ | ~30 | Desert, Swamp | Animal skull/bones |
-| M08 | ruins | ⬜ | ~60 | Desert, Mountain | Broken stone pillar/arch |
-| M09 | snowdrift | ⬜ | ~15 | Snow, Mountain | Snow mound |
-| M10 | geyser | ⬜ | ~40 | Desert, Swamp | Steam vent with particle effect |
-| M11 | nest | ⬜ | ~25 | Forest, Mountain | Bird nest on ground/rock |
+| M01 | stump | 🟡 | 84 | Forest, Grass | Tree stump with exposed roots + growth ring |
+| M02 | grain_field | 🟡 | 364 | Grass | 4×4 wheat stalk grid (farm visual) |
+| M03 | flowers | 🟡 | 246 | Grass | 3 flowers: red/blue/yellow with petals + leaves |
+| M04 | mushrooms | 🟡 | 96 | Forest, Swamp | 3 mushrooms: tall/medium/small with caps |
+| M05 | reed | 🟡 | 174 | Water, Swamp | 6 cattails with leaf blades |
+| M06 | driftwood | 🟡 | 40 | Coast, Water | Water-worn log with branch stub |
+| M07 | skull | 🟡 | 68 | Desert, Swamp | Horned animal skull with eye sockets |
+| M08 | ruins | 🟡 | 72 | Desert, Mountain | Broken stone pillar + scattered rubble + arch |
+| M09 | snowdrift | 🟡 | 52 | Snow, Mountain | Smooth snow mound with drift tail |
+| M10 | geyser | 🟡 | 65 | Desert, Swamp | Rock base with steam plume cones |
+| M11 | nest | 🟡 | 92 | Forest, Mountain | Twig bowl with 3 eggs + protruding twigs |
 
 ---
 
@@ -250,7 +250,7 @@ Each unit needs animations for all game states. Stored as glTF animation clips.
 |----------|--------|--------|
 | Terrain Tiles | 9 | 🟡 OBJ |
 | Vegetation | 5 | 🟡 OBJ |
-| Rocks & Minerals | 2 | 🟡 1 / ⬜ 1 |
+| Rocks & Minerals | 2 | 🟡 OBJ |
 | Resource Deposits | 8 | 🟡 OBJ |
 | Production Buildings | 9 | 🟡 OBJ |
 | Food Buildings | 3 | 🟡 OBJ |
@@ -262,15 +262,14 @@ Each unit needs animations for all game states. Stored as glTF animation clips.
 | Special Structures | 3 | 🟡 OBJ |
 | Vehicles | 1 | 🟡 OBJ |
 | Resource Icons | 11 | 🟡 OBJ |
-| Map Decorations | 11 | ⬜ |
+| Map Decorations | 11 | 🟡 OBJ |
 | Unit Animations | 15 clips | ⬜ |
 | Building Animations | 2 clips | ⬜ |
 
 | | Count |
 |---|-------|
-| **Total OBJ models (existing)** | **62** |
-| **Total models still needed** | **11 decorations** |
+| **Total OBJ models (existing)** | **74** |
+| **Total models still needed** | **0** |
 | **Total animations needed** | **17 clips** |
-| **Total triangles (existing)** | **2,721** |
-| **Estimated final tris (with decorations)** | **~3,100** |
+| **Total triangles (existing)** | **4,104** |
 | **Estimated animation data** | **~250 KB (glTF)** |
