@@ -466,6 +466,7 @@ s4wn/
 ||| 19 | 2026-06-15 | ~10 min | Settings panel (Phase 4.1/4.2): slide-in panel with zoom speed, terrain detail, master volume, music/SFX toggles. localStorage persistence, Reset to Defaults, keyboard shortcut S, Esc-to-close. Applied to both engine/index.html and map-viewer.html. 167 tests passing. |
 ||| 20 | 2026-06-15 | ~10 min | Phase 4.5 HUD: Added resource bar at top-center with emoji icons and live counts from WASM `get_resource_counts()` (Wood, Stone, Iron, Coal, Gold, Grain, Fish, Game, Sulfur). Formatted game_time as hh:mm:ss. Added "New Game" menu button with setup panel (player name, map selection, difficulty). Throttled resource update to every 2s. 167 tests passing. |
 ||| 21 | 2026-06-15 | ~7 min | Phase 4.5 HUD: Added live building/unit population summary to top-left HUD. Imports get_building_summary() and get_unit_summary() from WASM. Displays building counts (complete + constructing) and unit counts (workers + military). Throttled to 2s updates like resource bar. Resets on New Game start. |
+|| 22 | 2026-06-15 | ~10 min | Phase 4.5 Pause & Speed: Added `speed_multiplier` and `paused` fields to Rust App struct; game ticks scale by speed, skip when paused. Added 5 new WASM exports (set_game_speed, get_game_speed, set_paused, toggle_pause, is_paused). Added pause overlay (⏸ PAUSED with pulse animation) and speed control buttons (1×/2×/4×) to index.html. Keyboard shortcuts: P=toggle pause, 1/2/3=set speed. Rebuilt WASM v5. 137 engine tests passing. |
 
 ---
 
@@ -506,9 +507,8 @@ None at the moment.
 ## Next Session
 
 ### Phase 4.5 — In-Game HUD (remaining)
-- [x] **Building/unit count summary** — import `get_building_summary()` and `get_unit_summary()`, show counts in HUD (🏠 buildings · 🚧 constructing · 👷 workers · ⚔️ military)
-- [ ] **Pause button** — pauses game loop, shows pause overlay; bind to WASM if available, else JS-side
-- [ ] **Speed controls** (1×, 2×, 4×) — bind to toggle game speed
+- [ ] **Building placement mode** — click building type button → highlight valid terrain tiles → click to place. Wire to WASM `try_place_building()`, show construction progress.
+- [ ] **Selection indicator** — click-select buildings/units; show info panel with HP, production progress, assigned workers.
 
 ### Phase 4.3 — New Game Flow (deepen)
 - Wire "Start Game" to actually generate a procedural map based on selection (Island/Continents/River Valley/Highlands)

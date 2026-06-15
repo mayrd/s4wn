@@ -94,6 +94,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **Network Module** — WebSocket-compatible message types, NetworkManager stub, serialization (15 tests)
 - ✅ **Overlay Rendering** — WebGL building and unit dot markers
 - ✅ **Economy HUD** — `get_resource_counts()`, `get_building_summary()`, `get_unit_summary()` WASM exports
+- ✅ **Pause & Speed Controls** — Pause game loop (⏸ overlay, `P` key), Speed controls (1×/2×/4×, keys `1`/`2`/`3`)
 - ✅ **Map Export** — `Map::to_json()` serialization method
 - ✅ **Procedural Assets** — 8 terrain tile textures, 5 building sprites, 3 unit sprites, 2 UI elements (112KB)
 - ✅ **WebSocket Server** — `server/` crate with tokio-tungstenite, room management, player handling, chat relay, game start (16 tests)
