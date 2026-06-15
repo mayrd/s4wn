@@ -10,6 +10,8 @@ pub mod game_loop;
 pub mod ara_crypt;
 pub mod decompress;
 pub mod economy;
+pub mod units;
+pub mod pathfinding;
 
 use camera::Camera;
 use game_loop::{GameLoop, GameState};

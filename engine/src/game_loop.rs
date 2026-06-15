@@ -295,9 +295,15 @@ mod tests {
         );
 
         // Place a farm
-        state.economy.place_building(BuildingType::Farm, 0, 0);
+        let farm_idx = state.economy.place_building(BuildingType::Farm, 0, 0);
 
-        // Run enough ticks to build and produce
+        // Build the farm (20 ticks), then spawn a worker
+        for _ in 0..20 {
+            state.update();
+        }
+        state.economy.spawn_worker_for(farm_idx);
+
+        // Run enough ticks to produce
         for _ in 0..200 {
             state.update();
         }

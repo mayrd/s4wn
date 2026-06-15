@@ -80,8 +80,11 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 **Phase 2 — Game Logic** (in progress 🔧)
 
 - 🔧 **Economy System** — 16 resource types (9 raw + 7 processed), 14 building types, production chains, resource storage
-- ⬜ Military system (units, combat)
-- ⬜ Settler AI and pathfinding
+- 🔧 **Units System** — Workers, Soldiers, Archers with HP/speed/attack stats, movement along paths
+- 🔧 **Pathfinding** — A* on tile grid with terrain-aware movement costs
+- 🔧 **Worker-Building Integration** — Buildings require assigned workers to produce resources
+- ⬜ Settler/worker AI (auto-assignment, task prioritization)
+- ⬜ Military combat system (attack resolution, damage, unit AI)
 
 ---
 

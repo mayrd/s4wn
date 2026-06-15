@@ -51,8 +51,11 @@ Last updated: 2026-06-15
 
 ### Phase 2 — Game Logic
 - [x] Economy system (resources, buildings, production chains, storage) — 30 tests
-- [ ] Settler/warfare units and combat
-- [ ] Settler/worker AI and pathfinding
+- [x] Units system (workers, soldiers, archers, movement, combat stats) — 15 tests
+- [x] Pathfinding (A* on tile grid, terrain-aware cost) — 10 tests
+- [x] Worker-building integration (buildings need workers to produce)
+- [ ] Settler/worker AI (auto-assignment, task prioritization)
+- [ ] Military combat system (attack resolution, damage, unit AI)
 
 ### Phase 3 — Multiplayer
 - [ ] WebRTC peer-to-peer or WebSocket client-server
@@ -115,6 +118,7 @@ s4wn/
 | 3 | 2026-06-15 | ~5 min | Recovery: committed and pushed Session 2 work (was lost due to cron error); updated IMPLEMENTATION_PLAN.md |
 | 4 | 2026-06-15 | ~30 min | Asset pipeline: ported ARA stream cipher and LZ+Huffman decompression from Settlers.ts reference (ara_crypt.rs, decompress.rs); wired game loop into renderer with day/night cycle and resource visualization (glowing resource deposits); created docker-compose.yml (fixes #1); 29 tests passing |
 | 5 | 2026-06-15 | ~20 min | Economy system: ResourceType enum (9 raw + 7 processed), BuildingType enum (14 types with costs, inputs, outputs, production intervals), Building struct (construction, production, input/output buffers), ResourceStorage (capacity, cap tracking, spending), Economy manager (tick update, building placement); integrated into GameState + GameLoop; 30 new tests (59 total passing). Updated lib.rs to register economy module. Production chain Wood→Planks tested end-to-end. |
+| 6 | 2026-06-15 | ~20 min | Units system (src/units.rs): Unit struct with Worker/Soldier/Archer types, HP, speed, attack stats, movement along paths, assignment to buildings; UnitManager for spawning/assigning/removing units; 15 tests. Pathfinding (src/pathfinding.rs): A* on tile grid with terrain-aware movement costs, 10 tests. Worker-building integration: Building.assigned_workers, has_worker(), assign_worker(), Economy.spawn_worker_for(), auto_assign_workers(). Buildings now require workers to produce. Updated 2 existing tests. 84 tests total passing. |
 
 ---
 
@@ -150,12 +154,12 @@ None at the moment.
 
 ## Next Session
 
-- Verify `cargo test` still passes (all 59 tests)
-- Add settler units module (`src/units.rs`): Unit struct, Worker/Soldier types, unit stats, assigned workers for buildings
-- Connect units to economy: buildings need workers to produce; assign settlers to building tasks
-- Implement simple pathfinding (A* on the tile grid) for unit movement
-- Add unit tests for unit creation, assignment, movement
-- Update IMPLEMENTATION_PLAN.md to mark economy as complete if all sub-items done
+- Verify `cargo test` still passes (all 84 tests)
+- Implement settler/worker AI: auto-assign idle workers to buildings that need them, workers move to their assigned building
+- Add combat system: attack resolution between soldiers, damage calculation, unit death
+- Add pathfinding integration: units use A* to navigate to their assigned buildings
+- Write tests for combat, AI auto-assignment, and pathfinding integration
+- Update IMPLEMENTATION_PLAN.md with progress
 
 ---
 

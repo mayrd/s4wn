@@ -25,6 +25,7 @@
 //! - An output buffer (resources produced, waiting to be collected)
 
 use crate::map::Resource;
+use crate::units::UnitManager;
 
 // ── Resource Types ──────────────────────────────────────────────────────────
 
@@ -286,11 +287,16 @@ pub struct Building {
     pub input_buffer: [u32; ResourceType::COUNT],
     /// Output buffer: resources produced, waiting to be collected
     pub output_buffer: [u32; ResourceType::COUNT],
+    /// Worker IDs assigned to this building (from UnitManager)
+    pub assigned_workers: Vec<u32>,
+    /// Maximum number of workers this building can employ
+    pub max_workers: u32,
 }
 
 impl Building {
     /// Create a new building at the given position
     pub fn new(kind: BuildingType, x: usize, y: usize) -> Self {
+        let max_workers = if kind.requires_worker() { 1 } else { 0 };
         Building {
             kind,
             x,
@@ -300,7 +306,50 @@ impl Building {
             production_counter: 0,
             input_buffer: [0u32; ResourceType::COUNT],
             output_buffer: [0u32; ResourceType::COUNT],
+            assigned_workers: Vec::new(),
+            max_workers,
         }
+    }
+
+    /// Whether the building has at least one worker assigned
+    pub fn has_worker(&self) -> bool {
+        !self.assigned_workers.is_empty() || !self.kind.requires_worker()
+    }
+
+    /// Assign a worker to this building
+    pub fn assign_worker(&mut self, worker_id: u32) -> bool {
+        if self.assigned_workers.len() < self.max_workers as usize {
+            self.assigned_workers.push(worker_id);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Remove a worker from this building
+    pub fn remove_worker(&mut self, worker_id: u32) {
+        self.assigned_workers.retain(|&id| id != worker_id);
+    }
+
+    /// Whether the building can produce (has all prerequisites)
+    fn can_produce(&self, storage: &ResourceStorage) -> bool {
+        if !self.has_worker() {
+            return false;
+        }
+        // Check if we have enough inputs
+        for &(ref_type, amount) in self.kind.inputs() {
+            if self.input_buffer[ref_type as usize] < amount {
+                return false;
+            }
+        }
+        // Check if output buffer has space
+        for &(ref_type, amount) in self.kind.outputs() {
+            let current = self.output_buffer[ref_type as usize];
+            if current + amount > self.kind.output_buffer_size() {
+                return false;
+            }
+        }
+        true
     }
 
     /// Whether construction is complete
@@ -323,6 +372,7 @@ impl Building {
 
     /// Try to produce resources for this tick.
     /// Returns true if production occurred.
+    /// Note: this does NOT check for assigned workers — caller must check `has_worker()`.
     pub fn try_produce(&mut self, _storage: &mut ResourceStorage) -> bool {
         if !self.is_complete() || self.kind.production_interval() == 0 {
             return false;
@@ -489,6 +539,8 @@ pub struct Economy {
     pub storage: ResourceStorage,
     /// All placed buildings
     pub buildings: Vec<Building>,
+    /// Unit manager for worker assignment
+    pub units: UnitManager,
     /// Total production events (for statistics)
     pub production_events: u64,
     /// Total resources collected (for statistics)
@@ -501,6 +553,7 @@ impl Economy {
         Economy {
             storage: ResourceStorage::new(),
             buildings: Vec::new(),
+            units: UnitManager::new(),
             production_events: 0,
             resources_collected: 0,
         }
@@ -513,6 +566,49 @@ impl Economy {
             economy.storage.set(rt, amount);
         }
         economy
+    }
+
+    /// Spawn a worker and assign it to a building.
+    /// Returns the worker ID if successful.
+    pub fn spawn_worker_for(&mut self, building_index: usize) -> Option<u32> {
+        let building = self.buildings.get(building_index)?;
+        if !building.kind.requires_worker() {
+            return None;
+        }
+        let bx = building.x as f32 + 0.5;
+        let by = building.y as f32 + 0.5;
+        let id = self.units.spawn(crate::units::UnitKind::Worker, bx, by);
+        self.buildings[building_index].assign_worker(id);
+        self.units.get_mut(id)?.assign_to(building_index);
+        Some(id)
+    }
+
+    /// Auto-assign idle workers to buildings that need them.
+    /// Returns the number of assignments made.
+    pub fn auto_assign_workers(&mut self) -> usize {
+        let mut assigned = 0;
+        // Find buildings that need workers
+        for i in 0..self.buildings.len() {
+            let building = &self.buildings[i];
+            if building.kind.requires_worker() && building.assigned_workers.is_empty() {
+                if let Some(worker_id) = self.units.find_idle_worker().map(|w| w.id) {
+                    self.buildings[i].assign_worker(worker_id);
+                    self.units.get_mut(worker_id).unwrap().assign_to(i);
+                    assigned += 1;
+                }
+            }
+        }
+        assigned
+    }
+
+    /// Get the number of idle workers
+    pub fn idle_workers(&self) -> usize {
+        self.units.idle_worker_count()
+    }
+
+    /// Get the number of total workers
+    pub fn total_workers(&self) -> usize {
+        self.units.worker_count()
     }
 
     /// Place a new building. Returns the building index.
@@ -540,10 +636,12 @@ impl Economy {
             building.tick_construction();
         }
 
-        // 2. Try production for all buildings
+        // 2. Try production for all buildings (only if they have workers)
         for building in self.buildings.iter_mut() {
-            if building.try_produce(&mut self.storage) {
-                self.production_events += 1;
+            if building.has_worker() {
+                if building.try_produce(&mut self.storage) {
+                    self.production_events += 1;
+                }
             }
         }
 
@@ -830,9 +928,15 @@ mod tests {
             (ResourceType::Wood, 100),
         ]);
 
-        e.place_building(BuildingType::Farm, 0, 0);
+        let farm_idx = e.place_building(BuildingType::Farm, 0, 0);
 
-        // Run 200 ticks
+        // Build the farm (20 ticks), then spawn a worker
+        for _ in 0..20 {
+            e.update();
+        }
+        e.spawn_worker_for(farm_idx);
+
+        // Run 200 more ticks — farm should produce grain now
         for _ in 0..200 {
             e.update();
         }
