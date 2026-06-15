@@ -2,7 +2,7 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 3 — Multiplayer 🔨
+## Status: Phase 4 — UI & Single Player 🔨
 
 Last updated: 2026-06-15
 
@@ -71,7 +71,90 @@ Last updated: 2026-06-15
 - [x] Synchronized game state (server-authoritative tick + broadcast) — 30 tests
 - [x] Server-authoritative game state — ServerGameState module with map, buildings, units, resource tracking, action validation, tick loop broadcast (30 tests)
 
-### Phase 4 — Polish & Release
+### Phase 4 — UI & Single Player
+
+#### 4.0 — Splash Screen & Title Sequence
+- [x] Splash screen HTML/CSS (S4WN title, subtitle, version number)
+- [x] Auto-fade transition to main menu (2.5s display → 0.8s fade-out)
+- [ ] Particle/glow animation polish on title text
+- [ ] Skip splash on subsequent visits (sessionStorage flag)
+
+#### 4.1 — Main Menu
+- [x] Menu overlay with semi-transparent dark backdrop + blur
+- [x] "Load Map" button → triggers file input dialog
+- [x] "Demo Map" button → starts demo map in fullscreen
+- [ ] "New Game" button with full game setup flow
+- [ ] "Load Game" button → file picker for `.map` / `.sav` files
+- [ ] "Settings" button → opens settings panel
+- [ ] "Credits" / GitHub link
+- [ ] Keyboard navigation (arrow keys + Enter)
+- [ ] Menu open/close animation (slide/fade)
+- [ ] Menu accessible from in-game via ☰ button or Esc
+
+#### 4.2 — Settings Menu
+- [ ] Settings panel (slide-in from right or center modal)
+- [ ] Graphics: zoom sensitivity slider, terrain detail (low/med/high)
+- [ ] Audio: master volume, music on/off, SFX on/off (stubs — no audio yet)
+- [ ] Controls: mouse sensitivity, invert scroll, keyboard bindings display
+- [ ] Settings persisted to localStorage
+- [ ] "Reset to Defaults" button
+- [ ] Back button returns to main menu
+
+#### 4.3 — New Game Flow
+- [ ] Map selection screen (choose from bundled maps or upload custom)
+- [ ] Bundled maps: "Island", "Continents", "River Valley", "Highlands"
+- [ ] Map preview thumbnail on selection
+- [ ] Game setup: player name input, faction color picker
+- [ ] Difficulty selector (Easy/Medium/Hard — affects starting resources/AI aggression)
+- [ ] "Start Game" button → transitions to fullscreen map view
+- [ ] Loading screen with progress bar while WASM initializes
+
+#### 4.4 — Load Game Flow
+- [ ] File upload dialog accepting `.map` (terrain/scenario) and `.sav` (savegame)
+- [ ] Parse and validate `.map` binary format (WRLD magic header, dimensions, tile data)
+- [ ] Parse and validate `.sav` binary format (game state: buildings, units, resources)
+- [ ] Preview: show map name, dimensions, terrain distribution before loading
+- [ ] Error handling: show human-readable error for invalid/corrupt files
+- [ ] "Load" confirmation button → transitions to game view
+- [ ] Recent files list (stored in localStorage, max 5)
+
+#### 4.5 — In-Game HUD (Single Player)
+- [x] FPS counter (top-right, green, monospace)
+- [x] Map info overlay (top-left: map name, dimensions, zoom level)
+- [x] Tile hover tooltip (terrain type, elevation, resource, coordinates)
+- [x] Minimap (bottom-right, clickable to jump camera)
+- [ ] Resource bar (top-center: wood, stone, iron, coal, gold, grain — icons + counts)
+- [ ] Building/unit count summary
+- [ ] Game time display (hh:mm:ss)
+- [ ] Pause button → pauses game loop, shows pause overlay
+- [ ] Speed controls (1×, 2×, 4× game speed)
+- [ ] Building placement mode: click building type → place on valid terrain
+- [ ] Selection indicator (highlight selected building/unit)
+
+#### 4.6 — Single-Player Game Start (with .map file)
+- [x] `load_map_json()` WASM binding — accepts JSON map data, rebuilds mesh
+- [x] Support both Rust format (`{t, e, r}`) and verbose format (`{terrain, elevation, resource}`)
+- [x] `.map` binary format parser in JS (WRLD magic, version, width/height, tile loop)
+- [x] Game state reset on map load (new GameLoop, repositioned camera)
+- [ ] Validate map integrity before loading (check all tiles have valid terrain IDs)
+- [ ] Starting resources allocation based on map size + difficulty
+- [ ] Initial HQ placement (auto-placed at map center or player-chosen)
+- [ ] Initial worker spawn (2-4 workers near HQ)
+- [ ] Fog of war / unexplored territory (darken tiles not yet seen) — optional, phase 4.6+
+- [ ] Auto-save every 5 minutes to localStorage
+
+#### 4.7 — Full-Screen Map View
+- [x] Canvas fills entire viewport (no constrained container)
+- [x] Isometric rendering with smooth zoom (mouse wheel, pinch)
+- [x] Pan via mouse drag and touch
+- [x] Day/night cycle rendering
+- [x] Building + unit overlay dots
+- [x] Resource glow animation
+- [ ] Terrain elevation shading improvements (steeper = darker)
+- [ ] Water animation (vertex displacement or fragment shader wave)
+- [ ] Edge-of-map visual treatment (fog, gradient fade, or water border)
+
+### Phase 5 — Polish & Release
 - [ ] Mobile UI adaptation
 - [ ] Sound and music (Web Audio API) — generated, not extracted
 - [ ] Docker multi-arch deployment (linux/amd64, linux/arm64)
@@ -135,6 +218,9 @@ s4wn/
 ||| 11 | 2026-06-15 | ~10 min | Server-authoritative game state: Created server/src/game_state.rs with GameMap (procedural biome gen via SplitMix64), ServerGameState (map/buildings/units/player resources), action validation (BuildingPlace, UnitSpawn, UnitMove, UnitAttack), tick update (building construction+production, unit movement, combat resolution), GameStateSnapshot broadcast. Integrated into Room (starts game state on GameStart) and main.rs (10 TPS tick loop broadcasts to in-progress rooms). 14 new tests. 30 server + 129 engine = 159 total, all passing. |
 ||| 12 | 2026-06-15 | ~10 min | Closed stale GitHub issues #4, #5, #6 (verified all resolved). Added ClientInterpolator struct in engine/src/network.rs for client-side state interpolation: holds previous + current GameStateSnapshot, provides interpolation_alpha() for smooth 60fps rendering between 10 TPS server ticks, interpolate_unit_position() with spawn/death/move handling. 8 new tests. Marked synchronized game state roadmap item complete. 137 engine + 30 server = 167 total tests passing. |
 || 13 | 2026-06-15 | ~10 min | Wired ClientInterpolator into WASM rendering loop: added interpolator/network_manager fields to App struct, process GameStateSync messages in render() into interpolator, use interpolated unit positions in render_overlay() for smooth 60fps movement. Handle edge cases (first snapshot, no interpolation, fallback). All 137 tests passing. |
+|| 14 | 2026-06-15 | ~15 min | Fixed issue #7 (shader #version directive on wrong line — leading newline in OVERLAY shaders). Generated 3D model pack: 14 buildings, 14 resources, 3 units, 9 terrain tiles, 8 structures, 2 vehicles, 11 resource icons — 62 OBJ+MTL models, 2,721 tris total. |
+|| 15 | 2026-06-15 | ~20 min | Full-page UI overhaul: rewrote map-viewer.html and engine/index.html with splash screen (animated title → fade → menu), game menu (Load Map, Demo Map), full-page canvas, FPS/stats as in-map HUD overlays, minimap, tile tooltip, keyboard shortcuts. Added load_map_json() WASM binding supporting both Rust and verbose JSON formats. Built optimized WASM package. Fixed dynamic import crash (#8 — cache mismatch on load_map_json export). Fixed issue #9 — bounding-box off-by-one causing panic at map edge (clamped to width-2/height-2). |
+|| 16 | 2026-06-15 | ~15 min | Authored comprehensive Phase 4 UI & Single Player implementation plan covering splash screen, main menu, settings, new game flow, load game flow, in-game HUD, single-player game start, and full-screen map view. 57 actionable sub-items across 8 UI sections. |
 
 ---
 
@@ -183,27 +269,34 @@ None at the moment.
 
 ## Next Session
 
-- **Wire ClientInterpolator into WASM rendering loop** ✅ DONE (Session 13)
-  - `ClientInterpolator` and `NetworkManager` fields added to `App`
-  - GameStateSync messages processed in `render()` → fed into interpolator
-  - Interpolated unit positions used in `render_overlay()` for smooth 60fps movement
-  - First snapshot and reconnection edge cases handled
+### Phase 4.1 — Main Menu Completion (priority: high)
+- **"New Game" button** in menu → opens game setup panel (map selection, difficulty, player name)
+- **"Settings" button** → slide-in settings panel with localStorage persistence
+- **Keyboard navigation** (arrow keys + Enter) for menu accessibility
+- Menu open/close animation polish (smooth slide/fade transitions)
 
-- **Add interpolated building rendering:**
-  - Extend `ClientInterpolator` with `interpolate_building_construction()` for construction progress
-  - Render building construction animations using interpolated values
-  - Show progress bars for buildings under construction
+### Phase 4.3 — New Game Flow
+- **Map selection screen** with bundled maps (Island, Continents, River Valley, Highlands)
+- **Game setup panel**: player name input, faction color picker, difficulty selector
+- **"Start Game"** → loading screen with progress bar → transition to fullscreen game
+- Bundle 4 demo maps as `.json` in `assets/maps/` (generated via Map::generate_demo variants)
 
-- **Client-side resource interpolation:**
-  - Interpolate resource counts between snapshots for smooth HUD updates
-  - Handle resource delta display (+5 wood, -2 planks)
+### Phase 4.5 — In-Game HUD
+- **Resource bar** at top-center: wood/stone/iron/coal/gold/grain with icons + live counts from WASM
+- **Game time** display (hh:mm:ss from game_loop state)
+- **Pause + speed controls** (1×, 2×, 4×) — bind to `on_pause()`/`on_speed()` WASM functions
+- **Building placement mode**: select building type → click valid terrain → spawn building
 
-- **End-to-end multiplayer integration test:**
-  - Start server, connect 2 WASM clients, join room, start game
-  - Verify GameStateSync round-trip serialization matches between server and engine
-  - Place building, validate it appears in subsequent snapshots
+### Phase 4.6 — Single-Player Game Start
+- Validate `.map` file integrity before loading (check terrain IDs, elevation ranges)
+- **Starting resources**: allocate based on map size × difficulty (Easy: 200 wood/stone, Hard: 50)
+- **Auto-place HQ** at map center with 3 initial workers
+- **Auto-save** every 5 minutes to localStorage (serialize GameState to JSON)
 
-- **Fix WASM build warnings:** Clean up 17 compiler warnings (unused imports, variables) for cleaner build output
+### Phase 4.7 — Visual Polish
+- Water animation in fragment shader (time-based wave displacement)
+- Edge-of-map gradient fade (darken tiles near map boundary)
+- Elevation-based terrain darkening (steeper = more shadow)
 
 ---
 
