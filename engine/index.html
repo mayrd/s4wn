@@ -229,8 +229,10 @@ import init, {
     resize,
     on_mouse_down, on_mouse_move, on_mouse_up, on_wheel,
     get_tile_at, get_stats, get_map_data,
-    load_map_json,
-} from './pkg/s4wn_engine.js';
+} from './pkg/s4wn_engine.js?v=3';
+
+// load_map_json is accessed dynamically to avoid cache mismatches
+let load_map_json = null;
 
 // ── Terrain colors ──────────────────────────────────────────────────────
 const TERRAIN_COLORS = [
@@ -287,6 +289,10 @@ function loadFile(file) {
         try {
             const text = e.target.result;
             if (engineReady) {
+                if (!load_map_json) {
+                    alert('Map loading not available — please refresh the page to get the latest engine.');
+                    return;
+                }
                 const result = load_map_json(text);
                 if (result === 'ok') {
                     closeMenu();
@@ -462,6 +468,14 @@ function renderMinimap() {
 async function main() {
     try {
         await init();
+
+        // Dynamically import load_map_json to avoid cache-mismatch crashes
+        try {
+            const mod = await import('./pkg/s4wn_engine.js?v=3');
+            load_map_json = mod.load_map_json || null;
+        } catch (e) {
+            console.warn('load_map_json not available (old WASM cache?) — map loading disabled');
+        }
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
