@@ -57,6 +57,65 @@ Last updated: 2026-06-15
 - [x] Combat integration with game loop (AI-driven battles on map)
 - [x] Economy visualization in renderer (map-viewer.html — standalone viewer with terrain+resources)
 
+#### 2.8 — Nations & Balancing (Siedler 4 Specific)
+
+> **Goal:** Implement the 4 playable nations from Siedler IV with distinct playstyles,
+> unique buildings/units, and balanced start conditions. All data declared in code.
+
+**Nation Roster (Core 4):**
+
+| Nation    | Playstyle | Strength | Weakness |
+|-----------|-----------|----------|---------|
+| **Romans**    | Balanced builder | Efficient production chains, strong economy | Average military, no speed bonuses |
+| **Vikings**   | Aggressive rusher | Cheap military, fast unit production, naval bonus | Weak economy, high resource consumption |
+| **Mayans**    | Defensive expander | Fast workers, high HP buildings, natural healing | Slow unit production, expensive upgrades |
+| **Trojans**   | Trade & quality | Trade bonus, powerful elite units | Expensive buildings, slow early game |
+
+**Implementation Tasks:**
+
+##### 2.8.1 — Nation Data Model
+- [ ] `Nation` struct: `id` (u8), `name` (&str), `description` (&str), `color` (RGBA)
+- [ ] `NationType` enum: `Roman`, `Viking`, `Mayan`, `Trojan`
+- [ ] Per-nation building modifiers: cost multiplier, production speed multiplier, HP multiplier
+- [ ] Per-nation unit modifiers: training time, attack, defense, speed
+- [ ] `NationRegistry` — const lookup table with all 4 nations and their modifiers
+- [ ] Nation selection integrated into new game setup flow
+
+##### 2.8.2 — Unique Buildings Per Nation
+- [ ] **Romans:** Temple (happiness bonus), Vineyard (wine production, trade good)
+- [ ] **Vikings:** Mead Hall (morale boost, unit training speed), Shipyard (naval unit discount)
+- [ ] **Mayans:** Temple of the Sun (resource blessing, periodic free resource), Herbal Hut (passive unit healing)
+- [ ] **Trojans:** Oracle (line-of-sight reveal, scouting), Grand Market (trade route bonus)
+- [ ] Unique building definitions in `BuildingType` enum with `nation` constraint
+- [ ] Unique building sprites generated and stored in `assets/buildings/<nation>/`
+
+##### 2.8.3 — Nation-Specific Unit Specials
+- [ ] **Roman Legionary:** +10% attack in formation (adjacent to other Romans)
+- [ ] **Viking Berserker:** +30% attack below 50% HP, faster movement
+- [ ] **Mayan Jaguar Warrior:** stealth detection, +20% defense in forest
+- [ ] **Trojan Phalanx:** +40% defense, -20% movement speed
+- [ ] Special ability enum: `FormationBonus`, `Berserk`, `ForestGuard`, `ShieldWall`
+- [ ] Unit special logic in combat resolution
+
+##### 2.8.4 — Balancing Framework
+- [ ] **Cost balancing matrix:** Compare resource costs across nations — ensure no nation has strictly better units
+- [ ] **Build order simulation:** Script that simulates first 10 minutes for each nation, verifies similar resource totals
+- [ ] **Combat balance:** Equal-resource battles (Romans vs Vikings, etc.) should favor the "better" nation by ≤15%
+- [ ] **Starting resources:** Each nation starts with identical totals but different distribution (e.g., Vikings more stone for barracks, Romans more wood for economy buildings)
+- [ ] **Playtest data collector:** Export game stats (resources over time, unit counts, building counts) to JSON for balance analysis
+- [ ] **Balance TOML file:** `assets/balance.toml` — all modifiers in one place, human-readable, reloadable at runtime
+
+##### 2.8.5 — AI Personality Per Nation
+- [ ] **Roman AI:** Prioritizes economy buildings, expands slowly, defends with balanced army
+- [ ] **Viking AI:** Rushes military, attacks early, sparse economy, high aggression
+- [ ] **Mayan AI:** Walls up, builds defensively, counter-attacks, heals units
+- [ ] **Trojan AI:** Rushes trade routes, builds elite army late-game, avoids early conflict
+- [ ] AI personality struct: `aggression` (0.0–1.0), `expansion_rate` (0.0–1.0), `defense_priority` (0.0–1.0), `trade_focus` (0.0–1.0)
+- [ ] AI decision weights derived from personality
+
+**Tests:** 20+ tests covering nation modifiers, unique building availability, unit specials, balance assertions
+**Reference:** Siedler IV Gold Edition manual, Settlers United wiki, community balance patches
+
 ### Phase 3 — Multiplayer
 - [x] WebSocket network module (`engine/src/network.rs`) — `NetworkMessage` enum, `NetworkManager` stub, `GameStateSnapshot`, serialization via serde, 15 tests
 - [x] Building/unit overlay rendering in WebGL — colored dots for buildings (by type) and units (blue workers, red soldiers, green archers)
