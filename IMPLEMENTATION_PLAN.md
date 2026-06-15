@@ -118,6 +118,30 @@ Last updated: 2026-06-15
 - [ ] "Load" confirmation button → transitions to game view
 - [ ] Recent files list (stored in localStorage, max 5)
 
+#### 4.4a — Siedler 4 `.map` File Support (REQUIRED)
+> **Non-negotiable:** The engine MUST load original Siedler 4 `.map` binary files.
+> Maps are the only original S4 assets the engine is permitted to consume — per the
+> Asset Policy, terrain/scenario data is mapped to our own generated asset IDs.
+> No original sprites, textures, or sounds are ever extracted.
+
+- [x] Binary `.map` file detection (WRLD magic bytes `57 52 4C 44`)
+- [x] Header parsing: version (u32 LE), width (u32 LE), height (u32 LE)
+- [x] Tile record parsing: 6 bytes per tile — terrain (u8), elevation raw (u8 → normalized f32), flags (u8), resource ID (u8), micro-x (u8), micro-y (u8)
+- [x] Terrain ID mapping: 0=Grass, 1=Forest, 2=Mountain, 3=Water, 4=DeepWater, 5=Desert, 6=Swamp, 7=Snow
+- [x] Resource ID mapping: 0=None, 1=Iron, 2=Coal, 3=Gold, 4=Stone, 5=Sulfur, 6=Fish, 7=Game, 8=Grain
+- [x] Elevation decoding: raw byte 0-255 → normalized -1.0 to 1.0
+- [x] Fallback: if file starts with `{`, treat as JSON and parse via `load_map_json()`
+- [ ] **Validate** map integrity: all terrain IDs in 0-7 range, dimensions ≤ 1024×1024, tile count matches width×height
+- [ ] **Validate** elevation: flag suspicious elevation ranges (all water at -1.0? all flat at 0.0?) — warn user but don't reject
+- [ ] **Preview** before loading: show map name (from filename), dimensions, terrain type distribution (pie chart or bar), resource count summary
+- [ ] **Conflict resolution**: if map uses terrain/resource IDs unknown to us (custom maps), map to nearest equivalent with user warning, don't crash
+- [ ] **Performance**: for maps > 256×256, show loading progress bar; target < 2s for 512×512 maps
+- [ ] **Error recovery**: if parsing fails mid-file, report exact byte offset and tile (x,y) where corruption was detected
+- [ ] **Test corpus**: maintain 3-5 test .map files of varying sizes (64×64, 128×128, 256×256) in `assets/maps/test/`
+- [ ] **Round-trip**: load .map → render → export JSON → verify terrain/resource/elevation match between original and export
+- [ ] Integration with **New Game flow**: selecting "New Game" shows bundled maps AND a "Load Custom .map" option
+- [ ] Integration with **Load Game flow**: file picker accepts `.map` extension, auto-detects binary vs JSON
+
 #### 4.5 — In-Game HUD (Single Player)
 - [x] FPS counter (top-right, green, monospace)
 - [x] Map info overlay (top-left: map name, dimensions, zoom level)
@@ -281,6 +305,13 @@ None at the moment.
 - **"Start Game"** → loading screen with progress bar → transition to fullscreen game
 - Bundle 4 demo maps as `.json` in `assets/maps/` (generated via Map::generate_demo variants)
 
+### Phase 4.4a — S4 .map Validation (priority: high)
+- **Validate** binary .map integrity: terrain IDs in 0-7, tile count = width×height
+- **Elevation sanity check**: warn on suspicious patterns (all-zero, all-water) without rejecting
+- **Preview panel**: show terrain distribution + resource counts before loading
+- **Error recovery**: report exact byte offset + tile (x,y) on corruption
+- **Round-trip test**: load .map → export JSON → diff terrain/resource/elevation
+
 ### Phase 4.5 — In-Game HUD
 - **Resource bar** at top-center: wood/stone/iron/coal/gold/grain with icons + live counts from WASM
 - **Game time** display (hh:mm:ss from game_loop state)
@@ -314,3 +345,15 @@ None at the moment.
 - Day/night cycle cycles every ~5 real-time minutes; resource deposits glow with a pulsing overlay.
 - **⚠️ Asset Policy (non-negotiable):** Original S4 assets are NEVER used. All graphics/sound must be generated and stored in `assets/`. The ARA+LZH decoder exists solely for structural research and for the map/campaign importer — never to extract and republish Ubisoft artwork.
 - **Economy system (Session 5):** 14 building types with defined production chains. Resource storage caps at 200 base + 100 per warehouse. Production intervals range 15-50 ticks (1.5-5s at 10 TPS). Production chain Wood→Planks tested end-to-end.
+- **Siedler 4 `.map` file format** (reverse-engineered, implemented Session 15):
+  - **Magic**: 4 bytes `57 52 4C 44` ("WRLD")
+  - **Header**: version (u32 LE), width (u32 LE), height (u32 LE) — 12 bytes total
+  - **Tile records**: width×height entries, 6 bytes each:
+    - Byte 0: terrain ID (0=Grass, 1=Forest, 2=Mountain, 3=Water, 4=DeepWater, 5=Desert, 6=Swamp, 7=Snow)
+    - Byte 1: raw elevation (0-255, map to -1.0..1.0 normalized)
+    - Byte 2: flags (bitfield — water, buildable, etc.)
+    - Byte 3: resource ID (0=None, 1=Iron, 2=Coal, 3=Gold, 4=Stone, 5=Sulfur, 6=Fish, 7=Game, 8=Grain)
+    - Bytes 4-5: micro-position (sub-tile offset for objects)
+  - **Parser location**: `map-viewer.html` `parseBinaryMap()` function (client-side JS)
+  - **WASM path**: binary .map → JS parser → JSON → `load_map_json()` → WASM mesh rebuild
+  - **Reference**: S4 map structure documented in Settlers United community wiki; original maps bundled with Siedler 4 Gold Edition
