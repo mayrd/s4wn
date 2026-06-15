@@ -89,6 +89,83 @@ Last updated: 2026-06-15
 - [ ] Unique building definitions in `BuildingType` enum with `nation` constraint
 - [ ] Unique building sprites generated and stored in `assets/buildings/<nation>/`
 
+##### 2.8.2a — Nation-Specific Common Buildings
+> Each nation gets visually and functionally distinct versions of shared building types.
+> Same base function (e.g., Sawmill → produces planks), but different costs, rates, and sprites.
+
+| Building | Romans | Vikings | Mayans | Trojans |
+|----------|--------|---------|--------|---------|
+| **Headquarters** | Villa (stone/timber, elegant) | Longhouse (wood, rustic, weathered) | Step Pyramid (stone, geometric, vines) | Marble Palace (white stone, columns, gold trim) |
+| **Farm** | Latifundium (large rectangular fields, stone walls) | Smallholding (smaller plot, wooden fence, faster cycle) | Chinampa (floating garden, water channels, reed borders) | Irrigated Terrace (terraced hillside, aqueduct, olive trees) |
+| **Lumberjack** | Forest Clearing (orderly stumps, stacked logs) | Timber Camp (rough-hewn, axe in stump, deer hide) | Jungle Cutter (machete lean-to, tropical foliage) | Cedar Grove (tall straight trees, saw pit, stone path) |
+| **Sawmill** | Water Mill (water wheel, stone foundation, planks stacked neatly) | Wind Mill (wooden blades, rough-sawn output, sailcloth) | Stone Mill (obsidian blades, volcanic rock, grinding wheel) | Marble Cutter (stone-cutting frame, polished slabs, chisel rack) |
+| **Stone Mine** | Quarry (square-cut blocks, pulley crane) | Rock Pit (rough boulders, wooden ramp, pickaxe) | Obsidian Mine (dark glassy walls, feather-adorned tools) | Marble Quarry (white cliffs, column sections, sculptor tent) |
+| **Iron Smelter** | Forge (brick furnace, anvil, bellows, sword rack) | Bloomery (clay furnace, charcoal pile, rough ingots) | Copper Kiln (adobe oven, turquoise inlay, ceremonial mask shelf) | Bronze Foundry (lost-wax molds, statue castings, trip hammer) |
+| **Barracks** | Castrum (fortified square, training yard, standards) | Warcamp (tents, shield wall, bonfire, rune stones) | Warrior Temple (carved stele, obsidian spear rack, jaguar pelts) | Citadel (high walls, drill ground, horse stables, banners) |
+| **Warehouse** | Horreum (raised floor, columns, amphorae) | Storehouse (timber frame, thatched roof, barrels) | Granary (stone silo, maize bins, chili-drying racks) | Trade Depot (arched doorways, olive oil jars, coin chest) |
+| **Market** | Forum (open plaza, colonnades, merchant stalls) | Trading Post (wooden pier, ship cargo, fur bales) | Barter Circle (stone ring, feather currency, cocoa bean piles) | Bazaar (domed roof, silk canopies, spice sacks, scales) |
+
+**Implementation:**
+- [ ] One `BuildingDefinition` per nation-variant (36 total common + 8 unique = 44 building definitions)
+- [ ] Nation-specific sprite sheet: `assets/buildings/<nation>/<building>.png`
+- [ ] Generate via `generate_assets.py` — procedural nation-style color palettes (Roman: terracotta/marble, Viking: dark wood/stone, Mayan: adobe/jade, Trojan: white/gold)
+- [ ] Common interface: all Sawmill variants accept `input=Wood[x]`, produce `output=Planks[y]` at `rate=z ticks` — only costs/rates/aesthetics differ
+- [ ] Building tooltip shows nation-specific flavor text (e.g., "Roman Sawmill — water-powered precision. +10% plank yield vs standard.")
+
+##### 2.8.3a — Nation-Specific Settlers (Worker Units)
+> **Goal:** Each nation's worker units are visually and mechanically distinct.
+> Settlers are the backbone of the economy — they build, carry, and produce.
+
+**Worker Variants Per Nation:**
+
+| Nation   | Worker Name  | Visual | Special Ability | Speed | Carry |
+|----------|-------------|--------|-----------------|-------|-------|
+| **Romans**   | Colonus | Tunic, sandals, carries amphora on shoulder | **Discipline:** +10% build speed when adjacent to 2+ other workers | 1.0× | 1.0× |
+| **Vikings**  | Thrall | Furs, bearded, axe at belt, carries bundle on back | **Hardy:** ignores -20% cold/snow terrain speed penalty | 1.1× | 0.9× |
+| **Mayans**   | Tepale | Loincloth, jade necklace, carries basket on head | **Agile:** +15% speed on forest/jungle terrain | 1.0× | 1.1× |
+| **Trojans**  | Doulos | Tunic with geometric pattern, carries tray with both hands | **Efficient:** +20% carry capacity from mines/quarries | 0.9× | 1.2× |
+
+**Worker Tasks (shared across nations):**
+1. **Build** — walks to construction site, performs build animation, adds progress each tick
+2. **Carry** — picks up resource from production building, walks to warehouse/HQ, deposits
+3. **Harvest** — works at farm/lumberjack/mine, produces raw resources each tick
+4. **Repair** — walks to damaged building, repairs HP over time
+5. **Idle** — stands at HQ, awaits assignment
+
+**Worker State Machine:**
+```
+Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning → Idle
+  ↑                                                              |
+  └──────────────────────────────────────────────────────────────┘
+```
+
+**Implementation:**
+- [ ] `WorkerVariant` trait or enum with per-nation stats
+- [ ] Build speed modifier applied in `Economy::tick()` when workers are near construction
+- [ ] Terrain speed modifier lookup table (e.g., Snow ×0.8, Forest ×0.9, Road ×1.2)
+- [ ] Carry capacity affects how many resource units a worker transports per trip
+- [ ] Worker sprites: 4 nations × 4 facings × 3 frames (walk/build/carry/idle) = 192 sprite frames
+- [ ] Procedural generation via `generate_assets.py` — small 32×32 sprites in nation-specific color palettes
+- [ ] Worker animations: walk (bob), build (hammer swing), carry (slight lean), idle (breathe)
+
+**Carrier Logic (Siedler 4 trademark behavior):**
+- Every production building has an output buffer (produced goods waiting for pickup)
+- Workers auto-assign to carry tasks when:
+  - Building output buffer ≥ threshold (default: 1 unit)
+  - A warehouse/HQ with free capacity exists
+- Worker carries goods from building → deposits at nearest storage
+- If no storage has capacity, worker waits (idle at building) — creates visible congestion
+- Roads (future Phase 5) increase worker speed by 20% on road tiles
+
+**Assets Needed:**
+| Asset | Count | Format | Notes |
+|-------|-------|--------|-------|
+| Worker sprites (4 nations × 4 dirs × 4 states) | 64 frames | PNG 32×32 | Base + nation palette overlay |
+| Worker portrait (UI) | 4 | PNG 64×64 | For unit selection panel |
+| Worker icon (minimap) | 4 | PNG 8×8 | Nation-colored dots |
+| Carry item overlays | 8 | PNG 16×16 | Log, stone, iron ingot, gold nugget, coal chunk, grain sack, fish, plank — each held above worker sprite |
+| Build animation spark | 1 | PNG 16×16 | Small particle effect at construction site |
+
 ##### 2.8.3 — Nation-Specific Unit Specials
 - [ ] **Roman Legionary:** +10% attack in formation (adjacent to other Romans)
 - [ ] **Viking Berserker:** +30% attack below 50% HP, faster movement
