@@ -304,6 +304,99 @@ pub fn deserialize(text: &str) -> Result<NetworkMessage, String> {
     serde_json::from_str(text).map_err(|e| format!("deserialize error: {}", e))
 }
 
+// ── Client State Interpolation ────────────────────────────────────────────────
+
+/// Client-side state interpolator for smooth rendering between server ticks.
+///
+/// The server broadcasts `GameStateSnapshot` messages at a fixed tick rate
+/// (typically 10 TPS). The renderer runs at 60 FPS. `ClientInterpolator`
+/// stores the two most recent snapshots and provides interpolated state
+/// for smooth visual transitions between ticks.
+#[derive(Debug, Clone)]
+pub struct ClientInterpolator {
+    /// Previous snapshot (tick N-1)
+    previous: Option<GameStateSnapshot>,
+    /// Current snapshot (tick N)
+    current: Option<GameStateSnapshot>,
+    /// Tick duration in seconds (e.g., 0.1 for 10 TPS)
+    tick_duration: f64,
+    /// Time the current snapshot was received (monotonic seconds)
+    current_received_at: Option<f64>,
+}
+
+impl ClientInterpolator {
+    /// Create a new interpolator with the given tick duration.
+    pub fn new(tick_duration: f64) -> Self {
+        ClientInterpolator {
+            previous: None,
+            current: None,
+            tick_duration,
+            current_received_at: None,
+        }
+    }
+
+    /// Push a new snapshot received from the server.
+    pub fn push_snapshot(&mut self, snapshot: GameStateSnapshot, received_at: f64) {
+        self.previous = self.current.take();
+        self.current = Some(snapshot);
+        self.current_received_at = Some(received_at);
+    }
+
+    /// Whether we have enough data to interpolate (two distinct snapshots).
+    pub fn can_interpolate(&self) -> bool {
+        self.previous.is_some() && self.current.is_some()
+    }
+
+    /// Whether we have at least one snapshot (first sync received).
+    pub fn has_state(&self) -> bool {
+        self.current.is_some()
+    }
+
+    /// Compute the interpolation alpha in [0.0, 1.0].
+    pub fn interpolation_alpha(&self, now: f64) -> f64 {
+        match self.current_received_at {
+            Some(t) => {
+                let elapsed = now - t;
+                (elapsed / self.tick_duration).clamp(0.0, 1.0)
+            }
+            None => 0.0,
+        }
+    }
+
+    /// Interpolate a unit's position between previous and current snapshots.
+    pub fn interpolate_unit_position(&self, unit_id: u32, alpha: f64) -> Option<(f32, f32)> {
+        let prev = self.previous.as_ref()?;
+        let curr = self.current.as_ref()?;
+        let prev_unit = prev.units.iter().find(|u| u.id == unit_id);
+        let curr_unit = curr.units.iter().find(|u| u.id == unit_id);
+        match (prev_unit, curr_unit) {
+            (Some(p), Some(c)) => {
+                Some((p.x + (c.x - p.x) * alpha as f32, p.y + (c.y - p.y) * alpha as f32))
+            }
+            (None, Some(c)) => Some((c.x, c.y)),
+            (Some(p), None) => Some((p.x, p.y)),
+            (None, None) => None,
+        }
+    }
+
+    /// Get the current snapshot.
+    pub fn current_snapshot(&self) -> Option<&GameStateSnapshot> {
+        self.current.as_ref()
+    }
+
+    /// Get the previous snapshot.
+    pub fn previous_snapshot(&self) -> Option<&GameStateSnapshot> {
+        self.previous.as_ref()
+    }
+
+    /// Reset the interpolator (e.g., on disconnect).
+    pub fn reset(&mut self) {
+        self.previous = None;
+        self.current = None;
+        self.current_received_at = None;
+    }
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -589,5 +682,106 @@ mod tests {
         let mut mgr = NetworkManager::new();
         mgr.set_tick_rate(20);
         assert_eq!(mgr.tick_rate(), 20);
+    }
+
+    // ── Client Interpolator ──
+
+    fn test_snap(tick: u64, units: Vec<(u32, f32, f32)>) -> GameStateSnapshot {
+        GameStateSnapshot {
+            tick,
+            players: vec![],
+            buildings: vec![],
+            units: units
+                .into_iter()
+                .map(|(id, x, y)| UnitState {
+                    id,
+                    kind: 0,
+                    x,
+                    y,
+                    hp: 100,
+                    owner_id: 0,
+                })
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn test_interpolator_initial_state() {
+        let interp = ClientInterpolator::new(0.1);
+        assert!(!interp.can_interpolate());
+        assert!(!interp.has_state());
+        assert_eq!(interp.interpolation_alpha(0.0), 0.0);
+    }
+
+    #[test]
+    fn test_interpolator_first_snapshot() {
+        let mut interp = ClientInterpolator::new(0.1);
+        interp.push_snapshot(test_snap(0, vec![(1, 0.0, 0.0)]), 0.0);
+        assert!(interp.has_state());
+        assert!(!interp.can_interpolate());
+        assert_eq!(interp.interpolation_alpha(0.05), 0.5);
+    }
+
+    #[test]
+    fn test_interpolator_two_snapshots() {
+        let mut interp = ClientInterpolator::new(0.1);
+        interp.push_snapshot(test_snap(0, vec![(1, 0.0, 0.0)]), 0.0);
+        interp.push_snapshot(test_snap(1, vec![(1, 10.0, 0.0)]), 0.1);
+        assert!(interp.can_interpolate());
+        assert_eq!(interp.interpolation_alpha(0.1), 0.0);
+        assert!((interp.interpolation_alpha(0.15) - 0.5).abs() < 0.01);
+        assert_eq!(interp.interpolation_alpha(0.2), 1.0);
+        assert_eq!(interp.interpolation_alpha(0.5), 1.0);
+    }
+
+    #[test]
+    fn test_interpolate_unit_moving() {
+        let mut interp = ClientInterpolator::new(0.1);
+        interp.push_snapshot(test_snap(0, vec![(1, 0.0, 0.0)]), 0.0);
+        interp.push_snapshot(test_snap(1, vec![(1, 10.0, 20.0)]), 0.1);
+        let pos = interp.interpolate_unit_position(1, 0.0).unwrap();
+        assert!((pos.0 - 0.0).abs() < 0.01);
+        let pos = interp.interpolate_unit_position(1, 0.5).unwrap();
+        assert!((pos.0 - 5.0).abs() < 0.01);
+        assert!((pos.1 - 10.0).abs() < 0.01);
+        let pos = interp.interpolate_unit_position(1, 1.0).unwrap();
+        assert!((pos.0 - 10.0).abs() < 0.01);
+        assert!((pos.1 - 20.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_interpolate_unit_spawned() {
+        let mut interp = ClientInterpolator::new(0.1);
+        interp.push_snapshot(test_snap(0, vec![]), 0.0);
+        interp.push_snapshot(test_snap(1, vec![(42, 5.0, 5.0)]), 0.1);
+        let pos = interp.interpolate_unit_position(42, 0.5).unwrap();
+        assert!((pos.0 - 5.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_interpolate_unit_died() {
+        let mut interp = ClientInterpolator::new(0.1);
+        interp.push_snapshot(test_snap(0, vec![(99, 3.0, 4.0)]), 0.0);
+        interp.push_snapshot(test_snap(1, vec![]), 0.1);
+        let pos = interp.interpolate_unit_position(99, 0.5).unwrap();
+        assert!((pos.0 - 3.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_interpolator_reset() {
+        let mut interp = ClientInterpolator::new(0.1);
+        interp.push_snapshot(test_snap(0, vec![(1, 0.0, 0.0)]), 0.0);
+        assert!(interp.has_state());
+        interp.reset();
+        assert!(!interp.has_state());
+    }
+
+    #[test]
+    fn test_interpolator_snapshot_access() {
+        let mut interp = ClientInterpolator::new(0.1);
+        interp.push_snapshot(test_snap(0, vec![(1, 0.0, 0.0)]), 0.0);
+        interp.push_snapshot(test_snap(1, vec![(2, 10.0, 0.0)]), 0.1);
+        assert_eq!(interp.previous_snapshot().unwrap().tick, 0);
+        assert_eq!(interp.current_snapshot().unwrap().tick, 1);
     }
 }
