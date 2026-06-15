@@ -12,6 +12,8 @@ pub mod decompress;
 pub mod economy;
 pub mod units;
 pub mod pathfinding;
+pub mod worker_ai;
+pub mod combat;
 
 use camera::Camera;
 use game_loop::{GameLoop, GameState};
@@ -47,6 +49,9 @@ void main() {
     float x = a_position.x;
     float y = a_position.y;
     float elev = a_elevation;
+
+    // Subtle terrain animation: slight elevation wave driven by u_time
+    elev += sin(u_time * 0.5 + x * 0.3 + y * 0.3) * 0.02;
 
     // Isometric projection
     float iso_x = (x - y) * 0.866;  // cos(30°)

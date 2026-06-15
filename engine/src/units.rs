@@ -374,6 +374,13 @@ impl UnitManager {
             .count()
     }
 
+    /// Get all idle workers
+    pub fn idle_workers(&self) -> impl Iterator<Item = &Unit> {
+        self.units
+            .iter()
+            .filter(|u| u.kind == UnitKind::Worker && u.is_idle())
+    }
+
     /// Get the first idle worker, if any
     pub fn find_idle_worker(&self) -> Option<&Unit> {
         self.units
