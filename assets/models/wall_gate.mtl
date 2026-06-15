@@ -1,0 +1,4 @@
+newmtl wall_gate
+Kd 0.500 0.480 0.450
+Ns 0.0
+d 1.0

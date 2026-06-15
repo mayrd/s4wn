@@ -1,0 +1,4 @@
+newmtl terrain_swamp
+Kd 0.200 0.400 0.250
+Ns 0.0
+d 1.0

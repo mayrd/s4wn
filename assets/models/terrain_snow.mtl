@@ -1,0 +1,4 @@
+newmtl terrain_snow
+Kd 0.850 0.880 0.920
+Ns 0.0
+d 1.0
