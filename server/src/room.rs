@@ -1,6 +1,7 @@
 //! Game room management.
 
-use crate::protocol::{NetworkMessage, PlayerState, RoomInfo};
+use crate::game_state::ServerGameState;
+use crate::protocol::{PlayerState, RoomInfo};
 use std::collections::HashMap;
 
 /// Unique player ID counter.
@@ -69,6 +70,8 @@ pub struct Room {
     pub state: RoomState,
     /// Current game tick (only meaningful when InProgress).
     pub tick: u64,
+    /// Server-authoritative game state (Some when InProgress).
+    pub game_state: Option<ServerGameState>,
 }
 
 impl Room {
@@ -84,6 +87,7 @@ impl Room {
             max_players,
             state: RoomState::Lobby,
             tick: 0,
+            game_state: None,
         }
     }
 
@@ -139,6 +143,14 @@ impl Room {
         }
         self.state = RoomState::InProgress;
         self.tick = 0;
+
+        // Initialize server-authoritative game state
+        let mut gs = ServerGameState::new(64, 64, self.tick);
+        for pid in self.players.keys() {
+            gs.add_player(*pid);
+        }
+        self.game_state = Some(gs);
+
         Ok(())
     }
 
@@ -161,6 +173,9 @@ impl Room {
     pub fn tick(&mut self) {
         if self.state == RoomState::InProgress {
             self.tick += 1;
+            if let Some(ref mut gs) = self.game_state {
+                gs.tick();
+            }
         }
     }
 }

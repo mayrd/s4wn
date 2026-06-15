@@ -1,6 +1,6 @@
 //! Main WebSocket server with tokio-tungstenite.
 
-use crate::protocol::{deserialize, serialize, NetworkMessage, GameStateSnapshot};
+use crate::protocol::{deserialize, serialize, NetworkMessage};
 use crate::room::{next_player_id, Player, RoomManager};
 use log::{info, warn, error, debug};
 use std::collections::HashMap;
@@ -13,6 +13,7 @@ use futures::{SinkExt, StreamExt};
 
 mod protocol;
 mod room;
+mod game_state;
 
 /// Shared server state.
 struct ServerState {
@@ -180,6 +181,69 @@ async fn handle_connection(
     }
 
     info!("Player {} cleaned up", player_id);
+}
+
+/// Handle a validated game action — find player's room, apply, broadcast result.
+async fn handle_game_action<F>(
+    state: &Arc<Mutex<ServerState>>,
+    sender: &broadcast::Sender<String>,
+    player_id: u32,
+    action: F,
+) where
+    F: FnOnce(&mut crate::game_state::ServerGameState) -> Result<(), String>,
+{
+    let room_id = {
+        let state = state.lock().unwrap();
+        let mut found = None;
+        for room in state.rooms.list_rooms() {
+            if let Some(r) = state.rooms.get_room(&room.id) {
+                if r.has_player(player_id) && r.state == crate::room::RoomState::InProgress {
+                    found = Some(room.id.clone());
+                    break;
+                }
+            }
+        }
+        found
+    };
+
+    let room_id = match room_id {
+        Some(id) => id,
+        None => {
+            let err = NetworkMessage::Error {
+                code: 404,
+                message: "Not in an active game".to_string(),
+            };
+            if let Ok(json) = serialize(&err) {
+                let _ = sender.send(json);
+            }
+            return;
+        }
+    };
+
+    let mut state_guard = state.lock().unwrap();
+    if let Some(room) = state_guard.rooms.get_room_mut(&room_id) {
+        if let Some(ref mut gs) = room.game_state {
+            match action(gs) {
+                Ok(()) => {
+                    let sync = NetworkMessage::GameStateSync(gs.to_snapshot());
+                    if let Ok(json) = serialize(&sync) {
+                        broadcast_to_room(&state_guard, &room_id, &json);
+                    }
+                }
+                Err(e) => {
+                    let err_msg = NetworkMessage::Error {
+                        code: 400,
+                        message: e,
+                    };
+                    if let Ok(json) = serialize(&err_msg) {
+                        if let Some(sender) = state_guard.players.get(&player_id) {
+                            let _ = sender.send(json);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 /// Handle a single network message from a player.
@@ -390,15 +454,12 @@ async fn handle_message(
                     match room.start_game() {
                         Ok(()) => {
                             info!("Game started in room {} by player {}", room_id, player_id);
-                            let snapshot = GameStateSnapshot {
-                                tick: 0,
-                                players: room.players.values().map(|p| p.to_state()).collect(),
-                                buildings: vec![],
-                                units: vec![],
-                            };
-                            let sync = NetworkMessage::GameStateSync(snapshot);
-                            if let Ok(json) = serialize(&sync) {
-                                broadcast_to_room(&state, &room_id, &json);
+                            // Broadcast initial game state snapshot
+                            if let Some(ref gs) = room.game_state {
+                                let sync = NetworkMessage::GameStateSync(gs.to_snapshot());
+                                if let Ok(json) = serialize(&sync) {
+                                    broadcast_to_room(&state, &room_id, &json);
+                                }
                             }
                         }
                         Err(e) => {
@@ -415,32 +476,61 @@ async fn handle_message(
             }
         }
 
-        // Game action messages — validate and relay to room members
-        NetworkMessage::BuildingPlace { .. }
-        | NetworkMessage::UnitSpawn { .. }
-        | NetworkMessage::UnitMove { .. }
-        | NetworkMessage::UnitAttack { .. } => {
-            let room_id = {
-                let state = state.lock().unwrap();
-                let mut found = None;
-                for room in state.rooms.list_rooms() {
-                    if let Some(r) = state.rooms.get_room(&room.id) {
-                        if r.has_player(player_id) {
-                            found = Some(room.id.clone());
-                            break;
-                        }
-                    }
-                }
-                found
-            };
+        // Game action messages — validate and apply through server-authoritative game state
+        NetworkMessage::BuildingPlace {
+            building_type,
+            x,
+            y,
+            player_id,
+        } => handle_game_action(
+            state, sender, player_id,
+            move |gs: &mut crate::game_state::ServerGameState| {
+                gs.validate_building_place(player_id, building_type, x, y)?;
+                gs.apply_building_place(player_id, building_type, x, y)?;
+                Ok(())
+            },
+        ).await,
 
-            if let Some(room_id) = room_id {
-                if let Ok(json) = serialize(&msg) {
-                    let state = state.lock().unwrap();
-                    broadcast_to_room(&state, &room_id, &json);
-                }
-            }
-        }
+        NetworkMessage::UnitSpawn {
+            unit_kind,
+            x,
+            y,
+            player_id,
+        } => handle_game_action(
+            state, sender, player_id,
+            move |gs| {
+                gs.validate_unit_spawn(player_id, unit_kind, x, y)?;
+                gs.apply_unit_spawn(player_id, unit_kind, x, y);
+                Ok(())
+            },
+        ).await,
+
+        NetworkMessage::UnitMove {
+            unit_id,
+            target_x,
+            target_y,
+            player_id,
+        } => handle_game_action(
+            state, sender, player_id,
+            move |gs| {
+                gs.validate_unit_move(player_id, unit_id, target_x, target_y)?;
+                gs.apply_unit_move(unit_id, target_x, target_y);
+                Ok(())
+            },
+        ).await,
+
+        NetworkMessage::UnitAttack {
+            attacker_id,
+            target_id,
+            player_id,
+        } => handle_game_action(
+            state, sender, player_id,
+            move |gs| {
+                gs.validate_unit_attack(player_id, attacker_id, target_id)?;
+                gs.apply_unit_attack(attacker_id, target_id);
+                Ok(())
+            },
+        ).await,
 
         _ => {
             debug!("Unhandled message from player {}: {:?}", player_id, msg);
@@ -455,6 +545,59 @@ pub async fn run(addr: &str) -> Result<(), Box<dyn std::error::Error>> {
     info!("S4WN game server listening on {}", addr);
 
     let state = Arc::new(Mutex::new(ServerState::new()));
+
+    // Spawn the game tick loop — broadcasts GameStateSync every tick for in-progress rooms
+    let tick_state = Arc::clone(&state);
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_millis(100));
+        loop {
+            interval.tick().await;
+            let mut state = tick_state.lock().unwrap();
+
+            // Collect room IDs that are in progress
+            let in_progress_rooms: Vec<String> = state
+                .rooms
+                .list_rooms()
+                .iter()
+                .filter(|r| r.in_progress)
+                .map(|r| r.id.clone())
+                .collect();
+
+            for room_id in &in_progress_rooms {
+                let snapshot_and_pids = {
+                    if let Some(room) = state.rooms.get_room_mut(room_id) {
+                        room.tick();
+                        if let Some(ref gs) = room.game_state {
+                            let sync = NetworkMessage::GameStateSync(gs.to_snapshot());
+                            if let Ok(json) = serialize(&sync) {
+                                let pids: Vec<u32> = room.players.keys().copied().collect();
+                                Some((json, pids))
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                };
+
+                if let Some((json, pids)) = snapshot_and_pids {
+                    for pid in &pids {
+                        if let Some(sender) = state.players.get(pid) {
+                            let _ = sender.send(json.clone());
+                        }
+                    }
+                }
+            }
+
+            // Cleanup empty rooms periodically (~every 5 seconds / 50 ticks)
+            if state.rooms.list_rooms().iter().any(|r| r.player_count == 0) {
+                state.rooms.cleanup();
+            }
+        }
+    });
 
     while let Ok((stream, peer_addr)) = listener.accept().await {
         let state = Arc::clone(&state);
