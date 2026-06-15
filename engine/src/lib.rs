@@ -114,8 +114,7 @@ void main() {
 
 // ── Overlay Shaders (buildings + units) ───────────────────────────────────────
 
-const OVERLAY_VERTEX_SHADER: &str = r#"
-#version 300 es
+const OVERLAY_VERTEX_SHADER: &str = r#"#version 300 es
 precision highp float;
 
 in vec2 a_overlay_pos;
@@ -152,8 +151,7 @@ void main() {
 }
 "#;
 
-const OVERLAY_FRAGMENT_SHADER: &str = r#"
-#version 300 es
+const OVERLAY_FRAGMENT_SHADER: &str = r#"#version 300 es
 precision highp float;
 
 in vec3 v_overlay_color;
