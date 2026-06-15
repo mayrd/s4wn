@@ -219,7 +219,7 @@ impl RoomManager {
 
     #[allow(dead_code)]
     pub fn remove_room(&mut self, room_id: &str) -> bool {
-        self.rooms.remove(room_id)
+        self.rooms.remove(room_id).is_some()
     }
 
     pub fn list_rooms(&self) -> Vec<RoomInfo> {

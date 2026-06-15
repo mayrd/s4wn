@@ -694,7 +694,10 @@ impl ServerGameState {
     #[allow(dead_code)]
     pub fn set_unit_move_target(&mut self, unit_id: u32, target_x: usize, target_y: usize) -> bool {
         if let Some(unit) = self.units.iter_mut().find(|u| u.id == unit_id) {
-            unit.move_target = Some((tx, ty));
+            unit.move_target = Some((target_x, target_y));
+            true
+        } else {
+            false
         }
     }
 
@@ -884,8 +887,8 @@ impl ServerGameState {
 
     /// Get a building by its ID.
     #[allow(dead_code)]
-    pub fn get_building_mut(&mut self, building_id: u32) -> Option<&mut Building> {
-        self.buildings.iter_mut().find(|b| b.id == id)
+    pub fn get_building_mut(&mut self, building_id: u32) -> Option<&mut ServerBuilding> {
+        self.buildings.iter_mut().find(|b| b.id == building_id)
     }
 }
 
