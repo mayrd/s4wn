@@ -6,16 +6,14 @@
     file_server
 
     # WASM requires proper MIME type
-    header Content-Type application/wasm {
-        path *.wasm
-    }
+    header *.wasm Content-Type application/wasm
 
     # Enable compression for WASM (textual formats compress well)
     encode gzip zstd
 
     # Security headers
     header Cross-Origin-Opener-Policy same-origin
-    header Cross-Origin-Embedder-Policy require-corp {
-        ?path *.html *.js *.wasm
-    }
+    header *.html Cross-Origin-Embedder-Policy require-corp
+    header *.js Cross-Origin-Embedder-Policy require-corp
+    header *.wasm Cross-Origin-Embedder-Policy require-corp
 }
