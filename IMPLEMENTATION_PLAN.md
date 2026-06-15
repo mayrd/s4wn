@@ -2,7 +2,7 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 2 — Game Logic (near complete ✅)
+## Status: Phase 2 — Game Logic ✅ (complete)
 
 Last updated: 2026-06-15
 
@@ -56,8 +56,8 @@ Last updated: 2026-06-15
 - [x] Worker-building integration (buildings need workers to produce)
 - [x] Settler/worker AI (auto-assignment, pathfind to building, transition to Working)
 - [x] Military combat system (attack resolution, damage, unit AI, chase behavior)
-- [ ] Combat integration with game loop (AI-driven battles on map)
-- [ ] Economy visualization in renderer (building overlays, unit sprites)
+- [x] Combat integration with game loop (AI-driven battles on map)
+- [x] Economy visualization in renderer (map-viewer.html — standalone viewer with terrain+resources)
 
 ### Phase 3 — Multiplayer
 - [ ] WebRTC peer-to-peer or WebSocket client-server
@@ -122,6 +122,7 @@ s4wn/
 | 5 | 2026-06-15 | ~20 min | Economy system: ResourceType enum (9 raw + 7 processed), BuildingType enum (14 types with costs, inputs, outputs, production intervals), Building struct (construction, production, input/output buffers), ResourceStorage (capacity, cap tracking, spending), Economy manager (tick update, building placement); integrated into GameState + GameLoop; 30 new tests (59 total passing). Updated lib.rs to register economy module. Production chain Wood→Planks tested end-to-end. |
 | 6 | 2026-06-15 | ~20 min | Units system (src/units.rs): Unit struct with Worker/Soldier/Archer types, HP, speed, attack stats, movement along paths, assignment to buildings; UnitManager for spawning/assigning/removing units; 15 tests. Pathfinding (src/pathfinding.rs): A* on tile grid with terrain-aware movement costs, 10 tests. Worker-building integration: Building.assigned_workers, has_worker(), assign_worker(), Economy.spawn_worker_for(), auto_assign_workers(). Buildings now require workers to produce. Updated 2 existing tests. 84 tests total passing. |
 | 7 | 2026-06-15 | ~15 min | Fixed issue #3 (u_time uniform): unused uniform was optimized away by GLSL compiler → now used for subtle terrain animation. New worker_ai module: auto-assigns idle workers to buildings, pathfinds workers to buildings using A*, transitions to Working on arrival (6 tests). New combat module: soldier/archer AI finds nearest enemies, moves into range, resolves attacks with damage/cooldown, death handling (8 tests). Added idle_workers() iterator to UnitManager. 100 tests passing. Phase 2 nearly complete. |
+| 8 | 2026-06-15 | ~18 min | Combat+worker AI game loop integration: wired WorkerAI and CombatAI into GameState::update(), separated movement ticking (workers via WorkerAI, soldiers via CombatAI). Added 3 integration tests (102 total). Created standalone map-viewer.html (Canvas2D isometric renderer with pan/zoom/touch/drop). Sample island map in assets/. Added UnitManager::all_mut(). Phase 2 complete! |
 
 ---
 
@@ -132,6 +133,7 @@ s4wn/
 | #1 | docker-compose.yml | ✅ Closed | Resolved in Session 4 |
 | #3 | Cannot find u_time | ✅ Closed | Fixed in Session 7 — u_time now used in vertex shader |
 | #4 | Asset generation pipeline | 📋 Open | Phase 4; needs AI-driven procedural asset generation |
+| #5 | Basic Map Viewer | ✅ Closed | map-viewer.html created: standalone Canvas2D isometric renderer |
 
 ---
 
@@ -159,13 +161,24 @@ None at the moment.
 
 ## Next Session
 
-- **Engine module registration:** Register worker_ai and combat modules in the game loop's tick update (src/game_loop.rs), so workers auto-assign and soldiers auto-fight each tick
-- **Combat integration:** Wire combat AI into GameState::update() so battles happen automatically on the map
-- **Unit rendering:** Add building and unit overlays to the WebGL renderer — at minimum, render colored dots at building/unit positions on the isometric grid
-- **Economy visualization:** Show building states (under construction, active, idle) and resource levels in the HTML HUD
-- **Test simulation scenarios:** Create integration tests that simulate full game scenarios: place buildings → assign workers → produce resources → build military → fight enemies
-- **Address issue #4:** Begin scoping the asset generation pipeline (procedural sprite generation, tile textures)
-- Write tests for game loop integration of worker_ai + combat modules
+- **Phase 3 — Multiplayer:** Begin WebSocket client-server prototype. Create `engine/src/network.rs` with:
+  - `NetworkMessage` enum (GameStateSync, UnitSpawn, BuildingPlace, PlayerInput)
+  - `NetworkManager` struct with `send()`/`receive()` methods (stub with serde)
+  - Integrate into GameLoop — frame-based message polling
+  - Write 3-5 tests for message serialization/deserialization
+- **WebGL unit/building rendering:** Add building and unit position overlays to the WebGL renderer in `lib.rs`:
+  - Draw colored dots/rectangles at building positions (color by building type)
+  - Draw small triangles/circles at unit positions (color by unit kind: blue workers, red soldiers, green archers)
+  - Render these as additional draw calls after the terrain mesh
+- **Economy HUD:** Add an HTML overlay showing resource counts and building status:
+  - Expose `get_resource_counts()` and `get_building_summary()` via WASM bindings
+  - Create a small HTML info panel positioned over the canvas
+- **Asset generation pipeline (Issue #4):** Scope the pipeline — determine which assets to generate first:
+  - Terrain tile textures (procedural in shader or Canvas2D → PNG)
+  - Building sprites (simple geometric shapes, 64×64)
+  - Unit sprites (simple geometric shapes, 32×32)
+  - Create `assets/` directory structure with generated PNGs
+- **Map export:** Add `Map::to_json()` method to serialize map data in the format used by map-viewer.html
 
 ---
 

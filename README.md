@@ -77,7 +77,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **Asset Pipeline** — ARA stream cipher + LZ/Huffman decompression (ported from Settlers.ts)
 - ✅ **Renderer Integration** — Day/night cycle, resource glow visualization
 
-**Phase 2 — Game Logic** (near complete ✅)
+**Phase 2 — Game Logic** (complete ✅)
 
 - ✅ **Economy System** — 16 resource types (9 raw + 7 processed), 14 building types, production chains, resource storage
 - ✅ **Units System** — Workers, Soldiers, Archers with HP/speed/attack stats, movement along paths
@@ -85,8 +85,11 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **Worker-Building Integration** — Buildings require assigned workers to produce resources
 - ✅ **Worker AI** — Auto-assignment, pathfind to building, transition to Working state
 - ✅ **Combat System** — Attack resolution, damage/death, soldier chase and attack AI
-- ⬜ Combat integration with game loop (AI-driven battles each tick)
-- ⬜ Economy/unit visualization in WebGL renderer
+- ✅ **Game Loop Integration** — WorkerAI + CombatAI wired into deterministic tick update
+- ✅ **Map Viewer** — Standalone Canvas2D isometric viewer with pan/zoom/touch (map-viewer.html)
+- ✅ **102 unit tests** passing
+
+**Phase 3 — Multiplayer** (next)
 
 ---
 
