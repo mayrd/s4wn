@@ -2,7 +2,7 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 3 — Multiplayer 🔨 (nearly complete)
+## Status: Phase 3 — Multiplayer 🔨
 
 Last updated: 2026-06-15
 
@@ -69,6 +69,7 @@ Last updated: 2026-06-15
 - [x] Lobby and matchmaking UI — `engine/lobby.html` with room list, create/join/leave, player list, chat
 - [x] WebSocket client stubs — `ws_connect()`, `ws_send()`, `ws_receive()`, `ws_state()` WASM bindings
 - [ ] Synchronized game state (server-authoritative tick + broadcast)
+- [x] Server-authoritative game state — ServerGameState module with map, buildings, units, resource tracking, action validation, tick loop broadcast (30 tests)
 
 ### Phase 4 — Polish & Release
 - [ ] Mobile UI adaptation
@@ -131,6 +132,7 @@ s4wn/
 || 8 | 2026-06-15 | ~18 min | Combat+worker AI game loop integration: wired WorkerAI and CombatAI into GameState::update(), separated movement ticking (workers via WorkerAI, soldiers via CombatAI). Added 3 integration tests (102 total). Created standalone map-viewer.html (Canvas2D isometric renderer with pan/zoom/touch/drop). Sample island map in assets/. Added UnitManager::all_mut(). Phase 2 complete! |
 || 9 | 2026-06-15 | ~20 min | Phase 3 start: created network.rs module with NetworkMessage enum (10 variants: GameStateSync, BuildingPlace, UnitSpawn, UnitMove, UnitAttack, PlayerJoin, PlayerLeave, Chat, Ping/Pong, Welcome), NetworkManager stub with send/receive/inject, ConnectionState enum, serialization via serde (15 tests). Added building+unit overlay rendering to WebGL (second shader program, colored dots). Added HUD WASM bindings: get_resource_counts(), get_building_summary(), get_unit_summary(). Added Map::to_json(). Generated procedural assets: 8 terrain tiles, 5 building sprites, 3 unit sprites, 2 UI elements. Total ~130 tests. |
 || 10 | 2026-06-15 | ~20 min | WebSocket server: created server/ crate with tokio-tungstenite. Protocol module with NetworkMessage (serde tagged enum), RoomManager with Player/Room/RoomState, full WebSocket server with connection handling, room create/join/leave, chat relay, game start, broadcast. 16 server tests passing. Created lobby.html with title/loading screen (issue #6), room list, create/join/leave UI, player list, chat panel. Added ws_connect/ws_send/ws_receive/ws_state WASM stubs. Updated docker-compose with s4wn-server service, Caddyfile with /ws proxy. 129 engine + 16 server tests passing. |
+|| 11 | 2026-06-15 | ~10 min | Server-authoritative game state: Created server/src/game_state.rs with GameMap (procedural biome gen via SplitMix64), ServerGameState (map/buildings/units/player resources), action validation (BuildingPlace, UnitSpawn, UnitMove, UnitAttack), tick update (building construction+production, unit movement, combat resolution), GameStateSnapshot broadcast. Integrated into Room (starts game state on GameStart) and main.rs (10 TPS tick loop broadcasts to in-progress rooms). 14 new tests. 30 server + 129 engine = 159 total, all passing. |
 
 ---
 
@@ -180,28 +182,33 @@ None at the moment.
 
 ## Next Session
 
-- **Server-authoritative game state:** Implement the server-side game tick loop:
-  - Add a `GameState` struct to the server that mirrors the client's `GameState` (map, economy, units)
-  - Run a 10 TPS tick loop on the server that broadcasts `GameStateSync` to all room members
-  - Validate incoming `BuildingPlace`/`UnitSpawn`/`UnitMove`/`UnitAttack` messages against game rules
-  - Write integration tests for server-side game state updates
 - **Client-side state interpolation:** Wire received `GameStateSync` messages into the WASM engine:
-  - Replace the local game state with server snapshots
-  - Interpolate between snapshots for smooth rendering
-  - Handle input prediction for responsive controls
+  - Connect the WebSocket client stubs to the server tick broadcast
+  - Replace the local game state with server snapshots on `GameStateSync`
+  - Interpolate between consecutive snapshots for smooth 60fps rendering
+  - Handle edge cases: first snapshot, player disconnect, reconnection
+  - Write integration tests for state sync round-trip
+
 - **Map/campaign importer:** Parse original `*.map` / `*.sav` files:
   - Read terrain data using the ARA+LZH decoder
   - Map original terrain IDs to our internal `Terrain` enum
   - Generate a `Map` object from the parsed data
   - Write tests with sample map data
+
 - **Audio generation pipeline:** Create procedural sound effects:
   - Generate UI click sounds, building placement SFX, combat sounds using Web Audio API oscillator patterns
   - Create ambient nature sounds (wind, water, birds)
   - Add background music loops
+
 - **Mobile UI adaptation:** Responsive layout for the lobby and game:
   - Touch-friendly controls for the game canvas
   - Collapsible chat panel on small screens
   - Portrait/landscape orientation handling
+
+- **End-to-end integration test:** Verify the full multiplayer flow:
+  - Start server, connect 2 clients via WebSocket, join room, start game, receive snapshots
+  - Place a building, validate it appears in subsequent GameStateSync
+  - Spawn and move units, verify positions update
 
 ---
 

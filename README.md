@@ -92,15 +92,16 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 **Phase 3 — Multiplayer** (nearly complete 🔨)
 
 - ✅ **Network Module** — WebSocket-compatible message types, NetworkManager stub, serialization (15 tests)
-- ✅ **Overlay Rendering** — WebGL building (colored by type) and unit (blue/red/green) dot markers
+- ✅ **Overlay Rendering** — WebGL building and unit dot markers
 - ✅ **Economy HUD** — `get_resource_counts()`, `get_building_summary()`, `get_unit_summary()` WASM exports
 - ✅ **Map Export** — `Map::to_json()` serialization method
 - ✅ **Procedural Assets** — 8 terrain tile textures, 5 building sprites, 3 unit sprites, 2 UI elements (112KB)
 - ✅ **WebSocket Server** — `server/` crate with tokio-tungstenite, room management, player handling, chat relay, game start (16 tests)
 - ✅ **Lobby UI** — `lobby.html` with animated title/loading screen, room list, create/join/leave, player list, chat
 - ✅ **WebSocket Client Stubs** — `ws_connect()`, `ws_send()`, `ws_receive()`, `ws_state()` WASM bindings
-- ✅ **~145 tests** passing (129 engine + 16 server)
-- ⏳ Server-authoritative synchronized game state — next
+- ✅ **Server-Authoritative Game State** — `ServerGameState` module (map, buildings, units, resources), action validation, 10 TPS tick loop broadcasting `GameStateSync` to all room members (14 tests)
+- ✅ **~159 tests** passing (129 engine + 30 server)
+- ⏳ Client-side state interpolation — next
 
 ---
 
