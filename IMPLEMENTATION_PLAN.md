@@ -134,6 +134,7 @@ s4wn/
 || 10 | 2026-06-15 | ~20 min | WebSocket server: created server/ crate with tokio-tungstenite. Protocol module with NetworkMessage (serde tagged enum), RoomManager with Player/Room/RoomState, full WebSocket server with connection handling, room create/join/leave, chat relay, game start, broadcast. 16 server tests passing. Created lobby.html with title/loading screen (issue #6), room list, create/join/leave UI, player list, chat panel. Added ws_connect/ws_send/ws_receive/ws_state WASM stubs. Updated docker-compose with s4wn-server service, Caddyfile with /ws proxy. 129 engine + 16 server tests passing. |
 ||| 11 | 2026-06-15 | ~10 min | Server-authoritative game state: Created server/src/game_state.rs with GameMap (procedural biome gen via SplitMix64), ServerGameState (map/buildings/units/player resources), action validation (BuildingPlace, UnitSpawn, UnitMove, UnitAttack), tick update (building construction+production, unit movement, combat resolution), GameStateSnapshot broadcast. Integrated into Room (starts game state on GameStart) and main.rs (10 TPS tick loop broadcasts to in-progress rooms). 14 new tests. 30 server + 129 engine = 159 total, all passing. |
 ||| 12 | 2026-06-15 | ~10 min | Closed stale GitHub issues #4, #5, #6 (verified all resolved). Added ClientInterpolator struct in engine/src/network.rs for client-side state interpolation: holds previous + current GameStateSnapshot, provides interpolation_alpha() for smooth 60fps rendering between 10 TPS server ticks, interpolate_unit_position() with spawn/death/move handling. 8 new tests. Marked synchronized game state roadmap item complete. 137 engine + 30 server = 167 total tests passing. |
+|| 13 | 2026-06-15 | ~10 min | Wired ClientInterpolator into WASM rendering loop: added interpolator/network_manager fields to App struct, process GameStateSync messages in render() into interpolator, use interpolated unit positions in render_overlay() for smooth 60fps movement. Handle edge cases (first snapshot, no interpolation, fallback). All 137 tests passing. |
 
 ---
 
@@ -182,15 +183,16 @@ None at the moment.
 
 ## Next Session
 
-- **Wire ClientInterpolator into WASM engine rendering loop:**
-  - In `lib.rs`, feed received `GameStateSync` messages into `ClientInterpolator`
-  - Use `interpolate_unit_position()` in the render loop for smooth unit movement at 60fps
-  - Apply interpolated building construction states for progress bars
-  - Handle first snapshot (no interpolation) and reconnection edge cases
+- **Wire ClientInterpolator into WASM rendering loop** ✅ DONE (Session 13)
+  - `ClientInterpolator` and `NetworkManager` fields added to `App`
+  - GameStateSync messages processed in `render()` → fed into interpolator
+  - Interpolated unit positions used in `render_overlay()` for smooth 60fps movement
+  - First snapshot and reconnection edge cases handled
 
 - **Add interpolated building rendering:**
   - Extend `ClientInterpolator` with `interpolate_building_construction()` for construction progress
   - Render building construction animations using interpolated values
+  - Show progress bars for buildings under construction
 
 - **Client-side resource interpolation:**
   - Interpolate resource counts between snapshots for smooth HUD updates
