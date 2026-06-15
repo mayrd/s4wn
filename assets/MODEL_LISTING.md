@@ -211,36 +211,36 @@ Additional environmental detail for richer maps.
 
 ---
 
-## 16. Unit Animations — Not Yet Generated (15 animation clips)
+## 16. Unit Animations (15 clips)
 
-Each unit needs animations for all game states. Stored as glTF animation clips.
+Procedural skeletal keyframe data — 12-bone humanoid rig, quaternion rotations,
+30 FPS. Stored as JSON for engine loading. Format: per-bone keyframe arrays
+with `[x, y, z, w]` quaternions.
 
-| ID | Unit | State | Status | Duration | Loop | Keyframes |
-|----|------|------|--------|----------|------|-----------|
-| A01 | worker | idle | ⬜ | 2.0s | Yes | Stand with slight sway, pickaxe idle |
-| A02 | worker | walk | ⬜ | 0.8s | Yes | Walk cycle with pickaxe over shoulder |
-| A03 | worker | work | ⬜ | 1.5s | Yes | Mining/harvesting/building swing |
-| A04 | worker | carry | ⬜ | 0.9s | Yes | Walk with resource carried |
-| A05 | worker | die | ⬜ | 1.0s | Once | Fall and fade |
-| A06 | soldier | idle | ⬜ | 2.0s | Yes | Guard stance, shield ready |
-| A07 | soldier | walk | ⬜ | 0.8s | Yes | March with shield + sword |
-| A08 | soldier | fight | ⬜ | 0.6s | Trigger | Sword swing attack |
-| A09 | soldier | defend | ⬜ | 1.0s | Yes | Shield block stance |
-| A10 | soldier | die | ⬜ | 1.0s | Once | Fall, drop weapons |
-| A11 | archer | idle | ⬜ | 2.0s | Yes | Bow at rest |
-| A12 | archer | walk | ⬜ | 0.8s | Yes | Walk with bow |
-| A13 | archer | fight | ⬜ | 0.6s | Trigger | Draw and loose arrow |
-| A14 | archer | aim | ⬜ | 0.4s | Yes | Bow drawn, aiming |
-| A15 | archer | die | ⬜ | 1.0s | Once | Fall, drop bow |
+| ID | Unit | State | Status | Duration | Loop | Keyframes | File |
+|----|------|------|--------|----------|------|-----------|------|
+| A01 | worker | idle | 🟡 | 2.0s | Yes | 60 | A01_worker_idle.json |
+| A02 | worker | walk | 🟡 | 0.8s | Yes | 24 | A02_worker_walk.json |
+| A03 | worker | work | 🟡 | 1.5s | Yes | 45 | A03_worker_work.json |
+| A04 | worker | carry | 🟡 | 0.9s | Yes | 27 | A04_worker_carry.json |
+| A05 | worker | die | 🟡 | 1.0s | Once | 30 | A05_worker_die.json |
+| A06 | soldier | idle | 🟡 | 2.0s | Yes | 60 | A06_soldier_idle.json |
+| A07 | soldier | walk | 🟡 | 0.8s | Yes | 24 | A07_soldier_walk.json |
+| A08 | soldier | fight | 🟡 | 0.6s | Trigger | 18 | A08_soldier_fight.json |
+| A09 | soldier | defend | 🟡 | 1.0s | Yes | 30 | A09_soldier_defend.json |
+| A10 | soldier | die | 🟡 | 1.0s | Once | 30 | A10_soldier_die.json |
+| A11 | archer | idle | 🟡 | 2.0s | Yes | 60 | A11_archer_idle.json |
+| A12 | archer | walk | 🟡 | 0.8s | Yes | 24 | A12_archer_walk.json |
+| A13 | archer | fight | 🟡 | 0.6s | Trigger | 18 | A13_archer_fight.json |
+| A14 | archer | aim | 🟡 | 0.4s | Yes | 12 | A14_archer_aim.json |
+| A15 | archer | die | 🟡 | 1.0s | Once | 30 | A15_archer_die.json |
 
----
+## 17. Building Animations (2 clips)
 
-## 17. Building Animations — Not Yet Generated (2 animation clips)
-
-| ID | Building | State | Status | Duration | Loop | Notes |
-|----|----------|------|--------|----------|------|-------|
-| BA01 | all | construct | ⬜ | 3.0s | Once | Scale from 0→1, scaffolding appears/shrinks |
-| BA02 | all | idle | ⬜ | — | Yes | Production buildings: small smoke from chimney (particle) |
+| ID | Building | State | Status | Duration | Loop | Keyframes | File |
+|----|----------|------|--------|----------|------|-----------|------|
+| BA01 | all | construct | 🟡 | 3.0s | Once | 90 | BA01_building_construct.json |
+| BA02 | all | idle | 🟡 | 2.0s | Yes | 60 | BA02_building_idle.json |
 
 ---
 
@@ -263,8 +263,8 @@ Each unit needs animations for all game states. Stored as glTF animation clips.
 | Vehicles | 1 | 🟡 OBJ |
 | Resource Icons | 11 | 🟡 OBJ |
 | Map Decorations | 11 | 🟡 OBJ |
-| Unit Animations | 15 clips | ⬜ |
-| Building Animations | 2 clips | ⬜ |
+| Unit Animations | 15 clips | 🟡 JSON keyframe data |
+| Building Animations | 2 clips | 🟡 JSON keyframe data |
 
 | | Count |
 |---|-------|

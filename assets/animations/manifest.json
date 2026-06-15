@@ -1,0 +1,313 @@
+{
+  "format_version": "1.0",
+  "description": "S4WN Animation Clips \u2014 procedural skeletal keyframe data",
+  "bone_count": 13,
+  "bone_hierarchy": [
+    {
+      "name": "root",
+      "parent": -1,
+      "bind": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "spine",
+      "parent": 0,
+      "bind": [
+        0,
+        0.08,
+        0
+      ]
+    },
+    {
+      "name": "chest",
+      "parent": 1,
+      "bind": [
+        0,
+        0.07,
+        0
+      ]
+    },
+    {
+      "name": "neck",
+      "parent": 2,
+      "bind": [
+        0,
+        0.05,
+        0
+      ]
+    },
+    {
+      "name": "head",
+      "parent": 3,
+      "bind": [
+        0,
+        0.04,
+        0
+      ]
+    },
+    {
+      "name": "L_upper_arm",
+      "parent": 2,
+      "bind": [
+        -0.04,
+        0.01,
+        0
+      ]
+    },
+    {
+      "name": "L_lower_arm",
+      "parent": 5,
+      "bind": [
+        -0.05,
+        -0.02,
+        0
+      ]
+    },
+    {
+      "name": "R_upper_arm",
+      "parent": 2,
+      "bind": [
+        0.04,
+        0.01,
+        0
+      ]
+    },
+    {
+      "name": "R_lower_arm",
+      "parent": 7,
+      "bind": [
+        0.05,
+        -0.02,
+        0
+      ]
+    },
+    {
+      "name": "L_upper_leg",
+      "parent": 0,
+      "bind": [
+        -0.03,
+        -0.06,
+        0
+      ]
+    },
+    {
+      "name": "L_lower_leg",
+      "parent": 9,
+      "bind": [
+        0,
+        -0.07,
+        0
+      ]
+    },
+    {
+      "name": "R_upper_leg",
+      "parent": 0,
+      "bind": [
+        0.03,
+        -0.06,
+        0
+      ]
+    },
+    {
+      "name": "R_lower_leg",
+      "parent": 11,
+      "bind": [
+        0,
+        -0.07,
+        0
+      ]
+    }
+  ],
+  "clips": [
+    {
+      "id": "A01",
+      "unit": "worker",
+      "state": "idle",
+      "duration": 2.0,
+      "fps": 30,
+      "frames": 60,
+      "looping": true,
+      "file": "A01_worker_idle.json",
+      "description": "Stand with slight sway, pickaxe idle"
+    },
+    {
+      "id": "A02",
+      "unit": "worker",
+      "state": "walk",
+      "duration": 0.8,
+      "fps": 30,
+      "frames": 24,
+      "looping": true,
+      "file": "A02_worker_walk.json",
+      "description": "Walk cycle with pickaxe over shoulder"
+    },
+    {
+      "id": "A03",
+      "unit": "worker",
+      "state": "work",
+      "duration": 1.5,
+      "fps": 30,
+      "frames": 45,
+      "looping": true,
+      "file": "A03_worker_work.json",
+      "description": "Mining/harvesting/building swing"
+    },
+    {
+      "id": "A04",
+      "unit": "worker",
+      "state": "carry",
+      "duration": 0.9,
+      "fps": 30,
+      "frames": 27,
+      "looping": true,
+      "file": "A04_worker_carry.json",
+      "description": "Walk with resource carried"
+    },
+    {
+      "id": "A05",
+      "unit": "worker",
+      "state": "die",
+      "duration": 1.0,
+      "fps": 30,
+      "frames": 30,
+      "looping": false,
+      "file": "A05_worker_die.json",
+      "description": "Fall and fade"
+    },
+    {
+      "id": "A06",
+      "unit": "soldier",
+      "state": "idle",
+      "duration": 2.0,
+      "fps": 30,
+      "frames": 60,
+      "looping": true,
+      "file": "A06_soldier_idle.json",
+      "description": "Guard stance, shield ready"
+    },
+    {
+      "id": "A07",
+      "unit": "soldier",
+      "state": "walk",
+      "duration": 0.8,
+      "fps": 30,
+      "frames": 24,
+      "looping": true,
+      "file": "A07_soldier_walk.json",
+      "description": "March with shield + sword"
+    },
+    {
+      "id": "A08",
+      "unit": "soldier",
+      "state": "fight",
+      "duration": 0.6,
+      "fps": 30,
+      "frames": 18,
+      "looping": false,
+      "file": "A08_soldier_fight.json",
+      "description": "Sword swing attack"
+    },
+    {
+      "id": "A09",
+      "unit": "soldier",
+      "state": "defend",
+      "duration": 1.0,
+      "fps": 30,
+      "frames": 30,
+      "looping": true,
+      "file": "A09_soldier_defend.json",
+      "description": "Shield block stance"
+    },
+    {
+      "id": "A10",
+      "unit": "soldier",
+      "state": "die",
+      "duration": 1.0,
+      "fps": 30,
+      "frames": 30,
+      "looping": false,
+      "file": "A10_soldier_die.json",
+      "description": "Fall, drop weapons"
+    },
+    {
+      "id": "A11",
+      "unit": "archer",
+      "state": "idle",
+      "duration": 2.0,
+      "fps": 30,
+      "frames": 60,
+      "looping": true,
+      "file": "A11_archer_idle.json",
+      "description": "Bow at rest"
+    },
+    {
+      "id": "A12",
+      "unit": "archer",
+      "state": "walk",
+      "duration": 0.8,
+      "fps": 30,
+      "frames": 24,
+      "looping": true,
+      "file": "A12_archer_walk.json",
+      "description": "Walk with bow"
+    },
+    {
+      "id": "A13",
+      "unit": "archer",
+      "state": "fight",
+      "duration": 0.6,
+      "fps": 30,
+      "frames": 18,
+      "looping": false,
+      "file": "A13_archer_fight.json",
+      "description": "Draw and loose arrow"
+    },
+    {
+      "id": "A14",
+      "unit": "archer",
+      "state": "aim",
+      "duration": 0.4,
+      "fps": 30,
+      "frames": 12,
+      "looping": true,
+      "file": "A14_archer_aim.json",
+      "description": "Bow drawn, aiming"
+    },
+    {
+      "id": "A15",
+      "unit": "archer",
+      "state": "die",
+      "duration": 1.0,
+      "fps": 30,
+      "frames": 30,
+      "looping": false,
+      "file": "A15_archer_die.json",
+      "description": "Fall, drop bow"
+    },
+    {
+      "id": "BA01",
+      "unit": "building",
+      "state": "construct",
+      "duration": 3.0,
+      "fps": 30,
+      "frames": 90,
+      "looping": false,
+      "file": "BA01_building_construct.json",
+      "description": "Scale 0\u21921 with scaffolding fade"
+    },
+    {
+      "id": "BA02",
+      "unit": "building",
+      "state": "idle",
+      "duration": 2.0,
+      "fps": 30,
+      "frames": 60,
+      "looping": true,
+      "file": "BA02_building_idle.json",
+      "description": "Subtle sway + chimney smoke"
+    }
+  ]
+}
