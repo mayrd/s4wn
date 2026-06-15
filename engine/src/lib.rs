@@ -899,6 +899,117 @@ pub fn get_map_data() -> Vec<u8> {
     }
     Vec::new()
 }
+
+/// Load a map from JSON string (same format as exported by to_json()).
+/// Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":null},...]}
+/// Also accepts verbose format: {"width":64,"height":64,"tiles":[{"terrain":"Grass","elevation":0.0,"resource":"Iron"},...]}
+/// Returns "ok" on success or an error message.
+#[wasm_bindgen]
+pub fn load_map_json(json: &str) -> String {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            match parse_map_json(json) {
+                Ok(new_map) => {
+                    app.map = new_map;
+                    app.camera.center_x = app.map.width as f32 * 0.5;
+                    app.camera.center_y = app.map.height as f32 * 0.5;
+                    app.camera.zoom = 1.0;
+                    app.mesh_dirty = true;
+                    app.overlay_dirty = true;
+                    // Reset game state for the new map
+                    app.game_loop = GameLoop::new(GameState::new(app.map.clone()));
+                    String::from("ok")
+                }
+                Err(e) => format!("error: {}", e),
+            }
+        } else {
+            String::from("error: engine not initialized")
+        }
+    }
+}
+
+fn parse_map_json(json: &str) -> Result<Map, String> {
+    use serde_json::Value;
+    let v: Value = serde_json::from_str(json).map_err(|e| format!("JSON parse error: {}", e))?;
+
+    let width = v["width"].as_u64().ok_or("missing width")? as usize;
+    let height = v["height"].as_u64().ok_or("missing height")? as usize;
+
+    if width == 0 || width > 1024 || height == 0 || height > 1024 {
+        return Err(format!("invalid dimensions: {}×{}", width, height));
+    }
+
+    let tiles_arr = v["tiles"].as_array().ok_or("missing tiles array")?;
+
+    let mut map = Map::new(width, height);
+
+    for (i, tile_val) in tiles_arr.iter().enumerate() {
+        if i >= width * height { break; }
+        let x = i % width;
+        let y = i / width;
+
+        // Support both Rust format ({t, e, r}) and verbose format ({terrain, elevation, resource})
+        let terrain: Terrain = if let Some(t) = tile_val["t"].as_u64() {
+            match t {
+                0 => Terrain::Grass, 1 => Terrain::Forest, 2 => Terrain::Mountain,
+                3 => Terrain::Water, 4 => Terrain::DeepWater, 5 => Terrain::Desert,
+                6 => Terrain::Swamp, 7 => Terrain::Snow,
+                _ => return Err(format!("invalid terrain id {} at ({},{})", t, x, y)),
+            }
+        } else if let Some(tname) = tile_val["terrain"].as_str() {
+            match tname {
+                "Grass" => Terrain::Grass, "Forest" => Terrain::Forest,
+                "Mountain" => Terrain::Mountain, "Water" => Terrain::Water,
+                "DeepWater" | "Deep Water" => Terrain::DeepWater,
+                "Desert" => Terrain::Desert, "Swamp" => Terrain::Swamp,
+                "Snow" => Terrain::Snow,
+                _ => return Err(format!("unknown terrain '{}' at ({},{})", tname, x, y)),
+            }
+        } else {
+            return Err(format!("tile at ({},{}) has no terrain", x, y));
+        };
+
+        let elevation = tile_val["e"].as_f64()
+            .or_else(|| tile_val["elevation"].as_f64())
+            .unwrap_or(0.0) as f32;
+
+        let resource = if let Some(r) = tile_val["r"].as_str() {
+            match r {
+                "Iron" => Some(map::Resource::Iron),
+                "Coal" => Some(map::Resource::Coal),
+                "Gold" => Some(map::Resource::Gold),
+                "Stone" => Some(map::Resource::Stone),
+                "Sulfur" => Some(map::Resource::Sulfur),
+                "Fish" => Some(map::Resource::Fish),
+                "Game" => Some(map::Resource::Game),
+                "Grain" => Some(map::Resource::Grain),
+                _ => None,
+            }
+        } else if let Some(r) = tile_val["resource"].as_str() {
+            match r {
+                "Iron" => Some(map::Resource::Iron),
+                "Coal" => Some(map::Resource::Coal),
+                "Gold" => Some(map::Resource::Gold),
+                "Stone" => Some(map::Resource::Stone),
+                "Sulfur" => Some(map::Resource::Sulfur),
+                "Fish" => Some(map::Resource::Fish),
+                "Game" => Some(map::Resource::Game),
+                "Grain" => Some(map::Resource::Grain),
+                _ => None,
+            }
+        } else {
+            None
+        };
+
+        let tile = map.get_mut(x, y).ok_or(format!("out of bounds: ({},{})", x, y))?;
+        tile.terrain = terrain;
+        tile.elevation = elevation;
+        tile.resource = resource;
+    }
+
+    Ok(map)
+}
+
 #[wasm_bindgen]
 pub fn get_tile_at(x: f32, y: f32) -> String {
     unsafe {
