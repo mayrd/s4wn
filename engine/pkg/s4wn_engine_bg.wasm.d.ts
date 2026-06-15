@@ -2,12 +2,14 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export const get_build_cost: (a: number, b: number) => [number, number];
+export const get_building_info: (a: number) => [number, number];
 export const get_building_summary: () => [number, number];
 export const get_game_speed: () => number;
 export const get_map_data: () => [number, number];
 export const get_resource_counts: () => [number, number];
 export const get_stats: () => [number, number];
 export const get_tile_at: (a: number, b: number) => [number, number];
+export const get_unit_info: (a: number) => [number, number];
 export const get_unit_summary: () => [number, number];
 export const init: (a: number, b: number) => [number, number, number];
 export const is_paused: () => number;

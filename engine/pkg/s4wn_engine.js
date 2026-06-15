@@ -21,6 +21,29 @@ export function get_build_cost(kind_name) {
 }
 
 /**
+ * Get detailed building info by index.
+ * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
+ *   "active":true,"workers":[1],"max_workers":1,
+ *   "build_ticks":20,"production_interval":20,"inputs":[["Wood",2]],
+ *   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
+ * or {"error":"Building not found"}
+ * @param {number} idx
+ * @returns {string}
+ */
+export function get_building_info(idx) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_building_info(idx);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Get building summary as a JSON string for the HUD.
  * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"workers":1},...]
  * @returns {string}
@@ -105,6 +128,27 @@ export function get_tile_at(x, y) {
     let deferred1_1;
     try {
         const ret = wasm.get_tile_at(x, y);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
+ * Get detailed unit info by ID.
+ * Returns JSON: {"id":1,"kind":"Worker","x":5.5,"y":3.0,"hp":50,"max_hp":50,
+ *   "state":"Working","assigned_building":2,"target":null}
+ * or {"error":"Unit not found"}
+ * @param {number} id
+ * @returns {string}
+ */
+export function get_unit_info(id) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_unit_info(id);
         deferred1_0 = ret[0];
         deferred1_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);

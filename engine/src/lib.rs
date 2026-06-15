@@ -1177,6 +1177,104 @@ pub fn get_unit_summary() -> String {
     String::new()
 }
 
+/// Get detailed building info by index.
+/// Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
+///   "active":true,"workers":[1],"max_workers":1,
+///   "build_ticks":20,"production_interval":20,"inputs":[["Wood",2]],
+///   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
+/// or {"error":"Building not found"}
+#[wasm_bindgen]
+pub fn get_building_info(idx: usize) -> String {
+    use crate::economy::ResourceType;
+    unsafe {
+        if let Some(ref app) = APP {
+            let economy = &app.game_loop.state.economy;
+            if let Some(b) = economy.buildings.get(idx) {
+                let kind = b.kind;
+                let worker_ids: Vec<String> = b.assigned_workers.iter().map(|w| w.to_string()).collect();
+                let inputs: Vec<String> = kind.inputs().iter()
+                    .map(|(rt, amt)| format!(r#""{}",{}"#, rt.name(), amt))
+                    .collect();
+                let outputs: Vec<String> = kind.outputs().iter()
+                    .map(|(rt, amt)| format!(r#""{}",{}"#, rt.name(), amt))
+                    .collect();
+                // Output buffer summary (non-zero entries only)
+                let mut obuf_parts = Vec::new();
+                for i in 0..ResourceType::COUNT {
+                    let val = b.output_buffer[i];
+                    if val > 0 {
+                        let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
+                        obuf_parts.push(format!(r#""{}":{}"#, rt.name(), val));
+                    }
+                }
+                return format!(
+                    r#"{{"kind":"{}","x":{},"y":{},"construction":{},"complete":{},"active":{},"workers":[{}],"max_workers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}}}}"#,
+                    kind.name(),
+                    b.x,
+                    b.y,
+                    b.construction,
+                    b.is_complete(),
+                    b.active,
+                    worker_ids.join(","),
+                    b.max_workers,
+                    kind.build_time(),
+                    kind.production_interval(),
+                    inputs.join(","),
+                    outputs.join(","),
+                    obuf_parts.join(","),
+                );
+            }
+        }
+    }
+    format!(r#"{{"error":"Building at index {} not found"}}"#, idx)
+}
+
+/// Get detailed unit info by ID.
+/// Returns JSON: {"id":1,"kind":"Worker","x":5.5,"y":3.0,"hp":50,"max_hp":50,
+///   "state":"Working","assigned_building":2,"target":null}
+/// or {"error":"Unit not found"}
+#[wasm_bindgen]
+pub fn get_unit_info(id: u32) -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            let units = &app.game_loop.state.economy.units;
+            if let Some(u) = units.get(id) {
+                if !u.is_alive() {
+                    return format!(r#"{{"error":"Unit {} is dead"}}"#, id);
+                }
+                let state_name = match u.state {
+                    crate::units::UnitState::Idle => "Idle",
+                    crate::units::UnitState::Moving => "Moving",
+                    crate::units::UnitState::Working => "Working",
+                    crate::units::UnitState::Fighting => "Fighting",
+                    crate::units::UnitState::Dead => "Dead",
+                };
+                let ab = match u.assigned_building {
+                    Some(bi) => bi.to_string(),
+                    None => "null".to_string(),
+                };
+                let target = match u.target {
+                    Some(tid) => tid.to_string(),
+                    None => "null".to_string(),
+                };
+                return format!(
+                    r#"{{"id":{},"kind":"{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","assigned_building":{},"target":{}}}"#,
+                    u.id,
+                    u.kind.name(),
+                    u.x,
+                    u.y,
+                    u.hp,
+                    u.max_hp,
+                    state_name,
+                    ab,
+                    target,
+                );
+            }
+        }
+    }
+    format!(r#"{{"error":"Unit {} not found"}}"#, id)
+}
+
 /// Try to place a building on the map.
 /// Takes building type name (e.g. "Farm"), tile x, tile y.
 /// Returns JSON: {"ok":true,"idx":0} or {"error":"message"}

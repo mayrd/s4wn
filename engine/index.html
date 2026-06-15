@@ -404,6 +404,19 @@
     display: none; pointer-events: none;
   }
   #placement-status.visible { display: block; }
+  #selection-info {
+    position: fixed;
+    z-index: 26; padding: 10px 14px; border-radius: 6px;
+    background: rgba(0,0,0,0.85); color: #e0d5b0;
+    font-size: 11px; font-family: 'SF Mono','Cascadia Code',monospace;
+    line-height: 1.5; display: none; pointer-events: none;
+    border: 1px solid rgba(200,170,100,0.3);
+    max-width: 260px; white-space: nowrap;
+  }
+  #selection-info.visible { display: block; }
+  #selection-info .sel-title { font-size: 13px; font-weight: bold; color: #f0d070; margin-bottom: 4px; }
+  #selection-info .sel-stat { color: #aaa; }
+  #selection-info .sel-stat span { color: #e0d5b0; }
 </style>
 </head>
 <body>
@@ -545,6 +558,7 @@
 <!-- Building Toolbar -->
 <div id="build-toolbar"><span class="bt-label">BUILD</span></div>
 <div id="placement-status"></div>
+<div id="selection-info"></div>
 
 <input type="file" id="fileInput" accept=".json,.map">
 
@@ -558,13 +572,15 @@ import init, {
     get_resource_counts,
     get_building_summary,
     get_unit_summary,
+    get_building_info,
+    get_unit_info,
     set_game_speed,
     toggle_pause,
     is_paused,
     try_place_building,
     list_building_types,
     get_build_cost,
-} from './pkg/s4wn_engine.js?v=6';
+} from './pkg/s4wn_engine.js?v=7';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -588,9 +604,12 @@ const hudPop = document.getElementById('hud-pop');
 const tileTip = document.getElementById('tile-tip');
 const fileInput = document.getElementById('fileInput');
 const dropZone = document.getElementById('drop-zone');
+const selInfo = document.getElementById('selection-info');
 
 let engineReady = false;
 let showMenu = true;
+let selectedBuilding = null; // building index or null
+let selectedUnit = null;     // unit id or null
 
 // ── Splash → Menu ──────────────────────────────────────────────────────
 setTimeout(() => {
@@ -781,25 +800,157 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// Override canvas click for placement mode
+// Canvas click: placement mode OR selection
 canvas.addEventListener('click', (e) => {
-    if (!placementMode || !engineReady) return;
-    const info = get_tile_at(e.offsetX, e.offsetY);
-    if (!info) return;
-    const t = JSON.parse(info);
-    const result = try_place_building(placementMode, t.x, t.y);
-    const r = JSON.parse(result);
-    if (r.ok) {
-        placementStatus.textContent = `✅ ${r.kind} placed at (${t.x},${t.y})`;
-        // Keep placement mode active for quick building
-    } else {
-        placementStatus.textContent = `❌ ${r.error}`;
-        setTimeout(() => {
-            if (placementMode) placementStatus.textContent = `Place ${placementMode} — click tile · Esc to cancel`;
-        }, 2000);
+    if (!engineReady) return;
+
+    if (placementMode) {
+        // ── Placement mode ──
+        const info = get_tile_at(e.offsetX, e.offsetY);
+        if (!info) return;
+        const t = JSON.parse(info);
+        const result = try_place_building(placementMode, t.x, t.y);
+        const r = JSON.parse(result);
+        if (r.ok) {
+            placementStatus.textContent = `✅ ${r.kind} placed at (${t.x},${t.y})`;
+        } else {
+            placementStatus.textContent = `❌ ${r.error}`;
+            setTimeout(() => {
+                if (placementMode) placementStatus.textContent = `Place ${placementMode} — click tile · Esc to cancel`;
+            }, 2000);
+        }
+        lastPopUpdate = 0;
+        return;
     }
-    // Refresh building list for overlay
-    lastPopUpdate = 0;
+
+    // ── Selection mode (not in placement) ──
+    const info = get_tile_at(e.offsetX, e.offsetY);
+    if (!info) { hideSelection(); return; }
+    const t = JSON.parse(info);
+
+    // Check if any building is at this tile
+    try {
+        const bRaw = get_building_summary();
+        const unitsRaw = get_unit_summary();
+        if (!bRaw) { hideSelection(); return; }
+        const buildings = JSON.parse(bRaw);
+
+        // Find building at this tile
+        const bldgIdx = buildings.findIndex(b => b.x === t.x && b.y === t.y);
+        if (bldgIdx >= 0) {
+            showBuildingInfo(bldgIdx, e.clientX, e.clientY);
+            return;
+        }
+
+        // Find nearest unit within 1 tile
+        if (unitsRaw) {
+            const units = JSON.parse(unitsRaw);
+            let nearest = null, nearestDist = 1.5;
+            for (const u of units) {
+                const dx = u.x - t.x, dy = u.y - t.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearest = u;
+                }
+            }
+            if (nearest) {
+                showUnitInfo(nearest.id, e.clientX, e.clientY);
+                return;
+            }
+        }
+    } catch(_) {}
+
+    hideSelection();
+});
+
+// ── Selection info display ─────────────────────────────────────────────
+function showBuildingInfo(idx, cx, cy) {
+    if (!get_building_info) return;
+    const raw = get_building_info(idx);
+    if (!raw) return;
+    try {
+        const b = JSON.parse(raw);
+        if (b.error) { hideSelection(); return; }
+        selectedBuilding = idx;
+        selectedUnit = null;
+
+        const pct = Math.round(b.construction * 100);
+        const statusIcon = b.complete ? '✅' : pct > 0 ? `🚧 ${pct}%` : '📐';
+        const workers = b.workers.length > 0 ? `👷 ${b.workers.length}/${b.max_workers}` : '⚪ No workers';
+        const prod = b.production_interval > 0
+            ? `⚙️ Every ${(b.production_interval/10).toFixed(1)}s` : '';
+
+        let obuf = '';
+        try {
+            const ob = JSON.parse(JSON.stringify(b.output_buffer));
+            const keys = Object.keys(ob);
+            if (keys.length > 0) {
+                obuf = '📤 ' + keys.map(k => `${k}:${ob[k]}`).join(', ');
+            }
+        } catch(_) {}
+
+        selInfo.innerHTML = `
+            <div class="sel-title">${b.kind}</div>
+            <div class="sel-stat">Status: <span>${statusIcon}</span></div>
+            <div class="sel-stat">Pos: <span>(${b.x}, ${b.y})</span></div>
+            <div class="sel-stat">Workers: <span>${workers}</span></div>
+            ${prod ? `<div class="sel-stat">Production: <span>${prod}</span></div>` : ''}
+            ${obuf ? `<div class="sel-stat">${obuf}</div>` : ''}
+        `;
+        positionSelInfo(cx, cy);
+    } catch(_) { hideSelection(); }
+}
+
+function showUnitInfo(id, cx, cy) {
+    if (!get_unit_info) return;
+    const raw = get_unit_info(id);
+    if (!raw) return;
+    try {
+        const u = JSON.parse(raw);
+        if (u.error) { hideSelection(); return; }
+        selectedUnit = id;
+        selectedBuilding = null;
+
+        const hpPct = Math.round(u.hp / u.max_hp * 100);
+        const hpBar = hpPct > 80 ? '🟢' : hpPct > 40 ? '🟡' : '🔴';
+        const bldg = u.assigned_building !== null ? `🏠 Bldg #${u.assigned_building}` : '';
+        const tgt = u.target !== null ? `🎯 Target #${u.target}` : '';
+
+        selInfo.innerHTML = `
+            <div class="sel-title">${u.kind} #${u.id}</div>
+            <div class="sel-stat">HP: <span>${hpBar} ${u.hp}/${u.max_hp} (${hpPct}%)</span></div>
+            <div class="sel-stat">State: <span>${u.state}</span></div>
+            ${bldg ? `<div class="sel-stat">${bldg}</div>` : ''}
+            ${tgt ? `<div class="sel-stat">${tgt}</div>` : ''}
+        `;
+        positionSelInfo(cx, cy);
+    } catch(_) { hideSelection(); }
+}
+
+function positionSelInfo(cx, cy) {
+    selInfo.classList.add('visible');
+    // Position near cursor, keeping within viewport
+    let left = cx + 16, top = cy - 10;
+    const rect = selInfo.getBoundingClientRect();
+    if (left + 270 > window.innerWidth) left = cx - 270;
+    if (top + 150 > window.innerHeight) top = cy - 160;
+    selInfo.style.left = Math.max(4, left) + 'px';
+    selInfo.style.top = Math.max(4, top) + 'px';
+}
+
+function hideSelection() {
+    selectedBuilding = null;
+    selectedUnit = null;
+    selInfo.classList.remove('visible');
+}
+
+// Close selection on Escape or click elsewhere
+document.addEventListener('click', (e) => {
+    if (!selInfo.classList.contains('visible')) return;
+    if (!e.target.closest('#selection-info') && e.target !== canvas) {
+        hideSelection();
+    }
 });
 
 // ── Keyboard shortcuts ─────────────────────────────────────────────────
@@ -818,7 +969,9 @@ document.addEventListener('keydown', (e) => {
             break;
         case 'm':
         case 'escape':
-            if (document.getElementById('settings-panel').classList.contains('open')) {
+            if (selInfo.classList.contains('visible')) {
+                hideSelection();
+            } else if (document.getElementById('settings-panel').classList.contains('open')) {
                 closeSettings();
             } else {
                 showMenu ? closeMenu() : openMenu();

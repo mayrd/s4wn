@@ -7,6 +7,16 @@
 export function get_build_cost(kind_name: string): string;
 
 /**
+ * Get detailed building info by index.
+ * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
+ *   "active":true,"workers":[1],"max_workers":1,
+ *   "build_ticks":20,"production_interval":20,"inputs":[["Wood",2]],
+ *   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
+ * or {"error":"Building not found"}
+ */
+export function get_building_info(idx: number): string;
+
+/**
  * Get building summary as a JSON string for the HUD.
  * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"workers":1},...]
  */
@@ -36,6 +46,14 @@ export function get_resource_counts(): string;
 export function get_stats(): string;
 
 export function get_tile_at(x: number, y: number): string;
+
+/**
+ * Get detailed unit info by ID.
+ * Returns JSON: {"id":1,"kind":"Worker","x":5.5,"y":3.0,"hp":50,"max_hp":50,
+ *   "state":"Working","assigned_building":2,"target":null}
+ * or {"error":"Unit not found"}
+ */
+export function get_unit_info(id: number): string;
 
 /**
  * Get unit summary as a JSON string for the HUD.
@@ -147,12 +165,14 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly get_build_cost: (a: number, b: number) => [number, number];
+    readonly get_building_info: (a: number) => [number, number];
     readonly get_building_summary: () => [number, number];
     readonly get_game_speed: () => number;
     readonly get_map_data: () => [number, number];
     readonly get_resource_counts: () => [number, number];
     readonly get_stats: () => [number, number];
     readonly get_tile_at: (a: number, b: number) => [number, number];
+    readonly get_unit_info: (a: number) => [number, number];
     readonly get_unit_summary: () => [number, number];
     readonly init: (a: number, b: number) => [number, number, number];
     readonly is_paused: () => number;
