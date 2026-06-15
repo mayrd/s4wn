@@ -25,6 +25,7 @@ use std::collections::HashMap;
 /// Terrain types (mirrors engine Terrain enum).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
+#[allow(dead_code)]
 pub enum Terrain {
     Grass = 0,
     Forest = 1,
@@ -45,6 +46,7 @@ impl Terrain {
         !matches!(self, Terrain::Water | Terrain::DeepWater | Terrain::Mountain)
     }
 
+    #[allow(dead_code)]
     pub fn speed_multiplier(self) -> f32 {
         match self {
             Terrain::Grass => 1.0,
@@ -75,6 +77,7 @@ pub enum Resource {
 
 /// A single map tile.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Tile {
     pub terrain: Terrain,
     pub elevation: f32,
@@ -479,6 +482,7 @@ impl ServerGameState {
     }
 
     /// Remove a player and all their assets.
+    #[allow(dead_code)]
     pub fn remove_player(&mut self, player_id: u32) {
         self.player_resources.remove(&player_id);
         self.buildings.retain(|b| b.owner_id != player_id);
@@ -687,7 +691,8 @@ impl ServerGameState {
     }
 
     /// Set a move target for a unit (used by server AI).
-    pub fn set_unit_move_target(&mut self, unit_id: u32, tx: usize, ty: usize) {
+    #[allow(dead_code)]
+    pub fn set_unit_move_target(&mut self, unit_id: u32, target_x: usize, target_y: usize) -> bool {
         if let Some(unit) = self.units.iter_mut().find(|u| u.id == unit_id) {
             unit.move_target = Some((tx, ty));
         }
@@ -878,7 +883,8 @@ impl ServerGameState {
     }
 
     /// Get a building by its ID.
-    pub fn get_building_mut(&mut self, id: u32) -> Option<&mut ServerBuilding> {
+    #[allow(dead_code)]
+    pub fn get_building_mut(&mut self, building_id: u32) -> Option<&mut Building> {
         self.buildings.iter_mut().find(|b| b.id == id)
     }
 }

@@ -18,10 +18,10 @@
 //! - For assigned-but-not-there workers → compute path and start moving
 //! - Workers that reach their building → transition to Working state
 
-use crate::economy::{BuildingType, Economy};
+use crate::economy::Economy;
 use crate::map::Map;
 use crate::pathfinding::Pathfinder;
-use crate::units::{UnitKind, UnitState, UnitManager};
+use crate::units::{UnitKind, UnitState};
 
 /// Worker AI controller — makes workers autonomous.
 #[derive(Debug, Clone)]

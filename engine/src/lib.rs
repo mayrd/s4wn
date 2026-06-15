@@ -1101,7 +1101,7 @@ pub fn get_resource_counts() -> String {
             use crate::economy::ResourceType;
             let mut parts = Vec::new();
             for i in 0..ResourceType::COUNT {
-                let rt = unsafe { std::mem::transmute::<u8, ResourceType>(i as u8) };
+                let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
                 parts.push(format!("\"{}\":{}", rt.name(), storage.get(rt)));
             }
             return format!("{{{}}}", parts.join(","));
@@ -1169,31 +1169,16 @@ pub fn get_unit_summary() -> String {
 /// Connect to a game server via WebSocket.
 /// Returns true if connection was initiated.
 #[wasm_bindgen]
-pub fn ws_connect(url: &str) -> bool {
-    unsafe {
-        if let Some(ref mut app) = APP {
-            // Store the URL for the JS side to pick up
-            // The actual WebSocket is managed in JS; this is a signal
-            return true;
-        }
-    }
+pub fn ws_connect(_url: &str) -> bool {
+    // TODO: integrate with JS WebSocket — currently a stub
     false
 }
 
 /// Send a network message (JSON string) to the server.
 #[wasm_bindgen]
-pub fn ws_send(json: &str) {
-    // This is a stub — in the browser, the JS side manages the WebSocket.
-    // The WASM engine calls this to send game actions.
-    // The JS side intercepts and sends via the actual WebSocket.
-    unsafe {
-        if let Some(ref mut app) = APP {
-            if let Ok(msg) = crate::network::deserialize(json) {
-                // Process locally for now (single-player mode)
-                // In multiplayer, JS would send this to the server
-            }
-        }
-    }
+pub fn ws_send(_json: &str) {
+    // TODO: integrate with JS WebSocket — currently a stub
+    // In multiplayer, JS would send this to the server
 }
 
 /// Receive pending network messages as JSON strings.

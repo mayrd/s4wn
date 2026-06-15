@@ -332,7 +332,8 @@ impl Building {
     }
 
     /// Whether the building can produce (has all prerequisites)
-    fn can_produce(&self, storage: &ResourceStorage) -> bool {
+    #[allow(dead_code)]
+    fn can_produce(&self, _storage: &ResourceStorage) -> bool {
         if !self.has_worker() {
             return false;
         }

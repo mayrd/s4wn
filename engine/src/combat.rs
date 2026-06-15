@@ -24,7 +24,7 @@
 
 use crate::map::Map;
 use crate::pathfinding::Pathfinder;
-use crate::units::{Unit, UnitKind, UnitManager, UnitState};
+use crate::units::{UnitManager, UnitState};
 
 /// Combat controller — manages all military engagements.
 #[derive(Debug, Clone)]
@@ -121,7 +121,7 @@ impl CombatAI {
         let enemy_id = self.find_nearest_enemy(units, unit_id);
 
         if let Some(enemy_id) = enemy_id {
-            let (dist, can_attack) = {
+            let (_dist, can_attack) = {
                 let unit = units.get(unit_id).unwrap();
                 let enemy = units.get(enemy_id).unwrap();
                 let dist = unit.distance_to(enemy);

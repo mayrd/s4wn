@@ -81,7 +81,7 @@ export function resize(): void;
  * Connect to a game server via WebSocket.
  * Returns true if connection was initiated.
  */
-export function ws_connect(url: string): boolean;
+export function ws_connect(_url: string): boolean;
 
 /**
  * Receive pending network messages as JSON strings.
@@ -92,7 +92,7 @@ export function ws_receive(): string;
 /**
  * Send a network message (JSON string) to the server.
  */
-export function ws_send(json: string): void;
+export function ws_send(_json: string): void;
 
 /**
  * Get the current network connection state as a string.

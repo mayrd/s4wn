@@ -192,11 +192,11 @@ export function resize() {
 /**
  * Connect to a game server via WebSocket.
  * Returns true if connection was initiated.
- * @param {string} url
+ * @param {string} _url
  * @returns {boolean}
  */
-export function ws_connect(url) {
-    const ptr0 = passStringToWasm0(url, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+export function ws_connect(_url) {
+    const ptr0 = passStringToWasm0(_url, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len0 = WASM_VECTOR_LEN;
     const ret = wasm.ws_connect(ptr0, len0);
     return ret !== 0;
@@ -222,10 +222,10 @@ export function ws_receive() {
 
 /**
  * Send a network message (JSON string) to the server.
- * @param {string} json
+ * @param {string} _json
  */
-export function ws_send(json) {
-    const ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+export function ws_send(_json) {
+    const ptr0 = passStringToWasm0(_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len0 = WASM_VECTOR_LEN;
     wasm.ws_send(ptr0, len0);
 }

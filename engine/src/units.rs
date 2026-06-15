@@ -18,7 +18,7 @@
 //! - An optional path (A* computed waypoints)
 //! - An optional assignment (building index they work at)
 
-use crate::map::{Map, Terrain};
+use crate::map::Map;
 use crate::pathfinding::Path;
 
 /// Unit type determines behavior and stats.

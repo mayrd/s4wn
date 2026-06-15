@@ -23,6 +23,7 @@ pub fn generate_room_id() -> String {
 
 /// A connected player.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Player {
     pub id: u32,
     pub name: String,
@@ -42,6 +43,7 @@ impl Player {
         }
     }
 
+    #[allow(dead_code)]
     pub fn to_state(&self) -> PlayerState {
         PlayerState {
             id: self.id,
@@ -53,6 +55,7 @@ impl Player {
 
 /// Game room state.
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
 pub enum RoomState {
     Lobby,
     InProgress,
@@ -126,6 +129,7 @@ impl Room {
         self.players.get(&player_id)
     }
 
+    #[allow(dead_code)]
     pub fn get_player_mut(&mut self, player_id: u32) -> Option<&mut Player> {
         self.players.get_mut(&player_id)
     }
@@ -213,7 +217,8 @@ impl RoomManager {
         self.rooms.get_mut(room_id)
     }
 
-    pub fn remove_room(&mut self, room_id: &str) -> Option<Room> {
+    #[allow(dead_code)]
+    pub fn remove_room(&mut self, room_id: &str) -> bool {
         self.rooms.remove(room_id)
     }
 
