@@ -3339,6 +3339,7 @@ ${stack}
 };
 
 // Global error handlers
+window.ErrorHandler = ErrorHandler;
 window.onerror = function (message, source, lineno, colno, error) {
   const err = error || new Error(message);
   if (!error) {
