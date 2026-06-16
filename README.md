@@ -120,6 +120,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **Map Validation** — Binary .map integrity checks (terrain ID range, tile count, elevation pattern warnings)
 - ⏳ **Single-Player Start** — Auto-save (✅), continue game (✅), load .sav files (⏳)
 - ✅ **Save/Load System** — `get_game_state()` + `restore_game_state()` WASM exports, auto-save every 5 min to localStorage, Continue button with game time indicator, manual Save in pause overlay
+- ✅ **Binary .map Loader** — Parse original S4 .map files with preview panel (dimensions, terrain distribution, resource counts, integrity warnings)
 - ✅ **Recent Files** — Tracks last 5 loaded files in localStorage (metadata: name, size, type, date), clickable to re-trigger file picker
 - ⏳ **Load .sav files** — Savegame binary format parser in progress
 

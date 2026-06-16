@@ -349,16 +349,16 @@ Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning
 - [x] Resource ID mapping: 0=None, 1=Iron, 2=Coal, 3=Gold, 4=Stone, 5=Sulfur, 6=Fish, 7=Game, 8=Grain
 - [x] Elevation decoding: raw byte 0-255 → normalized -1.0 to 1.0
 - [x] Fallback: if file starts with `{`, treat as JSON and parse via `load_map_json()`
-- [ ] **Validate** map integrity: all terrain IDs in 0-7 range, dimensions ≤ 1024×1024, tile count matches width×height
-- [ ] **Validate** elevation: flag suspicious elevation ranges (all water at -1.0? all flat at 0.0?) — warn user but don't reject
-- [ ] **Preview** before loading: show map name (from filename), dimensions, terrain type distribution (pie chart or bar), resource count summary
-- [ ] **Conflict resolution**: if map uses terrain/resource IDs unknown to us (custom maps), map to nearest equivalent with user warning, don't crash
+- [x] **Validate** map integrity: all terrain IDs in 0-7 range, dimensions ≤ 1024×1024, tile count matches width×height
+- [x] **Validate** elevation: flag suspicious elevation ranges (all water at -1.0? all flat at 0.0?) — warn user but don't reject
+- [x] **Preview** before loading: show map name (from filename), dimensions, terrain type distribution (bar chart with percentages), resource count summary
+- [x] **Conflict resolution**: if map uses terrain/resource IDs unknown to us (custom maps), map to nearest equivalent with user warning, don't crash
+- [x] **Error recovery**: if parsing fails mid-file, report exact byte offset and tile (x,y) where corruption was detected
 - [ ] **Performance**: for maps > 256×256, show loading progress bar; target < 2s for 512×512 maps
-- [ ] **Error recovery**: if parsing fails mid-file, report exact byte offset and tile (x,y) where corruption was detected
 - [ ] **Test corpus**: maintain 3-5 test .map files of varying sizes (64×64, 128×128, 256×256) in `assets/maps/test/`
 - [ ] **Round-trip**: load .map → render → export JSON → verify terrain/resource/elevation match between original and export
+- [x] Integration with **Load Game flow**: file picker accepts `.map` extension, auto-detects binary vs JSON, previews before loading
 - [ ] Integration with **New Game flow**: selecting "New Game" shows bundled maps AND a "Load Custom .map" option
-- [ ] Integration with **Load Game flow**: file picker accepts `.map` extension, auto-detects binary vs JSON
 
 #### 4.5 — In-Game HUD (Single Player)
 - [x] FPS counter (top-right, green, monospace)
@@ -476,7 +476,8 @@ s4wn/
 ||||| 27 | 2026-06-16 | ~10 min | Phase 4.3: Wired Start Game button — added `generate_map` and `add_starting_resources` WASM exports, loading screen with animated progress bar (4-step: Generate terrain → Build landscape → Prepare resources → Ready), difficulty-based starting resources (Easy 2×, Medium 1×, Hard 0.5× of Wood/Stone/Iron/Coal/Gold/Grain/Fish/Game). Map size adapts to difficulty (48×48 easy, 64×64 others). Bumped WASM cache to v=9. All 167 tests passing. |
 ||||| 28 | 2026-06-16 | ~10 min | Phase 4.6: Added `setup_starter_base()` WASM export — spiral-searches from map center for a buildable tile, places free Headquarters, spawns 2–4 idle workers in offset pattern (2 Hard, 3 Medium, 4 Easy). Wired into `startNewGame()`. Added map integrity validation to `parseBinaryMap()`: terrain ID range check, tile count vs width×height verification, file size validation, elevation pattern warnings. Bumped WASM to v=10. 142 tests passing (137 engine + 5 server). |
 |||| 29 | 2026-06-16 | ~10 min | Phase 4.6 auto-save complete: Added `get_game_state()` + `restore_game_state()` WASM exports with full round-trip serialization (resources, buildings w/ input/output buffers + construction + workers, units w/ HP/state/assignments/targets, map JSON, game time). Added `add_existing()` + `set_next_id()` to UnitManager. JS side: auto-save to localStorage every 5 min, initial save 1s after New Game, Continue button in main menu (shows saved game time), Save button in pause overlay with confirmation feedback. Bumped WASM to v=11. All 167 tests passing (137 engine + 30 server). |
-|||| 30 | 2026-06-16 | ~10 min | Phase 4.4 recent files: Added Recent Files panel to main menu — stores file metadata (name, size, type, date) in localStorage on successful map load (max 5 entries). Shows type-specific icons (🗺️ .map, 💾 .sav, 📄 .json), file size, and load date. Clicking a recent entry triggers file input dialog for reload. Added `.sav` to file input accept attribute for future savegame support. All 167 tests passing. |
+||||| 30 | 2026-06-16 | ~10 min | Phase 4.4 recent files: Added Recent Files panel to main menu — stores file metadata (name, size, type, date) in localStorage on successful map load (max 5 entries). Shows type-specific icons (🗺️ .map, 💾 .sav, 📄 .json), file size, and load date. Clicking a recent entry triggers file input dialog for reload. Added `.sav` to file input accept attribute for future savegame support. All 167 tests passing. |
+||||| 31 | 2026-06-16 | ~10 min | Phase 4.4a map preview + binary loader: Added binary .map parser (`parseBinaryMap`) to engine/index.html with full validation (terrain IDs, dimensions, tile count, elevation range). Added map preview panel showing dimensions, terrain distribution bar chart (color-coded swatches + percentages), resource count summary (icons + counts), and integrity warnings. File type auto-detection (.map → ArrayBuffer binary parse, .sav → graceful unsupported message, .json → text parse). Marked 6 previously-pending Phase 4.4a checklist items complete. |
 
 ---
 
@@ -516,21 +517,20 @@ None at the moment.
 
 ## Next Session
 
-### Phase 4.4 — Load Game Flow (continued)
-- [ ] File upload dialog accepting `.map` and `.sav` files with visual distinction.
-- [ ] Parse and validate `.sav` binary format (game state: buildings, units, resources).
-- [ ] Map preview before loading (dimensions, terrain distribution, resource count).
-- [ ] Error handling: show human-readable error for invalid/corrupt files.
+### Phase 4.4 — Load .sav Files (highest priority)
+- [ ] Research S4 `.sav` binary format — identify magic bytes, header structure, entity records
+- [ ] Implement `parseBinarySav()` function in engine/index.html (buildings, units, resources, game time)
+- [ ] Add `.sav`-specific preview (game time, player count, building/unit summary)
+- [ ] Wire `restore_game_state()` WASM export to load parsed savegame state
 
-### Phase 4.6/4.7 — Map Polish & Validation
-- [ ] Validate map integrity before loading (check all tiles have valid terrain IDs).
-- [ ] Terrain elevation shading improvements (steeper = darker).
-- [ ] Water animation (vertex displacement or fragment shader wave).
-- [ ] Round-trip test: load .map → render → export JSON → verify match.
+### Phase 4.4a — Map Import Polish (3 remaining items)
+- [ ] Create test .map corpus: 3-5 test files of varying sizes (64×64, 128×128, 256×256) in `assets/maps/test/`
+- [ ] Add "Load Custom .map" option to New Game panel
+- [ ] Round-trip test: load .map → render → export JSON → verify match
 
 ### Phase 4.1 — Menu Polish
-- [ ] Menu open/close animation (slide/fade).
-- [ ] New Game panel ".sav" / "Load Custom .map" option — show recent files as shortcuts.
+- [ ] Menu open/close animation (slide/fade transition)
+- [ ] Credits / GitHub link in menu
 
 ---
 
