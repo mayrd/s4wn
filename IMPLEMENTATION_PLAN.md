@@ -4,7 +4,7 @@
 
 ## Status: Phase 4 — UI & Single Player 🔨
 
-Last updated: 2026-06-16
+Last updated: 2026-06-16 (Session 41)
 
 ## 🤖 Agent Operating Rules
 
@@ -386,16 +386,17 @@ Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning
 - [x] Auto-save every 5 minutes to localStorage (get_game_state + restore_game_state WASM exports, Continue button, Save button in pause overlay)
 - [ ] Fog of war / unexplored territory (darken tiles not yet seen) — optional, phase 4.6+
 
-#### 4.7 — Full-Screen Map View
-- [x] Canvas fills entire viewport (no constrained container)
+### Phase 4.7 — Visual Polish
+- [x] Terrain elevation shading improvements (steeper = darker via slope-based shading)
+- [x] Water animation (fragment shader wave color shift for water tiles)
+- [ ] Edge-of-map visual treatment (fog/gradient/water border)
+
+#### 4.8 — Full-Screen Map View
 - [x] Isometric rendering with smooth zoom (mouse wheel, pinch)
 - [x] Pan via mouse drag and touch
 - [x] Day/night cycle rendering
 - [x] Building + unit overlay dots
 - [x] Resource glow animation
-- [ ] Terrain elevation shading improvements (steeper = darker)
-- [ ] Water animation (vertex displacement or fragment shader wave)
-- [ ] Edge-of-map visual treatment (fog, gradient fade, or water border)
 
 ### Phase 5 — Polish & Release
 - [ ] Mobile UI adaptation
@@ -488,6 +489,7 @@ s4wn/
 ||| 38 | 2026-06-16 | ~15 min | Error handler UI: Added comprehensive error dialog system — catches window.onerror + unhandledrejection, shows error name/message/stack with file:line:col, 'Report on GitHub' button opens pre-filled issue (title, body, bug label), 'Copy Error Details' copies full report to clipboard, console.error wrapped to print GitHub deeplink for every error. Dark themed dialog with red accents. All 167 tests passing. |
 |||||| 39 | 2026-06-16 | ~10 min | Full .sav savegame state restoration: Researched S4Forge.RE C++ decompilation (CGameChunkGeneral struct, CSavedPlayer, building type IDs 0-82, settler type IDs 0-66). Created S4 building ID → S4WN BuildingType mapping (14 types) and S4 settler ID → S4WN UnitKind mapping (all 67 types). Added parseSavGeneralInfo() (map dims, game/map names, players, tick counter, camera), parseSavBuildings() (heuristic record-size detection), parseSavSettlers() (heuristic), parseSavResources() (fixed-array). Wired into confirmMapLoad() — after terrain load, decompresses all chunks, builds full state JSON, calls restore_game_state(). Enhanced savegame preview with game name, player info, restoration status. Supports all 3 chunk type ID schemes. All 142 tests passing. |
 |||||| 40 | 2026-06-16 | ~10 min | Phase 4.2 Controls settings: Added mouse sensitivity slider (0.2×–3.0×), invert scroll checkbox, and keyboard bindings display (13 shortcuts) to settings panel. Wired invert scroll to wheel handler in both index.html and map-viewer.html. Phase 4.0 Splash polish: Added 30 floating gold particles with drift animation, titleFloat bob animation, radial gradient glow overlay via ::after pseudo-element. All 167 tests passing (137 engine + 30 server). |
+||||| 41 | 2026-06-16 | ~10 min | Phase 4.7 Visual Polish: Added slope-based elevation shading (computes max neighbor elevation difference per tile as vertex attribute, fragment shader darkens steep terrain via smoothstep). Added water wave animation (fragment shader detects water tiles by color, applies time-varying brightness wave). Updated MeshData, App struct, vertex/fragment shaders, mesh builder, and rebuild_mesh. WASM rebuilt (183KB). All 137 engine tests passing. |
 
 ---
 
@@ -527,17 +529,17 @@ None at the moment.
 
 ## Next Session
 
+### Phase 4.7 — Visual Polish
+- [x] Terrain elevation shading improvements (steeper = darker via slope-based shading)
+- [x] Water animation (fragment shader wave color shift for water tiles)
+- [ ] Edge-of-map visual treatment (fog/gradient/water border)
+- [ ] Menu open/close animation (slide/fade) — partially done, could enhance
+- [ ] Menu accessible from in-game via ☰ button or Esc — done, could add ☰ button to HUD
+
 ### Phase 4.4a — Map Import Polish
 - [x] Create test .map corpus: 3 test files (32×32 island, 64×64 river valley, 128×128 continents) in `assets/maps/test/`
 - [x] Add .map test corpus to CI pipeline (verify all test maps parse without errors) — `scripts/validate_test_maps.py` + CI step
 - [ ] Round-trip test: load .map → render → export JSON → verify terrain/resource/elevation match
-
-### Phase 4.5 — Quick Wins
-- [ ] Water animation (fragment shader wave animation for water terrain tiles)
-- [ ] Edge-of-map visual treatment (fog/gradient/water border)
-- [ ] Terrain elevation shading improvements (steeper = darker)
-- [ ] Menu open/close animation (slide/fade) — partially done, could enhance
-- [ ] Menu accessible from in-game via ☰ button or Esc — done, could add ☰ button to HUD
 
 ### Phase 4.6 — Single-Player Start
 - [ ] Validate map integrity before loading (check all tiles have valid terrain IDs)

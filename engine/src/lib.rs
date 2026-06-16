@@ -35,6 +35,7 @@ in vec2 a_position;
 in vec3 a_color;
 in float a_elevation;
 in float a_has_resource;
+in float a_slope;
 
 uniform vec2 u_resolution;
 uniform float u_time;
@@ -46,6 +47,7 @@ out vec3 v_color;
 out float v_elevation;
 out float v_has_resource;
 out float v_day_phase;
+out float v_slope;
 
 void main() {
     float x = a_position.x;
@@ -74,6 +76,7 @@ void main() {
     v_elevation = elev;
     v_has_resource = a_has_resource;
     v_day_phase = u_day_phase;
+    v_slope = a_slope;
 }
 "#;
 
@@ -84,20 +87,29 @@ in vec3 v_color;
 in float v_elevation;
 in float v_has_resource;
 in float v_day_phase;
+in float v_slope;
 
 out vec4 out_color;
 
 void main() {
-    // Elevation-based shade
-    float shade = 1.0 - v_elevation * 0.15;
+    // Slope-based shading: steeper = darker
+    float slope_shade = 1.0 - smoothstep(0.0, 0.4, v_slope) * 0.5;
+    // Elevation-based shade: higher = slightly brighter
+    float elev_shade = 1.0 + v_elevation * 0.1;
+    float shade = slope_shade * elev_shade;
 
     // Day/night cycle: day_phase is 0..1, 0.0=midnight, 0.5=noon
-    // Use a smooth sine wave for daylight
     float day_light = 0.5 + 0.5 * sin(v_day_phase * 6.2831853);
-    float ambient = 0.2 + day_light * 0.8; // 0.2 min, 1.0 max
-    float warmth = 0.5 + day_light * 0.5; // warmer during day
+    float ambient = 0.2 + day_light * 0.8;
+    float warmth = 0.5 + day_light * 0.5;
 
     vec3 lit = v_color * shade * ambient;
+
+    // Water animation: subtle wave color shift
+    if (v_color.b > v_color.r && v_color.b > v_color.g) {
+        float wave = 0.85 + 0.15 * sin(v_day_phase * 6.2831853 * 3.0 + v_elevation * 10.0);
+        lit = lit * wave;
+    }
 
     // Resource glow: tiles with resources get a subtle pulsing overlay
     if (v_has_resource > 0.5) {
@@ -182,6 +194,7 @@ struct App {
     color_buffer: WebGlBuffer,
     elevation_buffer: WebGlBuffer,
     resource_buffer: WebGlBuffer,
+    slope_buffer: WebGlBuffer,
     index_buffer: WebGlBuffer,
 
     resolution_loc: web_sys::WebGlUniformLocation,
@@ -245,6 +258,7 @@ struct MeshData {
     colors: Vec<f32>,
     elevations: Vec<f32>,
     has_resources: Vec<f32>,
+    slopes: Vec<f32>,
     indices: Vec<u16>,
 }
 
@@ -255,6 +269,7 @@ impl MeshData {
             colors: Vec::new(),
             elevations: Vec::new(),
             has_resources: Vec::new(),
+            slopes: Vec::new(),
             indices: Vec::new(),
         }
     }
@@ -296,6 +311,22 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
             // Resource flag: 1.0 if tile has a resource, 0.0 otherwise
             let has_res = if tile.resource.is_some() { 1.0f32 } else { 0.0f32 };
             mesh.has_resources.push(has_res);
+
+            // Compute slope: max elevation difference to neighbors
+            let mut max_diff = 0.0f32;
+            for dy in [-1isize, 0, 1] {
+                for dx in [-1isize, 0, 1] {
+                    if dx == 0 && dy == 0 { continue; }
+                    let nx = mx as isize + dx;
+                    let ny = my as isize + dy;
+                    if nx >= 0 && ny >= 0 && (nx as usize) < map.width && (ny as usize) < map.height {
+                        let neighbor_elev = map.get(nx as usize, ny as usize).unwrap().elevation;
+                        let diff = (tile.elevation - neighbor_elev).abs();
+                        if diff > max_diff { max_diff = diff; }
+                    }
+                }
+            }
+            mesh.slopes.push(max_diff);
 
             // Build triangle strip indices
             if row < rows && col < cols {
@@ -348,6 +379,7 @@ impl App {
         let color_buffer = upload_f32_buffer(&gl, &mesh.colors, 1, 3);
         let elevation_buffer = upload_f32_buffer(&gl, &mesh.elevations, 2, 1);
         let resource_buffer = upload_f32_buffer(&gl, &mesh.has_resources, 3, 1);
+        let slope_buffer = upload_f32_buffer(&gl, &mesh.slopes, 4, 1);
         let index_buffer = gl.create_buffer().ok_or("Cannot create index buffer")?;
         gl.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, Some(&index_buffer));
         unsafe {
@@ -415,6 +447,7 @@ impl App {
             color_buffer,
             elevation_buffer,
             resource_buffer,
+            slope_buffer,
             index_buffer,
             resolution_loc,
             time_loc,
@@ -680,6 +713,9 @@ impl App {
 
         gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.resource_buffer));
         update_f32_buffer(gl, &mesh.has_resources);
+
+        gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.slope_buffer));
+        update_f32_buffer(gl, &mesh.slopes);
 
         gl.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, Some(&self.index_buffer));
         unsafe {
