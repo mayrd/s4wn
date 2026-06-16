@@ -364,6 +364,15 @@
       <input type="range" id="set-zoom" min="0.5" max="3" step="0.1" oninput="updateSettingVal('set-zoom')">
       <span class="setting-val" id="val-set-zoom">1.0</span>
     </div>
+    <div class="setting-row">
+      <label for="set-mouse-sens">Mouse Sensitivity</label>
+      <input type="range" id="set-mouse-sens" min="0.2" max="3" step="0.1" oninput="updateSettingVal('set-mouse-sens')">
+      <span class="setting-val" id="val-set-mouse-sens">1.0×</span>
+    </div>
+    <div class="setting-row">
+      <label for="set-invert-scroll">Invert Scroll</label>
+      <input type="checkbox" id="set-invert-scroll" onchange="saveSettings()">
+    </div>
   </div>
   <div class="settings-section">
     <h4>🎨 Graphics</h4>
@@ -951,7 +960,8 @@ canvas.addEventListener('mouseleave', () => { dragging = false; });
 canvas.addEventListener('wheel', (e) => {
   if (showMenu) return;
   e.preventDefault();
-  camera.targetZoom *= e.deltaY < 0 ? 1.15 : 0.87;
+  const delta = settings.invertScroll ? -e.deltaY : e.deltaY;
+  camera.targetZoom *= delta < 0 ? 1.15 : 0.87;
   camera.targetZoom = Math.max(0.2, Math.min(10, camera.targetZoom));
 });
 
@@ -1026,6 +1036,8 @@ const SETTINGS_DEFAULTS = {
     masterVolume: 80,
     musicOn: true,
     sfxOn: true,
+    mouseSensitivity: 1.0,
+    invertScroll: false,
 };
 
 let settings = {};
@@ -1046,6 +1058,8 @@ function saveSettings() {
     settings.masterVolume = parseInt(document.getElementById('set-master-vol').value);
     settings.musicOn = document.getElementById('set-music').checked;
     settings.sfxOn = document.getElementById('set-sfx').checked;
+    settings.mouseSensitivity = parseFloat(document.getElementById('set-mouse-sens').value);
+    settings.invertScroll = document.getElementById('set-invert-scroll').checked;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
@@ -1055,6 +1069,8 @@ function syncSettingsToUI() {
     document.getElementById('set-master-vol').value = settings.masterVolume;
     document.getElementById('set-music').checked = settings.musicOn;
     document.getElementById('set-sfx').checked = settings.sfxOn;
+    document.getElementById('set-mouse-sens').value = settings.mouseSensitivity;
+    document.getElementById('set-invert-scroll').checked = settings.invertScroll;
     updateAllSettingVals();
 }
 
@@ -1072,12 +1088,15 @@ function updateSettingVal(id) {
         case 'set-master-vol':
             valEl.textContent = el.value + '%';
             break;
+        case 'set-mouse-sens':
+            valEl.textContent = parseFloat(el.value).toFixed(1) + '×';
+            break;
     }
     saveSettings();
 }
 
 function updateAllSettingVals() {
-    ['set-zoom', 'set-detail', 'set-master-vol'].forEach(updateSettingVal);
+    ['set-zoom', 'set-detail', 'set-master-vol', 'set-mouse-sens'].forEach(updateSettingVal);
 }
 
 function openSettings() {

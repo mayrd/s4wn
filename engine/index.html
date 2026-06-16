@@ -20,6 +20,44 @@
     0%, 100% { text-shadow: 0 0 20px rgba(255,200,80,0.3), 0 0 60px rgba(255,180,40,0.1); }
     50%      { text-shadow: 0 0 30px rgba(255,200,80,0.5), 0 0 80px rgba(255,180,40,0.2); }
   }
+  @keyframes titleFloat {
+    0%, 100% { transform: translateY(0px); }
+    50%      { transform: translateY(-6px); }
+  }
+  @keyframes particleDrift {
+    0%   { opacity: 0; transform: translateY(0) scale(0); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-80px) scale(1); }
+  }
+  #splash .title {
+    font-size: clamp(48px, 10vw, 96px);
+    font-weight: 300; letter-spacing: 0.15em;
+    color: #e8c860;
+    animation: glow 3s ease-in-out infinite, titleFloat 4s ease-in-out infinite;
+    position: relative;
+  }
+  #splash .title::after {
+    content: '';
+    position: absolute;
+    inset: -20px;
+    background: radial-gradient(ellipse at center, rgba(255,200,80,0.12) 0%, transparent 70%);
+    pointer-events: none;
+    animation: glow 3s ease-in-out infinite;
+  }
+  .splash-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+  }
+  .sp-particle {
+    position: absolute;
+    width: 4px; height: 4px;
+    background: rgba(255,200,80,0.6);
+    border-radius: 50%;
+    animation: particleDrift 3s ease-out infinite;
+  }
 
   body {
     background: #080c18;
@@ -92,12 +130,6 @@
     transition: opacity 0.8s ease-out;
   }
   #splash.hidden { opacity: 0; pointer-events: none; }
-  #splash .title {
-    font-size: clamp(48px, 10vw, 96px);
-    font-weight: 300; letter-spacing: 0.15em;
-    color: #e8c860;
-    animation: glow 3s ease-in-out infinite;
-  }
   #splash .subtitle {
     font-size: clamp(14px, 3vw, 22px);
     color: #8a8578; letter-spacing: 0.2em;
@@ -618,6 +650,7 @@
 <body>
 
 <div id="splash">
+  <div class="splash-particles" id="splash-particles"></div>
   <img class="logo-img" src="../assets/ui/logo-loading.png" alt="S4WN Logo">
   <div class="title">S4WN</div>
   <div class="subtitle">Siedler 4 Web‑Native</div>
@@ -657,6 +690,20 @@
       <input type="range" id="set-zoom" min="0.5" max="3" step="0.1" oninput="updateSettingVal('set-zoom')">
       <span class="setting-val" id="val-set-zoom">1.0</span>
     </div>
+    <div class="setting-row">
+      <label for="set-mouse-sens">Mouse Sensitivity</label>
+      <input type="range" id="set-mouse-sens" min="0.2" max="3" step="0.1" oninput="updateSettingVal('set-mouse-sens')">
+      <span class="setting-val" id="val-set-mouse-sens">1.0×</span>
+    </div>
+    <div class="setting-row">
+      <label for="set-invert-scroll">Invert Scroll</label>
+      <input type="checkbox" id="set-invert-scroll" onchange="saveSettings()">
+    </div>
+  </div>
+
+  <div class="settings-section" id="settings-keys-section">
+    <h4>⌨️ Keyboard Bindings</h4>
+    <div id="key-bindings-list" style="font-size:12px;color:#999;line-height:1.8;"></div>
   </div>
 
   <div class="settings-section">
@@ -1326,6 +1373,26 @@ let selectedBuilding = null; // building index or null
 let selectedUnit = null;     // unit id or null
 
 // ── Splash → Menu ──────────────────────────────────────────────────────
+// Generate floating gold particles behind the title
+(function initSplashParticles() {
+    const container = document.getElementById('splash-particles');
+    if (!container) return;
+    for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'sp-particle';
+        // Random horizontal position centered around title area
+        p.style.left = (30 + Math.random() * 40) + '%';
+        p.style.top = (40 + Math.random() * 20) + '%';
+        p.style.animationDelay = (Math.random() * 3) + 's';
+        p.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+        // Slight size variation
+        const sz = 2 + Math.random() * 4;
+        p.style.width = sz + 'px';
+        p.style.height = sz + 'px';
+        container.appendChild(p);
+    }
+})();
+
 setTimeout(() => {
     splash.classList.add('hidden');
     setTimeout(openMenu, 800);
@@ -2465,7 +2532,8 @@ canvas.addEventListener('mouseleave', () => {
 canvas.addEventListener('wheel', (e) => {
     if (showMenu) return;
     e.preventDefault();
-    on_wheel(e.deltaY);
+    const invert = settings.invertScroll ? -1 : 1;
+    on_wheel(e.deltaY * invert);
 }, { passive: false });
 
 // Touch support
@@ -2551,6 +2619,8 @@ const SETTINGS_DEFAULTS = {
     masterVolume: 80,
     musicOn: true,
     sfxOn: true,
+    mouseSensitivity: 1.0,
+    invertScroll: false,
 };
 
 let settings = {};
@@ -2572,6 +2642,8 @@ function saveSettings() {
     settings.masterVolume = parseInt(document.getElementById('set-master-vol').value);
     settings.musicOn = document.getElementById('set-music').checked;
     settings.sfxOn = document.getElementById('set-sfx').checked;
+    settings.mouseSensitivity = parseFloat(document.getElementById('set-mouse-sens').value);
+    settings.invertScroll = document.getElementById('set-invert-scroll').checked;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
@@ -2581,6 +2653,8 @@ function syncSettingsToUI() {
     document.getElementById('set-master-vol').value = settings.masterVolume;
     document.getElementById('set-music').checked = settings.musicOn;
     document.getElementById('set-sfx').checked = settings.sfxOn;
+    document.getElementById('set-mouse-sens').value = settings.mouseSensitivity;
+    document.getElementById('set-invert-scroll').checked = settings.invertScroll;
     updateAllSettingVals();
 }
 
@@ -2598,12 +2672,15 @@ function updateSettingVal(id) {
         case 'set-master-vol':
             valEl.textContent = el.value + '%';
             break;
+        case 'set-mouse-sens':
+            valEl.textContent = parseFloat(el.value).toFixed(1) + '×';
+            break;
     }
     saveSettings();
 }
 
 function updateAllSettingVals() {
-    ['set-zoom', 'set-detail', 'set-master-vol'].forEach(updateSettingVal);
+    ['set-zoom', 'set-detail', 'set-master-vol', 'set-mouse-sens'].forEach(updateSettingVal);
 }
 
 function openSettings() {
@@ -2622,7 +2699,40 @@ function resetSettings() {
     syncSettingsToUI();
 }
 
-// ── Resource Bar ──────────────────────────────────────────────────────────
+// ── Keyboard Bindings Display ─────────────────────────────────────────────
+const KEY_BINDINGS = [
+    { key: 'L', desc: 'Load Map' },
+    { key: 'D', desc: 'Demo Map' },
+    { key: 'S', desc: 'Settings' },
+    { key: 'P', desc: 'Pause / Resume' },
+    { key: '1', desc: 'Game Speed 1×' },
+    { key: '2', desc: 'Game Speed 2×' },
+    { key: '3', desc: 'Game Speed 4×' },
+    { key: 'B', desc: 'Build Mode' },
+    { key: 'Esc', desc: 'Menu / Cancel / Close' },
+    { key: 'M', desc: 'Toggle Menu' },
+    { key: 'Click', desc: 'Select Building/Unit' },
+    { key: 'Drag', desc: 'Pan Camera' },
+    { key: 'Scroll', desc: 'Zoom In/Out' },
+];
+
+function renderKeyBindings() {
+    const el = document.getElementById('key-bindings-list');
+    if (!el) return;
+    el.innerHTML = KEY_BINDINGS.map(b =>
+        `<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;">
+            <span style="color:#c8b878;font-family:'SF Mono',monospace;background:rgba(200,170,100,0.08);padding:1px 6px;border-radius:3px;min-width:48px;text-align:center;">${b.key}</span>
+            <span style="flex:1;">${b.desc}</span>
+        </div>`
+    ).join('');
+}
+
+// Call renderKeyBindings when settings panel opens
+const _origOpenSettings = openSettings;
+openSettings = function() {
+    _origOpenSettings();
+    renderKeyBindings();
+};
 const RESOURCE_ICONS = {
     Wood: '🪵', Stone: '🪨', Iron: '⛏️', Coal: '⬛',
     Gold: '🪙', Sulfur: '🟡', Fish: '🐟', Game: '🍖',
