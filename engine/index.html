@@ -902,6 +902,403 @@ function getChunkTypeInfo(typeId) {
     return { name: `Chunk 0x${typeId.toString(16).toUpperCase()}`, desc: 'Unknown data section' };
 }
 
+// ── S4 Building ID → S4WN BuildingType name mapping ─────────────────────
+// Based on S4Forge.RE Buildings.h enum (BUILDING_* constants, IDs 0-82).
+// Only building types that exist in our engine are mapped; others fall back to 'Unknown'.
+const S4_BUILDING_ID_TO_NAME = {
+    0:  null,                  // BUILDING_NO_BUILDING
+    1:  'Lumberjack',          // BUILDING_WOODCUTTERHUT
+    2:  'Lumberjack',          // BUILDING_FORESTERHUT → Lumberjack (closest match)
+    3:  'Sawmill',             // BUILDING_SAWMILL
+    4:  'Quarry',              // BUILDING_STONECUTTERHUT
+    5:  null,                  // BUILDING_WATERWORKHUT (no match)
+    6:  'Fishery',             // BUILDING_FISHERHUT
+    7:  null,                  // BUILDING_HUNTERHUT (no match)
+    8:  'Butcher',             // BUILDING_SLAUGHTERHOUSE
+    9:  null,                  // BUILDING_MILL (no match)
+    10: 'Bakery',              // BUILDING_BAKERY
+    11: 'Farm',                // BUILDING_GRAINFARM
+    12: 'Farm',                // BUILDING_ANIMALRANCH → Farm
+    13: null,                  // BUILDING_DONKEYRANCH (no match)
+    14: 'Quarry',              // BUILDING_STONEMINE → Quarry
+    15: 'Mine',                // BUILDING_IRONMINE → Mine
+    16: 'Mine',                // BUILDING_GOLDMINE → Mine
+    17: 'Mine',                // BUILDING_COALMINE → Mine
+    18: 'Mine',                // BUILDING_SULFURMINE → Mine
+    19: null,                  // BUILDING_SMELTGOLD (no match)
+    20: 'Blacksmith',          // BUILDING_SMELTIRON → Blacksmith
+    21: null,                  // BUILDING_TOOLSMITH (no match — tools)
+    22: 'Armory',              // BUILDING_WEAPONSMITH → Armory
+    23: null,                  // BUILDING_VEHICLEHALL (no match)
+    24: null,                  // BUILDING_BARRACKS (military — no match yet)
+    25: null,                  // BUILDING_CHARCOALMAKER (no match)
+    26: null,                  // BUILDING_TRAININGCENTER (no match)
+    27: null,                  // BUILDING_HEALERHUT (no match)
+    28: null,                  // BUILDING_AMMOMAKERHUT (no match)
+    29: null,                  // BUILDING_GUNPOWDERMAKERHUT (no match)
+    30: null,                  // BUILDING_LANDSCAPEMAKERHUT (no match)
+    31: null,                  // BUILDING_SHIPYARD (no match)
+    32: null,                  // BUILDING_PORT (no match)
+    33: null,                  // BUILDING_MARKETPLACE (no match)
+    34: 'Warehouse',            // BUILDING_STORAGEAREA → Warehouse
+    35: null,                  // BUILDING_VINYARD (no match)
+    36: 'Farm',                // BUILDING_AGAVEFARMERHUT → Farm
+    37: null,                  // BUILDING_TEQUILAMAKERHUT (no match)
+    38: null,                  // BUILDING_BEEKEEPERHUT (no match)
+    39: 'Brewery',             // BUILDING_MEADMAKERHUT → Brewery
+    40: null,                  // BUILDING_RESIDENCESMALL (no match)
+    41: null,                  // BUILDING_RESIDENCEMEDIUM (no match)
+    42: null,                  // BUILDING_RESIDENCEBIG (no match)
+    43: null,                  // BUILDING_SMALLTEMPLE (no match)
+    44: null,                  // BUILDING_BIGTEMPLE (no match)
+    45: null,                  // BUILDING_LOOKOUTTOWER (no match)
+    46: null,                  // BUILDING_GUARDTOWERSMALL (no match)
+    47: null,                  // BUILDING_GUARDTOWERBIG (no match)
+    48: 'Headquarters',        // BUILDING_CASTLE → Headquarters
+    49: null,                  // BUILDING_MUSHROOMFARM (no match)
+    50: null,                  // BUILDING_DARKTEMPLE (no match)
+    51: null,                  // BUILDING_FORTRESS (no match)
+    // Ports 52-59, Shipyards 58-63 → no match
+    52: null, 53: null, 54: null, 55: null, 56: null, 57: null,
+    58: null, 59: null, 60: null, 61: null, 62: null, 63: null,
+    // Eyecatchers 64-75 → no match
+    64: null, 65: null, 66: null, 67: null, 68: null, 69: null,
+    70: null, 71: null, 72: null, 73: null, 74: null, 75: null,
+    76: null, 77: null, 78: null, 79: null, // ShipyardG/H, PortG/H
+    80: null, // BUILDING_MANACOPTERHALL
+    81: null, // BUILDING_SUNFLOWEROILMAKERHUT
+    82: null, // BUILDING_SUNFLOWERFARMERHUT
+};
+
+// ── S4 Settler ID → S4WN UnitKind mapping ───────────────────────────────
+// Based on S4Forge.RE Settlers.h enum (SETTLER_* constants, IDs 0-66).
+// Military settlers (IDs 29+) map to Soldier or Archer; workers map to Worker.
+const S4_SETTLER_ID_TO_KIND = (() => {
+    const m = new Map();
+    // Workers (IDs 0-28) → Worker
+    for (let i = 0; i <= 28; i++) m.set(i, 'Worker');
+    // Swordsmen (29-31) → Soldier
+    for (let i = 29; i <= 31; i++) m.set(i, 'Soldier');
+    // Bowmen (32-34) → Archer
+    for (let i = 32; i <= 34; i++) m.set(i, 'Archer');
+    // Medics (35-37) → Worker (healer role)
+    for (let i = 35; i <= 37; i++) m.set(i, 'Worker');
+    // Axe warriors (38-40) → Soldier
+    for (let i = 38; i <= 40; i++) m.set(i, 'Soldier');
+    // Blowgun warriors (41-43) → Archer
+    for (let i = 41; i <= 43; i++) m.set(i, 'Archer');
+    // Squad leader (44) → Soldier
+    m.set(44, 'Soldier');
+    // Priest (45) → Worker
+    m.set(45, 'Worker');
+    // Saboteur (46) → Worker
+    m.set(46, 'Worker');
+    // Pioneer (47) → Worker
+    m.set(47, 'Worker');
+    // Thief (48) → Worker
+    m.set(48, 'Worker');
+    // Geologist (49) → Worker
+    m.set(49, 'Worker');
+    // Gardener (50) → Worker
+    m.set(50, 'Worker');
+    // Landscaper (51) → Worker
+    m.set(51, 'Worker');
+    // Dark gardener (52) → Worker
+    m.set(52, 'Worker');
+    // Mushroom farmer (53) → Worker
+    m.set(53, 'Worker');
+    // Shaman (54) → Worker
+    m.set(54, 'Worker');
+    // Slaved settler (55) → Worker
+    m.set(55, 'Worker');
+    // Temple servant (56) → Worker
+    m.set(56, 'Worker');
+    // Angels (57-59) → Soldier
+    for (let i = 57; i <= 59; i++) m.set(i, 'Soldier');
+    // Donkey (60) → Worker (pack animal)
+    m.set(60, 'Worker');
+    // Backpack catapultist (61-63) → Soldier
+    for (let i = 61; i <= 63; i++) m.set(i, 'Soldier');
+    // Sunflower farmer (64) → Worker
+    m.set(64, 'Worker');
+    // Sunflower oil maker (65) → Worker
+    m.set(65, 'Worker');
+    // Manacopter master (66) → Worker
+    m.set(66, 'Worker');
+    return m;
+})();
+
+// ── S4 Resource ID → S4WN ResourceType name mapping ─────────────────────
+// Based on S4 map format resource IDs
+const S4_RESOURCE_ID_TO_NAME = {
+    0: null,           // None
+    1: 'Iron',         // Iron Ore
+    2: 'Coal',         // Coal
+    3: 'Gold',         // Gold Ore
+    4: 'Stone',        // Stone
+    5: 'Sulfur',       // Sulfur
+    6: 'Fish',         // Fish
+    7: 'Game',         // Game (hunting)
+    8: 'Grain',        // Grain
+};
+
+// ── Parse .sav General Information chunk (0x2712) ──────────────────────
+// CGameChunkGeneral struct layout (from S4Forge.RE decompilation):
+//   offset 0:   m_uMapFlags       (u32 LE)
+//   offset 4:   m_uCampaneID      (u32 LE)
+//   offset 8:   m_iMissionId      (u32 LE)
+//   offset 12:  m_iGameType       (u32 LE)
+//   offset 16:  m_iVersionMajor   (u32 LE)
+//   offset 20:  m_iVersionMinor   (u32 LE)
+//   offset 24:  m_iVersionBuild   (u32 LE)
+//   offset 28:  m_iWidthHeight    (u32 LE) ← map dimension
+//   offset 32:  m_spGameName[32]  (wchar_t[32] — 64 bytes UTF-16LE)
+//   offset 96:  m_swMapName[256]  (wchar_t[256] — 512 bytes UTF-16LE)
+//   offset 608: m_spSaveDateTime[26] (char[26])
+//   offset 634: m_iMapMaxNumPlayers (u32 LE)
+//   offset 638: m_uiPlayerCount   (u32 LE)
+//   offset 642: m_sPlayers[8]     (CSavedPlayer[8])
+//     Each CSavedPlayer: m_uType(u32) + m_swName[32](wchar 64B) + m_uColor(u32) + m_uStartX(u32) + m_uStartY(u32) + m_uTeam(u32) = 80 bytes
+//   offset 642+640=1282: m_uMultiPlayerGameID (u32 LE)
+//   ... more fields ...
+//   offset ~1350: m_uiTickCounter (u32 LE) — game time in ticks
+//   offset ~1362: m_uCamX (u32 LE), m_uCamY (u32 LE)
+//   offset ~1370: m_uZoom (u32 LE)
+function parseSavGeneralInfo(decompressed) {
+    const dv = new DataView(decompressed.buffer, decompressed.byteOffset, decompressed.byteLength);
+    const result = {};
+
+    if (decompressed.length < 32) return result;
+
+    // CGameChunkGame fields are all Little-Endian (x86)
+    result.mapWidth = dv.getUint32(28, true);   // m_iWidthHeight at offset 28 (LE)
+    result.mapHeight = result.mapWidth;          // S4 maps are square
+    result.gameType = dv.getUint32(12, true);    // m_iGameType at offset 12
+    result.playerCount = dv.getUint32(638, true); // m_uiPlayerCount at offset 638
+
+    // Game name (wchar_t[32] at offset 32, UTF-16LE, 64 bytes)
+    if (decompressed.length >= 96) {
+        const gameNameBytes = new Uint8Array(decompressed.buffer, decompressed.byteOffset + 32, 64);
+        result.gameName = decodeWcharString(gameNameBytes);
+    }
+
+    // Map name (wchar_t[256] at offset 96, UTF-16LE, 512 bytes)
+    if (decompressed.length >= 608) {
+        const mapNameBytes = new Uint8Array(decompressed.buffer, decompressed.byteOffset + 96, 512);
+        result.mapName = decodeWcharString(mapNameBytes);
+    }
+
+    // Parse CSavedPlayer array (8 players, 84 bytes each, starting at offset 642)
+    result.players = [];
+    const CSavedPlayer_SIZE = 84; // m_uType(4) + m_swName[32](64) + m_uColor(4) + m_uStartX(4) + m_uStartY(4) + m_uTeam(4) = 84
+    const playersOffset = 642;
+    if (decompressed.length >= playersOffset + CSavedPlayer_SIZE) {
+        for (let i = 0; i < 8; i++) {
+            const pOff = playersOffset + i * CSavedPlayer_SIZE;
+            if (pOff + CSavedPlayer_SIZE > decompressed.length) break;
+            const pType = dv.getUint32(pOff, true);
+            const pNameBytes = new Uint8Array(decompressed.buffer, decompressed.byteOffset + pOff + 4, 64);
+            const pName = decodeWcharString(pNameBytes);
+            const pColor = dv.getUint32(pOff + 68, true);
+            const pStartX = dv.getUint32(pOff + 72, true);
+            const pStartY = dv.getUint32(pOff + 76, true);
+            const pTeam = dv.getUint32(pOff + 80, true);
+            result.players.push({ type: pType, name: pName, color: pColor, startX: pStartX, startY: pStartY, team: pTeam });
+        }
+    }
+
+    // Tick counter at approximate offset 2328 (after player data + description + flags)
+    const TICK_COUNTER_OFFSET = 2328;
+    if (decompressed.length >= TICK_COUNTER_OFFSET + 4) {
+        result.tickCounter = dv.getUint32(TICK_COUNTER_OFFSET, true);
+    }
+
+    // Camera position after tick counter
+    const CAM_OFFSET = TICK_COUNTER_OFFSET + 16; // tickCounter(4) + netTimeDelta(4) + seed(4) + randCalls(4)
+    if (decompressed.length >= CAM_OFFSET + 8) {
+        result.camX = dv.getUint32(CAM_OFFSET, true);
+        result.camY = dv.getUint32(CAM_OFFSET + 4, true);
+    }
+
+    return result;
+}
+
+// ── Decode wchar_t string (UTF-16LE, null-terminated) ──────────────────
+function decodeWcharString(bytes) {
+    let str = '';
+    const len = Math.min(bytes.length / 2, 256); // max 256 chars
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    for (let i = 0; i < len; i++) {
+        const ch = dv.getUint16(i * 2, true);
+        if (ch === 0) break;
+        str += String.fromCharCode(ch);
+    }
+    return str;
+}
+
+// ── Parse .sav Buildings chunk (0x2713) ─────────────────────────────────
+// S4 building records are variable-length binary structures.
+// Based on the CBuilding class and the persistence framework, each record contains:
+//   - building type ID (u8 or u16)
+//   - position (x, y) — typically u16 each
+//   - construction progress (u8 or f32)
+//   - owner/player ID (u8)
+//   - flags/state (u8 or u16)
+// Since the exact binary layout is not fully documented, we use a best-effort
+// approach: scan for recognizable building type IDs at aligned offsets.
+// Returns array of { kind, x, y, construction, active }
+function parseSavBuildings(decompressed, mapWidth, mapHeight) {
+    if (!decompressed || decompressed.length < 10) return [];
+
+    const dv = new DataView(decompressed.buffer, decompressed.byteOffset, decompressed.length);
+    const buildings = [];
+
+    // Heuristic: S4 building records are typically 12-24 bytes each.
+    // We'll try to detect the record size by looking for patterns.
+    // Common pattern: records start with a building type byte (0-82) followed by
+    // position data. We scan for valid building type IDs.
+
+    // Strategy: Try record sizes from 8 to 24 bytes and pick the one that
+    // yields the most valid building records.
+    let bestBuildings = [];
+    let bestScore = 0;
+
+    for (let recSize = 8; recSize <= 28; recSize += 2) {
+        const count = Math.floor(decompressed.length / recSize);
+        if (count === 0 || count > 10000) continue;
+
+        const candidates = [];
+        let score = 0;
+
+        for (let i = 0; i < count; i++) {
+            const off = i * recSize;
+            if (off + recSize > decompressed.length) break;
+
+            // Try reading building type as u8 at offset 0
+            const bType = dv.getUint8(off);
+            if (bType > 82) continue; // Invalid building type
+
+            const bName = S4_BUILDING_ID_TO_NAME[bType];
+            if (!bName) continue; // Skip unknown building types
+
+            // Try reading position as u16 LE at offsets 2 and 4
+            const bx = dv.getUint16(off + 2, true);
+            const by = dv.getUint16(off + 4, true);
+
+            // Validate position is within map bounds (with some margin)
+            if (bx >= mapWidth * 2 || by >= mapHeight * 2) continue;
+
+            // Construction progress: try u8 at offset 6 (0-255, maps to 0.0-1.0)
+            const constructionRaw = dv.getUint8(off + 6);
+            const construction = Math.min(1.0, constructionRaw / 255.0);
+
+            candidates.push({
+                kind: bName,
+                x: Math.floor(bx / 2), // Convert from S4 coords to tile coords
+                y: Math.floor(by / 2),
+                construction: parseFloat(construction.toFixed(3)),
+                active: construction >= 1.0,
+                max_workers: 2,
+            });
+            score++;
+        }
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestBuildings = candidates;
+        }
+    }
+
+    return bestBuildings;
+}
+
+// ── Parse .sav Settlers/Units chunk (0x2714) ────────────────────────────
+// S4 settler records contain: settler type, position (x,y), HP, player ID, state.
+// Returns array of { id, kind, x, y, hp, max_hp, state }
+function parseSavSettlers(decompressed, mapWidth, mapHeight) {
+    if (!decompressed || decompressed.length < 10) return [];
+
+    const dv = new DataView(decompressed.buffer, decompressed.byteOffset, decompressed.length);
+    const units = [];
+
+    // Heuristic approach similar to buildings: try different record sizes
+    let bestUnits = [];
+    let bestScore = 0;
+
+    for (let recSize = 12; recSize <= 32; recSize += 2) {
+        const count = Math.floor(decompressed.length / recSize);
+        if (count === 0 || count > 50000) continue;
+
+        const candidates = [];
+        let score = 0;
+
+        for (let i = 0; i < count; i++) {
+            const off = i * recSize;
+            if (off + recSize > decompressed.length) break;
+
+            // Settler type as u8 at offset 0
+            const sType = dv.getUint8(off);
+            if (sType > 66) continue; // Invalid settler type
+
+            const kind = S4_SETTLER_ID_TO_KIND.get(sType) || 'Worker';
+
+            // Position as u16 LE at offsets 2 and 4
+            const sx = dv.getUint16(off + 2, true);
+            const sy = dv.getUint16(off + 4, true);
+
+            if (sx >= mapWidth * 2 || sy >= mapHeight * 2) continue;
+
+            // HP as u8 at offset 6
+            const hp = dv.getUint8(off + 6) || 50;
+
+            candidates.push({
+                id: i,
+                kind: kind,
+                x: sx / 2,
+                y: sy / 2,
+                hp: hp,
+                max_hp: 100,
+                state: 'Idle',
+                assigned_building: null,
+                target: null,
+            });
+            score++;
+        }
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestUnits = candidates;
+        }
+    }
+
+    return bestUnits;
+}
+
+// ── Parse .sav Resource Data chunk (0x2715) ────────────────────────────
+// Returns object with resource counts { Wood: N, Stone: N, ... }
+function parseSavResources(decompressed) {
+    if (!decompressed || decompressed.length < 4) return {};
+
+    const dv = new DataView(decompressed.buffer, decompressed.byteOffset, decompressed.length);
+    const resources = {};
+
+    // S4 resource data is typically an array of (resource_id, count) pairs
+    // or a fixed-size array indexed by resource ID.
+    // Try fixed-array approach first: 9 resource types × 4 bytes (u32 LE) = 36 bytes
+    const RESOURCE_NAMES = ['Wood', 'Stone', 'Iron', 'Coal', 'Gold', 'Grain', 'Fish', 'Game', 'Sulfur'];
+
+    if (decompressed.length >= 36) {
+        for (let i = 0; i < 9; i++) {
+            const val = dv.getUint32(i * 4, true);
+            if (val > 0 && val < 1000000) { // Sanity check
+                resources[RESOURCE_NAMES[i]] = val;
+            }
+        }
+    }
+
+    return resources;
+}
+
 // ── Terrain colors ──────────────────────────────────────────────────────
 const TERRAIN_COLORS = [
     '#3d993d', '#267326', '#8c8073', '#2659b3',
@@ -1266,7 +1663,7 @@ function showMapPreview(data, file) {
         // Try to extract map dimensions from chunk 0x2712 (GeneralInformation)
         let actualDim = null;
         const infoChunk = data.chunkTypes.find(
-            ct => ct.type === 0x2712 || ct.type === 10002
+            ct => ct.type === 0x2712 || ct.type === 10002 || ct.type === 130
         );
         if (infoChunk && decompress_sav_chunk) {
             try {
@@ -1302,6 +1699,21 @@ function showMapPreview(data, file) {
             savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">🗺️ Map Size</span><span class="mp-stat-count" style="color:#4f4">${actualDim} tiles (from save data)</span></div>`;
         } else if (data.mapSize) {
             savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">🗺️ Map Size</span><span class="mp-stat-count">${data.mapSize}</span></div>`;
+        }
+        // Show game name and map name if extracted from general info
+        if (data._savGeneralInfo) {
+            const gi = data._savGeneralInfo;
+            if (gi.gameName) savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">🎮 Game</span><span class="mp-stat-count">${gi.gameName}</span></div>`;
+            if (gi.mapName) savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">🗺️ Map Name</span><span class="mp-stat-count">${gi.mapName}</span></div>`;
+            if (gi.playerCount) savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">👥 Players</span><span class="mp-stat-count">${gi.playerCount}</span></div>`;
+            if (gi.tickCounter) savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">⏱️ Game Time</span><span class="mp-stat-count">${(gi.tickCounter / 10).toFixed(0)}s (${gi.tickCounter} ticks)</span></div>`;
+            if (gi.camX !== undefined && gi.camY !== undefined) savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">📷 Camera</span><span class="mp-stat-count">(${gi.camX}, ${gi.camY})</span></div>`;
+            // Show player names
+            if (gi.players && gi.players.length > 0) {
+                gi.players.forEach((p, i) => {
+                    if (p.name) savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">🏳️ Player ${i+1}</span><span class="mp-stat-count">${p.name} (${p.type === 0 ? 'Human' : 'AI'})</span></div>`;
+                });
+            }
         }
         savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">📐 Sections</span><span class="mp-stat-count">${data.chunkCount} data chunk(s)</span></div>`;
         savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">💾 File Size</span><span class="mp-stat-count">${data.totalSizeMB} MB</span></div>`;
@@ -1341,9 +1753,22 @@ function showMapPreview(data, file) {
         loadBtn.textContent = '▶ Load Savegame';
         loadBtn.onclick = confirmMapLoad;
 
-        // Warnings: show note about terrain-only load
+        // Warnings: show note about full state restoration
         const warningEl = document.getElementById('mp-warning');
-        warningEl.textContent = '⚠️ Terrain loads successfully — buildings/units/resource state not yet restored. Save manually after loading.';
+        const hasBuildings = data.chunkTypes.some(ct => ct.type === 0x2713 || ct.type === 10003 || ct.type === 162);
+        const hasSettlers = data.chunkTypes.some(ct => ct.type === 0x2714 || ct.type === 10004 || ct.type === 161);
+        const hasResources = data.chunkTypes.some(ct => ct.type === 0x2715 || ct.type === 10005);
+        const restoreParts = [];
+        if (hasBuildings) restoreParts.push('buildings');
+        if (hasSettlers) restoreParts.push('units');
+        if (hasResources) restoreParts.push('resources');
+        if (restoreParts.length > 0) {
+            warningEl.textContent = `✓ Full state restoration available: ${restoreParts.join(', ')} will be loaded.`;
+            warningEl.style.color = '#4f4';
+        } else {
+            warningEl.textContent = '⚠️ No building/unit/resource chunks found — terrain only.';
+            warningEl.style.color = '#fa4';
+        }
         warningEl.classList.add('show');
 
         // Update column header for chunks
@@ -1419,7 +1844,7 @@ function confirmMapLoad() {
         try {
             // Find the terrain chunk (type 0x2711 = SaveGameMapLandscape)
             const terrainChunk = pendingMapData.chunkTypes.find(
-                ct => ct.type === 0x2711 || ct.type === 10001
+                ct => ct.type === 0x2711 || ct.type === 10001 || ct.type === 200
             );
             if (!terrainChunk) {
                 alert('This savegame does not contain a terrain chunk.\n\nChunk types found: ' +
@@ -1431,9 +1856,10 @@ function confirmMapLoad() {
             // If already extracted during preview, use that; otherwise decompress now
             let savWidth = pendingMapData._savMapWidth || null;
             let savHeight = savWidth;
+            let generalInfo = null;
             if (!savWidth) {
                 const infoChunk = pendingMapData.chunkTypes.find(
-                    ct => ct.type === 0x2712 || ct.type === 10002
+                    ct => ct.type === 0x2712 || ct.type === 10002 || ct.type === 130
                 );
                 if (infoChunk) {
                     try {
@@ -1441,13 +1867,12 @@ function confirmMapLoad() {
                         const infoRaw = new Uint8Array(buf, infoChunk.rawOffset, infoChunk.compressedLen);
                         const infoDecompressed = decompress_sav_chunk(infoRaw, infoChunk.unpackedLen);
                         if (infoDecompressed && infoDecompressed.length >= 32) {
-                            const dv = new DataView(
-                                infoDecompressed.buffer,
-                                infoDecompressed.byteOffset,
-                                infoDecompressed.byteLength
-                            );
-                            savWidth = dv.getUint32(28, false);  // big-endian
-                            savHeight = savWidth;
+                            generalInfo = parseSavGeneralInfo(infoDecompressed);
+                            savWidth = generalInfo.mapWidth;
+                            savHeight = generalInfo.mapHeight;
+                            // Store for preview and later use
+                            pendingMapData._savMapWidth = savWidth;
+                            pendingMapData._savGeneralInfo = generalInfo;
                         }
                     } catch (_) { /* fall back to tile-count estimate */ }
                 }
@@ -1511,17 +1936,123 @@ function confirmMapLoad() {
                 });
             }
 
-            // Load via JSON
-            const jsonData = { width, height, tiles };
-            const result = load_map_json(JSON.stringify(jsonData));
-            if (result === 'ok') {
-                if (pendingMapFile) addToRecentFiles(pendingMapFile);
-                cancelMapPreview();
-                closeMenu();
-                hudMap.textContent = `Map: ${pendingMapData.filename || pendingMapFile?.name} | .sav Loaded`;
-            } else {
-                alert('Map load error: ' + result);
+            // ── Parse additional chunks for full state restoration ──
+            let savBuildings = [];
+            let savUnits = [];
+            let savResources = {};
+            let savGameTime = 0;
+
+            // Parse buildings chunk (0x2713 / 10003 / 162)
+            const buildingsChunk = pendingMapData.chunkTypes.find(
+                ct => ct.type === 0x2713 || ct.type === 10003 || ct.type === 162
+            );
+            if (buildingsChunk && decompress_sav_chunk) {
+                try {
+                    const bldgRaw = new Uint8Array(buf, buildingsChunk.rawOffset, buildingsChunk.compressedLen);
+                    const bldgDecompressed = decompress_sav_chunk(bldgRaw, buildingsChunk.unpackedLen);
+                    if (bldgDecompressed && bldgDecompressed.length > 0) {
+                        savBuildings = parseSavBuildings(bldgDecompressed, width, height);
+                        console.log(`[s4wn] Parsed ${savBuildings.length} buildings from .sav`);
+                    }
+                } catch (e) {
+                    console.warn('[s4wn] Failed to parse buildings chunk:', e.message);
+                }
             }
+
+            // Parse settlers/units chunk (0x2714 / 10004 / 161)
+            const settlersChunk = pendingMapData.chunkTypes.find(
+                ct => ct.type === 0x2714 || ct.type === 10004 || ct.type === 161
+            );
+            if (settlersChunk && decompress_sav_chunk) {
+                try {
+                    const settRaw = new Uint8Array(buf, settlersChunk.rawOffset, settlersChunk.compressedLen);
+                    const settDecompressed = decompress_sav_chunk(settRaw, settlersChunk.unpackedLen);
+                    if (settDecompressed && settDecompressed.length > 0) {
+                        savUnits = parseSavSettlers(settDecompressed, width, height);
+                        console.log(`[s4wn] Parsed ${savUnits.length} settlers from .sav`);
+                    }
+                } catch (e) {
+                    console.warn('[s4wn] Failed to parse settlers chunk:', e.message);
+                }
+            }
+
+            // Parse resource data chunk (0x2715 / 10005)
+            const resourcesChunk = pendingMapData.chunkTypes.find(
+                ct => ct.type === 0x2715 || ct.type === 10005
+            );
+            if (resourcesChunk && decompress_sav_chunk) {
+                try {
+                    const resRaw = new Uint8Array(buf, resourcesChunk.rawOffset, resourcesChunk.compressedLen);
+                    const resDecompressed = decompress_sav_chunk(resRaw, resourcesChunk.unpackedLen);
+                    if (resDecompressed && resDecompressed.length > 0) {
+                        savResources = parseSavResources(resDecompressed);
+                        console.log('[s4wn] Parsed resources from .sav:', JSON.stringify(savResources));
+                    }
+                } catch (e) {
+                    console.warn('[s4wn] Failed to parse resources chunk:', e.message);
+                }
+            }
+
+            // Extract game time from general info
+            if (generalInfo && generalInfo.tickCounter) {
+                savGameTime = generalInfo.tickCounter;
+            }
+
+            // ── Load terrain first, then restore full state ──
+            const jsonData = { width, height, tiles };
+            const mapResult = load_map_json(JSON.stringify(jsonData));
+            if (mapResult !== 'ok') {
+                alert('Map load error: ' + mapResult);
+                return;
+            }
+
+            // ── Build full state JSON and restore via restore_game_state ──
+            if (restore_game_state && (savBuildings.length > 0 || savUnits.length > 0 || Object.keys(savResources).length > 0)) {
+                try {
+                    // Build resources object
+                    const resParts = [];
+                    for (const [name, count] of Object.entries(savResources)) {
+                        if (count > 0) resParts.push(`"${name}":${count}`);
+                    }
+                    // Default resources if none parsed
+                    if (resParts.length === 0) {
+                        resParts.push('"Wood":500', '"Stone":300', '"Iron":100', '"Coal":100', '"Gold":50');
+                    }
+
+                    // Build buildings array
+                    const bldgParts = savBuildings.map(b => {
+                        return `{"kind":"${b.kind}","x":${b.x},"y":${b.y},"construction":${b.construction},"active":${b.active},"production_counter":0,"assigned_workers":[],"max_workers":${b.max_workers},"input_buffer":{},"output_buffer":{}}`;
+                    });
+
+                    // Build units array
+                    const unitParts = savUnits.map(u => {
+                        const ab = u.assigned_building !== null ? u.assigned_building : 'null';
+                        const tgt = u.target !== null ? u.target : 'null';
+                        return `{"id":${u.id},"kind":"${u.kind}","x":${u.x.toFixed(1)},"y":${u.y.toFixed(1)},"hp":${u.hp},"max_hp":${u.max_hp},"state":"${u.state}","assigned_building":${ab},"target":${tgt}}`;
+                    });
+
+                    const stateJson = `{"version":1,"game_time":${savGameTime},"map_json":${JSON.stringify(JSON.stringify(jsonData))},"resources":{${resParts.join(',')}},"buildings":[${bldgParts.join(',')}],"units":[${unitParts.join(',')}]}`;
+
+                    console.log('[s4wn] Restoring full game state...');
+                    const restoreResult = restore_game_state(stateJson);
+                    if (restoreResult === 'ok') {
+                        console.log('[s4wn] Full game state restored successfully');
+                    } else {
+                        console.warn('[s4wn] restore_game_state returned:', restoreResult);
+                        // Non-fatal: terrain is still loaded
+                    }
+                } catch (e) {
+                    console.warn('[s4wn] Failed to restore full state:', e.message);
+                    // Non-fatal: terrain is still loaded
+                }
+            }
+
+            if (pendingMapFile) addToRecentFiles(pendingMapFile);
+            cancelMapPreview();
+            closeMenu();
+            const bldgCount = savBuildings.length;
+            const unitCount = savUnits.length;
+            hudMap.textContent = `Map: ${pendingMapData.filename || pendingMapFile?.name} | .sav Loaded (${bldgCount} buildings, ${unitCount} units)`;
         } catch (err) {
             alert('Failed to load savegame: ' + err.message);
         }
