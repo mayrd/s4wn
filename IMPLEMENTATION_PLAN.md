@@ -318,13 +318,14 @@ Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning
 - [x] Back button returns to main menu
 
 #### 4.3 — New Game Flow
-- [ ] Map selection screen (choose from bundled maps or upload custom)
-- [ ] Bundled maps: "Island", "Continents", "River Valley", "Highlands"
-- [ ] Map preview thumbnail on selection
-- [ ] Game setup: player name input, faction color picker
-- [ ] Difficulty selector (Easy/Medium/Hard — affects starting resources/AI aggression)
-- [ ] "Start Game" button → transitions to fullscreen map view
-- [ ] Loading screen with progress bar while WASM initializes
+- [x] Map selection screen (choose from bundled maps or upload custom)
+- [x] Bundled maps: "Island", "Continents", "River Valley", "Highlands"
+- [x] Map preview thumbnail on selection
+- [x] Game setup: player name input, faction color picker
+- [x] Difficulty selector (Easy/Medium/Hard — affects starting resources/AI aggression)
+- [x] "Start Game" button → transitions to fullscreen map view
+- [x] Loading screen with progress bar while WASM initializes
+- [x] Wire Start Game button to call generate_map() + load_map_json() + add_starting_resources()
 
 #### 4.4 — Load Game Flow
 - [ ] File upload dialog accepting `.map` (terrain/scenario) and `.sav` (savegame)
@@ -471,7 +472,8 @@ s4wn/
 ||| 23 | 2026-06-15 | ~10 min | Phase 4.5 Building Placement: Added BuildingType::from_name() and all_names() to economy.rs. Added 3 WASM exports (try_place_building, get_build_cost, list_building_types) with terrain validation, occupancy checks, and cost checking. Building toolbar UI with 14 building type buttons, cost tooltips, emoji icons. Crosshair cursor in placement mode. Keyboard: B to toggle, Esc to cancel. Bumped WASM to v6. 137 engine + 5 server tests passing. |
 ||| 24 | 2026-06-15 | ~10 min | Phase 4.5 Selection Indicator: Added get_building_info(idx) and get_unit_info(id) WASM exports returning detailed info (construction, production, workers, HP, state, target). Added selection info card UI with position-aware placement near cursor. Click canvas (non-placement mode) selects building at tile or nearest unit within 1.5 tile radius. Escape closes card. Bumped WASM to v7. 137 engine + 5 server tests passing. |
 |||| 25 | 2026-06-16 | ~10 min | Phase 4.5: Building affordability check in build toolbar — `refreshBuildingAffordability()` disables buttons for unaffordable buildings, green border indicator for affordable ones, auto-refresh every 2s, immediate refresh after placement, auto-cancel if current building becomes unaffordable. 137 engine + 5 server tests passing. |
-|||| 26 | 2026-06-16 | ~8 min | Phase 4.5: Building construction progress visualization — constructing buildings now render as orange dots in the WebGL overlay (size 3.0→8.0 proportional to construction progress, previously invisible). Added explicit `constructed_pct` field to `get_building_info()` WASM export for JS clarity. Bumped WASM cache to v=8. All 167 tests passing (137 engine + 30 server). |
+||||| 26 | 2026-06-16 | ~8 min | Phase 4.5: Building construction progress visualization — constructing buildings now render as orange dots in the WebGL overlay (size 3.0→8.0 proportional to construction progress, previously invisible). Added explicit `constructed_pct` field to `get_building_info()` WASM export for JS clarity. Bumped WASM cache to v=8. All 167 tests passing (137 engine + 30 server). |
+||||| 27 | 2026-06-16 | ~10 min | Phase 4.3: Wired Start Game button — added `generate_map` and `add_starting_resources` WASM exports, loading screen with animated progress bar (4-step: Generate terrain → Build landscape → Prepare resources → Ready), difficulty-based starting resources (Easy 2×, Medium 1×, Hard 0.5× of Wood/Stone/Iron/Coal/Gold/Grain/Fish/Game). Map size adapts to difficulty (48×48 easy, 64×64 others). Bumped WASM cache to v=9. All 167 tests passing. |
 
 ---
 
@@ -511,20 +513,22 @@ None at the moment.
 
 ## Next Session
 
-### Phase 4.5 — Building Construction Progress Visualization
-- [x] Show constructing buildings as orange dots in WebGL overlay (size proportional to progress 3.0→8.0). Completed Session 26.
-- [x] Add `constructed_pct` field to `get_building_info()` JSON. Completed Session 26.
-- [ ] **JS progress bar overlay**: Render thin CSS progress bars under constructing building dots in the DOM — requires world-to-screen projection. Lower priority since orange dots already convey progress.
-
-### Phase 4.3 — New Game Flow (wire procedural maps)
-- [ ] Wire "Start Game" button in new game panel to actually call `Map::generate_*()` via a new WASM export (`generate_map(map_type: &str, width: u32, height: u32) -> String` returning JSON).
-- [ ] Add loading screen with animated progress bar while WASM generates and initializes map.
-- [ ] Pass difficulty to map generation (affects starting resources via multiplier in `Economy::with_starting_resources()`).
+### Phase 4.3 — New Game Flow (wire procedural maps) ✅ DONE Session 27
+- [x] Wire "Start Game" button to call generate_map() + load_map_json() + add_starting_resources().
+- [x] Add loading screen with animated progress bar.
+- [x] Pass difficulty to starting resources (Easy 2×, Medium 1×, Hard 0.5×).
 
 ### Phase 4.6 — Single-Player Game Start (deepen)
 - [ ] Validate map integrity in `parseBinaryMap()` — check all terrain IDs in 0-7 range, tile count matches width×height.
 - [ ] Initial HQ auto-placement at map center on new game start.
 - [ ] Generate starter workers (2-4) near HQ on new game start.
+- [ ] Auto-save every 5 minutes to localStorage.
+
+### Phase 4.4 — Load Game Flow
+- [ ] File upload dialog accepting `.map` and `.sav` files.
+- [ ] Parse and validate `.map` binary format with error handling.
+- [ ] Parse and validate `.sav` binary format (game state: buildings, units, resources).
+- [ ] Recent files list (localStorage, max 5).
 
 ---
 
