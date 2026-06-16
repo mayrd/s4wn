@@ -879,7 +879,7 @@ import init, {
     get_game_state,
     restore_game_state,
     decompress_sav_chunk,
-} from './pkg/s4wn_engine.js?v=15';
+} from './pkg/s4wn_engine.js?v=16';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -2192,6 +2192,7 @@ const BUILDING_ICONS = {
     'Toolsmith': '🔨', 'Weaponsmith': '⚔️', 'Brewery': '🍺', 'Bakery': '🍞',
     'Butcher': '🔪', 'Mill': '🏭', 'Farm': '🌾', 'Fisherman': '🎣',
     'Woodcutter': '🪓', 'Storehouse': '🏚️',
+    'Waterworks': '💧', 'Smelter': '🔥', 'Barracks': '⚔️',
 };
 
 let placementMode = null; // building type string or null
@@ -3098,7 +3099,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=15');
+            const mod = await import('./pkg/s4wn_engine.js?v=16');
             load_map_json = mod.load_map_json || null;
             console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {
