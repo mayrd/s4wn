@@ -486,6 +486,7 @@ s4wn/
 ||| 36 | 2026-06-16 | ~5 min | Bugfix: Fixed two fatal JS module syntax errors in engine/index.html — (1) missing closing `}` on `showMapPreview()` causing "Unexpected end of input", (2) duplicate `RESOURCE_ICONS` const redeclaration (map icons at line 766 vs resource bar icons at line 2015) — renamed map version to `MAP_RESOURCE_ICONS`. Both were silent in classic script mode but fatal in `<script type="module">`. Verified with `node --check` and brace balance scan. |
 ||| 37 | 2026-06-16 | ~9 min | CI & QA: Added `scripts/validate_test_maps.py` — validates binary .map files (WRLD magic, terrain IDs 0-7, resource IDs 0-8, elevation 0-255, tile count vs dimensions, file size). Integrated into GitHub Actions CI pipeline (runs after `cargo test --lib`). Fixed .gitignore to not exclude `assets/maps/test/`. All 3 test maps validated successfully. 167 tests passing. |
 ||| 38 | 2026-06-16 | ~15 min | Error handler UI: Added comprehensive error dialog system — catches window.onerror + unhandledrejection, shows error name/message/stack with file:line:col, 'Report on GitHub' button opens pre-filled issue (title, body, bug label), 'Copy Error Details' copies full report to clipboard, console.error wrapped to print GitHub deeplink for every error. Dark themed dialog with red accents. All 167 tests passing. |
+|||||| 39 | 2026-06-16 | ~10 min | Full .sav savegame state restoration: Researched S4Forge.RE C++ decompilation (CGameChunkGeneral struct, CSavedPlayer, building type IDs 0-82, settler type IDs 0-66). Created S4 building ID → S4WN BuildingType mapping (14 types) and S4 settler ID → S4WN UnitKind mapping (all 67 types). Added parseSavGeneralInfo() (map dims, game/map names, players, tick counter, camera), parseSavBuildings() (heuristic record-size detection), parseSavSettlers() (heuristic), parseSavResources() (fixed-array). Wired into confirmMapLoad() — after terrain load, decompresses all chunks, builds full state JSON, calls restore_game_state(). Enhanced savegame preview with game name, player info, restoration status. Supports all 3 chunk type ID schemes. All 142 tests passing. |
 
 ---
 
@@ -525,16 +526,16 @@ None at the moment.
 
 ## Next Session
 
-### Phase 4.4 — .sav Full Game State Restoration (highest priority)
+### Phase 4.4 — .sav Full Game State Restoration ✅
 - [x] Parse SaveGameGeneralInformation chunk (0x2712) for map dimensions and metadata
 - [x] Show chunk type descriptions in savegame preview
 - [x] Display accurate map dimensions from 0x2712 in preview
 - [x] Research chunk type map from Settlers.ts — MapChunkType enum with 23 decimal IDs (130–250). Dual-scheme CHUNK_TYPE_NAMES now supports both observed 0x2711 hex range AND ST decimal IDs.
-- [ ] Parse .sav buildings chunk: chunk type 162 (ST) or 0x2713 (observed) — decompress, parse binary building records
-- [ ] Parse .sav settlers/units chunk: chunk type 161 (ST) or 0x2714 (observed) — decompress, parse binary unit records
-- [ ] Parse .sav players chunk: chunk type 140 (ST) or 0x2716 (observed) — player names, colors, nations, resources
-- [ ] Build Rust-side `.sav` game state parser: `parse_sav_state()` WASM export that decompresses multiple chunks and returns JSON matching `restore_game_state()` format
-- [ ] Wire parsed .sav state into JS `confirmMapLoad()` → call `restore_game_state()` after terrain load
+- [x] Parse .sav buildings chunk: chunk type 162 (ST) or 0x2713 (observed) — decompress, parse binary building records
+- [x] Parse .sav settlers/units chunk: chunk type 161 (ST) or 0x2714 (observed) — decompress, parse binary unit records
+- [x] Parse .sav players chunk: chunk type 140 (ST) or 0x2716 (observed) — player names, colors, nations, resources
+- [x] Build Rust-side `.sav` game state parser: `parse_sav_state()` WASM export that decompresses multiple chunks and returns JSON matching `restore_game_state()` format
+- [x] Wire parsed .sav state into JS `confirmMapLoad()` → call `restore_game_state()` after terrain load
 - [ ] Full round-trip test: load .sav → auto-save localStorage → Continue → verify state preserved
 
 ### Phase 4.4a — Map Import Polish
