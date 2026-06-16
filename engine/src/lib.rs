@@ -630,7 +630,7 @@ impl App {
             }
         }
 
-        // Units: blue workers, red soldiers, green archers
+        // Units: blue settlers, red soldiers, green archers
         let use_interp = self.interpolator.can_interpolate();
         let alpha = if use_interp {
             self.interpolator.interpolation_alpha(self.last_frame_ms / 1000.0)
@@ -843,20 +843,20 @@ fn update_f32_buffer(gl: &WebGl2RenderingContext, data: &[f32]) {
 fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
     use crate::economy::BuildingType::*;
     match kind {
-        Headquarters => [1.0, 0.8, 0.2],   // gold
+        Castle => [1.0, 0.8, 0.2],   // gold
         Sawmill => [0.6, 0.4, 0.2],        // brown
-        Quarry => [0.5, 0.5, 0.5],        // grey
+        Stonecutter => [0.5, 0.5, 0.5],        // grey
         Mine => [0.4, 0.3, 0.3],          // dark red
-        Blacksmith => [0.8, 0.2, 0.2],    // red
-        Armory => [0.7, 0.1, 0.1],        // dark red
+        Toolsmith => [0.8, 0.2, 0.2],    // red
+        Weaponsmith => [0.7, 0.1, 0.1],        // dark red
         Brewery => [0.9, 0.7, 0.2],        // amber
         Bakery => [0.8, 0.6, 0.3],        // tan
         Butcher => [0.6, 0.2, 0.2],       // maroon
-        Tannery => [0.5, 0.3, 0.2],       // dark brown
+        Mill => [0.5, 0.3, 0.2],       // dark brown
         Farm => [0.3, 0.7, 0.3],          // green
-        Fishery => [0.2, 0.5, 0.8],       // blue
-        Lumberjack => [0.2, 0.5, 0.2],    // dark green
-        Warehouse => [0.6, 0.5, 0.4],      // taupe
+        Fisherman => [0.2, 0.5, 0.8],       // blue
+        Woodcutter => [0.2, 0.5, 0.2],    // dark green
+        Storehouse => [0.6, 0.5, 0.4],      // taupe
     }
 }
 
@@ -864,9 +864,9 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
 fn unit_color(kind: &crate::units::UnitKind) -> [f32; 3] {
     use crate::units::UnitKind::*;
     match kind {
-        Worker => [0.2, 0.4, 1.0],   // blue
-        Soldier => [1.0, 0.2, 0.2],  // red
-        Archer => [0.2, 0.8, 0.2],   // green
+        Settler => [0.2, 0.4, 1.0],   // blue
+        Swordsman => [1.0, 0.2, 0.2],  // red
+        Bowman => [0.2, 0.8, 0.2],   // green
     }
 }
 
@@ -1173,7 +1173,7 @@ pub fn get_tile_at(x: f32, y: f32) -> String {
 }
 
 /// Get resource counts as a JSON string for the HUD.
-/// Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Planks":0,...}
+/// Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Boards":0,...}
 #[wasm_bindgen]
 pub fn get_resource_counts() -> String {
     unsafe {
@@ -1192,7 +1192,7 @@ pub fn get_resource_counts() -> String {
 }
 
 /// Get building summary as a JSON string for the HUD.
-/// Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"workers":1},...]
+/// Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1},...]
 #[wasm_bindgen]
 pub fn get_building_summary() -> String {
     unsafe {
@@ -1200,12 +1200,12 @@ pub fn get_building_summary() -> String {
             let mut parts = Vec::new();
             for b in app.game_loop.state.economy.buildings.iter() {
                 parts.push(format!(
-                    "{{\"type\":\"{}\",\"x\":{},\"y\":{},\"complete\":{},\"workers\":{}}}",
+                    "{{\"type\":\"{}\",\"x\":{},\"y\":{},\"complete\":{},\"settlers\":{}}}",
                     b.kind.name(),
                     b.x,
                     b.y,
                     b.is_complete(),
-                    b.assigned_workers.len()
+                    b.assigned_settlers.len()
                 ));
             }
             return format!("[{}]", parts.join(","));
@@ -1215,7 +1215,7 @@ pub fn get_building_summary() -> String {
 }
 
 /// Get unit summary as a JSON string for the HUD.
-/// Returns: [{"id":1,"kind":"Worker","x":3.5,"y":3.5,"hp":50,"state":"Working"},...]
+/// Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"state":"Working"},...]
 #[wasm_bindgen]
 pub fn get_unit_summary() -> String {
     unsafe {
@@ -1247,9 +1247,9 @@ pub fn get_unit_summary() -> String {
 
 /// Get detailed building info by index.
 /// Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
-///   "active":true,"workers":[1],"max_workers":1,
+///   "active":true,"settlers":[1],"max_settlers":1,
 ///   "build_ticks":20,"production_interval":20,"inputs":[["Wood",2]],
-///   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
+///   "outputs":[["Boards",1]],"output_buffer":{"Boards":5}}
 /// or {"error":"Building not found"}
 #[wasm_bindgen]
 pub fn get_building_info(idx: usize) -> String {
@@ -1259,7 +1259,7 @@ pub fn get_building_info(idx: usize) -> String {
             let economy = &app.game_loop.state.economy;
             if let Some(b) = economy.buildings.get(idx) {
                 let kind = b.kind;
-                let worker_ids: Vec<String> = b.assigned_workers.iter().map(|w| w.to_string()).collect();
+                let settler_ids: Vec<String> = b.assigned_settlers.iter().map(|w| w.to_string()).collect();
                 let inputs: Vec<String> = kind.inputs().iter()
                     .map(|(rt, amt)| format!(r#""{}",{}"#, rt.name(), amt))
                     .collect();
@@ -1278,7 +1278,7 @@ pub fn get_building_info(idx: usize) -> String {
             }
         }
         return format!(
-            r#"{{"kind":"{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"workers":[{}],"max_workers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}}}}"#,
+            r#"{{"kind":"{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"settlers":[{}],"max_settlers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}}}}"#,
             kind.name(),
             b.x,
             b.y,
@@ -1286,8 +1286,8 @@ pub fn get_building_info(idx: usize) -> String {
             construction_pct,
             b.is_complete(),
             b.active,
-            worker_ids.join(","),
-            b.max_workers,
+            settler_ids.join(","),
+            b.max_settlers,
             kind.build_time(),
             kind.production_interval(),
             inputs.join(","),
@@ -1301,7 +1301,7 @@ pub fn get_building_info(idx: usize) -> String {
 }
 
 /// Get detailed unit info by ID.
-/// Returns JSON: {"id":1,"kind":"Worker","x":5.5,"y":3.0,"hp":50,"max_hp":50,
+/// Returns JSON: {"id":1,"kind":"Settler","x":5.5,"y":3.0,"hp":50,"max_hp":50,
 ///   "state":"Working","assigned_building":2,"target":null}
 /// or {"error":"Unit not found"}
 #[wasm_bindgen]
@@ -1419,7 +1419,7 @@ pub fn get_build_cost(kind_name: &str) -> String {
 }
 
 /// Get a list of all building types as JSON.
-/// Returns: ["Headquarters","Farm","Sawmill",...]
+/// Returns: ["Castle","Farm","Sawmill",...]
 #[wasm_bindgen]
 pub fn list_building_types() -> String {
     use crate::economy::BuildingType;
@@ -1567,12 +1567,12 @@ pub fn add_starting_resources(difficulty: &str) -> String {
     }
 }
 
-/// Place a free Headquarters near map center and spawn starter workers.
+/// Place a free Castle near map center and spawn starter settlers.
 /// Called after load_map_json() + add_starting_resources() to set up the initial base.
-/// worker_count: number of idle workers to spawn (clamped to 1..8).
-/// Returns JSON: {"ok":true,"hq_x":N,"hq_y":N,"workers":N} or {"error":"..."}
+/// settler_count: number of idle settlers to spawn (clamped to 1..8).
+/// Returns JSON: {"ok":true,"hq_x":N,"hq_y":N,"settlers":N} or {"error":"..."}
 #[wasm_bindgen]
-pub fn setup_starter_base(worker_count: u32) -> String {
+pub fn setup_starter_base(settler_count: u32) -> String {
     use crate::economy::BuildingType;
     use crate::units::UnitKind;
     unsafe {
@@ -1612,15 +1612,15 @@ pub fn setup_starter_base(worker_count: u32) -> String {
                 }
             }
 
-            // Place Headquarters for free (direct place_building, no cost)
+            // Place Castle for free (direct place_building, no cost)
             let _idx = app
                 .game_loop
                 .state
                 .economy
-                .place_building(BuildingType::Headquarters, hq_x, hq_y);
+                .place_building(BuildingType::Castle, hq_x, hq_y);
 
-            // Spawn idle workers around HQ in a small offset pattern
-            let count = worker_count.clamp(1, 8) as usize;
+            // Spawn idle settlers around HQ in a small offset pattern
+            let count = settler_count.clamp(1, 8) as usize;
             for i in 0..count {
                 let wx = hq_x as f32 + 0.5 + ((i % 3) as f32 - 1.0) * 0.8;
                 let wy = hq_y as f32 + 0.5 + ((i as f32 / 3.0).floor() - 0.5) * 0.8;
@@ -1628,12 +1628,12 @@ pub fn setup_starter_base(worker_count: u32) -> String {
                     .state
                     .economy
                     .units
-                    .spawn(UnitKind::Worker, wx, wy);
+                    .spawn(UnitKind::Settler, wx, wy);
             }
 
             app.overlay_dirty = true;
             format!(
-                r#"{{"ok":true,"hq_x":{},"hq_y":{},"workers":{}}}"#,
+                r#"{{"ok":true,"hq_x":{},"hq_y":{},"settlers":{}}}"#,
                 hq_x, hq_y, count
             )
         } else {
@@ -1663,7 +1663,7 @@ pub fn get_game_state() -> String {
             // Buildings
             let mut bldg_parts = Vec::new();
             for b in eco.buildings.iter() {
-                let worker_ids: Vec<String> = b.assigned_workers.iter().map(|w| w.to_string()).collect();
+                let settler_ids: Vec<String> = b.assigned_settlers.iter().map(|w| w.to_string()).collect();
                 let mut inbuf_parts = Vec::new();
                 for i in 0..ResourceType::COUNT {
                     if b.input_buffer[i] > 0 {
@@ -1679,9 +1679,9 @@ pub fn get_game_state() -> String {
                     }
                 }
                 bldg_parts.push(format!(
-                    r#"{{"kind":"{}","x":{},"y":{},"construction":{},"active":{},"production_counter":{},"assigned_workers":[{}],"max_workers":{},"input_buffer":{{{}}},"output_buffer":{{{}}}}}"#,
+                    r#"{{"kind":"{}","x":{},"y":{},"construction":{},"active":{},"production_counter":{},"assigned_settlers":[{}],"max_settlers":{},"input_buffer":{{{}}},"output_buffer":{{{}}}}}"#,
                     b.kind.name(), b.x, b.y, b.construction, b.active, b.production_counter,
-                    worker_ids.join(","), b.max_workers,
+                    settler_ids.join(","), b.max_settlers,
                     inbuf_parts.join(","), outbuf_parts.join(",")
                 ));
             }
@@ -1832,22 +1832,22 @@ pub fn restore_game_state(json: &str) -> String {
                     let construction = find_json_value(bjson, "construction").and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.0);
                     let active = find_json_value(bjson, "active").map_or(false, |v| v == "true");
                     let production_counter = find_json_value(bjson, "production_counter").and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
-                    let max_workers = find_json_value(bjson, "max_workers").and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
+                    let max_settlers = find_json_value(bjson, "max_settlers").and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
 
                     if let Some(kind) = BuildingType::from_name(kind_name) {
                         let mut b = Building::new(kind, x, y);
                         b.construction = construction;
                         b.active = active;
                         b.production_counter = production_counter;
-                        b.max_workers = max_workers;
+                        b.max_settlers = max_settlers;
 
-                        // Restore worker IDs
-                        if let Some(workers_str) = find_json_value(bjson, "assigned_workers") {
-                            let inner_w = &workers_str[1..workers_str.len()-1];
+                        // Restore settler IDs
+                        if let Some(settlers_str) = find_json_value(bjson, "assigned_settlers") {
+                            let inner_w = &settlers_str[1..settlers_str.len()-1];
                             if !inner_w.is_empty() {
                                 for wid_str in inner_w.split(',') {
                                     if let Ok(wid) = wid_str.trim().parse() {
-                                        b.assigned_workers.push(wid);
+                                        b.assigned_settlers.push(wid);
                                     }
                                 }
                             }
@@ -1915,7 +1915,7 @@ pub fn restore_game_state(json: &str) -> String {
                 let mut max_id: u32 = 0;
                 for ujson in unit_jsons {
                     let id = find_json_value(ujson, "id").and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
-                    let kind_name = find_json_value(ujson, "kind").unwrap_or("Worker");
+                    let kind_name = find_json_value(ujson, "kind").unwrap_or("Settler");
                     let ux = find_json_value(ujson, "x").and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.0);
                     let uy = find_json_value(ujson, "y").and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.0);
                     let hp = find_json_value(ujson, "hp").and_then(|v| v.parse::<u32>().ok()).unwrap_or(50);
@@ -1927,9 +1927,9 @@ pub fn restore_game_state(json: &str) -> String {
                         .and_then(|v| if v == "null" { None } else { v.parse::<u32>().ok() });
 
                     let kind = match kind_name {
-                        "Soldier" => UnitKind::Soldier,
-                        "Archer" => UnitKind::Archer,
-                        _ => UnitKind::Worker,
+                        "Soldier" => UnitKind::Swordsman,
+                        "Archer" => UnitKind::Bowman,
+                        _ => UnitKind::Settler,
                     };
 
                     let state = match state_str {
@@ -2057,9 +2057,9 @@ mod tests {
     fn test_building_color_coverage() {
         // Ensure all building types have a color
         use crate::economy::BuildingType::*;
-        for kind in [Headquarters, Sawmill, Quarry, Mine, Blacksmith, Armory,
-                     Brewery, Bakery, Butcher, Tannery, Farm, Fishery,
-                     Lumberjack, Warehouse] {
+        for kind in [Castle, Sawmill, Stonecutter, Mine, Toolsmith, Weaponsmith,
+                     Brewery, Bakery, Butcher, Mill, Farm, Fisherman,
+                     Woodcutter, Storehouse] {
             let c = building_color(&kind);
             assert!(c[0] >= 0.0 && c[0] <= 1.0);
             assert!(c[1] >= 0.0 && c[1] <= 1.0);
@@ -2070,7 +2070,7 @@ mod tests {
     #[test]
     fn test_unit_color_coverage() {
         use crate::units::UnitKind::*;
-        for kind in [Worker, Soldier, Archer] {
+        for kind in [Settler, Swordsman, Bowman] {
             let c = unit_color(&kind);
             assert!(c[0] >= 0.0 && c[0] <= 1.0);
             assert!(c[1] >= 0.0 && c[1] <= 1.0);

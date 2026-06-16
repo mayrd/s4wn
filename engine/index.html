@@ -869,7 +869,7 @@ import init, {
     get_game_state,
     restore_game_state,
     decompress_sav_chunk,
-} from './pkg/s4wn_engine.js?v=12';
+} from './pkg/s4wn_engine.js?v=13';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -954,12 +954,12 @@ function getChunkTypeInfo(typeId) {
 // Only building types that exist in our engine are mapped; others fall back to 'Unknown'.
 const S4_BUILDING_ID_TO_NAME = {
     0:  null,                  // BUILDING_NO_BUILDING
-    1:  'Lumberjack',          // BUILDING_WOODCUTTERHUT
-    2:  'Lumberjack',          // BUILDING_FORESTERHUT → Lumberjack (closest match)
+    1:  'Woodcutter',          // BUILDING_WOODCUTTERHUT
+    2:  'Woodcutter',          // BUILDING_FORESTERHUT → Woodcutter (closest match)
     3:  'Sawmill',             // BUILDING_SAWMILL
-    4:  'Quarry',              // BUILDING_STONECUTTERHUT
+    4:  'Stonecutter',              // BUILDING_STONECUTTERHUT
     5:  null,                  // BUILDING_WATERWORKHUT (no match)
-    6:  'Fishery',             // BUILDING_FISHERHUT
+    6:  'Fisherman',             // BUILDING_FISHERHUT
     7:  null,                  // BUILDING_HUNTERHUT (no match)
     8:  'Butcher',             // BUILDING_SLAUGHTERHOUSE
     9:  null,                  // BUILDING_MILL (no match)
@@ -967,15 +967,15 @@ const S4_BUILDING_ID_TO_NAME = {
     11: 'Farm',                // BUILDING_GRAINFARM
     12: 'Farm',                // BUILDING_ANIMALRANCH → Farm
     13: null,                  // BUILDING_DONKEYRANCH (no match)
-    14: 'Quarry',              // BUILDING_STONEMINE → Quarry
+    14: 'Stonecutter',              // BUILDING_STONEMINE → Stonecutter
     15: 'Mine',                // BUILDING_IRONMINE → Mine
     16: 'Mine',                // BUILDING_GOLDMINE → Mine
     17: 'Mine',                // BUILDING_COALMINE → Mine
     18: 'Mine',                // BUILDING_SULFURMINE → Mine
     19: null,                  // BUILDING_SMELTGOLD (no match)
-    20: 'Blacksmith',          // BUILDING_SMELTIRON → Blacksmith
+    20: 'Toolsmith',          // BUILDING_SMELTIRON → Toolsmith
     21: null,                  // BUILDING_TOOLSMITH (no match — tools)
-    22: 'Armory',              // BUILDING_WEAPONSMITH → Armory
+    22: 'Weaponsmith',              // BUILDING_WEAPONSMITH → Weaponsmith
     23: null,                  // BUILDING_VEHICLEHALL (no match)
     24: null,                  // BUILDING_BARRACKS (military — no match yet)
     25: null,                  // BUILDING_CHARCOALMAKER (no match)
@@ -987,7 +987,7 @@ const S4_BUILDING_ID_TO_NAME = {
     31: null,                  // BUILDING_SHIPYARD (no match)
     32: null,                  // BUILDING_PORT (no match)
     33: null,                  // BUILDING_MARKETPLACE (no match)
-    34: 'Warehouse',            // BUILDING_STORAGEAREA → Warehouse
+    34: 'Storehouse',            // BUILDING_STORAGEAREA → Storehouse
     35: null,                  // BUILDING_VINYARD (no match)
     36: 'Farm',                // BUILDING_AGAVEFARMERHUT → Farm
     37: null,                  // BUILDING_TEQUILAMAKERHUT (no match)
@@ -1001,7 +1001,7 @@ const S4_BUILDING_ID_TO_NAME = {
     45: null,                  // BUILDING_LOOKOUTTOWER (no match)
     46: null,                  // BUILDING_GUARDTOWERSMALL (no match)
     47: null,                  // BUILDING_GUARDTOWERBIG (no match)
-    48: 'Headquarters',        // BUILDING_CASTLE → Headquarters
+    48: 'Castle',        // BUILDING_CASTLE → Castle
     49: null,                  // BUILDING_MUSHROOMFARM (no match)
     50: null,                  // BUILDING_DARKTEMPLE (no match)
     51: null,                  // BUILDING_FORTRESS (no match)
@@ -2178,10 +2178,10 @@ document.addEventListener('drop', (e) => {
 const buildToolbar = document.getElementById('build-toolbar');
 const placementStatus = document.getElementById('placement-status');
 const BUILDING_ICONS = {
-    'Headquarters': '🏛️', 'Sawmill': '🪚', 'Quarry': '⛏️', 'Mine': '⛰️',
-    'Blacksmith': '🔨', 'Armory': '⚔️', 'Brewery': '🍺', 'Bakery': '🍞',
-    'Butcher': '🔪', 'Tannery': '🪶', 'Farm': '🌾', 'Fishery': '🎣',
-    'Lumberjack': '🪓', 'Warehouse': '🏚️',
+    'Castle': '🏰', 'Sawmill': '🪚', 'Stonecutter': '🪨', 'Mine': '⛏️',
+    'Toolsmith': '🔨', 'Weaponsmith': '⚔️', 'Brewery': '🍺', 'Bakery': '🍞',
+    'Butcher': '🔪', 'Mill': '🏭', 'Farm': '🌾', 'Fisherman': '🎣',
+    'Woodcutter': '🪓', 'Storehouse': '🏚️',
 };
 
 let placementMode = null; // building type string or null
@@ -3087,7 +3087,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=12');
+            const mod = await import('./pkg/s4wn_engine.js?v=13');
             load_map_json = mod.load_map_json || null;
             console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {

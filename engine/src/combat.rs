@@ -277,11 +277,11 @@ mod tests {
     fn test_combat_find_nearest_enemy() {
         let mut mgr = UnitManager::new();
         // Unit 1 (odd = faction 1)
-        mgr.spawn(UnitKind::Soldier, 0.0, 0.0);
+        mgr.spawn(UnitKind::Swordsman, 0.0, 0.0);
         // Unit 2 (even = faction 2)
-        mgr.spawn(UnitKind::Soldier, 5.0, 0.0);
+        mgr.spawn(UnitKind::Swordsman, 5.0, 0.0);
         // Unit 3 (odd = faction 1, same as unit 1)
-        mgr.spawn(UnitKind::Soldier, 10.0, 0.0);
+        mgr.spawn(UnitKind::Swordsman, 10.0, 0.0);
 
         let ai = CombatAI::new();
         let enemy = ai.find_nearest_enemy(&mgr, 1);
@@ -295,8 +295,8 @@ mod tests {
     #[test]
     fn test_combat_attack_deals_damage() {
         let mut mgr = UnitManager::new();
-        let id1 = mgr.spawn(UnitKind::Soldier, 0.0, 0.0);
-        let id2 = mgr.spawn(UnitKind::Soldier, 1.0, 0.0); // adjacent
+        let id1 = mgr.spawn(UnitKind::Swordsman, 0.0, 0.0);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 1.0, 0.0); // adjacent
 
         // Set up combat state
         mgr.get_mut(id1).unwrap().target = Some(id2);
@@ -317,8 +317,8 @@ mod tests {
     #[test]
     fn test_combat_kill_unit() {
         let mut mgr = UnitManager::new();
-        let id1 = mgr.spawn(UnitKind::Soldier, 0.0, 0.0);
-        let id2 = mgr.spawn(UnitKind::Soldier, 1.0, 0.0);
+        let id1 = mgr.spawn(UnitKind::Swordsman, 0.0, 0.0);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 1.0, 0.0);
 
         // Set unit 2 to low HP
         mgr.get_mut(id2).unwrap().hp = 10;
@@ -344,8 +344,8 @@ mod tests {
     #[test]
     fn test_combat_cooldown_prevents_attack() {
         let mut mgr = UnitManager::new();
-        let id1 = mgr.spawn(UnitKind::Soldier, 0.0, 0.0);
-        let id2 = mgr.spawn(UnitKind::Soldier, 1.0, 0.0);
+        let id1 = mgr.spawn(UnitKind::Swordsman, 0.0, 0.0);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 1.0, 0.0);
 
         mgr.get_mut(id1).unwrap().target = Some(id2);
         mgr.get_mut(id1).unwrap().state = UnitState::Fighting;
@@ -362,8 +362,8 @@ mod tests {
     #[test]
     fn test_combat_archer_ranged_attack() {
         let mut mgr = UnitManager::new();
-        let id1 = mgr.spawn(UnitKind::Archer, 0.0, 0.0);
-        let id2 = mgr.spawn(UnitKind::Soldier, 2.0, 0.0); // 2 tiles away (within range 3)
+        let id1 = mgr.spawn(UnitKind::Bowman, 0.0, 0.0);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 2.0, 0.0); // 2 tiles away (within range 3)
 
         mgr.get_mut(id1).unwrap().target = Some(id2);
         mgr.get_mut(id1).unwrap().state = UnitState::Fighting;
@@ -380,8 +380,8 @@ mod tests {
     fn test_combat_update_full() {
         let map = Map::new(20, 20);
         let mut mgr = UnitManager::new();
-        let id1 = mgr.spawn(UnitKind::Soldier, 5.5, 5.5);
-        let id2 = mgr.spawn(UnitKind::Soldier, 6.5, 5.5); // adjacent enemy
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 5.5); // adjacent enemy
 
         let ai = CombatAI::new();
         ai.update(&mut mgr, &map, 0.016);
@@ -404,8 +404,8 @@ mod tests {
         let map = Map::new(20, 20);
         let mut mgr = UnitManager::new();
         // Place soldiers very close (adjacent tiles)
-        let id1 = mgr.spawn(UnitKind::Soldier, 5.5, 5.5);
-        let id2 = mgr.spawn(UnitKind::Soldier, 6.5, 5.5); // 1 tile away
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 5.5); // 1 tile away
 
         let ai = CombatAI::new();
         // Run a few ticks - they should find each other and one should attack
@@ -428,8 +428,8 @@ mod tests {
     fn test_combat_dead_units_ignored() {
         let map = Map::new(10, 10);
         let mut mgr = UnitManager::new();
-        let id1 = mgr.spawn(UnitKind::Soldier, 0.5, 0.5);
-        let id2 = mgr.spawn(UnitKind::Soldier, 1.5, 0.5);
+        let id1 = mgr.spawn(UnitKind::Swordsman, 0.5, 0.5);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 1.5, 0.5);
 
         // Kill unit 2
         mgr.get_mut(id2).unwrap().hp = 0;

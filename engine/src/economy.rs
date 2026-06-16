@@ -5,7 +5,7 @@
 //! ## Design
 //!
 //! The economy is a tick-driven simulation. Each tick:
-//! 1. Buildings with assigned workers produce resources (if inputs available)
+//! 1. Buildings with assigned settlers produce resources (if inputs available)
 //! 2. Resources flow along production chains (producer → consumer)
 //! 3. Storage limits cap accumulation
 //! 4. New buildings can be placed on buildable tiles by spending resources
@@ -19,7 +19,7 @@
 //!
 //! A building occupies one tile. It has:
 //! - A building type (defines what it produces/consumes)
-//! - An optional assigned worker
+//! - An optional assigned settler
 //! - A construction progress (0.0 → 1.0, building is "active" at 1.0)
 //! - An input buffer (small queue of resources waiting to be consumed)
 //! - An output buffer (resources produced, waiting to be collected)
@@ -47,13 +47,13 @@ pub enum ResourceType {
     Game = 8,       // from hunting
 
     // Processed goods (produced by buildings)
-    Planks = 16,    // Wood → Planks (sawmill)
-    Tools = 17,     // Iron + Coal → Tools (blacksmith)
-    Weapons = 18,   // Iron + Coal + Tools → Weapons (armory)
+    Boards = 16,    // Wood → Boards (sawmill)
+    Tools = 17,     // Iron + Coal → Tools (toolsmith)
+    Weapons = 18,   // Iron + Coal + Tools → Weapons (weaponsmith)
     Beer = 19,      // Grain → Beer (brewery)
     Bread = 20,     // Grain → Bread (bakery)
     Meat = 21,      // Game → Meat (butcher)
-    Leather = 22,   // Game → Leather (tannery)
+    Flour = 22,     // Grain → Flour (mill)
 }
 
 impl ResourceType {
@@ -82,13 +82,13 @@ impl ResourceType {
             ResourceType::Fish => "Fish",
             ResourceType::Grain => "Grain",
             ResourceType::Game => "Game",
-            ResourceType::Planks => "Planks",
+            ResourceType::Boards => "Boards",
             ResourceType::Tools => "Tools",
             ResourceType::Weapons => "Weapons",
             ResourceType::Beer => "Beer",
             ResourceType::Bread => "Bread",
             ResourceType::Meat => "Meat",
-            ResourceType::Leather => "Leather",
+            ResourceType::Flour => "Flour",
         }
     }
 
@@ -113,74 +113,74 @@ impl ResourceType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum BuildingType {
-    /// Headquarters — stores resources, spawns settlers
-    Headquarters = 0,
-    /// Sawmill — converts Wood → Planks
+    /// Castle — stores resources, spawns settlers
+    Castle = 0,
+    /// Sawmill — converts Wood → Boards
     Sawmill = 1,
-    /// Quarry — produces Stone (requires worker + stone deposit nearby)
-    Quarry = 2,
+    /// Stonecutter — produces Stone (requires settler + stone deposit nearby)
+    Stonecutter = 2,
     /// Mine — produces Iron/Coal/Gold (requires deposit)
     Mine = 3,
-    /// Blacksmith — Iron + Coal → Tools
-    Blacksmith = 4,
-    /// Armory — Iron + Coal + Tools → Weapons
-    Armory = 5,
+    /// Toolsmith — Iron + Coal → Tools
+    Toolsmith = 4,
+    /// Weaponsmith — Iron + Coal + Tools → Weapons
+    Weaponsmith = 5,
     /// Brewery — Grain → Beer
     Brewery = 6,
     /// Bakery — Grain → Bread
     Bakery = 7,
-    /// Butcher — Game → Meat
+    /// Butcher — Meat → Sausages
     Butcher = 8,
-    /// Tannery — Game → Leather
-    Tannery = 9,
+    /// Mill — Grain → Flour
+    Mill = 9,
     /// Farm — produces Grain (on grass tiles)
     Farm = 10,
-    /// Fishery — produces Fish (on water-adjacent tiles)
-    Fishery = 11,
-    /// Lumberjack — produces Wood (near forests)
-    Lumberjack = 12,
-    /// Warehouse — extends storage capacity
-    Warehouse = 13,
+    /// Fisherman — produces Fish (on water-adjacent tiles)
+    Fisherman = 11,
+    /// Woodcutter — produces Wood (near forests)
+    Woodcutter = 12,
+    /// Storehouse — extends storage capacity
+    Storehouse = 13,
 }
 
 impl BuildingType {
     /// Display name
     pub fn name(self) -> &'static str {
         match self {
-            BuildingType::Headquarters => "Headquarters",
+            BuildingType::Castle => "Castle",
             BuildingType::Sawmill => "Sawmill",
-            BuildingType::Quarry => "Quarry",
+            BuildingType::Stonecutter => "Stonecutter",
             BuildingType::Mine => "Mine",
-            BuildingType::Blacksmith => "Blacksmith",
-            BuildingType::Armory => "Armory",
+            BuildingType::Toolsmith => "Toolsmith",
+            BuildingType::Weaponsmith => "Weaponsmith",
             BuildingType::Brewery => "Brewery",
             BuildingType::Bakery => "Bakery",
             BuildingType::Butcher => "Butcher",
-            BuildingType::Tannery => "Tannery",
+            BuildingType::Mill => "Mill",
             BuildingType::Farm => "Farm",
-            BuildingType::Fishery => "Fishery",
-            BuildingType::Lumberjack => "Lumberjack",
-            BuildingType::Warehouse => "Warehouse",
+            BuildingType::Fisherman => "Fisherman",
+            BuildingType::Woodcutter => "Woodcutter",
+            BuildingType::Storehouse => "Storehouse",
         }
     }
 
     /// Look up a building type by name.
     pub fn from_name(name: &str) -> Option<Self> {
         match name {
-            "Headquarters" => Some(BuildingType::Headquarters),
+            "Castle" => Some(BuildingType::Castle),
             "Sawmill" => Some(BuildingType::Sawmill),
-            "Quarry" => Some(BuildingType::Quarry),
+            "Stonecutter" => Some(BuildingType::Stonecutter),
             "Mine" => Some(BuildingType::Mine),
-            "Blacksmith" => Some(BuildingType::Blacksmith),
-            "Armory" => Some(BuildingType::Armory),
+            "Toolsmith" => Some(BuildingType::Toolsmith),
+            "Weaponsmith" => Some(BuildingType::Weaponsmith),
             "Brewery" => Some(BuildingType::Brewery),
             "Bakery" => Some(BuildingType::Bakery),
             "Butcher" => Some(BuildingType::Butcher),
-            "Tannery" => Some(BuildingType::Tannery),
+            "Mill" => Some(BuildingType::Mill),
             "Farm" => Some(BuildingType::Farm),
-            "Fishery" => Some(BuildingType::Fishery),
-            "Lumberjack" => Some(BuildingType::Lumberjack),
-            "Warehouse" => Some(BuildingType::Warehouse),
+            "Fisherman" => Some(BuildingType::Fisherman),
+            "Woodcutter" => Some(BuildingType::Woodcutter),
+            "Storehouse" => Some(BuildingType::Storehouse),
             _ => None,
         }
     }
@@ -188,30 +188,30 @@ impl BuildingType {
     /// Get all building type names.
     pub fn all_names() -> Vec<&'static str> {
         vec![
-            "Headquarters", "Sawmill", "Quarry", "Mine",
-            "Blacksmith", "Armory", "Brewery", "Bakery",
-            "Butcher", "Tannery", "Farm", "Fishery",
-            "Lumberjack", "Warehouse",
+            "Castle", "Sawmill", "Stonecutter", "Mine",
+            "Toolsmith", "Weaponsmith", "Brewery", "Bakery",
+            "Butcher", "Mill", "Farm", "Fisherman",
+            "Woodcutter", "Storehouse",
         ]
     }
 
     /// Resource cost to construct this building
     pub fn build_cost(self) -> &'static [(ResourceType, u32)] {
         match self {
-            BuildingType::Headquarters => &[(ResourceType::Wood, 10), (ResourceType::Stone, 5)],
+            BuildingType::Castle => &[(ResourceType::Wood, 10), (ResourceType::Stone, 5)],
             BuildingType::Sawmill => &[(ResourceType::Wood, 5), (ResourceType::Stone, 2)],
-            BuildingType::Quarry => &[(ResourceType::Wood, 5)],
+            BuildingType::Stonecutter => &[(ResourceType::Wood, 5)],
             BuildingType::Mine => &[(ResourceType::Wood, 8), (ResourceType::Stone, 3)],
-            BuildingType::Blacksmith => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5), (ResourceType::Iron, 2)],
-            BuildingType::Armory => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5), (ResourceType::Tools, 3)],
+            BuildingType::Toolsmith => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5), (ResourceType::Iron, 2)],
+            BuildingType::Weaponsmith => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5), (ResourceType::Tools, 3)],
             BuildingType::Brewery => &[(ResourceType::Wood, 5), (ResourceType::Stone, 2)],
             BuildingType::Bakery => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
             BuildingType::Butcher => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
-            BuildingType::Tannery => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
+            BuildingType::Mill => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
             BuildingType::Farm => &[(ResourceType::Wood, 3)],
-            BuildingType::Fishery => &[(ResourceType::Wood, 3)],
-            BuildingType::Lumberjack => &[(ResourceType::Wood, 2)],
-            BuildingType::Warehouse => &[(ResourceType::Wood, 8), (ResourceType::Stone, 4)],
+            BuildingType::Fisherman => &[(ResourceType::Wood, 3)],
+            BuildingType::Woodcutter => &[(ResourceType::Wood, 2)],
+            BuildingType::Storehouse => &[(ResourceType::Wood, 8), (ResourceType::Stone, 4)],
         }
     }
 
@@ -219,12 +219,12 @@ impl BuildingType {
     pub fn inputs(self) -> &'static [(ResourceType, u32)] {
         match self {
             BuildingType::Sawmill => &[(ResourceType::Wood, 2)],
-            BuildingType::Blacksmith => &[(ResourceType::Iron, 1), (ResourceType::Coal, 1)],
-            BuildingType::Armory => &[(ResourceType::Iron, 1), (ResourceType::Coal, 1), (ResourceType::Tools, 1)],
+            BuildingType::Toolsmith => &[(ResourceType::Iron, 1), (ResourceType::Coal, 1)],
+            BuildingType::Weaponsmith => &[(ResourceType::Iron, 1), (ResourceType::Coal, 1), (ResourceType::Tools, 1)],
             BuildingType::Brewery => &[(ResourceType::Grain, 3)],
             BuildingType::Bakery => &[(ResourceType::Grain, 2)],
             BuildingType::Butcher => &[(ResourceType::Game, 2)],
-            BuildingType::Tannery => &[(ResourceType::Game, 2)],
+            BuildingType::Mill => &[(ResourceType::Grain, 3)],
             _ => &[], // raw producers and storage have no inputs
         }
     }
@@ -232,18 +232,18 @@ impl BuildingType {
     /// Output resources produced per production cycle
     pub fn outputs(self) -> &'static [(ResourceType, u32)] {
         match self {
-            BuildingType::Sawmill => &[(ResourceType::Planks, 1)],
-            BuildingType::Quarry => &[(ResourceType::Stone, 1)],
+            BuildingType::Sawmill => &[(ResourceType::Boards, 1)],
+            BuildingType::Stonecutter => &[(ResourceType::Stone, 1)],
             BuildingType::Mine => &[(ResourceType::Iron, 1)], // simplified: mine produces iron
-            BuildingType::Blacksmith => &[(ResourceType::Tools, 1)],
-            BuildingType::Armory => &[(ResourceType::Weapons, 1)],
+            BuildingType::Toolsmith => &[(ResourceType::Tools, 1)],
+            BuildingType::Weaponsmith => &[(ResourceType::Weapons, 1)],
             BuildingType::Brewery => &[(ResourceType::Beer, 1)],
             BuildingType::Bakery => &[(ResourceType::Bread, 1)],
             BuildingType::Butcher => &[(ResourceType::Meat, 1)],
-            BuildingType::Tannery => &[(ResourceType::Leather, 1)],
+            BuildingType::Mill => &[(ResourceType::Flour, 1)],
             BuildingType::Farm => &[(ResourceType::Grain, 2)],
-            BuildingType::Fishery => &[(ResourceType::Fish, 1)],
-            BuildingType::Lumberjack => &[(ResourceType::Wood, 2)],
+            BuildingType::Fisherman => &[(ResourceType::Fish, 1)],
+            BuildingType::Woodcutter => &[(ResourceType::Wood, 2)],
             _ => &[], // HQ and warehouse produce nothing
         }
     }
@@ -252,17 +252,17 @@ impl BuildingType {
     pub fn production_interval(self) -> u32 {
         match self {
             BuildingType::Sawmill => 20,     // 2 seconds
-            BuildingType::Quarry => 30,      // 3 seconds
+            BuildingType::Stonecutter => 30,      // 3 seconds
             BuildingType::Mine => 40,        // 4 seconds
-            BuildingType::Blacksmith => 30,  // 3 seconds
-            BuildingType::Armory => 50,      // 5 seconds
+            BuildingType::Toolsmith => 30,  // 3 seconds
+            BuildingType::Weaponsmith => 50,      // 5 seconds
             BuildingType::Brewery => 25,     // 2.5 seconds
             BuildingType::Bakery => 20,      // 2 seconds
             BuildingType::Butcher => 25,     // 2.5 seconds
-            BuildingType::Tannery => 25,     // 2.5 seconds
+            BuildingType::Mill => 25,     // 2.5 seconds
             BuildingType::Farm => 20,        // 2 seconds
-            BuildingType::Fishery => 20,     // 2 seconds
-            BuildingType::Lumberjack => 15,  // 1.5 seconds
+            BuildingType::Fisherman => 20,     // 2 seconds
+            BuildingType::Woodcutter => 15,  // 1.5 seconds
             _ => 0, // HQ and warehouse don't produce
         }
     }
@@ -277,22 +277,22 @@ impl BuildingType {
         if self.outputs().is_empty() { 0 } else { 3 }
     }
 
-    /// Whether this building requires a worker to produce
-    pub fn requires_worker(self) -> bool {
-        !matches!(self, BuildingType::Headquarters | BuildingType::Warehouse)
+    /// Whether this building requires a settler to produce
+    pub fn requires_settler(self) -> bool {
+        !matches!(self, BuildingType::Castle | BuildingType::Storehouse)
     }
 
     /// Ticks needed to construct this building
     pub fn build_time(self) -> u32 {
         match self {
-            BuildingType::Headquarters => 0,    // already built
-            BuildingType::Warehouse => 50,
-            BuildingType::Farm | BuildingType::Fishery | BuildingType::Lumberjack => 20,
-            BuildingType::Quarry | BuildingType::Sawmill => 30,
+            BuildingType::Castle => 0,    // already built
+            BuildingType::Storehouse => 50,
+            BuildingType::Farm | BuildingType::Fisherman | BuildingType::Woodcutter => 20,
+            BuildingType::Stonecutter | BuildingType::Sawmill => 30,
             BuildingType::Mine => 40,
-            BuildingType::Blacksmith | BuildingType::Brewery | BuildingType::Bakery => 35,
-            BuildingType::Butcher | BuildingType::Tannery => 30,
-            BuildingType::Armory => 50,
+            BuildingType::Toolsmith | BuildingType::Brewery | BuildingType::Bakery => 35,
+            BuildingType::Butcher | BuildingType::Mill => 30,
+            BuildingType::Weaponsmith => 50,
         }
     }
 }
@@ -309,7 +309,7 @@ pub struct Building {
     pub y: usize,
     /// Construction progress (0.0 = just placed, 1.0 = complete)
     pub construction: f32,
-    /// Whether the building is active (construction == 1.0 and has worker if needed)
+    /// Whether the building is active (construction == 1.0 and has settler if needed)
     pub active: bool,
     /// Ticks since last production
     pub production_counter: u32,
@@ -319,15 +319,15 @@ pub struct Building {
     /// Output buffer: resources produced, waiting to be collected
     pub output_buffer: [u32; ResourceType::COUNT],
     /// Worker IDs assigned to this building (from UnitManager)
-    pub assigned_workers: Vec<u32>,
-    /// Maximum number of workers this building can employ
-    pub max_workers: u32,
+    pub assigned_settlers: Vec<u32>,
+    /// Maximum number of settlers this building can employ
+    pub max_settlers: u32,
 }
 
 impl Building {
     /// Create a new building at the given position
     pub fn new(kind: BuildingType, x: usize, y: usize) -> Self {
-        let max_workers = if kind.requires_worker() { 1 } else { 0 };
+        let max_settlers = if kind.requires_settler() { 1 } else { 0 };
         Building {
             kind,
             x,
@@ -337,35 +337,35 @@ impl Building {
             production_counter: 0,
             input_buffer: [0u32; ResourceType::COUNT],
             output_buffer: [0u32; ResourceType::COUNT],
-            assigned_workers: Vec::new(),
-            max_workers,
+            assigned_settlers: Vec::new(),
+            max_settlers,
         }
     }
 
-    /// Whether the building has at least one worker assigned
-    pub fn has_worker(&self) -> bool {
-        !self.assigned_workers.is_empty() || !self.kind.requires_worker()
+    /// Whether the building has at least one settler assigned
+    pub fn has_settler(&self) -> bool {
+        !self.assigned_settlers.is_empty() || !self.kind.requires_settler()
     }
 
-    /// Assign a worker to this building
-    pub fn assign_worker(&mut self, worker_id: u32) -> bool {
-        if self.assigned_workers.len() < self.max_workers as usize {
-            self.assigned_workers.push(worker_id);
+    /// Assign a settler to this building
+    pub fn assign_settler(&mut self, settler_id: u32) -> bool {
+        if self.assigned_settlers.len() < self.max_settlers as usize {
+            self.assigned_settlers.push(settler_id);
             true
         } else {
             false
         }
     }
 
-    /// Remove a worker from this building
-    pub fn remove_worker(&mut self, worker_id: u32) {
-        self.assigned_workers.retain(|&id| id != worker_id);
+    /// Remove a settler from this building
+    pub fn remove_settler(&mut self, settler_id: u32) {
+        self.assigned_settlers.retain(|&id| id != settler_id);
     }
 
     /// Whether the building can produce (has all prerequisites)
     #[allow(dead_code)]
     fn can_produce(&self, _storage: &ResourceStorage) -> bool {
-        if !self.has_worker() {
+        if !self.has_settler() {
             return false;
         }
         // Check if we have enough inputs
@@ -404,7 +404,7 @@ impl Building {
 
     /// Try to produce resources for this tick.
     /// Returns true if production occurred.
-    /// Note: this does NOT check for assigned workers — caller must check `has_worker()`.
+    /// Note: this does NOT check for assigned settlers — caller must check `has_settler()`.
     pub fn try_produce(&mut self, _storage: &mut ResourceStorage) -> bool {
         if !self.is_complete() || self.kind.production_interval() == 0 {
             return false;
@@ -571,7 +571,7 @@ pub struct Economy {
     pub storage: ResourceStorage,
     /// All placed buildings
     pub buildings: Vec<Building>,
-    /// Unit manager for worker assignment
+    /// Unit manager for settler assignment
     pub units: UnitManager,
     /// Total production events (for statistics)
     pub production_events: u64,
@@ -600,32 +600,32 @@ impl Economy {
         economy
     }
 
-    /// Spawn a worker and assign it to a building.
-    /// Returns the worker ID if successful.
-    pub fn spawn_worker_for(&mut self, building_index: usize) -> Option<u32> {
+    /// Spawn a settler and assign it to a building.
+    /// Returns the settler ID if successful.
+    pub fn spawn_settler_for(&mut self, building_index: usize) -> Option<u32> {
         let building = self.buildings.get(building_index)?;
-        if !building.kind.requires_worker() {
+        if !building.kind.requires_settler() {
             return None;
         }
         let bx = building.x as f32 + 0.5;
         let by = building.y as f32 + 0.5;
-        let id = self.units.spawn(crate::units::UnitKind::Worker, bx, by);
-        self.buildings[building_index].assign_worker(id);
+        let id = self.units.spawn(crate::units::UnitKind::Settler, bx, by);
+        self.buildings[building_index].assign_settler(id);
         self.units.get_mut(id)?.assign_to(building_index);
         Some(id)
     }
 
-    /// Auto-assign idle workers to buildings that need them.
+    /// Auto-assign idle settlers to buildings that need them.
     /// Returns the number of assignments made.
-    pub fn auto_assign_workers(&mut self) -> usize {
+    pub fn auto_assign_settlers(&mut self) -> usize {
         let mut assigned = 0;
-        // Find buildings that need workers
+        // Find buildings that need settlers
         for i in 0..self.buildings.len() {
             let building = &self.buildings[i];
-            if building.kind.requires_worker() && building.assigned_workers.is_empty() {
-                if let Some(worker_id) = self.units.find_idle_worker().map(|w| w.id) {
-                    self.buildings[i].assign_worker(worker_id);
-                    self.units.get_mut(worker_id).unwrap().assign_to(i);
+            if building.kind.requires_settler() && building.assigned_settlers.is_empty() {
+                if let Some(settler_id) = self.units.find_idle_settler().map(|w| w.id) {
+                    self.buildings[i].assign_settler(settler_id);
+                    self.units.get_mut(settler_id).unwrap().assign_to(i);
                     assigned += 1;
                 }
             }
@@ -633,14 +633,14 @@ impl Economy {
         assigned
     }
 
-    /// Get the number of idle workers
-    pub fn idle_workers(&self) -> usize {
-        self.units.idle_worker_count()
+    /// Get the number of idle settlers
+    pub fn idle_settlers(&self) -> usize {
+        self.units.idle_settler_count()
     }
 
-    /// Get the number of total workers
-    pub fn total_workers(&self) -> usize {
-        self.units.worker_count()
+    /// Get the number of total settlers
+    pub fn total_settlers(&self) -> usize {
+        self.units.settler_count()
     }
 
     /// Place a new building. Returns the building index.
@@ -668,9 +668,9 @@ impl Economy {
             building.tick_construction();
         }
 
-        // 2. Try production for all buildings (only if they have workers)
+        // 2. Try production for all buildings (only if they have settlers)
         for building in self.buildings.iter_mut() {
-            if building.has_worker() {
+            if building.has_settler() {
                 if building.try_produce(&mut self.storage) {
                     self.production_events += 1;
                 }
@@ -685,7 +685,7 @@ impl Economy {
 
         // 4. Update warehouse capacity
         let warehouse_count = self.buildings.iter()
-            .filter(|b| b.kind == BuildingType::Warehouse && b.is_complete())
+            .filter(|b| b.kind == BuildingType::Storehouse && b.is_complete())
             .count() as u32;
         // Base 200 + 100 per warehouse (recalculate from scratch)
         self.storage.capacity = 200 + warehouse_count * 100;
@@ -724,7 +724,7 @@ mod tests {
     #[test]
     fn test_resource_type_name() {
         assert_eq!(ResourceType::Wood.name(), "Wood");
-        assert_eq!(ResourceType::Planks.name(), "Planks");
+        assert_eq!(ResourceType::Boards.name(), "Boards");
         assert_eq!(ResourceType::Weapons.name(), "Weapons");
     }
 
@@ -732,7 +732,7 @@ mod tests {
     fn test_resource_type_is_raw() {
         assert!(ResourceType::Wood.is_raw());
         assert!(ResourceType::Iron.is_raw());
-        assert!(!ResourceType::Planks.is_raw());
+        assert!(!ResourceType::Boards.is_raw());
         assert!(!ResourceType::Tools.is_raw());
     }
 
@@ -746,7 +746,7 @@ mod tests {
 
     #[test]
     fn test_building_type_name() {
-        assert_eq!(BuildingType::Headquarters.name(), "Headquarters");
+        assert_eq!(BuildingType::Castle.name(), "Castle");
         assert_eq!(BuildingType::Sawmill.name(), "Sawmill");
     }
 
@@ -761,16 +761,16 @@ mod tests {
     #[test]
     fn test_building_production_interval() {
         assert_eq!(BuildingType::Sawmill.production_interval(), 20);
-        assert_eq!(BuildingType::Headquarters.production_interval(), 0);
-        assert_eq!(BuildingType::Warehouse.production_interval(), 0);
+        assert_eq!(BuildingType::Castle.production_interval(), 0);
+        assert_eq!(BuildingType::Storehouse.production_interval(), 0);
     }
 
     #[test]
-    fn test_building_requires_worker() {
-        assert!(!BuildingType::Headquarters.requires_worker());
-        assert!(!BuildingType::Warehouse.requires_worker());
-        assert!(BuildingType::Sawmill.requires_worker());
-        assert!(BuildingType::Farm.requires_worker());
+    fn test_building_requires_settler() {
+        assert!(!BuildingType::Castle.requires_settler());
+        assert!(!BuildingType::Storehouse.requires_settler());
+        assert!(BuildingType::Sawmill.requires_settler());
+        assert!(BuildingType::Farm.requires_settler());
     }
 
     #[test]
@@ -901,7 +901,7 @@ mod tests {
         // Add inputs
         building.input_buffer[ResourceType::Wood as usize] = 10;
 
-        // Sawmill: 20 ticks per cycle, consumes 2 Wood → produces 1 Planks
+        // Sawmill: 20 ticks per cycle, consumes 2 Wood → produces 1 Boards
         let mut produced = 0;
         for _ in 0..100 {
             if building.try_produce(&mut storage) {
@@ -909,7 +909,7 @@ mod tests {
             }
         }
         assert!(produced > 0, "Should have produced planks");
-        assert_eq!(building.output_buffer[ResourceType::Planks as usize], produced);
+        assert_eq!(building.output_buffer[ResourceType::Boards as usize], produced);
     }
 
     #[test]
@@ -962,11 +962,11 @@ mod tests {
 
         let farm_idx = e.place_building(BuildingType::Farm, 0, 0);
 
-        // Build the farm (20 ticks), then spawn a worker
+        // Build the farm (20 ticks), then spawn a settler
         for _ in 0..20 {
             e.update();
         }
-        e.spawn_worker_for(farm_idx);
+        e.spawn_settler_for(farm_idx);
 
         // Run 200 more ticks — farm should produce grain now
         for _ in 0..200 {
@@ -1007,9 +1007,9 @@ mod tests {
 
     #[test]
     fn test_production_chain_wood_to_planks() {
-        // Full chain: Lumberjack produces Wood → Sawmill converts to Planks
+        // Full chain: Lumberjack produces Wood → Sawmill converts to Boards
         let mut storage = ResourceStorage::new();
-        let mut lumberjack = Building::new(BuildingType::Lumberjack, 0, 0);
+        let mut lumberjack = Building::new(BuildingType::Woodcutter, 0, 0);
         let mut sawmill = Building::new(BuildingType::Sawmill, 1, 0);
 
         // Complete construction
@@ -1017,7 +1017,7 @@ mod tests {
         for _ in 0..30 { sawmill.tick_construction(); }
 
         // Lumberjack: no inputs, produces 2 Wood every 15 ticks
-        // Sawmill: 2 Wood → 1 Planks every 20 ticks
+        // Sawmill: 2 Wood → 1 Boards every 20 ticks
         let mut total_wood = 0u32;
         let mut total_planks = 0u32;
 
@@ -1045,9 +1045,9 @@ mod tests {
     #[test]
     fn test_building_inputs_outputs() {
         // Verify all buildings with inputs have matching outputs
-        for kind in [BuildingType::Sawmill, BuildingType::Blacksmith, BuildingType::Armory,
+        for kind in [BuildingType::Sawmill, BuildingType::Toolsmith, BuildingType::Weaponsmith,
                      BuildingType::Brewery, BuildingType::Bakery, BuildingType::Butcher,
-                     BuildingType::Tannery] {
+                     BuildingType::Mill] {
             let inputs = kind.inputs();
             let outputs = kind.outputs();
             assert!(!inputs.is_empty(), "{} should have inputs", kind.name());

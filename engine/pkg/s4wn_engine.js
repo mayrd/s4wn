@@ -88,9 +88,9 @@ export function get_build_cost(kind_name) {
 /**
  * Get detailed building info by index.
  * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
- *   "active":true,"workers":[1],"max_workers":1,
+ *   "active":true,"settlers":[1],"max_settlers":1,
  *   "build_ticks":20,"production_interval":20,"inputs":[["Wood",2]],
- *   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
+ *   "outputs":[["Boards",1]],"output_buffer":{"Boards":5}}
  * or {"error":"Building not found"}
  * @param {number} idx
  * @returns {string}
@@ -110,7 +110,7 @@ export function get_building_info(idx) {
 
 /**
  * Get building summary as a JSON string for the HUD.
- * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"workers":1},...]
+ * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1},...]
  * @returns {string}
  */
 export function get_building_summary() {
@@ -168,7 +168,7 @@ export function get_map_data() {
 
 /**
  * Get resource counts as a JSON string for the HUD.
- * Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Planks":0,...}
+ * Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Boards":0,...}
  * @returns {string}
  */
 export function get_resource_counts() {
@@ -221,7 +221,7 @@ export function get_tile_at(x, y) {
 
 /**
  * Get detailed unit info by ID.
- * Returns JSON: {"id":1,"kind":"Worker","x":5.5,"y":3.0,"hp":50,"max_hp":50,
+ * Returns JSON: {"id":1,"kind":"Settler","x":5.5,"y":3.0,"hp":50,"max_hp":50,
  *   "state":"Working","assigned_building":2,"target":null}
  * or {"error":"Unit not found"}
  * @param {number} id
@@ -242,7 +242,7 @@ export function get_unit_info(id) {
 
 /**
  * Get unit summary as a JSON string for the HUD.
- * Returns: [{"id":1,"kind":"Worker","x":3.5,"y":3.5,"hp":50,"state":"Working"},...]
+ * Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"state":"Working"},...]
  * @returns {string}
  */
 export function get_unit_summary() {
@@ -285,7 +285,7 @@ export function is_paused() {
 
 /**
  * Get a list of all building types as JSON.
- * Returns: ["Headquarters","Farm","Sawmill",...]
+ * Returns: ["Castle","Farm","Sawmill",...]
  * @returns {string}
  */
 export function list_building_types() {
@@ -410,18 +410,18 @@ export function set_paused(paused) {
 }
 
 /**
- * Place a free Headquarters near map center and spawn starter workers.
+ * Place a free Castle near map center and spawn starter settlers.
  * Called after load_map_json() + add_starting_resources() to set up the initial base.
- * worker_count: number of idle workers to spawn (clamped to 1..8).
- * Returns JSON: {"ok":true,"hq_x":N,"hq_y":N,"workers":N} or {"error":"..."}
- * @param {number} worker_count
+ * settler_count: number of idle settlers to spawn (clamped to 1..8).
+ * Returns JSON: {"ok":true,"hq_x":N,"hq_y":N,"settlers":N} or {"error":"..."}
+ * @param {number} settler_count
  * @returns {string}
  */
-export function setup_starter_base(worker_count) {
+export function setup_starter_base(settler_count) {
     let deferred1_0;
     let deferred1_1;
     try {
-        const ret = wasm.setup_starter_base(worker_count);
+        const ret = wasm.setup_starter_base(settler_count);
         deferred1_0 = ret[0];
         deferred1_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);

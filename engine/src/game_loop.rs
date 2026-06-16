@@ -310,7 +310,7 @@ mod tests {
         // Place a farm and spawn a worker separately (not at the building)
         let farm_idx = state.economy.place_building(BuildingType::Farm, 5, 5);
         let _worker_id = state.economy.units.spawn(
-            crate::units::UnitKind::Worker, 0.5, 0.5,
+            crate::units::UnitKind::Settler, 0.5, 0.5,
         );
 
         // Run ticks — building constructs, worker auto-assigns, moves there, works
@@ -336,8 +336,8 @@ mod tests {
         let mut state = GameState::new(map);
 
         // Spawn two enemy soldiers near each other
-        let _soldier1 = state.economy.units.spawn(UnitKind::Soldier, 5.5, 5.5);
-        let _soldier2 = state.economy.units.spawn(UnitKind::Soldier, 6.5, 5.5);
+        let _soldier1 = state.economy.units.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        let _soldier2 = state.economy.units.spawn(UnitKind::Swordsman, 6.5, 5.5);
 
         // Run many ticks — soldiers should engage in combat
         for _ in 0..500 {
@@ -373,21 +373,21 @@ mod tests {
 
         // Phase 1: Build a farm + lumberjack + sawmill + blacksmith + armory
         let _farm = state.economy.place_building(BuildingType::Farm, 3, 3);
-        let _lumberjack = state.economy.place_building(BuildingType::Lumberjack, 5, 3);
+        let _lumberjack = state.economy.place_building(BuildingType::Woodcutter, 5, 3);
         let _sawmill = state.economy.place_building(BuildingType::Sawmill, 7, 3);
-        let _blacksmith = state.economy.place_building(BuildingType::Blacksmith, 9, 3);
-        let _armory = state.economy.place_building(BuildingType::Armory, 11, 3);
+        let _blacksmith = state.economy.place_building(BuildingType::Toolsmith, 9, 3);
+        let _armory = state.economy.place_building(BuildingType::Weaponsmith, 11, 3);
 
         // Spawn workers
-        state.economy.units.spawn(UnitKind::Worker, 0.5, 0.5);
-        state.economy.units.spawn(UnitKind::Worker, 1.5, 0.5);
-        state.economy.units.spawn(UnitKind::Worker, 2.5, 0.5);
-        state.economy.units.spawn(UnitKind::Worker, 3.5, 0.5);
-        state.economy.units.spawn(UnitKind::Worker, 4.5, 0.5);
+        state.economy.units.spawn(UnitKind::Settler, 0.5, 0.5);
+        state.economy.units.spawn(UnitKind::Settler, 1.5, 0.5);
+        state.economy.units.spawn(UnitKind::Settler, 2.5, 0.5);
+        state.economy.units.spawn(UnitKind::Settler, 3.5, 0.5);
+        state.economy.units.spawn(UnitKind::Settler, 4.5, 0.5);
 
         // Phase 2: Spawn enemy soldiers
-        state.economy.units.spawn(UnitKind::Soldier, 20.5, 20.5);
-        state.economy.units.spawn(UnitKind::Soldier, 21.5, 20.5);
+        state.economy.units.spawn(UnitKind::Swordsman, 20.5, 20.5);
+        state.economy.units.spawn(UnitKind::Swordsman, 21.5, 20.5);
 
         // Phase 3: Run 3000 ticks (~300 seconds of game time)
         for tick in 0..3000 {
@@ -395,7 +395,7 @@ mod tests {
 
             // After 2000 ticks, spawn a friendly soldier
             if tick == 2000 {
-                state.economy.units.spawn(UnitKind::Soldier, 15.5, 15.5);
+                state.economy.units.spawn(UnitKind::Swordsman, 15.5, 15.5);
             }
         }
 

@@ -32,16 +32,16 @@ export function get_build_cost(kind_name: string): string;
 /**
  * Get detailed building info by index.
  * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
- *   "active":true,"workers":[1],"max_workers":1,
+ *   "active":true,"settlers":[1],"max_settlers":1,
  *   "build_ticks":20,"production_interval":20,"inputs":[["Wood",2]],
- *   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
+ *   "outputs":[["Boards",1]],"output_buffer":{"Boards":5}}
  * or {"error":"Building not found"}
  */
 export function get_building_info(idx: number): string;
 
 /**
  * Get building summary as a JSON string for the HUD.
- * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"workers":1},...]
+ * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1},...]
  */
 export function get_building_summary(): string;
 
@@ -65,7 +65,7 @@ export function get_map_data(): Uint8Array;
 
 /**
  * Get resource counts as a JSON string for the HUD.
- * Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Planks":0,...}
+ * Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Boards":0,...}
  */
 export function get_resource_counts(): string;
 
@@ -78,7 +78,7 @@ export function get_tile_at(x: number, y: number): string;
 
 /**
  * Get detailed unit info by ID.
- * Returns JSON: {"id":1,"kind":"Worker","x":5.5,"y":3.0,"hp":50,"max_hp":50,
+ * Returns JSON: {"id":1,"kind":"Settler","x":5.5,"y":3.0,"hp":50,"max_hp":50,
  *   "state":"Working","assigned_building":2,"target":null}
  * or {"error":"Unit not found"}
  */
@@ -86,7 +86,7 @@ export function get_unit_info(id: number): string;
 
 /**
  * Get unit summary as a JSON string for the HUD.
- * Returns: [{"id":1,"kind":"Worker","x":3.5,"y":3.5,"hp":50,"state":"Working"},...]
+ * Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"state":"Working"},...]
  */
 export function get_unit_summary(): string;
 
@@ -103,7 +103,7 @@ export function is_paused(): boolean;
 
 /**
  * Get a list of all building types as JSON.
- * Returns: ["Headquarters","Farm","Sawmill",...]
+ * Returns: ["Castle","Farm","Sawmill",...]
  */
 export function list_building_types(): string;
 
@@ -162,12 +162,12 @@ export function set_game_speed(multiplier: number): void;
 export function set_paused(paused: boolean): void;
 
 /**
- * Place a free Headquarters near map center and spawn starter workers.
+ * Place a free Castle near map center and spawn starter settlers.
  * Called after load_map_json() + add_starting_resources() to set up the initial base.
- * worker_count: number of idle workers to spawn (clamped to 1..8).
- * Returns JSON: {"ok":true,"hq_x":N,"hq_y":N,"workers":N} or {"error":"..."}
+ * settler_count: number of idle settlers to spawn (clamped to 1..8).
+ * Returns JSON: {"ok":true,"hq_x":N,"hq_y":N,"settlers":N} or {"error":"..."}
  */
-export function setup_starter_base(worker_count: number): string;
+export function setup_starter_base(settler_count: number): string;
 
 /**
  * Toggle the game pause state. Returns the new state.

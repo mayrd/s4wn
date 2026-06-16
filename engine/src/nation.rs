@@ -23,7 +23,7 @@ use crate::units::UnitKind;
 pub enum NationType {
     Roman = 0,
     Viking = 1,
-    Mayan = 2,
+    Maya = 2,
     Trojan = 3,
     DarkTribe = 4,
 }
@@ -33,7 +33,7 @@ impl NationType {
     pub const ALL: [NationType; 5] = [
         NationType::Roman,
         NationType::Viking,
-        NationType::Mayan,
+        NationType::Maya,
         NationType::Trojan,
         NationType::DarkTribe,
     ];
@@ -43,7 +43,7 @@ impl NationType {
         match self {
             NationType::Roman => "Romans",
             NationType::Viking => "Vikings",
-            NationType::Mayan => "Mayans",
+            NationType::Maya => "Maya",
             NationType::Trojan => "Trojans",
             NationType::DarkTribe => "Dark Tribe",
         }
@@ -54,7 +54,7 @@ impl NationType {
         match self {
             NationType::Roman => "Balanced builder — efficient production chains, strong economy",
             NationType::Viking => "Aggressive rusher — cheap military, fast unit production",
-            NationType::Mayan => "Defensive expander — fast workers, high HP buildings",
+            NationType::Maya => "Defensive expander — fast workers, high HP buildings",
             NationType::Trojan => "Trade & quality — trade bonus, powerful elite units",
             NationType::DarkTribe => "Terraforming swarm — terrain control, cheap mass units",
         }
@@ -65,7 +65,7 @@ impl NationType {
         match self {
             NationType::Roman => (200, 50, 50, 255),     // Red
             NationType::Viking => (50, 100, 200, 255),   // Blue
-            NationType::Mayan => (50, 180, 50, 255),     // Green
+            NationType::Maya => (50, 180, 50, 255),     // Green
             NationType::Trojan => (180, 150, 50, 255),   // Gold
             NationType::DarkTribe => (100, 50, 150, 255), // Purple
         }
@@ -76,7 +76,7 @@ impl NationType {
         match self {
             NationType::Roman => "#C83232",
             NationType::Viking => "#3264C8",
-            NationType::Mayan => "#32B432",
+            NationType::Maya => "#32B432",
             NationType::Trojan => "#B49632",
             NationType::DarkTribe => "#643296",
         }
@@ -153,7 +153,7 @@ pub enum UnitSpecial {
     FormationBonus,
     /// Viking: +30% attack below 50% HP, faster movement
     Berserk,
-    /// Mayan: stealth detection, +20% defense in forest
+    /// Maya: stealth detection, +20% defense in forest
     ForestGuard,
     /// Trojan: +40% defense, -20% movement speed
     ShieldWall,
@@ -167,7 +167,7 @@ impl UnitSpecial {
         match nation {
             NationType::Roman => UnitSpecial::FormationBonus,
             NationType::Viking => UnitSpecial::Berserk,
-            NationType::Mayan => UnitSpecial::ForestGuard,
+            NationType::Maya => UnitSpecial::ForestGuard,
             NationType::Trojan => UnitSpecial::ShieldWall,
             NationType::DarkTribe => UnitSpecial::None,
         }
@@ -341,7 +341,7 @@ impl NationRegistry {
                     trade_focus: 0.2,
                 },
             },
-            NationType::Mayan => NationModifiers {
+            NationType::Maya => NationModifiers {
                 production: ProductionModifier {
                     food: 1.2,
                     wood: 1.0,
@@ -448,7 +448,7 @@ impl NationRegistry {
         [
             Nation::new(NationType::Roman),
             Nation::new(NationType::Viking),
-            Nation::new(NationType::Mayan),
+            Nation::new(NationType::Maya),
             Nation::new(NationType::Trojan),
             Nation::new(NationType::DarkTribe),
         ]
@@ -467,7 +467,7 @@ impl NationRegistry {
                 // More stone for barracks, more iron for weapons
                 (base.0, base.1 + 10, base.2 + 5, base.3, base.4, base.5 - 5, base.6, base.7, base.8)
             }
-            NationType::Mayan => {
+            NationType::Maya => {
                 // More food, more wood
                 (base.0 + 5, base.1, base.2, base.3, base.4, base.5 + 10, base.6 + 5, base.7 + 5, base.8)
             }
@@ -504,7 +504,7 @@ pub enum UniqueBuildingType {
     SanctuaryOfThor = 13,
     SanctuaryOfFreya = 14,
     Runestone = 15,
-    // Mayans
+    // Mayas
     TempleOfChac = 20,
     AgaveFarm = 21,
     Distillery = 22,
@@ -537,7 +537,7 @@ impl UniqueBuildingType {
         match self as u8 {
             0..=5 => NationType::Roman,
             10..=15 => NationType::Viking,
-            20..=26 => NationType::Mayan,
+            20..=26 => NationType::Maya,
             30..=36 => NationType::Trojan,
             40..=47 => NationType::DarkTribe,
             _ => unreachable!(),
@@ -603,7 +603,7 @@ impl UniqueBuildingType {
                 UniqueBuildingType::SanctuaryOfFreya,
                 UniqueBuildingType::Runestone,
             ],
-            NationType::Mayan => &[
+            NationType::Maya => &[
                 UniqueBuildingType::TempleOfChac,
                 UniqueBuildingType::AgaveFarm,
                 UniqueBuildingType::Distillery,
@@ -731,7 +731,7 @@ mod tests {
     fn test_nation_type_names() {
         assert_eq!(NationType::Roman.name(), "Romans");
         assert_eq!(NationType::Viking.name(), "Vikings");
-        assert_eq!(NationType::Mayan.name(), "Mayans");
+        assert_eq!(NationType::Maya.name(), "Maya");
         assert_eq!(NationType::Trojan.name(), "Trojans");
         assert_eq!(NationType::DarkTribe.name(), "Dark Tribe");
     }
@@ -765,7 +765,7 @@ mod tests {
         let viking = Nation::new(NationType::Viking);
         assert_eq!(viking.unit_special(), UnitSpecial::Berserk);
 
-        let mayan = Nation::new(NationType::Mayan);
+        let mayan = Nation::new(NationType::Maya);
         assert_eq!(mayan.unit_special(), UnitSpecial::ForestGuard);
 
         let trojan = Nation::new(NationType::Trojan);
@@ -806,8 +806,8 @@ mod tests {
 
     #[test]
     fn test_mayan_production_modifiers() {
-        let mayan = Nation::new(NationType::Mayan);
-        // Mayans: fast workers, defensive
+        let mayan = Nation::new(NationType::Maya);
+        // Mayas: fast workers, defensive
         assert!(mayan.modifiers.units.worker_speed > 1.0);
         assert!(mayan.modifiers.units.soldier_defense > 1.0);
         assert!(mayan.modifiers.ai.defense_priority > 0.7);
@@ -845,7 +845,7 @@ mod tests {
     fn test_unique_building_nations() {
         assert_eq!(UniqueBuildingType::TempleOfBacchus.nation(), NationType::Roman);
         assert_eq!(UniqueBuildingType::MeadHall.nation(), NationType::Viking);
-        assert_eq!(UniqueBuildingType::TempleOfChac.nation(), NationType::Mayan);
+        assert_eq!(UniqueBuildingType::TempleOfChac.nation(), NationType::Maya);
         assert_eq!(UniqueBuildingType::OracleOfApollo.nation(), NationType::Trojan);
         assert_eq!(UniqueBuildingType::DarkTemple.nation(), NationType::DarkTribe);
     }
@@ -854,7 +854,7 @@ mod tests {
     fn test_unique_buildings_for_nation() {
         assert_eq!(UniqueBuildingType::for_nation(NationType::Roman).len(), 6);
         assert_eq!(UniqueBuildingType::for_nation(NationType::Viking).len(), 6);
-        assert_eq!(UniqueBuildingType::for_nation(NationType::Mayan).len(), 7);
+        assert_eq!(UniqueBuildingType::for_nation(NationType::Maya).len(), 7);
         assert_eq!(UniqueBuildingType::for_nation(NationType::Trojan).len(), 7);
         assert_eq!(UniqueBuildingType::for_nation(NationType::DarkTribe).len(), 8);
     }
@@ -885,7 +885,7 @@ mod tests {
     fn test_ai_personalities() {
         let roman = Nation::new(NationType::Roman);
         let viking = Nation::new(NationType::Viking);
-        let mayan = Nation::new(NationType::Mayan);
+        let mayan = Nation::new(NationType::Maya);
         let trojan = Nation::new(NationType::Trojan);
         let dark = Nation::new(NationType::DarkTribe);
 
@@ -893,7 +893,7 @@ mod tests {
         assert!(viking.modifiers.ai.aggression > roman.modifiers.ai.aggression);
         assert!(viking.modifiers.ai.aggression > mayan.modifiers.ai.aggression);
 
-        // Mayans are most defensive
+        // Mayas are most defensive
         assert!(mayan.modifiers.ai.defense_priority > viking.modifiers.ai.defense_priority);
 
         // Trojans are most trade-focused
@@ -927,7 +927,7 @@ mod tests {
     fn test_total_unique_buildings() {
         let total = UniqueBuildingType::for_nation(NationType::Roman).len()
             + UniqueBuildingType::for_nation(NationType::Viking).len()
-            + UniqueBuildingType::for_nation(NationType::Mayan).len()
+            + UniqueBuildingType::for_nation(NationType::Maya).len()
             + UniqueBuildingType::for_nation(NationType::Trojan).len()
             + UniqueBuildingType::for_nation(NationType::DarkTribe).len();
         assert_eq!(total, 34); // 6 + 6 + 7 + 7 + 8

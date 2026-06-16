@@ -25,77 +25,77 @@ use crate::pathfinding::Path;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum UnitKind {
-    /// Worker settler — can be assigned to buildings
-    Worker = 0,
-    /// Basic soldier — melee fighter
-    Soldier = 1,
-    /// Archer — ranged fighter
-    Archer = 2,
+    /// Settler — can be assigned to buildings
+    Settler = 0,
+    /// Swordsman — melee fighter
+    Swordsman = 1,
+    /// Bowman — ranged fighter
+    Bowman = 2,
 }
 
 impl UnitKind {
     /// Display name
     pub fn name(self) -> &'static str {
         match self {
-            UnitKind::Worker => "Worker",
-            UnitKind::Soldier => "Soldier",
-            UnitKind::Archer => "Archer",
+            UnitKind::Settler => "Settler",
+            UnitKind::Swordsman => "Swordsman",
+            UnitKind::Bowman => "Bowman",
         }
     }
 
     /// Maximum HP for this unit type
     pub fn max_hp(self) -> u32 {
         match self {
-            UnitKind::Worker => 50,
-            UnitKind::Soldier => 100,
-            UnitKind::Archer => 60,
+            UnitKind::Settler => 50,
+            UnitKind::Swordsman => 100,
+            UnitKind::Bowman => 60,
         }
     }
 
     /// Movement speed in tiles per second
     pub fn speed(self) -> f32 {
         match self {
-            UnitKind::Worker => 2.0,
-            UnitKind::Soldier => 2.5,
-            UnitKind::Archer => 2.0,
+            UnitKind::Settler => 2.0,
+            UnitKind::Swordsman => 2.5,
+            UnitKind::Bowman => 2.0,
         }
     }
 
     /// Attack damage per hit
     pub fn attack_damage(self) -> u32 {
         match self {
-            UnitKind::Worker => 0,   // workers can't fight
-            UnitKind::Soldier => 15,
-            UnitKind::Archer => 10,
+            UnitKind::Settler => 0,   // settlers can't fight
+            UnitKind::Swordsman => 15,
+            UnitKind::Bowman => 10,
         }
     }
 
     /// Attack range in tiles (1 = adjacent)
     pub fn attack_range(self) -> f32 {
         match self {
-            UnitKind::Worker => 0.0,
-            UnitKind::Soldier => 1.0,
-            UnitKind::Archer => 3.0,
+            UnitKind::Settler => 0.0,
+            UnitKind::Swordsman => 1.0,
+            UnitKind::Bowman => 3.0,
         }
     }
 
     /// Ticks between attacks (at 10 TPS)
     pub fn attack_interval(self) -> u32 {
         match self {
-            UnitKind::Worker => 0,
-            UnitKind::Soldier => 15,  // 1.5s
-            UnitKind::Archer => 20,   // 2.0s
+            UnitKind::Settler => 0,
+            UnitKind::Swordsman => 15,  // 1.5s
+            UnitKind::Bowman => 20,   // 2.0s
         }
     }
 
     /// Whether this unit can be assigned to a building
     pub fn can_work(self) -> bool {
-        matches!(self, UnitKind::Worker)
+        matches!(self, UnitKind::Settler)
     }
 
     /// Whether this unit can fight
     pub fn can_fight(self) -> bool {
-        !matches!(self, UnitKind::Worker)
+        !matches!(self, UnitKind::Settler)
     }
 }
 
@@ -114,7 +114,7 @@ pub enum UnitState {
     Dead,
 }
 
-/// A game unit (worker or soldier)
+/// A game unit (settler or soldier)
 #[derive(Debug, Clone)]
 pub struct Unit {
     /// Unique unit ID
@@ -377,45 +377,45 @@ impl UnitManager {
         self.units.iter().filter(|u| u.is_alive()).count()
     }
 
-    /// Count alive workers
-    pub fn worker_count(&self) -> usize {
-        self.alive_of_kind(UnitKind::Worker).count()
+    /// Count alive settlers
+    pub fn settler_count(&self) -> usize {
+        self.alive_of_kind(UnitKind::Settler).count()
     }
 
-    /// Count idle workers (available for assignment)
-    pub fn idle_worker_count(&self) -> usize {
+    /// Count idle settlers (available for assignment)
+    pub fn idle_settler_count(&self) -> usize {
         self.units
             .iter()
-            .filter(|u| u.kind == UnitKind::Worker && u.is_idle())
+            .filter(|u| u.kind == UnitKind::Settler && u.is_idle())
             .count()
     }
 
-    /// Get all idle workers
-    pub fn idle_workers(&self) -> impl Iterator<Item = &Unit> {
+    /// Get all idle settlers
+    pub fn idle_settlers(&self) -> impl Iterator<Item = &Unit> {
         self.units
             .iter()
-            .filter(|u| u.kind == UnitKind::Worker && u.is_idle())
+            .filter(|u| u.kind == UnitKind::Settler && u.is_idle())
     }
 
-    /// Get the first idle worker, if any
-    pub fn find_idle_worker(&self) -> Option<&Unit> {
+    /// Get the first idle settler, if any
+    pub fn find_idle_settler(&self) -> Option<&Unit> {
         self.units
             .iter()
-            .find(|u| u.kind == UnitKind::Worker && u.is_idle())
+            .find(|u| u.kind == UnitKind::Settler && u.is_idle())
     }
 
-    /// Get mutable reference to first idle worker
-    pub fn find_idle_worker_mut(&mut self) -> Option<&mut Unit> {
+    /// Get mutable reference to first idle settler
+    pub fn find_idle_settler_mut(&mut self) -> Option<&mut Unit> {
         self.units
             .iter_mut()
-            .find(|u| u.kind == UnitKind::Worker && u.is_idle())
+            .find(|u| u.kind == UnitKind::Settler && u.is_idle())
     }
 
-    /// Assign an idle worker to a building. Returns the worker ID.
-    pub fn assign_worker(&mut self, building_index: usize) -> Option<u32> {
-        let worker = self.find_idle_worker_mut()?;
-        worker.assign_to(building_index);
-        Some(worker.id)
+    /// Assign an idle settler to a building. Returns the settler ID.
+    pub fn assign_settler(&mut self, building_index: usize) -> Option<u32> {
+        let settler = self.find_idle_settler_mut()?;
+        settler.assign_to(building_index);
+        Some(settler.id)
     }
 
     /// Tick all units: movement, attack cooldowns
@@ -460,9 +460,9 @@ mod tests {
 
     #[test]
     fn test_unit_new() {
-        let u = Unit::new(1, UnitKind::Worker, 5.0, 10.0);
+        let u = Unit::new(1, UnitKind::Settler, 5.0, 10.0);
         assert_eq!(u.id, 1);
-        assert_eq!(u.kind, UnitKind::Worker);
+        assert_eq!(u.kind, UnitKind::Settler);
         assert_eq!(u.hp, 50);
         assert_eq!(u.max_hp, 50);
         assert_eq!(u.state, UnitState::Idle);
@@ -472,26 +472,26 @@ mod tests {
 
     #[test]
     fn test_unit_kind_stats() {
-        assert_eq!(UnitKind::Worker.max_hp(), 50);
-        assert_eq!(UnitKind::Soldier.max_hp(), 100);
-        assert_eq!(UnitKind::Archer.max_hp(), 60);
+        assert_eq!(UnitKind::Settler.max_hp(), 50);
+        assert_eq!(UnitKind::Swordsman.max_hp(), 100);
+        assert_eq!(UnitKind::Bowman.max_hp(), 60);
 
-        assert_eq!(UnitKind::Worker.attack_damage(), 0);
-        assert_eq!(UnitKind::Soldier.attack_damage(), 15);
-        assert_eq!(UnitKind::Archer.attack_damage(), 10);
+        assert_eq!(UnitKind::Settler.attack_damage(), 0);
+        assert_eq!(UnitKind::Swordsman.attack_damage(), 15);
+        assert_eq!(UnitKind::Bowman.attack_damage(), 10);
 
-        assert!(UnitKind::Worker.can_work());
-        assert!(!UnitKind::Soldier.can_work());
-        assert!(!UnitKind::Archer.can_work());
+        assert!(UnitKind::Settler.can_work());
+        assert!(!UnitKind::Swordsman.can_work());
+        assert!(!UnitKind::Bowman.can_work());
 
-        assert!(!UnitKind::Worker.can_fight());
-        assert!(UnitKind::Soldier.can_fight());
-        assert!(UnitKind::Archer.can_fight());
+        assert!(!UnitKind::Settler.can_fight());
+        assert!(UnitKind::Swordsman.can_fight());
+        assert!(UnitKind::Bowman.can_fight());
     }
 
     #[test]
-    fn test_unit_assign_worker() {
-        let mut u = Unit::new(1, UnitKind::Worker, 0.0, 0.0);
+    fn test_unit_assign_settler() {
+        let mut u = Unit::new(1, UnitKind::Settler, 0.0, 0.0);
         assert!(u.can_assign());
 
         u.assign_to(5);
@@ -505,8 +505,8 @@ mod tests {
     }
 
     #[test]
-    fn test_unit_assign_non_worker() {
-        let mut u = Unit::new(1, UnitKind::Soldier, 0.0, 0.0);
+    fn test_unit_assign_non_settler() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
         assert!(!u.can_assign());
         // assign_to should be a no-op
         u.assign_to(5);
@@ -515,7 +515,7 @@ mod tests {
 
     #[test]
     fn test_unit_take_damage() {
-        let mut u = Unit::new(1, UnitKind::Soldier, 0.0, 0.0);
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
         assert!(!u.take_damage(30));
         assert_eq!(u.hp, 70);
         assert!(u.is_alive());
@@ -528,7 +528,7 @@ mod tests {
 
     #[test]
     fn test_unit_heal() {
-        let mut u = Unit::new(1, UnitKind::Soldier, 0.0, 0.0);
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
         u.take_damage(50);
         assert_eq!(u.hp, 50);
         u.heal(20);
@@ -539,15 +539,15 @@ mod tests {
 
     #[test]
     fn test_unit_distance() {
-        let u1 = Unit::new(1, UnitKind::Worker, 0.0, 0.0);
-        let u2 = Unit::new(2, UnitKind::Worker, 3.0, 4.0);
+        let u1 = Unit::new(1, UnitKind::Settler, 0.0, 0.0);
+        let u2 = Unit::new(2, UnitKind::Settler, 3.0, 4.0);
         let d = u1.distance_to(&u2);
         assert!((d - 5.0).abs() < 0.01);
     }
 
     #[test]
     fn test_unit_attack_cooldown() {
-        let mut u = Unit::new(1, UnitKind::Soldier, 0.0, 0.0);
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
         assert!(u.can_attack());
 
         // Simulate an attack
@@ -564,7 +564,7 @@ mod tests {
     #[test]
     fn test_unit_movement() {
         let map = Map::new(10, 10);
-        let mut u = Unit::new(1, UnitKind::Worker, 0.5, 0.5);
+        let mut u = Unit::new(1, UnitKind::Settler, 0.5, 0.5);
 
         // Create a path: (0,0) → (5,0) — unit starts at center of (0,0)
         let path = Path::new(vec![(0, 0), (5, 0)]);
@@ -585,42 +585,42 @@ mod tests {
     #[test]
     fn test_unit_manager_spawn() {
         let mut mgr = UnitManager::new();
-        let id1 = mgr.spawn(UnitKind::Worker, 1.0, 1.0);
-        let id2 = mgr.spawn(UnitKind::Soldier, 2.0, 2.0);
-        let id3 = mgr.spawn(UnitKind::Worker, 3.0, 3.0);
+        let id1 = mgr.spawn(UnitKind::Settler, 1.0, 1.0);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 2.0, 2.0);
+        let id3 = mgr.spawn(UnitKind::Settler, 3.0, 3.0);
 
         assert_eq!(id1, 1);
         assert_eq!(id2, 2);
         assert_eq!(id3, 3);
         assert_eq!(mgr.alive_count(), 3);
-        assert_eq!(mgr.worker_count(), 2);
-        assert_eq!(mgr.idle_worker_count(), 2);
+        assert_eq!(mgr.settler_count(), 2);
+        assert_eq!(mgr.idle_settler_count(), 2);
     }
 
     #[test]
-    fn test_unit_manager_assign_worker() {
+    fn test_unit_manager_assign_settler() {
         let mut mgr = UnitManager::new();
-        mgr.spawn(UnitKind::Worker, 1.0, 1.0);
-        mgr.spawn(UnitKind::Worker, 2.0, 2.0);
-        mgr.spawn(UnitKind::Soldier, 3.0, 3.0);
+        mgr.spawn(UnitKind::Settler, 1.0, 1.0);
+        mgr.spawn(UnitKind::Settler, 2.0, 2.0);
+        mgr.spawn(UnitKind::Swordsman, 3.0, 3.0);
 
-        let wid = mgr.assign_worker(0);
+        let wid = mgr.assign_settler(0);
         assert!(wid.is_some());
-        assert_eq!(mgr.idle_worker_count(), 1); // one worker assigned
+        assert_eq!(mgr.idle_settler_count(), 1); // one settler assigned
 
-        let wid2 = mgr.assign_worker(1);
+        let wid2 = mgr.assign_settler(1);
         assert!(wid2.is_some());
-        assert_eq!(mgr.idle_worker_count(), 0); // all workers assigned
+        assert_eq!(mgr.idle_settler_count(), 0); // all settlers assigned
 
-        // No more idle workers
-        let wid3 = mgr.assign_worker(2);
+        // No more idle settlers
+        let wid3 = mgr.assign_settler(2);
         assert!(wid3.is_none());
     }
 
     #[test]
     fn test_unit_manager_get() {
         let mut mgr = UnitManager::new();
-        mgr.spawn(UnitKind::Worker, 5.0, 5.0);
+        mgr.spawn(UnitKind::Settler, 5.0, 5.0);
 
         let u = mgr.get(1);
         assert!(u.is_some());
@@ -632,8 +632,8 @@ mod tests {
     #[test]
     fn test_unit_manager_remove_dead() {
         let mut mgr = UnitManager::new();
-        let id1 = mgr.spawn(UnitKind::Soldier, 1.0, 1.0);
-        mgr.spawn(UnitKind::Soldier, 2.0, 2.0);
+        let id1 = mgr.spawn(UnitKind::Swordsman, 1.0, 1.0);
+        mgr.spawn(UnitKind::Swordsman, 2.0, 2.0);
 
         mgr.get_mut(id1).unwrap().take_damage(200);
         assert_eq!(mgr.alive_count(), 1);
@@ -647,7 +647,7 @@ mod tests {
     fn test_unit_manager_tick() {
         let map = Map::new(10, 10);
         let mut mgr = UnitManager::new();
-        let id = mgr.spawn(UnitKind::Worker, 0.5, 0.5);
+        let id = mgr.spawn(UnitKind::Settler, 0.5, 0.5);
 
         let path = Path::new(vec![(0, 0), (5, 0)]);
         mgr.get_mut(id).unwrap().move_along(path);
