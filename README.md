@@ -118,7 +118,8 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **New Game Flow** — Procedural map generation via `generate_map()` WASM, loading screen with progress bar, difficulty-based starting resources (Easy 2×, Medium 1×, Hard 0.5×)
 - ✅ **Starter Base** — Auto-placed Headquarters at map center + 2-4 idle workers on new game start
 - ✅ **Map Validation** — Binary .map integrity checks (terrain ID range, tile count, elevation pattern warnings)
-- ⏳ **Single-Player Start** — Auto-save, continue game, load .sav files
+- ⏳ **Single-Player Start** — Auto-save (✅), continue game (✅), load .sav files (⏳)
+- ✅ **Save/Load System** — `get_game_state()` + `restore_game_state()` WASM exports, auto-save every 5 min to localStorage, Continue button with game time indicator, manual Save in pause overlay
 
 ---
 
