@@ -763,7 +763,7 @@ const TERRAIN_BY_ID = [
     { id: 7, name: 'Snow', color: '#e6ebf2' },
 ];
 const RESOURCE_NAMES = [null, 'Iron', 'Coal', 'Gold', 'Stone', 'Sulfur', 'Fish', 'Game', 'Grain'];
-const RESOURCE_ICONS = { Iron:'⛓️', Coal:'🪨', Gold:'🪙', Stone:'🪨', Sulfur:'🟡', Fish:'🐟', Game:'🦌', Grain:'🌾' };
+const MAP_RESOURCE_ICONS = { Iron:'⛓️', Coal:'🪨', Gold:'🪙', Stone:'🪨', Sulfur:'🟡', Fish:'🐟', Game:'🦌', Grain:'🌾' };
 
 // ── .sav Chunk Type Names ─────────────────────────────────────────────────
 // Two ID schemes exist in the wild:
@@ -1309,7 +1309,7 @@ function showMapPreview(data, file) {
             .sort((a, b) => b[1] - a[1]);
         let resourceHTML = '';
         resourceSorted.forEach(([name, count]) => {
-            const icon = RESOURCE_ICONS[name] || '📦';
+            const icon = MAP_RESOURCE_ICONS[name] || '📦';
             resourceHTML += `<div class="mp-stat-row">
                 <span class="mp-stat-name">${icon} ${name}</span>
                 <span class="mp-stat-count">${count}</span>
@@ -1328,6 +1328,8 @@ function showMapPreview(data, file) {
             warningEl.classList.add('show');
         }
     }
+
+}
 
 function confirmMapLoad() {
     if (!pendingMapData || !load_map_json) return;
