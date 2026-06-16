@@ -741,7 +741,8 @@ import init, {
     setup_starter_base,
     get_game_state,
     restore_game_state,
-} from './pkg/s4wn_engine.js?v=11';
+    decompress_sav_chunk,
+} from './pkg/s4wn_engine.js?v=12';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -1006,7 +1007,13 @@ function parseSavHeader(buffer) {
             break; // Corrupt or end of chunks
         }
 
-        chunkTypes.push({ type: chunkType, compressedLen: chunkLength, unpackedLen });
+        chunkTypes.push({
+            type: chunkType,
+            compressedLen: chunkLength,
+            unpackedLen,
+            // Extract raw chunk data (offset + length) for later decompression
+            rawOffset: absOffset + 24,
+        });
         chunkCount++;
 
         // Advance to next chunk (header 24 + data)
@@ -1045,6 +1052,7 @@ function parseSavHeader(buffer) {
         resourceCounts: null,
         terrainWarnings: 0,
         elevWarning: null,
+        _rawBuffer: buffer,  // keep reference for decompression
     };
 }
 
@@ -1235,9 +1243,84 @@ function showMapPreview(data, file) {
 function confirmMapLoad() {
     if (!pendingMapData || !load_map_json) return;
 
-    // .sav files cannot be loaded yet — they need WASM decompression
+    // .sav files: decompress terrain chunk and load map
     if (pendingMapData.type === 'sav') {
-        alert('Full savegame (.sav) loading is not yet supported.\n\nSavegame data requires WASM decompression of LZ+Huffman compressed chunks.\nComing in a future update.');
+        try {
+            // Find the terrain chunk (type 0x2711 = SaveGameMapLandscape)
+            const terrainChunk = pendingMapData.chunkTypes.find(
+                ct => ct.type === 0x2711 || ct.type === 10001
+            );
+            if (!terrainChunk) {
+                alert('This savegame does not contain a terrain chunk.\n\nChunk types found: ' +
+                    pendingMapData.chunkTypes.map(ct => '0x' + ct.type.toString(16)).join(', '));
+                return;
+            }
+
+            // Extract raw compressed chunk bytes
+            const buf = pendingMapData._rawBuffer;
+            const rawBytes = new Uint8Array(
+                buf, terrainChunk.rawOffset, terrainChunk.compressedLen
+            );
+
+            // Decompress via WASM
+            const decompressed = decompress_sav_chunk(rawBytes, terrainChunk.unpackedLen);
+            if (!decompressed || decompressed.length === 0) {
+                alert('Failed to decompress savegame terrain chunk.\nThe data may be corrupted.');
+                return;
+            }
+
+            // Parse decompressed terrain tiles
+            // Each tile is 6 bytes: terrain(u8), elevation(u8→f32), flags(u8), resource(u8), mx(u8), my(u8)
+            // We'll estimate dimensions from tile count
+            const totalTiles = decompressed.length / 6;
+            if (totalTiles % 1 !== 0) {
+                alert('Decompressed terrain data has invalid size: ' + decompressed.length +
+                    ' bytes (not a multiple of 6)');
+                return;
+            }
+            const estDim = Math.round(Math.sqrt(totalTiles));
+            const width = estDim;
+            const height = estDim;
+            if (width * height !== totalTiles) {
+                alert('Decompressed terrain has ' + totalTiles +
+                    ' tiles, not a perfect square. Import may be incomplete.');
+                // Still try with estimated dimensions
+            }
+
+            // Build tile array
+            const tiles = [];
+            for (let i = 0; i < totalTiles * 6; i += 6) {
+                const terrainId = decompressed[i];
+                const rawElev = decompressed[i + 1];
+                const flags = decompressed[i + 2];
+                const resourceId = decompressed[i + 3];
+                // micro-x, micro-y ignored for now
+
+                const terrainName = TERRAIN_BY_ID[terrainId] ? TERRAIN_BY_ID[terrainId].name : 'Grass';
+                const elevation = (rawElev / 255.0) * 2.0 - 1.0; // normalize 0-255 → -1.0 to 1.0
+                const resourceName = RESOURCE_NAMES[resourceId] || null;
+
+                tiles.push({
+                    terrain: terrainName,
+                    elevation: parseFloat(elevation.toFixed(3)),
+                    resource: resourceName,
+                });
+            }
+
+            // Load via JSON
+            const jsonData = { width, height, tiles };
+            const result = load_map_json(JSON.stringify(jsonData));
+            if (result === 'ok') {
+                if (pendingMapFile) addToRecentFiles(pendingMapFile);
+                cancelMapPreview();
+                closeMenu();
+                hudMap.textContent = `Map: ${pendingMapData.filename || pendingMapFile?.name} | .sav Loaded`;
+            } else {
+                alert('Map load error: ' + result);
+            }
+        } catch (err) {
+            alert('Failed to load savegame: ' + err.message);
+        }
         return;
     }
 
@@ -2157,7 +2240,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=11');
+            const mod = await import('./pkg/s4wn_engine.js?v=12');
             load_map_json = mod.load_map_json || null;
         } catch (e) {
             console.warn('load_map_json not available (old WASM cache?) — map loading disabled');

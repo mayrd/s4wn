@@ -2,6 +2,7 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export const add_starting_resources: (a: number, b: number) => [number, number];
+export const decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
 export const generate_map: (a: number, b: number, c: number, d: number) => [number, number];
 export const get_build_cost: (a: number, b: number) => [number, number];
 export const get_building_info: (a: number) => [number, number];

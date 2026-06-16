@@ -24,6 +24,23 @@ export function add_starting_resources(difficulty) {
 }
 
 /**
+ * Decompress a .sav savegame chunk: ARA-decrypt then LZ+Huffman decompress.
+ * Used by the JS .sav loader to extract game data from savegame chunks.
+ * Returns the decompressed data, or an empty Vec on failure.
+ * @param {Uint8Array} data
+ * @param {number} expected_length
+ * @returns {Uint8Array}
+ */
+export function decompress_sav_chunk(data, expected_length) {
+    const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.decompress_sav_chunk(ptr0, len0, expected_length);
+    var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+    return v2;
+}
+
+/**
  * Generate a procedural map and return it as a JSON string.
  * map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
  * width/height: map dimensions (clamped to 16..1024)
@@ -915,6 +932,13 @@ function handleError(f, args) {
 
 function isLikeNone(x) {
     return x === undefined || x === null;
+}
+
+function passArray8ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 1, 1) >>> 0;
+    getUint8ArrayMemory0().set(arg, ptr / 1);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
 }
 
 function passStringToWasm0(arg, malloc, realloc) {

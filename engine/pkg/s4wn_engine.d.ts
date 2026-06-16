@@ -10,6 +10,13 @@
 export function add_starting_resources(difficulty: string): string;
 
 /**
+ * Decompress a .sav savegame chunk: ARA-decrypt then LZ+Huffman decompress.
+ * Used by the JS .sav loader to extract game data from savegame chunks.
+ * Returns the decompressed data, or an empty Vec on failure.
+ */
+export function decompress_sav_chunk(data: Uint8Array, expected_length: number): Uint8Array;
+
+/**
  * Generate a procedural map and return it as a JSON string.
  * map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
  * width/height: map dimensions (clamped to 16..1024)
@@ -201,6 +208,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
+    readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
     readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
     readonly get_build_cost: (a: number, b: number) => [number, number];
     readonly get_building_info: (a: number) => [number, number];

@@ -1912,6 +1912,19 @@ pub fn restore_game_state(json: &str) -> String {
     String::from("error: engine not initialized")
 }
 
+/// Decompress a .sav savegame chunk: ARA-decrypt then LZ+Huffman decompress.
+/// Used by the JS .sav loader to extract game data from savegame chunks.
+/// Returns the decompressed data, or an empty Vec on failure.
+#[wasm_bindgen]
+pub fn decompress_sav_chunk(data: &[u8], expected_length: usize) -> Vec<u8> {
+    use crate::ara_crypt::AraCrypt;
+    use crate::decompress::Decompressor;
+
+    let mut ara = AraCrypt::new_s4();
+    let decrypted = ara.decrypt(data);
+    Decompressor::unpack(&decrypted, 0, decrypted.len(), expected_length)
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
