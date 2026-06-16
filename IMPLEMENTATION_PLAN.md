@@ -3,7 +3,7 @@
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
 ## Status: Phase 2.8 — Tool System 🔨
-Last updated: 2026-06-16 (Session 50)
+Last updated: 2026-06-16 (Session 51)
 
 ## 🤖 Agent Operating Rules
 
@@ -497,8 +497,9 @@ s4wn/
 ||| 46 | 2026-06-16 | ~10 min | Phase 2.8.2 tool wiring: Added `carried_tool: Option<u8>` to Unit, `required_tool: Option<u8>` to Building, `tool_code_from_name()` helper, `has_tooled_settler()` method. Updated `Economy::update()` to precompute tool-aware production eligibility — buildings without tool-equipped settlers now block production. 6 new tests (tool_code_from_name, required_tool_field, has_tooled_settler, tool blocks/allows production). 171 tests passing. |
 ||| 47 | 2026-06-16 | ~20 min | Debug session: Investigated black main-canvas despite working minimap. Added RENDER_DIAG console.log to Rust render() — fires on first frame, logs map dimensions, index_count, zoom, camera center, canvas size, and map_dims_loc (Some/None). Identified potential edge-fog false-positive: if u_map_dims uniform is 0,0 the fog covers entire map making it invisible against clear color. Rebuilt WASM (v=14). Awaiting user console output for diagnosis. 171 tests passing. |
 ||| 48 | 2026-06-16 | ~25 min | S4 Authenticity cleanup: Removed fabricated Residence building (not in Siedler 4) from BuildingType enum, all methods (name/build_cost/inputs/outputs/requires_settler/build_time/required_tool/all_names/from_name), building_color() in lib.rs, and all tests. Deleted tannery.obj + tannery.mtl assets (fabricated building). Updated MODEL_LISTING.md and IMPLEMENTATION_PLAN.md (Residence references corrected to Castle). Rebuilt WASM (v=15). 171 tests passing. |
-||| 49 | 2026-06-16 | ~25 min | Comprehensive S4 authenticity audit
-|| 50 | 2026-06-16 | ~10 min | Castle settler recruitment: added recruitment_timer to Building, CASTLE_SETTLER_INTERVAL=50, Economy::update() spawns idle settlers from completed Castles. Fixed Building::new() to mark zero-build-time buildings (Castle, Storehouse) as immediately complete. 3 new tests (single, pre-interval, multi-Castle). 174 engine tests passing. of nations, people, goods, resources, terrain, decorations, and objects. No fabricated content found beyond Residence (removed S48). Cleaned old names from docs: IMPLEMENTATION_PLAN.md (Mayans→Maya, 4→5 nations, Residence→Castle, Butcher input Pig→Game, Planks→Boards, Fishery→Fisherman, Quarry→Stonecutter, Toolmaker→Toolsmith, Armory→Weaponsmith, Archery Range removed, Forester→Woodcutter, 25→17 building types), MODEL_LISTING.md (all 48 old building/unit/animation names updated to S4 terminology), engine/index.html (58 settler ID mapping comments updated: Worker→Settler, Soldier→Swordsman, Archer→Bowman). 171 tests passing. |
+|| 51 | 2026-06-16 | ~2h | **Nano Banana 2 high-res terrain textures.** Generated 8 × 1024×1024 PNG terrain textures via google/gemini-3.1-flash-image-preview (OpenRouter, ~$0.55). Wired into WebGL pipeline: added a_uv + a_terrain_id vertex attributes, sampler2DArray u_terrain_textures, base_color texture sampling in fragment shader with flat-color fallback. JS creates TEXTURE_2D_ARRAY, loads 8 PNGs, uploads via texSubImage3D. Cache v=17→v=18. 174 tests passing. |
+|| 50 | 2026-06-16 | ~10 min | Castle settler recruitment: added recruitment_timer to Building, CASTLE_SETTLER_INTERVAL=50, Economy::update() spawns idle settlers from completed Castles. Fixed Building::new() zero-build-time buildings. 174 tests passing. |
+||| 49 | 2026-06-16 | ~25 min | Comprehensive S4 authenticity audit of nations, people, goods, resources, terrain, decorations, and objects. No fabricated content beyond Residence (removed S48). Cleaned old names from docs. 171 tests passing. |
 | 48 | 2026-06-16 | ~10 min | Fixed black screen (Session 47 carryover): removed unused u_map_dims uniform from vertex shader — GPU drivers optimized it away, causing get_uniform_location to return None and default (0,0) to blanket map in edge-fog color matching clear color. Updated edge-fog shader test. Bumped WASM cache to v=15. All 171 tests passing. |
 ---
 
@@ -538,15 +539,16 @@ None at the moment.
 
 ## Next Session
 
-### ✅ Black screen FIXED in Session 48
-- The `u_map_dims` uniform is now fragment-shader-only. GPU drivers won't optimize it away.
-- If black screen recurs, check other causes: `showMenu` state, canvas size, WebGL context loss.
+### ✅ Nano Banana 2 terrain textures (Session 51)
+- 1024×1024 textures for all 8 S4 terrain types, loaded via WebGL TEXTURE_2D_ARRAY
+- Graceful fallback to flat colors if textures fail to load
+- Future: tune UV repeat factor, add texture blending between tile edges
 
 ### Phase 2.8.2 — Common Buildings (continued)
 - [ ] **Toolsmith named tool production:** Toolsmith produces specific tools (Hammer, Pickaxe, Saw, etc.) — each with separate production cycle and storage in storehouse
 - [ ] **Settler tool pickup:** idle settlers check storehouse for tools needed by unstaffed buildings, auto-pickup and route to building
 - [x] **Castle settler recruitment:** spawn idle settler at castle every ~50 ticks (5s at 10 TPS)
-- [ ] **Barracks unit training:** consume Swords + Shields + Settler → convert into Swordsman; Barracks: Weapons + Settler → Bowman
+- [ ] **Barracks unit training:** consume Swords + Shields + Settler → convert into Swordsman; Weapons + Settler → Bowman
 - [ ] **Mint building:** Gold Ore + Coal → Coins (trade/economic good) — reaches 19 common buildings
 - [ ] **WorkerAI tool awareness:** auto_assign prefers tool-carrying settlers; Toolsmith produces named tools with tool_type field
 
