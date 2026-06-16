@@ -40,6 +40,49 @@
   }
   canvas:active { cursor: grabbing; }
 
+  /* ── Loading Screen ─────────────────────────────────────────────────── */
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes progressPulse {
+    0%, 100% { opacity: 0.7; }
+    50%      { opacity: 1.0; }
+  }
+  #loading-screen {
+    position: fixed; inset: 0; z-index: 90;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(8, 12, 24, 0.95);
+    backdrop-filter: blur(8px);
+  }
+  #loading-screen.active { display: flex; }
+  .loading-spinner {
+    width: 48px; height: 48px;
+    border: 4px solid rgba(255,200,80,0.2);
+    border-top-color: #ffc850;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .loading-text {
+    color: #e0d8c8;
+    font-size: 18px;
+    margin-top: 20px;
+    animation: progressPulse 1.5s ease-in-out infinite;
+  }
+  .loading-bar-wrap {
+    width: 260px; height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+  .loading-bar-fill {
+    width: 0%; height: 100%;
+    background: linear-gradient(90deg, #ffc850, #ff8c00);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+
   /* ── Splash ────────────────────────────────────────────────────────── */
   #splash {
     position: fixed; inset: 0; z-index: 100;
@@ -548,6 +591,13 @@
 <canvas id="minimap" width="150" height="150"></canvas>
 <canvas id="game-canvas"></canvas>
 
+<!-- Loading Screen -->
+<div id="loading-screen">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Generating world...</div>
+  <div class="loading-bar-wrap"><div class="loading-bar-fill"></div></div>
+</div>
+
 <!-- Pause Overlay -->
 <div id="pause-overlay"><div class="pause-text">⏸ PAUSED</div></div>
 
@@ -583,7 +633,9 @@ import init, {
     try_place_building,
     list_building_types,
     get_build_cost,
-} from './pkg/s4wn_engine.js?v=8';
+    generate_map,
+    add_starting_resources,
+} from './pkg/s4wn_engine.js?v=9';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -1312,20 +1364,80 @@ function closeNewGame() {
     document.getElementById('new-game-panel').classList.remove('open');
 }
 
-function startNewGame() {
+function showLoading(msg) {
+    const ls = document.getElementById('loading-screen');
+    ls.querySelector('.loading-text').textContent = msg;
+    ls.querySelector('.loading-bar-fill').style.width = '0%';
+    ls.classList.add('active');
+}
+
+function updateLoadingProgress(pct, msg) {
+    const ls = document.getElementById('loading-screen');
+    ls.querySelector('.loading-bar-fill').style.width = Math.min(100, pct) + '%';
+    if (msg) ls.querySelector('.loading-text').textContent = msg;
+}
+
+function hideLoading() {
+    document.getElementById('loading-screen').classList.remove('active');
+}
+
+async function startNewGame() {
     const name = document.getElementById('ng-name').value || 'Player 1';
-    const map = document.getElementById('ng-map').value;
+    const mapType = document.getElementById('ng-map').value;
     const difficulty = document.getElementById('ng-difficulty').value;
-    console.log(`New Game: ${name}, map=${map}, difficulty=${difficulty}`);
+    console.log(`New Game: ${name}, map=${mapType}, difficulty=${difficulty}`);
     closeNewGame();
     closeMenu();
-    // Reset game state via WASM — fall back to demo map for now
-    if (engineReady && load_map_json) {
-        // Generate a simple map based on selection
-        const mapName = map.charAt(0).toUpperCase() + map.slice(1);
+
+    if (!engineReady || !load_map_json) {
+        alert('Engine not ready. Please wait for WASM to load.');
+        return;
+    }
+
+    // Show loading screen
+    showLoading('Generating world...');
+
+    try {
+        // Animate progress as async steps complete
+        updateLoadingProgress(20, 'Generating terrain...');
+
+        // Generate the map (64×64 default, use smaller map for easier difficulty)
+        const mapSize = difficulty === 'easy' ? 48 : 64;
+        const mapJson = generate_map(mapType, mapSize, mapSize);
+
+        updateLoadingProgress(60, 'Building landscape...');
+
+        // Load the map into the engine
+        const result = load_map_json(mapJson);
+        if (result !== 'ok') {
+            throw new Error('Map load failed: ' + result);
+        }
+
+        updateLoadingProgress(80, 'Preparing starting resources...');
+
+        // Apply starting resources based on difficulty
+        const resResult = add_starting_resources(difficulty);
+        if (resResult !== 'ok') {
+            console.warn('Starting resources warning:', resResult);
+        }
+
+        updateLoadingProgress(100, 'Ready!');
+
+        // Update HUD
+        const mapName = mapType.charAt(0).toUpperCase() + mapType.slice(1);
         hudMap.textContent = `Map: ${mapName} | Player: ${name} | ${difficulty}`;
         lastResourceUpdate = 0;
         lastPopUpdate = 0;
+
+        // Short delay to show "Ready!" then close loading
+        setTimeout(() => {
+            hideLoading();
+        }, 400);
+
+    } catch (err) {
+        console.error('New Game failed:', err);
+        hideLoading();
+        alert('Failed to start new game: ' + err.message);
     }
 }
 
@@ -1336,7 +1448,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=4');
+            const mod = await import('./pkg/s4wn_engine.js?v=9');
             load_map_json = mod.load_map_json || null;
         } catch (e) {
             console.warn('load_map_json not available (old WASM cache?) — map loading disabled');

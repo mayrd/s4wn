@@ -1,6 +1,54 @@
 /* @ts-self-types="./s4wn_engine.d.ts" */
 
 /**
+ * Apply starting resources based on difficulty level.
+ * Should be called AFTER load_map_json() to seed the new game state.
+ * difficulty: "easy" (2× resources), "medium" (1×), "hard" (0.5×)
+ * Returns "ok" on success or an error message.
+ * @param {string} difficulty
+ * @returns {string}
+ */
+export function add_starting_resources(difficulty) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(difficulty, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.add_starting_resources(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
+ * Generate a procedural map and return it as a JSON string.
+ * map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
+ * width/height: map dimensions (clamped to 16..1024)
+ * Returns JSON in the format expected by load_map_json().
+ * @param {string} map_type
+ * @param {number} width
+ * @param {number} height
+ * @returns {string}
+ */
+export function generate_map(map_type, width, height) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(map_type, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.generate_map(ptr0, len0, width, height);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
  * Get build cost for a building type. Returns JSON: {"Wood":3} or {"error":"..."}
  * @param {string} kind_name
  * @returns {string}

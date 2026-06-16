@@ -2,6 +2,22 @@
 /* eslint-disable */
 
 /**
+ * Apply starting resources based on difficulty level.
+ * Should be called AFTER load_map_json() to seed the new game state.
+ * difficulty: "easy" (2× resources), "medium" (1×), "hard" (0.5×)
+ * Returns "ok" on success or an error message.
+ */
+export function add_starting_resources(difficulty: string): string;
+
+/**
+ * Generate a procedural map and return it as a JSON string.
+ * map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
+ * width/height: map dimensions (clamped to 16..1024)
+ * Returns JSON in the format expected by load_map_json().
+ */
+export function generate_map(map_type: string, width: number, height: number): string;
+
+/**
  * Get build cost for a building type. Returns JSON: {"Wood":3} or {"error":"..."}
  */
 export function get_build_cost(kind_name: string): string;
@@ -164,6 +180,8 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly add_starting_resources: (a: number, b: number) => [number, number];
+    readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
     readonly get_build_cost: (a: number, b: number) => [number, number];
     readonly get_building_info: (a: number) => [number, number];
     readonly get_building_summary: () => [number, number];

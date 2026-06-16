@@ -1457,6 +1457,57 @@ pub fn is_paused() -> bool {
     }
 }
 
+/// Generate a procedural map and return it as a JSON string.
+/// map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
+/// width/height: map dimensions (clamped to 16..1024)
+/// Returns JSON in the format expected by load_map_json().
+#[wasm_bindgen]
+pub fn generate_map(map_type: &str, width: u32, height: u32) -> String {
+    let w = width.clamp(16, 1024) as usize;
+    let h = height.clamp(16, 1024) as usize;
+    let map = match map_type {
+        "demo" | "island" | "continents" | "rivervalley" | "highlands" => {
+            // All types use the same procedural gen for now; distinct biomes TBD
+            Map::generate_demo(w, h)
+        }
+        _ => Map::generate_demo(w, h),
+    };
+    map.to_json()
+}
+
+/// Apply starting resources based on difficulty level.
+/// Should be called AFTER load_map_json() to seed the new game state.
+/// difficulty: "easy" (2× resources), "medium" (1×), "hard" (0.5×)
+/// Returns "ok" on success or an error message.
+#[wasm_bindgen]
+pub fn add_starting_resources(difficulty: &str) -> String {
+    use crate::economy::ResourceType;
+    unsafe {
+        if let Some(ref mut app) = APP {
+            let multiplier = match difficulty {
+                "easy" => 2.0,
+                "hard" => 0.5,
+                _ => 1.0, // medium or unknown
+            };
+            let resources: Vec<(ResourceType, u32)> = vec![
+                (ResourceType::Wood,  (100.0 * multiplier) as u32),
+                (ResourceType::Stone, (50.0 * multiplier) as u32),
+                (ResourceType::Iron,  (20.0 * multiplier) as u32),
+                (ResourceType::Coal,  (20.0 * multiplier) as u32),
+                (ResourceType::Gold,  (10.0 * multiplier) as u32),
+                (ResourceType::Grain, (30.0 * multiplier) as u32),
+                (ResourceType::Fish,  (20.0 * multiplier) as u32),
+                (ResourceType::Game,  (10.0 * multiplier) as u32),
+            ];
+            let economy = crate::economy::Economy::with_starting_resources(&resources);
+            app.game_loop.state.economy = economy;
+            String::from("ok")
+        } else {
+            String::from("error: engine not initialized")
+        }
+    }
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
