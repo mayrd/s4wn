@@ -394,6 +394,9 @@
   #build-toolbar .bt-build-btn:disabled {
     opacity: 0.3; cursor: not-allowed;
   }
+  #build-toolbar .bt-build-btn.affordable:not(.active):not(:disabled) {
+    color: #8f8; border-color: rgba(100,200,100,0.3);
+  }
   .bt-label { display: block; font-size: 8px; color: #666; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.1em; }
   /* placement mode cursor */
   canvas.placing { cursor: crosshair !important; }
@@ -751,9 +754,11 @@ function populateBuildToolbar() {
     buildToolbar.innerHTML = '';
     buildToolbar.appendChild(label);
     placementButtons = [];
+    lastAffordabilityUpdate = 0; // force refresh on next check
     kinds.forEach(name => {
         const btn = document.createElement('button');
         btn.className = 'bt-build-btn';
+        btn._buildingName = name;
         const icon = BUILDING_ICONS[name] || '🏗️';
         const costTip = showBuildCostTooltip(name);
         btn.textContent = `${icon} ${name}`;
@@ -788,6 +793,49 @@ function cancelPlacement() {
     placementStatus.classList.remove('visible');
 }
 
+function canAffordAll(needed) {
+    // needed: {\"Wood\":5,\"Stone\":2} or error string
+    if (!needed || typeof needed === 'string' || needed.error) return false;
+    try {
+        const raw = get_resource_counts();
+        if (!raw) return false;
+        const resources = JSON.parse(raw);
+        for (const [name, amount] of Object.entries(needed)) {
+            if ((resources[name] || 0) < amount) return false;
+        }
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+let lastAffordabilityUpdate = 0;
+function refreshBuildingAffordability() {
+    if (!engineReady || placementButtons.length === 0) return;
+    const now = performance.now();
+    if (now - lastAffordabilityUpdate < 2000) return;
+    lastAffordabilityUpdate = now;
+
+    placementButtons.forEach(btn => {
+        const name = btn._buildingName;
+        if (!name) return;
+        const costJson = get_build_cost(name);
+        let cost;
+        try { cost = JSON.parse(costJson); } catch(e) { cost = null; }
+        const affordable = cost && !cost.error && canAffordAll(cost);
+        btn.disabled = !affordable;
+        if (affordable) {
+            btn.classList.add('affordable');
+        } else {
+            btn.classList.remove('affordable');
+            // Cancel placement if current building becomes unaffordable
+            if (placementMode === name) {
+                cancelPlacement();
+            }
+        }
+    });
+}
+
 // Keyboard shortcut: B to enter build mode, Escape to cancel
 window.addEventListener('keydown', (e) => {
     if (showMenu) return;
@@ -813,6 +861,7 @@ canvas.addEventListener('click', (e) => {
         const r = JSON.parse(result);
         if (r.ok) {
             placementStatus.textContent = `✅ ${r.kind} placed at (${t.x},${t.y})`;
+            lastAffordabilityUpdate = 0; // immediate refresh
         } else {
             placementStatus.textContent = `❌ ${r.error}`;
             setTimeout(() => {
@@ -1338,6 +1387,9 @@ async function main() {
 
             // Building/unit population summary
             updatePopulationSummary();
+
+            // Building affordability in toolbar
+            refreshBuildingAffordability();
 
             requestAnimationFrame(loop);
         }
