@@ -2360,18 +2360,22 @@ function renderRecentFiles() {
 // ── Main ────────────────────────────────────────────────────────────────
 async function main() {
     try {
+        console.log('main() starting...');
         await init();
+        console.log('WASM init complete');
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
             const mod = await import('./pkg/s4wn_engine.js?v=12');
             load_map_json = mod.load_map_json || null;
+            console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {
             console.warn('load_map_json not available (old WASM cache?) — map loading disabled');
         }
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        console.log('Canvas size:', canvas.width, 'x', canvas.height);
 
         const ok = engineInit('game-canvas');
         if (!ok) {
@@ -2383,16 +2387,31 @@ async function main() {
         hudMap.textContent = 'S4WN Engine | 64×64 isometric map';
         loadSettings();
         populateBuildToolbar();
+        console.log('Engine ready, starting render loop');
 
         // Animation loop
         let fpsFrames = 0, fpsTime = performance.now(), currentFps = 0;
+        let frameCount = 0;
         function loop(ts) {
             if (showMenu) {
                 requestAnimationFrame(loop);
                 return;
             }
 
-            render(ts);
+            try {
+                render(ts);
+            } catch (e) {
+                console.error('Render error:', e);
+            }
+
+            frameCount++;
+            if (frameCount === 1) {
+                console.log('First render call completed');
+                const s = get_stats();
+                console.log('Stats:', s);
+                const md = get_map_data();
+                console.log('Map data length:', md ? md.length : 'null');
+            }
 
             // FPS
             fpsFrames++;
