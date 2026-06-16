@@ -3,7 +3,7 @@
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
 ## Status: Phase 4 — UI & Single Player 🔨
-
+Last updated: 2026-06-16 (Session 44)
 Last updated: 2026-06-16 (Session 43)
 
 ## 🤖 Agent Operating Rules
@@ -78,7 +78,7 @@ Last updated: 2026-06-16 (Session 43)
 - [x] `Nation` struct: `id` (u8), `name` (&str), `description` (&str), `color` (RGBA)
 - [x] `NationType` enum: `Roman`, `Viking`, `Mayan`, `Trojan`, `DarkTribe`
 - [x] `NationRegistry` — const lookup table with all 5 nations and their modifiers
-- [ ] Nation selection integrated into new game setup flow
+- [x] Nation selection integrated into new game setup flow
 
 ##### 2.8.2 — Common Buildings (All Nations)
 > **Siedler IV has NO "Headquarters" building.** Settlers are recruited from Residences.
@@ -493,6 +493,7 @@ s4wn/
 ||||| 41 | 2026-06-16 | ~10 min | Phase 4.7 Visual Polish: Added slope-based elevation shading (computes max neighbor elevation difference per tile as vertex attribute, fragment shader darkens steep terrain via smoothstep). Added water wave animation (fragment shader detects water tiles by color, applies time-varying brightness wave). Updated MeshData, App struct, vertex/fragment shaders, mesh builder, and rebuild_mesh. WASM rebuilt (183KB). All 137 engine tests passing. |
 |||||| 42 | 2026-06-16 | ~10 min | Phase 4.7 Edge-of-map fog: Added shader-based edge fog effect — tiles near map border fade to dark navy (matching clear color) via smoothstep over 8-tile edge zone. Added u_map_dims uniform + v_tile_pos varying to vertex shader, fog computation in fragment shader. WASM rebuilt (184KB). Added 2 shader tests (edge fog uniforms + fog color match). 139 engine + 5 server = 144 tests passing. |
 ||||| 43 | 2026-06-16 | ~10 min | Phase 2.8.1 Nation Data Model: Created nation.rs module with NationType enum (5 nations), Nation struct with production/cost/unit/AI modifiers, NationRegistry const lookup tables, UnitSpecial enum (FormationBonus/Berserk/ForestGuard/ShieldWall/None), UniqueBuildingType enum (34 buildings), SpecialistType enum (6 types), ToolType enum (11 types), starting resources per nation. 21 new tests. 160 total tests passing (139 engine + 21 nation). |
+| 44 | 2026-06-16 | ~10 min | S4 naming cleanup: Aligned terminology with authentic Siedler 4 conventions (worker→settler, Headquarters→Castle, Quarry→Stonecutter, Blacksmith→Toolsmith, Armory→Weaponsmith, Fishery→Fisherman, Lumberjack→Woodcutter, Warehouse→Storehouse, Planks→Boards, Leather→Flour, Soldier→Swordsman). Fixed compiler warnings (unused imports/variables). Phase 2.8.1 integration: Added nation selection dropdown to new game panel (5 nations with emoji icons and playstyle descriptions), wired into startNewGame(). All 160 engine tests passing. |
 
 ---
 
@@ -532,26 +533,21 @@ None at the moment.
 
 ## Next Session
 
-### Phase 2.8.2 — Common Buildings (All Nations)
-- [ ] Extend BuildingType enum from 14 to 25 variants (add Residence, Mill, Bakery, Fishery, Butcher, Waterworks, Smelter, Mint, Armory, Barracks, GuardTower, Fortress, SiegeWorkshop, Shipyard, WarshipDock, RoadLayer)
-- [ ] Each building stores `input_resources`, `output_resources`, `required_tool`
+### Phase 2.8.1 — Nation Integration (cont.)
+- [ ] Add `set_player_nation(nation_name)` WASM export that stores nation on GameState
+- [ ] Apply nation modifiers: production speed, unit stats, building costs in economy/combat
+- [ ] Show nation flag/icon in in-game HUD with nation name
+
+### Phase 2.8.2 — Common Buildings (All Nations) — HIGHEST PRIORITY
+- [ ] Extend BuildingType enum from 14 to 18 variants (add Residence, Waterworks, Smelter, Mint, Barracks)
+- [ ] Each new building gets full wiring: costs, inputs, outputs, production_interval, terrain_requirement
+- [ ] Residence tier: Small (25 capacity), Medium (50), Large (100) with settler recruitment
 - [ ] Tool system: buildings stay "unoccupied" until worker with correct tool arrives
-- [ ] Residence tier: Small/Medium/Large with settler capacity
+- [ ] Add new ResourceType::Water for Waterworks output
 
-### Phase 2.8.2a — Nation-Specific Unique Buildings
-- [ ] Add unique building variants to BuildingType enum (~30 total)
-- [ ] Nation constraint on construction menu (filter by nation)
-- [ ] Manna resource type + mana consumption for magic spells
-
-### Phase 4.4a — Map Import Polish
-- [ ] Round-trip test: load .map → render → export JSON → verify terrain/resource/elevation match
-- [ ] Performance: for maps > 256×256, show loading progress bar; target < 2s for 512×512 maps
-
-### Phase 4.6 — Single-Player Start
-- [ ] Validate map integrity before loading (check all tiles have valid terrain IDs)
-- [ ] Starting resources allocation based on map size + difficulty
-- [ ] Fog of war / unexplored territory (darken tiles not yet seen) — optional, phase 4.6+
-- [ ] Add ☰ menu button to in-game HUD for Esc menu access
+### Phase 4.7 — Visual Polish (ongoing)
+- [ ] Fog of war / unexplored territory (darken unseen tiles via shader)
+- [ ] Nation-color tinting on buildings in WebGL overlay
 
 ---
 
