@@ -215,7 +215,7 @@ mod tests {
 
         // Run AI — should auto-assign settler to farm
         let ai = WorkerAI::new();
-        let map = Map::new(10, 10);
+        let _map = Map::new(10, 10);
         ai.auto_assign(&mut economy);
 
         // Worker should now be assigned to the farm
@@ -301,7 +301,7 @@ mod tests {
             (ResourceType::Stone, 50),
         ]);
 
-        let farm_idx = economy.place_building(BuildingType::Farm, 3, 3);
+        let _farm_idx = economy.place_building(BuildingType::Farm, 3, 3);
         economy.units.spawn(UnitKind::Settler, 0.5, 0.5);
 
         let map = Map::new(10, 10);
@@ -328,8 +328,8 @@ mod tests {
             (ResourceType::Stone, 100),
         ]);
 
-        let farm1 = economy.place_building(BuildingType::Farm, 2, 2);
-        let farm2 = economy.place_building(BuildingType::Farm, 7, 7);
+        let _farm1 = economy.place_building(BuildingType::Farm, 2, 2);
+        let _farm2 = economy.place_building(BuildingType::Farm, 7, 7);
 
         // Complete construction
         for _ in 0..20 {
@@ -340,7 +340,7 @@ mod tests {
         economy.units.spawn(UnitKind::Settler, 0.5, 0.5);
         economy.units.spawn(UnitKind::Settler, 9.5, 9.5);
 
-        let map = Map::new(10, 10);
+        let _map = Map::new(10, 10);
         let ai = WorkerAI::new();
 
         // Auto-assign should assign both settlers

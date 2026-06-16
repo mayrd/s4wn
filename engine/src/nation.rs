@@ -12,8 +12,8 @@
 //!
 //! Nation data is declared as const lookup tables — no runtime allocation.
 
-use crate::economy::BuildingType;
-use crate::units::UnitKind;
+// BuildingType and UnitKind used for future integration
+
 
 // ── Nation Type ──────────────────────────────────────────────────────────────
 
