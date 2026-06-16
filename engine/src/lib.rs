@@ -1508,6 +1508,81 @@ pub fn add_starting_resources(difficulty: &str) -> String {
     }
 }
 
+/// Place a free Headquarters near map center and spawn starter workers.
+/// Called after load_map_json() + add_starting_resources() to set up the initial base.
+/// worker_count: number of idle workers to spawn (clamped to 1..8).
+/// Returns JSON: {"ok":true,"hq_x":N,"hq_y":N,"workers":N} or {"error":"..."}
+#[wasm_bindgen]
+pub fn setup_starter_base(worker_count: u32) -> String {
+    use crate::economy::BuildingType;
+    use crate::units::UnitKind;
+    unsafe {
+        if let Some(ref mut app) = APP {
+            let w = app.map.width;
+            let h = app.map.height;
+
+            let cx = w / 2;
+            let cy = h / 2;
+
+            // Spiral outward from center to find buildable tile for HQ
+            let mut hq_x = cx;
+            let mut hq_y = cy;
+            let search_limit = w.max(h) as isize;
+            'outer: for radius in 0..search_limit {
+                for dx in -radius..=radius {
+                    for dy in -radius..=radius {
+                        if dx.abs() != radius && dy.abs() != radius {
+                            continue;
+                        }
+                        let tx = cx as isize + dx;
+                        let ty = cy as isize + dy;
+                        if tx < 0 || ty < 0 || tx >= w as isize || ty >= h as isize {
+                            continue;
+                        }
+                        let tile = app.map.get(tx as usize, ty as usize).unwrap();
+                        let buildable = !matches!(
+                            tile.terrain,
+                            Terrain::Water | Terrain::DeepWater | Terrain::Mountain
+                        );
+                        if buildable {
+                            hq_x = tx as usize;
+                            hq_y = ty as usize;
+                            break 'outer;
+                        }
+                    }
+                }
+            }
+
+            // Place Headquarters for free (direct place_building, no cost)
+            let _idx = app
+                .game_loop
+                .state
+                .economy
+                .place_building(BuildingType::Headquarters, hq_x, hq_y);
+
+            // Spawn idle workers around HQ in a small offset pattern
+            let count = worker_count.clamp(1, 8) as usize;
+            for i in 0..count {
+                let wx = hq_x as f32 + 0.5 + ((i % 3) as f32 - 1.0) * 0.8;
+                let wy = hq_y as f32 + 0.5 + ((i as f32 / 3.0).floor() - 0.5) * 0.8;
+                app.game_loop
+                    .state
+                    .economy
+                    .units
+                    .spawn(UnitKind::Worker, wx, wy);
+            }
+
+            app.overlay_dirty = true;
+            format!(
+                r#"{{"ok":true,"hq_x":{},"hq_y":{},"workers":{}}}"#,
+                hq_x, hq_y, count
+            )
+        } else {
+            String::from(r#"{"error":"Engine not initialized"}"#)
+        }
+    }
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]

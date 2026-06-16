@@ -143,6 +143,14 @@ export function set_game_speed(multiplier: number): void;
 export function set_paused(paused: boolean): void;
 
 /**
+ * Place a free Headquarters near map center and spawn starter workers.
+ * Called after load_map_json() + add_starting_resources() to set up the initial base.
+ * worker_count: number of idle workers to spawn (clamped to 1..8).
+ * Returns JSON: {"ok":true,"hq_x":N,"hq_y":N,"workers":N} or {"error":"..."}
+ */
+export function setup_starter_base(worker_count: number): string;
+
+/**
  * Toggle the game pause state. Returns the new state.
  */
 export function toggle_pause(): boolean;
@@ -204,6 +212,7 @@ export interface InitOutput {
     readonly resize: () => void;
     readonly set_game_speed: (a: number) => void;
     readonly set_paused: (a: number) => void;
+    readonly setup_starter_base: (a: number) => [number, number];
     readonly toggle_pause: () => number;
     readonly try_place_building: (a: number, b: number, c: number, d: number) => [number, number];
     readonly ws_connect: (a: number, b: number) => number;

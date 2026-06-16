@@ -354,6 +354,27 @@ export function set_paused(paused) {
 }
 
 /**
+ * Place a free Headquarters near map center and spawn starter workers.
+ * Called after load_map_json() + add_starting_resources() to set up the initial base.
+ * worker_count: number of idle workers to spawn (clamped to 1..8).
+ * Returns JSON: {"ok":true,"hq_x":N,"hq_y":N,"workers":N} or {"error":"..."}
+ * @param {number} worker_count
+ * @returns {string}
+ */
+export function setup_starter_base(worker_count) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.setup_starter_base(worker_count);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Toggle the game pause state. Returns the new state.
  * @returns {boolean}
  */

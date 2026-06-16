@@ -635,7 +635,8 @@ import init, {
     get_build_cost,
     generate_map,
     add_starting_resources,
-} from './pkg/s4wn_engine.js?v=9';
+    setup_starter_base,
+} from './pkg/s4wn_engine.js?v=10';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -1421,6 +1422,15 @@ async function startNewGame() {
             console.warn('Starting resources warning:', resResult);
         }
 
+        // Set up starter base: HQ at center + idle workers
+        const workerCount = difficulty === 'easy' ? 4 : (difficulty === 'hard' ? 2 : 3);
+        const baseResult = JSON.parse(setup_starter_base(workerCount));
+        if (!baseResult.ok) {
+            console.error('Starter base setup failed:', baseResult.error);
+        } else {
+            console.log(`HQ placed at (${baseResult.hq_x},${baseResult.hq_y}), ${baseResult.workers} workers`);
+        }
+
         updateLoadingProgress(100, 'Ready!');
 
         // Update HUD
@@ -1448,7 +1458,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=9');
+            const mod = await import('./pkg/s4wn_engine.js?v=10');
             load_map_json = mod.load_map_json || null;
         } catch (e) {
             console.warn('load_map_json not available (old WASM cache?) — map loading disabled');

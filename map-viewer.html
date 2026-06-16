@@ -560,8 +560,19 @@ function parseBinaryMap(buffer) {
     throw new Error(`Invalid map dimensions: ${width}×${height}`);
   }
 
+  const expectedTileBytes = width * height * 6;
+  const availableBytes = buffer.byteLength - 16; // after 16-byte header
+  if (availableBytes < expectedTileBytes) {
+    throw new Error(
+      `Truncated map file: expected ${expectedTileBytes} tile bytes (${width}×${height}×6), ` +
+      `found ${availableBytes} after header`
+    );
+  }
+
   const tiles = [];
   offset = 16;
+  let terrainWarnings = 0;
+  let elevMin = 255, elevMax = 0;
 
   for (let i = 0; i < width * height; i++) {
     if (offset + 6 > buffer.byteLength) break;
@@ -573,8 +584,20 @@ function parseBinaryMap(buffer) {
     const microY = view.getUint8(offset + 5);
     offset += 6;
 
+    // Validate terrain ID is in known range (0-7)
+    if (terrainId > 7) {
+      terrainWarnings++;
+      if (terrainWarnings <= 3) {
+        console.warn(`parseBinaryMap: unknown terrain ID ${terrainId} at tile ${i} — mapping to Grass`);
+      }
+    }
+
     const terrain = TERRAIN_BY_ID[terrainId]?.name || 'Grass';
     const elevation = (elevRaw / 255) * 2 - 1; // normalize to -1..1
+
+    // Track elevation range for integrity warning
+    if (elevRaw < elevMin) elevMin = elevRaw;
+    if (elevRaw > elevMax) elevMax = elevRaw;
 
     let resource = null;
     const resMap = [null, 'Iron', 'Coal', 'Gold', 'Stone', 'Sulfur', 'Fish', 'Game', 'Grain'];
@@ -583,6 +606,26 @@ function parseBinaryMap(buffer) {
     }
 
     tiles.push({ terrain, elevation, resource });
+  }
+
+  // Validate tile count
+  if (tiles.length !== width * height) {
+    throw new Error(
+      `Map integrity error: expected ${width * height} tiles, parsed ${tiles.length}. ` +
+      `File may be corrupted.`
+    );
+  }
+
+  if (terrainWarnings > 0) {
+    console.warn(`parseBinaryMap: ${terrainWarnings} tile(s) had unknown terrain IDs — mapped to Grass`);
+  }
+
+  // Warn about suspicious elevation patterns
+  const elevRange = elevMax - elevMin;
+  if (elevMax === 0 && elevMin === 0) {
+    console.warn('parseBinaryMap: all elevations are 0 — map may be flat (warning, not rejected)');
+  } else if (elevRange < 5) {
+    console.warn(`parseBinaryMap: narrow elevation range (${elevRange}/255) — terrain may appear flat`);
   }
 
   return { width, height, tiles };

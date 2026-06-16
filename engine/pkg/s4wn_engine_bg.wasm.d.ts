@@ -25,6 +25,7 @@ export const render: (a: number) => void;
 export const resize: () => void;
 export const set_game_speed: (a: number) => void;
 export const set_paused: (a: number) => void;
+export const setup_starter_base: (a: number) => [number, number];
 export const toggle_pause: () => number;
 export const try_place_building: (a: number, b: number, c: number, d: number) => [number, number];
 export const ws_connect: (a: number, b: number) => number;
