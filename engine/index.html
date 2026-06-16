@@ -765,24 +765,54 @@ const TERRAIN_BY_ID = [
 const RESOURCE_NAMES = [null, 'Iron', 'Coal', 'Gold', 'Stone', 'Sulfur', 'Fish', 'Game', 'Grain'];
 const RESOURCE_ICONS = { Iron:'⛓️', Coal:'🪨', Gold:'🪙', Stone:'🪨', Sulfur:'🟡', Fish:'🐟', Game:'🦌', Grain:'🌾' };
 
-// ── .sav Chunk Type Names (from Settlers.ts + community research) ────────
+// ── .sav Chunk Type Names ─────────────────────────────────────────────────
+// Two ID schemes exist in the wild:
+//  Scheme A (observed): 0x2711-0x271A range (observed in community .sav files)
+//  Scheme B (Settlers.ts): Decimal IDs 200, 130, 162, etc. (from map-chunk-type.ts)
+// Both are supported for display purposes.
 const CHUNK_TYPE_NAMES = {
+    // Scheme A: Observed hex IDs from community .sav files
     0x2711: { name: 'Map Landscape', desc: 'Terrain tiles, elevation, resources' },
-    0x2712: { name: 'General Information', desc: 'Map size, game version, player metadata' },
-    0x2713: { name: 'Game Data (Buildings)', desc: 'Building placements, construction state, workers' },
-    0x2714: { name: 'Game Data (Units)', desc: 'Unit positions, HP, assignments, targets' },
-    0x2715: { name: 'Game Data (Resources)', desc: 'Player resource counts, storehouse contents' },
-    0x2716: { name: 'Player Settings', desc: 'Player names, colors, nations, team assignments' },
-    0x2717: { name: 'Objectives/Triggers', desc: 'Campaign objectives, victory conditions, event triggers' },
-    0x2718: { name: 'Game Time & Speed', desc: 'Elapsed ticks, game speed, pause state' },
-    0x2719: { name: 'Fog of War / Visibility', desc: 'Explored tiles, current vision radius' },
-    0x271A: { name: 'Diplomacy / AI State', desc: 'Alliances, treaties, AI personality state' },
-    // Alternate chunk ranges (some .sav variants use different base offsets)
-    10001: { name: 'Map Landscape', desc: 'Terrain tiles, elevation, resources (alt)' },
-    10002: { name: 'General Information', desc: 'Map size, game version (alt)' },
-    10003: { name: 'Game Data (Buildings)', desc: 'Buildings, construction, workers (alt)' },
-    10004: { name: 'Game Data (Units)', desc: 'Units, HP, assignments (alt)' },
-    10005: { name: 'Game Data (Resources)', desc: 'Resources, storehouse (alt)' },
+    0x2712: { name: 'General Information', desc: 'Map size, game version, metadata' },
+    0x2713: { name: 'Building Data', desc: 'Building placements, construction, workers' },
+    0x2714: { name: 'Unit Data (Settlers)', desc: 'Unit positions, HP, assignments, targets' },
+    0x2715: { name: 'Resource Data', desc: 'Player resources, storehouse contents' },
+    0x2716: { name: 'Player Settings', desc: 'Names, colors, nations, teams' },
+    0x2717: { name: 'Objectives/Triggers', desc: 'Campaign objectives, victory conditions' },
+    0x2718: { name: 'Game Time & Speed', desc: 'Elapsed ticks, speed, pause state' },
+    0x2719: { name: 'Fog of War', desc: 'Explored tiles, vision radius' },
+    0x271A: { name: 'Diplomacy / AI', desc: 'Alliances, treaties, AI state' },
+    // Alt range (some variants use different base offsets)
+    10001: { name: 'Map Landscape (alt)', desc: 'Terrain tiles, elevation, resources' },
+    10002: { name: 'General Information (alt)', desc: 'Map size, game version, metadata' },
+    10003: { name: 'Building Data (alt)', desc: 'Building placements, construction, workers' },
+    10004: { name: 'Unit Data (alt)', desc: 'Unit positions, HP, assignments, targets' },
+    10005: { name: 'Resource Data (alt)', desc: 'Player resources, storehouse contents' },
+    // Scheme B: Settlers.ts MapChunkType enum values (decimal)
+    200: { name: 'Map Landscape', desc: 'Terrain tiles, elevation, resources (ST)' },
+    130: { name: 'General Information', desc: 'Map size, game version, metadata (ST)' },
+    162: { name: 'Building Data', desc: 'Building placements, construction (ST)' },
+    161: { name: 'Unit Data (Settlers)', desc: 'Unit positions, HP, assignments (ST)' },
+    170: { name: 'Map Objects', desc: 'Map scenery objects, decorations (ST)' },
+    166: { name: 'Vehicles', desc: 'Vehicle positions and state (ST)' },
+    168: { name: 'Flying Entities', desc: 'Birds, flying units (ST)' },
+    165: { name: 'Animals', desc: 'Animal positions and state (ST)' },
+    140: { name: 'Player Data', desc: 'Player names, colors, nation, stats (ST)' },
+    133: { name: 'Statistics 1', desc: 'Game statistics block 1 (ST)' },
+    137: { name: 'Statistics 2', desc: 'Game statistics block 2 (ST)' },
+    134: { name: 'Groups', desc: 'Unit group assignments (ST)' },
+    164: { name: 'Deco Objects', desc: 'Decorative map objects (ST)' },
+    163: { name: 'Piles', desc: 'Resource piles on ground (ST)' },
+    180: { name: 'Effects', desc: 'Visual effects, particles (ST)' },
+    150: { name: 'AI State', desc: 'AI personality, strategy state (ST)' },
+    143: { name: 'Event Effects', desc: 'Active effect triggers (ST)' },
+    142: { name: 'Future Events', desc: 'Scheduled events, timers (ST)' },
+    131: { name: 'Script', desc: 'Campaign script data (ST)' },
+    136: { name: 'Logo', desc: 'Savegame preview image (ST)' },
+    132: { name: 'Current State', desc: 'Current game state snapshot (ST)' },
+    250: { name: 'Comment Text', desc: 'Savegame description/comment (ST)' },
+    135: { name: 'Fog of War', desc: 'Explored/visible tiles (ST)' },
+    167: { name: 'Traders', desc: 'Trade route data (ST)' },
 };
 
 function getChunkTypeInfo(typeId) {

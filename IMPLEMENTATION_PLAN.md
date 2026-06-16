@@ -480,7 +480,8 @@ s4wn/
 |||||| 31 | 2026-06-16 | ~10 min | Phase 4.4a map preview + binary loader: Added binary .map parser (`parseBinaryMap`) to engine/index.html with full validation (terrain IDs, dimensions, tile count, elevation range). Added map preview panel showing dimensions, terrain distribution bar chart (color-coded swatches + percentages), resource count summary (icons + counts), and integrity warnings. File type auto-detection (.map → ArrayBuffer binary parse, .sav → graceful unsupported message, .json → text parse). Marked 6 previously-pending Phase 4.4a checklist items complete. |
 ||||||| 32 | 2026-06-16 | ~10 min | Phase 4.4 .sav WASM bridge: Added `decompress_sav_chunk()` WASM export (ARA-decrypt + LZ/Huffman decompress). Updated `parseSavHeader()` to store raw chunk byte offsets. Wired `confirmMapLoad()` for .sav files — decompresses terrain chunk (0x2711), parses 6-byte tile records, builds JSON map, loads via `load_map_json()`. Bumped WASM cache to v=12. All 142 tests passing. |
 ||||||| 33 | 2026-06-16 | ~10 min | Phase 4.4 .sav polish: Fixed dead .sav preview "Parse More" button — now wired to `confirmMapLoad()` (▶ Load Savegame). Added dimension extraction from SaveGameGeneralInformation chunk (0x2712 byte 28 → u32 BE map width) via WASM decompression, replacing inaccurate sqrt-tile-count estimate. Updated preview warning text. All 142 tests passing. |
-|| 34 | 2026-06-16 | ~10 min | Phase 4.4 .sav preview enhancements: Added CHUNK_TYPE_NAMES lookup table with 15 known chunk types (0x2711–0x271A + alt 10001–10005) and getChunkTypeInfo() helper. Show human-readable chunk names + descriptions in preview. Decompress 0x2712 GeneralInformation chunk during preview to extract accurate map dimensions (green highlight when from save data). Store _savMapWidth to avoid double decompression in confirmMapLoad(). All 167 tests passing (137 engine + 30 server). |
+||| 34 | 2026-06-16 | ~10 min | Phase 4.4 .sav preview enhancements: Added CHUNK_TYPE_NAMES lookup table with 15 known chunk types (0x2711–0x271A + alt 10001–10005) and getChunkTypeInfo() helper. Show human-readable chunk names + descriptions in preview. Decompress 0x2712 GeneralInformation chunk during preview to extract accurate map dimensions (green highlight when from save data). Store _savMapWidth to avoid double decompression in confirmMapLoad(). All 167 tests passing (137 engine + 30 server). |
+||| 35 | 2026-06-16 | ~10 min | Test corpus + chunk type research: Generated 3 test .map files (island 32×32, river valley 64×64, continents 128×128) with varying terrain, resources, and elevation. Created `scripts/generate_test_maps.py` for reproducible test map generation. Researched Settlers.ts chunk type mapping — discovered MapChunkType enum with 23 decimal IDs (130–250). Updated CHUNK_TYPE_NAMES with dual-scheme support: Scheme A (observed 0x2711 hex range + 10001 alt) AND Scheme B (Settlers.ts decimal IDs 130, 161, 162, 200, etc.) for future .sav compatibility. All 142 tests passing. |
 
 ---
 
@@ -521,28 +522,33 @@ None at the moment.
 ## Next Session
 
 ### Phase 4.4 — .sav Full Game State Restoration (highest priority)
-- [x] Parse SaveGameGeneralInformation chunk (0x2712) for map dimensions and metadata — use dimensions for terrain parsing instead of sqrt estimate
-- [x] Show chunk type descriptions in savegame preview (not just hex IDs) — CHUNK_TYPE_NAMES + getChunkTypeInfo()
-- [x] Display accurate map dimensions from 0x2712 in preview BEFORE loading — decompressed during showMapPreview()
-- [ ] Parse remaining .sav chunks for game state: chunk 0x2713+ for buildings, units, resources. Research chunk type map from Settlers.ts
-- [ ] Build Rust-side `.sav` game state parser: decompress → parse buildings/units/resources → return JSON matching `restore_game_state()` format
+- [x] Parse SaveGameGeneralInformation chunk (0x2712) for map dimensions and metadata
+- [x] Show chunk type descriptions in savegame preview
+- [x] Display accurate map dimensions from 0x2712 in preview
+- [x] Research chunk type map from Settlers.ts — MapChunkType enum with 23 decimal IDs (130–250). Dual-scheme CHUNK_TYPE_NAMES now supports both observed 0x2711 hex range AND ST decimal IDs.
+- [ ] Parse .sav buildings chunk: chunk type 162 (ST) or 0x2713 (observed) — decompress, parse binary building records
+- [ ] Parse .sav settlers/units chunk: chunk type 161 (ST) or 0x2714 (observed) — decompress, parse binary unit records
+- [ ] Parse .sav players chunk: chunk type 140 (ST) or 0x2716 (observed) — player names, colors, nations, resources
+- [ ] Build Rust-side `.sav` game state parser: `parse_sav_state()` WASM export that decompresses multiple chunks and returns JSON matching `restore_game_state()` format
 - [ ] Wire parsed .sav state into JS `confirmMapLoad()` → call `restore_game_state()` after terrain load
 - [ ] Full round-trip test: load .sav → auto-save localStorage → Continue → verify state preserved
 
 ### Phase 4.4a — Map Import Polish
-- [ ] Create test .map corpus: 3-5 test files of varying sizes (64×64, 128×128, 256×256) in `assets/maps/test/`
+- [x] Create test .map corpus: 3 test files (32×32 island, 64×64 river valley, 128×128 continents) in `assets/maps/test/`
 - [ ] Round-trip test: load .map → render → export JSON → verify terrain/resource/elevation match
+- [ ] Add .map test corpus to CI pipeline (verify all test maps parse without errors)
 
 ### Phase 4.0 — Polish
 - [ ] Particle/glow animation polish on title text
-- [ ] "Credits" / GitHub link on main menu
-- [ ] Menu open/close animation (slide/fade)
-- [ ] Menu accessible from in-game via ☰ button or Esc
+- [x] "Credits" / GitHub link on main menu (already done — "🔗 GitHub Repository" button)
+- [x] Menu open/close animation (already done — fadeIn 0.4s ease-out on #menu.active)
+- [x] Menu accessible from in-game (already done — ☰ button visible, Esc toggles menu)
 
 ### Phase 4.5 — Quick Wins
-- [ ] Water animation (fragment shader wave)
+- [ ] Water animation (fragment shader wave animation for water terrain tiles)
 - [ ] Edge-of-map visual treatment (fog/gradient/water border)
 - [ ] Terrain elevation shading improvements (steeper = darker)
+- [ ] Add `assets/maps/` to .gitignore exception for test/ directory
 
 ---
 

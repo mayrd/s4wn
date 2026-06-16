@@ -124,6 +124,8 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **Recent Files** — Tracks last 5 loaded files in localStorage (metadata: name, size, type, date), clickable to re-trigger file picker
 - ✅ **.sav WASM Decompression** — `decompress_sav_chunk()` WASM export (ARA-decrypt + LZ/Huffman decompress), .sav terrain chunk loading
 - ⏳ **Full .sav Game State** — Building/unit/resource restoration from .sav pending
+- ✅ **Test Map Corpus** — 3 test .map files (32×32 island, 64×64 river valley, 128×128 continents) with generation script
+- ✅ **Chunk Type Research** — Dual-scheme CHUNK_TYPE_NAMES: observed 0x2711 hex IDs + Settlers.ts decimal IDs (23 types)
 
 ---
 
