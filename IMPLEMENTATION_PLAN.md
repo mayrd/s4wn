@@ -474,6 +474,7 @@ s4wn/
 |||| 25 | 2026-06-16 | ~10 min | Phase 4.5: Building affordability check in build toolbar — `refreshBuildingAffordability()` disables buttons for unaffordable buildings, green border indicator for affordable ones, auto-refresh every 2s, immediate refresh after placement, auto-cancel if current building becomes unaffordable. 137 engine + 5 server tests passing. |
 ||||| 26 | 2026-06-16 | ~8 min | Phase 4.5: Building construction progress visualization — constructing buildings now render as orange dots in the WebGL overlay (size 3.0→8.0 proportional to construction progress, previously invisible). Added explicit `constructed_pct` field to `get_building_info()` WASM export for JS clarity. Bumped WASM cache to v=8. All 167 tests passing (137 engine + 30 server). |
 ||||| 27 | 2026-06-16 | ~10 min | Phase 4.3: Wired Start Game button — added `generate_map` and `add_starting_resources` WASM exports, loading screen with animated progress bar (4-step: Generate terrain → Build landscape → Prepare resources → Ready), difficulty-based starting resources (Easy 2×, Medium 1×, Hard 0.5× of Wood/Stone/Iron/Coal/Gold/Grain/Fish/Game). Map size adapts to difficulty (48×48 easy, 64×64 others). Bumped WASM cache to v=9. All 167 tests passing. |
+|||| 28 | 2026-06-16 | ~10 min | Phase 4.6: Added `setup_starter_base()` WASM export — spiral-searches from map center for a buildable tile, places free Headquarters, spawns 2–4 idle workers in offset pattern (2 Hard, 3 Medium, 4 Easy). Wired into `startNewGame()`. Added map integrity validation to `parseBinaryMap()`: terrain ID range check, tile count vs width×height verification, file size validation, elevation pattern warnings. Bumped WASM to v=10. 142 tests passing (137 engine + 5 server). |
 
 ---
 
@@ -513,22 +514,22 @@ None at the moment.
 
 ## Next Session
 
-### Phase 4.3 — New Game Flow (wire procedural maps) ✅ DONE Session 27
-- [x] Wire "Start Game" button to call generate_map() + load_map_json() + add_starting_resources().
-- [x] Add loading screen with animated progress bar.
-- [x] Pass difficulty to starting resources (Easy 2×, Medium 1×, Hard 0.5×).
-
-### Phase 4.6 — Single-Player Game Start (deepen)
-- [ ] Validate map integrity in `parseBinaryMap()` — check all terrain IDs in 0-7 range, tile count matches width×height.
-- [ ] Initial HQ auto-placement at map center on new game start.
-- [ ] Generate starter workers (2-4) near HQ on new game start.
-- [ ] Auto-save every 5 minutes to localStorage.
+### Phase 4.6 — Auto-Save
+- [ ] Implement auto-save to localStorage every 5 minutes during gameplay.
+- [ ] Save game state: buildings (type, position, workers, construction progress), units (kind, position, HP, state), resources (all counts), map seed/type, difficulty.
+- [ ] Add "Continue" button to main menu that loads latest auto-save.
+- [ ] Add "Save Game" manual save button in pause overlay.
 
 ### Phase 4.4 — Load Game Flow
 - [ ] File upload dialog accepting `.map` and `.sav` files.
-- [ ] Parse and validate `.map` binary format with error handling.
 - [ ] Parse and validate `.sav` binary format (game state: buildings, units, resources).
 - [ ] Recent files list (localStorage, max 5).
+- [ ] Map preview before loading (dimensions, terrain distribution, resource count).
+
+### Phase 4.1/4.4a — Polish
+- [ ] "Credits" / GitHub link button on main menu.
+- [ ] Menu open/close animation (slide/fade).
+- [ ] Round-trip test: load .map → render → export JSON → verify match.
 
 ---
 

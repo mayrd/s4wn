@@ -116,7 +116,9 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **Building Affordability** — Auto-refresh toolbar affordability, disable unaffordable, green indicators
 - ✅ **Construction Progress** — Orange overlay dots for constructing buildings, size proportional to progress (3.0→8.0), `constructed_pct` in building info
 - ✅ **New Game Flow** — Procedural map generation via `generate_map()` WASM, loading screen with progress bar, difficulty-based starting resources (Easy 2×, Medium 1×, Hard 0.5×)
-- ⏳ **Single-Player Start** — Validate map integrity, HQ auto-placement, starter workers
+- ✅ **Starter Base** — Auto-placed Headquarters at map center + 2-4 idle workers on new game start
+- ✅ **Map Validation** — Binary .map integrity checks (terrain ID range, tile count, elevation pattern warnings)
+- ⏳ **Single-Player Start** — Auto-save, continue game, load .sav files
 
 ---
 
