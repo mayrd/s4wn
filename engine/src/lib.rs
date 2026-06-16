@@ -562,6 +562,24 @@ impl App {
         gl.clear_color(0.05, 0.08, 0.18, 1.0); // Dark navy
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
+        // ── Render diagnostics (first frame only) ──────────────────────
+        if self.fps_frame_count == 0 {
+            let canvas_diag = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap();
+            let msg = format!(
+                "RENDER_DIAG: map={}×{} index_count={} zoom={:.2} cam=({:.1},{:.1}) canvas={}×{} map_dims_loc={}",
+                self.map.width,
+                self.map.height,
+                self.index_count,
+                self.camera.zoom,
+                self.camera.center_x,
+                self.camera.center_y,
+                canvas_diag.width(),
+                canvas_diag.height(),
+                self.map_dims_loc.is_some(),
+            );
+            web_sys::console::log_1(&msg.into());
+        }
+
         gl.use_program(Some(&self.program));
 
         let canvas = gl

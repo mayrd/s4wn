@@ -701,6 +701,9 @@ function __wbg_get_imports() {
         __wbg_linkProgram_e23a348b0f6e0c4f: function(arg0, arg1) {
             arg0.linkProgram(arg1);
         },
+        __wbg_log_6b5af08dd293697f: function(arg0) {
+            console.log(arg0);
+        },
         __wbg_new_227d7c05414eb861: function() {
             const ret = new Error();
             return ret;
