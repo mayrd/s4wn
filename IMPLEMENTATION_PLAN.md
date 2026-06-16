@@ -4,7 +4,7 @@
 
 ## Status: Phase 4 — UI & Single Player 🔨
 
-Last updated: 2026-06-15
+Last updated: 2026-06-16
 
 ## 🤖 Agent Operating Rules
 
@@ -470,6 +470,7 @@ s4wn/
 ||| 22 | 2026-06-15 | ~10 min | Phase 4.5 Pause & Speed: Added `speed_multiplier` and `paused` fields to Rust App struct; game ticks scale by speed, skip when paused. Added 5 new WASM exports (set_game_speed, get_game_speed, set_paused, toggle_pause, is_paused). Added pause overlay (⏸ PAUSED with pulse animation) and speed control buttons (1×/2×/4×) to index.html. Keyboard shortcuts: P=toggle pause, 1/2/3=set speed. Rebuilt WASM v5. 137 engine tests passing. |
 ||| 23 | 2026-06-15 | ~10 min | Phase 4.5 Building Placement: Added BuildingType::from_name() and all_names() to economy.rs. Added 3 WASM exports (try_place_building, get_build_cost, list_building_types) with terrain validation, occupancy checks, and cost checking. Building toolbar UI with 14 building type buttons, cost tooltips, emoji icons. Crosshair cursor in placement mode. Keyboard: B to toggle, Esc to cancel. Bumped WASM to v6. 137 engine + 5 server tests passing. |
 ||| 24 | 2026-06-15 | ~10 min | Phase 4.5 Selection Indicator: Added get_building_info(idx) and get_unit_info(id) WASM exports returning detailed info (construction, production, workers, HP, state, target). Added selection info card UI with position-aware placement near cursor. Click canvas (non-placement mode) selects building at tile or nearest unit within 1.5 tile radius. Escape closes card. Bumped WASM to v7. 137 engine + 5 server tests passing. |
+||| 25 | 2026-06-16 | ~10 min | Phase 4.5: Building affordability check in build toolbar — `refreshBuildingAffordability()` disables buttons for unaffordable buildings, green border indicator for affordable ones, auto-refresh every 2s, immediate refresh after placement, auto-cancel if current building becomes unaffordable. 137 engine + 5 server tests passing. |
 
 ---
 
@@ -509,19 +510,17 @@ None at the moment.
 
 ## Next Session
 
-### Phase 4.5 — Building Construction Progress Visibility
-- [ ] **Show construction progress bar** under incomplete buildings' overlay dots (different overlay dot color/size for constructing vs complete buildings)
-- [ ] **Auto-refresh build toolbar**: disable buttons for unaffordable buildings, show ✓ on affordable ones
-
-### Phase 4.6 — Single-Player Game Start (deepen)
-- [ ] Validate map integrity before loading (check all tiles have valid terrain IDs) — currently marked [ ]
-- [ ] Starting resources allocation based on map size + difficulty (pass difficulty to WASM)
-- [ ] Initial HQ placement (auto-placed at map center or player-chosen)
+### Phase 4.5 — Building Construction Progress Visualization
+- [ ] **Show construction progress bar** under constructing buildings' overlay dots: use a thin colored bar (yellow for constructing, green for complete). Change overlay dot color/size (smaller orange dot for constructing, full-size colored dot for complete). Read `get_building_info(idx)` — check `constructed_pct` field (0.0–1.0).
 
 ### Phase 4.3 — New Game Flow (wire procedural maps)
-- Wire "Start Game" to actually generate procedural map based on selection (Island/Continents/River Valley/Highlands) using existing `Map::generate_*()`
-- Loading screen with progress bar while WASM initializes map
-- Difficulty affects starting resources — pass as multiplier to WASM
+- [ ] Wire "Start Game" button in new game panel to actually call `Map::generate_*()` via a new WASM export (`generate_map(map_type: &str, width: u32, height: u32) -> String` returning JSON).
+- [ ] Add loading screen with animated progress bar while WASM generates and initializes map.
+- [ ] Pass difficulty to map generation (affects starting resources via multiplier in `Economy::with_starting_resources()`).
+
+### Phase 4.6 — Single-Player Game Start (deepen)
+- [ ] Validate map integrity in `parseBinaryMap()` — check all terrain IDs in 0-7 range, tile count matches width×height.
+- [ ] Initial HQ auto-placement at map center on new game start.
 
 ---
 
