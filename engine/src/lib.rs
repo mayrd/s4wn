@@ -43,7 +43,6 @@ uniform float u_time;
 uniform vec2 u_camera_center;
 uniform float u_zoom;
 uniform float u_day_phase;
-uniform vec2 u_map_dims;
 
 out vec3 v_color;
 out float v_elevation;
@@ -2023,7 +2022,7 @@ mod tests {
     #[test]
     fn test_edge_fog_shader_uniforms() {
         // Verify the edge-of-map fog uniforms and varyings are present
-        assert!(VERTEX_SHADER.contains("u_map_dims"), "vertex shader missing u_map_dims uniform");
+        assert!(!VERTEX_SHADER.contains("u_map_dims"), "vertex shader should NOT have u_map_dims (fragment-only uniform)");
         assert!(VERTEX_SHADER.contains("v_tile_pos"), "vertex shader missing v_tile_pos varying");
         assert!(FRAGMENT_SHADER.contains("v_tile_pos"), "fragment shader missing v_tile_pos varying");
         assert!(FRAGMENT_SHADER.contains("u_map_dims"), "fragment shader missing u_map_dims uniform");
