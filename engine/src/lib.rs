@@ -15,6 +15,7 @@ pub mod pathfinding;
 pub mod worker_ai;
 pub mod combat;
 pub mod network;
+pub mod nation;
 
 use camera::Camera;
 use game_loop::{GameLoop, GameState};
