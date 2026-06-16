@@ -765,6 +765,33 @@ const TERRAIN_BY_ID = [
 const RESOURCE_NAMES = [null, 'Iron', 'Coal', 'Gold', 'Stone', 'Sulfur', 'Fish', 'Game', 'Grain'];
 const RESOURCE_ICONS = { Iron:'⛓️', Coal:'🪨', Gold:'🪙', Stone:'🪨', Sulfur:'🟡', Fish:'🐟', Game:'🦌', Grain:'🌾' };
 
+// ── .sav Chunk Type Names (from Settlers.ts + community research) ────────
+const CHUNK_TYPE_NAMES = {
+    0x2711: { name: 'Map Landscape', desc: 'Terrain tiles, elevation, resources' },
+    0x2712: { name: 'General Information', desc: 'Map size, game version, player metadata' },
+    0x2713: { name: 'Game Data (Buildings)', desc: 'Building placements, construction state, workers' },
+    0x2714: { name: 'Game Data (Units)', desc: 'Unit positions, HP, assignments, targets' },
+    0x2715: { name: 'Game Data (Resources)', desc: 'Player resource counts, storehouse contents' },
+    0x2716: { name: 'Player Settings', desc: 'Player names, colors, nations, team assignments' },
+    0x2717: { name: 'Objectives/Triggers', desc: 'Campaign objectives, victory conditions, event triggers' },
+    0x2718: { name: 'Game Time & Speed', desc: 'Elapsed ticks, game speed, pause state' },
+    0x2719: { name: 'Fog of War / Visibility', desc: 'Explored tiles, current vision radius' },
+    0x271A: { name: 'Diplomacy / AI State', desc: 'Alliances, treaties, AI personality state' },
+    // Alternate chunk ranges (some .sav variants use different base offsets)
+    10001: { name: 'Map Landscape', desc: 'Terrain tiles, elevation, resources (alt)' },
+    10002: { name: 'General Information', desc: 'Map size, game version (alt)' },
+    10003: { name: 'Game Data (Buildings)', desc: 'Buildings, construction, workers (alt)' },
+    10004: { name: 'Game Data (Units)', desc: 'Units, HP, assignments (alt)' },
+    10005: { name: 'Game Data (Resources)', desc: 'Resources, storehouse (alt)' },
+};
+
+function getChunkTypeInfo(typeId) {
+    const info = CHUNK_TYPE_NAMES[typeId];
+    if (info) return info;
+    // Unknown chunk — provide hex ID only
+    return { name: `Chunk 0x${typeId.toString(16).toUpperCase()}`, desc: 'Unknown data section' };
+}
+
 // ── Terrain colors ──────────────────────────────────────────────────────
 const TERRAIN_COLORS = [
     '#3d993d', '#267326', '#8c8073', '#2659b3',
@@ -1126,15 +1153,44 @@ function showMapPreview(data, file) {
 
     if (isSav) {
         // ── .sav preview ──
+        // Try to extract map dimensions from chunk 0x2712 (GeneralInformation)
+        let actualDim = null;
+        const infoChunk = data.chunkTypes.find(
+            ct => ct.type === 0x2712 || ct.type === 10002
+        );
+        if (infoChunk && decompress_sav_chunk) {
+            try {
+                const buf = data._rawBuffer;
+                const infoRaw = new Uint8Array(buf, infoChunk.rawOffset, infoChunk.compressedLen);
+                const infoDecompressed = decompress_sav_chunk(infoRaw, infoChunk.unpackedLen);
+                if (infoDecompressed && infoDecompressed.length >= 32) {
+                    const dv = new DataView(
+                        infoDecompressed.buffer,
+                        infoDecompressed.byteOffset,
+                        infoDecompressed.byteLength
+                    );
+                    const w = dv.getUint32(28, false);  // big-endian map width
+                    if (w > 0 && w <= 1024) {
+                        actualDim = `${w}×${w}`;
+                        // Store for confirmMapLoad to use
+                        data._savMapWidth = w;
+                    }
+                }
+            } catch (_) { /* fall back to estimate */ }
+        }
+
+        const dimDisplay = actualDim || data.mapSize || 'Unknown';
         document.getElementById('mp-dimensions').textContent =
-            `S4 Savegame v${data.version} · ${data.totalSizeMB} MB · ${data.chunkCount} section(s)`;
+            `S4 Savegame v${data.version} · ${data.totalSizeMB} MB · ${data.chunkCount} section(s) · Map: ${dimDisplay}`;
 
         // Terrain column becomes savegame info
         const terrainEl = document.getElementById('mp-terrain-stats');
         let savHTML = `<div class="mp-stat-row"><span class="mp-stat-name">📦 Format</span><span class="mp-stat-count">Siedler IV Savegame</span></div>`;
         savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">🔢 Version</span><span class="mp-stat-count">${data.version}</span></div>`;
         savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">🔒 Checksum</span><span class="mp-stat-count">0x${data.checksum.toString(16).toUpperCase()}</span></div>`;
-        if (data.mapSize) {
+        if (actualDim) {
+            savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">🗺️ Map Size</span><span class="mp-stat-count" style="color:#4f4">${actualDim} tiles (from save data)</span></div>`;
+        } else if (data.mapSize) {
             savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">🗺️ Map Size</span><span class="mp-stat-count">${data.mapSize}</span></div>`;
         }
         savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">📐 Sections</span><span class="mp-stat-count">${data.chunkCount} data chunk(s)</span></div>`;
@@ -1150,12 +1206,17 @@ function showMapPreview(data, file) {
         if (data.chunkTypes && data.chunkTypes.length > 0) {
             chunkHTML += `<div class="mp-stat-row" style="font-size:0.8em;color:#aaa;margin-bottom:4px">Data sections (compressed):</div>`;
             data.chunkTypes.slice(0, 10).forEach((ct, i) => {
+                const info = getChunkTypeInfo(ct.type);
                 const typeHex = '0x' + ct.type.toString(16).toUpperCase();
                 const compKB = (ct.compressedLen / 1024).toFixed(1);
                 const uncompKB = (ct.unpackedLen / 1024).toFixed(1);
-                chunkHTML += `<div class="mp-stat-row">
+                const knownClass = CHUNK_TYPE_NAMES[ct.type] ? 'known-chunk' : '';
+                chunkHTML += `<div class="mp-stat-row ${knownClass}">
                     <span class="mp-stat-name" style="font-family:monospace;font-size:0.75em">${typeHex}</span>
-                    <span class="mp-stat-count">${compKB}K → ${uncompKB}K</span>
+                    <span class="mp-stat-count">${info.name}</span>
+                </div>`;
+                chunkHTML += `<div class="mp-stat-row" style="font-size:0.65em;color:#888;margin-left:16px;margin-bottom:4px">
+                    <span>📦 ${compKB}K → ${uncompKB}K · ${info.desc}</span>
                 </div>`;
             });
             if (data.chunkTypes.length > 10) {
@@ -1255,26 +1316,29 @@ function confirmMapLoad() {
             }
 
             // Try to get actual map dimensions from chunk 0x2712 (SaveGameGeneralInformation)
-            // Byte offset 28 contains u32 BE map width (per Settlers.ts savegame-loader.ts)
-            let savWidth = null, savHeight = null;
-            const infoChunk = pendingMapData.chunkTypes.find(
-                ct => ct.type === 0x2712 || ct.type === 10002
-            );
-            if (infoChunk) {
-                try {
-                    const buf = pendingMapData._rawBuffer;
-                    const infoRaw = new Uint8Array(buf, infoChunk.rawOffset, infoChunk.compressedLen);
-                    const infoDecompressed = decompress_sav_chunk(infoRaw, infoChunk.unpackedLen);
-                    if (infoDecompressed && infoDecompressed.length >= 32) {
-                        const dv = new DataView(
-                            infoDecompressed.buffer,
-                            infoDecompressed.byteOffset,
-                            infoDecompressed.byteLength
-                        );
-                        savWidth = dv.getUint32(28, false);  // big-endian
-                        savHeight = savWidth; // S4 maps are square
-                    }
-                } catch (_) { /* fall back to tile-count estimate */ }
+            // If already extracted during preview, use that; otherwise decompress now
+            let savWidth = pendingMapData._savMapWidth || null;
+            let savHeight = savWidth;
+            if (!savWidth) {
+                const infoChunk = pendingMapData.chunkTypes.find(
+                    ct => ct.type === 0x2712 || ct.type === 10002
+                );
+                if (infoChunk) {
+                    try {
+                        const buf = pendingMapData._rawBuffer;
+                        const infoRaw = new Uint8Array(buf, infoChunk.rawOffset, infoChunk.compressedLen);
+                        const infoDecompressed = decompress_sav_chunk(infoRaw, infoChunk.unpackedLen);
+                        if (infoDecompressed && infoDecompressed.length >= 32) {
+                            const dv = new DataView(
+                                infoDecompressed.buffer,
+                                infoDecompressed.byteOffset,
+                                infoDecompressed.byteLength
+                            );
+                            savWidth = dv.getUint32(28, false);  // big-endian
+                            savHeight = savWidth;
+                        }
+                    } catch (_) { /* fall back to tile-count estimate */ }
+                }
             }
 
             // Extract raw compressed chunk bytes
