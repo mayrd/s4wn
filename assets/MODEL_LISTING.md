@@ -7,7 +7,7 @@ Last updated: 2026-06-15
 
 ---
 
-## 1. Terrain Tiles (9 models)
+## 1. Terrain Tiles (8 models)
 
 Base terrain tiles — one per terrain type. Flat diamond shapes for isometric view,
 height-displaced quads for full 3D.
@@ -22,7 +22,6 @@ height-displaced quads for full 3D.
 | T06 | terrain_desert | 🟡 | 14 | #D9BF66 | Sandy, buildable, slow movement |
 | T07 | terrain_swamp | 🟡 | 14 | #4D6640 | Swampy, unbuildable, slow |
 | T08 | terrain_snow | 🟡 | 14 | #E6EBF2 | Snow-capped, high elevation |
-| T09 | terrain_coast | 🟡 | 14 | #A6B366 | Coastal transition zone |
 
 ---
 
@@ -34,7 +33,7 @@ Trees and foliage placed on terrain tiles as decoration and resource indicators.
 |----|------|--------|------|-------|---------|-------|
 | V01 | tree_pine | 🟡 | 68 | #267A1A | Forest, Mountain | Conifer, 3-tier cone shape |
 | V02 | tree_broadleaf | 🟡 | 56 | #338C26 | Grass, Forest | Deciduous, jittered canopy |
-| V03 | tree_palm | 🟡 | 26 | #599926 | Desert, Coast | Tropical palm with fronds |
+| V03 | tree_palm | 🟡 | 26 | #599926 | Desert | Tropical palm with fronds |
 | V04 | bush | 🟡 | 39 | #33731A | Grass, Swamp | Low shrub cluster |
 | V05 | cactus | 🟡 | 68 | #408C33 | Desert | Saguaro-style with arms |
 
@@ -62,7 +61,7 @@ Harvestable natural resources placed on specific terrain types.
 | D03 | deposit_coal | 🟡 | 36 | #1A1A1A | Grass, Swamp | Coal |
 | D04 | deposit_gold | 🟡 | 36 | #D9B326 | Mountain | Gold |
 | D05 | deposit_sulfur | 🟡 | 36 | #E6D91A | Desert | Sulfur |
-| D06 | deposit_fish | 🟡 | 15 | #6699E6 | Water, Coast | Fish |
+| D06 | deposit_fish | 🟡 | 15 | #6699E6 | Water | Fish |
 | D07 | deposit_grain | 🟡 | 25 | #B3A633 | Grass | Grain |
 | D08 | deposit_game | 🟡 | 85 | #8C5933 | Forest | Game (deer silhouette) |
 
@@ -201,7 +200,7 @@ Additional environmental detail for richer maps.
 | M03 | flowers | 🟡 | 246 | Grass | 3 flowers: red/blue/yellow with petals + leaves |
 | M04 | mushrooms | 🟡 | 96 | Forest, Swamp | 3 mushrooms: tall/medium/small with caps |
 | M05 | reed | 🟡 | 174 | Water, Swamp | 6 cattails with leaf blades |
-| M06 | driftwood | 🟡 | 40 | Coast, Water | Water-worn log with branch stub |
+| M06 | driftwood | 🟡 | 40 | Water | Water-worn log with branch stub |
 | M07 | skull | 🟡 | 68 | Desert, Swamp | Horned animal skull with eye sockets |
 | M08 | ruins | 🟡 | 72 | Desert, Mountain | Broken stone pillar + scattered rubble + arch |
 | M09 | snowdrift | 🟡 | 52 | Snow, Mountain | Smooth snow mound with drift tail |
@@ -280,7 +279,7 @@ with `[x, y, z, w]` quaternions.
 
 All textures procedurally generated, seamless tiling, PNG/RGBA format.
 
-### Terrain Textures (9) — 256×256 PNG
+### Terrain Textures (8) — 256×256 PNG
 
 | ID | Name | Type | Format | Notes |
 |----|------|------|--------|-------|
@@ -292,7 +291,6 @@ All textures procedurally generated, seamless tiling, PNG/RGBA format.
 | TX06 | terrain_desert | Diffuse | PNG 256² | Sandy yellow-beige |
 | TX07 | terrain_swamp | Diffuse | PNG 256² | Murky green-brown |
 | TX08 | terrain_snow | Diffuse | PNG 256² | White with subtle blue-grey variation |
-| TX09 | terrain_coast | Diffuse | PNG 256² | Pale sandy-green transition |
 
 ### Building Materials (4) — 256×256 PNG
 

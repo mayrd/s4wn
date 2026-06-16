@@ -99,7 +99,7 @@ def gen_water_tile(size=64):
             pixels[idx+3] = 255
     return create_png(size, size, pixels)
 
-def gen_sand_tile(size=64):
+def gen_desert_tile(size=64):
     pixels = [0] * (size * size * 4)
     for y in range(size):
         for x in range(size):
@@ -159,16 +159,16 @@ def gen_mountain_tile(size=64):
             pixels[idx+3] = 255
     return create_png(size, size, pixels)
 
-def gen_desert_tile(size=64):
+def gen_deepwater_tile(size=64):
     pixels = [0] * (size * size * 4)
     for y in range(size):
         for x in range(size):
             idx = (y * size + x) * 4
             n = fbm(x / 8, y / 8, 3, 400)
-            base = lerp_color([210, 190, 130], [230, 210, 150], n)
-            # Dune lines
-            dune = math.sin(y * 0.15 + fbm(x / 20, y / 20, 2, 401) * 4) * 0.5 + 0.5
-            base = lerp_color(base, [225, 205, 140], dune * 0.3)
+            base = lerp_color([15, 30, 80], [25, 45, 110], n)
+            # Subtle depth variation
+            depth = math.sin(y * 0.15 + fbm(x / 20, y / 20, 2, 401) * 4) * 0.5 + 0.5
+            base = lerp_color(base, [10, 20, 60], depth * 0.3)
             pixels[idx] = int(base[0])
             pixels[idx+1] = int(base[1])
             pixels[idx+2] = int(base[2])
@@ -371,11 +371,11 @@ def main():
     tiles = {
         "grass": gen_grass_tile,
         "water": gen_water_tile,
-        "sand": gen_sand_tile,
+        "desert": gen_desert_tile,
         "snow": gen_snow_tile,
         "forest": gen_forest_tile,
         "mountain": gen_mountain_tile,
-        "desert": gen_desert_tile,
+        "deepwater": gen_deepwater_tile,
         "swamp": gen_swamp_tile,
     }
     for name, gen in tiles.items():

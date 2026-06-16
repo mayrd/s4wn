@@ -3,24 +3,23 @@
   "tiles": [
     "grass",
     "water",
-    "sand",
+    "desert",
     "snow",
     "forest",
     "mountain",
-    "desert",
     "swamp"
   ],
   "buildings": [
-    "headquarters",
+    "castle",
     "farm",
     "sawmill",
-    "lumberjack",
-    "warehouse"
+    "woodcutter",
+    "storehouse"
   ],
   "units": [
-    "worker",
-    "soldier",
-    "archer"
+    "settler",
+    "swordsman",
+    "bowman"
   ],
   "ui": [
     "panel",
