@@ -533,6 +533,86 @@
   #selection-info .sel-title { font-size: 13px; font-weight: bold; color: #f0d070; margin-bottom: 4px; }
   #selection-info .sel-stat { color: #aaa; }
   #selection-info .sel-stat span { color: #e0d5b0; }
+
+  /* ── Error Dialog ────────────────────────────────────────────────────── */
+  #error-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    display: none;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(4px);
+  }
+  #error-overlay.active { display: flex; }
+  .error-dialog {
+    background: linear-gradient(135deg, #1a1018, #0d0a12);
+    border: 1px solid rgba(220,60,60,0.5);
+    border-radius: 12px;
+    padding: 28px 32px;
+    max-width: 560px;
+    width: 90vw;
+    box-shadow: 0 20px 80px rgba(200,0,0,0.3), 0 0 0 1px rgba(220,60,60,0.2);
+    animation: fadeIn 0.3s ease-out;
+  }
+  .error-dialog .error-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .error-dialog .error-icon { font-size: 28px; }
+  .error-dialog .error-title {
+    font-size: 18px; font-weight: 600; color: #ff6b6b;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+  .error-dialog .error-message {
+    font-family: 'Courier New', monospace;
+    font-size: 13px; color: #e0d5b0;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(220,60,60,0.2);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    white-space: pre-wrap; word-break: break-word;
+    max-height: 200px; overflow-y: auto;
+    line-height: 1.5;
+  }
+  .error-dialog .error-location {
+    font-family: 'Courier New', monospace;
+    font-size: 11px; color: #888;
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+    border-left: 3px solid rgba(220,60,60,0.4);
+  }
+  .error-dialog .error-location span { color: #c8b878; }
+  .error-dialog .error-actions {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .error-dialog .btn {
+    padding: 8px 18px;
+    border: none; border-radius: 6px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+  .error-dialog .btn-primary {
+    background: linear-gradient(135deg, #dc3545, #b02a37);
+    color: #fff;
+  }
+  .error-dialog .btn-primary:hover { background: linear-gradient(135deg, #e04555, #c03a47); }
+  .error-dialog .btn-secondary {
+    background: rgba(255,255,255,0.08);
+    color: #ccc;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .error-dialog .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+  .error-dialog .btn-copy {
+    background: rgba(255,255,255,0.05);
+    color: #aaa;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .error-dialog .btn-copy:hover { background: rgba(255,255,255,0.12); }
+  .error-dialog .btn-copy.copied { color: #4caf50; border-color: rgba(76,175,80,0.4); }
 </style>
 </head>
 <body>
@@ -2459,12 +2539,204 @@ async function main() {
         requestAnimationFrame(loop);
 
     } catch (err) {
-        document.body.innerHTML = `<div style="color:#e44;padding:40px;text-align:center">Error: ${err}</div>`;
-        console.error(err);
+        ErrorHandler.show(err, 'main() initialization');
     }
 }
 
 main();
+
+// ── Error Handler ───────────────────────────────────────────────────────
+const ErrorHandler = {
+  _lastError: null,
+
+  // Build a GitHub issue URL with pre-filled title and body
+  _buildGitHubUrl(title, body) {
+    const params = new URLSearchParams({
+      title: title,
+      body: body,
+      labels: 'bug',
+    });
+    return `https://github.com/mayrd/s4wn/issues/new?${params.toString()}`;
+  },
+
+  // Parse a stack trace to extract file, line, column
+  _parseStack(stack) {
+    if (!stack) return { file: 'unknown', line: '?', column: '?', raw: '' };
+    // Match patterns like "at function (file:line:col)" or "file:line:col"
+    const lines = stack.split('\n');
+    for (const line of lines) {
+      const match = line.match(/^(?:.*?@|at\s+.*?)\(?([^)]+?):(\d+):(\d+)\)?$/);
+      if (match) {
+        return { file: match[1], line: match[2], column: match[3], raw: stack };
+      }
+      // Also match "at file:line:col" without function name
+      const match2 = line.match(/at\s+(https?:\/\/[^:]+):(\d+):(\d+)/);
+      if (match2) {
+        return { file: match2[1], line: match2[2], column: match2[3], raw: stack };
+      }
+    }
+    return { file: 'unknown', line: '?', column: '?', raw: stack };
+  },
+
+  // Format error info for display
+  _formatError(err) {
+    const name = err.name || 'Error';
+    const message = err.message || String(err);
+    const stack = err.stack || '';
+    const loc = this._parseStack(stack);
+    return { name, message, stack, loc };
+  },
+
+  // Show the error dialog
+  show(err, context = '') {
+    const info = this._formatError(err);
+    this._lastError = { ...info, context, timestamp: new Date().toISOString() };
+
+    // Log to console with GitHub deeplink
+    console.error(`[S4WN Error] ${info.name}: ${info.message}`);
+    if (info.loc.file !== 'unknown') {
+      console.error(`  at ${info.loc.file}:${info.loc.line}:${info.loc.column}`);
+    }
+    if (info.stack) {
+      console.error('Stack trace:\n' + info.stack);
+    }
+
+    // Build and log GitHub issue URL
+    const title = `[Bug] ${info.name}: ${info.message.substring(0, 80)}`;
+    const body = this._buildIssueBody(info);
+    const ghUrl = this._buildGitHubUrl(title, body);
+    console.log('%c🐛 Create GitHub issue:', 'color:#ff6b6b;font-weight:bold;font-size:14px');
+    console.log('%c' + ghUrl, 'color:#58a6ff;text-decoration:underline;word-break:break-all');
+
+    // Show dialog
+    const overlay = document.getElementById('error-overlay');
+    const titleEl = document.getElementById('error-dialog-title');
+    const msgEl = document.getElementById('error-dialog-message');
+    const locEl = document.getElementById('error-dialog-location');
+
+    titleEl.textContent = info.name;
+    msgEl.textContent = (context ? `[${context}] ` : '') + info.message;
+    locEl.innerHTML = info.loc.file !== 'unknown'
+      ? `📍 <span>${info.loc.file}</span> :${info.loc.line}:${info.loc.column}`
+      : '📍 Location unknown';
+
+    overlay.classList.add('active');
+  },
+
+  // Build the GitHub issue body markdown
+  _buildIssueBody(info) {
+    const context = info.context ? `**Context:** ${info.context}\n\n` : '';
+    const stack = info.stack ? '```\n' + info.stack + '\n```' : 'No stack trace available';
+    return `## Bug Report
+
+${context}**Error:** ${info.name}: ${info.message}
+
+**Location:** \`${info.loc.file}:${info.loc.line}:${info.loc.column}\`
+
+**Timestamp:** ${info.timestamp}
+
+**Stack Trace:**
+${stack}
+
+**Browser:** ${navigator.userAgent}
+
+**URL:** ${window.location.href}
+`;
+  },
+
+  // Open GitHub issue in new tab
+  openGitHubIssue() {
+    if (!this._lastError) return;
+    const title = `[Bug] ${this._lastError.name}: ${this._lastError.message.substring(0, 80)}`;
+    const body = this._buildIssueBody(this._lastError);
+    const url = this._buildGitHubUrl(title, body);
+    window.open(url, '_blank');
+  },
+
+  // Copy error details to clipboard
+  async copyError() {
+    if (!this._lastError) return;
+    const text = this._buildIssueBody(this._lastError);
+    try {
+      await navigator.clipboard.writeText(text);
+      const btn = document.getElementById('error-btn-copy');
+      btn.textContent = '✅ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '📋 Copy Error Details';
+        btn.classList.remove('copied');
+      }, 2000);
+    } catch (e) {
+      console.error('Failed to copy:', e);
+    }
+  },
+
+  // Dismiss the error dialog
+  dismiss() {
+    document.getElementById('error-overlay').classList.remove('active');
+  },
+};
+
+// Global error handlers
+window.onerror = function (message, source, lineno, colno, error) {
+  const err = error || new Error(message);
+  if (!error) {
+    err.message = message;
+    err.stack = `    at ${source}:${lineno}:${colno}`;
+  }
+  ErrorHandler.show(err, 'window.onerror');
+  return true; // Prevent default browser error handling
+};
+
+window.addEventListener('unhandledrejection', function (event) {
+  const reason = event.reason;
+  if (reason instanceof Error) {
+    ErrorHandler.show(reason, 'Unhandled Promise Rejection');
+  } else {
+    const err = new Error(String(reason));
+    err.name = 'UnhandledRejection';
+    ErrorHandler.show(err, 'Unhandled Promise Rejection');
+  }
+});
+
+// Wrap console.error to also show GitHub deeplink
+const _origConsoleError = console.error;
+console.error = function (...args) {
+  _origConsoleError.apply(console, args);
+  // If the first arg is an Error object, offer a GitHub link
+  if (args[0] instanceof Error) {
+    const info = ErrorHandler._formatError(args[0]);
+    const title = `[Bug] ${info.name}: ${info.message.substring(0, 80)}`;
+    const body = ErrorHandler._buildIssueBody({ ...info, context: 'console.error', timestamp: new Date().toISOString() });
+    const ghUrl = ErrorHandler._buildGitHubUrl(title, body);
+    console.log('%c🐛 Create GitHub issue for this error:', 'color:#ff6b6b;font-weight:bold');
+    console.log('%c' + ghUrl, 'color:#58a6ff;text-decoration:underline;word-break:break-all');
+  }
+};
 </script>
+
+<!-- ── Error Dialog ────────────────────────────────────────────────────── -->
+<div id="error-overlay">
+  <div class="error-dialog">
+    <div class="error-header">
+      <span class="error-icon">🐛</span>
+      <span class="error-title" id="error-dialog-title">Runtime Error</span>
+    </div>
+    <div class="error-message" id="error-dialog-message"></div>
+    <div class="error-location" id="error-dialog-location"></div>
+    <div class="error-actions">
+      <button class="btn btn-primary" id="error-btn-github" onclick="ErrorHandler.openGitHubIssue()">
+        🐛 Report on GitHub
+      </button>
+      <button class="btn btn-copy" id="error-btn-copy" onclick="ErrorHandler.copyError()">
+        📋 Copy Error Details
+      </button>
+      <button class="btn btn-secondary" onclick="ErrorHandler.dismiss()">
+        Dismiss
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
