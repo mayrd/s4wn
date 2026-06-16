@@ -77,8 +77,13 @@ impl WorkerAI {
             let settler_id = idle_settler_ids[i];
             // Assign settler to building
             economy.buildings[building_idx].assign_settler(settler_id);
+            // Tool pickup: if building requires a tool, try to give to settler
+            let tool_given: Option<u8> = economy.buildings[building_idx]
+                .required_tool
+                .filter(|&tc| economy.withdraw_tool(tc));
             if let Some(unit) = economy.units.get_mut(settler_id) {
                 unit.assigned_building = Some(building_idx);
+                unit.carried_tool = unit.carried_tool.or(tool_given);
                 // Set state to Moving so move_settlers handles pathfinding
                 unit.state = UnitState::Moving;
             }
@@ -349,5 +354,69 @@ mod tests {
         assert!(w2.assigned_building.is_some());
         // They should be assigned to different buildings
         assert_ne!(w1.assigned_building, w2.assigned_building);
+    }
+
+    #[test]
+    fn test_worker_ai_auto_assign_tool_pickup() {
+        let mut economy = Economy::with_starting_resources(&[
+            (ResourceType::Wood, 100),
+            (ResourceType::Stone, 50),
+        ]);
+
+        // Add a pickaxe to tool storage
+        economy.add_tool(1, 1); // Pickaxe
+
+        // Place a stonecutter (requires pickaxe)
+        let stonecutter_idx = economy.place_building(BuildingType::Stonecutter, 2, 2);
+
+        // Complete construction
+        for _ in 0..31 {
+            economy.update();
+        }
+        assert!(economy.buildings[stonecutter_idx].is_complete());
+
+        // Spawn an idle settler
+        economy.units.spawn(UnitKind::Settler, 0.5, 0.5);
+
+        // Run auto_assign
+        let ai = WorkerAI::new();
+        let assigned = ai.auto_assign(&mut economy);
+        assert_eq!(assigned, 1, "Should assign settler to stonecutter");
+
+        // Check settler carries the pickaxe
+        let settler = economy.units.get(1).unwrap();
+        assert_eq!(settler.assigned_building, Some(stonecutter_idx));
+        assert_eq!(settler.carried_tool, Some(1), "Settler should carry pickaxe");
+
+        // Tool storage should be empty now
+        assert_eq!(economy.get_tool_count(1), 0, "Pickaxe should be withdrawn");
+    }
+
+    #[test]
+    fn test_worker_ai_auto_assign_tool_pickup_no_tool_available() {
+        let mut economy = Economy::with_starting_resources(&[
+            (ResourceType::Wood, 100),
+            (ResourceType::Stone, 50),
+        ]);
+
+        // Place a stonecutter (requires pickaxe) — but no tools in storage
+        let stonecutter_idx = economy.place_building(BuildingType::Stonecutter, 2, 2);
+        for _ in 0..31 {
+            economy.update();
+        }
+        assert!(economy.buildings[stonecutter_idx].is_complete());
+
+        // Spawn an idle settler
+        economy.units.spawn(UnitKind::Settler, 0.5, 0.5);
+
+        // Run auto_assign
+        let ai = WorkerAI::new();
+        let assigned = ai.auto_assign(&mut economy);
+        assert_eq!(assigned, 1, "Should still assign settler even without tool");
+
+        // Check settler does NOT carry a tool (none available)
+        let settler = economy.units.get(1).unwrap();
+        assert_eq!(settler.assigned_building, Some(stonecutter_idx));
+        assert_eq!(settler.carried_tool, None, "Settler should not carry a tool");
     }
 }

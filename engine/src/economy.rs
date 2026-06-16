@@ -748,14 +748,27 @@ impl Economy {
     }
 
     /// Auto-assign idle settlers to buildings that need them.
+    /// Tries to give the settler the required tool from storage.
     /// Returns the number of assignments made.
     pub fn auto_assign_settlers(&mut self) -> usize {
         let mut assigned = 0;
         // Find buildings that need settlers
         for i in 0..self.buildings.len() {
             let building = &self.buildings[i];
-            if building.kind.requires_settler() && building.assigned_settlers.is_empty() {
+            if building.kind.requires_settler()
+                && building.is_complete()
+                && building.assigned_settlers.is_empty()
+            {
                 if let Some(settler_id) = self.units.find_idle_settler().map(|w| w.id) {
+                    // Tool pickup: try to give the settler the required tool
+                    let tool_code = building.required_tool;
+                    if let Some(tc) = tool_code {
+                        if self.withdraw_tool(tc) {
+                            if let Some(unit) = self.units.get_mut(settler_id) {
+                                unit.carried_tool = Some(tc);
+                            }
+                        }
+                    }
                     self.buildings[i].assign_settler(settler_id);
                     self.units.get_mut(settler_id).unwrap().assign_to(i);
                     assigned += 1;
@@ -1535,6 +1548,48 @@ mod tests {
         assert!(
             e.production_events > prev_events,
             "Sawmill should produce with a tool-carrying settler"
+        );
+    }
+
+    #[test]
+    fn test_auto_assign_settlers_tool_pickup() {
+        let mut economy = Economy::with_starting_resources(&[
+            (ResourceType::Wood, 100),
+            (ResourceType::Stone, 50),
+        ]);
+
+        // Add a pickaxe to tool storage
+        economy.add_tool(1, 1); // Pickaxe (tool code 1)
+
+        // Place a Stonecutter (requires pickaxe, does NOT produce tools)
+        let sc_idx = economy.place_building(BuildingType::Stonecutter, 2, 2);
+        for _ in 0..31 {
+            economy.update();
+        }
+        assert!(economy.buildings[sc_idx].is_complete());
+
+        // Spawn an idle settler
+        economy.units.spawn(UnitKind::Settler, 0.5, 0.5);
+
+        // Run auto_assign_settlers
+        let assigned = economy.auto_assign_settlers();
+        assert_eq!(assigned, 1, "Should assign settler to stonecutter");
+
+        // Check settler carries the pickaxe
+        let settler = economy.units.get(1).unwrap();
+        assert_eq!(settler.assigned_building, Some(sc_idx));
+        assert_eq!(
+            settler.carried_tool,
+            Some(1),
+            "Settler should carry pickaxe"
+        );
+
+        // Tool storage should be empty now (pickaxe was withdrawn)
+        assert_eq!(
+            economy.get_tool_count(1),
+            0,
+            "Pickaxe should be withdrawn (got {})",
+            economy.get_tool_count(1)
         );
     }
 
