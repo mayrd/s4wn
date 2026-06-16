@@ -111,6 +111,10 @@ impl ResourceType {
     }
 }
 
+/// Ticks between settler recruitment at each Castle
+/// At 10 TPS, 50 ticks = 5 seconds per settler
+pub const CASTLE_SETTLER_INTERVAL: u32 = 50;
+
 // ── Building Types ─────────────────────────────────────────────────────────
 
 /// Defines a building type and its production characteristics.
@@ -372,6 +376,8 @@ pub struct Building {
     pub construction: f32,
     /// Whether the building is active (construction == 1.0 and has settler if needed)
     pub active: bool,
+    /// Ticks until next settler recruitment (Castle only)
+    pub recruitment_timer: u32,
     /// Ticks since last production
     pub production_counter: u32,
     /// Input buffer: resources waiting to be consumed
@@ -392,12 +398,15 @@ impl Building {
     pub fn new(kind: BuildingType, x: usize, y: usize) -> Self {
         let max_settlers = if kind.requires_settler() { 1 } else { 0 };
         let required_tool = kind.required_tool().and_then(tool_code_from_name);
+        // Buildings with 0 build time start immediately complete (Castle, Storehouse)
+        let start_construction = if kind.build_time() == 0 { 1.0 } else { 0.0 };
         Building {
             kind,
             x,
             y,
-            construction: 0.0,
-            active: false,
+            construction: start_construction,
+            active: start_construction >= 1.0,
+            recruitment_timer: 0,
             production_counter: 0,
             input_buffer: [0u32; ResourceType::COUNT],
             output_buffer: [0u32; ResourceType::COUNT],
@@ -743,6 +752,24 @@ impl Economy {
         // 1. Tick construction for all buildings
         for building in self.buildings.iter_mut() {
             building.tick_construction();
+        }
+
+        // 1b. Castle recruitment — spawn idle settlers from completed Castles
+        // Pre-collect spawn positions to avoid borrowing conflicts
+        let castle_spawns: Vec<(f32, f32)> = self.buildings.iter_mut()
+            .filter(|b| b.kind == BuildingType::Castle && b.is_complete())
+            .filter_map(|b| {
+                b.recruitment_timer += 1;
+                if b.recruitment_timer >= CASTLE_SETTLER_INTERVAL {
+                    b.recruitment_timer = 0;
+                    Some((b.x as f32 + 0.5, b.y as f32 + 0.5))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        for (cx, cy) in castle_spawns {
+            self.units.spawn(crate::units::UnitKind::Settler, cx, cy);
         }
 
         // Pre-compute which buildings have tooled settlers
@@ -1355,6 +1382,88 @@ mod tests {
         assert!(
             e.production_events > prev_events,
             "Sawmill should produce with a tool-carrying settler"
+        );
+    }
+
+    #[test]
+    fn test_castle_recruits_settlers() {
+        // Castle should spawn a settler every CASTLE_SETTLER_INTERVAL ticks
+        let mut e = Economy::new();
+        e.place_building(BuildingType::Castle, 5, 5);
+
+        // Castle has build_time=0, so is_complete immediately
+        assert!(e.buildings[0].is_complete(), "Castle should be complete immediately");
+
+        let initial_settler_count = e.units.settler_count();
+
+        // Run exactly CASTLE_SETTLER_INTERVAL ticks
+        for _ in 0..CASTLE_SETTLER_INTERVAL {
+            e.update();
+        }
+
+        let count_after = e.units.settler_count();
+        assert_eq!(
+            count_after, initial_settler_count + 1,
+            "Castle should recruit one settler after {} ticks; got {} settlers (was {})",
+            CASTLE_SETTLER_INTERVAL, count_after, initial_settler_count
+        );
+
+        // Run another CASTLE_SETTLER_INTERVAL ticks
+        for _ in 0..CASTLE_SETTLER_INTERVAL {
+            e.update();
+        }
+
+        let count_after2 = e.units.settler_count();
+        assert_eq!(
+            count_after2, initial_settler_count + 2,
+            "Castle should recruit two settlers after {} ticks",
+            CASTLE_SETTLER_INTERVAL * 2
+        );
+    }
+
+    #[test]
+    fn test_castle_no_recruitment_during_construction() {
+        let mut e = Economy::new();
+        e.place_building(BuildingType::Castle, 5, 5);
+        assert_eq!(e.buildings[0].recruitment_timer, 0);
+
+        // Run only 10 ticks — not enough for a settler
+        for _ in 0..10 {
+            e.update();
+        }
+        assert_eq!(e.units.settler_count(), 0,
+            "No settlers should be recruited before CASTLE_SETTLER_INTERVAL ticks");
+    }
+
+    #[test]
+    fn test_multiple_castles_recruit() {
+        // Multiple Castles should each recruit settlers independently
+        let mut e = Economy::new();
+        e.place_building(BuildingType::Castle, 0, 0);
+        e.place_building(BuildingType::Castle, 5, 5);
+        e.place_building(BuildingType::Castle, 10, 10);
+
+        // Run CASTLE_SETTLER_INTERVAL ticks
+        for _ in 0..CASTLE_SETTLER_INTERVAL {
+            e.update();
+        }
+
+        // Each Castle should have produced one settler
+        assert_eq!(
+            e.units.settler_count(), 3,
+            "Three Castles should recruit three settlers after {} ticks",
+            CASTLE_SETTLER_INTERVAL
+        );
+
+        // Run another interval
+        for _ in 0..CASTLE_SETTLER_INTERVAL {
+            e.update();
+        }
+
+        assert_eq!(
+            e.units.settler_count(), 6,
+            "Three Castles should recruit six settlers after {} ticks",
+            CASTLE_SETTLER_INTERVAL * 2
         );
     }
 }
