@@ -1165,16 +1165,14 @@ function showMapPreview(data, file) {
         resourceEl.innerHTML = chunkHTML;
         resourceEl.parentElement.querySelector('h4').textContent = '📦 Chunks';
 
-        // Change Load button text
+        // Wire Load button to actual loader (decompression bridge is ready)
         const loadBtn = document.querySelector('.btn-mp-load');
-        loadBtn.textContent = '🔍 Parse More';
-        loadBtn.onclick = () => {
-            alert('Full .sav parsing will be available when the WASM decompression bridge is ready.\n\nThe .sav file header has been validated (version ' + data.version + ', ' + data.chunkCount + ' data sections).\n\nFor now, .map files are fully supported for terrain loading.');
-        };
+        loadBtn.textContent = '▶ Load Savegame';
+        loadBtn.onclick = confirmMapLoad;
 
-        // Warnings: show note about decompression
+        // Warnings: show note about terrain-only load
         const warningEl = document.getElementById('mp-warning');
-        warningEl.textContent = '⚠️ Full savegame parsing requires WASM decompression — preview only.';
+        warningEl.textContent = '⚠️ Terrain loads successfully — buildings/units/resource state not yet restored. Save manually after loading.';
         warningEl.classList.add('show');
 
         // Update column header for chunks
@@ -1256,6 +1254,29 @@ function confirmMapLoad() {
                 return;
             }
 
+            // Try to get actual map dimensions from chunk 0x2712 (SaveGameGeneralInformation)
+            // Byte offset 28 contains u32 BE map width (per Settlers.ts savegame-loader.ts)
+            let savWidth = null, savHeight = null;
+            const infoChunk = pendingMapData.chunkTypes.find(
+                ct => ct.type === 0x2712 || ct.type === 10002
+            );
+            if (infoChunk) {
+                try {
+                    const buf = pendingMapData._rawBuffer;
+                    const infoRaw = new Uint8Array(buf, infoChunk.rawOffset, infoChunk.compressedLen);
+                    const infoDecompressed = decompress_sav_chunk(infoRaw, infoChunk.unpackedLen);
+                    if (infoDecompressed && infoDecompressed.length >= 32) {
+                        const dv = new DataView(
+                            infoDecompressed.buffer,
+                            infoDecompressed.byteOffset,
+                            infoDecompressed.byteLength
+                        );
+                        savWidth = dv.getUint32(28, false);  // big-endian
+                        savHeight = savWidth; // S4 maps are square
+                    }
+                } catch (_) { /* fall back to tile-count estimate */ }
+            }
+
             // Extract raw compressed chunk bytes
             const buf = pendingMapData._rawBuffer;
             const rawBytes = new Uint8Array(
@@ -1271,20 +1292,27 @@ function confirmMapLoad() {
 
             // Parse decompressed terrain tiles
             // Each tile is 6 bytes: terrain(u8), elevation(u8→f32), flags(u8), resource(u8), mx(u8), my(u8)
-            // We'll estimate dimensions from tile count
             const totalTiles = decompressed.length / 6;
             if (totalTiles % 1 !== 0) {
                 alert('Decompressed terrain data has invalid size: ' + decompressed.length +
                     ' bytes (not a multiple of 6)');
                 return;
             }
-            const estDim = Math.round(Math.sqrt(totalTiles));
-            const width = estDim;
-            const height = estDim;
-            if (width * height !== totalTiles) {
-                alert('Decompressed terrain has ' + totalTiles +
-                    ' tiles, not a perfect square. Import may be incomplete.');
-                // Still try with estimated dimensions
+
+            // Use dimensions from GeneralInformation chunk if available, else estimate from tile count
+            let width, height;
+            if (savWidth && savWidth * savHeight === totalTiles) {
+                width = savWidth;
+                height = savHeight;
+            } else {
+                const estDim = Math.round(Math.sqrt(totalTiles));
+                width = estDim;
+                height = estDim;
+                if (width * height !== totalTiles) {
+                    alert('Decompressed terrain has ' + totalTiles +
+                        ' tiles, not a perfect square. Import may be incomplete.');
+                    // Still try with estimated dimensions
+                }
             }
 
             // Build tile array
