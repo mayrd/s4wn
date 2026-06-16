@@ -2,8 +2,8 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 2.8 — Tool System 🔨
-Last updated: 2026-06-16 (Session 51)
+## Status: Phase 2.8 — Tool System 🔨 (184 tests)
+Last updated: 2026-06-16 (Session 52)
 
 ## 🤖 Agent Operating Rules
 
@@ -498,6 +498,7 @@ s4wn/
 ||| 47 | 2026-06-16 | ~20 min | Debug session: Investigated black main-canvas despite working minimap. Added RENDER_DIAG console.log to Rust render() — fires on first frame, logs map dimensions, index_count, zoom, camera center, canvas size, and map_dims_loc (Some/None). Identified potential edge-fog false-positive: if u_map_dims uniform is 0,0 the fog covers entire map making it invisible against clear color. Rebuilt WASM (v=14). Awaiting user console output for diagnosis. 171 tests passing. |
 ||| 48 | 2026-06-16 | ~25 min | S4 Authenticity cleanup: Removed fabricated Residence building (not in Siedler 4) from BuildingType enum, all methods (name/build_cost/inputs/outputs/requires_settler/build_time/required_tool/all_names/from_name), building_color() in lib.rs, and all tests. Deleted tannery.obj + tannery.mtl assets (fabricated building). Updated MODEL_LISTING.md and IMPLEMENTATION_PLAN.md (Residence references corrected to Castle). Rebuilt WASM (v=15). 171 tests passing. |
 || 51 | 2026-06-16 | ~2h | **Nano Banana 2 high-res terrain textures.** Generated 8 × 1024×1024 PNG terrain textures via google/gemini-3.1-flash-image-preview (OpenRouter, ~$0.55). Wired into WebGL pipeline: added a_uv + a_terrain_id vertex attributes, sampler2DArray u_terrain_textures, base_color texture sampling in fragment shader with flat-color fallback. JS creates TEXTURE_2D_ARRAY, loads 8 PNGs, uploads via texSubImage3D. Cache v=17→v=18. 174 tests passing. |
+||| 52 | 2026-06-16 | ~10 min | **Bugfix #10 + named tool storage.** Fixed `openMenu is not defined` — JS `<script type="module">` scoped functions invisible to inline onclick handlers; exposed 9 UI functions to `window`. Added `tool_storage: [u32; 12]` to Economy with `get_tool_count`/`add_tool`/`withdraw_tool`/`most_needed_tool`. Toolsmith now produces named tools based on demand. 184 tests passing (+4). |
 || 50 | 2026-06-16 | ~10 min | Castle settler recruitment: added recruitment_timer to Building, CASTLE_SETTLER_INTERVAL=50, Economy::update() spawns idle settlers from completed Castles. Fixed Building::new() zero-build-time buildings. 174 tests passing. |
 ||| 49 | 2026-06-16 | ~25 min | Comprehensive S4 authenticity audit of nations, people, goods, resources, terrain, decorations, and objects. No fabricated content beyond Residence (removed S48). Cleaned old names from docs. 171 tests passing. |
 | 48 | 2026-06-16 | ~10 min | Fixed black screen (Session 47 carryover): removed unused u_map_dims uniform from vertex shader — GPU drivers optimized it away, causing get_uniform_location to return None and default (0,0) to blanket map in edge-fog color matching clear color. Updated edge-fog shader test. Bumped WASM cache to v=15. All 171 tests passing. |
@@ -508,6 +509,7 @@ s4wn/
 | ID | Title | Status | Notes |
 |----|-------|--------|-------|
 | #1 | docker-compose.yml | ✅ Closed | Resolved in Session 4 |
+| #10 | openMenu is not defined | ✅ Closed | Fixed in Session 52 — module-scoped functions exposed to window |
 | #3 | Cannot find u_time | ✅ Closed | Fixed in Session 7 — u_time now used in vertex shader |
 | #8 | Create S4WN Icon and Logo | ✅ Closed | Resolved in Session 17 — SVG + PNG favicon suite, loading screen logo, web manifest |
 
@@ -544,8 +546,21 @@ None at the moment.
 - Graceful fallback to flat colors if textures fail to load
 - Future: tune UV repeat factor, add texture blending between tile edges
 
+### Next Session (Session 53)
+
+1. **Settler tool pickup:** Wire `withdraw_tool()` into WorkerAI — idle settlers near storehouse check `most_needed_tool()`, pick up matching tool, and route to the building. Add `carried_tool` assignment in `units.rs`.
+2. **WorkerAI tool awareness:** `auto_assign_settlers()` prefers tool-carrying settlers; building with `required_tool` only accepts settlers carrying the right tool.
+3. **Mint building:** Add `BuildingType::Mint` (Gold Ore + Coal → Coins), update all match arms, building_color, BUILDING_ICONS. ResourceType COUNT 25→26.
+4. **Barracks unit training:** Add recruitment timer to Barracks building — consumes Weapons+Settler → spawn Swordsman/Bowman.
+5. **WASM binding:** Export `get_tool_counts()` for JS HUD display of tool inventory.
+
 ### Phase 2.8.2 — Common Buildings (continued)
-- [ ] **Toolsmith named tool production:** Toolsmith produces specific tools (Hammer, Pickaxe, Saw, etc.) — each with separate production cycle and storage in storehouse
+
+### Phase 2.8.2 — Common Buildings (continued)
+ - [x] **Toolsmith named tool production:** Toolsmith produces specific tools (Hammer, Pickaxe, Saw, etc.) — each with separate production cycle and storage in storehouse
+### Session 52 Deliverables
+- [x] **Bugfix #10:** `openMenu is not defined` — exposed 9 module-scoped UI functions to `window`
+- [x] **Toolsmith named tool production:** `tool_storage` array on Economy, Toolsmith produces named tools based on `most_needed_tool()` demand scan
 - [ ] **Settler tool pickup:** idle settlers check storehouse for tools needed by unstaffed buildings, auto-pickup and route to building
 - [x] **Castle settler recruitment:** spawn idle settler at castle every ~50 ticks (5s at 10 TPS)
 - [ ] **Barracks unit training:** consume Swords + Shields + Settler → convert into Swordsman; Weapons + Settler → Bowman
