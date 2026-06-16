@@ -36,25 +36,25 @@ use crate::units::UnitManager;
 #[repr(u8)]
 pub enum ResourceType {
     // Raw resources (mined/harvested from map deposits)
-    Wood = 0,       // from forests
-    Stone = 1,      // from stone deposits
-    Iron = 2,       // from iron ore
-    Coal = 3,       // from coal deposits
-    Gold = 4,       // from gold deposits
-    Sulfur = 5,     // from sulfur deposits
-    Fish = 6,       // from fishing
-    Grain = 7,      // from farming
-    Game = 8,       // from hunting
-    Water = 9,     // from waterworks
+    Wood = 0,   // from forests
+    Stone = 1,  // from stone deposits
+    Iron = 2,   // from iron ore
+    Coal = 3,   // from coal deposits
+    Gold = 4,   // from gold deposits
+    Sulfur = 5, // from sulfur deposits
+    Fish = 6,   // from fishing
+    Grain = 7,  // from farming
+    Game = 8,   // from hunting
+    Water = 9,  // from waterworks
 
     // Processed goods (produced by buildings)
-    Boards = 16,    // Wood → Boards (sawmill)
-    Tools = 17,     // Iron + Coal → Tools (toolsmith)
-    Weapons = 18,   // Iron + Coal + Tools → Weapons (weaponsmith)
-    Beer = 19,      // Grain → Beer (brewery)
-    Bread = 20,     // Grain → Bread (bakery)
-    Meat = 21,      // Game → Meat (butcher)
-    Flour = 22,     // Grain → Flour (mill)
+    Boards = 16,     // Wood → Boards (sawmill)
+    Tools = 17,      // Iron + Coal → Tools (toolsmith)
+    Weapons = 18,    // Iron + Coal + Tools → Weapons (weaponsmith)
+    Beer = 19,       // Grain → Beer (brewery)
+    Bread = 20,      // Grain → Bread (bakery)
+    Meat = 21,       // Game → Meat (butcher)
+    Flour = 22,      // Grain → Flour (mill)
     IronIngots = 23, // Iron + Coal → Iron Ingots (smelter)
 }
 
@@ -208,11 +208,23 @@ impl BuildingType {
     /// Get all building type names.
     pub fn all_names() -> Vec<&'static str> {
         vec![
-            "Castle", "Sawmill", "Stonecutter", "Mine",
-            "Toolsmith", "Weaponsmith", "Brewery", "Bakery",
-            "Butcher", "Mill", "Farm", "Fisherman",
-            "Woodcutter", "Storehouse",
-            "Waterworks", "Smelter", "Barracks",
+            "Castle",
+            "Sawmill",
+            "Stonecutter",
+            "Mine",
+            "Toolsmith",
+            "Weaponsmith",
+            "Brewery",
+            "Bakery",
+            "Butcher",
+            "Mill",
+            "Farm",
+            "Fisherman",
+            "Woodcutter",
+            "Storehouse",
+            "Waterworks",
+            "Smelter",
+            "Barracks",
         ]
     }
 
@@ -223,8 +235,16 @@ impl BuildingType {
             BuildingType::Sawmill => &[(ResourceType::Wood, 5), (ResourceType::Stone, 2)],
             BuildingType::Stonecutter => &[(ResourceType::Wood, 5)],
             BuildingType::Mine => &[(ResourceType::Wood, 8), (ResourceType::Stone, 3)],
-            BuildingType::Toolsmith => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5), (ResourceType::Iron, 2)],
-            BuildingType::Weaponsmith => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5), (ResourceType::Tools, 3)],
+            BuildingType::Toolsmith => &[
+                (ResourceType::Wood, 5),
+                (ResourceType::Stone, 5),
+                (ResourceType::Iron, 2),
+            ],
+            BuildingType::Weaponsmith => &[
+                (ResourceType::Wood, 5),
+                (ResourceType::Stone, 5),
+                (ResourceType::Tools, 3),
+            ],
             BuildingType::Brewery => &[(ResourceType::Wood, 5), (ResourceType::Stone, 2)],
             BuildingType::Bakery => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
             BuildingType::Butcher => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
@@ -244,7 +264,11 @@ impl BuildingType {
         match self {
             BuildingType::Sawmill => &[(ResourceType::Wood, 2)],
             BuildingType::Toolsmith => &[(ResourceType::Iron, 1), (ResourceType::Coal, 1)],
-            BuildingType::Weaponsmith => &[(ResourceType::Iron, 1), (ResourceType::Coal, 1), (ResourceType::Tools, 1)],
+            BuildingType::Weaponsmith => &[
+                (ResourceType::Iron, 1),
+                (ResourceType::Coal, 1),
+                (ResourceType::Tools, 1),
+            ],
             BuildingType::Brewery => &[(ResourceType::Grain, 3)],
             BuildingType::Bakery => &[(ResourceType::Grain, 2)],
             BuildingType::Butcher => &[(ResourceType::Game, 2)],
@@ -279,42 +303,53 @@ impl BuildingType {
     pub fn production_interval(self) -> u32 {
         match self {
             BuildingType::Sawmill => 20,     // 2 seconds
-            BuildingType::Stonecutter => 30,      // 3 seconds
+            BuildingType::Stonecutter => 30, // 3 seconds
             BuildingType::Mine => 40,        // 4 seconds
-            BuildingType::Toolsmith => 30,  // 3 seconds
-            BuildingType::Weaponsmith => 50,      // 5 seconds
+            BuildingType::Toolsmith => 30,   // 3 seconds
+            BuildingType::Weaponsmith => 50, // 5 seconds
             BuildingType::Brewery => 25,     // 2.5 seconds
             BuildingType::Bakery => 20,      // 2 seconds
             BuildingType::Butcher => 25,     // 2.5 seconds
-            BuildingType::Mill => 25,     // 2.5 seconds
+            BuildingType::Mill => 25,        // 2.5 seconds
             BuildingType::Farm => 20,        // 2 seconds
-            BuildingType::Fisherman => 20,     // 2 seconds
+            BuildingType::Fisherman => 20,   // 2 seconds
             BuildingType::Woodcutter => 15,  // 1.5 seconds
-            BuildingType::Waterworks => 30,     // 3 seconds
-            BuildingType::Smelter => 30,         // 3 seconds
-            _ => 0, // Barracks, Castle, Storehouse don't produce
+            BuildingType::Waterworks => 30,  // 3 seconds
+            BuildingType::Smelter => 30,     // 3 seconds
+            _ => 0,                          // Barracks, Castle, Storehouse don't produce
         }
     }
 
     /// Maximum input buffer size (how many cycles worth of inputs can be queued)
     pub fn input_buffer_size(self) -> u32 {
-        if self.inputs().is_empty() { 0 } else { 3 }
+        if self.inputs().is_empty() {
+            0
+        } else {
+            3
+        }
     }
 
     /// Maximum output buffer size
     pub fn output_buffer_size(self) -> u32 {
-        if self.outputs().is_empty() { 0 } else { 3 }
+        if self.outputs().is_empty() {
+            0
+        } else {
+            3
+        }
     }
 
     /// Whether this building requires a settler to produce
     pub fn requires_settler(self) -> bool {
-        !matches!(self, BuildingType::Castle | BuildingType::Storehouse | BuildingType::Barracks)
+        !matches!(
+            self,
+            BuildingType::Castle | BuildingType::Storehouse | BuildingType::Barracks
+        )
     }
 
     /// Ticks needed to construct this building
     pub fn build_time(self) -> u32 {
         match self {
-            BuildingType::Castle => 0,    // already built
+            BuildingType::Castle => 0, // already built
             BuildingType::Storehouse => 50,
             BuildingType::Farm | BuildingType::Fisherman | BuildingType::Woodcutter => 20,
             BuildingType::Stonecutter | BuildingType::Sawmill => 30,
@@ -335,7 +370,9 @@ impl BuildingType {
             BuildingType::Stonecutter | BuildingType::Mine => Some("Pickaxe"),
             BuildingType::Sawmill => Some("Saw"),
             BuildingType::Toolsmith | BuildingType::Weaponsmith => Some("Hammer"),
-            BuildingType::Brewery | BuildingType::Bakery | BuildingType::Mill => Some("Rolling Pin"),
+            BuildingType::Brewery | BuildingType::Bakery | BuildingType::Mill => {
+                Some("Rolling Pin")
+            }
             BuildingType::Butcher => Some("Cleaver"),
             BuildingType::Fisherman => Some("Fishing Rod"),
             BuildingType::Woodcutter => Some("Axe"),
@@ -429,7 +466,10 @@ impl Building {
         }
         let needed = self.required_tool.unwrap();
         self.assigned_settlers.iter().any(|&sid| {
-            units.get(sid).map(|u| u.carried_tool == Some(needed)).unwrap_or(false)
+            units
+                .get(sid)
+                .map(|u| u.carried_tool == Some(needed))
+                .unwrap_or(false)
         })
     }
 
@@ -596,7 +636,9 @@ impl ResourceStorage {
     pub fn add_all(&mut self, amounts: &[u32; ResourceType::COUNT]) {
         for i in 0..ResourceType::COUNT {
             if amounts[i] > 0 {
-                self.amounts[i] = self.amounts[i].saturating_add(amounts[i]).min(self.capacity);
+                self.amounts[i] = self.amounts[i]
+                    .saturating_add(amounts[i])
+                    .min(self.capacity);
             }
         }
     }
@@ -756,7 +798,9 @@ impl Economy {
 
         // 1b. Castle recruitment — spawn idle settlers from completed Castles
         // Pre-collect spawn positions to avoid borrowing conflicts
-        let castle_spawns: Vec<(f32, f32)> = self.buildings.iter_mut()
+        let castle_spawns: Vec<(f32, f32)> = self
+            .buildings
+            .iter_mut()
             .filter(|b| b.kind == BuildingType::Castle && b.is_complete())
             .filter_map(|b| {
                 b.recruitment_timer += 1;
@@ -774,7 +818,9 @@ impl Economy {
 
         // Pre-compute which buildings have tooled settlers
         // (separate pass to avoid borrowing both buildings and units simultaneously)
-        let can_produce: Vec<bool> = self.buildings.iter()
+        let can_produce: Vec<bool> = self
+            .buildings
+            .iter()
             .map(|b| b.has_settler() && b.has_tooled_settler(&self.units))
             .collect();
 
@@ -808,7 +854,8 @@ impl Economy {
 
     /// Count completed buildings of a type
     pub fn count_completed(&self, kind: BuildingType) -> usize {
-        self.buildings.iter()
+        self.buildings
+            .iter()
             .filter(|b| b.kind == kind && b.is_complete())
             .count()
     }
@@ -850,9 +897,18 @@ mod tests {
     #[test]
     fn test_resource_type_from_map_resource() {
         use crate::map::Resource;
-        assert_eq!(ResourceType::from_map_resource(Resource::Iron), Some(ResourceType::Iron));
-        assert_eq!(ResourceType::from_map_resource(Resource::Coal), Some(ResourceType::Coal));
-        assert_eq!(ResourceType::from_map_resource(Resource::Stone), Some(ResourceType::Stone));
+        assert_eq!(
+            ResourceType::from_map_resource(Resource::Iron),
+            Some(ResourceType::Iron)
+        );
+        assert_eq!(
+            ResourceType::from_map_resource(Resource::Coal),
+            Some(ResourceType::Coal)
+        );
+        assert_eq!(
+            ResourceType::from_map_resource(Resource::Stone),
+            Some(ResourceType::Stone)
+        );
     }
 
     #[test]
@@ -989,9 +1045,7 @@ mod tests {
 
     #[test]
     fn test_economy_try_place_building_cant_afford() {
-        let mut e = Economy::with_starting_resources(&[
-            (ResourceType::Wood, 1),
-        ]);
+        let mut e = Economy::with_starting_resources(&[(ResourceType::Wood, 1)]);
         let idx = e.try_place_building(BuildingType::Sawmill, 5, 10);
         assert!(idx.is_none());
         // Unchanged
@@ -1020,7 +1074,10 @@ mod tests {
             }
         }
         assert!(produced > 0, "Should have produced planks");
-        assert_eq!(building.output_buffer[ResourceType::Boards as usize], produced);
+        assert_eq!(
+            building.output_buffer[ResourceType::Boards as usize],
+            produced
+        );
     }
 
     #[test]
@@ -1042,7 +1099,10 @@ mod tests {
             }
         }
         assert!(produced > 0, "Should have produced grain");
-        assert_eq!(building.output_buffer[ResourceType::Grain as usize], produced * 2);
+        assert_eq!(
+            building.output_buffer[ResourceType::Grain as usize],
+            produced * 2
+        );
     }
 
     #[test]
@@ -1067,9 +1127,7 @@ mod tests {
 
     #[test]
     fn test_economy_update() {
-        let mut e = Economy::with_starting_resources(&[
-            (ResourceType::Wood, 100),
-        ]);
+        let mut e = Economy::with_starting_resources(&[(ResourceType::Wood, 100)]);
 
         let farm_idx = e.place_building(BuildingType::Farm, 0, 0);
 
@@ -1085,12 +1143,18 @@ mod tests {
         }
 
         // Farm should have produced some grain
-        let grain: u32 = e.buildings.iter()
+        let grain: u32 = e
+            .buildings
+            .iter()
             .map(|b| b.output_buffer[ResourceType::Grain as usize])
             .sum();
         // Grain in buildings + collected into storage
         let total_grain = grain + e.storage.get(ResourceType::Grain);
-        assert!(total_grain > 0, "Should have produced grain, got {}", total_grain);
+        assert!(
+            total_grain > 0,
+            "Should have produced grain, got {}",
+            total_grain
+        );
     }
 
     #[test]
@@ -1124,8 +1188,12 @@ mod tests {
         let mut sawmill = Building::new(BuildingType::Sawmill, 1, 0);
 
         // Complete construction
-        for _ in 0..20 { lumberjack.tick_construction(); }
-        for _ in 0..30 { sawmill.tick_construction(); }
+        for _ in 0..20 {
+            lumberjack.tick_construction();
+        }
+        for _ in 0..30 {
+            sawmill.tick_construction();
+        }
 
         // Lumberjack: no inputs, produces 2 Wood every 15 ticks
         // Sawmill: 2 Wood → 1 Boards every 20 ticks
@@ -1156,14 +1224,25 @@ mod tests {
     #[test]
     fn test_building_inputs_outputs() {
         // Verify all buildings with inputs have matching outputs
-        for kind in [BuildingType::Sawmill, BuildingType::Toolsmith, BuildingType::Weaponsmith,
-                     BuildingType::Brewery, BuildingType::Bakery, BuildingType::Butcher,
-                     BuildingType::Mill, BuildingType::Smelter] {
+        for kind in [
+            BuildingType::Sawmill,
+            BuildingType::Toolsmith,
+            BuildingType::Weaponsmith,
+            BuildingType::Brewery,
+            BuildingType::Bakery,
+            BuildingType::Butcher,
+            BuildingType::Mill,
+            BuildingType::Smelter,
+        ] {
             let inputs = kind.inputs();
             let outputs = kind.outputs();
             assert!(!inputs.is_empty(), "{} should have inputs", kind.name());
             assert!(!outputs.is_empty(), "{} should have outputs", kind.name());
-            assert!(kind.production_interval() > 0, "{} should have production interval", kind.name());
+            assert!(
+                kind.production_interval() > 0,
+                "{} should have production interval",
+                kind.name()
+            );
         }
     }
 
@@ -1211,7 +1290,9 @@ mod tests {
         let mut building = Building::new(BuildingType::Waterworks, 0, 0);
 
         // Complete construction (25 ticks)
-        for _ in 0..25 { building.tick_construction(); }
+        for _ in 0..25 {
+            building.tick_construction();
+        }
         assert!(building.is_complete());
 
         // Waterworks: no inputs, produces 1 Water every 30 ticks
@@ -1222,7 +1303,10 @@ mod tests {
             }
         }
         assert!(produced > 0, "Waterworks should produce water");
-        assert_eq!(building.output_buffer[ResourceType::Water as usize], produced);
+        assert_eq!(
+            building.output_buffer[ResourceType::Water as usize],
+            produced
+        );
     }
 
     #[test]
@@ -1232,8 +1316,12 @@ mod tests {
         let mut smelter = Building::new(BuildingType::Smelter, 1, 0);
 
         // Complete construction (extra tick for float safety)
-        for _ in 0..41 { mine.tick_construction(); }
-        for _ in 0..36 { smelter.tick_construction(); }
+        for _ in 0..41 {
+            mine.tick_construction();
+        }
+        for _ in 0..36 {
+            smelter.tick_construction();
+        }
         assert!(mine.is_complete());
         assert!(smelter.is_complete());
 
@@ -1254,7 +1342,11 @@ mod tests {
         }
 
         let ingots = smelter.output_buffer[ResourceType::IronIngots as usize];
-        assert!(ingots > 0, "Smelter should produce iron ingots, got {}", ingots);
+        assert!(
+            ingots > 0,
+            "Smelter should produce iron ingots, got {}",
+            ingots
+        );
     }
 
     #[test]
@@ -1392,7 +1484,10 @@ mod tests {
         e.place_building(BuildingType::Castle, 5, 5);
 
         // Castle has build_time=0, so is_complete immediately
-        assert!(e.buildings[0].is_complete(), "Castle should be complete immediately");
+        assert!(
+            e.buildings[0].is_complete(),
+            "Castle should be complete immediately"
+        );
 
         let initial_settler_count = e.units.settler_count();
 
@@ -1403,9 +1498,12 @@ mod tests {
 
         let count_after = e.units.settler_count();
         assert_eq!(
-            count_after, initial_settler_count + 1,
+            count_after,
+            initial_settler_count + 1,
             "Castle should recruit one settler after {} ticks; got {} settlers (was {})",
-            CASTLE_SETTLER_INTERVAL, count_after, initial_settler_count
+            CASTLE_SETTLER_INTERVAL,
+            count_after,
+            initial_settler_count
         );
 
         // Run another CASTLE_SETTLER_INTERVAL ticks
@@ -1415,7 +1513,8 @@ mod tests {
 
         let count_after2 = e.units.settler_count();
         assert_eq!(
-            count_after2, initial_settler_count + 2,
+            count_after2,
+            initial_settler_count + 2,
             "Castle should recruit two settlers after {} ticks",
             CASTLE_SETTLER_INTERVAL * 2
         );
@@ -1431,8 +1530,11 @@ mod tests {
         for _ in 0..10 {
             e.update();
         }
-        assert_eq!(e.units.settler_count(), 0,
-            "No settlers should be recruited before CASTLE_SETTLER_INTERVAL ticks");
+        assert_eq!(
+            e.units.settler_count(),
+            0,
+            "No settlers should be recruited before CASTLE_SETTLER_INTERVAL ticks"
+        );
     }
 
     #[test]
@@ -1450,7 +1552,8 @@ mod tests {
 
         // Each Castle should have produced one settler
         assert_eq!(
-            e.units.settler_count(), 3,
+            e.units.settler_count(),
+            3,
             "Three Castles should recruit three settlers after {} ticks",
             CASTLE_SETTLER_INTERVAL
         );
@@ -1461,7 +1564,8 @@ mod tests {
         }
 
         assert_eq!(
-            e.units.settler_count(), 6,
+            e.units.settler_count(),
+            6,
             "Three Castles should recruit six settlers after {} ticks",
             CASTLE_SETTLER_INTERVAL * 2
         );

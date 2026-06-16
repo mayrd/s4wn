@@ -31,10 +31,7 @@ pub struct Path {
 impl Path {
     /// Create a new path from a list of tiles.
     pub fn new(tiles: Vec<(usize, usize)>) -> Self {
-        Path {
-            tiles,
-            cost: 0.0,
-        }
+        Path { tiles, cost: 0.0 }
     }
 
     /// Create a path with a known cost.
@@ -76,10 +73,16 @@ impl Pathfinder {
     /// Returns `Some(Path)` if a path exists, `None` otherwise.
     pub fn find_path(map: &Map, start: (usize, usize), goal: (usize, usize)) -> Option<Path> {
         // Validate start and goal
-        if map.get(start.0, start.1).map_or(true, |t| !t.terrain.is_passable()) {
+        if map
+            .get(start.0, start.1)
+            .map_or(true, |t| !t.terrain.is_passable())
+        {
             return None;
         }
-        if map.get(goal.0, goal.1).map_or(true, |t| !t.terrain.is_passable()) {
+        if map
+            .get(goal.0, goal.1)
+            .map_or(true, |t| !t.terrain.is_passable())
+        {
             return None;
         }
 
@@ -154,7 +157,11 @@ impl Pathfinder {
                 // Movement cost: base 1.0 * speed_multiplier (lower = faster)
                 // We use 1.0 / speed as cost so faster terrain = lower cost
                 let speed = tile.terrain.speed_multiplier();
-                let move_cost = if speed > 0.0 { 1.0 / speed } else { f32::INFINITY };
+                let move_cost = if speed > 0.0 {
+                    1.0 / speed
+                } else {
+                    f32::INFINITY
+                };
 
                 let tentative_g = g_score[current_idx] + move_cost;
 
@@ -200,7 +207,11 @@ impl Pathfinder {
     }
 
     /// Reconstruct path from came_from array.
-    fn reconstruct_path(came_from: &[Option<usize>], mut current: usize, width: usize) -> Vec<(usize, usize)> {
+    fn reconstruct_path(
+        came_from: &[Option<usize>],
+        mut current: usize,
+        width: usize,
+    ) -> Vec<(usize, usize)> {
         let mut path = vec![(current % width, current / width)];
         while let Some(parent) = came_from[current] {
             current = parent;
@@ -313,8 +324,12 @@ mod tests {
             assert_eq!(p.goal(), Some((31, 31)));
             // All tiles in path should be passable
             for &(x, y) in p.tiles() {
-                assert!(map.get(x, y).unwrap().terrain.is_passable(),
-                    "Path tile ({},{}) is not passable", x, y);
+                assert!(
+                    map.get(x, y).unwrap().terrain.is_passable(),
+                    "Path tile ({},{}) is not passable",
+                    x,
+                    y
+                );
             }
         }
     }
@@ -342,6 +357,10 @@ mod tests {
         assert!(path.is_some());
         // Desert has speed 0.8, so cost per tile = 1.0/0.8 = 1.25
         let p = path.unwrap();
-        assert!(p.cost > 5.0, "Desert path should cost more than 5.0, got {}", p.cost);
+        assert!(
+            p.cost > 5.0,
+            "Desert path should cost more than 5.0, got {}",
+            p.cost
+        );
     }
 }

@@ -34,7 +34,10 @@ impl Terrain {
 
     /// Whether units can walk on this terrain
     pub fn is_passable(self) -> bool {
-        !matches!(self, Terrain::Water | Terrain::DeepWater | Terrain::Mountain)
+        !matches!(
+            self,
+            Terrain::Water | Terrain::DeepWater | Terrain::Mountain
+        )
     }
 
     /// Movement speed multiplier (0.0 = impassable, 1.0 = normal)
@@ -84,9 +87,9 @@ pub enum Resource {
     Gold,
     Stone,
     Sulfur,
-    Fish,    // only on coast tiles
-    Game,    // only in forest tiles
-    Grain,   // only on grass
+    Fish,  // only on coast tiles
+    Game,  // only in forest tiles
+    Grain, // only on grass
 }
 
 /// The game world map — a 2D grid of tiles
@@ -216,18 +219,29 @@ impl Map {
                 if rng > 0.35 && rng < 0.47 {
                     let resource = match tile.terrain {
                         Terrain::Grass => {
-                            if rng > 0.43 { Resource::Grain }
-                            else if rng > 0.40 { Resource::Stone }
-                            else { Resource::Coal }
+                            if rng > 0.43 {
+                                Resource::Grain
+                            } else if rng > 0.40 {
+                                Resource::Stone
+                            } else {
+                                Resource::Coal
+                            }
                         }
                         Terrain::Forest => {
-                            if rng > 0.43 { Resource::Game }
-                            else { Resource::Iron }
+                            if rng > 0.43 {
+                                Resource::Game
+                            } else {
+                                Resource::Iron
+                            }
                         }
                         Terrain::Mountain => {
-                            if rng > 0.43 { Resource::Gold }
-                            else if rng > 0.40 { Resource::Stone }
-                            else { Resource::Iron }
+                            if rng > 0.43 {
+                                Resource::Gold
+                            } else if rng > 0.40 {
+                                Resource::Stone
+                            } else {
+                                Resource::Iron
+                            }
                         }
                         Terrain::Desert => Resource::Sulfur,
                         Terrain::Swamp => Resource::Coal,
@@ -335,7 +349,11 @@ fn layered_noise(nx: f32, ny: f32, seed: u64) -> f32 {
     let mut max_value = 0.0;
 
     for i in 0..4 {
-        let v = simplex(nx * frequency + s * (i + 1) as f32, ny * frequency + s * (i + 2) as f32, seed);
+        let v = simplex(
+            nx * frequency + s * (i + 1) as f32,
+            ny * frequency + s * (i + 2) as f32,
+            seed,
+        );
         value += v * amplitude;
         max_value += amplitude;
         amplitude *= 0.5;
@@ -393,7 +411,11 @@ mod tests {
         for (x, y) in map.coordinates() {
             terrain_types.insert(map.get(x, y).unwrap().terrain as u8);
         }
-        assert!(terrain_types.len() >= 5, "Expected at least 5 terrain types, got {}", terrain_types.len());
+        assert!(
+            terrain_types.len() >= 5,
+            "Expected at least 5 terrain types, got {}",
+            terrain_types.len()
+        );
     }
 
     #[test]
@@ -410,9 +432,14 @@ mod tests {
     fn test_terrain_colors() {
         // All terrains must return valid RGB
         for t in &[
-            Terrain::Grass, Terrain::Forest, Terrain::Mountain,
-            Terrain::Water, Terrain::DeepWater, Terrain::Desert,
-            Terrain::Swamp, Terrain::Snow,
+            Terrain::Grass,
+            Terrain::Forest,
+            Terrain::Mountain,
+            Terrain::Water,
+            Terrain::DeepWater,
+            Terrain::Desert,
+            Terrain::Swamp,
+            Terrain::Snow,
         ] {
             let c = t.color();
             assert!(c[0] >= 0.0 && c[0] <= 1.0);

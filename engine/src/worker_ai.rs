@@ -67,11 +67,7 @@ impl WorkerAI {
         }
 
         // Collect idle settler IDs first (avoid re-finding the same settler)
-        let idle_settler_ids: Vec<u32> = economy
-            .units
-            .idle_settlers()
-            .map(|u| u.id)
-            .collect();
+        let idle_settler_ids: Vec<u32> = economy.units.idle_settlers().map(|u| u.id).collect();
 
         // For each building that needs a settler, try to find an idle settler
         for (i, &building_idx) in needs_settler.iter().enumerate() {
@@ -133,7 +129,8 @@ impl WorkerAI {
                 match unit {
                     Some(u) => {
                         u.state == UnitState::Moving
-                            && u.path.as_ref()
+                            && u.path
+                                .as_ref()
                                 .map(|p| p.goal() == Some((bx, by)))
                                 .unwrap_or(false)
                     }
@@ -238,9 +235,7 @@ mod tests {
 
     #[test]
     fn test_worker_ai_auto_assign_building_already_has_settler() {
-        let mut economy = Economy::with_starting_resources(&[
-            (ResourceType::Wood, 100),
-        ]);
+        let mut economy = Economy::with_starting_resources(&[(ResourceType::Wood, 100)]);
 
         let farm_idx = economy.place_building(BuildingType::Farm, 2, 2);
         for _ in 0..20 {

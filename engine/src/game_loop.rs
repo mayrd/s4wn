@@ -89,10 +89,12 @@ impl GameState {
         self.rng_seed = next_rng(self.rng_seed);
 
         // Update worker AI (auto-assigns workers, moves them, calls economy.update())
-        self.worker_ai.update(&mut self.economy, &self.map, TICK_DURATION as f32);
+        self.worker_ai
+            .update(&mut self.economy, &self.map, TICK_DURATION as f32);
 
         // Update combat AI (soldiers seek enemies, fight)
-        self.combat_ai.update(&mut self.economy.units, &self.map, TICK_DURATION as f32);
+        self.combat_ai
+            .update(&mut self.economy.units, &self.map, TICK_DURATION as f32);
     }
 
     /// Get a seeded pseudo-random value in [0, 1)
@@ -223,8 +225,20 @@ mod tests {
                 (crate::economy::ResourceType::Stone, 30),
             ],
         );
-        assert_eq!(state.economy.storage.get(crate::economy::ResourceType::Wood), 50);
-        assert_eq!(state.economy.storage.get(crate::economy::ResourceType::Stone), 30);
+        assert_eq!(
+            state
+                .economy
+                .storage
+                .get(crate::economy::ResourceType::Wood),
+            50
+        );
+        assert_eq!(
+            state
+                .economy
+                .storage
+                .get(crate::economy::ResourceType::Stone),
+            30
+        );
     }
 
     #[test]
@@ -256,13 +270,19 @@ mod tests {
         let mut gloop = GameLoop::new(state);
 
         gloop.frame(0.0);
-        assert!(gloop.interpolation() < 0.01,
-            "after init, interpolation should be ~0, got {}", gloop.interpolation());
+        assert!(
+            gloop.interpolation() < 0.01,
+            "after init, interpolation should be ~0, got {}",
+            gloop.interpolation()
+        );
 
         // 0.05s = half a tick
         gloop.frame(0.05);
-        assert!(gloop.interpolation() > 0.4 && gloop.interpolation() < 0.6,
-            "interpolation should be ~0.5, got {}", gloop.interpolation());
+        assert!(
+            gloop.interpolation() > 0.4 && gloop.interpolation() < 0.6,
+            "interpolation should be ~0.5, got {}",
+            gloop.interpolation()
+        );
     }
 
     #[test]
@@ -274,7 +294,11 @@ mod tests {
         gloop.frame(0.0);
         // Huge delta (5 seconds) should be clamped to 0.25s = max 2 ticks
         let ticks = gloop.frame(5.0);
-        assert!(ticks <= 3, "Spiral of death protection: got {} ticks", ticks);
+        assert!(
+            ticks <= 3,
+            "Spiral of death protection: got {} ticks",
+            ticks
+        );
     }
 
     #[test]
@@ -309,9 +333,10 @@ mod tests {
 
         // Place a farm and spawn a worker separately (not at the building)
         let farm_idx = state.economy.place_building(BuildingType::Farm, 5, 5);
-        let _worker_id = state.economy.units.spawn(
-            crate::units::UnitKind::Settler, 0.5, 0.5,
-        );
+        let _worker_id = state
+            .economy
+            .units
+            .spawn(crate::units::UnitKind::Settler, 0.5, 0.5);
 
         // Run ticks — building constructs, worker auto-assigns, moves there, works
         for _ in 0..1000 {
@@ -376,7 +401,9 @@ mod tests {
         let _lumberjack = state.economy.place_building(BuildingType::Woodcutter, 5, 3);
         let _sawmill = state.economy.place_building(BuildingType::Sawmill, 7, 3);
         let _blacksmith = state.economy.place_building(BuildingType::Toolsmith, 9, 3);
-        let _armory = state.economy.place_building(BuildingType::Weaponsmith, 11, 3);
+        let _armory = state
+            .economy
+            .place_building(BuildingType::Weaponsmith, 11, 3);
 
         // Spawn workers
         state.economy.units.spawn(UnitKind::Settler, 0.5, 0.5);
@@ -408,10 +435,7 @@ mod tests {
 
         // Verify: combat happened
         let all_units: Vec<_> = state.economy.units.alive_units().collect();
-        let total_soldiers = all_units
-            .iter()
-            .filter(|u| u.kind.can_fight())
-            .count();
+        let total_soldiers = all_units.iter().filter(|u| u.kind.can_fight()).count();
         // We started with 3 soldiers (2 enemy + 1 friendly). Some may have died.
         assert!(
             total_soldiers <= 3,

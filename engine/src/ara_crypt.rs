@@ -203,7 +203,9 @@ mod tests {
         assert!(
             key1 != key2 || key2 != key3,
             "Key stream should not repeat immediately: k1={}, k2={}, k3={}",
-            key1, key2, key3
+            key1,
+            key2,
+            key3
         );
     }
 }

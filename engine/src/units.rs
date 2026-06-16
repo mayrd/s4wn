@@ -64,7 +64,7 @@ impl UnitKind {
     /// Attack damage per hit
     pub fn attack_damage(self) -> u32 {
         match self {
-            UnitKind::Settler => 0,   // settlers can't fight
+            UnitKind::Settler => 0, // settlers can't fight
             UnitKind::Swordsman => 15,
             UnitKind::Bowman => 10,
         }
@@ -83,8 +83,8 @@ impl UnitKind {
     pub fn attack_interval(self) -> u32 {
         match self {
             UnitKind::Settler => 0,
-            UnitKind::Swordsman => 15,  // 1.5s
-            UnitKind::Bowman => 20,   // 2.0s
+            UnitKind::Swordsman => 15, // 1.5s
+            UnitKind::Bowman => 20,    // 2.0s
         }
     }
 

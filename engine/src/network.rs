@@ -268,13 +268,18 @@ impl NetworkManager {
     /// Process an incoming message (auto-handle system messages).
     pub fn process_message(&mut self, msg: NetworkMessage) -> bool {
         match &msg {
-            NetworkMessage::Welcome { player_id, tick_rate } => {
+            NetworkMessage::Welcome {
+                player_id,
+                tick_rate,
+            } => {
                 self.handle_welcome(*player_id, *tick_rate);
                 true // handled, don't add to incoming
             }
             NetworkMessage::Ping { timestamp } => {
                 // Auto-respond with Pong
-                self.send(NetworkMessage::Pong { timestamp: *timestamp });
+                self.send(NetworkMessage::Pong {
+                    timestamp: *timestamp,
+                });
                 true // handled
             }
             _ => {
@@ -370,9 +375,10 @@ impl ClientInterpolator {
         let prev_unit = prev.units.iter().find(|u| u.id == unit_id);
         let curr_unit = curr.units.iter().find(|u| u.id == unit_id);
         match (prev_unit, curr_unit) {
-            (Some(p), Some(c)) => {
-                Some((p.x + (c.x - p.x) * alpha as f32, p.y + (c.y - p.y) * alpha as f32))
-            }
+            (Some(p), Some(c)) => Some((
+                p.x + (c.x - p.x) * alpha as f32,
+                p.y + (c.y - p.y) * alpha as f32,
+            )),
             (None, Some(c)) => Some((c.x, c.y)),
             (Some(p), None) => Some((p.x, p.y)),
             (None, None) => None,
@@ -424,7 +430,12 @@ mod tests {
         let json = r#"{"BuildingPlace":{"building_type":10,"x":5,"y":3,"player_id":1}}"#;
         let msg = deserialize(json).unwrap();
         match msg {
-            NetworkMessage::BuildingPlace { building_type, x, y, player_id } => {
+            NetworkMessage::BuildingPlace {
+                building_type,
+                x,
+                y,
+                player_id,
+            } => {
                 assert_eq!(building_type, 10);
                 assert_eq!(x, 5);
                 assert_eq!(y, 3);
@@ -596,14 +607,18 @@ mod tests {
     fn test_network_manager_send() {
         let mut mgr = NetworkManager::new();
         mgr.connect("ws://localhost:8080");
-        mgr.send(NetworkMessage::PlayerJoin { name: "Bob".to_string() });
+        mgr.send(NetworkMessage::PlayerJoin {
+            name: "Bob".to_string(),
+        });
         assert_eq!(mgr.outgoing_count(), 1);
     }
 
     #[test]
     fn test_network_manager_send_when_disconnected() {
         let mut mgr = NetworkManager::new();
-        mgr.send(NetworkMessage::PlayerJoin { name: "Bob".to_string() });
+        mgr.send(NetworkMessage::PlayerJoin {
+            name: "Bob".to_string(),
+        });
         assert_eq!(mgr.outgoing_count(), 0); // dropped
     }
 
@@ -664,7 +679,9 @@ mod tests {
     #[test]
     fn test_network_manager_process_regular_message() {
         let mut mgr = NetworkManager::new();
-        let msg = NetworkMessage::PlayerJoin { name: "Eve".to_string() };
+        let msg = NetworkMessage::PlayerJoin {
+            name: "Eve".to_string(),
+        };
         let handled = mgr.process_message(msg.clone());
         assert!(!handled); // not auto-handled
         assert_eq!(mgr.incoming_count(), 1);

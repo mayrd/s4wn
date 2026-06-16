@@ -4,18 +4,18 @@
 //! Full WASM + WebGL2 pipeline with generated terrain maps,
 //! smooth camera pan (mouse drag) and zoom (scroll wheel).
 
-pub mod map;
-pub mod camera;
-pub mod game_loop;
 pub mod ara_crypt;
+pub mod camera;
+pub mod combat;
 pub mod decompress;
 pub mod economy;
-pub mod units;
-pub mod pathfinding;
-pub mod worker_ai;
-pub mod combat;
-pub mod network;
+pub mod game_loop;
+pub mod map;
 pub mod nation;
+pub mod network;
+pub mod pathfinding;
+pub mod units;
+pub mod worker_ai;
 
 use camera::Camera;
 use game_loop::{GameLoop, GameState};
@@ -37,6 +37,7 @@ in vec3 a_color;
 in float a_elevation;
 in float a_has_resource;
 in float a_slope;
+in float a_edge_dist;
 
 uniform vec2 u_resolution;
 uniform float u_time;
@@ -49,7 +50,7 @@ out float v_elevation;
 out float v_has_resource;
 out float v_day_phase;
 out float v_slope;
-out vec2 v_tile_pos;
+out float v_edge_dist;
 
 void main() {
     float x = a_position.x;
@@ -79,7 +80,7 @@ void main() {
     v_has_resource = a_has_resource;
     v_day_phase = u_day_phase;
     v_slope = a_slope;
-    v_tile_pos = vec2(x, y);
+    v_edge_dist = a_edge_dist;
 }
 "#;
 
@@ -91,11 +92,9 @@ in float v_elevation;
 in float v_has_resource;
 in float v_day_phase;
 in float v_slope;
-in vec2 v_tile_pos;
+in float v_edge_dist;
 
 out vec4 out_color;
-
-uniform vec2 u_map_dims;
 
 void main() {
     // Slope-based shading: steeper = darker
@@ -124,9 +123,8 @@ void main() {
         lit = lit + glow;
     }
 
-    // Edge-of-map fog: darken tiles near map border
-    float edge_dist = min(min(v_tile_pos.x, u_map_dims.x - 1.0 - v_tile_pos.x),
-                          min(v_tile_pos.y, u_map_dims.y - 1.0 - v_tile_pos.y));
+    // Edge-of-map fog: darken tiles near map border (pre-computed on CPU)
+    float edge_dist = v_edge_dist;
     float edge_zone = 8.0;  // tiles from edge where fog starts
     float fog_factor = smoothstep(0.0, edge_zone, edge_dist);
     // Tint the fog dark navy (matching clear color) rather than white
@@ -210,6 +208,7 @@ struct App {
     elevation_buffer: WebGlBuffer,
     resource_buffer: WebGlBuffer,
     slope_buffer: WebGlBuffer,
+    edge_buffer: WebGlBuffer,
     index_buffer: WebGlBuffer,
 
     resolution_loc: web_sys::WebGlUniformLocation,
@@ -217,7 +216,6 @@ struct App {
     camera_center_loc: web_sys::WebGlUniformLocation,
     zoom_loc: web_sys::WebGlUniformLocation,
     day_phase_loc: web_sys::WebGlUniformLocation,
-    map_dims_loc: Option<web_sys::WebGlUniformLocation>,
 
     index_count: i32,
     start_time: f64,
@@ -275,6 +273,7 @@ struct MeshData {
     elevations: Vec<f32>,
     has_resources: Vec<f32>,
     slopes: Vec<f32>,
+    edge_dists: Vec<f32>,
     indices: Vec<u16>,
 }
 
@@ -286,6 +285,7 @@ impl MeshData {
             elevations: Vec::new(),
             has_resources: Vec::new(),
             slopes: Vec::new(),
+            edge_dists: Vec::new(),
             indices: Vec::new(),
         }
     }
@@ -325,24 +325,38 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
             mesh.elevations.push(tile.elevation);
 
             // Resource flag: 1.0 if tile has a resource, 0.0 otherwise
-            let has_res = if tile.resource.is_some() { 1.0f32 } else { 0.0f32 };
+            let has_res = if tile.resource.is_some() {
+                1.0f32
+            } else {
+                0.0f32
+            };
             mesh.has_resources.push(has_res);
 
             // Compute slope: max elevation difference to neighbors
             let mut max_diff = 0.0f32;
             for dy in [-1isize, 0, 1] {
                 for dx in [-1isize, 0, 1] {
-                    if dx == 0 && dy == 0 { continue; }
+                    if dx == 0 && dy == 0 {
+                        continue;
+                    }
                     let nx = mx as isize + dx;
                     let ny = my as isize + dy;
-                    if nx >= 0 && ny >= 0 && (nx as usize) < map.width && (ny as usize) < map.height {
+                    if nx >= 0 && ny >= 0 && (nx as usize) < map.width && (ny as usize) < map.height
+                    {
                         let neighbor_elev = map.get(nx as usize, ny as usize).unwrap().elevation;
                         let diff = (tile.elevation - neighbor_elev).abs();
-                        if diff > max_diff { max_diff = diff; }
+                        if diff > max_diff {
+                            max_diff = diff;
+                        }
                     }
                 }
             }
             mesh.slopes.push(max_diff);
+
+            // Compute edge distance for fog (CPU-side to avoid GPU uniform optimizer issues)
+            let edge_x = (mx as f32).min(map.width as f32 - 1.0 - mx as f32);
+            let edge_y = (my as f32).min(map.height as f32 - 1.0 - my as f32);
+            mesh.edge_dists.push(edge_x.min(edge_y));
 
             // Build triangle strip indices
             if row < rows && col < cols {
@@ -370,7 +384,11 @@ impl App {
 
         // Compile shaders
         let vert = compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, VERTEX_SHADER)?;
-        let frag = compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, FRAGMENT_SHADER)?;
+        let frag = compile_shader(
+            &gl,
+            WebGl2RenderingContext::FRAGMENT_SHADER,
+            FRAGMENT_SHADER,
+        )?;
         let program = link_program(&gl, &vert, &frag)?;
 
         // Generate demo map (64×64 tiles)
@@ -396,8 +414,12 @@ impl App {
         let elevation_buffer = upload_f32_buffer(&gl, &mesh.elevations, 2, 1);
         let resource_buffer = upload_f32_buffer(&gl, &mesh.has_resources, 3, 1);
         let slope_buffer = upload_f32_buffer(&gl, &mesh.slopes, 4, 1);
+        let edge_buffer = upload_f32_buffer(&gl, &mesh.edge_dists, 5, 1);
         let index_buffer = gl.create_buffer().ok_or("Cannot create index buffer")?;
-        gl.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, Some(&index_buffer));
+        gl.bind_buffer(
+            WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
+            Some(&index_buffer),
+        );
         unsafe {
             let view = js_sys::Uint16Array::view(&mesh.indices);
             gl.buffer_data_with_array_buffer_view(
@@ -424,16 +446,24 @@ impl App {
         let day_phase_loc = gl
             .get_uniform_location(&program, "u_day_phase")
             .ok_or("Cannot find u_day_phase")?;
-        let map_dims_loc = gl
-            .get_uniform_location(&program, "u_map_dims");
 
         // Compile overlay shaders
-        let overlay_vert = compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, OVERLAY_VERTEX_SHADER)?;
-        let overlay_frag = compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, OVERLAY_FRAGMENT_SHADER)?;
+        let overlay_vert = compile_shader(
+            &gl,
+            WebGl2RenderingContext::VERTEX_SHADER,
+            OVERLAY_VERTEX_SHADER,
+        )?;
+        let overlay_frag = compile_shader(
+            &gl,
+            WebGl2RenderingContext::FRAGMENT_SHADER,
+            OVERLAY_FRAGMENT_SHADER,
+        )?;
         let overlay_program = link_program(&gl, &overlay_vert, &overlay_frag)?;
 
         // Create overlay VAO and buffers
-        let overlay_vao = gl.create_vertex_array().ok_or("Cannot create overlay VAO")?;
+        let overlay_vao = gl
+            .create_vertex_array()
+            .ok_or("Cannot create overlay VAO")?;
         gl.bind_vertex_array(Some(&overlay_vao));
 
         let overlay_pos_buffer = upload_f32_buffer(&gl, &[], 0, 2);
@@ -466,13 +496,14 @@ impl App {
             elevation_buffer,
             resource_buffer,
             slope_buffer,
+            edge_buffer,
             index_buffer,
             resolution_loc,
             time_loc,
             camera_center_loc,
             zoom_loc,
             day_phase_loc,
-            map_dims_loc,
+
             index_count: mesh.indices.len() as i32,
             start_time,
             map: map.clone(),
@@ -563,9 +594,13 @@ impl App {
 
         // ── Render diagnostics (first frame only) ──────────────────────
         if self.fps_frame_count == 0 {
-            let canvas_diag = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap();
+            let canvas_diag = gl
+                .canvas()
+                .unwrap()
+                .dyn_into::<HtmlCanvasElement>()
+                .unwrap();
             let msg = format!(
-                "RENDER_DIAG: map={}×{} index_count={} zoom={:.2} cam=({:.1},{:.1}) canvas={}×{} map_dims_loc={}",
+                "RENDER_DIAG: map={}×{} index_count={} zoom={:.2} cam=({:.1},{:.1}) canvas={}×{} fog=CPU-computed",
                 self.map.width,
                 self.map.height,
                 self.index_count,
@@ -574,7 +609,6 @@ impl App {
                 self.camera.center_y,
                 canvas_diag.width(),
                 canvas_diag.height(),
-                self.map_dims_loc.is_some(),
             );
             web_sys::console::log_1(&msg.into());
         }
@@ -601,9 +635,6 @@ impl App {
             canvas.width() as f32 * 0.5,
             canvas.height() as f32 * 0.5,
         );
-        if let Some(ref loc) = self.map_dims_loc {
-            gl.uniform2f(Some(loc), self.map.width as f32, self.map.height as f32);
-        }
 
         gl.bind_vertex_array(Some(&self.vao));
 
@@ -627,7 +658,7 @@ impl App {
         // Buildings: colored by type (complete) or orange (constructing)
         for building in self.game_loop.state.economy.buildings.iter() {
             let complete = building.is_complete();
-            let con_pct = building.construction;  // 0.0–1.0
+            let con_pct = building.construction; // 0.0–1.0
 
             positions.push(building.x as f32 + 0.5);
             positions.push(building.y as f32 + 0.5);
@@ -640,24 +671,26 @@ impl App {
                 sizes.push(8.0);
             } else {
                 // Orange dot, size grows with construction progress
-                colors.push(1.0);    // R
-                colors.push(0.55);   // G
-                colors.push(0.1);    // B
-                sizes.push(3.0 + 5.0 * con_pct);  // 3.0→8.0
+                colors.push(1.0); // R
+                colors.push(0.55); // G
+                colors.push(0.1); // B
+                sizes.push(3.0 + 5.0 * con_pct); // 3.0→8.0
             }
         }
 
         // Units: blue settlers, red soldiers, green archers
         let use_interp = self.interpolator.can_interpolate();
         let alpha = if use_interp {
-            self.interpolator.interpolation_alpha(self.last_frame_ms / 1000.0)
+            self.interpolator
+                .interpolation_alpha(self.last_frame_ms / 1000.0)
         } else {
             0.0
         };
 
         for unit in self.game_loop.state.economy.units.alive_units() {
             if use_interp {
-                if let Some((ix, iy)) = self.interpolator.interpolate_unit_position(unit.id, alpha) {
+                if let Some((ix, iy)) = self.interpolator.interpolate_unit_position(unit.id, alpha)
+                {
                     positions.push(ix);
                     positions.push(iy);
                 } else {
@@ -685,7 +718,10 @@ impl App {
         // Rebuild overlay buffers if dirty
         if self.overlay_dirty || true {
             // always rebuild since game state changes
-            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.overlay_pos_buffer));
+            gl.bind_buffer(
+                WebGl2RenderingContext::ARRAY_BUFFER,
+                Some(&self.overlay_pos_buffer),
+            );
             unsafe {
                 let view = js_sys::Float32Array::view(&positions);
                 gl.buffer_data_with_array_buffer_view(
@@ -694,7 +730,10 @@ impl App {
                     WebGl2RenderingContext::DYNAMIC_DRAW,
                 );
             }
-            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.overlay_color_buffer));
+            gl.bind_buffer(
+                WebGl2RenderingContext::ARRAY_BUFFER,
+                Some(&self.overlay_color_buffer),
+            );
             unsafe {
                 let view = js_sys::Float32Array::view(&colors);
                 gl.buffer_data_with_array_buffer_view(
@@ -703,7 +742,10 @@ impl App {
                     WebGl2RenderingContext::DYNAMIC_DRAW,
                 );
             }
-            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.overlay_size_buffer));
+            gl.bind_buffer(
+                WebGl2RenderingContext::ARRAY_BUFFER,
+                Some(&self.overlay_size_buffer),
+            );
             unsafe {
                 let view = js_sys::Float32Array::view(&sizes);
                 gl.buffer_data_with_array_buffer_view(
@@ -723,7 +765,11 @@ impl App {
         gl.uniform2f(Some(&self.overlay_camera_center_loc), iso_x, iso_y);
         gl.uniform1f(Some(&self.overlay_zoom_loc), self.camera.zoom);
 
-        let canvas = gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap();
+        let canvas = gl
+            .canvas()
+            .unwrap()
+            .dyn_into::<HtmlCanvasElement>()
+            .unwrap();
         gl.uniform2f(
             Some(&self.overlay_resolution_loc),
             canvas.width() as f32 * 0.5,
@@ -731,7 +777,10 @@ impl App {
         );
 
         gl.enable(WebGl2RenderingContext::BLEND);
-        gl.blend_func(WebGl2RenderingContext::SRC_ALPHA, WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
+        gl.blend_func(
+            WebGl2RenderingContext::SRC_ALPHA,
+            WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA,
+        );
 
         gl.bind_vertex_array(Some(&self.overlay_vao));
         gl.draw_arrays(WebGl2RenderingContext::POINTS, 0, self.overlay_index_count);
@@ -742,22 +791,46 @@ impl App {
         let mesh = build_map_mesh(&self.map, &self.camera);
 
         let gl = &self.gl;
-        gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.position_buffer));
+        gl.bind_buffer(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            Some(&self.position_buffer),
+        );
         update_f32_buffer(gl, &mesh.positions);
 
-        gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.color_buffer));
+        gl.bind_buffer(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            Some(&self.color_buffer),
+        );
         update_f32_buffer(gl, &mesh.colors);
 
-        gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.elevation_buffer));
+        gl.bind_buffer(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            Some(&self.elevation_buffer),
+        );
         update_f32_buffer(gl, &mesh.elevations);
 
-        gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.resource_buffer));
+        gl.bind_buffer(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            Some(&self.resource_buffer),
+        );
         update_f32_buffer(gl, &mesh.has_resources);
 
-        gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&self.slope_buffer));
+        gl.bind_buffer(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            Some(&self.slope_buffer),
+        );
         update_f32_buffer(gl, &mesh.slopes);
 
-        gl.bind_buffer(WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER, Some(&self.index_buffer));
+        gl.bind_buffer(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            Some(&self.edge_buffer),
+        );
+        update_f32_buffer(gl, &mesh.edge_dists);
+
+        gl.bind_buffer(
+            WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
+            Some(&self.index_buffer),
+        );
         unsafe {
             let view = js_sys::Uint16Array::view(&mesh.indices);
             gl.buffer_data_with_array_buffer_view(
@@ -841,7 +914,14 @@ fn upload_f32_buffer(
         );
     }
     gl.enable_vertex_attrib_array(location);
-    gl.vertex_attrib_pointer_with_i32(location, components, WebGl2RenderingContext::FLOAT, false, 0, 0);
+    gl.vertex_attrib_pointer_with_i32(
+        location,
+        components,
+        WebGl2RenderingContext::FLOAT,
+        false,
+        0,
+        0,
+    );
     buffer
 }
 
@@ -860,23 +940,23 @@ fn update_f32_buffer(gl: &WebGl2RenderingContext, data: &[f32]) {
 fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
     use crate::economy::BuildingType::*;
     match kind {
-        Castle => [1.0, 0.8, 0.2],   // gold
-        Sawmill => [0.6, 0.4, 0.2],        // brown
-        Stonecutter => [0.5, 0.5, 0.5],        // grey
-        Mine => [0.4, 0.3, 0.3],          // dark red
-        Toolsmith => [0.8, 0.2, 0.2],    // red
-        Weaponsmith => [0.7, 0.1, 0.1],        // dark red
-        Brewery => [0.9, 0.7, 0.2],        // amber
-        Bakery => [0.8, 0.6, 0.3],        // tan
-        Butcher => [0.6, 0.2, 0.2],       // maroon
-        Mill => [0.5, 0.3, 0.2],       // dark brown
-        Farm => [0.3, 0.7, 0.3],          // green
-        Fisherman => [0.2, 0.5, 0.8],       // blue
-        Woodcutter => [0.2, 0.5, 0.2],    // dark green
-        Storehouse => [0.6, 0.5, 0.4],      // taupe
-        Waterworks => [0.2, 0.6, 1.0],       // water blue
-        Smelter => [1.0, 0.5, 0.1],          // orange
-        Barracks => [0.8, 0.2, 0.2],         // crimson
+        Castle => [1.0, 0.8, 0.2],      // gold
+        Sawmill => [0.6, 0.4, 0.2],     // brown
+        Stonecutter => [0.5, 0.5, 0.5], // grey
+        Mine => [0.4, 0.3, 0.3],        // dark red
+        Toolsmith => [0.8, 0.2, 0.2],   // red
+        Weaponsmith => [0.7, 0.1, 0.1], // dark red
+        Brewery => [0.9, 0.7, 0.2],     // amber
+        Bakery => [0.8, 0.6, 0.3],      // tan
+        Butcher => [0.6, 0.2, 0.2],     // maroon
+        Mill => [0.5, 0.3, 0.2],        // dark brown
+        Farm => [0.3, 0.7, 0.3],        // green
+        Fisherman => [0.2, 0.5, 0.8],   // blue
+        Woodcutter => [0.2, 0.5, 0.2],  // dark green
+        Storehouse => [0.6, 0.5, 0.4],  // taupe
+        Waterworks => [0.2, 0.6, 1.0],  // water blue
+        Smelter => [1.0, 0.5, 0.1],     // orange
+        Barracks => [0.8, 0.2, 0.2],    // crimson
     }
 }
 
@@ -885,8 +965,8 @@ fn unit_color(kind: &crate::units::UnitKind) -> [f32; 3] {
     use crate::units::UnitKind::*;
     match kind {
         Settler => [0.2, 0.4, 1.0],   // blue
-        Swordsman => [1.0, 0.2, 0.2],  // red
-        Bowman => [0.2, 0.8, 0.2],   // green
+        Swordsman => [1.0, 0.2, 0.2], // red
+        Bowman => [0.2, 0.8, 0.2],    // green
     }
 }
 
@@ -937,7 +1017,12 @@ pub fn render(timestamp: f64) {
 pub fn resize() {
     unsafe {
         if let Some(ref mut app) = APP {
-            let canvas = app.gl.canvas().unwrap().dyn_into::<HtmlCanvasElement>().unwrap();
+            let canvas = app
+                .gl
+                .canvas()
+                .unwrap()
+                .dyn_into::<HtmlCanvasElement>()
+                .unwrap();
             let parent = canvas.parent_element().unwrap();
             let w = parent.client_width() as u32;
             let h = parent.client_height() as u32;
@@ -1085,24 +1170,34 @@ fn parse_map_json(json: &str) -> Result<Map, String> {
     let mut map = Map::new(width, height);
 
     for (i, tile_val) in tiles_arr.iter().enumerate() {
-        if i >= width * height { break; }
+        if i >= width * height {
+            break;
+        }
         let x = i % width;
         let y = i / width;
 
         // Support both Rust format ({t, e, r}) and verbose format ({terrain, elevation, resource})
         let terrain: Terrain = if let Some(t) = tile_val["t"].as_u64() {
             match t {
-                0 => Terrain::Grass, 1 => Terrain::Forest, 2 => Terrain::Mountain,
-                3 => Terrain::Water, 4 => Terrain::DeepWater, 5 => Terrain::Desert,
-                6 => Terrain::Swamp, 7 => Terrain::Snow,
+                0 => Terrain::Grass,
+                1 => Terrain::Forest,
+                2 => Terrain::Mountain,
+                3 => Terrain::Water,
+                4 => Terrain::DeepWater,
+                5 => Terrain::Desert,
+                6 => Terrain::Swamp,
+                7 => Terrain::Snow,
                 _ => return Err(format!("invalid terrain id {} at ({},{})", t, x, y)),
             }
         } else if let Some(tname) = tile_val["terrain"].as_str() {
             match tname {
-                "Grass" => Terrain::Grass, "Forest" => Terrain::Forest,
-                "Mountain" => Terrain::Mountain, "Water" => Terrain::Water,
+                "Grass" => Terrain::Grass,
+                "Forest" => Terrain::Forest,
+                "Mountain" => Terrain::Mountain,
+                "Water" => Terrain::Water,
                 "DeepWater" | "Deep Water" => Terrain::DeepWater,
-                "Desert" => Terrain::Desert, "Swamp" => Terrain::Swamp,
+                "Desert" => Terrain::Desert,
+                "Swamp" => Terrain::Swamp,
                 "Snow" => Terrain::Snow,
                 _ => return Err(format!("unknown terrain '{}' at ({},{})", tname, x, y)),
             }
@@ -1110,7 +1205,8 @@ fn parse_map_json(json: &str) -> Result<Map, String> {
             return Err(format!("tile at ({},{}) has no terrain", x, y));
         };
 
-        let elevation = tile_val["e"].as_f64()
+        let elevation = tile_val["e"]
+            .as_f64()
             .or_else(|| tile_val["elevation"].as_f64())
             .unwrap_or(0.0) as f32;
 
@@ -1142,7 +1238,9 @@ fn parse_map_json(json: &str) -> Result<Map, String> {
             None
         };
 
-        let tile = map.get_mut(x, y).ok_or(format!("out of bounds: ({},{})", x, y))?;
+        let tile = map
+            .get_mut(x, y)
+            .ok_or(format!("out of bounds: ({},{})", x, y))?;
         tile.terrain = terrain;
         tile.elevation = elevation;
         tile.resource = resource;
@@ -1159,7 +1257,8 @@ pub fn get_tile_at(x: f32, y: f32) -> String {
             let tx = wx.floor() as isize;
             let ty = wy.floor() as isize;
 
-            if tx >= 0 && ty >= 0 && (tx as usize) < app.map.width && (ty as usize) < app.map.height {
+            if tx >= 0 && ty >= 0 && (tx as usize) < app.map.width && (ty as usize) < app.map.height
+            {
                 let tile = app.map.get(tx as usize, ty as usize).unwrap();
                 let terrain_name = match tile.terrain {
                     Terrain::Grass => "Grass",
@@ -1279,41 +1378,46 @@ pub fn get_building_info(idx: usize) -> String {
             let economy = &app.game_loop.state.economy;
             if let Some(b) = economy.buildings.get(idx) {
                 let kind = b.kind;
-                let settler_ids: Vec<String> = b.assigned_settlers.iter().map(|w| w.to_string()).collect();
-                let inputs: Vec<String> = kind.inputs().iter()
+                let settler_ids: Vec<String> =
+                    b.assigned_settlers.iter().map(|w| w.to_string()).collect();
+                let inputs: Vec<String> = kind
+                    .inputs()
+                    .iter()
                     .map(|(rt, amt)| format!(r#""{}",{}"#, rt.name(), amt))
                     .collect();
-                let outputs: Vec<String> = kind.outputs().iter()
+                let outputs: Vec<String> = kind
+                    .outputs()
+                    .iter()
                     .map(|(rt, amt)| format!(r#""{}",{}"#, rt.name(), amt))
                     .collect();
-        let construction_pct = b.construction;  // duplicate for JS clarity
+                let construction_pct = b.construction; // duplicate for JS clarity
 
-        // Output buffer summary (non-zero entries only)
-        let mut obuf_parts = Vec::new();
-        for i in 0..ResourceType::COUNT {
-            let val = b.output_buffer[i];
-            if val > 0 {
-                let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
-                obuf_parts.push(format!(r#""{}":{}"#, rt.name(), val));
-            }
-        }
-        return format!(
-            r#"{{"kind":"{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"settlers":[{}],"max_settlers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}}}}"#,
-            kind.name(),
-            b.x,
-            b.y,
-            b.construction,
-            construction_pct,
-            b.is_complete(),
-            b.active,
-            settler_ids.join(","),
-            b.max_settlers,
-            kind.build_time(),
-            kind.production_interval(),
-            inputs.join(","),
-            outputs.join(","),
-            obuf_parts.join(","),
-        );
+                // Output buffer summary (non-zero entries only)
+                let mut obuf_parts = Vec::new();
+                for i in 0..ResourceType::COUNT {
+                    let val = b.output_buffer[i];
+                    if val > 0 {
+                        let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
+                        obuf_parts.push(format!(r#""{}":{}"#, rt.name(), val));
+                    }
+                }
+                return format!(
+                    r#"{{"kind":"{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"settlers":[{}],"max_settlers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}}}}"#,
+                    kind.name(),
+                    b.x,
+                    b.y,
+                    b.construction,
+                    construction_pct,
+                    b.is_complete(),
+                    b.active,
+                    settler_ids.join(","),
+                    b.max_settlers,
+                    kind.build_time(),
+                    kind.production_interval(),
+                    inputs.join(","),
+                    outputs.join(","),
+                    obuf_parts.join(","),
+                );
             }
         }
     }
@@ -1392,17 +1496,27 @@ pub fn try_place_building(kind_name: &str, x: usize, y: usize) -> String {
                 _ => true,
             };
             if !buildable {
-                return format!(r#"{{"error":"Cannot build on {} terrain at ({},{})"}}"#, 
+                return format!(
+                    r#"{{"error":"Cannot build on {} terrain at ({},{})"}}"#,
                     match tile.terrain {
                         Terrain::Water => "water",
                         Terrain::DeepWater => "deep water",
                         Terrain::Mountain => "mountain",
                         _ => "unbuildable",
-                    }, x, y);
+                    },
+                    x,
+                    y
+                );
             }
 
             // Validate tile isn't already occupied by another building
-            let occupied = app.game_loop.state.economy.buildings.iter().any(|b| b.x == x && b.y == y);
+            let occupied = app
+                .game_loop
+                .state
+                .economy
+                .buildings
+                .iter()
+                .any(|b| b.x == x && b.y == y);
             if occupied {
                 return format!(r#"{{"error":"Tile ({},{}) already has a building"}}"#, x, y);
             }
@@ -1414,7 +1528,10 @@ pub fn try_place_building(kind_name: &str, x: usize, y: usize) -> String {
                     return format!(r#"{{"ok":true,"idx":{},"kind":"{}"}}"#, idx, kind.name());
                 }
                 None => {
-                    return format!(r#"{{"error":"Cannot afford {} — insufficient resources"}}"#, kind.name());
+                    return format!(
+                        r#"{{"error":"Cannot afford {} — insufficient resources"}}"#,
+                        kind.name()
+                    );
                 }
             }
         }
@@ -1569,14 +1686,14 @@ pub fn add_starting_resources(difficulty: &str) -> String {
                 _ => 1.0, // medium or unknown
             };
             let resources: Vec<(ResourceType, u32)> = vec![
-                (ResourceType::Wood,  (100.0 * multiplier) as u32),
+                (ResourceType::Wood, (100.0 * multiplier) as u32),
                 (ResourceType::Stone, (50.0 * multiplier) as u32),
-                (ResourceType::Iron,  (20.0 * multiplier) as u32),
-                (ResourceType::Coal,  (20.0 * multiplier) as u32),
-                (ResourceType::Gold,  (10.0 * multiplier) as u32),
+                (ResourceType::Iron, (20.0 * multiplier) as u32),
+                (ResourceType::Coal, (20.0 * multiplier) as u32),
+                (ResourceType::Gold, (10.0 * multiplier) as u32),
                 (ResourceType::Grain, (30.0 * multiplier) as u32),
-                (ResourceType::Fish,  (20.0 * multiplier) as u32),
-                (ResourceType::Game,  (10.0 * multiplier) as u32),
+                (ResourceType::Fish, (20.0 * multiplier) as u32),
+                (ResourceType::Game, (10.0 * multiplier) as u32),
             ];
             let economy = crate::economy::Economy::with_starting_resources(&resources);
             app.game_loop.state.economy = economy;
@@ -1683,7 +1800,8 @@ pub fn get_game_state() -> String {
             // Buildings
             let mut bldg_parts = Vec::new();
             for b in eco.buildings.iter() {
-                let settler_ids: Vec<String> = b.assigned_settlers.iter().map(|w| w.to_string()).collect();
+                let settler_ids: Vec<String> =
+                    b.assigned_settlers.iter().map(|w| w.to_string()).collect();
                 let mut inbuf_parts = Vec::new();
                 for i in 0..ResourceType::COUNT {
                     if b.input_buffer[i] > 0 {
@@ -1732,7 +1850,8 @@ pub fn get_game_state() -> String {
 
             return format!(
                 r#"{{"version":1,"game_time":{},"map_json":{},"resources":{{{}}},"buildings":[{}],"units":[{}]}}"#,
-                game_time, map_json,
+                game_time,
+                map_json,
                 res_parts.join(","),
                 bldg_parts.join(","),
                 unit_parts.join(",")
@@ -1774,14 +1893,22 @@ pub fn restore_game_state(json: &str) -> String {
                         let mut end = 1usize;
                         for c in after_key[1..].chars() {
                             end += c.len_utf8();
-                            if c == open_char { depth += 1; }
-                            else if c == close_char { depth -= 1; if depth == 0 { break; } }
+                            if c == open_char {
+                                depth += 1;
+                            } else if c == close_char {
+                                depth -= 1;
+                                if depth == 0 {
+                                    break;
+                                }
+                            }
                         }
                         Some(&after_key[..end])
                     }
                     _ => {
                         // Number or boolean or null
-                        let end = after_key.find(|c: char| c == ',' || c == '}' || c == ']').unwrap_or(after_key.len());
+                        let end = after_key
+                            .find(|c: char| c == ',' || c == '}' || c == ']')
+                            .unwrap_or(after_key.len());
                         Some(&after_key[..end])
                     }
                 }
@@ -1812,7 +1939,9 @@ pub fn restore_game_state(json: &str) -> String {
                 let search = format!("\"{}\":", name);
                 if let Some(pos) = resources_str.find(&search) {
                     let after = &resources_str[pos + search.len()..];
-                    let end = after.find(|c: char| c == ',' || c == '}').unwrap_or(after.len());
+                    let end = after
+                        .find(|c: char| c == ',' || c == '}')
+                        .unwrap_or(after.len());
                     if let Ok(val) = after[..end].trim().parse::<u32>() {
                         new_eco.storage.set(rt, val);
                     }
@@ -1826,7 +1955,7 @@ pub fn restore_game_state(json: &str) -> String {
             };
             if buildings_str != "[]" {
                 // Parse each building object by splitting on "},{"
-                let inner = &buildings_str[1..buildings_str.len()-1];
+                let inner = &buildings_str[1..buildings_str.len() - 1];
                 let mut depth = 0;
                 let mut start = 0;
                 let mut bldg_jsons = Vec::new();
@@ -1847,12 +1976,22 @@ pub fn restore_game_state(json: &str) -> String {
                 for bjson in bldg_jsons {
                     // Extract building properties
                     let kind_name = find_json_value(bjson, "kind").unwrap_or("Unknown");
-                    let x = find_json_value(bjson, "x").and_then(|v| v.parse::<usize>().ok()).unwrap_or(0);
-                    let y = find_json_value(bjson, "y").and_then(|v| v.parse::<usize>().ok()).unwrap_or(0);
-                    let construction = find_json_value(bjson, "construction").and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.0);
+                    let x = find_json_value(bjson, "x")
+                        .and_then(|v| v.parse::<usize>().ok())
+                        .unwrap_or(0);
+                    let y = find_json_value(bjson, "y")
+                        .and_then(|v| v.parse::<usize>().ok())
+                        .unwrap_or(0);
+                    let construction = find_json_value(bjson, "construction")
+                        .and_then(|v| v.parse::<f32>().ok())
+                        .unwrap_or(0.0);
                     let active = find_json_value(bjson, "active").map_or(false, |v| v == "true");
-                    let production_counter = find_json_value(bjson, "production_counter").and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
-                    let max_settlers = find_json_value(bjson, "max_settlers").and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
+                    let production_counter = find_json_value(bjson, "production_counter")
+                        .and_then(|v| v.parse::<u32>().ok())
+                        .unwrap_or(0);
+                    let max_settlers = find_json_value(bjson, "max_settlers")
+                        .and_then(|v| v.parse::<u32>().ok())
+                        .unwrap_or(0);
 
                     if let Some(kind) = BuildingType::from_name(kind_name) {
                         let mut b = Building::new(kind, x, y);
@@ -1863,7 +2002,7 @@ pub fn restore_game_state(json: &str) -> String {
 
                         // Restore settler IDs
                         if let Some(settlers_str) = find_json_value(bjson, "assigned_settlers") {
-                            let inner_w = &settlers_str[1..settlers_str.len()-1];
+                            let inner_w = &settlers_str[1..settlers_str.len() - 1];
                             if !inner_w.is_empty() {
                                 for wid_str in inner_w.split(',') {
                                     if let Ok(wid) = wid_str.trim().parse() {
@@ -1880,7 +2019,9 @@ pub fn restore_game_state(json: &str) -> String {
                                 let search = format!("\"{}\":", rt.name());
                                 if let Some(pos) = inbuf_str.find(&search) {
                                     let after = &inbuf_str[pos + search.len()..];
-                                    let end = after.find(|c: char| c == ',' || c == '}').unwrap_or(after.len());
+                                    let end = after
+                                        .find(|c: char| c == ',' || c == '}')
+                                        .unwrap_or(after.len());
                                     if let Ok(val) = after[..end].trim().parse::<u32>() {
                                         b.input_buffer[i] = val;
                                     }
@@ -1894,7 +2035,9 @@ pub fn restore_game_state(json: &str) -> String {
                                 let search = format!("\"{}\":", rt.name());
                                 if let Some(pos) = outbuf_str.find(&search) {
                                     let after = &outbuf_str[pos + search.len()..];
-                                    let end = after.find(|c: char| c == ',' || c == '}').unwrap_or(after.len());
+                                    let end = after
+                                        .find(|c: char| c == ',' || c == '}')
+                                        .unwrap_or(after.len());
                                     if let Ok(val) = after[..end].trim().parse::<u32>() {
                                         b.output_buffer[i] = val;
                                     }
@@ -1913,7 +2056,7 @@ pub fn restore_game_state(json: &str) -> String {
                 None => return String::from("error: missing units"),
             };
             if units_str != "[]" {
-                let inner = &units_str[1..units_str.len()-1];
+                let inner = &units_str[1..units_str.len() - 1];
                 let mut depth = 0;
                 let mut start = 0;
                 let mut unit_jsons = Vec::new();
@@ -1934,17 +2077,38 @@ pub fn restore_game_state(json: &str) -> String {
                 // Track max ID to continue sequence
                 let mut max_id: u32 = 0;
                 for ujson in unit_jsons {
-                    let id = find_json_value(ujson, "id").and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
+                    let id = find_json_value(ujson, "id")
+                        .and_then(|v| v.parse::<u32>().ok())
+                        .unwrap_or(0);
                     let kind_name = find_json_value(ujson, "kind").unwrap_or("Settler");
-                    let ux = find_json_value(ujson, "x").and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.0);
-                    let uy = find_json_value(ujson, "y").and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.0);
-                    let hp = find_json_value(ujson, "hp").and_then(|v| v.parse::<u32>().ok()).unwrap_or(50);
-                    let max_hp = find_json_value(ujson, "max_hp").and_then(|v| v.parse::<u32>().ok()).unwrap_or(50);
+                    let ux = find_json_value(ujson, "x")
+                        .and_then(|v| v.parse::<f32>().ok())
+                        .unwrap_or(0.0);
+                    let uy = find_json_value(ujson, "y")
+                        .and_then(|v| v.parse::<f32>().ok())
+                        .unwrap_or(0.0);
+                    let hp = find_json_value(ujson, "hp")
+                        .and_then(|v| v.parse::<u32>().ok())
+                        .unwrap_or(50);
+                    let max_hp = find_json_value(ujson, "max_hp")
+                        .and_then(|v| v.parse::<u32>().ok())
+                        .unwrap_or(50);
                     let state_str = find_json_value(ujson, "state").unwrap_or("Idle");
-                    let assigned_building = find_json_value(ujson, "assigned_building")
-                        .and_then(|v| if v == "null" { None } else { v.parse::<usize>().ok() });
-                    let target = find_json_value(ujson, "target")
-                        .and_then(|v| if v == "null" { None } else { v.parse::<u32>().ok() });
+                    let assigned_building =
+                        find_json_value(ujson, "assigned_building").and_then(|v| {
+                            if v == "null" {
+                                None
+                            } else {
+                                v.parse::<usize>().ok()
+                            }
+                        });
+                    let target = find_json_value(ujson, "target").and_then(|v| {
+                        if v == "null" {
+                            None
+                        } else {
+                            v.parse::<u32>().ok()
+                        }
+                    });
 
                     let kind = match kind_name {
                         "Soldier" => UnitKind::Swordsman,
@@ -1967,7 +2131,9 @@ pub fn restore_game_state(json: &str) -> String {
                     unit.assigned_building = assigned_building;
                     unit.target = target;
 
-                    if id > max_id { max_id = id; }
+                    if id > max_id {
+                        max_id = id;
+                    }
                     new_eco.units.add_existing(unit);
                 }
                 new_eco.units.set_next_id(max_id + 1);
@@ -2019,24 +2185,48 @@ mod tests {
     }
 
     #[test]
-    fn test_edge_fog_shader_uniforms() {
-        // Verify the edge-of-map fog uniforms and varyings are present
-        assert!(!VERTEX_SHADER.contains("u_map_dims"), "vertex shader should NOT have u_map_dims (fragment-only uniform)");
-        assert!(VERTEX_SHADER.contains("v_tile_pos"), "vertex shader missing v_tile_pos varying");
-        assert!(FRAGMENT_SHADER.contains("v_tile_pos"), "fragment shader missing v_tile_pos varying");
-        assert!(FRAGMENT_SHADER.contains("u_map_dims"), "fragment shader missing u_map_dims uniform");
+    fn test_edge_fog_shader_attribute() {
+        // Verify edge-of-map fog uses CPU-computed vertex attributes (not GPU uniforms)
+        assert!(
+            VERTEX_SHADER.contains("a_edge_dist"),
+            "vertex shader missing a_edge_dist attribute"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("v_edge_dist"),
+            "fragment shader missing v_edge_dist varying"
+        );
+        // u_map_dims should NOT be in either shader (replaced by CPU-computed edge_dists)
+        assert!(
+            !VERTEX_SHADER.contains("u_map_dims"),
+            "vertex shader should NOT have u_map_dims"
+        );
+        assert!(
+            !FRAGMENT_SHADER.contains("u_map_dims"),
+            "fragment shader should NOT have u_map_dims"
+        );
         // Verify fog computation is present
-        assert!(FRAGMENT_SHADER.contains("edge_dist"), "fragment shader missing edge_dist computation");
-        assert!(FRAGMENT_SHADER.contains("fog_factor"), "fragment shader missing fog_factor");
-        assert!(FRAGMENT_SHADER.contains("fog_color"), "fragment shader missing fog_color");
+        assert!(
+            FRAGMENT_SHADER.contains("edge_dist"),
+            "fragment shader missing edge_dist computation"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("fog_factor"),
+            "fragment shader missing fog_factor"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("fog_color"),
+            "fragment shader missing fog_color"
+        );
     }
 
     #[test]
     fn test_edge_fog_fog_color_matches_clear() {
         // The fog color should match the clear color (0.05, 0.08, 0.18)
         // to create a seamless edge fade
-        assert!(FRAGMENT_SHADER.contains("0.05, 0.08, 0.18"),
-            "fog color should match clear color");
+        assert!(
+            FRAGMENT_SHADER.contains("0.05, 0.08, 0.18"),
+            "fog color should match clear color"
+        );
     }
 
     #[test]
@@ -2077,9 +2267,22 @@ mod tests {
     fn test_building_color_coverage() {
         // Ensure all building types have a color
         use crate::economy::BuildingType::*;
-        for kind in [Castle, Sawmill, Stonecutter, Mine, Toolsmith, Weaponsmith,
-                     Brewery, Bakery, Butcher, Mill, Farm, Fisherman,
-                     Woodcutter, Storehouse] {
+        for kind in [
+            Castle,
+            Sawmill,
+            Stonecutter,
+            Mine,
+            Toolsmith,
+            Weaponsmith,
+            Brewery,
+            Bakery,
+            Butcher,
+            Mill,
+            Farm,
+            Fisherman,
+            Woodcutter,
+            Storehouse,
+        ] {
             let c = building_color(&kind);
             assert!(c[0] >= 0.0 && c[0] <= 1.0);
             assert!(c[1] >= 0.0 && c[1] <= 1.0);

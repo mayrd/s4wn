@@ -130,7 +130,11 @@ impl Camera {
 
     /// Get the visible tile range for frustum culling.
     /// Returns (min_x, max_x, min_y, max_y) in tile coordinates.
-    pub fn visible_bounds(&self, map_width: usize, map_height: usize) -> (usize, usize, usize, usize) {
+    pub fn visible_bounds(
+        &self,
+        map_width: usize,
+        map_height: usize,
+    ) -> (usize, usize, usize, usize) {
         let tile_size = base_tile_size() * self.zoom;
         let extra = (1.0 / self.zoom).ceil() as usize + 2;
 

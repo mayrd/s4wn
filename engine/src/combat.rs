@@ -46,12 +46,7 @@ impl CombatAI {
     /// NOTE: This does NOT call units.tick() — worker movement is handled by
     /// WorkerAI, and soldier movement is handled by chase_target below.
     /// We only tick attack cooldowns for all units here.
-    pub fn update(
-        &self,
-        units: &mut UnitManager,
-        map: &Map,
-        dt: f32,
-    ) {
+    pub fn update(&self, units: &mut UnitManager, map: &Map, dt: f32) {
         // Tick attack cooldowns for all units
         for unit in units.all_mut() {
             unit.tick_attack();
@@ -80,12 +75,7 @@ impl CombatAI {
     }
 
     /// Update a single combat unit's AI.
-    fn update_combatant(
-        &self,
-        units: &mut UnitManager,
-        map: &Map,
-        unit_id: u32,
-    ) {
+    fn update_combatant(&self, units: &mut UnitManager, map: &Map, unit_id: u32) {
         let unit = match units.get(unit_id) {
             Some(u) if u.is_alive() && u.kind.can_fight() => u,
             _ => return,
@@ -285,7 +275,11 @@ mod tests {
 
         let ai = CombatAI::new();
         let enemy = ai.find_nearest_enemy(&mgr, 1);
-        assert_eq!(enemy, Some(2), "Unit 1 should target unit 2 (enemy faction)");
+        assert_eq!(
+            enemy,
+            Some(2),
+            "Unit 1 should target unit 2 (enemy faction)"
+        );
 
         // Unit 2 should target unit 1 (nearest enemy)
         let enemy2 = ai.find_nearest_enemy(&mgr, 2);
@@ -307,11 +301,18 @@ mod tests {
 
         // Soldier does 15 damage per hit
         let target = mgr.get(id2).unwrap();
-        assert_eq!(target.hp, 85, "Soldier should take 15 damage, hp={}", target.hp);
+        assert_eq!(
+            target.hp, 85,
+            "Soldier should take 15 damage, hp={}",
+            target.hp
+        );
 
         // Attacker should have cooldown
         let attacker = mgr.get(id1).unwrap();
-        assert_eq!(attacker.attack_cooldown, 15, "Attack cooldown should be 15 ticks");
+        assert_eq!(
+            attacker.attack_cooldown, 15,
+            "Attack cooldown should be 15 ticks"
+        );
     }
 
     #[test]
@@ -337,7 +338,10 @@ mod tests {
 
         // Attacker should have cleared target
         let attacker = mgr.get(id1).unwrap();
-        assert!(attacker.target.is_none(), "Attacker should clear target after kill");
+        assert!(
+            attacker.target.is_none(),
+            "Attacker should clear target after kill"
+        );
         assert_eq!(attacker.state, UnitState::Idle);
     }
 
@@ -373,7 +377,11 @@ mod tests {
 
         // Archer does 10 damage
         let target = mgr.get(id2).unwrap();
-        assert_eq!(target.hp, 90, "Archer should deal 10 damage, hp={}", target.hp);
+        assert_eq!(
+            target.hp, 90,
+            "Archer should deal 10 damage, hp={}",
+            target.hp
+        );
     }
 
     #[test]
@@ -420,7 +428,9 @@ mod tests {
         assert!(
             total_hp < 200 || u1.state != UnitState::Idle || u2.state != UnitState::Idle,
             "Soldiers should have engaged in combat, total_hp={}, states=({:?}, {:?})",
-            total_hp, u1.state, u2.state
+            total_hp,
+            u1.state,
+            u2.state
         );
     }
 

@@ -59,7 +59,10 @@ impl<'a> BitReader<'a> {
     pub fn source_left_length(&self) -> usize {
         let end = std::cmp::min(
             self.data.len(),
-            self.data.len().saturating_sub(self.max_bytes).saturating_add(self.max_bytes),
+            self.data
+                .len()
+                .saturating_sub(self.max_bytes)
+                .saturating_add(self.max_bytes),
         );
         end.saturating_sub(self.byte_pos)
     }
@@ -146,10 +149,12 @@ impl Decompressor {
 
     fn default_huffman_table() -> IndexValueTable {
         IndexValueTable::new(
-            vec![0x2, 0x3, 0x3, 0x4, 0x4, 0x4, 0x4, 0x4, 0x4, 0x4, 0x4, 0x4, 0x4, 0x5, 0x5, 0x5],
             vec![
-                0x0, 0x4, 0xC, 0x14, 0x24, 0x34, 0x44, 0x54, 0x64, 0x74, 0x84, 0x94, 0xA4,
-                0xB4, 0xD4, 0xF4,
+                0x2, 0x3, 0x3, 0x4, 0x4, 0x4, 0x4, 0x4, 0x4, 0x4, 0x4, 0x4, 0x4, 0x5, 0x5, 0x5,
+            ],
+            vec![
+                0x0, 0x4, 0xC, 0x14, 0x24, 0x34, 0x44, 0x54, 0x64, 0x74, 0x84, 0x94, 0xA4, 0xB4,
+                0xD4, 0xF4,
             ],
         )
     }
@@ -253,7 +258,11 @@ impl Decompressor {
         Self::init_code_table()
     }
 
-    fn copy_from_dictionary(reader: &mut BitReader, writer: &mut StreamWriter, code_word: i32) -> bool {
+    fn copy_from_dictionary(
+        reader: &mut BitReader,
+        writer: &mut StreamWriter,
+        code_word: i32,
+    ) -> bool {
         let mut entry_len = 4i32;
 
         if code_word < 0x108 {
@@ -279,7 +288,8 @@ impl Decompressor {
                 return false;
             }
             if copy_start < writer.data.len() {
-                let byte = writer.data[copy_start + (writer.pos - copy_start) % (writer.pos - copy_start).max(1)];
+                let byte = writer.data
+                    [copy_start + (writer.pos - copy_start) % (writer.pos - copy_start).max(1)];
                 writer.set_byte(byte as i32);
             } else {
                 break;

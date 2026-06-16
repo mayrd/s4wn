@@ -14,7 +14,6 @@
 
 // BuildingType and UnitKind used for future integration
 
-
 // ── Nation Type ──────────────────────────────────────────────────────────────
 
 /// The five playable nations of S4WN.
@@ -63,10 +62,10 @@ impl NationType {
     /// Primary display color (RGBA) for this nation.
     pub fn color(self) -> (u8, u8, u8, u8) {
         match self {
-            NationType::Roman => (200, 50, 50, 255),     // Red
-            NationType::Viking => (50, 100, 200, 255),   // Blue
-            NationType::Maya => (50, 180, 50, 255),     // Green
-            NationType::Trojan => (180, 150, 50, 255),   // Gold
+            NationType::Roman => (200, 50, 50, 255),      // Red
+            NationType::Viking => (50, 100, 200, 255),    // Blue
+            NationType::Maya => (50, 180, 50, 255),       // Green
+            NationType::Trojan => (180, 150, 50, 255),    // Gold
             NationType::DarkTribe => (100, 50, 150, 255), // Purple
         }
     }
@@ -415,7 +414,7 @@ impl NationRegistry {
                     iron: 0.85,
                     coal: 0.85,
                     gold: 0.85,
-                    tools: 0.0,  // No toolmaker
+                    tools: 0.0, // No toolmaker
                     weapons: 0.8,
                 },
                 cost: CostModifier {
@@ -458,26 +457,65 @@ impl NationRegistry {
     /// Returns (wood, stone, iron, coal, gold, grain, fish, game, sulfur).
     pub fn starting_resources(nation: NationType) -> (u32, u32, u32, u32, u32, u32, u32, u32, u32) {
         // Base starting resources
-        let base: (u32, u32, u32, u32, u32, u32, u32, u32, u32) =
-            (30, 20, 10, 10, 5, 15, 10, 5, 0);
+        let base: (u32, u32, u32, u32, u32, u32, u32, u32, u32) = (30, 20, 10, 10, 5, 15, 10, 5, 0);
 
         match nation {
             NationType::Roman => base,
             NationType::Viking => {
                 // More stone for barracks, more iron for weapons
-                (base.0, base.1 + 10, base.2 + 5, base.3, base.4, base.5 - 5, base.6, base.7, base.8)
+                (
+                    base.0,
+                    base.1 + 10,
+                    base.2 + 5,
+                    base.3,
+                    base.4,
+                    base.5 - 5,
+                    base.6,
+                    base.7,
+                    base.8,
+                )
             }
             NationType::Maya => {
                 // More food, more wood
-                (base.0 + 5, base.1, base.2, base.3, base.4, base.5 + 10, base.6 + 5, base.7 + 5, base.8)
+                (
+                    base.0 + 5,
+                    base.1,
+                    base.2,
+                    base.3,
+                    base.4,
+                    base.5 + 10,
+                    base.6 + 5,
+                    base.7 + 5,
+                    base.8,
+                )
             }
             NationType::Trojan => {
                 // More gold, more stone
-                (base.0, base.1 + 5, base.2, base.3, base.4 + 10, base.5, base.6, base.7, base.8)
+                (
+                    base.0,
+                    base.1 + 5,
+                    base.2,
+                    base.3,
+                    base.4 + 10,
+                    base.5,
+                    base.6,
+                    base.7,
+                    base.8,
+                )
             }
             NationType::DarkTribe => {
                 // More wood, less iron/coal (no toolmaker)
-                (base.0 + 10, base.1, base.2 - 5, base.3 - 5, base.4, base.5, base.6, base.7, base.8)
+                (
+                    base.0 + 10,
+                    base.1,
+                    base.2 - 5,
+                    base.3 - 5,
+                    base.4,
+                    base.5,
+                    base.6,
+                    base.7,
+                    base.8,
+                )
             }
         }
     }
@@ -843,11 +881,20 @@ mod tests {
 
     #[test]
     fn test_unique_building_nations() {
-        assert_eq!(UniqueBuildingType::TempleOfBacchus.nation(), NationType::Roman);
+        assert_eq!(
+            UniqueBuildingType::TempleOfBacchus.nation(),
+            NationType::Roman
+        );
         assert_eq!(UniqueBuildingType::MeadHall.nation(), NationType::Viking);
         assert_eq!(UniqueBuildingType::TempleOfChac.nation(), NationType::Maya);
-        assert_eq!(UniqueBuildingType::OracleOfApollo.nation(), NationType::Trojan);
-        assert_eq!(UniqueBuildingType::DarkTemple.nation(), NationType::DarkTribe);
+        assert_eq!(
+            UniqueBuildingType::OracleOfApollo.nation(),
+            NationType::Trojan
+        );
+        assert_eq!(
+            UniqueBuildingType::DarkTemple.nation(),
+            NationType::DarkTribe
+        );
     }
 
     #[test]
@@ -856,7 +903,10 @@ mod tests {
         assert_eq!(UniqueBuildingType::for_nation(NationType::Viking).len(), 6);
         assert_eq!(UniqueBuildingType::for_nation(NationType::Maya).len(), 7);
         assert_eq!(UniqueBuildingType::for_nation(NationType::Trojan).len(), 7);
-        assert_eq!(UniqueBuildingType::for_nation(NationType::DarkTribe).len(), 8);
+        assert_eq!(
+            UniqueBuildingType::for_nation(NationType::DarkTribe).len(),
+            8
+        );
     }
 
     #[test]
@@ -870,7 +920,10 @@ mod tests {
     fn test_specialist_types() {
         assert_eq!(SpecialistType::Pioneer.name(), "Pioneer");
         assert_eq!(SpecialistType::Shaman.name(), "Shaman");
-        assert_eq!(SpecialistType::Pioneer.required_tool(), Some(ToolType::Hammer));
+        assert_eq!(
+            SpecialistType::Pioneer.required_tool(),
+            Some(ToolType::Hammer)
+        );
         assert_eq!(SpecialistType::Priest.required_tool(), None);
     }
 
