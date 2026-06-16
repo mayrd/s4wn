@@ -2382,6 +2382,17 @@ async function main() {
             document.body.innerHTML = '<div style="color:red;padding:40px;text-align:center">WebGL2 not available</div>';
             return;
         }
+        console.log('engineInit returned:', ok);
+
+        // Check WebGL context
+        const gl = canvas.getContext('webgl2');
+        if (gl) {
+            console.log('WebGL2 context OK');
+            console.log('WebGL vendor:', gl.getParameter(gl.VENDOR));
+            console.log('WebGL renderer:', gl.getParameter(gl.RENDERER));
+        } else {
+            console.error('No WebGL2 context on canvas');
+        }
 
         engineReady = true;
         hudMap.textContent = 'S4WN Engine | 64×64 isometric map';
