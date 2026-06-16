@@ -159,6 +159,39 @@
     margin-top: 14px; letter-spacing: 0.05em;
   }
 
+  /* ── Recent Files ───────────────────────────────────────────────────── */
+  .recent-files {
+    margin: 8px 0; padding: 8px 10px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);
+    text-align: left; max-height: 160px; overflow-y: auto;
+  }
+  .recent-title {
+    font-size: 10px; color: #666;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 6px; padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .recent-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 6px; border-radius: 4px;
+    font-size: 12px; color: #999; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .recent-item:hover {
+    background: rgba(200,170,100,0.1); color: #d4c498;
+  }
+  .recent-item-icon { font-size: 14px; }
+  .recent-item-name {
+    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .recent-item-meta {
+    font-size: 10px; color: #555; white-space: nowrap;
+  }
+  .recent-empty {
+    font-size: 11px; color: #444; font-style: italic; padding: 2px 4px;
+  }
+
   /* ── HUD Overlays ───────────────────────────────────────────────────── */
   #hud-top-left {
     position: fixed; top: 12px; left: 16px; z-index: 10;
@@ -478,6 +511,10 @@
   <div class="menu-card">
     <h2>⚔️ Game Menu</h2>
     <button class="menu-btn" id="btn-load">📂 Load Map</button>
+    <div class="recent-files" id="recent-files">
+      <div class="recent-title">📁 Recent Files</div>
+      <div class="recent-list" id="recent-list"><span class="recent-empty">None yet</span></div>
+    </div>
     <button class="menu-btn" id="btn-demo">🗺️ Demo Map</button>
     <button class="menu-btn" id="btn-continue" style="display:none">💾 Continue Game</button>
     <button class="menu-btn" onclick="openNewGame()">🆕 New Game</button>
@@ -618,7 +655,7 @@
 <div id="placement-status"></div>
 <div id="selection-info"></div>
 
-<input type="file" id="fileInput" accept=".json,.map">
+<input type="file" id="fileInput" accept=".json,.map,.sav">
 
 <script type="module">
 import init, {
@@ -684,6 +721,7 @@ function openMenu() {
     showMenu = true;
     menu.classList.add('active');
     updateContinueButton();
+    renderRecentFiles();
 }
 
 function closeMenu() {
@@ -759,6 +797,7 @@ function loadFile(file) {
                 }
                 const result = load_map_json(text);
                 if (result === 'ok') {
+                    addToRecentFiles(file);
                     closeMenu();
                     hudMap.textContent = `Map: ${file.name} | Loading...`;
                 } else {
@@ -1574,6 +1613,73 @@ function updateContinueButton() {
     } else {
         btn.style.display = 'none';
     }
+}
+
+// ── Recent Files ────────────────────────────────────────────────────────
+const RECENT_KEY = 's4wn-recent-files';
+const RECENT_MAX = 5;
+
+function getRecentFiles() {
+    try {
+        return JSON.parse(localStorage.getItem(RECENT_KEY)) || [];
+    } catch { return []; }
+}
+
+function saveRecentFiles(files) {
+    try {
+        localStorage.setItem(RECENT_KEY, JSON.stringify(files.slice(0, RECENT_MAX)));
+    } catch { /* quota exceeded — ignore */ }
+}
+
+function addToRecentFiles(file) {
+    const recent = getRecentFiles();
+    // Remove duplicate by name
+    const filtered = recent.filter(f => f.name !== file.name);
+    // Prepend new entry
+    filtered.unshift({
+        name: file.name,
+        size: file.size,
+        type: file.name.endsWith('.sav') ? 'sav' : (file.name.endsWith('.map') ? 'map' : 'json'),
+        loadedAt: new Date().toISOString()
+    });
+    saveRecentFiles(filtered);
+    renderRecentFiles();
+}
+
+function renderRecentFiles() {
+    const list = document.getElementById('recent-list');
+    const recent = getRecentFiles();
+    if (!list) return;
+
+    if (recent.length === 0) {
+        list.innerHTML = '<span class="recent-empty">None yet</span>';
+        return;
+    }
+
+    const typeIcons = { map: '🗺️', sav: '💾', json: '📄' };
+    list.innerHTML = recent.map(f => {
+        const icon = typeIcons[f.type] || '📄';
+        const sizeStr = f.size > 1024*1024
+            ? (f.size / (1024*1024)).toFixed(1) + ' MB'
+            : (f.size / 1024).toFixed(0) + ' KB';
+        const date = new Date(f.loadedAt);
+        const dateStr = date.toLocaleDateString(undefined, {month:'short',day:'numeric'});
+        return `<div class="recent-item" data-file="${f.name}">
+            <span class="recent-item-icon">${icon}</span>
+            <span class="recent-item-name" title="${f.name}">${f.name}</span>
+            <span class="recent-item-meta">${sizeStr} · ${dateStr}</span>
+        </div>`;
+    }).join('');
+
+    // Click handlers: trigger file input (browser can't re-read from disk)
+    list.querySelectorAll('.recent-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const fileName = item.dataset.file;
+            // Store the expected filename so we can show a helpful message
+            fileInput.setAttribute('data-expected', fileName);
+            fileInput.click();
+        });
+    });
 }
 
 // ── Main ────────────────────────────────────────────────────────────────
