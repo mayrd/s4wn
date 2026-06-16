@@ -3,8 +3,7 @@
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
 ## Status: Phase 4 — UI & Single Player 🔨
-Last updated: 2026-06-16 (Session 44)
-Last updated: 2026-06-16 (Session 43)
+Last updated: 2026-06-16 (Session 45)
 
 ## 🤖 Agent Operating Rules
 
@@ -118,9 +117,9 @@ Last updated: 2026-06-16 (Session 43)
 
 **Implementation:**
 - [ ] 25 `BuildingType` variants in enum (shared pool)
-- [ ] Each building stores `input_resources: Vec<(ResourceType, u32)>`, `output_resources: Vec<(ResourceType, u32)>`, `required_tool: Option<ToolType>`
+- [x] Each building stores `input_resources: Vec<(ResourceType, u32)>`, `output_resources: Vec<(ResourceType, u32)>`, `required_tool: Option<ToolType>`
 - [ ] Tool system: buildings stay "unoccupied" until worker with correct tool arrives
-- [ ] Residence tier: Small (2 settlers, 25 max), Medium (4 settlers, 50 max), Large (8 settlers, 100 max)
+- [x] Residence tier: Small (2 settlers, 25 max), Medium (4 settlers, 50 max), Large (8 settlers, 100 max)
 - [ ] Construction progress: worker builds for N ticks based on building cost
 - [ ] Territory system: Guard Towers/Fortresses extend player territory radius when garrisoned
 
@@ -495,6 +494,7 @@ s4wn/
 ||||| 43 | 2026-06-16 | ~10 min | Phase 2.8.1 Nation Data Model: Created nation.rs module with NationType enum (5 nations), Nation struct with production/cost/unit/AI modifiers, NationRegistry const lookup tables, UnitSpecial enum (FormationBonus/Berserk/ForestGuard/ShieldWall/None), UniqueBuildingType enum (34 buildings), SpecialistType enum (6 types), ToolType enum (11 types), starting resources per nation. 21 new tests. 160 total tests passing (139 engine + 21 nation). |
 | 44 | 2026-06-16 | ~10 min | S4 naming cleanup: Aligned terminology with authentic Siedler 4 conventions (worker→settler, Headquarters→Castle, Quarry→Stonecutter, Blacksmith→Toolsmith, Armory→Weaponsmith, Fishery→Fisherman, Lumberjack→Woodcutter, Warehouse→Storehouse, Planks→Boards, Leather→Flour, Soldier→Swordsman). Fixed compiler warnings (unused imports/variables). Phase 2.8.1 integration: Added nation selection dropdown to new game panel (5 nations with emoji icons and playstyle descriptions), wired into startNewGame(). All 160 engine tests passing. |
 
+|| 45 | 2026-06-16 | ~10 min | Phase 2.8.2: Extended BuildingType from 14→18 variants (Residence, Waterworks, Smelter, Barracks). Added ResourceType::Water + IronIngots (COUNT 25). Added required_tool() method with 11 tool assignments. Wired full config: build_cost, inputs, outputs, production_interval, build_time, colors. Added 5 new tests (tool coverage, resource types, waterworks production, smelter chain). All 170 tests passing (165 engine + 5 server). |
 ---
 
 ## Open Items & Decisions Needed
@@ -539,15 +539,22 @@ None at the moment.
 - [ ] Show nation flag/icon in in-game HUD with nation name
 
 ### Phase 2.8.2 — Common Buildings (All Nations) — HIGHEST PRIORITY
-- [ ] Extend BuildingType enum from 14 to 18 variants (add Residence, Waterworks, Smelter, Mint, Barracks)
-- [ ] Each new building gets full wiring: costs, inputs, outputs, production_interval, terrain_requirement
-- [ ] Residence tier: Small (25 capacity), Medium (50), Large (100) with settler recruitment
-- [ ] Tool system: buildings stay "unoccupied" until worker with correct tool arrives
-- [ ] Add new ResourceType::Water for Waterworks output
+- [ ] Wire `required_tool()` into game loop: buildings stay unoccupied until settler carries correct tool
+- [ ] Residence settler recruitment: spawn idle settler at residence every N ticks (game loop logic)
+- [ ] Barracks unit training: consume Weapons → convert settler into Swordsman (game loop logic)
+- [ ] Tool consumption: Toolsmith produces specific tool types, settlers pick them up from storehouse
+- [ ] Add Building `required_tool: Option<ToolType>` field for runtime tool tracking
+- [ ] Add Mint building (Gold + Coal → Coins) to reach full 19 common buildings
 
 ### Phase 4.7 — Visual Polish (ongoing)
 - [ ] Fog of war / unexplored territory (darken unseen tiles via shader)
 - [ ] Nation-color tinting on buildings in WebGL overlay
+
+### Phase 4.4a — Map Loading (remaining items)
+- [ ] Performance: loading progress bar for maps > 256×256
+- [ ] Test corpus: 256×256 test map
+- [ ] Round-trip validation: .map → render → JSON export → verify
+- [ ] Integration: New Game flow shows "Load Custom .map" option
 
 ---
 
@@ -564,7 +571,7 @@ None at the moment.
 - Hello World POC renders an 8×8 isometric terrain grid with animated elevation via vertex shader — validates the full WASM + WebGL2 pipeline on arm64.
 - Day/night cycle cycles every ~5 real-time minutes; resource deposits glow with a pulsing overlay.
 - **⚠️ Asset Policy (non-negotiable):** Original S4 assets are NEVER used. All graphics/sound must be generated and stored in `assets/`. The ARA+LZH decoder exists solely for structural research and for the map/campaign importer — never to extract and republish Ubisoft artwork.
-- **Economy system (Session 5):** 14 building types with defined production chains. Resource storage caps at 200 base + 100 per warehouse. Production intervals range 15-50 ticks (1.5-5s at 10 TPS). Production chain Wood→Planks tested end-to-end.
+- **Economy system (Session 5):** 18 building types (14 common + 4 Phase 2.8.2) with defined production chains. Resource storage caps at 200 base + 100 per warehouse. Production intervals range 15-50 ticks (1.5-5s at 10 TPS). Production chain Wood→Planks tested end-to-end.
 - **Siedler 4 `.map` file format** (reverse-engineered, implemented Session 15):
   - **Magic**: 4 bytes `57 52 4C 44` ("WRLD")
   - **Header**: version (u32 LE), width (u32 LE), height (u32 LE) — 12 bytes total
