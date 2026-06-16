@@ -140,6 +140,9 @@ pub struct Unit {
     pub attack_cooldown: u32,
     /// Target unit ID for combat
     pub target: Option<u32>,
+    /// Tool this settler carries (ToolType discriminant as u8). None = no tool.
+    /// Only relevant for settlers; military units don't carry tools.
+    pub carried_tool: Option<u8>,
 }
 
 impl Unit {
@@ -159,6 +162,7 @@ impl Unit {
             assigned_building: None,
             attack_cooldown: 0,
             target: None,
+            carried_tool: None,
         }
     }
 

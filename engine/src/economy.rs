@@ -348,6 +348,22 @@ impl BuildingType {
     }
 }
 
+/// Convert a tool name string to its ToolType discriminant (u8).
+/// None if the name doesn't map to a known tool.
+pub fn tool_code_from_name(name: &str) -> Option<u8> {
+    match name {
+        "Hammer" => Some(0),
+        "Pickaxe" => Some(1),
+        "Axe" => Some(2),
+        "Saw" => Some(3),
+        "Fishing Rod" => Some(4),
+        "Rolling Pin" => Some(5),
+        "Cleaver" => Some(6),
+        "Bucket" => Some(7),
+        _ => None,
+    }
+}
+
 // ── Building Instance ───────────────────────────────────────────────────────
 
 /// A placed building on the map.
@@ -373,12 +389,15 @@ pub struct Building {
     pub assigned_settlers: Vec<u32>,
     /// Maximum number of settlers this building can employ
     pub max_settlers: u32,
+    /// Tool required for work (ToolType discriminant). None = no tool needed.
+    pub required_tool: Option<u8>,
 }
 
 impl Building {
     /// Create a new building at the given position
     pub fn new(kind: BuildingType, x: usize, y: usize) -> Self {
         let max_settlers = if kind.requires_settler() { 1 } else { 0 };
+        let required_tool = kind.required_tool().and_then(tool_code_from_name);
         Building {
             kind,
             x,
@@ -390,12 +409,25 @@ impl Building {
             output_buffer: [0u32; ResourceType::COUNT],
             assigned_settlers: Vec::new(),
             max_settlers,
+            required_tool,
         }
     }
 
     /// Whether the building has at least one settler assigned
     pub fn has_settler(&self) -> bool {
         !self.assigned_settlers.is_empty() || !self.kind.requires_settler()
+    }
+
+    /// Whether at least one assigned settler carries the required tool.
+    /// Buildings that don't require a tool always return true.
+    pub fn has_tooled_settler(&self, units: &UnitManager) -> bool {
+        if self.required_tool.is_none() {
+            return true; // No tool required
+        }
+        let needed = self.required_tool.unwrap();
+        self.assigned_settlers.iter().any(|&sid| {
+            units.get(sid).map(|u| u.carried_tool == Some(needed)).unwrap_or(false)
+        })
     }
 
     /// Assign a settler to this building
@@ -719,9 +751,15 @@ impl Economy {
             building.tick_construction();
         }
 
-        // 2. Try production for all buildings (only if they have settlers)
-        for building in self.buildings.iter_mut() {
-            if building.has_settler() {
+        // Pre-compute which buildings have tooled settlers
+        // (separate pass to avoid borrowing both buildings and units simultaneously)
+        let can_produce: Vec<bool> = self.buildings.iter()
+            .map(|b| b.has_settler() && b.has_tooled_settler(&self.units))
+            .collect();
+
+        // 2. Try production for all buildings (only if they have tooled settlers)
+        for (i, building) in self.buildings.iter_mut().enumerate() {
+            if can_produce[i] {
                 if building.try_produce(&mut self.storage) {
                     self.production_events += 1;
                 }
@@ -735,14 +773,14 @@ impl Economy {
         }
 
         // 4. Update warehouse capacity
-        let warehouse_count = self.buildings.iter()
+        let warehouse_count = self
+            .buildings
+            .iter()
             .filter(|b| b.kind == BuildingType::Storehouse && b.is_complete())
             .count() as u32;
         // Base 200 + 100 per warehouse (recalculate from scratch)
         self.storage.capacity = 200 + warehouse_count * 100;
     }
-
-    /// Get all buildings of a specific type
     pub fn buildings_of_type(&self, kind: BuildingType) -> impl Iterator<Item = &Building> {
         self.buildings.iter().filter(move |b| b.kind == kind)
     }
@@ -771,6 +809,7 @@ impl Default for Economy {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::units::UnitKind;
 
     #[test]
     fn test_resource_type_name() {
@@ -1209,5 +1248,124 @@ mod tests {
         s.add(ResourceType::Wood, 60);
         assert!(s.can_accept(ResourceType::Wood, 40));
         assert!(!s.can_accept(ResourceType::Wood, 41));
+    }
+
+    #[test]
+    fn test_tool_code_from_name() {
+        assert_eq!(tool_code_from_name("Hammer"), Some(0));
+        assert_eq!(tool_code_from_name("Pickaxe"), Some(1));
+        assert_eq!(tool_code_from_name("Axe"), Some(2));
+        assert_eq!(tool_code_from_name("Saw"), Some(3));
+        assert_eq!(tool_code_from_name("Fishing Rod"), Some(4));
+        assert_eq!(tool_code_from_name("Rolling Pin"), Some(5));
+        assert_eq!(tool_code_from_name("Cleaver"), Some(6));
+        assert_eq!(tool_code_from_name("Bucket"), Some(7));
+        assert_eq!(tool_code_from_name("Nonexistent"), None);
+        assert_eq!(tool_code_from_name(""), None);
+    }
+
+    #[test]
+    fn test_building_required_tool_field() {
+        // Buildings that need tools
+        let sawmill = Building::new(BuildingType::Sawmill, 0, 0);
+        assert_eq!(sawmill.required_tool, Some(3)); // Saw = 3
+
+        let mine = Building::new(BuildingType::Mine, 0, 0);
+        assert_eq!(mine.required_tool, Some(1)); // Pickaxe = 1
+
+        let waterworks = Building::new(BuildingType::Waterworks, 0, 0);
+        assert_eq!(waterworks.required_tool, Some(7)); // Bucket = 7
+
+        // Buildings that don't need tools
+        let farm = Building::new(BuildingType::Farm, 0, 0);
+        assert_eq!(farm.required_tool, None);
+
+        let residence = Building::new(BuildingType::Residence, 0, 0);
+        assert_eq!(residence.required_tool, None);
+
+        let castle = Building::new(BuildingType::Castle, 0, 0);
+        assert_eq!(castle.required_tool, None);
+    }
+
+    #[test]
+    fn test_has_tooled_settler_no_tool_required() {
+        let farm = Building::new(BuildingType::Farm, 0, 0);
+        let units = UnitManager::new();
+        // Buildings without tool requirements always return true
+        assert!(farm.has_tooled_settler(&units));
+    }
+
+    #[test]
+    fn test_has_tooled_settler_without_tool() {
+        let sawmill = Building::new(BuildingType::Sawmill, 0, 0);
+        let units = UnitManager::new();
+        // Sawmill requires a Saw but no settler assigned → false
+        assert!(!sawmill.has_tooled_settler(&units));
+    }
+
+    #[test]
+    fn test_economy_update_tool_requirement_blocks_production() {
+        // A Sawmill with a settler but no tool should NOT produce
+        let mut e = Economy::with_starting_resources(&[
+            (ResourceType::Wood, 100),
+            (ResourceType::Stone, 50),
+        ]);
+
+        let _sawmill_idx = e.place_building(BuildingType::Sawmill, 0, 0);
+        // Complete construction
+        for _ in 0..31 {
+            e.update();
+        }
+
+        // Assign a settler without a tool
+        let settler_id = e.units.spawn(UnitKind::Settler, 0.5, 0.5);
+        e.buildings[0].assign_settler(settler_id);
+        e.units.get_mut(settler_id).unwrap().carried_tool = None;
+
+        // Run production ticks
+        let prev_events = e.production_events;
+        for _ in 0..100 {
+            e.update();
+        }
+
+        // No production should have occurred (settler has no tool)
+        assert_eq!(
+            e.production_events, prev_events,
+            "Sawmill should not produce without a tool-carrying settler"
+        );
+    }
+
+    #[test]
+    fn test_economy_update_tool_requirement_allows_production() {
+        // A Sawmill with a tool-carrying settler should produce
+        let mut e = Economy::with_starting_resources(&[
+            (ResourceType::Wood, 100),
+            (ResourceType::Stone, 50),
+        ]);
+
+        let _sawmill_idx = e.place_building(BuildingType::Sawmill, 0, 0);
+        // Complete construction
+        for _ in 0..31 {
+            e.update();
+        }
+
+        // Assign a settler WITH a Saw (tool code 3)
+        let settler_id = e.units.spawn(UnitKind::Settler, 0.5, 0.5);
+        e.buildings[0].assign_settler(settler_id);
+        e.units.get_mut(settler_id).unwrap().carried_tool = Some(3); // Saw
+
+        // Run production ticks — need to feed wood to the sawmill input
+        e.buildings[0].input_buffer[ResourceType::Wood as usize] = 10;
+
+        let prev_events = e.production_events;
+        for _ in 0..100 {
+            e.update();
+        }
+
+        // Production should have occurred
+        assert!(
+            e.production_events > prev_events,
+            "Sawmill should produce with a tool-carrying settler"
+        );
     }
 }
