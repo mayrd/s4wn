@@ -356,6 +356,7 @@ Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning
 - [x] **Error recovery**: if parsing fails mid-file, report exact byte offset and tile (x,y) where corruption was detected
 - [ ] **Performance**: for maps > 256×256, show loading progress bar; target < 2s for 512×512 maps
 - [ ] **Test corpus**: maintain 3-5 test .map files of varying sizes (64×64, 128×128, 256×256) in `assets/maps/test/`
+- [x] **CI validation**: validate test .map corpus in GitHub Actions pipeline (`scripts/validate_test_maps.py`)
 - [ ] **Round-trip**: load .map → render → export JSON → verify terrain/resource/elevation match between original and export
 - [x] Integration with **Load Game flow**: file picker accepts `.map` extension, auto-detects binary vs JSON, previews before loading
 - [ ] Integration with **New Game flow**: selecting "New Game" shows bundled maps AND a "Load Custom .map" option
@@ -482,7 +483,8 @@ s4wn/
 ||||||| 33 | 2026-06-16 | ~10 min | Phase 4.4 .sav polish: Fixed dead .sav preview "Parse More" button — now wired to `confirmMapLoad()` (▶ Load Savegame). Added dimension extraction from SaveGameGeneralInformation chunk (0x2712 byte 28 → u32 BE map width) via WASM decompression, replacing inaccurate sqrt-tile-count estimate. Updated preview warning text. All 142 tests passing. |
 ||| 34 | 2026-06-16 | ~10 min | Phase 4.4 .sav preview enhancements: Added CHUNK_TYPE_NAMES lookup table with 15 known chunk types (0x2711–0x271A + alt 10001–10005) and getChunkTypeInfo() helper. Show human-readable chunk names + descriptions in preview. Decompress 0x2712 GeneralInformation chunk during preview to extract accurate map dimensions (green highlight when from save data). Store _savMapWidth to avoid double decompression in confirmMapLoad(). All 167 tests passing (137 engine + 30 server). |
 ||| 35 | 2026-06-16 | ~10 min | Test corpus + chunk type research: Generated 3 test .map files (island 32×32, river valley 64×64, continents 128×128) with varying terrain, resources, and elevation. Created `scripts/generate_test_maps.py` for reproducible test map generation. Researched Settlers.ts chunk type mapping — discovered MapChunkType enum with 23 decimal IDs (130–250). Updated CHUNK_TYPE_NAMES with dual-scheme support: Scheme A (observed 0x2711 hex range + 10001 alt) AND Scheme B (Settlers.ts decimal IDs 130, 161, 162, 200, etc.) for future .sav compatibility. All 142 tests passing. |
-|| 36 | 2026-06-16 | ~5 min | Bugfix: Fixed two fatal JS module syntax errors in engine/index.html — (1) missing closing `}` on `showMapPreview()` causing "Unexpected end of input", (2) duplicate `RESOURCE_ICONS` const redeclaration (map icons at line 766 vs resource bar icons at line 2015) — renamed map version to `MAP_RESOURCE_ICONS`. Both were silent in classic script mode but fatal in `<script type="module">`. Verified with `node --check` and brace balance scan. |
+||| 36 | 2026-06-16 | ~5 min | Bugfix: Fixed two fatal JS module syntax errors in engine/index.html — (1) missing closing `}` on `showMapPreview()` causing "Unexpected end of input", (2) duplicate `RESOURCE_ICONS` const redeclaration (map icons at line 766 vs resource bar icons at line 2015) — renamed map version to `MAP_RESOURCE_ICONS`. Both were silent in classic script mode but fatal in `<script type="module">`. Verified with `node --check` and brace balance scan. |
+|| 37 | 2026-06-16 | ~9 min | CI & QA: Added `scripts/validate_test_maps.py` — validates binary .map files (WRLD magic, terrain IDs 0-7, resource IDs 0-8, elevation 0-255, tile count vs dimensions, file size). Integrated into GitHub Actions CI pipeline (runs after `cargo test --lib`). Fixed .gitignore to not exclude `assets/maps/test/`. All 3 test maps validated successfully. 167 tests passing. |
 
 ---
 
@@ -536,8 +538,8 @@ None at the moment.
 
 ### Phase 4.4a — Map Import Polish
 - [x] Create test .map corpus: 3 test files (32×32 island, 64×64 river valley, 128×128 continents) in `assets/maps/test/`
+- [x] Add .map test corpus to CI pipeline (verify all test maps parse without errors) — `scripts/validate_test_maps.py` + CI step
 - [ ] Round-trip test: load .map → render → export JSON → verify terrain/resource/elevation match
-- [ ] Add .map test corpus to CI pipeline (verify all test maps parse without errors)
 
 ### Phase 4.0 — Polish
 - [ ] Particle/glow animation polish on title text
@@ -549,7 +551,7 @@ None at the moment.
 - [ ] Water animation (fragment shader wave animation for water terrain tiles)
 - [ ] Edge-of-map visual treatment (fog/gradient/water border)
 - [ ] Terrain elevation shading improvements (steeper = darker)
-- [ ] Add `assets/maps/` to .gitignore exception for test/ directory
+- [x] Add `assets/maps/` to .gitignore exception for test/ directory
 
 ---
 
