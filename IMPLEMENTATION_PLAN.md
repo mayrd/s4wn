@@ -3,7 +3,7 @@
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
 ## Status: Phase 2.8 — Tool System 🔨
-Last updated: 2026-06-16 (Session 48)
+Last updated: 2026-06-16 (Session 49)
 
 ## 🤖 Agent Operating Rules
 
@@ -58,7 +58,7 @@ Last updated: 2026-06-16 (Session 48)
 
 #### 2.8 — Nations & Balancing (Siedler 4 Specific)
 
-> **Goal:** Implement the 4 playable nations from Siedler IV with distinct playstyles,
+> **Goal:** Implement the 5 playable nations from Siedler IV with distinct playstyles,
 > unique buildings/units, and balanced start conditions. All data declared in code.
 
 **Nation Roster (Core 5):**
@@ -67,7 +67,7 @@ Last updated: 2026-06-16 (Session 48)
 |-----------|-----------|----------|---------|
 | **Romans**    | Balanced builder | Efficient production chains, strong economy | Average military, no speed bonuses |
 | **Vikings**   | Aggressive rusher | Cheap military, fast unit production, naval bonus | Weak economy, high resource consumption |
-| **Mayans**    | Defensive expander | Fast workers, high HP buildings, natural healing | Slow unit production, expensive upgrades |
+| **Maya**    | Defensive expander | Fast workers, high HP buildings, natural healing | Slow unit production, expensive upgrades |
 | **Trojans**   | Trade & quality | Trade bonus, powerful elite units | Expensive buildings, slow early game |
 | **Dark Tribe**| Terraforming swarm | Terrain control, cheap mass units, auto-spread | No toolmaker, weak individual units, must terraform first |
 
@@ -75,12 +75,12 @@ Last updated: 2026-06-16 (Session 48)
 
 ##### 2.8.1 — Nation Data Model
 - [x] `Nation` struct: `id` (u8), `name` (&str), `description` (&str), `color` (RGBA)
-- [x] `NationType` enum: `Roman`, `Viking`, `Mayan`, `Trojan`, `DarkTribe`
+- [x] `NationType` enum: `Roman`, `Viking`, `Maya`, `Trojan`, `DarkTribe`
 - [x] `NationRegistry` — const lookup table with all 5 nations and their modifiers
 - [x] Nation selection integrated into new game setup flow
 
 ##### 2.8.2 — Common Buildings (All Nations)
-> **Siedler IV settlers are recruited from the Castle/Headquarters.** There is no separate Residence building.
+> **Siedler IV settlers are recruited from the Castle.** There is no separate Residence building.
 > Territory expands via military buildings (Barracks, Guard Tower, Fortress).
 > Tools are required to assign workers to buildings.
 > The common building pool is shared across all 5 nations with nation-specific aesthetics.
@@ -89,37 +89,36 @@ Last updated: 2026-06-16 (Session 48)
 
 | Category | Building | Input | Output | Tool Required |
 |----------|----------|-------|--------|---------------|
-| **Settler Recruitment** | Residence (Small/Medium/Large) | None | Settlers (capacity: 25/50/100) | None |
+| **Settler Recruitment** | Castle | None | Settlers | None |
 | **Food — Grain** | Farm | None | Grain | None |
 | **Food — Flour** | Mill | Grain | Flour | None |
 | **Food — Bread** | Bakery | Flour + Water | Bread | Rolling Pin |
-| **Food — Fish** | Fishery | None | Fish | Fishing Rod |
-| **Food — Meat** | Butcher | Pig (from Farm w/ Pig upgrade) | Meat | Cleaver |
+| **Food — Fish** | Fisherman | None | Fish | Fishing Rod |
+| **Food — Meat** | Butcher | Game | Meat | Cleaver |
 | **Food — Water** | Waterworks | None | Water | Bucket |
-| **Wood — Raw** | Forester | None | Wood (replants trees) | None |
-| **Wood — Processed** | Sawmill | Wood | Planks | Saw |
-| **Stone — Raw** | Quarry | None | Stone | Pickaxe |
-| **Iron — Raw** | Iron Mine | None | Iron Ore | Pickaxe |
-| **Coal** | Coal Mine | None | Coal | Pickaxe |
+| **Wood — Raw** | Woodcutter | None | Wood | Axe |
+| **Wood — Processed** | Sawmill | Wood | Boards | Saw |
+| **Stone — Raw** | Stonecutter | None | Stone | Pickaxe |
+| **Iron — Raw** | Mine (on iron deposit) | None | Iron Ore | Pickaxe |
+| **Coal** | Mine (on coal deposit) | None | Coal | Pickaxe |
 | **Iron — Smelted** | Smelter | Iron Ore + Coal | Iron Ingots | None |
-| **Gold — Raw** | Gold Mine | None | Gold Ore | Pickaxe |
+| **Gold — Raw** | Mine (on gold deposit) | None | Gold Ore | Pickaxe |
 | **Gold — Minted** | Mint | Gold Ore + Coal | Coins | None |
-| **Tools** | Toolmaker | Iron Ingots + Wood | Tools (all types) | Hammer |
-| **Weapons** | Armory | Iron Ingots + Coal | Swords, Shields, Bows | Hammer |
-| **Military — Melee** | Barracks | Swords + Shields + Settler | Soldiers | None |
-| **Military — Ranged** | Archery Range | Bows + Settler | Archers | None |
-| **Military — Territory** | Guard Tower / Fortress | Stone + Planks | Territory expansion + garrison | Hammer |
+| **Tools** | Toolsmith | Iron Ingots + Wood | Tools (all types) | Hammer |
+| **Weapons** | Weaponsmith | Iron Ingots + Coal | Weapons | Hammer |
+| **Military — Melee** | Barracks | Weapons + Settler | Swordsmen | None |
+| **Military — Ranged** | Barracks | Weapons + Settler | Bowmen | None |
+| **Military — Territory** | Guard Tower / Fortress | Stone + Boards | Territory expansion + garrison | Hammer |
 | **Siege** | Siege Workshop | Iron Ingots + Wood | Catapults / Ballistas | Hammer |
 | **Storage** | Storehouse | — (capacity buffer) | Stores all goods | None |
-| **Ship — Transport** | Shipyard | Wood + Planks | Transport Ship | Saw |
+| **Ship — Transport** | Shipyard | Wood + Boards | Transport Ship | Saw |
 | **Ship — War** | Warship Dock | Wood + Iron Ingots | Warship | Hammer |
 | **Roads** | Road Layer | Stone | Paved Road (speed bonus) | None |
 
 **Implementation:**
-- [ ] 25 `BuildingType` variants in enum (shared pool)
+- [ ] Full `BuildingType` variants for all S4 common buildings (17 currently)
 - [x] Each building stores `input_resources: Vec<(ResourceType, u32)>`, `output_resources: Vec<(ResourceType, u32)>`, `required_tool: Option<ToolType>`
 - [ ] Tool system: buildings stay "unoccupied" until worker with correct tool arrives
-- [x] Residence tier: Small (2 settlers, 25 max), Medium (4 settlers, 50 max), Large (8 settlers, 100 max)
 - [ ] Construction progress: worker builds for N ticks based on building cost
 - [ ] Territory system: Guard Towers/Fortresses extend player territory radius when garrisoned
 
@@ -135,7 +134,7 @@ Last updated: 2026-06-16 (Session 48)
 | Wine Press | Wine processing | Grapes | Wine (trade good, morale bonus) |
 | Sanctuary of Minerva | Pioneer/specialist training | Manna | Promotes soldiers, reveals map |
 | Sanctuary of Vulcan | Earthquake magic | Manna (high) | Destroys enemy buildings in radius |
-| Colosseum | Morale + territory bonus | Stone + Planks | Eyecatcher (offensive strength) |
+| Colosseum | Morale + territory bonus | Stone + Boards | Eyecatcher (offensive strength) |
 
 **Vikings** — Aggressive Rush + Naval
 | Building | Function | Input | Output |
@@ -147,7 +146,7 @@ Last updated: 2026-06-16 (Session 48)
 | Sanctuary of Freya | Healing magic | Manna | Heals all friendly units in territory |
 | Runestone | Morale + territory bonus | Stone | Eyecatcher |
 
-**Mayans** — Defensive + Farm Economy
+**Maya** — Defensive + Farm Economy
 | Building | Function | Input | Output |
 |----------|----------|-------|--------|
 | Temple of Chac | Manna production | None | Manna |
@@ -156,7 +155,7 @@ Last updated: 2026-06-16 (Session 48)
 | Sanctuary of Kukulkan | Plague magic | Manna (high) | Damages all enemy units in radius |
 | Sanctuary of Quetzalcoatl | Blessing magic | Manna | Boosts farm production 2× for duration |
 | Sanctuary of Huitzilopochtli | War magic | Manna | Temporarily boosts soldier strength |
-| Observatory | Morale + territory bonus | Stone + Planks | Eyecatcher |
+| Observatory | Morale + territory bonus | Stone + Boards | Eyecatcher |
 
 **Trojans** — Trade + Elite Units
 | Building | Function | Input | Output |
@@ -213,7 +212,7 @@ Last updated: 2026-06-16 (Session 48)
 - [ ] **Trojan Phalanx:** +40% defense, -20% movement speed
 - [ ] Special ability enum: `FormationBonus`, `Berserk`, `ForestGuard`, `ShieldWall`
 ##### 2.8.3a — Settlers (Worker Units)
-> **Goal:** Workers are the backbone of the economy. In Siedler IV, workers are generic
+> **Goal:** Settlers are the backbone of the economy. In Siedler IV, workers are generic
 > unnamed "settlers" recruited from Residences. Our version adds nation flavor.
 
 **Settler Tasks:**
@@ -452,7 +451,7 @@ s4wn/
 | 2 | 2026-06-14 | ~60 min | Map module (8 terrain types, procedural gen, resource deposits); Camera module (isometric pan/zoom, touch support); Game loop module (10 TPS tick-based, SplitMix64 PRNG); integrated into lib.rs; 18 unit tests passing; WASM build 70KB; HTML demo with mouse/touch controls |
 | 3 | 2026-06-15 | ~5 min | Recovery: committed and pushed Session 2 work (was lost due to cron error); updated IMPLEMENTATION_PLAN.md |
 | 4 | 2026-06-15 | ~30 min | Asset pipeline: ported ARA stream cipher and LZ+Huffman decompression from Settlers.ts reference (ara_crypt.rs, decompress.rs); wired game loop into renderer with day/night cycle and resource visualization (glowing resource deposits); created docker-compose.yml (fixes #1); 29 tests passing |
-| 5 | 2026-06-15 | ~20 min | Economy system: ResourceType enum (9 raw + 7 processed), BuildingType enum (14 types with costs, inputs, outputs, production intervals), Building struct (construction, production, input/output buffers), ResourceStorage (capacity, cap tracking, spending), Economy manager (tick update, building placement); integrated into GameState + GameLoop; 30 new tests (59 total passing). Updated lib.rs to register economy module. Production chain Wood→Planks tested end-to-end. |
+| 5 | 2026-06-15 | ~20 min | Economy system: ResourceType enum (9 raw + 7 processed), BuildingType enum (14 types with costs, inputs, outputs, production intervals), Building struct (construction, production, input/output buffers), ResourceStorage (capacity, cap tracking, spending), Economy manager (tick update, building placement); integrated into GameState + GameLoop; 30 new tests (59 total passing). Updated lib.rs to register economy module. Production chain Wood→Boards tested end-to-end. |
 | 6 | 2026-06-15 | ~20 min | Units system (src/units.rs): Unit struct with Worker/Soldier/Archer types, HP, speed, attack stats, movement along paths, assignment to buildings; UnitManager for spawning/assigning/removing units; 15 tests. Pathfinding (src/pathfinding.rs): A* on tile grid with terrain-aware movement costs, 10 tests. Worker-building integration: Building.assigned_workers, has_worker(), assign_worker(), Economy.spawn_worker_for(), auto_assign_workers(). Buildings now require workers to produce. Updated 2 existing tests. 84 tests total passing. |
 | 7 | 2026-06-15 | ~15 min | Fixed issue #3 (u_time uniform): unused uniform was optimized away by GLSL compiler → now used for subtle terrain animation. New worker_ai module: auto-assigns idle workers to buildings, pathfinds workers to buildings using A*, transitions to Working on arrival (6 tests). New combat module: soldier/archer AI finds nearest enemies, moves into range, resolves attacks with damage/cooldown, death handling (8 tests). Added idle_workers() iterator to UnitManager. 100 tests passing. Phase 2 nearly complete. |
 || 8 | 2026-06-15 | ~18 min | Combat+worker AI game loop integration: wired WorkerAI and CombatAI into GameState::update(), separated movement ticking (workers via WorkerAI, soldiers via CombatAI). Added 3 integration tests (102 total). Created standalone map-viewer.html (Canvas2D isometric renderer with pan/zoom/touch/drop). Sample island map in assets/. Added UnitManager::all_mut(). Phase 2 complete! |
@@ -498,6 +497,7 @@ s4wn/
 ||| 46 | 2026-06-16 | ~10 min | Phase 2.8.2 tool wiring: Added `carried_tool: Option<u8>` to Unit, `required_tool: Option<u8>` to Building, `tool_code_from_name()` helper, `has_tooled_settler()` method. Updated `Economy::update()` to precompute tool-aware production eligibility — buildings without tool-equipped settlers now block production. 6 new tests (tool_code_from_name, required_tool_field, has_tooled_settler, tool blocks/allows production). 171 tests passing. |
 ||| 47 | 2026-06-16 | ~20 min | Debug session: Investigated black main-canvas despite working minimap. Added RENDER_DIAG console.log to Rust render() — fires on first frame, logs map dimensions, index_count, zoom, camera center, canvas size, and map_dims_loc (Some/None). Identified potential edge-fog false-positive: if u_map_dims uniform is 0,0 the fog covers entire map making it invisible against clear color. Rebuilt WASM (v=14). Awaiting user console output for diagnosis. 171 tests passing. |
 ||| 48 | 2026-06-16 | ~25 min | S4 Authenticity cleanup: Removed fabricated Residence building (not in Siedler 4) from BuildingType enum, all methods (name/build_cost/inputs/outputs/requires_settler/build_time/required_tool/all_names/from_name), building_color() in lib.rs, and all tests. Deleted tannery.obj + tannery.mtl assets (fabricated building). Updated MODEL_LISTING.md and IMPLEMENTATION_PLAN.md (Residence references corrected to Castle). Rebuilt WASM (v=15). 171 tests passing. |
+||| 49 | 2026-06-16 | ~25 min | Comprehensive S4 authenticity audit of nations, people, goods, resources, terrain, decorations, and objects. No fabricated content found beyond Residence (removed S48). Cleaned old names from docs: IMPLEMENTATION_PLAN.md (Mayans→Maya, 4→5 nations, Residence→Castle, Butcher input Pig→Game, Planks→Boards, Fishery→Fisherman, Quarry→Stonecutter, Toolmaker→Toolsmith, Armory→Weaponsmith, Archery Range removed, Forester→Woodcutter, 25→17 building types), MODEL_LISTING.md (all 48 old building/unit/animation names updated to S4 terminology), engine/index.html (58 settler ID mapping comments updated: Worker→Settler, Soldier→Swordsman, Archer→Bowman). 171 tests passing. |
 | 48 | 2026-06-16 | ~10 min | Fixed black screen (Session 47 carryover): removed unused u_map_dims uniform from vertex shader — GPU drivers optimized it away, causing get_uniform_location to return None and default (0,0) to blanket map in edge-fog color matching clear color. Updated edge-fog shader test. Bumped WASM cache to v=15. All 171 tests passing. |
 ---
 
@@ -545,7 +545,7 @@ None at the moment.
 - [ ] **Toolsmith named tool production:** Toolsmith produces specific tools (Hammer, Pickaxe, Saw, etc.) — each with separate production cycle and storage in storehouse
 - [ ] **Settler tool pickup:** idle settlers check storehouse for tools needed by unstaffed buildings, auto-pickup and route to building
 - [ ] **Castle settler recruitment:** spawn idle settler at castle every ~50 ticks (5s at 10 TPS)
-- [ ] **Barracks unit training:** consume Swords + Shields + Settler → convert into Swordsman; Archery Range: Bows + Settler → Archer
+- [ ] **Barracks unit training:** consume Swords + Shields + Settler → convert into Swordsman; Barracks: Weapons + Settler → Bowman
 - [ ] **Mint building:** Gold Ore + Coal → Coins (trade/economic good) — reaches 19 common buildings
 - [ ] **WorkerAI tool awareness:** auto_assign prefers tool-carrying settlers; Toolsmith produces named tools with tool_type field
 
@@ -573,7 +573,7 @@ None at the moment.
 - Hello World POC renders an 8×8 isometric terrain grid with animated elevation via vertex shader — validates the full WASM + WebGL2 pipeline on arm64.
 - Day/night cycle cycles every ~5 real-time minutes; resource deposits glow with a pulsing overlay.
 - **⚠️ Asset Policy (non-negotiable):** Original S4 assets are NEVER used. All graphics/sound must be generated and stored in `assets/`. The ARA+LZH decoder exists solely for structural research and for the map/campaign importer — never to extract and republish Ubisoft artwork.
-- **Economy system (Session 5):** 18 building types (14 common + 4 Phase 2.8.2) with defined production chains. Resource storage caps at 200 base + 100 per warehouse. Production intervals range 15-50 ticks (1.5-5s at 10 TPS). Production chain Wood→Planks tested end-to-end.
+- **Economy system (Session 5):** 17 building types with defined production chains. Resource storage caps at 200 base + 100 per storehouse. Production intervals range 15-50 ticks (1.5-5s at 10 TPS). Production chain Wood→Boards tested end-to-end.
 - **Siedler 4 `.map` file format** (reverse-engineered, implemented Session 15):
   - **Magic**: 4 bytes `57 52 4C 44` ("WRLD")
   - **Header**: version (u32 LE), width (u32 LE), height (u32 LE) — 12 bytes total

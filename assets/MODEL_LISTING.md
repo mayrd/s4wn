@@ -74,11 +74,11 @@ Buildings that produce resources, process goods, or extract raw materials.
 
 | ID | Name | Status | Tris | Color | Workers | Produces |
 |----|------|--------|------|-------|---------|----------|
-| B01 | sawmill | 🟡 | 92 | #996633 | 1 | Wood → Planks |
-| B02 | quarry | 🟡 | 42 | #808080 | 1 | Stone extraction |
+| B01 | sawmill | 🟡 | 92 | #996633 | 1 | Wood → Boards |
+| B02 | stonecutter | 🟡 | 42 | #808080 | 1 | Stone extraction |
 | B03 | mine | 🟡 | 21 | #664D4D | 1 | Iron, Coal, Gold extraction |
-| B04 | blacksmith | 🟡 | 44 | #CC3333 | 1 | Iron+Coal → Tools |
-| B05 | armory | 🟡 | 66 | #B31A1A | 1 | Iron+Coal+Tools → Weapons |
+| B04 | toolsmith | 🟡 | 44 | #CC3333 | 1 | Iron+Coal → Tools |
+| B05 | weaponsmith | 🟡 | 66 | #B31A1A | 1 | Iron+Coal+Tools → Weapons |
 | B06 | brewery | 🟡 | 74 | #E6B333 | 1 | Grain → Beer |
 | B07 | bakery | 🟡 | 32 | #CC9966 | 1 | Grain → Bread |
 | B08 | butcher | 🟡 | 44 | #993333 | 1 | Game → Meat |
@@ -92,8 +92,8 @@ Primary resource gathering buildings.
 | ID | Name | Status | Tris | Color | Workers | Produces |
 |----|------|--------|------|-------|---------|----------|
 | B10 | farm | 🟡 | 46 | #4DB34D | 1 | Grain (+ fields) |
-| B11 | fishery | 🟡 | 56 | #3380CC | 1 | Fish |
-| B12 | lumberjack | 🟡 | 60 | #338033 | 1 | Wood |
+| B11 | fisherman | 🟡 | 56 | #3380CC | 1 | Fish |
+| B12 | woodcutter | 🟡 | 60 | #338033 | 1 | Wood |
 
 ---
 
@@ -101,8 +101,8 @@ Primary resource gathering buildings.
 
 | ID | Name | Status | Tris | Color | Workers | Function |
 |----|------|--------|------|-------|---------|----------|
-| B13 | headquarters | 🟡 | 90 | #FFCC33 | 0 | Central building, spawn point |
-| B14 | warehouse | 🟡 | 32 | #998066 | 0 | +100 resource storage capacity |
+| B13 | castle | 🟡 | 90 | #FFCC33 | 0 | Central building, spawns settlers |
+| B14 | storehouse | 🟡 | 32 | #998066 | 0 | +100 resource storage capacity |
 
 ---
 
@@ -122,9 +122,9 @@ Player-controlled and AI-driven game agents. Require skeletal rigging and animat
 
 | ID | Name | Status | Tris | Color | HP | Speed | Attack | Notes |
 |----|------|--------|------|-------|----|-------|--------|-------|
-| U01 | unit_worker | 🟡 | 84 | #3366FF | 50 | 1.0 | 0 | Builds, harvests, carries |
-| U02 | unit_soldier | 🟡 | 108 | #FF3333 | 100 | 0.8 | 15 | Melee, shield + sword |
-| U03 | unit_archer | 🟡 | 78 | #33CC33 | 75 | 0.7 | 10 | Ranged, bow |
+| U01 | unit_settler | 🟡 | 84 | #3366FF | 50 | 1.0 | 0 | Builds, harvests, carries |
+| U02 | unit_swordsman | 🟡 | 108 | #FF3333 | 100 | 0.8 | 15 | Melee, shield + sword |
+| U03 | unit_bowman | 🟡 | 78 | #33CC33 | 75 | 0.7 | 10 | Ranged, bow |
 
 ---
 
@@ -183,7 +183,7 @@ Small floating shapes that hover above resource deposits or appear in the HUD.
 | I05 | icon_gold | 🟡 | 28 | #E6BF1A | Circle | Gold |
 | I06 | icon_sulfur | 🟡 | 20 | #F2E61A | Hexagon | Sulfur |
 | I07 | icon_food | 🟡 | 28 | #CC8033 | Circle | Food (general) |
-| I08 | icon_planks | 🟡 | 12 | #996633 | Diamond | Planks |
+| I08 | icon_boards | 🟡 | 12 | #996633 | Diamond | Boards |
 | I09 | icon_tools | 🟡 | 20 | #808080 | Hexagon | Tools |
 | I10 | icon_weapons | 🟡 | 20 | #992626 | Hexagon | Weapons |
 | I11 | icon_beer | 🟡 | 28 | #F2BF33 | Circle | Beer |
@@ -218,21 +218,21 @@ with `[x, y, z, w]` quaternions.
 
 | ID | Unit | State | Status | Duration | Loop | Keyframes | File |
 |----|------|------|--------|----------|------|-----------|------|
-| A01 | worker | idle | 🟡 | 2.0s | Yes | 60 | A01_worker_idle.json |
-| A02 | worker | walk | 🟡 | 0.8s | Yes | 24 | A02_worker_walk.json |
-| A03 | worker | work | 🟡 | 1.5s | Yes | 45 | A03_worker_work.json |
-| A04 | worker | carry | 🟡 | 0.9s | Yes | 27 | A04_worker_carry.json |
-| A05 | worker | die | 🟡 | 1.0s | Once | 30 | A05_worker_die.json |
-| A06 | soldier | idle | 🟡 | 2.0s | Yes | 60 | A06_soldier_idle.json |
-| A07 | soldier | walk | 🟡 | 0.8s | Yes | 24 | A07_soldier_walk.json |
-| A08 | soldier | fight | 🟡 | 0.6s | Trigger | 18 | A08_soldier_fight.json |
-| A09 | soldier | defend | 🟡 | 1.0s | Yes | 30 | A09_soldier_defend.json |
-| A10 | soldier | die | 🟡 | 1.0s | Once | 30 | A10_soldier_die.json |
-| A11 | archer | idle | 🟡 | 2.0s | Yes | 60 | A11_archer_idle.json |
-| A12 | archer | walk | 🟡 | 0.8s | Yes | 24 | A12_archer_walk.json |
-| A13 | archer | fight | 🟡 | 0.6s | Trigger | 18 | A13_archer_fight.json |
-| A14 | archer | aim | 🟡 | 0.4s | Yes | 12 | A14_archer_aim.json |
-| A15 | archer | die | 🟡 | 1.0s | Once | 30 | A15_archer_die.json |
+| A01 | settler | idle | 🟡 | 2.0s | Yes | 60 | A01_settler_idle.json |
+| A02 | settler | walk | 🟡 | 0.8s | Yes | 24 | A02_settler_walk.json |
+| A03 | settler | work | 🟡 | 1.5s | Yes | 45 | A03_settler_work.json |
+| A04 | settler | carry | 🟡 | 0.9s | Yes | 27 | A04_settler_carry.json |
+| A05 | settler | die | 🟡 | 1.0s | Once | 30 | A05_settler_die.json |
+| A06 | swordsman | idle | 🟡 | 2.0s | Yes | 60 | A06_swordsman_idle.json |
+| A07 | swordsman | walk | 🟡 | 0.8s | Yes | 24 | A07_swordsman_walk.json |
+| A08 | swordsman | fight | 🟡 | 0.6s | Trigger | 18 | A08_swordsman_fight.json |
+| A09 | swordsman | defend | 🟡 | 1.0s | Yes | 30 | A09_swordsman_defend.json |
+| A10 | swordsman | die | 🟡 | 1.0s | Once | 30 | A10_swordsman_die.json |
+| A11 | bowman | idle | 🟡 | 2.0s | Yes | 60 | A11_bowman_idle.json |
+| A12 | bowman | walk | 🟡 | 0.8s | Yes | 24 | A12_bowman_walk.json |
+| A13 | bowman | fight | 🟡 | 0.6s | Trigger | 18 | A13_bowman_fight.json |
+| A14 | bowman | aim | 🟡 | 0.4s | Yes | 12 | A14_bowman_aim.json |
+| A15 | bowman | die | 🟡 | 1.0s | Once | 30 | A15_bowman_die.json |
 
 ## 17. Building Animations (2 clips)
 
@@ -350,7 +350,7 @@ All textures procedurally generated, seamless tiling, PNG/RGBA format.
 | TX34 | icon_gold | Icon | RGBA 64² | Circle, transparent background |
 | TX35 | icon_sulfur | Icon | RGBA 64² | Circle, transparent background |
 | TX36 | icon_food | Icon | RGBA 64² | Circle, transparent background |
-| TX37 | icon_planks | Icon | RGBA 64² | Circle, transparent background |
+| TX37 | icon_boards | Icon | RGBA 64² | Circle, transparent background |
 | TX38 | icon_tools | Icon | RGBA 64² | Circle, transparent background |
 | TX39 | icon_weapons | Icon | RGBA 64² | Circle, transparent background |
 | TX40 | icon_beer | Icon | RGBA 64² | Circle, transparent background |

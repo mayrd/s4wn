@@ -1029,58 +1029,58 @@ const S4_BUILDING_ID_TO_NAME = {
 
 // ── S4 Settler ID → S4WN UnitKind mapping ───────────────────────────────
 // Based on S4Forge.RE Settlers.h enum (SETTLER_* constants, IDs 0-66).
-// Military settlers (IDs 29+) map to Soldier or Archer; workers map to Worker.
+// Military settlers (IDs 29+) map to Swordsman or Bowman; workers map to Settler.
 const S4_SETTLER_ID_TO_KIND = (() => {
     const m = new Map();
-    // Workers (IDs 0-28) → Worker
+    // Settlers (IDs 0-28) → Settler (uses string "Worker" for .sav compat)
     for (let i = 0; i <= 28; i++) m.set(i, 'Worker');
-    // Swordsmen (29-31) → Soldier
+    // Swordsmen (29-31) → Swordsman (uses string "Soldier" for .sav compat)
     for (let i = 29; i <= 31; i++) m.set(i, 'Soldier');
-    // Bowmen (32-34) → Archer
+    // Bowmen (32-34) → Bowman (uses string "Archer" for .sav compat)
     for (let i = 32; i <= 34; i++) m.set(i, 'Archer');
-    // Medics (35-37) → Worker (healer role)
+    // Medics (35-37) → Settler (healer role)
     for (let i = 35; i <= 37; i++) m.set(i, 'Worker');
-    // Axe warriors (38-40) → Soldier
+    // Axe warriors (38-40) → Swordsman
     for (let i = 38; i <= 40; i++) m.set(i, 'Soldier');
-    // Blowgun warriors (41-43) → Archer
+    // Blowgun warriors (41-43) → Bowman
     for (let i = 41; i <= 43; i++) m.set(i, 'Archer');
-    // Squad leader (44) → Soldier
+    // Squad leader (44) → Swordsman
     m.set(44, 'Soldier');
-    // Priest (45) → Worker
+    // Priest (45) → Settler
     m.set(45, 'Worker');
-    // Saboteur (46) → Worker
+    // Saboteur (46) → Settler
     m.set(46, 'Worker');
-    // Pioneer (47) → Worker
+    // Pioneer (47) → Settler
     m.set(47, 'Worker');
-    // Thief (48) → Worker
+    // Thief (48) → Settler
     m.set(48, 'Worker');
-    // Geologist (49) → Worker
+    // Geologist (49) → Settler
     m.set(49, 'Worker');
-    // Gardener (50) → Worker
+    // Gardener (50) → Settler
     m.set(50, 'Worker');
-    // Landscaper (51) → Worker
+    // Landscaper (51) → Settler
     m.set(51, 'Worker');
-    // Dark gardener (52) → Worker
+    // Dark gardener (52) → Settler
     m.set(52, 'Worker');
-    // Mushroom farmer (53) → Worker
+    // Mushroom farmer (53) → Settler
     m.set(53, 'Worker');
-    // Shaman (54) → Worker
+    // Shaman (54) → Settler
     m.set(54, 'Worker');
-    // Slaved settler (55) → Worker
+    // Slaved settler (55) → Settler
     m.set(55, 'Worker');
-    // Temple servant (56) → Worker
+    // Temple servant (56) → Settler
     m.set(56, 'Worker');
-    // Angels (57-59) → Soldier
+    // Angels (57-59) → Swordsman
     for (let i = 57; i <= 59; i++) m.set(i, 'Soldier');
-    // Donkey (60) → Worker (pack animal)
+    // Donkey (60) → Settler (pack animal)
     m.set(60, 'Worker');
-    // Backpack catapultist (61-63) → Soldier
+    // Backpack catapultist (61-63) → Swordsman
     for (let i = 61; i <= 63; i++) m.set(i, 'Soldier');
-    // Sunflower farmer (64) → Worker
+    // Sunflower farmer (64) → Settler
     m.set(64, 'Worker');
-    // Sunflower oil maker (65) → Worker
+    // Sunflower oil maker (65) → Settler
     m.set(65, 'Worker');
-    // Manacopter master (66) → Worker
+    // Manacopter master (66) → Settler
     m.set(66, 'Worker');
     return m;
 })();
