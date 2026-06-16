@@ -89,7 +89,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **Map Viewer** — Standalone Canvas2D isometric viewer with pan/zoom/touch (map-viewer.html)
 - ✅ **102 unit tests** passing
 
-**Phase 3 — Multiplayer** (nearly complete 🔨)
+**Phase 3 — Multiplayer** (complete ✅)
 
 - ✅ **Network Module** — WebSocket-compatible message types, NetworkManager stub, serialization (15 tests)
 - ✅ **Overlay Rendering** — WebGL building and unit dot markers
@@ -101,9 +101,22 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **Lobby UI** — `lobby.html` with animated title/loading screen, room list, create/join/leave, player list, chat
 - ✅ **WebSocket Client Stubs** — `ws_connect()`, `ws_send()`, `ws_receive()`, `ws_state()` WASM bindings
 - ✅ **Server-Authoritative Game State** — `ServerGameState` module (map, buildings, units, resources), action validation, 10 TPS tick loop broadcasting `GameStateSync` to all room members (14 tests)
-- ✅ **Client-Side Interpolation** — `ClientInterpolator` struct with previous/current snapshot tracking, `interpolation_alpha()` for smooth 60fps rendering, `interpolate_unit_position()` with spawn/death/move handling (8 tests)
+- ✅ **Client-Side Interpolation** — `ClientInterpolator` struct with previous/current snapshot tracking, `interpolation_alpha()` for smooth 60fps rendering, `interpolate_unit_position()` with spawn/death/move handling (8 tests). Wired into WASM rendering loop.
 - ✅ **~167 tests** passing (137 engine + 30 server)
-- ⏳ Wire ClientInterpolator into WASM rendering loop — next
+
+**Phase 4 — UI & Single Player** (in progress 🔨)
+
+- ✅ **Splash Screen & Title** — Animated splash → fade → menu, S4WN logo, heraldic shield design, favicon suite
+- ✅ **Main Menu** — Load Map, Demo Map, Load Game, New Game, Settings buttons; keyboard navigation
+- ✅ **Settings Panel** — Zoom speed, terrain detail, volume/SFX toggles, localStorage persistence
+- ✅ **Economy HUD** — FPS counter, map info, tile tooltip, minimap, resource bar (emojis + counts)
+- ✅ **Pause & Speed** — Pause overlay, 1×/2×/4× speed controls, keyboard shortcuts
+- ✅ **Building Placement** — Building toolbar (14 types), terrain validation, cost checking, crosshair cursor
+- ✅ **Selection Info** — Click-to-select buildings/units, detail card with HP/production/workers
+- ✅ **Building Affordability** — Auto-refresh toolbar affordability, disable unaffordable, green indicators
+- ✅ **Construction Progress** — Orange overlay dots for constructing buildings, size proportional to progress (3.0→8.0), `constructed_pct` in building info
+- ⏳ **New Game Flow** — Wire procedural map generation, loading screen
+- ⏳ **Single-Player Start** — Validate map integrity, HQ auto-placement, starter workers
 
 ---
 

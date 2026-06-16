@@ -370,7 +370,7 @@ Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning
 - [x] Speed controls (1×, 2×, 4× game speed)
 - [x] **Building placement mode** — click building type button → highlight valid terrain tiles → click to place. Wire to WASM `try_place_building()`, show construction progress.
 - [x] Selection indicator (click-select buildings/units on map; info card with HP, production, workers, assigned building, combat target)
-- [ ] Building construction progress visibility (bar under overlay dots, auto-refresh toolbar affordability)
+- [x] Building construction progress visibility (bar under overlay dots, auto-refresh toolbar affordability)
 
 #### 4.6 — Single-Player Game Start (with .map file)
 - [x] `load_map_json()` WASM binding — accepts JSON map data, rebuilds mesh
@@ -470,7 +470,8 @@ s4wn/
 ||| 22 | 2026-06-15 | ~10 min | Phase 4.5 Pause & Speed: Added `speed_multiplier` and `paused` fields to Rust App struct; game ticks scale by speed, skip when paused. Added 5 new WASM exports (set_game_speed, get_game_speed, set_paused, toggle_pause, is_paused). Added pause overlay (⏸ PAUSED with pulse animation) and speed control buttons (1×/2×/4×) to index.html. Keyboard shortcuts: P=toggle pause, 1/2/3=set speed. Rebuilt WASM v5. 137 engine tests passing. |
 ||| 23 | 2026-06-15 | ~10 min | Phase 4.5 Building Placement: Added BuildingType::from_name() and all_names() to economy.rs. Added 3 WASM exports (try_place_building, get_build_cost, list_building_types) with terrain validation, occupancy checks, and cost checking. Building toolbar UI with 14 building type buttons, cost tooltips, emoji icons. Crosshair cursor in placement mode. Keyboard: B to toggle, Esc to cancel. Bumped WASM to v6. 137 engine + 5 server tests passing. |
 ||| 24 | 2026-06-15 | ~10 min | Phase 4.5 Selection Indicator: Added get_building_info(idx) and get_unit_info(id) WASM exports returning detailed info (construction, production, workers, HP, state, target). Added selection info card UI with position-aware placement near cursor. Click canvas (non-placement mode) selects building at tile or nearest unit within 1.5 tile radius. Escape closes card. Bumped WASM to v7. 137 engine + 5 server tests passing. |
-||| 25 | 2026-06-16 | ~10 min | Phase 4.5: Building affordability check in build toolbar — `refreshBuildingAffordability()` disables buttons for unaffordable buildings, green border indicator for affordable ones, auto-refresh every 2s, immediate refresh after placement, auto-cancel if current building becomes unaffordable. 137 engine + 5 server tests passing. |
+|||| 25 | 2026-06-16 | ~10 min | Phase 4.5: Building affordability check in build toolbar — `refreshBuildingAffordability()` disables buttons for unaffordable buildings, green border indicator for affordable ones, auto-refresh every 2s, immediate refresh after placement, auto-cancel if current building becomes unaffordable. 137 engine + 5 server tests passing. |
+|||| 26 | 2026-06-16 | ~8 min | Phase 4.5: Building construction progress visualization — constructing buildings now render as orange dots in the WebGL overlay (size 3.0→8.0 proportional to construction progress, previously invisible). Added explicit `constructed_pct` field to `get_building_info()` WASM export for JS clarity. Bumped WASM cache to v=8. All 167 tests passing (137 engine + 30 server). |
 
 ---
 
@@ -511,7 +512,9 @@ None at the moment.
 ## Next Session
 
 ### Phase 4.5 — Building Construction Progress Visualization
-- [ ] **Show construction progress bar** under constructing buildings' overlay dots: use a thin colored bar (yellow for constructing, green for complete). Change overlay dot color/size (smaller orange dot for constructing, full-size colored dot for complete). Read `get_building_info(idx)` — check `constructed_pct` field (0.0–1.0).
+- [x] Show constructing buildings as orange dots in WebGL overlay (size proportional to progress 3.0→8.0). Completed Session 26.
+- [x] Add `constructed_pct` field to `get_building_info()` JSON. Completed Session 26.
+- [ ] **JS progress bar overlay**: Render thin CSS progress bars under constructing building dots in the DOM — requires world-to-screen projection. Lower priority since orange dots already convey progress.
 
 ### Phase 4.3 — New Game Flow (wire procedural maps)
 - [ ] Wire "Start Game" button in new game panel to actually call `Map::generate_*()` via a new WASM export (`generate_map(map_type: &str, width: u32, height: u32) -> String` returning JSON).
@@ -521,6 +524,7 @@ None at the moment.
 ### Phase 4.6 — Single-Player Game Start (deepen)
 - [ ] Validate map integrity in `parseBinaryMap()` — check all terrain IDs in 0-7 range, tile count matches width×height.
 - [ ] Initial HQ auto-placement at map center on new game start.
+- [ ] Generate starter workers (2-4) near HQ on new game start.
 
 ---
 
