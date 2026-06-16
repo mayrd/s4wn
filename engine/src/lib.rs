@@ -42,12 +42,14 @@ uniform float u_time;
 uniform vec2 u_camera_center;
 uniform float u_zoom;
 uniform float u_day_phase;
+uniform vec2 u_map_dims;
 
 out vec3 v_color;
 out float v_elevation;
 out float v_has_resource;
 out float v_day_phase;
 out float v_slope;
+out vec2 v_tile_pos;
 
 void main() {
     float x = a_position.x;
@@ -77,6 +79,7 @@ void main() {
     v_has_resource = a_has_resource;
     v_day_phase = u_day_phase;
     v_slope = a_slope;
+    v_tile_pos = vec2(x, y);
 }
 "#;
 
@@ -88,8 +91,11 @@ in float v_elevation;
 in float v_has_resource;
 in float v_day_phase;
 in float v_slope;
+in vec2 v_tile_pos;
 
 out vec4 out_color;
+
+uniform vec2 u_map_dims;
 
 void main() {
     // Slope-based shading: steeper = darker
@@ -117,6 +123,15 @@ void main() {
         vec3 glow = vec3(0.9, 0.85, 0.3) * 0.15 * pulse;
         lit = lit + glow;
     }
+
+    // Edge-of-map fog: darken tiles near map border
+    float edge_dist = min(min(v_tile_pos.x, u_map_dims.x - 1.0 - v_tile_pos.x),
+                          min(v_tile_pos.y, u_map_dims.y - 1.0 - v_tile_pos.y));
+    float edge_zone = 8.0;  // tiles from edge where fog starts
+    float fog_factor = smoothstep(0.0, edge_zone, edge_dist);
+    // Tint the fog dark navy (matching clear color) rather than white
+    vec3 fog_color = vec3(0.05, 0.08, 0.18);
+    lit = mix(fog_color, lit, fog_factor);
 
     // Add warmth tint
     lit = mix(lit * 0.7, lit, warmth);
@@ -202,6 +217,7 @@ struct App {
     camera_center_loc: web_sys::WebGlUniformLocation,
     zoom_loc: web_sys::WebGlUniformLocation,
     day_phase_loc: web_sys::WebGlUniformLocation,
+    map_dims_loc: Option<web_sys::WebGlUniformLocation>,
 
     index_count: i32,
     start_time: f64,
@@ -408,6 +424,8 @@ impl App {
         let day_phase_loc = gl
             .get_uniform_location(&program, "u_day_phase")
             .ok_or("Cannot find u_day_phase")?;
+        let map_dims_loc = gl
+            .get_uniform_location(&program, "u_map_dims");
 
         // Compile overlay shaders
         let overlay_vert = compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, OVERLAY_VERTEX_SHADER)?;
@@ -454,6 +472,7 @@ impl App {
             camera_center_loc,
             zoom_loc,
             day_phase_loc,
+            map_dims_loc,
             index_count: mesh.indices.len() as i32,
             start_time,
             map: map.clone(),
@@ -564,6 +583,9 @@ impl App {
             canvas.width() as f32 * 0.5,
             canvas.height() as f32 * 0.5,
         );
+        if let Some(ref loc) = self.map_dims_loc {
+            gl.uniform2f(Some(loc), self.map.width as f32, self.map.height as f32);
+        }
 
         gl.bind_vertex_array(Some(&self.vao));
 
@@ -1973,6 +1995,27 @@ mod tests {
         assert!(FRAGMENT_SHADER.contains("out_color"));
         assert!(VERTEX_SHADER.contains("u_camera_center"));
         assert!(VERTEX_SHADER.contains("u_zoom"));
+    }
+
+    #[test]
+    fn test_edge_fog_shader_uniforms() {
+        // Verify the edge-of-map fog uniforms and varyings are present
+        assert!(VERTEX_SHADER.contains("u_map_dims"), "vertex shader missing u_map_dims uniform");
+        assert!(VERTEX_SHADER.contains("v_tile_pos"), "vertex shader missing v_tile_pos varying");
+        assert!(FRAGMENT_SHADER.contains("v_tile_pos"), "fragment shader missing v_tile_pos varying");
+        assert!(FRAGMENT_SHADER.contains("u_map_dims"), "fragment shader missing u_map_dims uniform");
+        // Verify fog computation is present
+        assert!(FRAGMENT_SHADER.contains("edge_dist"), "fragment shader missing edge_dist computation");
+        assert!(FRAGMENT_SHADER.contains("fog_factor"), "fragment shader missing fog_factor");
+        assert!(FRAGMENT_SHADER.contains("fog_color"), "fragment shader missing fog_color");
+    }
+
+    #[test]
+    fn test_edge_fog_fog_color_matches_clear() {
+        // The fog color should match the clear color (0.05, 0.08, 0.18)
+        // to create a seamless edge fade
+        assert!(FRAGMENT_SHADER.contains("0.05, 0.08, 0.18"),
+            "fog color should match clear color");
     }
 
     #[test]

@@ -4,7 +4,7 @@
 
 ## Status: Phase 4 — UI & Single Player 🔨
 
-Last updated: 2026-06-16 (Session 41)
+Last updated: 2026-06-16 (Session 42)
 
 ## 🤖 Agent Operating Rules
 
@@ -389,7 +389,7 @@ Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning
 ### Phase 4.7 — Visual Polish
 - [x] Terrain elevation shading improvements (steeper = darker via slope-based shading)
 - [x] Water animation (fragment shader wave color shift for water tiles)
-- [ ] Edge-of-map visual treatment (fog/gradient/water border)
+- [x] Edge-of-map visual treatment (fog/gradient/water border)
 
 #### 4.8 — Full-Screen Map View
 - [x] Isometric rendering with smooth zoom (mouse wheel, pinch)
@@ -490,6 +490,7 @@ s4wn/
 |||||| 39 | 2026-06-16 | ~10 min | Full .sav savegame state restoration: Researched S4Forge.RE C++ decompilation (CGameChunkGeneral struct, CSavedPlayer, building type IDs 0-82, settler type IDs 0-66). Created S4 building ID → S4WN BuildingType mapping (14 types) and S4 settler ID → S4WN UnitKind mapping (all 67 types). Added parseSavGeneralInfo() (map dims, game/map names, players, tick counter, camera), parseSavBuildings() (heuristic record-size detection), parseSavSettlers() (heuristic), parseSavResources() (fixed-array). Wired into confirmMapLoad() — after terrain load, decompresses all chunks, builds full state JSON, calls restore_game_state(). Enhanced savegame preview with game name, player info, restoration status. Supports all 3 chunk type ID schemes. All 142 tests passing. |
 |||||| 40 | 2026-06-16 | ~10 min | Phase 4.2 Controls settings: Added mouse sensitivity slider (0.2×–3.0×), invert scroll checkbox, and keyboard bindings display (13 shortcuts) to settings panel. Wired invert scroll to wheel handler in both index.html and map-viewer.html. Phase 4.0 Splash polish: Added 30 floating gold particles with drift animation, titleFloat bob animation, radial gradient glow overlay via ::after pseudo-element. All 167 tests passing (137 engine + 30 server). |
 ||||| 41 | 2026-06-16 | ~10 min | Phase 4.7 Visual Polish: Added slope-based elevation shading (computes max neighbor elevation difference per tile as vertex attribute, fragment shader darkens steep terrain via smoothstep). Added water wave animation (fragment shader detects water tiles by color, applies time-varying brightness wave). Updated MeshData, App struct, vertex/fragment shaders, mesh builder, and rebuild_mesh. WASM rebuilt (183KB). All 137 engine tests passing. |
+|||||| 42 | 2026-06-16 | ~10 min | Phase 4.7 Edge-of-map fog: Added shader-based edge fog effect — tiles near map border fade to dark navy (matching clear color) via smoothstep over 8-tile edge zone. Added u_map_dims uniform + v_tile_pos varying to vertex shader, fog computation in fragment shader. WASM rebuilt (184KB). Added 2 shader tests (edge fog uniforms + fog color match). 139 engine + 5 server = 144 tests passing. |
 
 ---
 
@@ -529,23 +530,15 @@ None at the moment.
 
 ## Next Session
 
-### Phase 4.7 — Visual Polish
-- [x] Terrain elevation shading improvements (steeper = darker via slope-based shading)
-- [x] Water animation (fragment shader wave color shift for water tiles)
-- [ ] Edge-of-map visual treatment (fog/gradient/water border)
-- [ ] Menu open/close animation (slide/fade) — partially done, could enhance
-- [ ] Menu accessible from in-game via ☰ button or Esc — done, could add ☰ button to HUD
-
 ### Phase 4.4a — Map Import Polish
-- [x] Create test .map corpus: 3 test files (32×32 island, 64×64 river valley, 128×128 continents) in `assets/maps/test/`
-- [x] Add .map test corpus to CI pipeline (verify all test maps parse without errors) — `scripts/validate_test_maps.py` + CI step
 - [ ] Round-trip test: load .map → render → export JSON → verify terrain/resource/elevation match
+- [ ] Performance: for maps > 256×256, show loading progress bar; target < 2s for 512×512 maps
 
 ### Phase 4.6 — Single-Player Start
 - [ ] Validate map integrity before loading (check all tiles have valid terrain IDs)
 - [ ] Starting resources allocation based on map size + difficulty
-- [ ] Initial HQ placement (auto-placed at map center or player-chosen)
 - [ ] Fog of war / unexplored territory (darken tiles not yet seen) — optional, phase 4.6+
+- [ ] Add ☰ menu button to in-game HUD for Esc menu access
 
 ### Phase 2.8 — Nations & Balancing (Next Major Feature)
 - [ ] Nation data model: `Nation` struct, `NationType` enum (Roman/Viking/Mayan/Trojan/DarkTribe)
@@ -553,6 +546,11 @@ None at the moment.
 - [ ] Nation-specific unique buildings (~30 across 5 nations)
 - [ ] Nation-specific unit specials (Roman formation bonus, Viking berserk, etc.)
 - [ ] Settler/worker sprites: 5 nations × 4 dirs × 4 states = 80 frames
+
+### Phase 5 — Polish & Release
+- [ ] Mobile UI adaptation (touch-friendly HUD, responsive layout)
+- [ ] Sound and music (Web Audio API) — generated, not extracted
+- [ ] Docker multi-arch deployment (linux/amd64, linux/arm64)
 
 ---
 
