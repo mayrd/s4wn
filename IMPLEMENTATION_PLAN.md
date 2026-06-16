@@ -480,6 +480,7 @@ s4wn/
 |||||| 31 | 2026-06-16 | ~10 min | Phase 4.4a map preview + binary loader: Added binary .map parser (`parseBinaryMap`) to engine/index.html with full validation (terrain IDs, dimensions, tile count, elevation range). Added map preview panel showing dimensions, terrain distribution bar chart (color-coded swatches + percentages), resource count summary (icons + counts), and integrity warnings. File type auto-detection (.map → ArrayBuffer binary parse, .sav → graceful unsupported message, .json → text parse). Marked 6 previously-pending Phase 4.4a checklist items complete. |
 ||||||| 32 | 2026-06-16 | ~10 min | Phase 4.4 .sav WASM bridge: Added `decompress_sav_chunk()` WASM export (ARA-decrypt + LZ/Huffman decompress). Updated `parseSavHeader()` to store raw chunk byte offsets. Wired `confirmMapLoad()` for .sav files — decompresses terrain chunk (0x2711), parses 6-byte tile records, builds JSON map, loads via `load_map_json()`. Bumped WASM cache to v=12. All 142 tests passing. |
 ||||||| 33 | 2026-06-16 | ~10 min | Phase 4.4 .sav polish: Fixed dead .sav preview "Parse More" button — now wired to `confirmMapLoad()` (▶ Load Savegame). Added dimension extraction from SaveGameGeneralInformation chunk (0x2712 byte 28 → u32 BE map width) via WASM decompression, replacing inaccurate sqrt-tile-count estimate. Updated preview warning text. All 142 tests passing. |
+|| 34 | 2026-06-16 | ~10 min | Phase 4.4 .sav preview enhancements: Added CHUNK_TYPE_NAMES lookup table with 15 known chunk types (0x2711–0x271A + alt 10001–10005) and getChunkTypeInfo() helper. Show human-readable chunk names + descriptions in preview. Decompress 0x2712 GeneralInformation chunk during preview to extract accurate map dimensions (green highlight when from save data). Store _savMapWidth to avoid double decompression in confirmMapLoad(). All 167 tests passing (137 engine + 30 server). |
 
 ---
 
@@ -521,6 +522,8 @@ None at the moment.
 
 ### Phase 4.4 — .sav Full Game State Restoration (highest priority)
 - [x] Parse SaveGameGeneralInformation chunk (0x2712) for map dimensions and metadata — use dimensions for terrain parsing instead of sqrt estimate
+- [x] Show chunk type descriptions in savegame preview (not just hex IDs) — CHUNK_TYPE_NAMES + getChunkTypeInfo()
+- [x] Display accurate map dimensions from 0x2712 in preview BEFORE loading — decompressed during showMapPreview()
 - [ ] Parse remaining .sav chunks for game state: chunk 0x2713+ for buildings, units, resources. Research chunk type map from Settlers.ts
 - [ ] Build Rust-side `.sav` game state parser: decompress → parse buildings/units/resources → return JSON matching `restore_game_state()` format
 - [ ] Wire parsed .sav state into JS `confirmMapLoad()` → call `restore_game_state()` after terrain load
@@ -530,9 +533,16 @@ None at the moment.
 - [ ] Create test .map corpus: 3-5 test files of varying sizes (64×64, 128×128, 256×256) in `assets/maps/test/`
 - [ ] Round-trip test: load .map → render → export JSON → verify terrain/resource/elevation match
 
-### Phase 4.4 — .sav Preview Enhancements
-- [ ] Show chunk type descriptions in savegame preview (not just hex IDs)
-- [ ] Display estimated map dimensions from 0x2712 in preview before loading
+### Phase 4.0 — Polish
+- [ ] Particle/glow animation polish on title text
+- [ ] "Credits" / GitHub link on main menu
+- [ ] Menu open/close animation (slide/fade)
+- [ ] Menu accessible from in-game via ☰ button or Esc
+
+### Phase 4.5 — Quick Wins
+- [ ] Water animation (fragment shader wave)
+- [ ] Edge-of-map visual treatment (fog/gradient/water border)
+- [ ] Terrain elevation shading improvements (steeper = darker)
 
 ---
 
