@@ -2384,4 +2384,135 @@ mod tests {
             assert!(c[2] >= 0.0 && c[2] <= 1.0);
         }
     }
+
+    // ── Texture Pipeline Tests ───────────────────────────────────────────
+
+    #[test]
+    fn test_terrain_layer_mapping() {
+        // Terrain enum discriminants MUST match the texture array layer order
+        // Layer 0=Grass, 1=Forest, 2=Mountain, 3=Water, 4=DeepWater, 5=Desert, 6=Swamp, 7=Snow
+        use crate::map::Terrain::*;
+        assert_eq!(Grass as u8, 0);
+        assert_eq!(Forest as u8, 1);
+        assert_eq!(Mountain as u8, 2);
+        assert_eq!(Water as u8, 3);
+        assert_eq!(DeepWater as u8, 4);
+        assert_eq!(Desert as u8, 5);
+        assert_eq!(Swamp as u8, 6);
+        assert_eq!(Snow as u8, 7);
+    }
+
+    #[test]
+    fn test_mesh_contains_uv_and_terrain_id() {
+        // build_map_mesh must populate uvs (2 floats per vertex) and terrain_ids (1 float)
+        let map = Map::generate_demo(16, 16);
+        let camera = Camera::new(8.0, 8.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+
+        let vertex_count = mesh.positions.len() / 2;
+        assert!(vertex_count > 0, "mesh should have vertices");
+
+        // UVs: 2 floats per vertex
+        assert_eq!(mesh.uvs.len(), vertex_count * 2, "uvs count mismatch");
+        // terrain_ids: 1 float per vertex
+        assert_eq!(
+            mesh.terrain_ids.len(),
+            vertex_count,
+            "terrain_ids count mismatch"
+        );
+
+        // All UVs must be in [0.0, 1.0) range
+        for &uv in &mesh.uvs {
+            assert!(
+                (0.0..1.0).contains(&uv),
+                "UV value {uv} outside [0, 1) range"
+            );
+        }
+
+        // All terrain_ids must be in [0, 7] range (valid terrain types)
+        for &id in &mesh.terrain_ids {
+            assert!(
+                (0.0..=7.0).contains(&id),
+                "terrain_id {id} outside [0, 7] range"
+            );
+        }
+    }
+
+    #[test]
+    fn test_terrain_id_matches_uv_correspondence() {
+        // Each vertex's terrain_id should correspond to the actual tile's terrain
+        let map = Map::generate_demo(8, 8);
+        let camera = Camera::new(4.0, 4.0, 400, 300);
+        let mesh = build_map_mesh(&map, &camera);
+
+        // Vertices are laid out in row-major order (row, col)
+        // terrain_ids follow the same order as positions
+        for v in 0..mesh.terrain_ids.len() {
+            let x = mesh.positions[v * 2] as usize;
+            let y = mesh.positions[v * 2 + 1] as usize;
+            let expected = map.get(x, y).unwrap().terrain as u8 as f32;
+            assert_eq!(
+                mesh.terrain_ids[v], expected,
+                "Vertex {v}: position ({x},{y}) terrain_id {} != expected {expected}",
+                mesh.terrain_ids[v]
+            );
+        }
+    }
+
+    #[test]
+    fn test_fragment_shader_texture_fallback() {
+        // Fragment shader must support both texture sampling and flat-color fallback
+        assert!(
+            FRAGMENT_SHADER.contains("if (u_use_textures)"),
+            "fragment shader missing u_use_textures branch"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("texture(u_terrain_textures"),
+            "fragment shader missing texture() sampling call"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("base_color = v_color"),
+            "fragment shader missing flat-color fallback"
+        );
+        // The base_color variable must be used for the final lit calculation
+        assert!(
+            FRAGMENT_SHADER.contains("base_color * shade"),
+            "fragment shader not using base_color in shading"
+        );
+    }
+
+    #[test]
+    fn test_texture_varying_pass_through() {
+        // Vertex shader must pass v_uv and v_terrain_id to fragment shader
+        assert!(
+            VERTEX_SHADER.contains("v_uv = a_uv"),
+            "vertex shader missing v_uv = a_uv pass-through"
+        );
+        assert!(
+            VERTEX_SHADER.contains("v_terrain_id = a_terrain_id"),
+            "vertex shader missing v_terrain_id = a_terrain_id pass-through"
+        );
+        // Fragment shader must receive them
+        assert!(
+            FRAGMENT_SHADER.contains("in vec2 v_uv"),
+            "fragment shader missing v_uv input"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("in float v_terrain_id"),
+            "fragment shader missing v_terrain_id input"
+        );
+    }
+
+    #[test]
+    fn test_texture_uniforms_declared() {
+        // Both texture-related uniforms must be declared in the fragment shader
+        assert!(
+            FRAGMENT_SHADER.contains("uniform highp sampler2DArray u_terrain_textures"),
+            "fragment shader missing sampler2DArray declaration"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("uniform bool u_use_textures"),
+            "fragment shader missing u_use_textures declaration"
+        );
+    }
 }
