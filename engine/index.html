@@ -626,6 +626,7 @@
         <option value="continents">🌍 Continents</option>
         <option value="rivervalley">🏞️ River Valley</option>
         <option value="highlands">⛰️ Highlands</option>
+        <option value="custom">📂 Load Custom .map…</option>
       </select>
     </div>
     <div class="ng-row">
@@ -667,7 +668,7 @@
   </div>
 </div>
 
-<div id="drop-zone"><div class="msg">📂 Drop .map / .json file here</div></div>
+<div id="drop-zone"><div class="msg">📂 Drop .map / .sav / .json file here</div></div>
 
 <div id="hud-top-left">
   <div id="hud-map"></div>
@@ -961,6 +962,92 @@ function parseBinaryMap(buffer) {
     return { width, height, tiles, terrainCounts, resourceCounts, terrainWarnings: terrainWarnings > 0 ? terrainWarnings : 0, elevWarning };
 }
 
+// ── .sav Savegame Header Parser ────────────────────────────────────────
+// S4 .sav files are savegames prefixed by a Windows executable stub (MZ).
+// The actual save data starts at offset 6656 (0x1A00).
+// Data is chunk-based (same format as .map) with ARA-encrypted + LZH-compressed
+// sections. Full parsing requires the Rust decompressor via WASM.
+// Format reference: Settlers.ts savegame-loader.ts + original-map-file.ts
+function parseSavHeader(buffer) {
+    const view = new DataView(buffer);
+    const SAV_HEADER_OFFSET = 6656; // Windows PE stub size
+
+    if (buffer.byteLength < SAV_HEADER_OFFSET + 8) {
+        throw new Error('File too small for .sav format (need ≥ 6664 bytes)');
+    }
+
+    // Check for MZ magic (Windows executable stub)
+    const magic = String.fromCharCode(...new Uint8Array(buffer, 0, 2));
+    if (magic !== 'MZ') {
+        throw new Error('Not a valid .sav file (missing MZ executable stub). Try a .map file instead.');
+    }
+
+    // Read save data header at offset 6656
+    const checksum = view.getUint32(SAV_HEADER_OFFSET, false);     // BE
+    const version = view.getUint32(SAV_HEADER_OFFSET + 4, false);   // BE
+
+    // Walk chunk headers to count sections
+    const bytesAfterHeader = buffer.byteLength - SAV_HEADER_OFFSET - 8;
+    let chunkOffset = 0;
+    let chunkCount = 0;
+    const chunkTypes = [];
+    let foundEnd = false;
+
+    while (chunkOffset + 24 <= bytesAfterHeader && chunkCount < 200) {
+        const absOffset = SAV_HEADER_OFFSET + 8 + chunkOffset;
+        const chunkType = view.getUint32(absOffset, false);
+        const chunkLength = view.getUint32(absOffset + 4, false);
+        const unpackedLen = view.getUint32(absOffset + 8, false);
+
+        if (chunkType === 0) { foundEnd = true; break; } // End-of-file marker
+
+        // Validate plausible chunk values
+        if (chunkLength < 1 || chunkLength > bytesAfterHeader || unpackedLen < 1 || unpackedLen > 50_000_000) {
+            break; // Corrupt or end of chunks
+        }
+
+        chunkTypes.push({ type: chunkType, compressedLen: chunkLength, unpackedLen });
+        chunkCount++;
+
+        // Advance to next chunk (header 24 + data)
+        const step = 24 + chunkLength;
+        if (chunkOffset + step > bytesAfterHeader) break;
+        chunkOffset += step;
+    }
+
+    // Try to extract map size from basic chunk scan (heuristic)
+    let mapSize = null;
+    let gameTime = null;
+    for (const ct of chunkTypes) {
+        // Chunk type 0x2712 = SaveGameGeneralInformation (from Settlers.ts)
+        // Contains version info and map size at byte offset 28 (32-bit BE)
+        if (ct.type === 0x2712 || ct.type === 10002) {
+            mapSize = `detected (${Math.round(Math.sqrt(ct.unpackedLen / 6))}×? from data size)`;
+        }
+        // Chunk type 0x2711 or similar = SaveGameMapLandscape
+        if (ct.type === 0x2711 || ct.type === 10001) {
+            const estSize = Math.round(Math.sqrt(ct.unpackedLen / 6));
+            if (estSize > 0) mapSize = `${estSize}×${estSize} (estimated)`;
+        }
+    }
+
+    const totalSizeMB = (buffer.byteLength / (1024 * 1024)).toFixed(1);
+
+    return {
+        type: 'sav',
+        version,
+        checksum,
+        chunkCount,
+        chunkTypes,
+        mapSize,
+        totalSizeMB,
+        terrainCounts: null,
+        resourceCounts: null,
+        terrainWarnings: 0,
+        elevWarning: null,
+    };
+}
+
 // ── Map loading with preview ────────────────────────────────────────────
 function loadFile(file) {
     const ext = file.name.split('.').pop().toLowerCase();
@@ -973,9 +1060,8 @@ function loadFile(file) {
                 // Binary S4 .map format
                 data = parseBinaryMap(e.target.result);
             } else if (ext === 'sav') {
-                // .sav files not yet supported — show error
-                alert('Savegame (.sav) loading is not yet implemented. Coming soon!');
-                return;
+                // Binary S4 .sav savegame format
+                data = parseSavHeader(e.target.result);
             } else {
                 // JSON map format
                 data = JSON.parse(e.target.result);
@@ -1019,59 +1105,141 @@ function showMapPreview(data, file) {
 
     // Show panels
     document.getElementById('menu').classList.remove('active');
-    document.getElementById('map-preview-panel').classList.add('open');
+    const previewPanel = document.getElementById('map-preview-panel');
+    previewPanel.classList.add('open');
+
+    const isSav = data.type === 'sav';
+
+    // Update panel title
+    previewPanel.querySelector('h3').textContent = isSav ? '💾 Savegame Preview' : '🗺️ Map Preview';
 
     // Populate filename and dimensions
     document.getElementById('mp-filename').textContent = data.filename || file.name;
-    document.getElementById('mp-dimensions').textContent = `${data.width} × ${data.height} tiles (${(data.width * data.height).toLocaleString()} total)`;
 
-    // Terrain distribution
-    const terrainEl = document.getElementById('mp-terrain-stats');
-    const totalTiles = data.width * data.height;
-    const terrainSorted = Object.entries(data.terrainCounts || {})
-        .sort((a, b) => b[1] - a[1]);
-    let terrainHTML = '';
-    terrainSorted.forEach(([name, count]) => {
-        const pct = ((count / totalTiles) * 100).toFixed(1);
-        const terrainInfo = TERRAIN_BY_ID.find(t => t.name === name);
-        const color = terrainInfo ? terrainInfo.color : '#888';
-        terrainHTML += `<div class="mp-stat-row">
-            <span class="swatch" style="background:${color}"></span>
-            <span class="mp-stat-name">${name}</span>
-            <span class="mp-stat-count">${count}</span>
-            <span class="mp-stat-bar"><div class="mp-stat-bar-fill" style="width:${pct}%;background:${color}"></div></span>
-        </div>`;
-    });
-    terrainEl.innerHTML = terrainHTML || '<div class="mp-stat-row"><span class="mp-stat-name">No data</span></div>';
+    if (isSav) {
+        // ── .sav preview ──
+        document.getElementById('mp-dimensions').textContent =
+            `S4 Savegame v${data.version} · ${data.totalSizeMB} MB · ${data.chunkCount} section(s)`;
 
-    // Resource distribution
-    const resourceEl = document.getElementById('mp-resource-stats');
-    const resourceSorted = Object.entries(data.resourceCounts || {})
-        .sort((a, b) => b[1] - a[1]);
-    let resourceHTML = '';
-    resourceSorted.forEach(([name, count]) => {
-        const icon = RESOURCE_ICONS[name] || '📦';
-        resourceHTML += `<div class="mp-stat-row">
-            <span class="mp-stat-name">${icon} ${name}</span>
-            <span class="mp-stat-count">${count}</span>
-        </div>`;
-    });
-    resourceEl.innerHTML = resourceHTML || '<div class="mp-stat-row"><span class="mp-stat-name">No resources</span></div>';
+        // Terrain column becomes savegame info
+        const terrainEl = document.getElementById('mp-terrain-stats');
+        let savHTML = `<div class="mp-stat-row"><span class="mp-stat-name">📦 Format</span><span class="mp-stat-count">Siedler IV Savegame</span></div>`;
+        savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">🔢 Version</span><span class="mp-stat-count">${data.version}</span></div>`;
+        savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">🔒 Checksum</span><span class="mp-stat-count">0x${data.checksum.toString(16).toUpperCase()}</span></div>`;
+        if (data.mapSize) {
+            savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">🗺️ Map Size</span><span class="mp-stat-count">${data.mapSize}</span></div>`;
+        }
+        savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">📐 Sections</span><span class="mp-stat-count">${data.chunkCount} data chunk(s)</span></div>`;
+        savHTML += `<div class="mp-stat-row"><span class="mp-stat-name">💾 File Size</span><span class="mp-stat-count">${data.totalSizeMB} MB</span></div>`;
+        terrainEl.innerHTML = savHTML;
 
-    // Warnings
-    const warningEl = document.getElementById('mp-warning');
-    warningEl.classList.remove('show');
-    if (data.terrainWarnings > 0) {
-        warningEl.textContent = `⚠️ ${data.terrainWarnings} tile(s) had unknown terrain IDs — mapped to Grass`;
+        // Update column header
+        terrainEl.parentElement.querySelector('h4').textContent = '📋 Save Info';
+
+        // Resource column becomes chunk summary
+        const resourceEl = document.getElementById('mp-resource-stats');
+        let chunkHTML = '';
+        if (data.chunkTypes && data.chunkTypes.length > 0) {
+            chunkHTML += `<div class="mp-stat-row" style="font-size:0.8em;color:#aaa;margin-bottom:4px">Data sections (compressed):</div>`;
+            data.chunkTypes.slice(0, 10).forEach((ct, i) => {
+                const typeHex = '0x' + ct.type.toString(16).toUpperCase();
+                const compKB = (ct.compressedLen / 1024).toFixed(1);
+                const uncompKB = (ct.unpackedLen / 1024).toFixed(1);
+                chunkHTML += `<div class="mp-stat-row">
+                    <span class="mp-stat-name" style="font-family:monospace;font-size:0.75em">${typeHex}</span>
+                    <span class="mp-stat-count">${compKB}K → ${uncompKB}K</span>
+                </div>`;
+            });
+            if (data.chunkTypes.length > 10) {
+                chunkHTML += `<div class="mp-stat-row"><span class="mp-stat-name" style="color:#888">... and ${data.chunkTypes.length - 10} more</span></div>`;
+            }
+        }
+        resourceEl.innerHTML = chunkHTML;
+        resourceEl.parentElement.querySelector('h4').textContent = '📦 Chunks';
+
+        // Change Load button text
+        const loadBtn = document.querySelector('.btn-mp-load');
+        loadBtn.textContent = '🔍 Parse More';
+        loadBtn.onclick = () => {
+            alert('Full .sav parsing will be available when the WASM decompression bridge is ready.\n\nThe .sav file header has been validated (version ' + data.version + ', ' + data.chunkCount + ' data sections).\n\nFor now, .map files are fully supported for terrain loading.');
+        };
+
+        // Warnings: show note about decompression
+        const warningEl = document.getElementById('mp-warning');
+        warningEl.textContent = '⚠️ Full savegame parsing requires WASM decompression — preview only.';
         warningEl.classList.add('show');
-    } else if (data.elevWarning) {
-        warningEl.textContent = `⚠️ ${data.elevWarning}`;
-        warningEl.classList.add('show');
+
+        // Update column header for chunks
+        resourceEl.parentElement.querySelector('h4').textContent = '📦 Chunks';
+
+    } else {
+        // ── .map preview (existing logic) ──
+        document.getElementById('mp-dimensions').textContent = `${data.width} × ${data.height} tiles (${(data.width * data.height).toLocaleString()} total)`;
+
+        // Restore column headers
+        const terrainCol = document.getElementById('mp-terrain-stats').parentElement;
+        terrainCol.querySelector('h4').textContent = '🏔️ Terrain';
+        const resourceCol = document.getElementById('mp-resource-stats').parentElement;
+        resourceCol.querySelector('h4').textContent = '⛏️ Resources';
+
+        // Restore Load button
+        const loadBtn = document.querySelector('.btn-mp-load');
+        loadBtn.textContent = '▶ Load Map';
+        loadBtn.onclick = confirmMapLoad;
+
+        // Terrain distribution
+        const terrainEl = document.getElementById('mp-terrain-stats');
+        const totalTiles = data.width * data.height;
+        const terrainSorted = Object.entries(data.terrainCounts || {})
+            .sort((a, b) => b[1] - a[1]);
+        let terrainHTML = '';
+        terrainSorted.forEach(([name, count]) => {
+            const pct = ((count / totalTiles) * 100).toFixed(1);
+            const terrainInfo = TERRAIN_BY_ID.find(t => t.name === name);
+            const color = terrainInfo ? terrainInfo.color : '#888';
+            terrainHTML += `<div class="mp-stat-row">
+                <span class="swatch" style="background:${color}"></span>
+                <span class="mp-stat-name">${name}</span>
+                <span class="mp-stat-count">${count}</span>
+                <span class="mp-stat-bar"><div class="mp-stat-bar-fill" style="width:${pct}%;background:${color}"></div></span>
+            </div>`;
+        });
+        terrainEl.innerHTML = terrainHTML || '<div class="mp-stat-row"><span class="mp-stat-name">No data</span></div>';
+
+        // Resource distribution
+        const resourceEl = document.getElementById('mp-resource-stats');
+        const resourceSorted = Object.entries(data.resourceCounts || {})
+            .sort((a, b) => b[1] - a[1]);
+        let resourceHTML = '';
+        resourceSorted.forEach(([name, count]) => {
+            const icon = RESOURCE_ICONS[name] || '📦';
+            resourceHTML += `<div class="mp-stat-row">
+                <span class="mp-stat-name">${icon} ${name}</span>
+                <span class="mp-stat-count">${count}</span>
+            </div>`;
+        });
+        resourceEl.innerHTML = resourceHTML || '<div class="mp-stat-row"><span class="mp-stat-name">No resources</span></div>';
+
+        // Warnings
+        const warningEl = document.getElementById('mp-warning');
+        warningEl.classList.remove('show');
+        if (data.terrainWarnings > 0) {
+            warningEl.textContent = `⚠️ ${data.terrainWarnings} tile(s) had unknown terrain IDs — mapped to Grass`;
+            warningEl.classList.add('show');
+        } else if (data.elevWarning) {
+            warningEl.textContent = `⚠️ ${data.elevWarning}`;
+            warningEl.classList.add('show');
+        }
     }
-}
 
 function confirmMapLoad() {
     if (!pendingMapData || !load_map_json) return;
+
+    // .sav files cannot be loaded yet — they need WASM decompression
+    if (pendingMapData.type === 'sav') {
+        alert('Full savegame (.sav) loading is not yet supported.\n\nSavegame data requires WASM decompression of LZ+Huffman compressed chunks.\nComing in a future update.');
+        return;
+    }
 
     try {
         // Build JSON in WASM-compatible verbose format
@@ -1740,6 +1908,13 @@ async function startNewGame() {
     const name = document.getElementById('ng-name').value || 'Player 1';
     const mapType = document.getElementById('ng-map').value;
     const difficulty = document.getElementById('ng-difficulty').value;
+
+    // "Load Custom .map" triggers file picker
+    if (mapType === 'custom') {
+        closeNewGame();
+        triggerLoad(); // Opens file input dialog for .map/.sav/.json
+        return;
+    }
     console.log(`New Game: ${name}, map=${mapType}, difficulty=${difficulty}`);
     closeNewGame();
     closeMenu();
