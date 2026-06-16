@@ -145,14 +145,12 @@ pub enum BuildingType {
     Woodcutter = 12,
     /// Storehouse — extends storage capacity
     Storehouse = 13,
-    /// Residence — spawns settlers, 25 max capacity
-    Residence = 14,
     /// Waterworks — produces Water (requires Bucket tool)
-    Waterworks = 15,
+    Waterworks = 14,
     /// Smelter — converts Iron Ore + Coal → Iron Ingots
-    Smelter = 16,
+    Smelter = 15,
     /// Barracks — converts settlers into Swordsmen (requires Weapons)
-    Barracks = 17,
+    Barracks = 16,
 }
 
 impl BuildingType {
@@ -173,7 +171,6 @@ impl BuildingType {
             BuildingType::Fisherman => "Fisherman",
             BuildingType::Woodcutter => "Woodcutter",
             BuildingType::Storehouse => "Storehouse",
-            BuildingType::Residence => "Residence",
             BuildingType::Waterworks => "Waterworks",
             BuildingType::Smelter => "Smelter",
             BuildingType::Barracks => "Barracks",
@@ -197,7 +194,6 @@ impl BuildingType {
             "Fisherman" => Some(BuildingType::Fisherman),
             "Woodcutter" => Some(BuildingType::Woodcutter),
             "Storehouse" => Some(BuildingType::Storehouse),
-            "Residence" => Some(BuildingType::Residence),
             "Waterworks" => Some(BuildingType::Waterworks),
             "Smelter" => Some(BuildingType::Smelter),
             "Barracks" => Some(BuildingType::Barracks),
@@ -212,7 +208,7 @@ impl BuildingType {
             "Toolsmith", "Weaponsmith", "Brewery", "Bakery",
             "Butcher", "Mill", "Farm", "Fisherman",
             "Woodcutter", "Storehouse",
-            "Residence", "Waterworks", "Smelter", "Barracks",
+            "Waterworks", "Smelter", "Barracks",
         ]
     }
 
@@ -233,7 +229,6 @@ impl BuildingType {
             BuildingType::Fisherman => &[(ResourceType::Wood, 3)],
             BuildingType::Woodcutter => &[(ResourceType::Wood, 2)],
             BuildingType::Storehouse => &[(ResourceType::Wood, 8), (ResourceType::Stone, 4)],
-            BuildingType::Residence => &[(ResourceType::Wood, 8), (ResourceType::Stone, 4)],
             BuildingType::Waterworks => &[(ResourceType::Wood, 4), (ResourceType::Stone, 3)],
             BuildingType::Smelter => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5)],
             BuildingType::Barracks => &[(ResourceType::Wood, 6), (ResourceType::Stone, 6)],
@@ -272,7 +267,7 @@ impl BuildingType {
             BuildingType::Woodcutter => &[(ResourceType::Wood, 2)],
             BuildingType::Waterworks => &[(ResourceType::Water, 1)],
             BuildingType::Smelter => &[(ResourceType::IronIngots, 1)],
-            _ => &[], // Residence, Barracks, Castle, Storehouse produce nothing
+            _ => &[], // Barracks, Castle, Storehouse produce nothing
         }
     }
 
@@ -293,7 +288,7 @@ impl BuildingType {
             BuildingType::Woodcutter => 15,  // 1.5 seconds
             BuildingType::Waterworks => 30,     // 3 seconds
             BuildingType::Smelter => 30,         // 3 seconds
-            _ => 0, // Residence, Barracks, Castle, Storehouse don't produce
+            _ => 0, // Barracks, Castle, Storehouse don't produce
         }
     }
 
@@ -309,7 +304,7 @@ impl BuildingType {
 
     /// Whether this building requires a settler to produce
     pub fn requires_settler(self) -> bool {
-        !matches!(self, BuildingType::Castle | BuildingType::Storehouse | BuildingType::Residence | BuildingType::Barracks)
+        !matches!(self, BuildingType::Castle | BuildingType::Storehouse | BuildingType::Barracks)
     }
 
     /// Ticks needed to construct this building
@@ -323,7 +318,6 @@ impl BuildingType {
             BuildingType::Toolsmith | BuildingType::Brewery | BuildingType::Bakery => 35,
             BuildingType::Butcher | BuildingType::Mill => 30,
             BuildingType::Weaponsmith => 50,
-            BuildingType::Residence => 30,
             BuildingType::Waterworks => 25,
             BuildingType::Smelter => 35,
             BuildingType::Barracks => 40,
@@ -343,7 +337,7 @@ impl BuildingType {
             BuildingType::Woodcutter => Some("Axe"),
             BuildingType::Waterworks => Some("Bucket"),
             BuildingType::Smelter => Some("Hammer"),
-            _ => None, // Castle, Storehouse, Farm, Residence, Barracks — no tool needed
+            _ => None, // Castle, Storehouse, Farm, Barracks — no tool needed
         }
     }
 }
@@ -1165,7 +1159,6 @@ mod tests {
         assert_eq!(BuildingType::Castle.required_tool(), None);
         assert_eq!(BuildingType::Farm.required_tool(), None);
         assert_eq!(BuildingType::Storehouse.required_tool(), None);
-        assert_eq!(BuildingType::Residence.required_tool(), None);
         assert_eq!(BuildingType::Barracks.required_tool(), None);
     }
 
@@ -1179,8 +1172,7 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        assert_eq!(BuildingType::all_names().len(), 18);
-        assert!(BuildingType::all_names().contains(&"Residence"));
+        assert_eq!(BuildingType::all_names().len(), 17);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
@@ -1279,9 +1271,6 @@ mod tests {
         // Buildings that don't need tools
         let farm = Building::new(BuildingType::Farm, 0, 0);
         assert_eq!(farm.required_tool, None);
-
-        let residence = Building::new(BuildingType::Residence, 0, 0);
-        assert_eq!(residence.required_tool, None);
 
         let castle = Building::new(BuildingType::Castle, 0, 0);
         assert_eq!(castle.required_tool, None);

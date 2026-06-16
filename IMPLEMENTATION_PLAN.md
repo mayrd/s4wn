@@ -80,7 +80,7 @@ Last updated: 2026-06-16 (Session 48)
 - [x] Nation selection integrated into new game setup flow
 
 ##### 2.8.2 — Common Buildings (All Nations)
-> **Siedler IV has NO "Headquarters" building.** Settlers are recruited from Residences.
+> **Siedler IV settlers are recruited from the Castle/Headquarters.** There is no separate Residence building.
 > Territory expands via military buildings (Barracks, Guard Tower, Fortress).
 > Tools are required to assign workers to buildings.
 > The common building pool is shared across all 5 nations with nation-specific aesthetics.
@@ -496,6 +496,7 @@ s4wn/
 
 ||| 45 | 2026-06-16 | ~10 min | Phase 2.8.2: Extended BuildingType from 14→18 variants (Residence, Waterworks, Smelter, Barracks). Added ResourceType::Water + IronIngots (COUNT 25). Added required_tool() method with 11 tool assignments. Wired full config: build_cost, inputs, outputs, production_interval, build_time, colors. Added 5 new tests (tool coverage, resource types, waterworks production, smelter chain). All 170 tests passing (165 engine + 5 server). |
 ||| 46 | 2026-06-16 | ~10 min | Phase 2.8.2 tool wiring: Added `carried_tool: Option<u8>` to Unit, `required_tool: Option<u8>` to Building, `tool_code_from_name()` helper, `has_tooled_settler()` method. Updated `Economy::update()` to precompute tool-aware production eligibility — buildings without tool-equipped settlers now block production. 6 new tests (tool_code_from_name, required_tool_field, has_tooled_settler, tool blocks/allows production). 171 tests passing. |
+||| 48 | 2026-06-16 | ~25 min | S4 Authenticity cleanup: Removed fabricated Residence building (not in Siedler 4) from BuildingType enum, all methods (name/build_cost/inputs/outputs/requires_settler/build_time/required_tool/all_names/from_name), building_color() in lib.rs, and all tests. Deleted tannery.obj + tannery.mtl assets (fabricated building). Updated MODEL_LISTING.md and IMPLEMENTATION_PLAN.md (Residence references corrected to Castle). Rebuilt WASM (v=15). 171 tests passing. |
 ||| 47 | 2026-06-16 | ~20 min | Debug session: Investigated black main-canvas despite working minimap. Added RENDER_DIAG console.log to Rust render() — fires on first frame, logs map dimensions, index_count, zoom, camera center, canvas size, and map_dims_loc (Some/None). Identified potential edge-fog false-positive: if u_map_dims uniform is 0,0 the fog covers entire map making it invisible against clear color. Rebuilt WASM (v=14). Awaiting user console output for diagnosis. 171 tests passing. |
 | 48 | 2026-06-16 | ~10 min | Fixed black screen (Session 47 carryover): removed unused u_map_dims uniform from vertex shader — GPU drivers optimized it away, causing get_uniform_location to return None and default (0,0) to blanket map in edge-fog color matching clear color. Updated edge-fog shader test. Bumped WASM cache to v=15. All 171 tests passing. |
 ---
@@ -543,7 +544,7 @@ None at the moment.
 ### Phase 2.8.2 — Common Buildings (continued)
 - [ ] **Toolsmith named tool production:** Toolsmith produces specific tools (Hammer, Pickaxe, Saw, etc.) — each with separate production cycle and storage in storehouse
 - [ ] **Settler tool pickup:** idle settlers check storehouse for tools needed by unstaffed buildings, auto-pickup and route to building
-- [ ] **Residence settler recruitment:** spawn idle settler at residence every ~50 ticks (5s at 10 TPS), up to residence capacity
+- [ ] **Castle settler recruitment:** spawn idle settler at castle every ~50 ticks (5s at 10 TPS)
 - [ ] **Barracks unit training:** consume Swords + Shields + Settler → convert into Swordsman; Archery Range: Bows + Settler → Archer
 - [ ] **Mint building:** Gold Ore + Coal → Coins (trade/economic good) — reaches 19 common buildings
 - [ ] **WorkerAI tool awareness:** auto_assign prefers tool-carrying settlers; Toolsmith produces named tools with tool_type field

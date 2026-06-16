@@ -82,7 +82,6 @@ Buildings that produce resources, process goods, or extract raw materials.
 | B06 | brewery | 🟡 | 74 | #E6B333 | 1 | Grain → Beer |
 | B07 | bakery | 🟡 | 32 | #CC9966 | 1 | Grain → Bread |
 | B08 | butcher | 🟡 | 44 | #993333 | 1 | Game → Meat |
-| B09 | tannery | 🟡 | 56 | #804D33 | 1 | Game → Leather |
 
 ---
 
