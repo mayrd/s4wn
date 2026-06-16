@@ -764,6 +764,16 @@
         <option value="hard">🔴 Hard</option>
       </select>
     </div>
+    <div class="ng-row">
+      <label>Nation</label>
+      <select id="ng-nation">
+        <option value="roman" selected>🏛️ Romans — Balanced Builder</option>
+        <option value="viking">🪓 Vikings — Aggressive Rusher</option>
+        <option value="mayan">🌿 Mayans — Defensive Expander</option>
+        <option value="trojan">🏺 Trojans — Trade & Quality</option>
+        <option value="dark">🌑 Dark Tribe — Terraforming Swarm</option>
+      </select>
+    </div>
     <div class="ng-actions">
       <button class="btn-start" onclick="startNewGame()">▶ Start Game</button>
       <button class="btn-cancel" onclick="closeNewGame()">Cancel</button>
@@ -2836,6 +2846,7 @@ async function startNewGame() {
     const name = document.getElementById('ng-name').value || 'Player 1';
     const mapType = document.getElementById('ng-map').value;
     const difficulty = document.getElementById('ng-difficulty').value;
+    const nation = document.getElementById('ng-nation').value;
 
     // "Load Custom .map" triggers file picker
     if (mapType === 'custom') {
@@ -2843,7 +2854,7 @@ async function startNewGame() {
         triggerLoad(); // Opens file input dialog for .map/.sav/.json
         return;
     }
-    console.log(`New Game: ${name}, map=${mapType}, difficulty=${difficulty}`);
+    console.log(`New Game: ${name}, map=${mapType}, difficulty=${difficulty}, nation=${nation}`);
     closeNewGame();
     closeMenu();
 
