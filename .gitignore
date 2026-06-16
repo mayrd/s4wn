@@ -25,3 +25,6 @@ Thumbs.db
 
 # Build outputs (generated)
 *.wasm.map
+
+# Exception: test map corpus is version-controlled
+!assets/maps/test/
