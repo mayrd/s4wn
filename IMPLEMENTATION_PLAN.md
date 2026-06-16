@@ -294,7 +294,7 @@ Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning
 - [x] Favicon (SVG + multi-size PNG: 16/32/180/192/512) — closes #8
 - [x] Web app manifest (manifest.json) for PWA support
 - [x] Loading screen logo integrated in lobby.html title screen
-- [ ] Particle/glow animation polish on title text
+- [x] Particle/glow animation polish on title text
 
 #### 4.1 — Main Menu
 - [x] Menu overlay with semi-transparent dark backdrop + blur
@@ -312,7 +312,7 @@ Idle → Assigned → Pathfinding → Building/Harvesting/Carrying → Returning
 - [x] Settings panel (slide-in from right or center modal)
 - [x] Graphics: zoom sensitivity slider, terrain detail (low/med/high)
 - [x] Audio: master volume, music on/off, SFX on/off (stubs — no audio yet)
-- [ ] Controls: mouse sensitivity, invert scroll, keyboard bindings display
+- [x] Controls: mouse sensitivity, invert scroll, keyboard bindings display
 - [x] Settings persisted to localStorage
 - [x] "Reset to Defaults" button
 - [x] Back button returns to main menu
@@ -487,6 +487,7 @@ s4wn/
 ||| 37 | 2026-06-16 | ~9 min | CI & QA: Added `scripts/validate_test_maps.py` — validates binary .map files (WRLD magic, terrain IDs 0-7, resource IDs 0-8, elevation 0-255, tile count vs dimensions, file size). Integrated into GitHub Actions CI pipeline (runs after `cargo test --lib`). Fixed .gitignore to not exclude `assets/maps/test/`. All 3 test maps validated successfully. 167 tests passing. |
 ||| 38 | 2026-06-16 | ~15 min | Error handler UI: Added comprehensive error dialog system — catches window.onerror + unhandledrejection, shows error name/message/stack with file:line:col, 'Report on GitHub' button opens pre-filled issue (title, body, bug label), 'Copy Error Details' copies full report to clipboard, console.error wrapped to print GitHub deeplink for every error. Dark themed dialog with red accents. All 167 tests passing. |
 |||||| 39 | 2026-06-16 | ~10 min | Full .sav savegame state restoration: Researched S4Forge.RE C++ decompilation (CGameChunkGeneral struct, CSavedPlayer, building type IDs 0-82, settler type IDs 0-66). Created S4 building ID → S4WN BuildingType mapping (14 types) and S4 settler ID → S4WN UnitKind mapping (all 67 types). Added parseSavGeneralInfo() (map dims, game/map names, players, tick counter, camera), parseSavBuildings() (heuristic record-size detection), parseSavSettlers() (heuristic), parseSavResources() (fixed-array). Wired into confirmMapLoad() — after terrain load, decompresses all chunks, builds full state JSON, calls restore_game_state(). Enhanced savegame preview with game name, player info, restoration status. Supports all 3 chunk type ID schemes. All 142 tests passing. |
+|||||| 40 | 2026-06-16 | ~10 min | Phase 4.2 Controls settings: Added mouse sensitivity slider (0.2×–3.0×), invert scroll checkbox, and keyboard bindings display (13 shortcuts) to settings panel. Wired invert scroll to wheel handler in both index.html and map-viewer.html. Phase 4.0 Splash polish: Added 30 floating gold particles with drift animation, titleFloat bob animation, radial gradient glow overlay via ::after pseudo-element. All 167 tests passing (137 engine + 30 server). |
 
 ---
 
@@ -526,34 +527,30 @@ None at the moment.
 
 ## Next Session
 
-### Phase 4.4 — .sav Full Game State Restoration ✅
-- [x] Parse SaveGameGeneralInformation chunk (0x2712) for map dimensions and metadata
-- [x] Show chunk type descriptions in savegame preview
-- [x] Display accurate map dimensions from 0x2712 in preview
-- [x] Research chunk type map from Settlers.ts — MapChunkType enum with 23 decimal IDs (130–250). Dual-scheme CHUNK_TYPE_NAMES now supports both observed 0x2711 hex range AND ST decimal IDs.
-- [x] Parse .sav buildings chunk: chunk type 162 (ST) or 0x2713 (observed) — decompress, parse binary building records
-- [x] Parse .sav settlers/units chunk: chunk type 161 (ST) or 0x2714 (observed) — decompress, parse binary unit records
-- [x] Parse .sav players chunk: chunk type 140 (ST) or 0x2716 (observed) — player names, colors, nations, resources
-- [x] Build Rust-side `.sav` game state parser: `parse_sav_state()` WASM export that decompresses multiple chunks and returns JSON matching `restore_game_state()` format
-- [x] Wire parsed .sav state into JS `confirmMapLoad()` → call `restore_game_state()` after terrain load
-- [ ] Full round-trip test: load .sav → auto-save localStorage → Continue → verify state preserved
-
 ### Phase 4.4a — Map Import Polish
 - [x] Create test .map corpus: 3 test files (32×32 island, 64×64 river valley, 128×128 continents) in `assets/maps/test/`
 - [x] Add .map test corpus to CI pipeline (verify all test maps parse without errors) — `scripts/validate_test_maps.py` + CI step
 - [ ] Round-trip test: load .map → render → export JSON → verify terrain/resource/elevation match
 
-### Phase 4.0 — Polish
-- [ ] Particle/glow animation polish on title text
-- [x] "Credits" / GitHub link on main menu (already done — "🔗 GitHub Repository" button)
-- [x] Menu open/close animation (already done — fadeIn 0.4s ease-out on #menu.active)
-- [x] Menu accessible from in-game (already done — ☰ button visible, Esc toggles menu)
-
 ### Phase 4.5 — Quick Wins
 - [ ] Water animation (fragment shader wave animation for water terrain tiles)
 - [ ] Edge-of-map visual treatment (fog/gradient/water border)
 - [ ] Terrain elevation shading improvements (steeper = darker)
-- [x] Add `assets/maps/` to .gitignore exception for test/ directory
+- [ ] Menu open/close animation (slide/fade) — partially done, could enhance
+- [ ] Menu accessible from in-game via ☰ button or Esc — done, could add ☰ button to HUD
+
+### Phase 4.6 — Single-Player Start
+- [ ] Validate map integrity before loading (check all tiles have valid terrain IDs)
+- [ ] Starting resources allocation based on map size + difficulty
+- [ ] Initial HQ placement (auto-placed at map center or player-chosen)
+- [ ] Fog of war / unexplored territory (darken tiles not yet seen) — optional, phase 4.6+
+
+### Phase 2.8 — Nations & Balancing (Next Major Feature)
+- [ ] Nation data model: `Nation` struct, `NationType` enum (Roman/Viking/Mayan/Trojan/DarkTribe)
+- [ ] 25 common building types with input/output resources and tool requirements
+- [ ] Nation-specific unique buildings (~30 across 5 nations)
+- [ ] Nation-specific unit specials (Roman formation bonus, Viking berserk, etc.)
+- [ ] Settler/worker sprites: 5 nations × 4 dirs × 4 states = 80 frames
 
 ---
 

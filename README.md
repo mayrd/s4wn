@@ -106,9 +106,9 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 **Phase 4 — UI & Single Player** (in progress 🔨)
 
-- ✅ **Splash Screen & Title** — Animated splash → fade → menu, S4WN logo, heraldic shield design, favicon suite
+- ✅ **Splash Screen & Title** — Animated splash with floating gold particles, glow title animation → fade → menu, S4WN logo, heraldic shield design, favicon suite
 - ✅ **Main Menu** — Load Map, Demo Map, Load Game, New Game, Settings buttons; keyboard navigation
-- ✅ **Settings Panel** — Zoom speed, terrain detail, volume/SFX toggles, localStorage persistence
+- ✅ **Settings Panel** — Zoom speed, terrain detail, volume/SFX toggles, mouse sensitivity, invert scroll, keyboard bindings display, localStorage persistence
 - ✅ **Economy HUD** — FPS counter, map info, tile tooltip, minimap, resource bar (emojis + counts)
 - ✅ **Pause & Speed** — Pause overlay, 1×/2×/4× speed controls, keyboard shortcuts
 - ✅ **Building Placement** — Building toolbar (14 types), terrain validation, cost checking, crosshair cursor
