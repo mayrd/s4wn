@@ -45,6 +45,7 @@ pub enum ResourceType {
     Fish = 6,       // from fishing
     Grain = 7,      // from farming
     Game = 8,       // from hunting
+    Water = 9,     // from waterworks
 
     // Processed goods (produced by buildings)
     Boards = 16,    // Wood → Boards (sawmill)
@@ -54,11 +55,12 @@ pub enum ResourceType {
     Bread = 20,     // Grain → Bread (bakery)
     Meat = 21,      // Game → Meat (butcher)
     Flour = 22,     // Grain → Flour (mill)
+    IronIngots = 23, // Iron + Coal → Iron Ingots (smelter)
 }
 
 impl ResourceType {
     /// Total number of distinct resource types
-    pub const COUNT: usize = 23;
+    pub const COUNT: usize = 25;
 
     /// Whether this is a raw resource (harvested from the map)
     pub fn is_raw(self) -> bool {
@@ -89,6 +91,8 @@ impl ResourceType {
             ResourceType::Bread => "Bread",
             ResourceType::Meat => "Meat",
             ResourceType::Flour => "Flour",
+            ResourceType::Water => "Water",
+            ResourceType::IronIngots => "Iron Ingots",
         }
     }
 
@@ -141,6 +145,14 @@ pub enum BuildingType {
     Woodcutter = 12,
     /// Storehouse — extends storage capacity
     Storehouse = 13,
+    /// Residence — spawns settlers, 25 max capacity
+    Residence = 14,
+    /// Waterworks — produces Water (requires Bucket tool)
+    Waterworks = 15,
+    /// Smelter — converts Iron Ore + Coal → Iron Ingots
+    Smelter = 16,
+    /// Barracks — converts settlers into Swordsmen (requires Weapons)
+    Barracks = 17,
 }
 
 impl BuildingType {
@@ -161,6 +173,10 @@ impl BuildingType {
             BuildingType::Fisherman => "Fisherman",
             BuildingType::Woodcutter => "Woodcutter",
             BuildingType::Storehouse => "Storehouse",
+            BuildingType::Residence => "Residence",
+            BuildingType::Waterworks => "Waterworks",
+            BuildingType::Smelter => "Smelter",
+            BuildingType::Barracks => "Barracks",
         }
     }
 
@@ -181,6 +197,10 @@ impl BuildingType {
             "Fisherman" => Some(BuildingType::Fisherman),
             "Woodcutter" => Some(BuildingType::Woodcutter),
             "Storehouse" => Some(BuildingType::Storehouse),
+            "Residence" => Some(BuildingType::Residence),
+            "Waterworks" => Some(BuildingType::Waterworks),
+            "Smelter" => Some(BuildingType::Smelter),
+            "Barracks" => Some(BuildingType::Barracks),
             _ => None,
         }
     }
@@ -192,6 +212,7 @@ impl BuildingType {
             "Toolsmith", "Weaponsmith", "Brewery", "Bakery",
             "Butcher", "Mill", "Farm", "Fisherman",
             "Woodcutter", "Storehouse",
+            "Residence", "Waterworks", "Smelter", "Barracks",
         ]
     }
 
@@ -212,6 +233,10 @@ impl BuildingType {
             BuildingType::Fisherman => &[(ResourceType::Wood, 3)],
             BuildingType::Woodcutter => &[(ResourceType::Wood, 2)],
             BuildingType::Storehouse => &[(ResourceType::Wood, 8), (ResourceType::Stone, 4)],
+            BuildingType::Residence => &[(ResourceType::Wood, 8), (ResourceType::Stone, 4)],
+            BuildingType::Waterworks => &[(ResourceType::Wood, 4), (ResourceType::Stone, 3)],
+            BuildingType::Smelter => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5)],
+            BuildingType::Barracks => &[(ResourceType::Wood, 6), (ResourceType::Stone, 6)],
         }
     }
 
@@ -225,6 +250,7 @@ impl BuildingType {
             BuildingType::Bakery => &[(ResourceType::Grain, 2)],
             BuildingType::Butcher => &[(ResourceType::Game, 2)],
             BuildingType::Mill => &[(ResourceType::Grain, 3)],
+            BuildingType::Smelter => &[(ResourceType::Iron, 1), (ResourceType::Coal, 1)],
             _ => &[], // raw producers and storage have no inputs
         }
     }
@@ -244,7 +270,9 @@ impl BuildingType {
             BuildingType::Farm => &[(ResourceType::Grain, 2)],
             BuildingType::Fisherman => &[(ResourceType::Fish, 1)],
             BuildingType::Woodcutter => &[(ResourceType::Wood, 2)],
-            _ => &[], // HQ and warehouse produce nothing
+            BuildingType::Waterworks => &[(ResourceType::Water, 1)],
+            BuildingType::Smelter => &[(ResourceType::IronIngots, 1)],
+            _ => &[], // Residence, Barracks, Castle, Storehouse produce nothing
         }
     }
 
@@ -263,7 +291,9 @@ impl BuildingType {
             BuildingType::Farm => 20,        // 2 seconds
             BuildingType::Fisherman => 20,     // 2 seconds
             BuildingType::Woodcutter => 15,  // 1.5 seconds
-            _ => 0, // HQ and warehouse don't produce
+            BuildingType::Waterworks => 30,     // 3 seconds
+            BuildingType::Smelter => 30,         // 3 seconds
+            _ => 0, // Residence, Barracks, Castle, Storehouse don't produce
         }
     }
 
@@ -279,7 +309,7 @@ impl BuildingType {
 
     /// Whether this building requires a settler to produce
     pub fn requires_settler(self) -> bool {
-        !matches!(self, BuildingType::Castle | BuildingType::Storehouse)
+        !matches!(self, BuildingType::Castle | BuildingType::Storehouse | BuildingType::Residence | BuildingType::Barracks)
     }
 
     /// Ticks needed to construct this building
@@ -293,6 +323,27 @@ impl BuildingType {
             BuildingType::Toolsmith | BuildingType::Brewery | BuildingType::Bakery => 35,
             BuildingType::Butcher | BuildingType::Mill => 30,
             BuildingType::Weaponsmith => 50,
+            BuildingType::Residence => 30,
+            BuildingType::Waterworks => 25,
+            BuildingType::Smelter => 35,
+            BuildingType::Barracks => 40,
+        }
+    }
+
+    /// The tool a settler must carry to work at this building.
+    /// Returns None for buildings that don't require a tool.
+    pub fn required_tool(self) -> Option<&'static str> {
+        match self {
+            BuildingType::Stonecutter | BuildingType::Mine => Some("Pickaxe"),
+            BuildingType::Sawmill => Some("Saw"),
+            BuildingType::Toolsmith | BuildingType::Weaponsmith => Some("Hammer"),
+            BuildingType::Brewery | BuildingType::Bakery | BuildingType::Mill => Some("Rolling Pin"),
+            BuildingType::Butcher => Some("Cleaver"),
+            BuildingType::Fisherman => Some("Fishing Rod"),
+            BuildingType::Woodcutter => Some("Axe"),
+            BuildingType::Waterworks => Some("Bucket"),
+            BuildingType::Smelter => Some("Hammer"),
+            _ => None, // Castle, Storehouse, Farm, Residence, Barracks — no tool needed
         }
     }
 }
@@ -1047,13 +1098,105 @@ mod tests {
         // Verify all buildings with inputs have matching outputs
         for kind in [BuildingType::Sawmill, BuildingType::Toolsmith, BuildingType::Weaponsmith,
                      BuildingType::Brewery, BuildingType::Bakery, BuildingType::Butcher,
-                     BuildingType::Mill] {
+                     BuildingType::Mill, BuildingType::Smelter] {
             let inputs = kind.inputs();
             let outputs = kind.outputs();
             assert!(!inputs.is_empty(), "{} should have inputs", kind.name());
             assert!(!outputs.is_empty(), "{} should have outputs", kind.name());
             assert!(kind.production_interval() > 0, "{} should have production interval", kind.name());
         }
+    }
+
+    #[test]
+    fn test_building_required_tool() {
+        assert_eq!(BuildingType::Stonecutter.required_tool(), Some("Pickaxe"));
+        assert_eq!(BuildingType::Mine.required_tool(), Some("Pickaxe"));
+        assert_eq!(BuildingType::Sawmill.required_tool(), Some("Saw"));
+        assert_eq!(BuildingType::Toolsmith.required_tool(), Some("Hammer"));
+        assert_eq!(BuildingType::Weaponsmith.required_tool(), Some("Hammer"));
+        assert_eq!(BuildingType::Woodcutter.required_tool(), Some("Axe"));
+        assert_eq!(BuildingType::Fisherman.required_tool(), Some("Fishing Rod"));
+        assert_eq!(BuildingType::Waterworks.required_tool(), Some("Bucket"));
+        assert_eq!(BuildingType::Smelter.required_tool(), Some("Hammer"));
+        assert_eq!(BuildingType::Butcher.required_tool(), Some("Cleaver"));
+        assert_eq!(BuildingType::Brewery.required_tool(), Some("Rolling Pin"));
+        assert_eq!(BuildingType::Bakery.required_tool(), Some("Rolling Pin"));
+        assert_eq!(BuildingType::Mill.required_tool(), Some("Rolling Pin"));
+        // Buildings without tool requirements
+        assert_eq!(BuildingType::Castle.required_tool(), None);
+        assert_eq!(BuildingType::Farm.required_tool(), None);
+        assert_eq!(BuildingType::Storehouse.required_tool(), None);
+        assert_eq!(BuildingType::Residence.required_tool(), None);
+        assert_eq!(BuildingType::Barracks.required_tool(), None);
+    }
+
+    #[test]
+    fn test_new_resource_types() {
+        assert_eq!(ResourceType::Water.name(), "Water");
+        assert_eq!(ResourceType::IronIngots.name(), "Iron Ingots");
+        assert!(ResourceType::Water.is_raw());
+        assert!(ResourceType::IronIngots.is_processed());
+    }
+
+    #[test]
+    fn test_new_building_types_count() {
+        assert_eq!(BuildingType::all_names().len(), 18);
+        assert!(BuildingType::all_names().contains(&"Residence"));
+        assert!(BuildingType::all_names().contains(&"Waterworks"));
+        assert!(BuildingType::all_names().contains(&"Smelter"));
+        assert!(BuildingType::all_names().contains(&"Barracks"));
+    }
+
+    #[test]
+    fn test_waterworks_production() {
+        let mut storage = ResourceStorage::new();
+        let mut building = Building::new(BuildingType::Waterworks, 0, 0);
+
+        // Complete construction (25 ticks)
+        for _ in 0..25 { building.tick_construction(); }
+        assert!(building.is_complete());
+
+        // Waterworks: no inputs, produces 1 Water every 30 ticks
+        let mut produced = 0;
+        for _ in 0..100 {
+            if building.try_produce(&mut storage) {
+                produced += 1;
+            }
+        }
+        assert!(produced > 0, "Waterworks should produce water");
+        assert_eq!(building.output_buffer[ResourceType::Water as usize], produced);
+    }
+
+    #[test]
+    fn test_smelter_production_chain() {
+        let mut storage = ResourceStorage::new();
+        let mut mine = Building::new(BuildingType::Mine, 0, 0);
+        let mut smelter = Building::new(BuildingType::Smelter, 1, 0);
+
+        // Complete construction (extra tick for float safety)
+        for _ in 0..41 { mine.tick_construction(); }
+        for _ in 0..36 { smelter.tick_construction(); }
+        assert!(mine.is_complete());
+        assert!(smelter.is_complete());
+
+        // Mine: no inputs, 1 Iron every 40 ticks
+        // Smelter: 1 Iron + 1 Coal → 1 IronIngot every 30 ticks
+        // Set up coal manually since mine only produces iron
+        smelter.input_buffer[ResourceType::Coal as usize] = 10;
+
+        for _ in 0..200 {
+            if mine.try_produce(&mut storage) {
+                let iron = mine.output_buffer[ResourceType::Iron as usize];
+                if iron > 0 {
+                    smelter.input_buffer[ResourceType::Iron as usize] += iron;
+                    mine.output_buffer[ResourceType::Iron as usize] = 0;
+                }
+            }
+            smelter.try_produce(&mut storage);
+        }
+
+        let ingots = smelter.output_buffer[ResourceType::IronIngots as usize];
+        assert!(ingots > 0, "Smelter should produce iron ingots, got {}", ingots);
     }
 
     #[test]

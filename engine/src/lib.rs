@@ -857,6 +857,10 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
         Fisherman => [0.2, 0.5, 0.8],       // blue
         Woodcutter => [0.2, 0.5, 0.2],    // dark green
         Storehouse => [0.6, 0.5, 0.4],      // taupe
+        Residence => [0.5, 0.7, 0.5],       // sage green
+        Waterworks => [0.2, 0.6, 1.0],       // water blue
+        Smelter => [1.0, 0.5, 0.1],          // orange
+        Barracks => [0.8, 0.2, 0.2],         // crimson
     }
 }
 
