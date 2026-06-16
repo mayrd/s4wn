@@ -551,18 +551,27 @@ impl App {
         let mut colors: Vec<f32> = Vec::new();
         let mut sizes: Vec<f32> = Vec::new();
 
-        // Buildings: colored by type
+        // Buildings: colored by type (complete) or orange (constructing)
         for building in self.game_loop.state.economy.buildings.iter() {
-            if !building.is_complete() {
-                continue;
-            }
+            let complete = building.is_complete();
+            let con_pct = building.construction;  // 0.0–1.0
+
             positions.push(building.x as f32 + 0.5);
             positions.push(building.y as f32 + 0.5);
-            let c = building_color(&building.kind);
-            colors.push(c[0]);
-            colors.push(c[1]);
-            colors.push(c[2]);
-            sizes.push(8.0);
+
+            if complete {
+                let c = building_color(&building.kind);
+                colors.push(c[0]);
+                colors.push(c[1]);
+                colors.push(c[2]);
+                sizes.push(8.0);
+            } else {
+                // Orange dot, size grows with construction progress
+                colors.push(1.0);    // R
+                colors.push(0.55);   // G
+                colors.push(0.1);    // B
+                sizes.push(3.0 + 5.0 * con_pct);  // 3.0→8.0
+            }
         }
 
         // Units: blue workers, red soldiers, green archers
@@ -1198,31 +1207,34 @@ pub fn get_building_info(idx: usize) -> String {
                 let outputs: Vec<String> = kind.outputs().iter()
                     .map(|(rt, amt)| format!(r#""{}",{}"#, rt.name(), amt))
                     .collect();
-                // Output buffer summary (non-zero entries only)
-                let mut obuf_parts = Vec::new();
-                for i in 0..ResourceType::COUNT {
-                    let val = b.output_buffer[i];
-                    if val > 0 {
-                        let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
-                        obuf_parts.push(format!(r#""{}":{}"#, rt.name(), val));
-                    }
-                }
-                return format!(
-                    r#"{{"kind":"{}","x":{},"y":{},"construction":{},"complete":{},"active":{},"workers":[{}],"max_workers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}}}}"#,
-                    kind.name(),
-                    b.x,
-                    b.y,
-                    b.construction,
-                    b.is_complete(),
-                    b.active,
-                    worker_ids.join(","),
-                    b.max_workers,
-                    kind.build_time(),
-                    kind.production_interval(),
-                    inputs.join(","),
-                    outputs.join(","),
-                    obuf_parts.join(","),
-                );
+        let construction_pct = b.construction;  // duplicate for JS clarity
+
+        // Output buffer summary (non-zero entries only)
+        let mut obuf_parts = Vec::new();
+        for i in 0..ResourceType::COUNT {
+            let val = b.output_buffer[i];
+            if val > 0 {
+                let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
+                obuf_parts.push(format!(r#""{}":{}"#, rt.name(), val));
+            }
+        }
+        return format!(
+            r#"{{"kind":"{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"workers":[{}],"max_workers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}}}}"#,
+            kind.name(),
+            b.x,
+            b.y,
+            b.construction,
+            construction_pct,
+            b.is_complete(),
+            b.active,
+            worker_ids.join(","),
+            b.max_workers,
+            kind.build_time(),
+            kind.production_interval(),
+            inputs.join(","),
+            outputs.join(","),
+            obuf_parts.join(","),
+        );
             }
         }
     }

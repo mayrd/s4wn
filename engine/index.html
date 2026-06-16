@@ -583,7 +583,7 @@ import init, {
     try_place_building,
     list_building_types,
     get_build_cost,
-} from './pkg/s4wn_engine.js?v=7';
+} from './pkg/s4wn_engine.js?v=8';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -1336,7 +1336,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=3');
+            const mod = await import('./pkg/s4wn_engine.js?v=4');
             load_map_json = mod.load_map_json || null;
         } catch (e) {
             console.warn('load_map_json not available (old WASM cache?) — map loading disabled');
