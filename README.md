@@ -115,7 +115,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ **Selection Info** — Click-to-select buildings/units, detail card with HP/production/workers
 - ✅ **Building Affordability** — Auto-refresh toolbar affordability, disable unaffordable, green indicators
 - ✅ **Construction Progress** — Orange overlay dots for constructing buildings, size proportional to progress (3.0→8.0), `constructed_pct` in building info
-- ⏳ **New Game Flow** — Wire procedural map generation, loading screen
+- ✅ **New Game Flow** — Procedural map generation via `generate_map()` WASM, loading screen with progress bar, difficulty-based starting resources (Easy 2×, Medium 1×, Hard 0.5×)
 - ⏳ **Single-Player Start** — Validate map integrity, HQ auto-placement, starter workers
 
 ---
