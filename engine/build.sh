@@ -19,6 +19,13 @@ echo "=== Build complete ==="
 echo "Output: engine/pkg/"
 ls -lh pkg/s4wn_engine_bg.wasm pkg/s4wn_engine.js
 
+# Stamp build version into index.html (yyyy.mm.dd-HH.MM)
+BUILD_VER=$(date '+%Y.%m.%d-%H.%M')
+if [ -f index.html ]; then
+    sed -i "s/BUILD_VERSION/${BUILD_VER}/g" index.html
+    echo "  Version stamped: ${BUILD_VER}"
+fi
+
 echo ""
 echo "To serve locally:"
 echo "  cd engine && python3 -m http.server 8080"
