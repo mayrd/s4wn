@@ -478,7 +478,8 @@ s4wn/
 |||| 29 | 2026-06-16 | ~10 min | Phase 4.6 auto-save complete: Added `get_game_state()` + `restore_game_state()` WASM exports with full round-trip serialization (resources, buildings w/ input/output buffers + construction + workers, units w/ HP/state/assignments/targets, map JSON, game time). Added `add_existing()` + `set_next_id()` to UnitManager. JS side: auto-save to localStorage every 5 min, initial save 1s after New Game, Continue button in main menu (shows saved game time), Save button in pause overlay with confirmation feedback. Bumped WASM to v=11. All 167 tests passing (137 engine + 30 server). |
 ||||| 30 | 2026-06-16 | ~10 min | Phase 4.4 recent files: Added Recent Files panel to main menu — stores file metadata (name, size, type, date) in localStorage on successful map load (max 5 entries). Shows type-specific icons (🗺️ .map, 💾 .sav, 📄 .json), file size, and load date. Clicking a recent entry triggers file input dialog for reload. Added `.sav` to file input accept attribute for future savegame support. All 167 tests passing. |
 |||||| 31 | 2026-06-16 | ~10 min | Phase 4.4a map preview + binary loader: Added binary .map parser (`parseBinaryMap`) to engine/index.html with full validation (terrain IDs, dimensions, tile count, elevation range). Added map preview panel showing dimensions, terrain distribution bar chart (color-coded swatches + percentages), resource count summary (icons + counts), and integrity warnings. File type auto-detection (.map → ArrayBuffer binary parse, .sav → graceful unsupported message, .json → text parse). Marked 6 previously-pending Phase 4.4a checklist items complete. |
-|||||| 32 | 2026-06-16 | ~10 min | Phase 4.4 .sav WASM bridge: Added `decompress_sav_chunk()` WASM export (ARA-decrypt + LZ/Huffman decompress). Updated `parseSavHeader()` to store raw chunk byte offsets. Wired `confirmMapLoad()` for .sav files — decompresses terrain chunk (0x2711), parses 6-byte tile records, builds JSON map, loads via `load_map_json()`. Bumped WASM cache to v=12. All 142 tests passing. |
+||||||| 32 | 2026-06-16 | ~10 min | Phase 4.4 .sav WASM bridge: Added `decompress_sav_chunk()` WASM export (ARA-decrypt + LZ/Huffman decompress). Updated `parseSavHeader()` to store raw chunk byte offsets. Wired `confirmMapLoad()` for .sav files — decompresses terrain chunk (0x2711), parses 6-byte tile records, builds JSON map, loads via `load_map_json()`. Bumped WASM cache to v=12. All 142 tests passing. |
+||||||| 33 | 2026-06-16 | ~10 min | Phase 4.4 .sav polish: Fixed dead .sav preview "Parse More" button — now wired to `confirmMapLoad()` (▶ Load Savegame). Added dimension extraction from SaveGameGeneralInformation chunk (0x2712 byte 28 → u32 BE map width) via WASM decompression, replacing inaccurate sqrt-tile-count estimate. Updated preview warning text. All 142 tests passing. |
 
 ---
 
@@ -519,20 +520,19 @@ None at the moment.
 ## Next Session
 
 ### Phase 4.4 — .sav Full Game State Restoration (highest priority)
-- [ ] Parse SaveGameGeneralInformation chunk (0x2712) for map dimensions and metadata — use dimensions for terrain parsing instead of sqrt estimate
-- [ ] Parse other .sav chunks for game state: buildings, units, resources, game time
-- [ ] Wire parsed .sav game state into `restore_game_state()` for full savegame load
-- [ ] Full round-trip test: load .sav → play → save → load again → verify state preserved
+- [x] Parse SaveGameGeneralInformation chunk (0x2712) for map dimensions and metadata — use dimensions for terrain parsing instead of sqrt estimate
+- [ ] Parse remaining .sav chunks for game state: chunk 0x2713+ for buildings, units, resources. Research chunk type map from Settlers.ts
+- [ ] Build Rust-side `.sav` game state parser: decompress → parse buildings/units/resources → return JSON matching `restore_game_state()` format
+- [ ] Wire parsed .sav state into JS `confirmMapLoad()` → call `restore_game_state()` after terrain load
+- [ ] Full round-trip test: load .sav → auto-save localStorage → Continue → verify state preserved
 
 ### Phase 4.4a — Map Import Polish
-- [ ] Create test .map corpus: 3-5 test files of varying sizes in `assets/maps/test/`
-- [ ] Round-trip test: load .map → render → export JSON → verify terrain/resource match
-- [ ] Performance: loading progress bar for maps > 256×256
+- [ ] Create test .map corpus: 3-5 test files of varying sizes (64×64, 128×128, 256×256) in `assets/maps/test/`
+- [ ] Round-trip test: load .map → render → export JSON → verify terrain/resource/elevation match
 
-### Phase 4.7 — Map View Polish
-- [ ] Terrain elevation shading improvements (steeper = darker in shader)
-- [ ] Water animation (vertex displacement or fragment shader wave)
-- [ ] Edge-of-map visual treatment (fog, gradient fade, or water border)
+### Phase 4.4 — .sav Preview Enhancements
+- [ ] Show chunk type descriptions in savegame preview (not just hex IDs)
+- [ ] Display estimated map dimensions from 0x2712 in preview before loading
 
 ---
 
