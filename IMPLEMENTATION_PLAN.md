@@ -3,7 +3,7 @@
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
 ## Status: Phase 2.8 — Tool System 🔨
-Last updated: 2026-06-16 (Session 46)
+Last updated: 2026-06-16 (Session 47)
 
 ## 🤖 Agent Operating Rules
 
@@ -496,6 +496,7 @@ s4wn/
 
 ||| 45 | 2026-06-16 | ~10 min | Phase 2.8.2: Extended BuildingType from 14→18 variants (Residence, Waterworks, Smelter, Barracks). Added ResourceType::Water + IronIngots (COUNT 25). Added required_tool() method with 11 tool assignments. Wired full config: build_cost, inputs, outputs, production_interval, build_time, colors. Added 5 new tests (tool coverage, resource types, waterworks production, smelter chain). All 170 tests passing (165 engine + 5 server). |
 ||| 46 | 2026-06-16 | ~10 min | Phase 2.8.2 tool wiring: Added `carried_tool: Option<u8>` to Unit, `required_tool: Option<u8>` to Building, `tool_code_from_name()` helper, `has_tooled_settler()` method. Updated `Economy::update()` to precompute tool-aware production eligibility — buildings without tool-equipped settlers now block production. 6 new tests (tool_code_from_name, required_tool_field, has_tooled_settler, tool blocks/allows production). 171 tests passing. |
+||| 47 | 2026-06-16 | ~20 min | Debug session: Investigated black main-canvas despite working minimap. Added RENDER_DIAG console.log to Rust render() — fires on first frame, logs map dimensions, index_count, zoom, camera center, canvas size, and map_dims_loc (Some/None). Identified potential edge-fog false-positive: if u_map_dims uniform is 0,0 the fog covers entire map making it invisible against clear color. Rebuilt WASM (v=14). Awaiting user console output for diagnosis. 171 tests passing. |
 ---
 
 ## Open Items & Decisions Needed
@@ -534,7 +535,14 @@ None at the moment.
 
 ## Next Session
 
-### Phase 2.8.2 — Common Buildings (All Nations) — HIGHEST PRIORITY
+### 🚨 HIGHEST PRIORITY: Black screen debug
+- [ ] **READ CONSOLE** — look for `RENDER_DIAG:` line to see map_dims_loc status
+- [ ] If `map_dims_loc=false`: reload page (new WASM v=14) and retry
+- [ ] If `map_dims_loc=true` but `index_count=0`: camera/viewport issue — check zoom and canvas size
+- [ ] If fog false-positive confirmed (uniform 0,0): add fallback `gl.uniform2f` with explicit (64,64) when loc is None
+- [ ] Consider removing `u_map_dims` from vertex shader (only needed in fragment shader) to prevent GPU optimizer ambiguity
+
+### Phase 2.8.2 — Common Buildings (All Nations)
 - [x] Wire `required_tool()` into game loop: buildings stay unoccupied until settler carries correct tool ✅
 - [ ] Toolsmith produces specific tool types (Hammer, Pickaxe, Saw, Axe, etc.) — settlers pick them up from storehouse
 - [ ] Residence settler recruitment: spawn idle settler at residence every ~50 ticks (5s at 10 TPS)
