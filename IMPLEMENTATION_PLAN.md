@@ -4,7 +4,7 @@
 
 ## Status: Phase 4 — UI & Single Player 🔨
 
-Last updated: 2026-06-16 (Session 42)
+Last updated: 2026-06-16 (Session 43)
 
 ## 🤖 Agent Operating Rules
 
@@ -75,9 +75,9 @@ Last updated: 2026-06-16 (Session 42)
 **Implementation Tasks:**
 
 ##### 2.8.1 — Nation Data Model
-- [ ] `Nation` struct: `id` (u8), `name` (&str), `description` (&str), `color` (RGBA)
-- [ ] `NationType` enum: `Roman`, `Viking`, `Mayan`, `Trojan`, `DarkTribe`
-- [ ] `NationRegistry` — const lookup table with all 5 nations and their modifiers
+- [x] `Nation` struct: `id` (u8), `name` (&str), `description` (&str), `color` (RGBA)
+- [x] `NationType` enum: `Roman`, `Viking`, `Mayan`, `Trojan`, `DarkTribe`
+- [x] `NationRegistry` — const lookup table with all 5 nations and their modifiers
 - [ ] Nation selection integrated into new game setup flow
 
 ##### 2.8.2 — Common Buildings (All Nations)
@@ -491,6 +491,7 @@ s4wn/
 |||||| 40 | 2026-06-16 | ~10 min | Phase 4.2 Controls settings: Added mouse sensitivity slider (0.2×–3.0×), invert scroll checkbox, and keyboard bindings display (13 shortcuts) to settings panel. Wired invert scroll to wheel handler in both index.html and map-viewer.html. Phase 4.0 Splash polish: Added 30 floating gold particles with drift animation, titleFloat bob animation, radial gradient glow overlay via ::after pseudo-element. All 167 tests passing (137 engine + 30 server). |
 ||||| 41 | 2026-06-16 | ~10 min | Phase 4.7 Visual Polish: Added slope-based elevation shading (computes max neighbor elevation difference per tile as vertex attribute, fragment shader darkens steep terrain via smoothstep). Added water wave animation (fragment shader detects water tiles by color, applies time-varying brightness wave). Updated MeshData, App struct, vertex/fragment shaders, mesh builder, and rebuild_mesh. WASM rebuilt (183KB). All 137 engine tests passing. |
 |||||| 42 | 2026-06-16 | ~10 min | Phase 4.7 Edge-of-map fog: Added shader-based edge fog effect — tiles near map border fade to dark navy (matching clear color) via smoothstep over 8-tile edge zone. Added u_map_dims uniform + v_tile_pos varying to vertex shader, fog computation in fragment shader. WASM rebuilt (184KB). Added 2 shader tests (edge fog uniforms + fog color match). 139 engine + 5 server = 144 tests passing. |
+||||| 43 | 2026-06-16 | ~10 min | Phase 2.8.1 Nation Data Model: Created nation.rs module with NationType enum (5 nations), Nation struct with production/cost/unit/AI modifiers, NationRegistry const lookup tables, UnitSpecial enum (FormationBonus/Berserk/ForestGuard/ShieldWall/None), UniqueBuildingType enum (34 buildings), SpecialistType enum (6 types), ToolType enum (11 types), starting resources per nation. 21 new tests. 160 total tests passing (139 engine + 21 nation). |
 
 ---
 
@@ -530,6 +531,17 @@ None at the moment.
 
 ## Next Session
 
+### Phase 2.8.2 — Common Buildings (All Nations)
+- [ ] Extend BuildingType enum from 14 to 25 variants (add Residence, Mill, Bakery, Fishery, Butcher, Waterworks, Smelter, Mint, Armory, Barracks, GuardTower, Fortress, SiegeWorkshop, Shipyard, WarshipDock, RoadLayer)
+- [ ] Each building stores `input_resources`, `output_resources`, `required_tool`
+- [ ] Tool system: buildings stay "unoccupied" until worker with correct tool arrives
+- [ ] Residence tier: Small/Medium/Large with settler capacity
+
+### Phase 2.8.2a — Nation-Specific Unique Buildings
+- [ ] Add unique building variants to BuildingType enum (~30 total)
+- [ ] Nation constraint on construction menu (filter by nation)
+- [ ] Manna resource type + mana consumption for magic spells
+
 ### Phase 4.4a — Map Import Polish
 - [ ] Round-trip test: load .map → render → export JSON → verify terrain/resource/elevation match
 - [ ] Performance: for maps > 256×256, show loading progress bar; target < 2s for 512×512 maps
@@ -539,18 +551,6 @@ None at the moment.
 - [ ] Starting resources allocation based on map size + difficulty
 - [ ] Fog of war / unexplored territory (darken tiles not yet seen) — optional, phase 4.6+
 - [ ] Add ☰ menu button to in-game HUD for Esc menu access
-
-### Phase 2.8 — Nations & Balancing (Next Major Feature)
-- [ ] Nation data model: `Nation` struct, `NationType` enum (Roman/Viking/Mayan/Trojan/DarkTribe)
-- [ ] 25 common building types with input/output resources and tool requirements
-- [ ] Nation-specific unique buildings (~30 across 5 nations)
-- [ ] Nation-specific unit specials (Roman formation bonus, Viking berserk, etc.)
-- [ ] Settler/worker sprites: 5 nations × 4 dirs × 4 states = 80 frames
-
-### Phase 5 — Polish & Release
-- [ ] Mobile UI adaptation (touch-friendly HUD, responsive layout)
-- [ ] Sound and music (Web Audio API) — generated, not extracted
-- [ ] Docker multi-arch deployment (linux/amd64, linux/arm64)
 
 ---
 
