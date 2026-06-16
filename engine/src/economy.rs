@@ -705,6 +705,9 @@ pub struct Economy {
     pub production_events: u64,
     /// Total resources collected (for statistics)
     pub resources_collected: u64,
+    /// Named tool storage — tracks how many of each ToolType are in the storehouse.
+    /// Indexed by ToolType discriminant (0=Hammer, 1=Pickaxe, ..., 10=Scythe).
+    pub tool_storage: [u32; 12],
 }
 
 impl Economy {
@@ -716,6 +719,7 @@ impl Economy {
             units: UnitManager::new(),
             production_events: 0,
             resources_collected: 0,
+            tool_storage: [0u32; 12],
         }
     }
 
@@ -834,9 +838,21 @@ impl Economy {
         }
 
         // 3. Collect outputs from all buildings into storage
+        //    and track Toolsmith tool production in separate pass to avoid borrow conflict
         for building in self.buildings.iter_mut() {
             let collected = building.collect_output(&mut self.storage);
             self.resources_collected += collected.iter().sum::<u32>() as u64;
+        }
+
+        // 3b. Toolsmith named tool production — separate pass after output collection
+        let toolsmith_count = self
+            .buildings
+            .iter()
+            .filter(|b| b.kind == BuildingType::Toolsmith && b.is_complete())
+            .count();
+        if toolsmith_count > 0 {
+            let needed = self.most_needed_tool().unwrap_or(0); // 0 = Hammer default
+            self.add_tool(needed, toolsmith_count as u32);
         }
 
         // 4. Update warehouse capacity
@@ -863,6 +879,51 @@ impl Economy {
     /// Get total building count
     pub fn building_count(&self) -> usize {
         self.buildings.len()
+    }
+}
+
+impl Economy {
+    // ── Named Tool Storage ────────────────────────────────────────────────────
+
+    /// Get the count of a specific tool type in storage
+    pub fn get_tool_count(&self, tool_code: u8) -> u32 {
+        self.tool_storage[tool_code as usize]
+    }
+
+    /// Add a specific tool to storage
+    pub fn add_tool(&mut self, tool_code: u8, count: u32) {
+        self.tool_storage[tool_code as usize] = self.tool_storage[tool_code as usize].saturating_add(count);
+    }
+
+    /// Try to withdraw a specific tool from storage. Returns true if successful.
+    pub fn withdraw_tool(&mut self, tool_code: u8) -> bool {
+        if self.tool_storage[tool_code as usize] > 0 {
+            self.tool_storage[tool_code as usize] -= 1;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Scan all unstaffed buildings and return the most-needed tool code.
+    /// Returns None if no buildings need tools.
+    pub fn most_needed_tool(&self) -> Option<u8> {
+        use std::collections::HashMap;
+        let mut demand: HashMap<u8, u32> = HashMap::new();
+        for building in &self.buildings {
+            // Skip incomplete buildings — they can't be staffed yet
+            if !building.is_complete() {
+                continue;
+            }
+            // Skip buildings that already have a tooled settler
+            if building.has_tooled_settler(&self.units) {
+                continue;
+            }
+            if let Some(tool_code) = building.required_tool {
+                *demand.entry(tool_code).or_insert(0) += 1;
+            }
+        }
+        demand.into_iter().max_by_key(|&(_, count)| count).map(|(code, _)| code)
     }
 }
 
@@ -1569,5 +1630,66 @@ mod tests {
             "Three Castles should recruit six settlers after {} ticks",
             CASTLE_SETTLER_INTERVAL * 2
         );
+    }
+
+    // ── Tool Storage Tests ────────────────────────────────────────────────
+
+    #[test]
+    fn test_tool_storage_add_withdraw() {
+        let mut e = Economy::new();
+        assert_eq!(e.get_tool_count(0), 0); // Hammer = 0
+        assert_eq!(e.get_tool_count(1), 0); // Pickaxe = 1
+
+        e.add_tool(0, 3); // Add 3 Hammers
+        assert_eq!(e.get_tool_count(0), 3);
+
+        assert!(e.withdraw_tool(0)); // Withdraw one
+        assert_eq!(e.get_tool_count(0), 2);
+
+        assert!(e.withdraw_tool(0));
+        assert_eq!(e.get_tool_count(0), 1);
+
+        assert!(e.withdraw_tool(0));
+        assert_eq!(e.get_tool_count(0), 0);
+
+        // Can't withdraw from empty
+        assert!(!e.withdraw_tool(0));
+        assert_eq!(e.get_tool_count(0), 0);
+    }
+
+    #[test]
+    fn test_tool_storage_multiple_types() {
+        let mut e = Economy::new();
+        e.add_tool(0, 5); // 5 Hammers
+        e.add_tool(3, 2); // 2 Saws
+        assert_eq!(e.get_tool_count(0), 5);
+        assert_eq!(e.get_tool_count(3), 2);
+        // Unused tool types stay at 0
+        assert_eq!(e.get_tool_count(10), 0); // Scythe
+    }
+
+    #[test]
+    fn test_most_needed_tool_empty() {
+        let e = Economy::new();
+        // No buildings → no tools needed
+        assert_eq!(e.most_needed_tool(), None);
+    }
+
+    #[test]
+    fn test_most_needed_tool_demand() {
+        let mut e = Economy::new();
+        // Place a Sawmill (requires Saw = tool code 3)
+        let idx = e.place_building(BuildingType::Sawmill, 5, 5);
+        // Building is placed but not complete yet (build_time > 0)
+        // So most_needed_tool should still return None (no completed unstaffed buildings)
+        assert_eq!(e.most_needed_tool(), None);
+        // Advance construction to completion
+        let build_ticks = BuildingType::Sawmill.build_time();
+        for _ in 0..build_ticks + 1 {
+            e.buildings[idx].tick_construction();
+        }
+        assert!(e.buildings[idx].is_complete());
+        // Now the completed building needs a tooled settler
+        assert_eq!(e.most_needed_tool(), Some(3)); // Saw = 3
     }
 }

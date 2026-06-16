@@ -886,7 +886,7 @@ import init, {
     restore_game_state,
     decompress_sav_chunk,
     set_textures_ready,
-} from './pkg/s4wn_engine.js?v=19';
+} from './pkg/s4wn_engine.js?v=20';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -3170,7 +3170,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=19');
+            const mod = await import('./pkg/s4wn_engine.js?v=20');
             load_map_json = mod.load_map_json || null;
             console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {
@@ -3421,6 +3421,18 @@ ${stack}
     document.getElementById('error-overlay').classList.remove('active');
   },
 };
+
+// Expose UI functions called from inline onclick handlers (module scope → global)
+window.openMenu = openMenu;
+window.closeMenu = closeMenu;
+window.openNewGame = openNewGame;
+window.closeNewGame = closeNewGame;
+window.startNewGame = startNewGame;
+window.openSettings = openSettings;
+window.closeSettings = closeSettings;
+window.resetSettings = resetSettings;
+window.confirmMapLoad = confirmMapLoad;
+window.cancelMapPreview = cancelMapPreview;
 
 // Global error handlers
 window.ErrorHandler = ErrorHandler;
