@@ -38,6 +38,8 @@ in float a_elevation;
 in float a_has_resource;
 in float a_slope;
 in float a_edge_dist;
+in vec2 a_uv;
+in float a_terrain_id;
 
 uniform vec2 u_resolution;
 uniform float u_time;
@@ -51,6 +53,8 @@ out float v_has_resource;
 out float v_day_phase;
 out float v_slope;
 out float v_edge_dist;
+out vec2 v_uv;
+out float v_terrain_id;
 
 void main() {
     float x = a_position.x;
@@ -81,6 +85,8 @@ void main() {
     v_day_phase = u_day_phase;
     v_slope = a_slope;
     v_edge_dist = a_edge_dist;
+    v_uv = a_uv;
+    v_terrain_id = a_terrain_id;
 }
 "#;
 
@@ -93,10 +99,23 @@ in float v_has_resource;
 in float v_day_phase;
 in float v_slope;
 in float v_edge_dist;
+in vec2 v_uv;
+in float v_terrain_id;
+
+uniform highp sampler2DArray u_terrain_textures;
+uniform bool u_use_textures;
 
 out vec4 out_color;
 
 void main() {
+    // Base color: sample terrain texture or fall back to vertex color
+    vec3 base_color;
+    if (u_use_textures) {
+        base_color = texture(u_terrain_textures, vec3(v_uv, v_terrain_id)).rgb;
+    } else {
+        base_color = v_color;
+    }
+
     // Slope-based shading: steeper = darker
     float slope_shade = 1.0 - smoothstep(0.0, 0.4, v_slope) * 0.5;
     // Elevation-based shade: higher = slightly brighter
@@ -108,7 +127,7 @@ void main() {
     float ambient = 0.2 + day_light * 0.8;
     float warmth = 0.5 + day_light * 0.5;
 
-    vec3 lit = v_color * shade * ambient;
+    vec3 lit = base_color * shade * ambient;
 
     // Water animation: subtle wave color shift
     if (v_color.b > v_color.r && v_color.b > v_color.g) {
@@ -263,6 +282,12 @@ struct App {
     speed_multiplier: f64,
     // Pause state
     paused: bool,
+    // Terrain texture support (texture created + managed by JS)
+    terrain_tex_loc: Option<web_sys::WebGlUniformLocation>,
+    use_textures_loc: Option<web_sys::WebGlUniformLocation>,
+    uvs_buffer: Option<WebGlBuffer>,
+    terrain_id_buffer: Option<WebGlBuffer>,
+    textures_loaded: bool,
 }
 
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
@@ -274,6 +299,8 @@ struct MeshData {
     has_resources: Vec<f32>,
     slopes: Vec<f32>,
     edge_dists: Vec<f32>,
+    uvs: Vec<f32>,
+    terrain_ids: Vec<f32>,
     indices: Vec<u16>,
 }
 
@@ -286,6 +313,8 @@ impl MeshData {
             has_resources: Vec::new(),
             slopes: Vec::new(),
             edge_dists: Vec::new(),
+            uvs: Vec::new(),
+            terrain_ids: Vec::new(),
             indices: Vec::new(),
         }
     }
@@ -358,6 +387,13 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
             let edge_y = (my as f32).min(map.height as f32 - 1.0 - my as f32);
             mesh.edge_dists.push(edge_x.min(edge_y));
 
+            // UV coordinates for texture mapping (tile-relative, 4×4 repeat)
+            let u = (mx % 4) as f32 / 4.0;
+            let v = (my % 4) as f32 / 4.0;
+            mesh.uvs.push(u);
+            mesh.uvs.push(v);
+            mesh.terrain_ids.push(tile.terrain as u8 as f32);
+
             // Build triangle strip indices
             if row < rows && col < cols {
                 let tl = (row as u16) * grid_w + (col as u16);
@@ -415,6 +451,8 @@ impl App {
         let resource_buffer = upload_f32_buffer(&gl, &mesh.has_resources, 3, 1);
         let slope_buffer = upload_f32_buffer(&gl, &mesh.slopes, 4, 1);
         let edge_buffer = upload_f32_buffer(&gl, &mesh.edge_dists, 5, 1);
+        let uvs_buffer = upload_f32_buffer(&gl, &mesh.uvs, 6, 2);
+        let terrain_id_buffer = upload_f32_buffer(&gl, &mesh.terrain_ids, 7, 1);
         let index_buffer = gl.create_buffer().ok_or("Cannot create index buffer")?;
         gl.bind_buffer(
             WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
@@ -443,6 +481,8 @@ impl App {
         let zoom_loc = gl
             .get_uniform_location(&program, "u_zoom")
             .ok_or("Cannot find u_zoom")?;
+        let terrain_tex_loc = gl.get_uniform_location(&program, "u_terrain_textures");
+        let use_textures_loc = gl.get_uniform_location(&program, "u_use_textures");
         let day_phase_loc = gl
             .get_uniform_location(&program, "u_day_phase")
             .ok_or("Cannot find u_day_phase")?;
@@ -531,6 +571,11 @@ impl App {
             last_frame_ms: 0.0,
             speed_multiplier: 1.0,
             paused: false,
+            terrain_tex_loc,
+            use_textures_loc,
+            uvs_buffer: Some(uvs_buffer),
+            terrain_id_buffer: Some(terrain_id_buffer),
+            textures_loaded: false,
         })
     }
 
@@ -614,6 +659,16 @@ impl App {
         }
 
         gl.use_program(Some(&self.program));
+
+        // Tell shader whether textures are loaded (JS binds the texture array)
+        if let Some(ref loc) = self.use_textures_loc {
+            gl.uniform1i(Some(loc), if self.textures_loaded { 1 } else { 0 });
+        }
+        if self.textures_loaded {
+            if let Some(ref loc) = self.terrain_tex_loc {
+                gl.uniform1i(Some(loc), 0); // TEXTURE0
+            }
+        }
 
         let canvas = gl
             .canvas()
@@ -827,6 +882,15 @@ impl App {
         );
         update_f32_buffer(gl, &mesh.edge_dists);
 
+        if let Some(ref buf) = self.uvs_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            update_f32_buffer(gl, &mesh.uvs);
+        }
+        if let Some(ref buf) = self.terrain_id_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            update_f32_buffer(gl, &mesh.terrain_ids);
+        }
+
         gl.bind_buffer(
             WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
             Some(&self.index_buffer),
@@ -1002,8 +1066,15 @@ pub fn init(canvas_id: &str) -> Result<bool, JsValue> {
     Ok(true)
 }
 
-/// Render one frame. Call this from requestAnimationFrame.
+/// Called from JS after terrain textures are fully loaded into the shared WebGL context.
+/// JS creates the TEXTURE_2D_ARRAY with 8 layers (1024×1024), then calls this.
 #[wasm_bindgen]
+pub fn set_textures_ready() {
+    let app = unsafe { APP.as_mut().expect("App not initialized") };
+    app.textures_loaded = true;
+    web_sys::console::log_1(&"Terrain textures ready (8 layers, 1024x1024)".into());
+}
+
 pub fn render(timestamp: f64) {
     unsafe {
         if let Some(ref mut app) = APP {
@@ -2179,6 +2250,19 @@ mod tests {
     #[test]
     fn test_shader_constants() {
         assert!(VERTEX_SHADER.contains("a_position"));
+        assert!(VERTEX_SHADER.contains("a_uv"), "missing a_uv");
+        assert!(
+            VERTEX_SHADER.contains("a_terrain_id"),
+            "missing a_terrain_id"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("u_terrain_textures"),
+            "missing texture sampler"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("u_use_textures"),
+            "missing use_textures uniform"
+        );
         assert!(FRAGMENT_SHADER.contains("out_color"));
         assert!(VERTEX_SHADER.contains("u_camera_center"));
         assert!(VERTEX_SHADER.contains("u_zoom"));

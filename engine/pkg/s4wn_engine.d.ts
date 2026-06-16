@@ -136,11 +136,6 @@ export function on_mouse_up(): void;
 export function on_wheel(delta_y: number): void;
 
 /**
- * Render one frame. Call this from requestAnimationFrame.
- */
-export function render(timestamp: number): void;
-
-/**
  * Handle window/canvas resize.
  */
 export function resize(): void;
@@ -160,6 +155,12 @@ export function set_game_speed(multiplier: number): void;
  * Set the game pause state.
  */
 export function set_paused(paused: boolean): void;
+
+/**
+ * Called from JS after terrain textures are fully loaded into the shared WebGL context.
+ * JS creates the TEXTURE_2D_ARRAY with 8 layers (1024×1024), then calls this.
+ */
+export function set_textures_ready(): void;
 
 /**
  * Place a free Castle near map center and spawn starter settlers.
@@ -229,11 +230,11 @@ export interface InitOutput {
     readonly on_mouse_move: (a: number, b: number) => void;
     readonly on_mouse_up: () => void;
     readonly on_wheel: (a: number) => void;
-    readonly render: (a: number) => void;
     readonly resize: () => void;
     readonly restore_game_state: (a: number, b: number) => [number, number];
     readonly set_game_speed: (a: number) => void;
     readonly set_paused: (a: number) => void;
+    readonly set_textures_ready: () => void;
     readonly setup_starter_base: (a: number) => [number, number];
     readonly toggle_pause: () => number;
     readonly try_place_building: (a: number, b: number, c: number, d: number) => [number, number];
