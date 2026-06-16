@@ -3212,6 +3212,14 @@ const ErrorHandler = {
     return `https://github.com/mayrd/s4wn/issues/new?${params.toString()}`;
   },
 
+  // Truncate body for URL safety (browser/GitHub limit ~2000 chars total)
+  _truncateBody(body) {
+    const MAX_URL_BODY = 1200; // leaves room for title, labels, URL prefix
+    if (body.length <= MAX_URL_BODY) return body;
+    const truncated = body.substring(0, MAX_URL_BODY - 30);
+    return truncated + '\n\n... (truncated for URL length)';
+  },
+
   // Parse a stack trace to extract file, line, column
   _parseStack(stack) {
     if (!stack) return { file: 'unknown', line: '?', column: '?', raw: '' };
@@ -3256,7 +3264,7 @@ const ErrorHandler = {
 
     // Build and log GitHub issue URL
     const title = `[Bug] ${info.name}: ${info.message.substring(0, 80)}`;
-    const body = this._buildIssueBody(info);
+    const body = this._truncateBody(this._buildIssueBody(info));
     const ghUrl = this._buildGitHubUrl(title, body);
     console.log('%c🐛 Create GitHub issue:', 'color:#ff6b6b;font-weight:bold;font-size:14px');
     console.log('%c' + ghUrl, 'color:#58a6ff;text-decoration:underline;word-break:break-all');
@@ -3301,7 +3309,7 @@ ${stack}
   openGitHubIssue() {
     if (!this._lastError) return;
     const title = `[Bug] ${this._lastError.name}: ${this._lastError.message.substring(0, 80)}`;
-    const body = this._buildIssueBody(this._lastError);
+    const body = this._truncateBody(this._buildIssueBody(this._lastError));
     const url = this._buildGitHubUrl(title, body);
     window.open(url, '_blank');
   },
@@ -3360,7 +3368,7 @@ console.error = function (...args) {
   if (args[0] instanceof Error) {
     const info = ErrorHandler._formatError(args[0]);
     const title = `[Bug] ${info.name}: ${info.message.substring(0, 80)}`;
-    const body = ErrorHandler._buildIssueBody({ ...info, context: 'console.error', timestamp: new Date().toISOString() });
+    const body = ErrorHandler._truncateBody(ErrorHandler._buildIssueBody({ ...info, context: 'console.error', timestamp: new Date().toISOString() }));
     const ghUrl = ErrorHandler._buildGitHubUrl(title, body);
     console.log('%c🐛 Create GitHub issue for this error:', 'color:#ff6b6b;font-weight:bold');
     console.log('%c' + ghUrl, 'color:#58a6ff;text-decoration:underline;word-break:break-all');
