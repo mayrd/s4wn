@@ -66,66 +66,13 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 1 — Core Engine** (complete ✅)
+**Phase 2.8 — Tool System** (in progress 🔨)
 
-- ✅ **TECHNOLOGY_CHOICE.md** — Engine: Rust → WASM, Server: Caddy, Graphics: WebGL2/WebGPU
-- ✅ **Hello World POC** — Rust/WASM engine rendering an animated isometric terrain grid via WebGL2 (42KB .wasm)
-- ✅ **CI/CD Pipeline** — GitHub Actions + Docker Buildx multi-arch (amd64/arm64)
-- ✅ **Map Module** — 8 terrain types, procedural generation, resource deposits
-- ✅ **Camera Module** — Isometric pan/zoom with mouse + touch support
-- ✅ **Game Loop** — Tick-based deterministic, 10 TPS, seeded PRNG (SplitMix64)
-- ✅ **Asset Pipeline** — ARA stream cipher + LZ/Huffman decompression (ported from Settlers.ts)
-- ✅ **Renderer Integration** — Day/night cycle, resource glow visualization
-
-**Phase 2 — Game Logic** (complete ✅)
-
-- ✅ **Economy System** — 16 resource types (9 raw + 7 processed), 14 building types, production chains, resource storage
-- ✅ **Units System** — Workers, Soldiers, Archers with HP/speed/attack stats, movement along paths
-- ✅ **Pathfinding** — A* on tile grid with terrain-aware movement costs
-- ✅ **Worker-Building Integration** — Buildings require assigned workers to produce resources
-- ✅ **Worker AI** — Auto-assignment, pathfind to building, transition to Working state
-- ✅ **Combat System** — Attack resolution, damage/death, soldier chase and attack AI
-- ✅ **Game Loop Integration** — WorkerAI + CombatAI wired into deterministic tick update
-- ✅ **Map Viewer** — Standalone Canvas2D isometric viewer with pan/zoom/touch (map-viewer.html)
-- ✅ **102 unit tests** passing
-
-**Phase 3 — Multiplayer** (complete ✅)
-
-- ✅ **Network Module** — WebSocket-compatible message types, NetworkManager stub, serialization (15 tests)
-- ✅ **Overlay Rendering** — WebGL building and unit dot markers
-- ✅ **Economy HUD** — `get_resource_counts()`, `get_building_summary()`, `get_unit_summary()` WASM exports
-- ✅ **Pause & Speed Controls** — Pause game loop (⏸ overlay, `P` key), Speed controls (1×/2×/4×, keys `1`/`2`/`3`)
-- ✅ **Map Export** — `Map::to_json()` serialization method
-- ✅ **Procedural Assets** — 8 terrain tile textures, 5 building sprites, 3 unit sprites, 2 UI elements (112KB)
-- ✅ **WebSocket Server** — `server/` crate with tokio-tungstenite, room management, player handling, chat relay, game start (16 tests)
-- ✅ **Lobby UI** — `lobby.html` with animated title/loading screen, room list, create/join/leave, player list, chat
-- ✅ **WebSocket Client Stubs** — `ws_connect()`, `ws_send()`, `ws_receive()`, `ws_state()` WASM bindings
-- ✅ **Server-Authoritative Game State** — `ServerGameState` module (map, buildings, units, resources), action validation, 10 TPS tick loop broadcasting `GameStateSync` to all room members (14 tests)
-- ✅ **Client-Side Interpolation** — `ClientInterpolator` struct with previous/current snapshot tracking, `interpolation_alpha()` for smooth 60fps rendering, `interpolate_unit_position()` with spawn/death/move handling (8 tests). Wired into WASM rendering loop.
-- ✅ **~167 tests** passing (137 engine + 30 server)
-
-**Phase 4 — UI & Single Player** (in progress 🔨)
-
-- ✅ **Splash Screen & Title** — Animated splash with floating gold particles, glow title animation → fade → menu, S4WN logo, heraldic shield design, favicon suite
-- ✅ **Main Menu** — Load Map, Demo Map, Load Game, New Game, Settings buttons; keyboard navigation
-- ✅ **Settings Panel** — Zoom speed, terrain detail, volume/SFX toggles, mouse sensitivity, invert scroll, keyboard bindings display, localStorage persistence
-- ✅ **Economy HUD** — FPS counter, map info, tile tooltip, minimap, resource bar (emojis + counts)
-- ✅ **Pause & Speed** — Pause overlay, 1×/2×/4× speed controls, keyboard shortcuts
-- ✅ **Building Placement** — Building toolbar (14 types), terrain validation, cost checking, crosshair cursor
-- ✅ **Selection Info** — Click-to-select buildings/units, detail card with HP/production/workers
-- ✅ **Building Affordability** — Auto-refresh toolbar affordability, disable unaffordable, green indicators
-- ✅ **Construction Progress** — Orange overlay dots for constructing buildings, size proportional to progress (3.0→8.0), `constructed_pct` in building info
-- ✅ **New Game Flow** — Procedural map generation via `generate_map()` WASM, loading screen with progress bar, difficulty-based starting resources (Easy 2×, Medium 1×, Hard 0.5×)
-- ✅ **Starter Base** — Auto-placed Headquarters at map center + 2-4 idle workers on new game start
-- ✅ **Map Validation** — Binary .map integrity checks (terrain ID range, tile count, elevation pattern warnings)
-- ⏳ **Single-Player Start** — Auto-save (✅), continue game (✅), load .sav files (⏳)
-- ✅ **Save/Load System** — `get_game_state()` + `restore_game_state()` WASM exports, auto-save every 5 min to localStorage, Continue button with game time indicator, manual Save in pause overlay
-- ✅ **Binary .map Loader** — Parse original S4 .map files with preview panel (dimensions, terrain distribution, resource counts, integrity warnings)
-- ✅ **Recent Files** — Tracks last 5 loaded files in localStorage (metadata: name, size, type, date), clickable to re-trigger file picker
-- ✅ **.sav WASM Decompression** — `decompress_sav_chunk()` WASM export (ARA-decrypt + LZ/Huffman decompress), .sav terrain chunk loading
-- ⏳ **Full .sav Game State** — Building/unit/resource restoration from .sav pending
-- ✅ **Test Map Corpus** — 3 test .map files (32×32 island, 64×64 river valley, 128×128 continents) with generation script
-- ✅ **Chunk Type Research** — Dual-scheme CHUNK_TYPE_NAMES: observed 0x2711 hex IDs + Settlers.ts decimal IDs (23 types)
+- ✅ **Phase 1 — Core Engine** — Complete. Rust/WASM engine, WebGL2 rendering, map, camera, game loop, asset pipeline.
+- ✅ **Phase 2 — Game Logic** — Complete. Economy (25 resources, 18 buildings), units, pathfinding, worker AI, combat.
+- ✅ **Phase 3 — Multiplayer** — Complete. WebSocket server, lobby UI, server-authoritative tick, client interpolation.
+- 🔨 **Phase 2.8 — Nations & Balancing** — In progress. Nation data model (5 nations, 34 unique buildings, 6 specialists, 11 tool types), nation selection UI, building tool requirements wired into game loop. 171 tests passing.
+- ✅ **Phase 4 — UI & Single Player** — Mostly complete. Splash/title, main menu, settings, new game flow, building placement, selection HUD, save/load, .map/.sav loading, visual polish.
 
 ---
 

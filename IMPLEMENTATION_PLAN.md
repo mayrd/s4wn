@@ -2,8 +2,8 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 4 — UI & Single Player 🔨
-Last updated: 2026-06-16 (Session 45)
+## Status: Phase 2.8 — Tool System 🔨
+Last updated: 2026-06-16 (Session 46)
 
 ## 🤖 Agent Operating Rules
 
@@ -494,7 +494,8 @@ s4wn/
 ||||| 43 | 2026-06-16 | ~10 min | Phase 2.8.1 Nation Data Model: Created nation.rs module with NationType enum (5 nations), Nation struct with production/cost/unit/AI modifiers, NationRegistry const lookup tables, UnitSpecial enum (FormationBonus/Berserk/ForestGuard/ShieldWall/None), UniqueBuildingType enum (34 buildings), SpecialistType enum (6 types), ToolType enum (11 types), starting resources per nation. 21 new tests. 160 total tests passing (139 engine + 21 nation). |
 | 44 | 2026-06-16 | ~10 min | S4 naming cleanup: Aligned terminology with authentic Siedler 4 conventions (worker→settler, Headquarters→Castle, Quarry→Stonecutter, Blacksmith→Toolsmith, Armory→Weaponsmith, Fishery→Fisherman, Lumberjack→Woodcutter, Warehouse→Storehouse, Planks→Boards, Leather→Flour, Soldier→Swordsman). Fixed compiler warnings (unused imports/variables). Phase 2.8.1 integration: Added nation selection dropdown to new game panel (5 nations with emoji icons and playstyle descriptions), wired into startNewGame(). All 160 engine tests passing. |
 
-|| 45 | 2026-06-16 | ~10 min | Phase 2.8.2: Extended BuildingType from 14→18 variants (Residence, Waterworks, Smelter, Barracks). Added ResourceType::Water + IronIngots (COUNT 25). Added required_tool() method with 11 tool assignments. Wired full config: build_cost, inputs, outputs, production_interval, build_time, colors. Added 5 new tests (tool coverage, resource types, waterworks production, smelter chain). All 170 tests passing (165 engine + 5 server). |
+||| 45 | 2026-06-16 | ~10 min | Phase 2.8.2: Extended BuildingType from 14→18 variants (Residence, Waterworks, Smelter, Barracks). Added ResourceType::Water + IronIngots (COUNT 25). Added required_tool() method with 11 tool assignments. Wired full config: build_cost, inputs, outputs, production_interval, build_time, colors. Added 5 new tests (tool coverage, resource types, waterworks production, smelter chain). All 170 tests passing (165 engine + 5 server). |
+||| 46 | 2026-06-16 | ~10 min | Phase 2.8.2 tool wiring: Added `carried_tool: Option<u8>` to Unit, `required_tool: Option<u8>` to Building, `tool_code_from_name()` helper, `has_tooled_settler()` method. Updated `Economy::update()` to precompute tool-aware production eligibility — buildings without tool-equipped settlers now block production. 6 new tests (tool_code_from_name, required_tool_field, has_tooled_settler, tool blocks/allows production). 171 tests passing. |
 ---
 
 ## Open Items & Decisions Needed
@@ -533,28 +534,22 @@ None at the moment.
 
 ## Next Session
 
-### Phase 2.8.1 — Nation Integration (cont.)
-- [ ] Add `set_player_nation(nation_name)` WASM export that stores nation on GameState
-- [ ] Apply nation modifiers: production speed, unit stats, building costs in economy/combat
-- [ ] Show nation flag/icon in in-game HUD with nation name
-
 ### Phase 2.8.2 — Common Buildings (All Nations) — HIGHEST PRIORITY
-- [ ] Wire `required_tool()` into game loop: buildings stay unoccupied until settler carries correct tool
-- [ ] Residence settler recruitment: spawn idle settler at residence every N ticks (game loop logic)
-- [ ] Barracks unit training: consume Weapons → convert settler into Swordsman (game loop logic)
-- [ ] Tool consumption: Toolsmith produces specific tool types, settlers pick them up from storehouse
-- [ ] Add Building `required_tool: Option<ToolType>` field for runtime tool tracking
+- [x] Wire `required_tool()` into game loop: buildings stay unoccupied until settler carries correct tool ✅
+- [ ] Toolsmith produces specific tool types (Hammer, Pickaxe, Saw, Axe, etc.) — settlers pick them up from storehouse
+- [ ] Residence settler recruitment: spawn idle settler at residence every ~50 ticks (5s at 10 TPS)
+- [ ] Barracks unit training: consume Weapons + settler → convert into Swordsman
 - [ ] Add Mint building (Gold + Coal → Coins) to reach full 19 common buildings
+- [ ] WorkerAI tool awareness: auto_assign prefers tool-carrying settlers; Toolsmith produces named tools
 
-### Phase 4.7 — Visual Polish (ongoing)
+### Phase 2.8.1 — Nation Integration
+- [ ] `set_player_nation(nation_name)` WASM export storing nation on GameState
+- [ ] Apply nation modifiers: production speed, unit stats, building costs in economy/combat
+- [ ] Nation flag/icon in in-game HUD
+
+### Phase 4.7 — Visual Polish
 - [ ] Fog of war / unexplored territory (darken unseen tiles via shader)
 - [ ] Nation-color tinting on buildings in WebGL overlay
-
-### Phase 4.4a — Map Loading (remaining items)
-- [ ] Performance: loading progress bar for maps > 256×256
-- [ ] Test corpus: 256×256 test map
-- [ ] Round-trip validation: .map → render → JSON export → verify
-- [ ] Integration: New Game flow shows "Load Custom .map" option
 
 ---
 
