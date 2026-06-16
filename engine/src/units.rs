@@ -329,6 +329,17 @@ impl UnitManager {
         id
     }
 
+    /// Add an already-constructed unit (used for save/load).
+    /// Does NOT increment next_id — caller must manage ID sequence.
+    pub fn add_existing(&mut self, unit: Unit) {
+        self.units.push(unit);
+    }
+
+    /// Set the next unit ID (used for save/load to continue ID sequence).
+    pub fn set_next_id(&mut self, id: u32) {
+        self.next_id = id;
+    }
+
     /// Get a unit by ID
     pub fn get(&self, id: u32) -> Option<&Unit> {
         self.units.iter().find(|u| u.id == id)

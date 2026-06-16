@@ -390,6 +390,7 @@
     0%, 100% { opacity: 0.3; }
     50% { opacity: 0.6; }
   }
+  #btn-save-game:hover { background: rgba(200,170,100,0.2); border-color: rgba(200,170,100,0.5); color: #f0dca0; }
 
   /* ── Speed Controls ─────────────────────────────────────────────────── */
   #speed-controls {
@@ -478,6 +479,7 @@
     <h2>⚔️ Game Menu</h2>
     <button class="menu-btn" id="btn-load">📂 Load Map</button>
     <button class="menu-btn" id="btn-demo">🗺️ Demo Map</button>
+    <button class="menu-btn" id="btn-continue" style="display:none">💾 Continue Game</button>
     <button class="menu-btn" onclick="openNewGame()">🆕 New Game</button>
     <button class="menu-btn" onclick="openSettings()">⚙️ Settings</button>
     <button class="menu-btn secondary" onclick="window.open('https://github.com/mayrd/s4wn','_blank')">
@@ -599,7 +601,10 @@
 </div>
 
 <!-- Pause Overlay -->
-<div id="pause-overlay"><div class="pause-text">⏸ PAUSED</div></div>
+<div id="pause-overlay">
+  <div class="pause-text">⏸ PAUSED</div>
+  <button id="btn-save-game" style="position:absolute;bottom:30%;left:50%;transform:translateX(-50%);padding:10px 24px;font-size:14px;font-family:inherit;background:rgba(200,170,100,0.1);border:1px solid rgba(200,170,100,0.3);border-radius:8px;color:#c8b878;cursor:pointer;pointer-events:auto;display:none;letter-spacing:0.05em;transition:all 0.2s;">💾 Save Game</button>
+</div>
 
 <!-- Speed Controls -->
 <div id="speed-controls">
@@ -636,7 +641,9 @@ import init, {
     generate_map,
     add_starting_resources,
     setup_starter_base,
-} from './pkg/s4wn_engine.js?v=10';
+    get_game_state,
+    restore_game_state,
+} from './pkg/s4wn_engine.js?v=11';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -676,6 +683,7 @@ setTimeout(() => {
 function openMenu() {
     showMenu = true;
     menu.classList.add('active');
+    updateContinueButton();
 }
 
 function closeMenu() {
@@ -699,6 +707,9 @@ function setSpeed(speed) {
 function togglePause() {
     const paused = toggle_pause();
     document.getElementById('pause-overlay').classList.toggle('active', paused);
+    // Show/hide save button in pause overlay during gameplay
+    const saveBtn = document.getElementById('btn-save-game');
+    saveBtn.style.display = (paused && engineReady && !showMenu) ? 'block' : 'none';
 }
 
 // Speed button click handlers
@@ -1086,6 +1097,17 @@ document.addEventListener('keydown', (e) => {
 document.getElementById('btn-load').addEventListener('click', triggerLoad);
 document.getElementById('btn-load2').addEventListener('click', triggerLoad);
 document.getElementById('btn-demo').addEventListener('click', closeMenu);
+document.getElementById('btn-continue').addEventListener('click', loadSavedGame);
+
+// Save Game button in pause overlay
+document.getElementById('btn-save-game').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (saveGame()) {
+        const btn = document.getElementById('btn-save-game');
+        btn.textContent = '✅ Saved!';
+        setTimeout(() => { btn.textContent = '💾 Save Game'; }, 2000);
+    }
+});
 
 // ── Canvas sizing ──────────────────────────────────────────────────────
 function resizeCanvas() {
@@ -1439,6 +1461,12 @@ async function startNewGame() {
         lastResourceUpdate = 0;
         lastPopUpdate = 0;
 
+        // Start auto-save timer
+        startAutoSave();
+
+        // Save initial state immediately
+        setTimeout(() => saveGame(), 1000);
+
         // Short delay to show "Ready!" then close loading
         setTimeout(() => {
             hideLoading();
@@ -1451,6 +1479,103 @@ async function startNewGame() {
     }
 }
 
+// ── Save / Load Game State ────────────────────────────────────────────────
+const SAVE_KEY = 's4wn-autosave';
+const SAVE_META_KEY = 's4wn-autosave-meta';
+
+function saveGame() {
+    if (!engineReady || !get_game_state) return false;
+    try {
+        const stateJson = get_game_state();
+        if (!stateJson || stateJson.includes('"error"')) {
+            console.warn('saveGame: failed to get game state');
+            return false;
+        }
+        localStorage.setItem(SAVE_KEY, stateJson);
+        const meta = {
+            savedAt: new Date().toISOString(),
+            gameTime: null,
+        };
+        // Extract game_time from state for display
+        try {
+            const parsed = JSON.parse(stateJson);
+            meta.gameTime = parsed.game_time || 0;
+        } catch(_) {}
+        localStorage.setItem(SAVE_META_KEY, JSON.stringify(meta));
+        console.log('Game saved (auto-save) at', meta.savedAt);
+        return true;
+    } catch (err) {
+        console.error('saveGame failed:', err);
+        return false;
+    }
+}
+
+function hasSavedGame() {
+    return !!localStorage.getItem(SAVE_KEY);
+}
+
+function getSavedGameMeta() {
+    try {
+        const raw = localStorage.getItem(SAVE_META_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+}
+
+function loadSavedGame() {
+    if (!engineReady || !restore_game_state) {
+        alert('Engine not ready. Please wait...');
+        return;
+    }
+    const stateJson = localStorage.getItem(SAVE_KEY);
+    if (!stateJson) {
+        alert('No saved game found.');
+        return;
+    }
+    try {
+        const result = restore_game_state(stateJson);
+        if (result === 'ok') {
+            closeMenu();
+            lastResourceUpdate = 0;
+            lastPopUpdate = 0;
+            hudMap.textContent = 'Map: Saved Game | 💾 Continue';
+            startAutoSave();
+            console.log('Game restored from auto-save');
+        } else {
+            alert('Failed to restore saved game: ' + result);
+        }
+    } catch (err) {
+        console.error('loadSavedGame failed:', err);
+        alert('Failed to load saved game: ' + err.message);
+    }
+}
+
+// Auto-save timer: save every 5 minutes during gameplay
+let autoSaveTimer = null;
+function startAutoSave() {
+    if (autoSaveTimer) clearInterval(autoSaveTimer);
+    autoSaveTimer = setInterval(() => {
+        if (!showMenu && engineReady && !is_paused()) {
+            saveGame();
+        }
+    }, 5 * 60 * 1000); // 5 minutes
+}
+
+// Update Continue button visibility
+function updateContinueButton() {
+    const btn = document.getElementById('btn-continue');
+    if (hasSavedGame()) {
+        btn.style.display = 'block';
+        const meta = getSavedGameMeta();
+        if (meta && meta.gameTime !== null) {
+            btn.textContent = `💾 Continue Game (${formatGameTime(meta.gameTime)})`;
+        } else {
+            btn.textContent = '💾 Continue Game';
+        }
+    } else {
+        btn.style.display = 'none';
+    }
+}
+
 // ── Main ────────────────────────────────────────────────────────────────
 async function main() {
     try {
@@ -1458,7 +1583,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=10');
+            const mod = await import('./pkg/s4wn_engine.js?v=11');
             load_map_json = mod.load_map_json || null;
         } catch (e) {
             console.warn('load_map_json not available (old WASM cache?) — map loading disabled');

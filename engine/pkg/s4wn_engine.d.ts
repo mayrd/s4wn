@@ -44,6 +44,12 @@ export function get_building_summary(): string;
 export function get_game_speed(): number;
 
 /**
+ * Get the complete game state as a JSON string for save/load.
+ * Returns JSON with: map_json, resources, buildings, units, game_time, player_name, difficulty, map_type
+ */
+export function get_game_state(): string;
+
+/**
  * Get the full map as a compact Vec<u8> for minimap rendering.
  * Layout: [width_lo, width_hi, height_lo, height_hi, terrain_byte, terrain_byte, ...]
  * Each tile is one byte (terrain type as u8, matching Terrain enum repr).
@@ -133,6 +139,12 @@ export function render(timestamp: number): void;
 export function resize(): void;
 
 /**
+ * Restore game state from a JSON save string (produced by get_game_state).
+ * Returns "ok" on success or an error message.
+ */
+export function restore_game_state(json: string): string;
+
+/**
  * Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
  */
 export function set_game_speed(multiplier: number): void;
@@ -194,6 +206,7 @@ export interface InitOutput {
     readonly get_building_info: (a: number) => [number, number];
     readonly get_building_summary: () => [number, number];
     readonly get_game_speed: () => number;
+    readonly get_game_state: () => [number, number];
     readonly get_map_data: () => [number, number];
     readonly get_resource_counts: () => [number, number];
     readonly get_stats: () => [number, number];
@@ -210,6 +223,7 @@ export interface InitOutput {
     readonly on_wheel: (a: number) => void;
     readonly render: (a: number) => void;
     readonly resize: () => void;
+    readonly restore_game_state: (a: number, b: number) => [number, number];
     readonly set_game_speed: (a: number) => void;
     readonly set_paused: (a: number) => void;
     readonly setup_starter_base: (a: number) => [number, number];

@@ -119,6 +119,24 @@ export function get_game_speed() {
 }
 
 /**
+ * Get the complete game state as a JSON string for save/load.
+ * Returns JSON with: map_json, resources, buildings, units, game_time, player_name, difficulty, map_type
+ * @returns {string}
+ */
+export function get_game_state() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_game_state();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Get the full map as a compact Vec<u8> for minimap rendering.
  * Layout: [width_lo, width_hi, height_lo, height_hi, terrain_byte, terrain_byte, ...]
  * Each tile is one byte (terrain type as u8, matching Terrain enum repr).
@@ -335,6 +353,27 @@ export function render(timestamp) {
  */
 export function resize() {
     wasm.resize();
+}
+
+/**
+ * Restore game state from a JSON save string (produced by get_game_state).
+ * Returns "ok" on success or an error message.
+ * @param {string} json
+ * @returns {string}
+ */
+export function restore_game_state(json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.restore_game_state(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
 }
 
 /**

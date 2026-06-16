@@ -1583,6 +1583,335 @@ pub fn setup_starter_base(worker_count: u32) -> String {
     }
 }
 
+/// Get the complete game state as a JSON string for save/load.
+/// Returns JSON with: map_json, resources, buildings, units, game_time, player_name, difficulty, map_type
+#[wasm_bindgen]
+pub fn get_game_state() -> String {
+    use crate::economy::ResourceType;
+    unsafe {
+        if let Some(ref app) = APP {
+            let eco = &app.game_loop.state.economy;
+            let game_time = app.game_loop.state.game_time;
+            let map_json = app.map.to_json();
+
+            // Resources
+            let mut res_parts = Vec::new();
+            for i in 0..ResourceType::COUNT {
+                let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
+                res_parts.push(format!("\"{}\":{}", rt.name(), eco.storage.get(rt)));
+            }
+
+            // Buildings
+            let mut bldg_parts = Vec::new();
+            for b in eco.buildings.iter() {
+                let worker_ids: Vec<String> = b.assigned_workers.iter().map(|w| w.to_string()).collect();
+                let mut inbuf_parts = Vec::new();
+                for i in 0..ResourceType::COUNT {
+                    if b.input_buffer[i] > 0 {
+                        let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
+                        inbuf_parts.push(format!("\"{}\":{}", rt.name(), b.input_buffer[i]));
+                    }
+                }
+                let mut outbuf_parts = Vec::new();
+                for i in 0..ResourceType::COUNT {
+                    if b.output_buffer[i] > 0 {
+                        let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
+                        outbuf_parts.push(format!("\"{}\":{}", rt.name(), b.output_buffer[i]));
+                    }
+                }
+                bldg_parts.push(format!(
+                    r#"{{"kind":"{}","x":{},"y":{},"construction":{},"active":{},"production_counter":{},"assigned_workers":[{}],"max_workers":{},"input_buffer":{{{}}},"output_buffer":{{{}}}}}"#,
+                    b.kind.name(), b.x, b.y, b.construction, b.active, b.production_counter,
+                    worker_ids.join(","), b.max_workers,
+                    inbuf_parts.join(","), outbuf_parts.join(",")
+                ));
+            }
+
+            // Units
+            let mut unit_parts = Vec::new();
+            for u in eco.units.alive_units() {
+                let state_name = match u.state {
+                    crate::units::UnitState::Idle => "Idle",
+                    crate::units::UnitState::Moving => "Moving",
+                    crate::units::UnitState::Working => "Working",
+                    crate::units::UnitState::Fighting => "Fighting",
+                    crate::units::UnitState::Dead => "Dead",
+                };
+                let ab = match u.assigned_building {
+                    Some(bi) => bi.to_string(),
+                    None => "null".to_string(),
+                };
+                let tgt = match u.target {
+                    Some(tid) => tid.to_string(),
+                    None => "null".to_string(),
+                };
+                unit_parts.push(format!(
+                    r#"{{"id":{},"kind":"{}","x":{},"y":{},"hp":{},"max_hp":{},"state":"{}","assigned_building":{},"target":{}}}"#,
+                    u.id, u.kind.name(), u.x, u.y, u.hp, u.max_hp, state_name, ab, tgt
+                ));
+            }
+
+            return format!(
+                r#"{{"version":1,"game_time":{},"map_json":{},"resources":{{{}}},"buildings":[{}],"units":[{}]}}"#,
+                game_time, map_json,
+                res_parts.join(","),
+                bldg_parts.join(","),
+                unit_parts.join(",")
+            );
+        }
+    }
+    String::from(r#"{"error":"engine not initialized"}"#)
+}
+
+/// Restore game state from a JSON save string (produced by get_game_state).
+/// Returns "ok" on success or an error message.
+#[wasm_bindgen]
+pub fn restore_game_state(json: &str) -> String {
+    use crate::economy::{Building, BuildingType, Economy, ResourceType};
+    use crate::units::{Unit, UnitKind, UnitState};
+    unsafe {
+        if let Some(ref mut app) = APP {
+            // Parse the JSON manually — no serde in WASM context, use simple string parsing
+            // Since we control the format, we can safely use a simple approach
+
+            // Helper: find a JSON value by key
+            fn find_json_value<'a>(s: &'a str, key: &str) -> Option<&'a str> {
+                let search = format!("\"{}\":", key);
+                let start = s.find(&search)?;
+                let after_key = &s[start + search.len()..];
+                let ch = after_key.chars().next()?;
+                match ch {
+                    '"' => {
+                        // String value
+                        let rest = &after_key[1..];
+                        let end = rest.find('"')?;
+                        Some(&rest[..end])
+                    }
+                    '{' | '[' => {
+                        // Nested object/array — find matching close
+                        let open_char = ch;
+                        let close_char = if ch == '{' { '}' } else { ']' };
+                        let mut depth = 1u32;
+                        let mut end = 1usize;
+                        for c in after_key[1..].chars() {
+                            end += c.len_utf8();
+                            if c == open_char { depth += 1; }
+                            else if c == close_char { depth -= 1; if depth == 0 { break; } }
+                        }
+                        Some(&after_key[..end])
+                    }
+                    _ => {
+                        // Number or boolean or null
+                        let end = after_key.find(|c: char| c == ',' || c == '}' || c == ']').unwrap_or(after_key.len());
+                        Some(&after_key[..end])
+                    }
+                }
+            }
+
+            // 1. Load map
+            let map_json_val = match find_json_value(json, "map_json") {
+                Some(v) => v,
+                None => return String::from("error: missing map_json"),
+            };
+            let map_load = crate::load_map_json(map_json_val);
+            if map_load != "ok" {
+                return format!("error: map load failed: {}", map_load);
+            }
+
+            // 2. Clear existing economy and rebuild
+            let mut new_eco = Economy::new();
+
+            // 3. Restore resources
+            let resources_str = match find_json_value(json, "resources") {
+                Some(v) => v,
+                None => return String::from("error: missing resources"),
+            };
+            for i in 0..ResourceType::COUNT {
+                let rt: ResourceType = std::mem::transmute(i as u8);
+                let name = rt.name();
+                // Find "{name}":number in resources string
+                let search = format!("\"{}\":", name);
+                if let Some(pos) = resources_str.find(&search) {
+                    let after = &resources_str[pos + search.len()..];
+                    let end = after.find(|c: char| c == ',' || c == '}').unwrap_or(after.len());
+                    if let Ok(val) = after[..end].trim().parse::<u32>() {
+                        new_eco.storage.set(rt, val);
+                    }
+                }
+            }
+
+            // 4. Restore buildings
+            let buildings_str = match find_json_value(json, "buildings") {
+                Some(v) => v,
+                None => return String::from("error: missing buildings"),
+            };
+            if buildings_str != "[]" {
+                // Parse each building object by splitting on "},{"
+                let inner = &buildings_str[1..buildings_str.len()-1];
+                let mut depth = 0;
+                let mut start = 0;
+                let mut bldg_jsons = Vec::new();
+                for (i, ch) in inner.char_indices() {
+                    match ch {
+                        '{' => depth += 1,
+                        '}' => {
+                            depth -= 1;
+                            if depth == 0 {
+                                bldg_jsons.push(&inner[start..=i]);
+                                start = i + 2; // skip "},{"
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
+                for bjson in bldg_jsons {
+                    // Extract building properties
+                    let kind_name = find_json_value(bjson, "kind").unwrap_or("Unknown");
+                    let x = find_json_value(bjson, "x").and_then(|v| v.parse::<usize>().ok()).unwrap_or(0);
+                    let y = find_json_value(bjson, "y").and_then(|v| v.parse::<usize>().ok()).unwrap_or(0);
+                    let construction = find_json_value(bjson, "construction").and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.0);
+                    let active = find_json_value(bjson, "active").map_or(false, |v| v == "true");
+                    let production_counter = find_json_value(bjson, "production_counter").and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
+                    let max_workers = find_json_value(bjson, "max_workers").and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
+
+                    if let Some(kind) = BuildingType::from_name(kind_name) {
+                        let mut b = Building::new(kind, x, y);
+                        b.construction = construction;
+                        b.active = active;
+                        b.production_counter = production_counter;
+                        b.max_workers = max_workers;
+
+                        // Restore worker IDs
+                        if let Some(workers_str) = find_json_value(bjson, "assigned_workers") {
+                            let inner_w = &workers_str[1..workers_str.len()-1];
+                            if !inner_w.is_empty() {
+                                for wid_str in inner_w.split(',') {
+                                    if let Ok(wid) = wid_str.trim().parse() {
+                                        b.assigned_workers.push(wid);
+                                    }
+                                }
+                            }
+                        }
+
+                        // Restore input buffer
+                        if let Some(inbuf_str) = find_json_value(bjson, "input_buffer") {
+                            for i in 0..ResourceType::COUNT {
+                                let rt: ResourceType = std::mem::transmute(i as u8);
+                                let search = format!("\"{}\":", rt.name());
+                                if let Some(pos) = inbuf_str.find(&search) {
+                                    let after = &inbuf_str[pos + search.len()..];
+                                    let end = after.find(|c: char| c == ',' || c == '}').unwrap_or(after.len());
+                                    if let Ok(val) = after[..end].trim().parse::<u32>() {
+                                        b.input_buffer[i] = val;
+                                    }
+                                }
+                            }
+                        }
+                        // Restore output buffer
+                        if let Some(outbuf_str) = find_json_value(bjson, "output_buffer") {
+                            for i in 0..ResourceType::COUNT {
+                                let rt: ResourceType = std::mem::transmute(i as u8);
+                                let search = format!("\"{}\":", rt.name());
+                                if let Some(pos) = outbuf_str.find(&search) {
+                                    let after = &outbuf_str[pos + search.len()..];
+                                    let end = after.find(|c: char| c == ',' || c == '}').unwrap_or(after.len());
+                                    if let Ok(val) = after[..end].trim().parse::<u32>() {
+                                        b.output_buffer[i] = val;
+                                    }
+                                }
+                            }
+                        }
+
+                        new_eco.buildings.push(b);
+                    }
+                }
+            }
+
+            // 5. Restore units
+            let units_str = match find_json_value(json, "units") {
+                Some(v) => v,
+                None => return String::from("error: missing units"),
+            };
+            if units_str != "[]" {
+                let inner = &units_str[1..units_str.len()-1];
+                let mut depth = 0;
+                let mut start = 0;
+                let mut unit_jsons = Vec::new();
+                for (i, ch) in inner.char_indices() {
+                    match ch {
+                        '{' => depth += 1,
+                        '}' => {
+                            depth -= 1;
+                            if depth == 0 {
+                                unit_jsons.push(&inner[start..=i]);
+                                start = i + 2;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
+                // Track max ID to continue sequence
+                let mut max_id: u32 = 0;
+                for ujson in unit_jsons {
+                    let id = find_json_value(ujson, "id").and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
+                    let kind_name = find_json_value(ujson, "kind").unwrap_or("Worker");
+                    let ux = find_json_value(ujson, "x").and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.0);
+                    let uy = find_json_value(ujson, "y").and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.0);
+                    let hp = find_json_value(ujson, "hp").and_then(|v| v.parse::<u32>().ok()).unwrap_or(50);
+                    let max_hp = find_json_value(ujson, "max_hp").and_then(|v| v.parse::<u32>().ok()).unwrap_or(50);
+                    let state_str = find_json_value(ujson, "state").unwrap_or("Idle");
+                    let assigned_building = find_json_value(ujson, "assigned_building")
+                        .and_then(|v| if v == "null" { None } else { v.parse::<usize>().ok() });
+                    let target = find_json_value(ujson, "target")
+                        .and_then(|v| if v == "null" { None } else { v.parse::<u32>().ok() });
+
+                    let kind = match kind_name {
+                        "Soldier" => UnitKind::Soldier,
+                        "Archer" => UnitKind::Archer,
+                        _ => UnitKind::Worker,
+                    };
+
+                    let state = match state_str {
+                        "Moving" => UnitState::Moving,
+                        "Working" => UnitState::Working,
+                        "Fighting" => UnitState::Fighting,
+                        "Dead" => UnitState::Dead,
+                        _ => UnitState::Idle,
+                    };
+
+                    let mut unit = Unit::new(id, kind, ux, uy);
+                    unit.hp = hp;
+                    unit.max_hp = max_hp;
+                    unit.state = state;
+                    unit.assigned_building = assigned_building;
+                    unit.target = target;
+
+                    if id > max_id { max_id = id; }
+                    new_eco.units.add_existing(unit);
+                }
+                new_eco.units.set_next_id(max_id + 1);
+            }
+
+            // 6. Restore game time
+            if let Some(gt_val) = find_json_value(json, "game_time") {
+                if let Ok(gt) = gt_val.parse::<f64>() {
+                    app.game_loop.state.game_time = gt;
+                }
+            }
+
+            // Replace economy
+            app.game_loop.state.economy = new_eco;
+            app.overlay_dirty = true;
+            app.mesh_dirty = true;
+
+            return String::from("ok");
+        }
+    }
+    String::from("error: engine not initialized")
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
