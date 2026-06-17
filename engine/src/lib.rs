@@ -1546,8 +1546,18 @@ pub fn get_building_info(idx: usize) -> String {
                         obuf_parts.push(format!(r#""{}":{}"#, rt.name(), val));
                     }
                 }
+            // Toolsmith: report currently-producing tool
+            use crate::economy::{tool_code_to_name, BuildingType};
+            let producing_tool: Option<String> =
+                if kind == BuildingType::Toolsmith && b.is_complete() {
+                    let tool_code = economy.most_needed_tool().unwrap_or(0);
+                    Some(format!(r##","producing_tool":"{}""##, tool_code_to_name(tool_code)))
+                } else {
+                    None
+                };
+
                 return format!(
-                    r#"{{"kind":"{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"settlers":[{}],"max_settlers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}}}}"#,
+                    r#"{{"kind":"{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"settlers":[{}],"max_settlers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}}}}{}"#,
                     kind.name(),
                     b.x,
                     b.y,
@@ -1562,6 +1572,7 @@ pub fn get_building_info(idx: usize) -> String {
                     inputs.join(","),
                     outputs.join(","),
                     obuf_parts.join(","),
+                producing_tool.unwrap_or_default(),
                 );
             }
         }

@@ -2444,6 +2444,7 @@ function showBuildingInfo(idx, cx, cy) {
             <div class="sel-stat">Status: <span>${statusIcon}</span></div>
             <div class="sel-stat">Pos: <span>(${b.x}, ${b.y})</span></div>
             <div class="sel-stat">Workers: <span>${workers}</span></div>
+            ${b.producing_tool ? `<div class="sel-stat">Producing: <span>🔧 ${b.producing_tool}</span></div>` : ''}
             ${prod ? `<div class="sel-stat">Production: <span>${prod}</span></div>` : ''}
             ${obuf ? `<div class="sel-stat">${obuf}</div>` : ''}
         `;
