@@ -1,40 +1,4 @@
-<
-// German translations for building names (S4 authentic)
-const BUILDING_NAMES_DE = {
-    'Castle': 'Burg',
-    'Sawmill': 'Sägewerk',
-    'Stonecutter': 'Steinmetz',
-    'Mine': 'Mine',
-    'Toolsmith': 'Werkzeugschmiede',
-    'Weaponsmith': 'Waffenschmiede',
-    'Brewery': 'Brauerei',
-    'Bakery': 'Bäckerei',
-    'Butcher': 'Metzger',
-    'Mill': 'Mühle',
-    'Farm': 'Farm',
-    'Fisherman': 'Fischer',
-    'Woodcutter': 'Holzfäller',
-    'Storehouse': 'Lagerhaus',
-    'Waterworks': 'Wasserwerk',
-    'Smelter': 'Schmelze',
-    'Barracks': 'Kaserne',
-    'Mint': 'Münzerei',
-    'GuardTower': 'Wachturm',
-    'Fortress': 'Festung',
-    'SiegeWorkshop': 'Belagerungswerkstatt',
-    'Shipyard': 'Werft',
-    'RoadLayer': 'Straßenbauer',
-};
-
-// Translate a building name (returns English if no translation)
-function tBuilding(name) {
-    if (currentLang === 'de' && BUILDING_NAMES_DE[name]) {
-        return BUILDING_NAMES_DE[name];
-    }
-    return name;
-}
-!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -2288,6 +2252,41 @@ const BUILDING_ICONS = {
     'Road Layer': '🛤️',
 };
 
+// German translations for building names (S4 authentic — matches Rust all_names() output)
+const BUILDING_NAMES_DE = {
+    'Castle': 'Burg',
+    'Sawmill': 'Sägewerk',
+    'Stonecutter': 'Steinmetz',
+    'Mine': 'Mine',
+    'Toolsmith': 'Werkzeugschmiede',
+    'Weaponsmith': 'Waffenschmiede',
+    'Brewery': 'Brauerei',
+    'Bakery': 'Bäckerei',
+    'Butcher': 'Metzger',
+    'Mill': 'Mühle',
+    'Farm': 'Farm',
+    'Fisherman': 'Fischer',
+    'Woodcutter': 'Holzfäller',
+    'Storehouse': 'Lagerhaus',
+    'Waterworks': 'Wasserwerk',
+    'Smelter': 'Schmelze',
+    'Barracks': 'Kaserne',
+    'Mint': 'Münzerei',
+    'Guard Tower': 'Wachturm',
+    'Fortress': 'Festung',
+    'Siege Workshop': 'Belagerungswerkstatt',
+    'Shipyard': 'Werft',
+    'Road Layer': 'Straßenbauer',
+};
+
+// Translate a building name (returns English if no translation for current language)
+function tBuilding(name) {
+    if (typeof currentLang !== 'undefined' && currentLang === 'de' && BUILDING_NAMES_DE[name]) {
+        return BUILDING_NAMES_DE[name];
+    }
+    return name;
+}
+
 let placementMode = null; // building type string or null
 let placementButtons = [];
 
@@ -3054,6 +3053,7 @@ function setLanguage(lang) {
     applyLanguage();
     saveSettings();
 }
+window.setLanguage = setLanguage;
 
 function applyLanguage() {
     // Update all data-i18n elements
