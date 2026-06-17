@@ -1114,6 +1114,27 @@ impl Economy {
     pub fn building_count(&self) -> usize {
         self.buildings.len()
     }
+
+    /// Find the nearest completed Storehouse or Castle to the given position.
+    /// Returns the building index if one exists.
+    pub fn find_nearest_storehouse(&self, x: f32, y: f32) -> Option<usize> {
+        let mut best: Option<(usize, f32)> = None;
+        for (i, b) in self.buildings.iter().enumerate() {
+            if !b.is_complete() {
+                continue;
+            }
+            if b.kind != BuildingType::Storehouse && b.kind != BuildingType::Castle {
+                continue;
+            }
+            let dx = b.x as f32 + 0.5 - x;
+            let dy = b.y as f32 + 0.5 - y;
+            let dist = (dx * dx + dy * dy).sqrt();
+            if best.map_or(true, |(_, d)| dist < d) {
+                best = Some((i, dist));
+            }
+        }
+        best.map(|(i, _)| i)
+    }
 }
 
 impl Economy {

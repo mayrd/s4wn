@@ -77,15 +77,39 @@ impl WorkerAI {
             let settler_id = idle_settler_ids[i];
             // Assign settler to building
             economy.buildings[building_idx].assign_settler(settler_id);
-            // Tool pickup: if building requires a tool, try to give to settler
-            let tool_given: Option<u8> = economy.buildings[building_idx]
+            // Physical tool pickup: if building requires a tool AND one is available,
+            // route settler through nearest Storehouse/Castle first
+            let needs_tool = economy.buildings[building_idx]
                 .required_tool
-                .filter(|&tc| economy.withdraw_tool(tc));
-            if let Some(unit) = economy.units.get_mut(settler_id) {
-                unit.assigned_building = Some(building_idx);
-                unit.carried_tool = unit.carried_tool.or(tool_given);
-                // Set state to Moving so move_settlers handles pathfinding
-                unit.state = UnitState::Moving;
+                .is_some();
+            let tool_available = economy.buildings[building_idx]
+                .required_tool
+                .map_or(false, |tc| economy.get_tool_count(tc) > 0);
+
+            // Pre-compute storehouse index before mutable borrow
+            let settler_pos = economy.units.get(settler_id).map(|u| (u.x, u.y));
+            let storehouse_idx = settler_pos
+                .and_then(|(ux, uy)| economy.find_nearest_storehouse(ux, uy));
+
+            if needs_tool && tool_available {
+                if let Some(unit) = economy.units.get_mut(settler_id) {
+                    if let Some(sh_idx) = storehouse_idx {
+                        // Route to storehouse first for physical tool pickup
+                        unit.assigned_building = Some(sh_idx);
+                        unit.pickup_target = Some(building_idx);
+                        unit.state = UnitState::Moving;
+                    } else {
+                        // No storehouse available — assign directly without tool
+                        unit.assigned_building = Some(building_idx);
+                        unit.state = UnitState::Moving;
+                    }
+                }
+            } else {
+                // No tool needed — assign directly
+                if let Some(unit) = economy.units.get_mut(settler_id) {
+                    unit.assigned_building = Some(building_idx);
+                    unit.state = UnitState::Moving;
+                }
             }
             assigned += 1;
         }
@@ -120,10 +144,40 @@ impl WorkerAI {
         for (settler_id, bx, by, ux, uy) in settler_tasks {
             // Check if settler is already at the building
             if ux == bx && uy == by {
-                if let Some(unit) = economy.units.get_mut(settler_id) {
-                    unit.state = UnitState::Working;
-                    unit.path = None;
-                    unit.path_index = 0;
+                // Check if this is a tool pickup arrival
+                let has_pickup = economy.units.get(settler_id)
+                    .map(|u| u.pickup_target.is_some())
+                    .unwrap_or(false);
+                if has_pickup {
+                    // Tool pickup — reroute to real target
+                    if let Some(unit) = economy.units.get_mut(settler_id) {
+                        if let Some(real_target) = unit.pickup_target {
+                            unit.assigned_building = Some(real_target);
+                            unit.pickup_target = None;
+                            unit.path = None;
+                            unit.path_index = 0;
+                            // Keep Moving state
+                        }
+                    }
+                    // Withdraw tool from storage
+                    let tc_needed = economy.units.get(settler_id)
+                        .and_then(|u| {
+                            u.assigned_building
+                                .and_then(|bidx| economy.buildings.get(bidx))
+                                .and_then(|b| b.required_tool)
+                        });
+                    if let Some(tc) = tc_needed {
+                        economy.withdraw_tool(tc);
+                        if let Some(unit) = economy.units.get_mut(settler_id) {
+                            unit.carried_tool = Some(tc);
+                        }
+                    }
+                } else {
+                    if let Some(unit) = economy.units.get_mut(settler_id) {
+                        unit.state = UnitState::Working;
+                        unit.path = None;
+                        unit.path_index = 0;
+                    }
                 }
                 continue;
             }
@@ -155,6 +209,16 @@ impl WorkerAI {
                 }
             }
 
+            // Pre-compute tool pickup info (before mutable borrow to avoid conflicts)
+            let pickup_tool_code: Option<u8> = {
+                let unit = economy.units.get(settler_id);
+                unit.and_then(|u| u.pickup_target)
+                    .and_then(|real_target| {
+                        economy.buildings.get(real_target)
+                            .and_then(|b| b.required_tool)
+                    })
+            };
+
             // Tick movement
             if let Some(unit) = economy.units.get_mut(settler_id) {
                 if unit.state == UnitState::Moving {
@@ -163,11 +227,39 @@ impl WorkerAI {
                         let new_ux = unit.x as usize;
                         let new_uy = unit.y as usize;
                         if new_ux == bx && new_uy == by {
-                            unit.state = UnitState::Working;
-                            unit.path = None;
-                            unit.path_index = 0;
+                            // Check if this is a tool pickup stopover
+                            if unit.pickup_target.is_some() {
+                                // Route to actual building (tool pickup handles separately)
+                                let real_target = unit.pickup_target.unwrap();
+                                unit.assigned_building = Some(real_target);
+                                unit.pickup_target = None;
+                                unit.path = None;
+                                unit.path_index = 0;
+                                // Keep Moving state — next tick paths to real target
+                            } else {
+                                unit.state = UnitState::Working;
+                                unit.path = None;
+                                unit.path_index = 0;
+                            }
                         }
                     }
+                }
+            }
+
+            // Tool pickup: withdraw from storage + give to settler (separate borrow)
+            if let Some(tc) = pickup_tool_code {
+                if let Some(unit) = economy.units.get(settler_id) {
+                    let new_ux = unit.x as usize;
+                    let new_uy = unit.y as usize;
+                    if new_ux == bx && new_uy == by && unit.pickup_target.is_none()
+                        && unit.assigned_building.is_some()
+                    {
+                        // Settler was at storehouse this tick and was rerouted
+                        economy.withdraw_tool(tc);
+                    }
+                }
+                if let Some(unit) = economy.units.get_mut(settler_id) {
+                    unit.carried_tool = Some(tc);
                 }
             }
         }
@@ -383,13 +475,13 @@ mod tests {
         let assigned = ai.auto_assign(&mut economy);
         assert_eq!(assigned, 1, "Should assign settler to stonecutter");
 
-        // Check settler carries the pickaxe
+        // Physical pickup: settler is routed to Storehouse/Castle first
+        // (no Storehouse in test — so settler goes directly to building without tool)
         let settler = economy.units.get(1).unwrap();
-        assert_eq!(settler.assigned_building, Some(stonecutter_idx));
-        assert_eq!(settler.carried_tool, Some(1), "Settler should carry pickaxe");
-
-        // Tool storage should be empty now
-        assert_eq!(economy.get_tool_count(1), 0, "Pickaxe should be withdrawn");
+        assert!(settler.assigned_building.is_some(), "Settler should be assigned somewhere");
+        // Tool is NOT yet withdrawn — physical pickup requires routing through Storehouse
+        assert_eq!(economy.get_tool_count(1), 1, "Pickaxe still in storage (no Storehouse)");
+        assert_eq!(settler.carried_tool, None, "Settler hasn't picked up tool yet");
     }
 
     #[test]

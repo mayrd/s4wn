@@ -143,6 +143,9 @@ pub struct Unit {
     /// Tool this settler carries (ToolType discriminant as u8). None = no tool.
     /// Only relevant for settlers; military units don't carry tools.
     pub carried_tool: Option<u8>,
+    /// When routing through a Storehouse for tool pickup, this stores the real
+    /// target building index. Cleared once the tool is picked up.
+    pub pickup_target: Option<usize>,
     /// Nation-specific attack multiplier (1.0 = normal)
     pub attack_mult: f32,
     /// Nation-specific defense multiplier (1.0 = normal)
@@ -171,6 +174,7 @@ impl Unit {
             attack_cooldown: 0,
             target: None,
             carried_tool: None,
+            pickup_target: None,
             attack_mult: 1.0,
             defense_mult: 1.0,
             attack_range_mult: 1.0,
