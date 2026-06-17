@@ -844,8 +844,10 @@ impl Economy {
     }
 
     /// Set the nation modifiers for this economy.
+    /// Also applies the worker speed multiplier to all existing settlers.
     pub fn set_nation_modifiers(&mut self, modifiers: NationModifiers) {
         self.nation_modifiers = Some(modifiers);
+        self.units.set_nation_speed_mult(modifiers.units.worker_speed);
     }
 
     /// Map a building type to its resource category for nation production speed lookups.
@@ -973,7 +975,13 @@ impl Economy {
             })
             .collect();
         for (cx, cy) in castle_spawns {
-            self.units.spawn(crate::units::UnitKind::Settler, cx, cy);
+            let sid = self.units.spawn(crate::units::UnitKind::Settler, cx, cy);
+            // Apply nation worker speed modifier to newly spawned settler
+            if let Some(ref mods) = self.nation_modifiers {
+                if let Some(unit) = self.units.get_mut(sid) {
+                    unit.nation_speed_mult = mods.units.worker_speed;
+                }
+            }
         }
 
         // 1c. Barracks training — spawn swordsmen/bowmen from completed Barracks that have Weapons
@@ -2221,6 +2229,51 @@ mod tests {
         // Grain should have been produced (some number of times)
         let grain = e.storage.amounts()[ResourceType::Grain as usize];
         assert!(grain > 0, "Farm should have produced Grain with 2.0x speed modifier (got {})", grain);
+    }
+
+    #[test]
+    fn test_nation_worker_speed_modifier() {
+        // Maya workers are 1.15x speed — applied to settlers spawned via Castle recruitment
+        use crate::nation::{AIPersonality, CostModifier, NationModifiers, ProductionModifier, UnitModifier};
+
+        let mut e = Economy::new();
+        let maya_mods = NationModifiers {
+            production: ProductionModifier {
+                food: 1.0, wood: 1.0, stone: 1.0, iron: 1.0,
+                coal: 1.0, gold: 1.0, tools: 1.0, weapons: 1.0,
+            },
+            cost: CostModifier { economic: 1.0, military: 1.0, unique: 1.0 },
+            units: UnitModifier {
+                worker_speed: 1.15, worker_build_speed: 1.0,
+                soldier_hp: 1.0, soldier_attack: 1.0, soldier_defense: 1.0,
+                archer_hp: 1.0, archer_attack: 1.0, archer_range: 1.0,
+            },
+            ai: AIPersonality {
+                aggression: 0.5, expansion_rate: 0.5, defense_priority: 0.5, trade_focus: 0.5,
+            },
+        };
+        e.set_nation_modifiers(maya_mods);
+
+        // Place a Castle (build_time = 0, so it's immediately complete)
+        e.place_building(crate::economy::BuildingType::Castle, 5, 5);
+
+        // Run enough ticks for Castle recruitment (CASTLE_SETTLER_INTERVAL = 50)
+        for _ in 0..51 {
+            e.update();
+        }
+
+        // A settler should have been spawned by the Castle with the 1.15x speed multiplier
+        let settlers: Vec<u32> = e.units.alive_of_kind(crate::units::UnitKind::Settler)
+            .map(|u| u.id)
+            .collect();
+        assert!(!settlers.is_empty(), "Castle should have recruited a settler");
+
+        let settler = e.units.get(settlers[0]).unwrap();
+        assert!(
+            (settler.nation_speed_mult - 1.15).abs() < 0.01,
+            "Settler should have Maya 1.15x speed mult, got {}",
+            settler.nation_speed_mult
+        );
     }
 
     #[test]

@@ -149,6 +149,8 @@ pub struct Unit {
     pub defense_mult: f32,
     /// Nation-specific attack range multiplier (1.0 = normal)
     pub attack_range_mult: f32,
+    /// Nation-specific worker speed multiplier (1.0 = normal). Applied to settler movement.
+    pub nation_speed_mult: f32,
 }
 
 impl Unit {
@@ -172,6 +174,7 @@ impl Unit {
             attack_mult: 1.0,
             defense_mult: 1.0,
             attack_range_mult: 1.0,
+            nation_speed_mult: 1.0,
         }
     }
 
@@ -256,7 +259,7 @@ impl Unit {
             .map(|t| t.terrain.speed_multiplier())
             .unwrap_or(1.0);
 
-        let move_speed = self.kind.speed() * speed_mult;
+        let move_speed = self.kind.speed() * speed_mult * self.nation_speed_mult;
         let step = move_speed * dt;
 
         if dist <= step {
@@ -424,7 +427,15 @@ impl UnitManager {
             .find(|u| u.kind == UnitKind::Settler && u.is_idle())
     }
 
-    /// Assign an idle settler to a building. Returns the settler ID.
+    /// Set the nation speed multiplier on all settler units.
+    /// Called when nation modifiers are applied so workers move faster/slower.
+    pub fn set_nation_speed_mult(&mut self, mult: f32) {
+        for unit in self.units.iter_mut() {
+            if unit.kind == UnitKind::Settler {
+                unit.nation_speed_mult = mult;
+            }
+        }
+    }
     pub fn assign_settler(&mut self, building_index: usize) -> Option<u32> {
         let settler = self.find_idle_settler_mut()?;
         settler.assign_to(building_index);
@@ -673,5 +684,86 @@ mod tests {
         assert_eq!(u.state, UnitState::Moving);
         // Should have moved slightly right
         assert!(u.x > 0.6, "Unit should have moved, x={}", u.x);
+    }
+
+    #[test]
+    fn test_nation_speed_mult_default() {
+        let u = Unit::new(1, UnitKind::Settler, 0.5, 0.5);
+        assert!((u.nation_speed_mult - 1.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_nation_speed_mult_applied_to_movement() {
+        let map = Map::new(10, 10);
+
+        // Create two settlers: one normal, one with 1.5x speed
+        let mut u1 = Unit::new(1, UnitKind::Settler, 0.5, 0.5);
+        let mut u2 = Unit::new(2, UnitKind::Settler, 0.5, 0.5);
+        u2.nation_speed_mult = 1.5;
+
+        let path1 = Path::new(vec![(0, 0), (5, 0)]);
+        let path2 = Path::new(vec![(0, 0), (5, 0)]);
+        u1.move_along(path1);
+        u2.move_along(path2);
+
+        // Move both for the same number of ticks
+        for _ in 0..100 {
+            u1.tick_movement(0.016, &map);
+            u2.tick_movement(0.016, &map);
+        }
+
+        // u2 should have moved farther (1.5x speed)
+        assert!(
+            u2.x > u1.x,
+            "Faster settler should move farther: u1.x={}, u2.x={}",
+            u1.x,
+            u2.x
+        );
+    }
+
+    #[test]
+    fn test_unit_manager_set_nation_speed_mult() {
+        let mut mgr = UnitManager::new();
+        mgr.spawn(UnitKind::Settler, 1.0, 1.0);
+        mgr.spawn(UnitKind::Settler, 2.0, 2.0);
+        mgr.spawn(UnitKind::Swordsman, 3.0, 3.0); // should not be affected
+
+        mgr.set_nation_speed_mult(1.15);
+
+        let s1 = mgr.get(1).unwrap();
+        let s2 = mgr.get(2).unwrap();
+        let sw = mgr.get(3).unwrap();
+
+        assert!((s1.nation_speed_mult - 1.15).abs() < 0.01);
+        assert!((s2.nation_speed_mult - 1.15).abs() < 0.01);
+        assert!((sw.nation_speed_mult - 1.0).abs() < 0.01); // soldiers unaffected
+    }
+
+    #[test]
+    fn test_nation_speed_mult_slower() {
+        let map = Map::new(10, 10);
+
+        // Trojan workers are 0.95x speed
+        let mut u1 = Unit::new(1, UnitKind::Settler, 0.5, 0.5);
+        let mut u2 = Unit::new(2, UnitKind::Settler, 0.5, 0.5);
+        u2.nation_speed_mult = 0.95;
+
+        let path1 = Path::new(vec![(0, 0), (5, 0)]);
+        let path2 = Path::new(vec![(0, 0), (5, 0)]);
+        u1.move_along(path1);
+        u2.move_along(path2);
+
+        for _ in 0..100 {
+            u1.tick_movement(0.016, &map);
+            u2.tick_movement(0.016, &map);
+        }
+
+        // u2 should have moved less (0.95x speed)
+        assert!(
+            u2.x < u1.x,
+            "Slower settler should move less: u1.x={}, u2.x={}",
+            u1.x,
+            u2.x
+        );
     }
 }
