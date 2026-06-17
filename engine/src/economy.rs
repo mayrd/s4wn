@@ -26,7 +26,7 @@
 
 use crate::map::Resource;
 use crate::nation::{NationModifiers, ResourceCategory};
-use crate::units::UnitManager;
+use crate::units::{UnitKind, UnitManager};
 
 // ── Resource Types ──────────────────────────────────────────────────────────
 
@@ -486,6 +486,8 @@ pub struct Building {
     pub max_settlers: u32,
     /// Tool required for work (ToolType discriminant). None = no tool needed.
     pub required_tool: Option<u8>,
+    /// Which unit kind this barracks is currently training (alternates Swordsman/Bowman)
+    pub training_kind: UnitKind,
 }
 
 impl Building {
@@ -508,6 +510,7 @@ impl Building {
             assigned_settlers: Vec::new(),
             max_settlers,
             required_tool,
+            training_kind: UnitKind::Swordsman,
         }
     }
 
@@ -973,8 +976,8 @@ impl Economy {
             self.units.spawn(crate::units::UnitKind::Settler, cx, cy);
         }
 
-        // 1c. Barracks training — spawn swordsmen from completed Barracks that have Weapons
-        let barracks_spawns: Vec<(f32, f32)> = self
+        // 1c. Barracks training — spawn swordsmen/bowmen from completed Barracks that have Weapons
+        let barracks_spawns: Vec<(f32, f32, crate::units::UnitKind)> = self
             .buildings
             .iter_mut()
             .filter(|b| b.kind == BuildingType::Barracks && b.is_complete())
@@ -984,7 +987,13 @@ impl Economy {
                     // Check if we have at least 1 Weapon in storage
                     if self.storage.amounts()[ResourceType::Weapons as usize] >= 1 {
                         b.recruitment_timer = 0;
-                        Some((b.x as f32 + 0.5, b.y as f32 + 0.5))
+                        let trained_kind = b.training_kind;
+                        // Toggle for next training cycle
+                        b.training_kind = match b.training_kind {
+                            crate::units::UnitKind::Swordsman => crate::units::UnitKind::Bowman,
+                            _ => crate::units::UnitKind::Swordsman,
+                        };
+                        Some((b.x as f32 + 0.5, b.y as f32 + 0.5, trained_kind))
                     } else {
                         // No weapons — hold the timer (don't reset, just wait)
                         None
@@ -994,18 +1003,30 @@ impl Economy {
                 }
             })
             .collect();
-        for (bx, by) in barracks_spawns {
+        for (bx, by, kind) in barracks_spawns {
             // Consume 1 Weapon from storage
             self.storage.try_spend(&[(ResourceType::Weapons, 1)]);
-            let sid = self.units.spawn(crate::units::UnitKind::Swordsman, bx, by);
-            // Apply nation combat modifiers to swordsman
+            let sid = self.units.spawn(kind, bx, by);
+            // Apply nation combat modifiers to trained unit
             if let Some(ref mods) = self.nation_modifiers {
                 if let Some(unit) = self.units.get_mut(sid) {
                     let base_hp = unit.hp as f32;
-                    unit.hp = (base_hp * mods.units.soldier_hp).max(1.0) as u32;
-                    unit.max_hp = unit.hp;
-                    unit.attack_mult = mods.units.soldier_attack;
-                    unit.defense_mult = mods.units.soldier_defense;
+                    match unit.kind {
+                        crate::units::UnitKind::Swordsman => {
+                            unit.hp = (base_hp * mods.units.soldier_hp).max(1.0) as u32;
+                            unit.max_hp = unit.hp;
+                            unit.attack_mult = mods.units.soldier_attack;
+                            unit.defense_mult = mods.units.soldier_defense;
+                        }
+                        crate::units::UnitKind::Bowman => {
+                            unit.hp = (base_hp * mods.units.archer_hp).max(1.0) as u32;
+                            unit.max_hp = unit.hp;
+                            unit.attack_mult = mods.units.archer_attack;
+                            unit.defense_mult = 1.0; // bowmen use attack_mult + range for balance
+                            unit.attack_range_mult = mods.units.archer_range;
+                        }
+                        _ => {}
+                    }
                 }
             }
         }
@@ -2282,5 +2303,111 @@ mod tests {
         assert_eq!(unit.max_hp, 110);
         assert!((unit.attack_mult - 1.0).abs() < 0.01, "Attack mult should be 1.0");
         assert!((unit.defense_mult - 1.15).abs() < 0.01, "Defense mult should be 1.15");
+    }
+
+    #[test]
+    fn test_barracks_alternates_swordsman_bowman() {
+        // Barracks should alternate between Swordsman and Bowman each training cycle.
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Weapons, 5);
+
+        e.place_building(BuildingType::Barracks, 3, 3);
+        for _ in 0..41 { e.buildings[0].tick_construction(); }
+        assert!(e.buildings[0].is_complete());
+
+        // Run 2 training cycles
+        for _ in 0..(BARRACKS_TRAINING_INTERVAL * 2) {
+            e.update();
+        }
+
+        // Should have 1 swordsman + 1 bowman
+        let swordsmen: Vec<u32> = e.units.alive_units()
+            .filter(|u| u.kind == crate::units::UnitKind::Swordsman)
+            .map(|u| u.id)
+            .collect();
+        let bowmen: Vec<u32> = e.units.alive_units()
+            .filter(|u| u.kind == crate::units::UnitKind::Bowman)
+            .map(|u| u.id)
+            .collect();
+
+        assert_eq!(swordsmen.len(), 1, "Should have 1 swordsman after 2 cycles");
+        assert_eq!(bowmen.len(), 1, "Should have 1 bowman after 2 cycles");
+
+        // Run 2 more cycles — should get another swordsman + bowman
+        e.storage.add(ResourceType::Weapons, 5);
+        for _ in 0..(BARRACKS_TRAINING_INTERVAL * 2) {
+            e.update();
+        }
+
+        let swordsmen2: Vec<u32> = e.units.alive_units()
+            .filter(|u| u.kind == crate::units::UnitKind::Swordsman)
+            .map(|u| u.id)
+            .collect();
+        let bowmen2: Vec<u32> = e.units.alive_units()
+            .filter(|u| u.kind == crate::units::UnitKind::Bowman)
+            .map(|u| u.id)
+            .collect();
+
+        assert_eq!(swordsmen2.len(), 2, "Should have 2 swordsmen after 4 cycles");
+        assert_eq!(bowmen2.len(), 2, "Should have 2 bowmen after 4 cycles");
+    }
+
+    #[test]
+    fn test_nation_bowman_archer_modifiers() {
+        // Bowmen should receive archer multipliers from nation modifiers.
+        use crate::nation::{NationModifiers, ProductionModifier, CostModifier, UnitModifier, AIPersonality};
+
+        let mut e = Economy::new();
+        // Viking archers have 0.9× HP, 1.0× attack, 1.0× range
+        let viking_mods = NationModifiers {
+            production: ProductionModifier {
+                food: 1.0, wood: 1.0, stone: 1.0, iron: 1.0,
+                coal: 1.0, gold: 1.0, tools: 1.0, weapons: 1.0,
+            },
+            cost: CostModifier {
+                economic: 1.0, military: 1.0, unique: 1.0,
+            },
+            units: UnitModifier {
+                soldier_hp: 1.0, soldier_attack: 1.0, soldier_defense: 1.0,
+                archer_hp: 0.9, archer_attack: 1.1, archer_range: 1.05,
+                worker_speed: 1.0, worker_build_speed: 1.0,
+            },
+            ai: AIPersonality {
+                aggression: 0.5, expansion_rate: 0.5,
+                defense_priority: 0.5, trade_focus: 0.5,
+            },
+        };
+        e.set_nation_modifiers(viking_mods);
+
+        // Place Barracks, construct it, add Weapons. First cycle = Swordsman, second = Bowman.
+        // We need to skip the first cycle to get a Bowman.
+        e.storage.add(ResourceType::Weapons, 5);
+        e.place_building(BuildingType::Barracks, 5, 5);
+        for _ in 0..41 { e.buildings[0].tick_construction(); }
+        assert!(e.buildings[0].is_complete());
+
+        // Run first cycle → Swordsman (ignore)
+        for _ in 0..BARRACKS_TRAINING_INTERVAL {
+            e.update();
+        }
+
+        // Run second cycle → Bowman
+        for _ in 0..BARRACKS_TRAINING_INTERVAL {
+            e.update();
+        }
+
+        let bowmen: Vec<u32> = e.units.alive_units()
+            .filter(|u| u.kind == crate::units::UnitKind::Bowman)
+            .map(|u| u.id)
+            .collect();
+        assert!(!bowmen.is_empty(), "Should have spawned a bowman");
+
+        let unit = e.units.get(bowmen[0]).unwrap();
+        // Base bowman HP = 60, Viking archer_hp = 0.9x → floor(54) = 54
+        assert_eq!(unit.hp, 54, "Viking bowman should have 54 HP (60 * 0.9)");
+        assert_eq!(unit.max_hp, 54);
+        assert!((unit.attack_mult - 1.1).abs() < 0.01, "Attack mult should be 1.1");
+        assert!((unit.defense_mult - 1.0).abs() < 0.01, "Defense mult should be 1.0");
+        assert!((unit.attack_range_mult - 1.05).abs() < 0.01, "Range mult should be 1.05");
     }
 }

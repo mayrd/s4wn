@@ -88,7 +88,8 @@ impl CombatAI {
                     if target.is_alive() {
                         // Check if in range
                         let dist = unit.distance_to(target);
-                        if dist <= unit.kind.attack_range() {
+                        let range = unit.kind.attack_range() * unit.attack_range_mult;
+                        if dist <= range {
                             // In range → try to attack
                             self.try_attack(units, unit_id);
                             return;
@@ -115,7 +116,8 @@ impl CombatAI {
                 let unit = units.get(unit_id).unwrap();
                 let enemy = units.get(enemy_id).unwrap();
                 let dist = unit.distance_to(enemy);
-                (dist, dist <= unit.kind.attack_range())
+                let range = unit.kind.attack_range() * unit.attack_range_mult;
+                (dist, dist <= range)
             };
 
             if can_attack {

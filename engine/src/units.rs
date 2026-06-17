@@ -147,6 +147,8 @@ pub struct Unit {
     pub attack_mult: f32,
     /// Nation-specific defense multiplier (1.0 = normal)
     pub defense_mult: f32,
+    /// Nation-specific attack range multiplier (1.0 = normal)
+    pub attack_range_mult: f32,
 }
 
 impl Unit {
@@ -169,6 +171,7 @@ impl Unit {
             carried_tool: None,
             attack_mult: 1.0,
             defense_mult: 1.0,
+            attack_range_mult: 1.0,
         }
     }
 
