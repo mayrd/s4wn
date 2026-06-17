@@ -3,7 +3,7 @@
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
 ## Status: Phase 2.8 — Nations & Balancing 🔨 (205 tests, 210 total)
-Last updated: 2026-06-17 (Session 63)
+Last updated: 2026-06-17 (Session 64)
 
 ## 🤖 Agent Operating Rules
 
@@ -566,9 +566,17 @@ None at the moment.
 - Graceful fallback to flat colors if textures fail to load
 - Future: tune UV repeat factor, add texture blending between tile edges
 
-### Next Session (Session 64)
+### Next Session (Session 65)
 
-1. **Tool production integration — physical pickup:** Settlers physically pick up tools from Storehouse inventory (add `pickup_tool()` route), not just magically on auto_assign. This makes the tool bar HUD actionable — players see tools being consumed.
+1. **Fog of war:** Implement unexplored territory darkening for tiles not yet seen (shader-based, similar to edge-fog pattern).
+2. **Unit overlay dot tinting:** Extend nation-color overlay tinting to unit dots as well (not just buildings).
+3. **Guard Tower / Fortress territory expansion:** When garrisoned, extend player territory radius.
+4. **Common building completion:** Add remaining S4 common buildings (Shipyard, Siege Workshop, Guard Tower, Fortress, Road Layer).
+5. **Tool pickup polish:** Settlers now route through Storehouse for tools — verify in-game, add HUD feedback showing tool pickup in progress.
+
+### ✅ Completed in Session 64
+
+1. **Tool production integration — physical pickup:** ✅ Settlers physically pick up tools from Storehouse inventory (Session 64) (add `pickup_tool()` route), not just magically on auto_assign. This makes the tool bar HUD actionable — players see tools being consumed.
 2. **Fog of war:** Implement unexplored territory darkening for tiles not yet seen (shader-based, similar to edge-fog pattern).
 3. **Unit overlay dot tinting:** Extend nation-color overlay tinting to unit dots as well (not just buildings).
 4. **Guard Tower / Fortress territory expansion:** When garrisoned, extend player territory radius.
