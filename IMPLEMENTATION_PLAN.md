@@ -2,8 +2,8 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 2.8 — Nations & Balancing 🔨 (188 tests)
-Last updated: 2026-06-17 (Session 54)
+## Status: Phase 2.8 — Nations & Balancing 🔨 (192 tests)
+Last updated: 2026-06-17 (Session 55)
 
 ## 🤖 Agent Operating Rules
 
@@ -500,6 +500,8 @@ s4wn/
 || 51 | 2026-06-16 | ~2h | **Nano Banana 2 high-res terrain textures.** Generated 8 × 1024×1024 PNG terrain textures via google/gemini-3.1-flash-image-preview (OpenRouter, ~$0.55). Wired into WebGL pipeline: added a_uv + a_terrain_id vertex attributes, sampler2DArray u_terrain_textures, base_color texture sampling in fragment shader with flat-color fallback. JS creates TEXTURE_2D_ARRAY, loads 8 PNGs, uploads via texSubImage3D. Cache v=17→v=18. 174 tests passing. |
 ||| 52 | 2026-06-16 | ~10 min | **Bugfix #10 + named tool storage.** Fixed `openMenu is not defined` — JS `<script type="module">` scoped functions invisible to inline onclick handlers; exposed 9 UI functions to `window`. Added `tool_storage: [u32; 12]` to Economy with `get_tool_count`/`add_tool`/`withdraw_tool`/`most_needed_tool`. Toolsmith now produces named tools based on demand. 184 tests passing (+4). |
 ||| 54 | 2026-06-17 | ~10 min | **Mint building + Coins resource.** Added ResourceType::Coins (COUNT 26) and BuildingType::Mint (18 common buildings). Mint converts Gold Ore + Coal → Coins (30 tick interval, Hammer tool, 35 tick construction). Updated building_color, BUILDING_ICONS (🪙), all match arms, tests (+mint_production_chain). 188 tests passing, WASM rebuilt (143KB). |
+||| 55 | 2026-06-17 | ~10 min | **Barracks unit training:** Added BARRACKS_TRAINING_INTERVAL (60 ticks). Completed Barracks consume 1 Weapon → spawn Swordsman. Timer holds when Weapons unavailable. Construction gate (no training until built). 4 new tests. 192 tests passing (+4). |
+
 ||| 53 | 2026-06-16 | ~10 min | **Settler tool pickup + tool awareness.** WorkerAI::auto_assign() now withdraws required tools from economy storage and gives them to settlers (carried_tool) when assigning to tool-requiring buildings. Economy::auto_assign_settlers() applies the same logic. Buildings check has_tooled_settler() before production. 3 new tests (tool pickup with/without tool, economy auto_assign tool pickup). 187 tests passing (+3). |
 || 50 | 2026-06-16 | ~10 min | Castle settler recruitment: added recruitment_timer to Building, CASTLE_SETTLER_INTERVAL=50, Economy::update() spawns idle settlers from completed Castles. Fixed Building::new() zero-build-time buildings. 174 tests passing. |
 ||| 49 | 2026-06-16 | ~25 min | Comprehensive S4 authenticity audit of nations, people, goods, resources, terrain, decorations, and objects. No fabricated content beyond Residence (removed S48). Cleaned old names from docs. 171 tests passing. |
@@ -548,13 +550,13 @@ None at the moment.
 - Graceful fallback to flat colors if textures fail to load
 - Future: tune UV repeat factor, add texture blending between tile edges
 
-### Next Session (Session 55)
+### Next Session (Session 56)
 
-1. **Barracks unit training:** Add recruitment_timer to Barracks building — consumes Weapons+Settler → spawn Swordsman/Bowman. Follow per-building-timer pattern (Session 50 Castle recruitment).
-2. **WASM binding:** Export `get_tool_counts()` from Economy for JS HUD display of tool inventory in the resource bar.
-3. **Tool production integration:** Settlers physically pick up tools from Storehouse before routing to buildings (currently tools are magically assigned on auto_assign).
-4. **Nation modifiers:** Wire `set_player_nation()` WASM export, apply nation production/unit/building cost modifiers in economy and combat.
-5. **Phase 2.8.1 — Nation selection in game state:** Store selected nation on GameState, show nation flag/icon in HUD.
+1. **WASM binding: get_tool_counts()** — Export tool inventory from Economy for JS HUD display in resource bar.
+2. **Tool production integration:** Settlers physically pick up tools from Storehouse before routing to buildings (currently tools are magically assigned on auto_assign).
+3. **Nation modifiers:** Wire `set_player_nation()` WASM export, apply nation production/unit/building cost modifiers in economy and combat.
+4. **Phase 2.8.1 — Nation selection in game state:** Store selected nation on GameState, show nation flag/icon in HUD.
+5. **Bowman training:** Extend Barracks to choose between Swordsman and Bowman unit types.
 
 ### Phase 2.8.2 — Common Buildings (continued)
 
@@ -565,7 +567,7 @@ None at the moment.
 - [x] **Toolsmith named tool production:** `tool_storage` array on Economy, Toolsmith produces named tools based on `most_needed_tool()` demand scan
 - [x] **Settler tool pickup:** idle settlers check storehouse for tools needed by unstaffed buildings, auto-pickup and route to building
 - [x] **Castle settler recruitment:** spawn idle settler at castle every ~50 ticks (5s at 10 TPS)
-- [ ] **Barracks unit training:** consume Swords + Shields + Settler → convert into Swordsman; Weapons + Settler → Bowman
+- [x] **Barracks unit training:** Weapons → Swordsman — recruitment timer, consumes 1 Weapon, 4 tests (Session 55)
 - [x] **Mint building:** Gold Ore + Coal → Coins (trade/economic good) — 18 common buildings (Session 54)
 - [x] **WorkerAI tool awareness:** auto_assign prefers tool-carrying settlers; Toolsmith produces named tools with tool_type field
 
