@@ -77,6 +77,8 @@ pub struct Tile {
     pub elevation: f32,
     /// Optional resource deposit on this tile
     pub resource: Option<Resource>,
+    /// Fog of war visibility: 0.0 = hidden (unexplored), 1.0 = fully visible
+    pub visibility: f32,
 }
 
 /// Natural resources that can be harvested
@@ -108,6 +110,7 @@ impl Map {
                 terrain: Terrain::Grass,
                 elevation: 0.0,
                 resource: None,
+                visibility: 0.0,
             };
             width * height
         ];
@@ -291,6 +294,80 @@ impl Map {
         (0..h).flat_map(move |y| (0..w).map(move |x| (x, y)))
     }
 
+    /// Get the visibility value at a tile (0.0 = hidden, 1.0 = visible).
+    pub fn get_visibility(&self, x: usize, y: usize) -> f32 {
+        if x < self.width && y < self.height {
+            self.tiles[y * self.width + x].visibility
+        } else {
+            0.0
+        }
+    }
+
+    /// Compute fog-of-war visibility from a list of sight sources.
+    /// Each source is (x, y, radius). Buildings and units provide sight.
+    /// Visibility decays linearly from 1.0 at center to 0.0 at radius edge.
+    /// Already-visible tiles remain visible (visibility is cumulative/or'd).
+    pub fn compute_visibility(&mut self, sources: &[(f32, f32, f32)]) {
+        // Reset all visibility to 0
+        for tile in self.tiles.iter_mut() {
+            tile.visibility = 0.0;
+        }
+        // For each source, mark tiles within radius as visible
+        for &(sx, sy, radius) in sources {
+            let r2 = radius * radius;
+            let min_x = (sx - radius).floor().max(0.0) as usize;
+            let max_x = ((sx + radius).ceil() as usize).min(self.width - 1);
+            let min_y = (sy - radius).floor().max(0.0) as usize;
+            let max_y = ((sy + radius).ceil() as usize).min(self.height - 1);
+            for y in min_y..=max_y {
+                for x in min_x..=max_x {
+                    let dx = x as f32 + 0.5 - sx;
+                    let dy = y as f32 + 0.5 - sy;
+                    let dist2 = dx * dx + dy * dy;
+                    if dist2 <= r2 {
+                        let dist = dist2.sqrt();
+                        let v = 1.0 - (dist / radius).clamp(0.0, 1.0);
+                        let idx = y * self.width + x;
+                        // Take max visibility from any source
+                        if v > self.tiles[idx].visibility {
+                            self.tiles[idx].visibility = v;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Compute visibility from buildings and units.
+    /// Buildings: Castle=5, GuardTower=7, Fortress=10, Storehouse=3, others=2
+    /// Units: Settler=3, Swordsman=4, Bowman=4
+    pub fn compute_visibility_from_entities(
+        &mut self,
+        buildings: &[(crate::economy::BuildingType, usize, usize)],
+        units: &[(crate::units::UnitKind, f32, f32)],
+    ) {
+        let mut sources: Vec<(f32, f32, f32)> = Vec::new();
+        for &(ref kind, bx, by) in buildings {
+            let radius = match *kind {
+                crate::economy::BuildingType::Castle => 5.0,
+                crate::economy::BuildingType::GuardTower => 7.0,
+                crate::economy::BuildingType::Fortress => 10.0,
+                crate::economy::BuildingType::Storehouse => 3.0,
+                _ => 2.0,
+            };
+            sources.push((bx as f32 + 0.5, by as f32 + 0.5, radius));
+        }
+        for &(ref kind, ux, uy) in units {
+            let radius = match *kind {
+                crate::units::UnitKind::Settler => 3.0,
+                crate::units::UnitKind::Swordsman => 4.0,
+                crate::units::UnitKind::Bowman => 4.0,
+            };
+            sources.push((ux, uy, radius));
+        }
+        self.compute_visibility(&sources);
+    }
+
     /// Serialize the map to a JSON string for export/sharing.
     /// Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":null},...]}
     /// t = terrain type (u8), e = elevation (f32), r = resource (string or null)
@@ -460,5 +537,203 @@ mod tests {
 
         let corner = neighbors(0, 0, 5, 5);
         assert_eq!(corner.len(), 2); // only right and down
+    }
+
+    // ── Fog of War Tests ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_fog_initial_visibility_zero() {
+        let map = Map::new(10, 10);
+        for (x, y) in map.coordinates() {
+            assert_eq!(map.get_visibility(x, y), 0.0);
+        }
+    }
+
+    #[test]
+    fn test_fog_single_source_center() {
+        let mut map = Map::new(20, 20);
+        // Single source at (10, 10) with radius 5
+        map.compute_visibility(&[(10.5, 10.5, 5.0)]);
+
+        // Center should be fully visible
+        assert!(map.get_visibility(10, 10) > 0.9);
+
+        // Tile within radius should have some visibility
+        assert!(map.get_visibility(14, 10) > 0.0);
+
+        // Tile far outside radius should be hidden
+        assert_eq!(map.get_visibility(0, 0), 0.0);
+    }
+
+    #[test]
+    fn test_fog_outside_sight_radius() {
+        let mut map = Map::new(30, 30);
+        map.compute_visibility(&[(15.5, 15.5, 3.0)]);
+
+        // Tile 5 tiles away should be hidden
+        assert_eq!(map.get_visibility(15, 10), 0.0);
+        assert_eq!(map.get_visibility(10, 15), 0.0);
+
+        // Tile 2 tiles away should be visible
+        assert!(map.get_visibility(15, 13) > 0.0);
+    }
+
+    #[test]
+    fn test_fog_inside_sight_radius() {
+        let mut map = Map::new(20, 20);
+        map.compute_visibility(&[(10.5, 10.5, 5.0)]);
+
+        // All tiles well within radius should have visibility > 0
+        for y in 7..=13 {
+            for x in 7..=13 {
+                let dx = x as f32 + 0.5 - 10.5;
+                let dy = y as f32 + 0.5 - 10.5;
+                let dist = (dx * dx + dy * dy).sqrt();
+                if dist < 4.5 {
+                    assert!(
+                        map.get_visibility(x, y) > 0.0,
+                        "Tile ({},{}) at dist {} should be visible",
+                        x,
+                        y,
+                        dist
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_fog_linear_decay() {
+        let mut map = Map::new(30, 30);
+        // Source at center, radius 10
+        map.compute_visibility(&[(15.5, 15.5, 10.0)]);
+
+        // Visibility should decrease with distance
+        let v_center = map.get_visibility(15, 15);
+        let v_mid = map.get_visibility(15, 10); // ~5 tiles away
+        let v_edge = map.get_visibility(15, 6); // ~9 tiles away
+
+        assert!(v_center > v_mid, "center should be brighter than mid");
+        assert!(v_mid > v_edge, "mid should be brighter than edge");
+    }
+
+    #[test]
+    fn test_fog_guard_tower_larger_radius() {
+        let mut map = Map::new(30, 30);
+        use crate::economy::BuildingType;
+        use crate::units::UnitKind;
+
+        let buildings = vec![
+            (BuildingType::Castle, 15, 15),
+            (BuildingType::GuardTower, 10, 10),
+        ];
+        let units: Vec<(UnitKind, f32, f32)> = vec![];
+
+        map.compute_visibility_from_entities(&buildings, &units);
+
+        // Guard Tower at (10,10) has radius 7, Castle at (15,15) has radius 5
+        // Tile near Guard Tower should be visible
+        assert!(map.get_visibility(10, 10) > 0.0);
+        // Tile near Castle should be visible
+        assert!(map.get_visibility(15, 15) > 0.0);
+        // Tile far from both should be hidden
+        assert_eq!(map.get_visibility(0, 0), 0.0);
+    }
+
+    #[test]
+    fn test_fog_fortress_largest_radius() {
+        let mut map = Map::new(40, 40);
+        use crate::economy::BuildingType;
+
+        let buildings = vec![(BuildingType::Fortress, 20, 20)];
+        let units: Vec<(crate::units::UnitKind, f32, f32)> = vec![];
+
+        map.compute_visibility_from_entities(&buildings, &units);
+
+        // Fortress has radius 10
+        assert!(map.get_visibility(20, 20) > 0.9);
+        assert!(map.get_visibility(25, 20) > 0.0);
+        assert!(map.get_visibility(29, 20) > 0.0); // within radius
+        assert_eq!(map.get_visibility(0, 0), 0.0);
+    }
+
+    #[test]
+    fn test_fog_units_provide_sight() {
+        let mut map = Map::new(20, 20);
+        use crate::units::UnitKind;
+
+        let buildings: Vec<(crate::economy::BuildingType, usize, usize)> = vec![];
+        let units = vec![
+            (UnitKind::Settler, 10.5, 10.5),
+            (UnitKind::Swordsman, 5.5, 5.5),
+        ];
+
+        map.compute_visibility_from_entities(&buildings, &units);
+
+        // Settler has radius 3
+        assert!(map.get_visibility(10, 10) > 0.9);
+        // Swordsman has radius 4
+        assert!(map.get_visibility(5, 5) > 0.9);
+        // Far tile should be hidden
+        assert_eq!(map.get_visibility(19, 19), 0.0);
+    }
+
+    #[test]
+    fn test_fog_multiple_sources_combine() {
+        let mut map = Map::new(30, 30);
+        // Two sources far apart
+        map.compute_visibility(&[(5.5, 5.5, 3.0), (25.5, 25.5, 3.0)]);
+
+        // Both centers visible
+        assert!(map.get_visibility(5, 5) > 0.0);
+        assert!(map.get_visibility(25, 25) > 0.0);
+        // Middle should be hidden (too far from both)
+        assert_eq!(map.get_visibility(15, 15), 0.0);
+    }
+
+    #[test]
+    fn test_fog_performance_256x256() {
+        let mut map = Map::new(256, 256);
+        let sources: Vec<(f32, f32, f32)> = vec![
+            (64.5, 64.5, 10.0),
+            (128.5, 128.5, 15.0),
+            (192.5, 64.5, 8.0),
+            (64.5, 192.5, 12.0),
+            (192.5, 192.5, 10.0),
+        ];
+
+        // This should complete quickly (< 5ms is the target)
+        let start = std::time::Instant::now();
+        map.compute_visibility(&sources);
+        let elapsed = start.elapsed();
+
+        // Verify some tiles are visible
+        assert!(map.get_visibility(64, 64) > 0.0);
+        assert!(map.get_visibility(128, 128) > 0.0);
+
+        // Should complete in under 100ms even in debug mode
+        assert!(
+            elapsed.as_millis() < 100,
+            "Fog computation took {}ms, expected < 100ms",
+            elapsed.as_millis()
+        );
+    }
+
+    #[test]
+    fn test_fog_get_visibility_out_of_bounds() {
+        let map = Map::new(10, 10);
+        assert_eq!(map.get_visibility(100, 100), 0.0);
+        assert_eq!(map.get_visibility(10, 10), 0.0);
+    }
+
+    #[test]
+    fn test_fog_reset_clears_visibility() {
+        let mut map = Map::new(20, 20);
+        map.compute_visibility(&[(10.5, 10.5, 5.0)]);
+        assert!(map.get_visibility(10, 10) > 0.0);
+
+        // Compute again with no sources — should reset
+        map.compute_visibility(&[]);
+        assert_eq!(map.get_visibility(10, 10), 0.0);
     }
 }

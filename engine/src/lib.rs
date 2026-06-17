@@ -38,6 +38,7 @@ in float a_elevation;
 in float a_has_resource;
 in float a_slope;
 in float a_edge_dist;
+in float a_visibility;
 in vec2 a_uv;
 in float a_terrain_id;
 
@@ -53,6 +54,7 @@ out float v_has_resource;
 out float v_day_phase;
 out float v_slope;
 out float v_edge_dist;
+out float v_visibility;
 out vec2 v_uv;
 out float v_terrain_id;
 
@@ -308,6 +310,7 @@ struct MeshData {
     has_resources: Vec<f32>,
     slopes: Vec<f32>,
     edge_dists: Vec<f32>,
+    visibilities: Vec<f32>,
     uvs: Vec<f32>,
     terrain_ids: Vec<f32>,
     indices: Vec<u16>,
@@ -322,6 +325,7 @@ impl MeshData {
             has_resources: Vec::new(),
             slopes: Vec::new(),
             edge_dists: Vec::new(),
+            visibilities: Vec::new(),
             uvs: Vec::new(),
             terrain_ids: Vec::new(),
             indices: Vec::new(),
@@ -413,6 +417,7 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
             mesh.uvs.push(u);
             mesh.uvs.push(v);
             mesh.terrain_ids.push(tile.terrain as u8 as f32);
+            mesh.visibilities.push(tile.visibility);
 
             // Build triangle strip indices
             if row < rows && col < cols {
