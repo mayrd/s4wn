@@ -921,7 +921,6 @@
 <div id="tile-tip"></div>
 
 <div id="controls">
-  <button onclick="openMenu()">☰ Menu</button>
 </div>
 
 <canvas id="minimap" width="150" height="150"></canvas>
@@ -940,12 +939,7 @@
   <button id="btn-save-game" style="position:absolute;bottom:30%;left:50%;transform:translateX(-50%);padding:10px 24px;font-size:14px;font-family:inherit;background:rgba(200,170,100,0.1);border:1px solid rgba(200,170,100,0.3);border-radius:8px;color:#c8b878;cursor:pointer;pointer-events:auto;display:none;letter-spacing:0.05em;transition:all 0.2s;" data-i18n="save_game">💾 Save Game</button>
 </div>
 
-<!-- Speed Controls -->
-<div id="speed-controls">
-  <button class="spd-btn active" data-speed="1">▶ 1×</button>
-  <button class="spd-btn" data-speed="2">▶▶ 2×</button>
-  <button class="spd-btn" data-speed="4">▶▶▶ 4×</button>
-</div>
+<!-- Speed Controls removed — single toggle button in bottom-left panel -->
 
 <div id="placement-status"></div>
 <div id="selection-info"></div>
@@ -1523,7 +1517,22 @@ function updateSpeedButtons() {
 
 function setSpeed(speed) {
     set_game_speed(speed);
-    updateSpeedButtons();
+    updateSpeedButton();
+}
+
+const SPEEDS = [1, 2, 4];
+let currentSpeedIdx = 0;
+
+function toggleSpeed() {
+    currentSpeedIdx = (currentSpeedIdx + 1) % SPEEDS.length;
+    setSpeed(SPEEDS[currentSpeedIdx]);
+}
+
+function updateSpeedButton() {
+    const btn = document.getElementById('btn-speed');
+    if (!btn) return;
+    const speed = SPEEDS[currentSpeedIdx];
+    btn.textContent = speed === 1 ? '▶ 1×' : speed === 2 ? '▶▶ 2×' : '▶▶▶ 4×';
 }
 
 function togglePause() {
@@ -4307,6 +4316,7 @@ console.error = function (...args) {
 <!-- Bottom-left action buttons -->
 <div id="bottom-left-btns">
     <button id="btn-menu" onclick="openMenu()" data-i18n="menu">☰ Menu</button>
+    <button id="btn-speed" onclick="toggleSpeed()" title="Toggle game speed">▶ 1×</button>
     <button id="btn-construction" onclick="toggleConstructionPanel()" data-i18n="construction">🏗️ Bauen</button>
     <button id="btn-stats" onclick="toggleStatsPanel()" data-i18n="stats">📊 Statistik</button>
 </div>
