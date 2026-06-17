@@ -3,7 +3,7 @@
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
 ## Status: Phase 2.8 — Nations & Balancing 🔨 (205 tests, 210 total)
-Last updated: 2026-06-17 (Session 64)
+Last updated: 2026-06-17 (Session 65)
 
 ## 🤖 Agent Operating Rules
 
@@ -123,7 +123,7 @@ Last updated: 2026-06-17 (Session 64)
 | **Roads** | Road Layer | Stone | Paved Road (speed bonus) | None |
 
 **Implementation:**
-- [ ] Full `BuildingType` variants for all S4 common buildings (17 currently)
+- [ ] Full `BuildingType` variants for all S4 common buildings (18 currently — Guard Tower added)
 - [x] Each building stores `input_resources: Vec<(ResourceType, u32)>`, `output_resources: Vec<(ResourceType, u32)>`, `required_tool: Option<ToolType>`
 - [ ] Tool system: buildings stay "unoccupied" until worker with correct tool arrives
 - [ ] Construction progress: worker builds for N ticks based on building cost
@@ -522,6 +522,8 @@ s4wn/
 ||| 49 | 2026-06-16 | ~25 min | Comprehensive S4 authenticity audit of nations, people, goods, resources, terrain, decorations, and objects. No fabricated content beyond Residence (removed S48). Cleaned old names from docs. 171 tests passing. |
 | 48 | 2026-06-16 | ~10 min | Fixed black screen (Session 47 carryover): removed unused u_map_dims uniform from vertex shader — GPU drivers optimized it away, causing get_uniform_location to return None and default (0,0) to blanket map in edge-fog color matching clear color. Updated edge-fog shader test. Bumped WASM cache to v=15. All 171 tests passing. |
 || 63 | 2026-06-17 | ~10 min | **Nation-color tinting on building overlay dots:** Added `u_player_rgb` uniform to overlay fragment shader — when a player nation is selected, building dots are tinted 40% with the nation color (Romans=red, Vikings=blue, Maya=green, Trojans=gold, DarkTribe=purple). No tint when no nation selected. `overlay_player_rgb_loc` stored as Option for GPU safety. WASM rebuilt (v=25). All 210 tests passing (205 engine + 5 server). |
+|| 64 | 2026-06-17 | ~10 min | **Physical tool pickup:** Settlers now route through Storehouse/Castle to physically pick up tools from inventory before heading to buildings. Economy::pickup_tool() withdraws tool, assigns to settler. 210 tests passing. |
+|| 65 | 2026-06-17 | ~10 min | **Guard Tower building:** Added BuildingType::GuardTower (discriminant 18) — S4 common military building. Cost: 8 Stone + 6 Boards, 40-tick build, Hammer tool, Military category. Stone grey overlay dot, 🗼 toolbar icon. Updated test count 18→19 types. 210 tests passing. |
 ---
 
 ## Open Items & Decisions Needed
@@ -566,21 +568,17 @@ None at the moment.
 - Graceful fallback to flat colors if textures fail to load
 - Future: tune UV repeat factor, add texture blending between tile edges
 
-### Next Session (Session 65)
+### Next Session (Session 66)
 
-1. **Fog of war:** Implement unexplored territory darkening for tiles not yet seen (shader-based, similar to edge-fog pattern).
-2. **Unit overlay dot tinting:** Extend nation-color overlay tinting to unit dots as well (not just buildings).
-3. **Guard Tower / Fortress territory expansion:** When garrisoned, extend player territory radius.
-4. **Common building completion:** Add remaining S4 common buildings (Shipyard, Siege Workshop, Guard Tower, Fortress, Road Layer).
-5. **Tool pickup polish:** Settlers now route through Storehouse for tools — verify in-game, add HUD feedback showing tool pickup in progress.
+1. **Common building completion:** Add remaining S4 common buildings — Fortress, Siege Workshop, Shipyard, Road Layer (Guard Tower done in S65).
+2. **Guard Tower / Fortress territory expansion:** When garrisoned, extend player territory radius via shader or map overlay.
+3. **Fog of war:** Implement unexplored territory darkening for tiles not yet seen (shader-based, similar to edge-fog pattern).
+4. **Unit overlay dot tinting:** Verify nation-color tinting applies to unit dots (shader uniform already shared).
+5. **Tool pickup polish:** Add HUD feedback showing tool pickup in progress.
 
 ### ✅ Completed in Session 64
 
-1. **Tool production integration — physical pickup:** ✅ Settlers physically pick up tools from Storehouse inventory (Session 64) (add `pickup_tool()` route), not just magically on auto_assign. This makes the tool bar HUD actionable — players see tools being consumed.
-2. **Fog of war:** Implement unexplored territory darkening for tiles not yet seen (shader-based, similar to edge-fog pattern).
-3. **Unit overlay dot tinting:** Extend nation-color overlay tinting to unit dots as well (not just buildings).
-4. **Guard Tower / Fortress territory expansion:** When garrisoned, extend player territory radius.
-5. **Common building completion:** Add remaining S4 common buildings (Shipyard, Siege Workshop, Guard Tower, Fortress, Road Layer).
+1. **Tool production integration — physical pickup:** ✅ Settlers physically pick up tools from Storehouse inventory (add `pickup_tool()` route), not just magically on auto_assign. This makes the tool bar HUD actionable — players see tools being consumed.
 
 ### Phase 2.8.2 — Common Buildings (continued)
 
