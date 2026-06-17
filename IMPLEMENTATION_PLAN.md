@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 **Status:** Phase 2.8 — Nations & Balancing (216 tests)
-**Last updated:** 2026-06-17 (Session 74 — Fog of War)
+**Last updated:** 2026-06-17 (Session 75 — Bugfix #37 toggleSpeed)
 
 ---
 
@@ -274,15 +274,19 @@ protocol::tests               5 tests    Message serialization, room management
 || 72 | 2026-06-17 | Tool pickup toast notifications — carried_tool added to get_unit_summary(), showToast() CSS animation, trackToolPickups() in game loop, WASM v=32 |
 ||| **73** | **2026-06-17** | **Authentic S4 resources: removed Coins+Mint (fabricated), renamed Iron→IronOre, Game→Meat (raw). Added 6 missing S4 resources (Clay, Hemp, Honey, Bricks, Rope, Mead) + 6 planned buildings (ClayPit, Brickworks, HempFarm, Ropemaker, Apiary, MeadMaker). Resources: 18→22. Buildings: 22→27 (21 impl + 6 planned). 204 tests pass.** |
 ||| **74** | **2026-06-17** | **Fog of war: visibility field on Tile, compute_visibility() with linear falloff, compute_visibility_from_entities() for buildings (Castle=5, GuardTower=7, Fortress=10, Storehouse=3, others=2) and units (Settler=3, Swordsman=4, Bowman=4). 12 new tests. Visibility integrated into mesh vertex attribute for shader fog rendering. 216 tests pass.** |
+|| **75** | **2026-06-17** | **Bugfix #37: toggleSpeed() was module-scoped, inaccessible to inline onclick. Added window.toggleSpeed to exposure block. 216 tests pass.** |
 
 ---
 
 ## Next Objectives (TDD Order)
 
-### 1. Fog of War ✅ Done (Session 74)
-**Objective:** Unexplored tiles render dark. Tiles become visible when a unit/building is within sight radius.
-**Implementation:** ✅ `Tile.visibility` field, `Map::compute_visibility()` with linear falloff, `Map::compute_visibility_from_entities()` for buildings (Castle=5, GuardTower=7, Fortress=10, Storehouse=3, others=2) and units (Settler=3, Swordsman=4, Bowman=4). Visibility vertex attribute in mesh for shader integration. 12 tests passing.
-**Remaining:** Fragment shader fog darkening (engine-side vertex attribute ready, shader update pending).
+### 1. Fog of War Shader Integration
+**Objective:** Fragment shader darkens unexplored/unvisible tiles using the visibility vertex attribute.
+**Test Cases (to write first):**
+- [ ] `Tile::visibility` field is 0.0 for unexplored, 1.0 for fully visible
+- [ ] Fragment shader reads `a_visibility` and darkens tiles below threshold
+- [ ] Smooth transition at visibility edges (no hard cutoffs)
+**Remaining:** Wire visibility attribute into fragment shader (`u_fog_color` uniform + `a_visibility` attribute).
 
 ### 2. Territory Expansion
 **Objective:** Guard Towers and Fortresses extend player territory border when garrisoned.
