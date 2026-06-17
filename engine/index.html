@@ -1507,6 +1507,14 @@ function closeMenu() {
     showMenu = false;
 }
 
+function toggleMenu() {
+    if (showMenu) {
+        closeMenu();
+    } else {
+        openMenu();
+    }
+}
+
 // ── Pause / Speed controls ────────────────────────────────────────────
 function updateSpeedButtons() {
     const speed = parseFloat(document.querySelector('#speed-controls .spd-btn.active')?.dataset?.speed || 1);
@@ -4263,6 +4271,7 @@ ${stack}
 // Expose UI functions called from inline onclick handlers (module scope → global)
 window.openMenu = openMenu;
 window.closeMenu = closeMenu;
+window.toggleMenu = toggleMenu;
 window.openNewGame = openNewGame;
 window.closeNewGame = closeNewGame;
 window.startNewGame = startNewGame;
@@ -4319,7 +4328,7 @@ console.error = function (...args) {
 
 <!-- Bottom-left action buttons -->
 <div id="bottom-left-btns">
-    <button id="btn-menu" onclick="openMenu()" data-i18n="menu">☰ Menu</button>
+    <button id="btn-menu" onclick="toggleMenu()" data-i18n="menu">☰ Menu</button>
     <button id="btn-speed" onclick="toggleSpeed()" title="Toggle game speed">▶ 1×</button>
     <button id="btn-construction" onclick="toggleConstructionPanel()" data-i18n="construction">🏗️ Bauen</button>
     <button id="btn-stats" onclick="toggleStatsPanel()" data-i18n="stats">📊 Statistik</button>
