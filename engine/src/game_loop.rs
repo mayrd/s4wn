@@ -24,6 +24,7 @@
 //! - Randomness comes from a seeded PRNG (not system entropy)
 
 use crate::combat::CombatAI;
+use crate::nation::NationType;
 use crate::economy::Economy;
 use crate::map::Map;
 use crate::worker_ai::WorkerAI;
@@ -49,6 +50,8 @@ pub struct GameState {
     worker_ai: WorkerAI,
     /// Combat AI controller — manages military engagements
     combat_ai: CombatAI,
+    /// The player's nation type (set after game start via set_player_nation)
+    pub player_nation: Option<NationType>,
 }
 
 impl GameState {
@@ -62,6 +65,7 @@ impl GameState {
             economy: Economy::new(),
             worker_ai: WorkerAI::new(),
             combat_ai: CombatAI::new(),
+            player_nation: None,
         }
     }
 
@@ -78,6 +82,7 @@ impl GameState {
             economy: Economy::with_starting_resources(resources),
             worker_ai: WorkerAI::new(),
             combat_ai: CombatAI::new(),
+            player_nation: None,
         }
     }
 

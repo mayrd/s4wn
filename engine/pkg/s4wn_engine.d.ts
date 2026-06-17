@@ -64,6 +64,12 @@ export function get_game_state(): string;
 export function get_map_data(): Uint8Array;
 
 /**
+ * Get the player's nation as a JSON string {name, color, emoji, description}
+ * Returns empty string if no nation is set.
+ */
+export function get_player_nation(): string;
+
+/**
  * Get resource counts as a JSON string for the HUD.
  * Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Boards":0,...}
  */
@@ -114,6 +120,11 @@ export function is_paused(): boolean;
 export function list_building_types(): string;
 
 /**
+ * List all available nation types as a JSON array.
+ */
+export function list_nations(): string;
+
+/**
  * Load a map from JSON string (same format as exported by to_json()).
  * Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":null},...]}
  * Also accepts verbose format: {"width":64,"height":64,"tiles":[{"terrain":"Grass","elevation":0.0,"resource":"Iron"},...]}
@@ -161,6 +172,12 @@ export function set_game_speed(multiplier: number): void;
  * Set the game pause state.
  */
 export function set_paused(paused: boolean): void;
+
+/**
+ * Set the player's nation for the current game.
+ * Returns true if the nation name was recognized and applied.
+ */
+export function set_player_nation(nation_name: string): boolean;
 
 /**
  * Called from JS after terrain textures are fully loaded into the shared WebGL context.
@@ -223,6 +240,7 @@ export interface InitOutput {
     readonly get_game_speed: () => number;
     readonly get_game_state: () => [number, number];
     readonly get_map_data: () => [number, number];
+    readonly get_player_nation: () => [number, number];
     readonly get_resource_counts: () => [number, number];
     readonly get_stats: () => [number, number];
     readonly get_tile_at: (a: number, b: number) => [number, number];
@@ -232,6 +250,7 @@ export interface InitOutput {
     readonly init: (a: number, b: number) => [number, number, number];
     readonly is_paused: () => number;
     readonly list_building_types: () => [number, number];
+    readonly list_nations: () => [number, number];
     readonly load_map_json: (a: number, b: number) => [number, number];
     readonly on_mouse_down: (a: number, b: number) => void;
     readonly on_mouse_move: (a: number, b: number) => void;
@@ -241,6 +260,7 @@ export interface InitOutput {
     readonly restore_game_state: (a: number, b: number) => [number, number];
     readonly set_game_speed: (a: number) => void;
     readonly set_paused: (a: number) => void;
+    readonly set_player_nation: (a: number, b: number) => number;
     readonly set_textures_ready: () => void;
     readonly setup_starter_base: (a: number) => [number, number];
     readonly toggle_pause: () => number;

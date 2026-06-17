@@ -80,6 +80,34 @@ impl NationType {
             NationType::DarkTribe => "#643296",
         }
     }
+
+    /// Parse a nation type from its name string.
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "Roman" | "Romans" => Some(NationType::Roman),
+            "Viking" | "Vikings" => Some(NationType::Viking),
+            "Maya" => Some(NationType::Maya),
+            "Trojan" | "Trojans" => Some(NationType::Trojan),
+            "DarkTribe" | "Dark Tribe" => Some(NationType::DarkTribe),
+            _ => None,
+        }
+    }
+
+    /// All nation type names (for UI population).
+    pub fn all_names() -> Vec<&'static str> {
+        vec!["Roman", "Viking", "Maya", "Trojan", "DarkTribe"]
+    }
+
+    /// Emoji icon for this nation (for HUD display).
+    pub fn emoji(self) -> &'static str {
+        match self {
+            NationType::Roman => "🏛️",
+            NationType::Viking => "⚔️",
+            NationType::Maya => "🏯",
+            NationType::Trojan => "🏺",
+            NationType::DarkTribe => "💀",
+        }
+    }
 }
 
 // ── Nation Modifiers ──────────────────────────────────────────────────────────

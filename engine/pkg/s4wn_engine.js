@@ -167,6 +167,24 @@ export function get_map_data() {
 }
 
 /**
+ * Get the player's nation as a JSON string {name, color, emoji, description}
+ * Returns empty string if no nation is set.
+ * @returns {string}
+ */
+export function get_player_nation() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_player_nation();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Get resource counts as a JSON string for the HUD.
  * Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Boards":0,...}
  * @returns {string}
@@ -320,6 +338,23 @@ export function list_building_types() {
 }
 
 /**
+ * List all available nation types as a JSON array.
+ * @returns {string}
+ */
+export function list_nations() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.list_nations();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Load a map from JSON string (same format as exported by to_json()).
  * Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":null},...]}
  * Also accepts verbose format: {"width":64,"height":64,"tiles":[{"terrain":"Grass","elevation":0.0,"resource":"Iron"},...]}
@@ -417,6 +452,19 @@ export function set_game_speed(multiplier) {
  */
 export function set_paused(paused) {
     wasm.set_paused(paused);
+}
+
+/**
+ * Set the player's nation for the current game.
+ * Returns true if the nation name was recognized and applied.
+ * @param {string} nation_name
+ * @returns {boolean}
+ */
+export function set_player_nation(nation_name) {
+    const ptr0 = passStringToWasm0(nation_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.set_player_nation(ptr0, len0);
+    return ret !== 0;
 }
 
 /**

@@ -1401,6 +1401,57 @@ pub fn get_tool_counts() -> String {
     String::new()
 }
 
+/// Set the player's nation for the current game.
+/// Returns true if the nation name was recognized and applied.
+#[wasm_bindgen]
+pub fn set_player_nation(nation_name: &str) -> bool {
+    use crate::nation::NationType;
+    if let Some(nation) = NationType::from_name(nation_name) {
+        unsafe {
+            if let Some(ref mut app) = APP {
+                app.game_loop.state.player_nation = Some(nation);
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// Get the player's nation as a JSON string {name, color, emoji, description}
+/// Returns empty string if no nation is set.
+#[wasm_bindgen]
+pub fn get_player_nation() -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            if let Some(nation) = app.game_loop.state.player_nation {
+                return format!(
+                    "{{\"name\":\"{}\",\"color\":\"{}\",\"emoji\":\"{}\",\"description\":\"{}\"}}",
+                    nation.name(),
+                    nation.color_hex(),
+                    nation.emoji(),
+                    nation.description()
+                );
+            }
+        }
+    }
+    String::new()
+}
+
+/// List all available nation types as a JSON array.
+#[wasm_bindgen]
+pub fn list_nations() -> String {
+    use crate::nation::NationType;
+    let nations: Vec<String> = NationType::all_names().iter().map(|name| {
+        if let Some(nt) = NationType::from_name(name) {
+            format!("{{\"name\":\"{}\",\"color\":\"{}\",\"emoji\":\"{}\",\"description\":\"{}\"}}",
+                nt.name(), nt.color_hex(), nt.emoji(), nt.description())
+        } else {
+            String::new()
+        }
+    }).collect();
+    format!("[{}]", nations.join(","))
+}
+
 /// Get building summary as a JSON string for the HUD.
 /// Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1},...]
 #[wasm_bindgen]
