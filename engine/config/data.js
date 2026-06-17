@@ -1460,8 +1460,7 @@ window.S4WN_CONFIG = {
     ],
     "Processing": [
       "Toolsmith",
-      "Weaponsmith",
-      "Mint"
+      "Weaponsmith"
     ],
     "Military": [
       "Barracks",

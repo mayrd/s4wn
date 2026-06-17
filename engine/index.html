@@ -3957,8 +3957,11 @@ function toggleConstructionPanel() {
 
 function populateConstructionPanel() {
     const container = document.getElementById('construction-categories');
+    if (!container) return;
+    const cats = window.BUILDING_CATEGORIES || BUILDING_CATEGORIES;
+    if (!cats) return;
     let html = '';
-    for (const [cat, buildings] of Object.entries(BUILDING_CATEGORIES)) {
+    for (const [cat, buildings] of Object.entries(cats)) {
         html += '<div class="con-category">';
         html += `<div class="con-cat-header">${cat}</div>`;
         html += '<div class="con-cat-body">';
