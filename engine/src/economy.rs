@@ -25,6 +25,7 @@
 //! - An output buffer (resources produced, waiting to be collected)
 
 use crate::map::Resource;
+use crate::nation::{NationModifiers, ResourceCategory};
 use crate::units::UnitManager;
 
 // ── Resource Types ──────────────────────────────────────────────────────────
@@ -397,6 +398,25 @@ impl BuildingType {
             _ => None, // Castle, Storehouse, Farm, Barracks — no tool needed
         }
     }
+
+    /// The building category for nation cost modifier lookups.
+    pub fn building_category(self) -> crate::nation::BuildingCategory {
+        use crate::nation::BuildingCategory;
+        match self {
+            // Economic buildings
+            BuildingType::Farm | BuildingType::Mill | BuildingType::Bakery
+            | BuildingType::Fisherman | BuildingType::Butcher | BuildingType::Waterworks
+            | BuildingType::Woodcutter | BuildingType::Sawmill | BuildingType::Stonecutter
+            | BuildingType::Smelter | BuildingType::Mint | BuildingType::Toolsmith
+            | BuildingType::Brewery | BuildingType::Castle | BuildingType::Storehouse => {
+                BuildingCategory::Economic
+            }
+            // Military buildings
+            BuildingType::Weaponsmith | BuildingType::Barracks | BuildingType::Mine => {
+                BuildingCategory::Military
+            }
+        }
+    }
 }
 
 /// Convert a tool name string to its ToolType discriminant (u8).
@@ -453,8 +473,8 @@ pub struct Building {
     pub active: bool,
     /// Ticks until next settler recruitment (Castle only)
     pub recruitment_timer: u32,
-    /// Ticks since last production
-    pub production_counter: u32,
+    /// Ticks since last production (f32 for nation-modifier precision)
+    pub production_counter: f32,
     /// Input buffer: resources waiting to be consumed
     /// Indexed by ResourceType as u8
     pub input_buffer: [u32; ResourceType::COUNT],
@@ -482,7 +502,7 @@ impl Building {
             construction: start_construction,
             active: start_construction >= 1.0,
             recruitment_timer: 0,
-            production_counter: 0,
+            production_counter: 0.0,
             input_buffer: [0u32; ResourceType::COUNT],
             output_buffer: [0u32; ResourceType::COUNT],
             assigned_settlers: Vec::new(),
@@ -567,18 +587,19 @@ impl Building {
     }
 
     /// Try to produce resources for this tick.
+    /// `speed_multiplier` applies nation production modifiers (1.0 = normal).
     /// Returns true if production occurred.
     /// Note: this does NOT check for assigned settlers — caller must check `has_settler()`.
-    pub fn try_produce(&mut self, _storage: &mut ResourceStorage) -> bool {
+    pub fn try_produce(&mut self, _storage: &mut ResourceStorage, speed_multiplier: f32) -> bool {
         if !self.is_complete() || self.kind.production_interval() == 0 {
             return false;
         }
 
-        self.production_counter += 1;
-        if self.production_counter < self.kind.production_interval() {
+        self.production_counter += speed_multiplier;
+        if self.production_counter < self.kind.production_interval() as f32 {
             return false;
         }
-        self.production_counter = 0;
+        self.production_counter = 0.0;
 
         // Check if we have enough inputs
         for &(ref_type, amount) in self.kind.inputs() {
@@ -746,6 +767,8 @@ pub struct Economy {
     /// Named tool storage — tracks how many of each ToolType are in the storehouse.
     /// Indexed by ToolType discriminant (0=Hammer, 1=Pickaxe, ..., 10=Scythe).
     pub tool_storage: [u32; 12],
+    /// Nation modifiers applied to production costs and speeds (None = unset)
+    pub nation_modifiers: Option<NationModifiers>,
 }
 
 impl Economy {
@@ -758,6 +781,7 @@ impl Economy {
             production_events: 0,
             resources_collected: 0,
             tool_storage: [0u32; 12],
+            nation_modifiers: None,
         }
     }
 
@@ -816,6 +840,68 @@ impl Economy {
         assigned
     }
 
+    /// Set the nation modifiers for this economy.
+    pub fn set_nation_modifiers(&mut self, modifiers: NationModifiers) {
+        self.nation_modifiers = Some(modifiers);
+    }
+
+    /// Map a building type to its resource category for nation production speed lookups.
+    fn building_to_resource_category(kind: BuildingType) -> ResourceCategory {
+        match kind {
+            // Food buildings
+            BuildingType::Farm | BuildingType::Fisherman | BuildingType::Butcher
+            | BuildingType::Mill | BuildingType::Bakery | BuildingType::Waterworks => {
+                ResourceCategory::Food
+            }
+            // Wood buildings
+            BuildingType::Woodcutter | BuildingType::Sawmill => {
+                ResourceCategory::Wood
+            }
+            // Stone
+            BuildingType::Stonecutter => {
+                ResourceCategory::Stone
+            }
+            // Iron-related (mining + smelting)
+            BuildingType::Smelter => {
+                ResourceCategory::Iron
+            }
+            // Gold
+            BuildingType::Mint => {
+                ResourceCategory::Gold
+            }
+            // Tools
+            BuildingType::Toolsmith => {
+                ResourceCategory::Tools
+            }
+            // Weapons
+            BuildingType::Weaponsmith => {
+                ResourceCategory::Weapons
+            }
+            // Buildings without resource production (Castle, Storehouse, Barracks, Mine)
+            // use a default 1.0 multiplier — handled upstream
+            _ => ResourceCategory::Food, // unreachable for production, safe default
+        }
+    }
+
+    /// Get the production speed multiplier for a building type from nation modifiers.
+    fn production_speed_for(&self, kind: BuildingType) -> f32 {
+        if let Some(ref mods) = self.nation_modifiers {
+            let cat = Self::building_to_resource_category(kind);
+            match cat {
+                ResourceCategory::Food => mods.production.food,
+                ResourceCategory::Wood => mods.production.wood,
+                ResourceCategory::Stone => mods.production.stone,
+                ResourceCategory::Iron => mods.production.iron,
+                ResourceCategory::Coal => mods.production.coal,
+                ResourceCategory::Gold => mods.production.gold,
+                ResourceCategory::Tools => mods.production.tools,
+                ResourceCategory::Weapons => mods.production.weapons,
+            }
+        } else {
+            1.0
+        }
+    }
+
     /// Get the number of idle settlers
     pub fn idle_settlers(&self) -> usize {
         self.units.idle_settler_count()
@@ -834,10 +920,26 @@ impl Economy {
     }
 
     /// Try to place a building, checking if we can afford it.
+    /// Applies nation cost modifiers to building costs.
     /// Returns the building index if successful.
     pub fn try_place_building(&mut self, kind: BuildingType, x: usize, y: usize) -> Option<usize> {
-        let cost = kind.build_cost();
-        if self.storage.try_spend(cost) {
+        let base_cost = kind.build_cost();
+        let cost_multiplier = self.nation_modifiers
+            .map(|m| {
+                use crate::nation::BuildingCategory;
+                match kind.building_category() {
+                    BuildingCategory::Economic => m.cost.economic,
+                    BuildingCategory::Military => m.cost.military,
+                    BuildingCategory::Unique => m.cost.unique,
+                }
+            })
+            .unwrap_or(1.0);
+        // Apply modifier: multiply each cost entry and round up (ceil)
+        let adjusted_cost: Vec<(ResourceType, u32)> = base_cost.iter().map(|&(rt, amt)| {
+            let adj = (amt as f32 * cost_multiplier).ceil() as u32;
+            (rt, adj)
+        }).collect();
+        if self.storage.try_spend(&adjusted_cost) {
             Some(self.place_building(kind, x, y))
         } else {
             None
@@ -895,7 +997,17 @@ impl Economy {
         for (bx, by) in barracks_spawns {
             // Consume 1 Weapon from storage
             self.storage.try_spend(&[(ResourceType::Weapons, 1)]);
-            self.units.spawn(crate::units::UnitKind::Swordsman, bx, by);
+            let sid = self.units.spawn(crate::units::UnitKind::Swordsman, bx, by);
+            // Apply nation combat modifiers to swordsman
+            if let Some(ref mods) = self.nation_modifiers {
+                if let Some(unit) = self.units.get_mut(sid) {
+                    let base_hp = unit.hp as f32;
+                    unit.hp = (base_hp * mods.units.soldier_hp).max(1.0) as u32;
+                    unit.max_hp = unit.hp;
+                    unit.attack_mult = mods.units.soldier_attack;
+                    unit.defense_mult = mods.units.soldier_defense;
+                }
+            }
         }
 
         // Pre-compute which buildings have tooled settlers
@@ -907,9 +1019,13 @@ impl Economy {
             .collect();
 
         // 2. Try production for all buildings (only if they have tooled settlers)
+        //    Pre-compute production speeds to avoid borrow conflict
+        let speeds: Vec<f32> = self.buildings.iter()
+            .map(|b| self.production_speed_for(b.kind))
+            .collect();
         for (i, building) in self.buildings.iter_mut().enumerate() {
             if can_produce[i] {
-                if building.try_produce(&mut self.storage) {
+                if building.try_produce(&mut self.storage, speeds[i]) {
                     self.production_events += 1;
                 }
             }
@@ -1208,7 +1324,7 @@ mod tests {
         // Sawmill: 20 ticks per cycle, consumes 2 Wood → produces 1 Boards
         let mut produced = 0;
         for _ in 0..100 {
-            if building.try_produce(&mut storage) {
+            if building.try_produce(&mut storage, 1.0) {
                 produced += 1;
             }
         }
@@ -1233,7 +1349,7 @@ mod tests {
         // Farm: no inputs, produces 2 Grain every 20 ticks
         let mut produced = 0;
         for _ in 0..100 {
-            if building.try_produce(&mut storage) {
+            if building.try_produce(&mut storage, 1.0) {
                 produced += 1;
             }
         }
@@ -1257,7 +1373,7 @@ mod tests {
         // No inputs → no production
         let mut produced = 0;
         for _ in 0..100 {
-            if building.try_produce(&mut storage) {
+            if building.try_produce(&mut storage, 1.0) {
                 produced += 1;
             }
         }
@@ -1341,7 +1457,7 @@ mod tests {
 
         for _tick in 0..300 {
             // Lumberjack produces
-            if lumberjack.try_produce(&mut storage) {
+            if lumberjack.try_produce(&mut storage, 1.0) {
                 total_wood += 2;
             }
             // Move wood from lumberjack output to sawmill input
@@ -1351,7 +1467,7 @@ mod tests {
                 lumberjack.output_buffer[ResourceType::Wood as usize] = 0;
             }
             // Sawmill produces
-            if sawmill.try_produce(&mut storage) {
+            if sawmill.try_produce(&mut storage, 1.0) {
                 total_planks += 1;
             }
         }
@@ -1440,7 +1556,7 @@ mod tests {
         // Waterworks: no inputs, produces 1 Water every 30 ticks
         let mut produced = 0;
         for _ in 0..100 {
-            if building.try_produce(&mut storage) {
+            if building.try_produce(&mut storage, 1.0) {
                 produced += 1;
             }
         }
@@ -1473,14 +1589,14 @@ mod tests {
         smelter.input_buffer[ResourceType::Coal as usize] = 10;
 
         for _ in 0..200 {
-            if mine.try_produce(&mut storage) {
+            if mine.try_produce(&mut storage, 1.0) {
                 let iron = mine.output_buffer[ResourceType::Iron as usize];
                 if iron > 0 {
                     smelter.input_buffer[ResourceType::Iron as usize] += iron;
                     mine.output_buffer[ResourceType::Iron as usize] = 0;
                 }
             }
-            smelter.try_produce(&mut storage);
+            smelter.try_produce(&mut storage, 1.0);
         }
 
         let ingots = smelter.output_buffer[ResourceType::IronIngots as usize];
@@ -1571,7 +1687,7 @@ mod tests {
 
         let mut produced = 0;
         for _ in 0..200 {
-            if mint.try_produce(&mut storage) {
+            if mint.try_produce(&mut storage, 1.0) {
                 produced += 1;
             }
         }
@@ -2038,5 +2154,133 @@ mod tests {
             7,
             "Weapons should decrease from 10 to 7 after 3 swordsmen"
         );
+    }
+
+    #[test]
+    fn test_nation_production_speed_modifier() {
+        // Roman food production is 1.1x (10% faster)
+        // A Farm produces Grain every 30 ticks normally
+        // With Roman modifier, effective interval should be shorter
+        use crate::nation::{NationModifiers, ProductionModifier, CostModifier, UnitModifier, AIPersonality};
+
+        let mut e = Economy::new();
+        let roman_mods = NationModifiers {
+            production: ProductionModifier {
+                food: 2.0, wood: 1.0, stone: 1.0, iron: 1.0,
+                coal: 1.0, gold: 1.0, tools: 1.0, weapons: 1.0,
+            },
+            cost: CostModifier { economic: 1.0, military: 1.0, unique: 1.0 },
+            units: UnitModifier {
+                worker_speed: 1.0, worker_build_speed: 1.0,
+                soldier_hp: 1.0, soldier_attack: 1.0, soldier_defense: 1.0,
+                archer_hp: 1.0, archer_attack: 1.0, archer_range: 1.0,
+            },
+            ai: AIPersonality {
+                aggression: 0.5, expansion_rate: 0.5, defense_priority: 0.5, trade_focus: 0.5,
+            },
+        };
+        e.set_nation_modifiers(roman_mods);
+
+        // Place and construct a Farm (no tool needed, no inputs)
+        e.place_building(BuildingType::Farm, 5, 5);
+        for _ in 0..41 { e.buildings[0].tick_construction(); }
+        assert!(e.buildings[0].is_complete());
+
+        // Assign a settler (no tool needed for Farm, so has_tooled_settler returns true)
+        let sid = e.units.spawn(crate::units::UnitKind::Settler, 5.5, 5.5);
+        e.buildings[0].assign_settler(sid);
+        e.units.get_mut(sid).unwrap().assign_to(0);
+
+        // With 2.0x speed, production should fire every ~15 ticks instead of 30
+        // After 20 ticks, we should have at least 1 production event
+        let mut produced = 0u64;
+        for _ in 0..20 {
+            e.update();
+        }
+        // Grain should have been produced (some number of times)
+        let grain = e.storage.amounts()[ResourceType::Grain as usize];
+        assert!(grain > 0, "Farm should have produced Grain with 2.0x speed modifier (got {})", grain);
+    }
+
+    #[test]
+    fn test_nation_cost_modifier() {
+        // Viking military buildings are 0.8x cost (20% cheaper)
+        use crate::nation::{NationModifiers, ProductionModifier, CostModifier, UnitModifier, AIPersonality};
+
+        let mut e = Economy::new();
+        let viking_mods = NationModifiers {
+            production: ProductionModifier {
+                food: 1.0, wood: 1.0, stone: 1.0, iron: 1.0,
+                coal: 1.0, gold: 1.0, tools: 1.0, weapons: 1.0,
+            },
+            cost: CostModifier { economic: 1.0, military: 0.5, unique: 1.0 },
+            units: UnitModifier {
+                worker_speed: 1.0, worker_build_speed: 1.0,
+                soldier_hp: 1.0, soldier_attack: 1.0, soldier_defense: 1.0,
+                archer_hp: 1.0, archer_attack: 1.0, archer_range: 1.0,
+            },
+            ai: AIPersonality {
+                aggression: 0.5, expansion_rate: 0.5, defense_priority: 0.5, trade_focus: 0.5,
+            },
+        };
+        e.set_nation_modifiers(viking_mods);
+
+        // Barracks normal cost: [(Wood, 20), (Stone, 15), (IronIngots, 5)]
+        // With 0.5x cost modifier: [(Wood, 10), (Stone, 8), (IronIngots, 3)]
+        // We need 10 Wood, 8 Stone, 3 IronIngots (ceil of 5*0.5)
+        e.storage.add(ResourceType::Wood, 10);
+        e.storage.add(ResourceType::Stone, 8);
+        e.storage.add(ResourceType::IronIngots, 3);
+
+        let idx = e.try_place_building(BuildingType::Barracks, 3, 3);
+        assert!(idx.is_some(), "Should be able to place Barracks with discounted costs");
+    }
+
+    #[test]
+    fn test_nation_swordsman_hp_modifier() {
+        // Maya swordsman has 1.1x HP (10% more)
+        use crate::nation::{NationModifiers, ProductionModifier, CostModifier, UnitModifier, AIPersonality};
+
+        let mut e = Economy::new();
+        let maya_mods = NationModifiers {
+            production: ProductionModifier {
+                food: 1.0, wood: 1.0, stone: 1.0, iron: 1.0,
+                coal: 1.0, gold: 1.0, tools: 1.0, weapons: 1.0,
+            },
+            cost: CostModifier { economic: 1.0, military: 1.0, unique: 1.0 },
+            units: UnitModifier {
+                worker_speed: 1.0, worker_build_speed: 1.0,
+                soldier_hp: 1.1, soldier_attack: 1.0, soldier_defense: 1.15,
+                archer_hp: 1.0, archer_attack: 1.0, archer_range: 1.0,
+            },
+            ai: AIPersonality {
+                aggression: 0.5, expansion_rate: 0.5, defense_priority: 0.5, trade_focus: 0.5,
+            },
+        };
+        e.set_nation_modifiers(maya_mods);
+
+        // Place and construct a Barracks with Weapons
+        e.storage.add(ResourceType::Weapons, 5);
+        e.place_building(BuildingType::Barracks, 5, 5);
+        for _ in 0..41 { e.buildings[0].tick_construction(); }
+        assert!(e.buildings[0].is_complete());
+
+        // Run BARRACKS_TRAINING_INTERVAL ticks to spawn a swordsman
+        for _ in 0..BARRACKS_TRAINING_INTERVAL {
+            e.update();
+        }
+
+        let swordsmen: Vec<u32> = e.units.alive_units()
+            .filter(|u| u.kind == crate::units::UnitKind::Swordsman)
+            .map(|u| u.id)
+            .collect();
+        assert!(!swordsmen.is_empty(), "Should have spawned a swordsman");
+
+        let unit = e.units.get(swordsmen[0]).unwrap();
+        // Base swordsman HP = 100, Maya modifier = 1.1x → 110
+        assert_eq!(unit.hp, 110, "Maya swordsman should have 110 HP (100 * 1.1)");
+        assert_eq!(unit.max_hp, 110);
+        assert!((unit.attack_mult - 1.0).abs() < 0.01, "Attack mult should be 1.0");
+        assert!((unit.defense_mult - 1.15).abs() < 0.01, "Defense mult should be 1.15");
     }
 }

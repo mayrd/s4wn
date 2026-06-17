@@ -143,6 +143,10 @@ pub struct Unit {
     /// Tool this settler carries (ToolType discriminant as u8). None = no tool.
     /// Only relevant for settlers; military units don't carry tools.
     pub carried_tool: Option<u8>,
+    /// Nation-specific attack multiplier (1.0 = normal)
+    pub attack_mult: f32,
+    /// Nation-specific defense multiplier (1.0 = normal)
+    pub defense_mult: f32,
 }
 
 impl Unit {
@@ -163,6 +167,8 @@ impl Unit {
             attack_cooldown: 0,
             target: None,
             carried_tool: None,
+            attack_mult: 1.0,
+            defense_mult: 1.0,
         }
     }
 

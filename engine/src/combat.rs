@@ -174,18 +174,19 @@ impl CombatAI {
             };
             (
                 target_id,
-                attacker.kind.attack_damage(),
+                (attacker.kind.attack_damage() as f32 * attacker.attack_mult).max(1.0) as u32,
                 attacker.kind.attack_interval(),
             )
         };
 
-        // Apply damage
+        // Apply damage (defense multiplier reduces incoming damage)
         let died = {
             let target = match units.get_mut(target_id) {
                 Some(t) => t,
                 None => return,
             };
-            target.take_damage(damage)
+            let effective_damage = (damage as f32 / target.defense_mult.max(0.1)).max(1.0) as u32;
+            target.take_damage(effective_damage)
         };
 
         // Set cooldown on attacker

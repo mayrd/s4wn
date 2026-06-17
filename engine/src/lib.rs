@@ -1405,11 +1405,14 @@ pub fn get_tool_counts() -> String {
 /// Returns true if the nation name was recognized and applied.
 #[wasm_bindgen]
 pub fn set_player_nation(nation_name: &str) -> bool {
-    use crate::nation::NationType;
-    if let Some(nation) = NationType::from_name(nation_name) {
+    use crate::nation::{NationType, Nation};
+    if let Some(nation_type) = NationType::from_name(nation_name) {
+        let nation = Nation::new(nation_type);
         unsafe {
             if let Some(ref mut app) = APP {
-                app.game_loop.state.player_nation = Some(nation);
+                app.game_loop.state.player_nation = Some(nation_type);
+                // Apply nation modifiers to economy
+                app.game_loop.state.economy.set_nation_modifiers(nation.modifiers);
                 return true;
             }
         }
@@ -2139,7 +2142,7 @@ pub fn restore_game_state(json: &str) -> String {
                         let mut b = Building::new(kind, x, y);
                         b.construction = construction;
                         b.active = active;
-                        b.production_counter = production_counter;
+                        b.production_counter = production_counter as f32;
                         b.max_settlers = max_settlers;
 
                         // Restore settler IDs
