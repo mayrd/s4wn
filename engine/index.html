@@ -992,7 +992,7 @@ import init, {
     set_player_nation,
     get_player_nation,
     list_nations,
-} from './pkg/s4wn_engine.js?v=29';
+} from './pkg/s4wn_engine.js?v=30';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -2752,7 +2752,14 @@ minimapEl.addEventListener('click', (e) => {
 // ── Minimap render ─────────────────────────────────────────────────────
 function renderMinimap() {
     if (!engineReady) return;
-    const mapData = get_map_data();
+    let mapData;
+    try {
+        mapData = get_map_data();
+    } catch (e) {
+        // Defensive: get_map_data can panic if map state is inconsistent
+        console.warn('Minimap: get_map_data failed', e);
+        return;
+    }
     if (!mapData || mapData.length < 4) return;
 
     const w = mapData[0] | (mapData[1] << 8);
@@ -3820,7 +3827,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=29');
+            const mod = await import('./pkg/s4wn_engine.js?v=30');
             load_map_json = mod.load_map_json || null;
             console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {
@@ -4256,6 +4263,8 @@ window.closeSettings = closeSettings;
 window.resetSettings = resetSettings;
 window.confirmMapLoad = confirmMapLoad;
 window.cancelMapPreview = cancelMapPreview;
+window.toggleConstructionPanel = toggleConstructionPanel;
+window.toggleStatsPanel = toggleStatsPanel;
 
 // Global error handlers
 window.ErrorHandler = ErrorHandler;

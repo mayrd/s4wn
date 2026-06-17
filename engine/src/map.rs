@@ -118,6 +118,11 @@ impl Map {
         }
     }
 
+    /// Number of tiles in the map (width × height). Public for consistency checks.
+    pub fn tiles_len(&self) -> usize {
+        self.tiles.len()
+    }
+
     /// Get tile at (x, y). Returns None if out of bounds.
     pub fn get(&self, x: usize, y: usize) -> Option<&Tile> {
         if x < self.width && y < self.height {

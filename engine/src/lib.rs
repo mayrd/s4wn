@@ -1222,7 +1222,16 @@ pub fn get_map_data() -> Vec<u8> {
         if let Some(ref app) = APP {
             let w = app.map.width;
             let h = app.map.height;
-            let mut data = Vec::with_capacity(4 + w * h);
+            // Guard against inconsistent map state (tile count mismatch)
+            let tile_count = w.checked_mul(h).unwrap_or(0);
+            if tile_count == 0 || app.map.tiles_len() != tile_count {
+                return Vec::new();
+            }
+            let cap = 4usize.checked_add(tile_count).unwrap_or(0);
+            if cap == 0 {
+                return Vec::new();
+            }
+            let mut data = Vec::with_capacity(cap);
             data.push((w & 0xFF) as u8);
             data.push((w >> 8) as u8);
             data.push((h & 0xFF) as u8);
