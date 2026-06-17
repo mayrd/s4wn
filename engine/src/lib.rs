@@ -1229,7 +1229,8 @@ pub fn get_map_data() -> Vec<u8> {
             data.push((h >> 8) as u8);
             for y in 0..h {
                 for x in 0..w {
-                    data.push(app.map.get(x, y).unwrap().terrain as u8);
+                    let terrain = app.map.get(x, y).map(|t| t.terrain as u8).unwrap_or(0u8);
+                    data.push(terrain);
                 }
             }
             return data;

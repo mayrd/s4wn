@@ -1,4 +1,39 @@
-<!DOCTYPE html>
+<
+// German translations for building names (S4 authentic)
+const BUILDING_NAMES_DE = {
+    'Castle': 'Burg',
+    'Sawmill': 'Sägewerk',
+    'Stonecutter': 'Steinmetz',
+    'Mine': 'Mine',
+    'Toolsmith': 'Werkzeugschmiede',
+    'Weaponsmith': 'Waffenschmiede',
+    'Brewery': 'Brauerei',
+    'Bakery': 'Bäckerei',
+    'Butcher': 'Metzger',
+    'Mill': 'Mühle',
+    'Farm': 'Farm',
+    'Fisherman': 'Fischer',
+    'Woodcutter': 'Holzfäller',
+    'Storehouse': 'Lagerhaus',
+    'Waterworks': 'Wasserwerk',
+    'Smelter': 'Schmelze',
+    'Barracks': 'Kaserne',
+    'Mint': 'Münzerei',
+    'GuardTower': 'Wachturm',
+    'Fortress': 'Festung',
+    'SiegeWorkshop': 'Belagerungswerkstatt',
+    'Shipyard': 'Werft',
+    'RoadLayer': 'Straßenbauer',
+};
+
+// Translate a building name (returns English if no translation)
+function tBuilding(name) {
+    if (currentLang === 'de' && BUILDING_NAMES_DE[name]) {
+        return BUILDING_NAMES_DE[name];
+    }
+    return name;
+}
+!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -697,7 +732,7 @@
     </div>
     <button class="menu-btn" id="btn-demo">🗺️ Demo Map</button>
     <button class="menu-btn" id="btn-continue" style="display:none">💾 Continue Game</button>
-    <button class="menu-btn" onclick="openNewGame()">🆕 New Game</button>
+    <button class="menu-btn" onclick="openNewGame()" data-i18n="new_game">🆕 New Game</button>
     <button class="menu-btn" onclick="openSettings()">⚙️ Settings</button>
     <button class="menu-btn secondary" onclick="window.open('https://github.com/mayrd/s4wn','_blank')">
       🔗 GitHub Repository
@@ -2279,7 +2314,7 @@ function populateBuildToolbar() {
         btn._buildingName = name;
         const icon = BUILDING_ICONS[name] || '🏗️';
         const costTip = showBuildCostTooltip(name);
-        btn.textContent = `${icon} ${name}`;
+        btn.textContent = `${icon} ${tBuilding(name)}`;
         btn.title = costTip || name;
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -2295,7 +2330,7 @@ function populateBuildToolbar() {
                 placementMode = name;
                 btn.classList.add('active');
                 canvas.classList.add('placing');
-                placementStatus.textContent = `Place ${name} — click tile · Right-click/B to cancel`;
+                placementStatus.textContent = `Place ${tBuilding(name)} — click tile · Right-click/B to cancel`;
                 placementStatus.classList.add('visible');
             }
         });
