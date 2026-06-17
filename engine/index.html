@@ -675,6 +675,68 @@
   }
   .error-dialog .btn-copy:hover { background: rgba(255,255,255,0.12); }
   .error-dialog .btn-copy.copied { color: #4caf50; border-color: rgba(76,175,80,0.4); }
+
+  /* ── Bottom-left buttons (Construction + Statistics) ───────────────── */
+  #bottom-left-btns {
+      position: fixed; bottom: 52px; left: 8px; z-index: 100;
+      display: flex; gap: 4px;
+  }
+  #bottom-left-btns button {
+      background: rgba(0,0,0,0.75); color: #ccc; border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px; padding: 4px 10px; font-size: 11px; cursor: pointer;
+      font-family: inherit; white-space: nowrap;
+  }
+  #bottom-left-btns button:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  #bottom-left-btns button.active { background: rgba(255,255,255,0.15); border-color: #e6b422; }
+
+  /* ── Construction Panel ──────────────────────────────────────────── */
+  #construction-panel {
+      position: fixed; bottom: 80px; left: 8px; z-index: 99;
+      background: rgba(10,10,26,0.95); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px; padding: 8px; width: 320px; max-height: 60vh;
+      overflow-y: auto; display: none; font-size: 11px;
+  }
+  #construction-panel.open { display: block; }
+  #construction-panel h4 { margin: 0 0 6px 0; color: #e6b422; font-size: 13px; text-align: center; }
+  #construction-panel .con-category { margin-bottom: 6px; }
+  #construction-panel .con-cat-header {
+      color: #888; font-size: 10px; text-transform: uppercase;
+      padding: 3px 6px; background: rgba(255,255,255,0.03); border-radius: 3px;
+      margin-bottom: 3px; cursor: pointer;
+  }
+  #construction-panel .con-cat-header:hover { color: #ccc; }
+  #construction-panel .con-bldg {
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 6px; border-radius: 3px; cursor: pointer;
+      margin-bottom: 1px; transition: background 0.15s;
+  }
+  #construction-panel .con-bldg:hover { background: rgba(255,255,255,0.06); }
+  #construction-panel .con-bldg .con-icon { font-size: 16px; width: 22px; text-align: center; }
+  #construction-panel .con-bldg .con-name { flex: 1; color: #ddd; }
+  #construction-panel .con-bldg .con-cost { color: #888; font-size: 10px; }
+
+  /* ── Statistics Panel ────────────────────────────────────────────── */
+  #stats-panel {
+      position: fixed; bottom: 80px; left: 8px; z-index: 98;
+      background: rgba(10,10,26,0.95); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px; padding: 8px; width: 300px; max-height: 55vh;
+      overflow-y: auto; display: none; font-size: 11px;
+  }
+  #stats-panel.open { display: block; }
+  #stats-panel .stats-tabs { display: flex; gap: 2px; margin-bottom: 8px; }
+  #stats-panel .stats-tab {
+      flex: 1; text-align: center; padding: 4px; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 3px;
+      cursor: pointer; font-size: 10px; color: #888;
+  }
+  #stats-panel .stats-tab:hover { color: #ccc; background: rgba(255,255,255,0.08); }
+  #stats-panel .stats-tab.active { color: #e6b422; border-color: #e6b422; background: rgba(255,255,255,0.08); }
+  #stats-panel .stats-row {
+      display: flex; justify-content: space-between; padding: 2px 6px;
+      color: #ccc; border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  #stats-panel .stats-row .stats-label { color: #aaa; }
+  #stats-panel .stats-row .stats-val { color: #e6b422; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -2746,6 +2808,8 @@ const LANG = {
         sound_effects: 'Sound Effects',
         reset_defaults: '↺ Reset Defaults',
         back_to_game: '← Back to Game',
+        construction: '🏗️ Build',
+        stats: '📊 Statistics',
         language_label: '🌐 Language',
         new_game_title: '🆕 New Game',
         player_name: 'Player Name',
@@ -2823,6 +2887,8 @@ const LANG = {
         sound_effects: 'Soundeffekte',
         reset_defaults: '↺ Zurücksetzen',
         back_to_game: '← Zurück zum Spiel',
+        construction: '🏗️ Bauen',
+        stats: '📊 Statistik',
         language_label: '🌐 Sprache',
         new_game_title: '🆕 Neues Spiel',
         player_name: 'Spielername',
@@ -3874,6 +3940,171 @@ async function main() {
 
 main();
 
+
+// ── Construction Panel (#18) ──────────────────────────────────────────────
+
+// S4 building categories
+const BUILDING_CATEGORIES = {
+    'Food': ['Farm', 'Fisherman', 'Butcher', 'Mill', 'Bakery', 'Waterworks', 'Brewery'],
+    'Raw Materials': ['Woodcutter', 'Sawmill', 'Stonecutter', 'Mine', 'Smelter'],
+    'Processing': ['Toolsmith', 'Weaponsmith', 'Mint'],
+    'Military': ['Barracks', 'Guard Tower', 'Fortress', 'Siege Workshop'],
+    'Infrastructure': ['Castle', 'Storehouse', 'Shipyard', 'Road Layer'],
+};
+
+function toggleConstructionPanel() {
+    const panel = document.getElementById('construction-panel');
+    const btn = document.getElementById('btn-construction');
+    const statsPanel = document.getElementById('stats-panel');
+    // Close stats if open
+    if (statsPanel.classList.contains('open')) {
+        statsPanel.classList.remove('open');
+        document.getElementById('btn-stats').classList.remove('active');
+    }
+    if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+        btn.classList.remove('active');
+    } else {
+        populateConstructionPanel();
+        panel.classList.add('open');
+        btn.classList.add('active');
+    }
+}
+
+function populateConstructionPanel() {
+    const container = document.getElementById('construction-categories');
+    let html = '';
+    for (const [cat, buildings] of Object.entries(BUILDING_CATEGORIES)) {
+        html += '<div class="con-category">';
+        html += `<div class="con-cat-header">${cat}</div>`;
+        html += '<div class="con-cat-body">';
+        for (const name of buildings) {
+            const icon = BUILDING_ICONS[name] || '🏗️';
+            const costStr = showBuildCostTooltip(name);
+            const cost = costStr ? costStr.replace('Cost: ', '') : '?';
+            const displayName = tBuilding(name);
+            html += `<div class="con-bldg" onclick="selectBuilding('${name}')" title="${costStr || name}">`;
+            html += `<span class="con-icon">${icon}</span>`;
+            html += `<span class="con-name">${displayName}</span>`;
+            html += `<span class="con-cost">${cost}</span>`;
+            html += '</div>';
+        }
+        html += '</div></div>';
+    }
+    container.innerHTML = html;
+}
+
+function selectBuilding(name) {
+    // Use the existing placement system
+    placementButtons.forEach(b => b.classList.remove('active'));
+    placementMode = name;
+    canvas.classList.add('placing');
+    const icon = BUILDING_ICONS[name] || '🏗️';
+    placementStatus.textContent = `Place ${tBuilding(name)} — click tile · Right-click/B to cancel`;
+    placementStatus.classList.add('visible');
+    // Highlight the matching toolbar button
+    placementButtons.forEach(b => {
+        if (b._buildingName === name) b.classList.add('active');
+    });
+    // Close construction panel
+    document.getElementById('construction-panel').classList.remove('open');
+    document.getElementById('btn-construction').classList.remove('active');
+}
+
+
+
+// ── Statistics Panel (#20) ────────────────────────────────────────────────
+
+let currentStatsTab = 'resources';
+let statsRefreshInterval = null;
+
+function toggleStatsPanel() {
+    const panel = document.getElementById('stats-panel');
+    const btn = document.getElementById('btn-stats');
+    const conPanel = document.getElementById('construction-panel');
+    // Close construction if open
+    if (conPanel.classList.contains('open')) {
+        conPanel.classList.remove('open');
+        document.getElementById('btn-construction').classList.remove('active');
+    }
+    if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+        btn.classList.remove('active');
+        if (statsRefreshInterval) { clearInterval(statsRefreshInterval); statsRefreshInterval = null; }
+    } else {
+        showStatsTab(currentStatsTab);
+        panel.classList.add('open');
+        btn.classList.add('active');
+        // Auto-refresh every 2 seconds while open
+        statsRefreshInterval = setInterval(() => showStatsTab(currentStatsTab), 2000);
+    }
+}
+
+function showStatsTab(tab) {
+    currentStatsTab = tab;
+    document.querySelectorAll('#stats-panel .stats-tab').forEach(t => {
+        t.classList.toggle('active', t.textContent.includes(
+            tab === 'resources' ? 'Ressourcen' : tab === 'settlers' ? 'Siedler' : 'Militär'
+        ));
+    });
+    const body = document.getElementById('stats-body');
+    if (tab === 'resources') {
+        renderResourceStats(body);
+    } else if (tab === 'settlers') {
+        renderSettlerStats(body);
+    } else if (tab === 'military') {
+        renderMilitaryStats(body);
+    }
+}
+
+function renderResourceStats(body) {
+    try {
+        const counts = JSON.parse(get_resource_counts());
+        let html = '';
+        const total = Object.values(counts).reduce((a, b) => a + b, 0);
+        for (const [name, count] of Object.entries(counts)) {
+            const pct = total > 0 ? (count / total * 100).toFixed(1) : '0.0';
+            html += `<div class="stats-row"><span class="stats-label">${name}</span><span class="stats-val">${count} (${pct}%)</span></div>`;
+        }
+        if (!html) html = '<div class="stats-row"><span class="stats-label">No resources</span></div>';
+        html += `<div class="stats-row" style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px"><span class="stats-label">Total</span><span class="stats-val">${total}</span></div>`;
+        body.innerHTML = html;
+    } catch(e) {
+        body.innerHTML = '<div class="stats-row"><span class="stats-label">Error loading resources</span></div>';
+    }
+}
+
+function renderSettlerStats(body) {
+    try {
+        const summary = JSON.parse(get_unit_summary());
+        let html = '';
+        for (const [kind, data] of Object.entries(summary)) {
+            let emoji = kind === 'Settler' ? '👷' : kind === 'Swordsman' ? '⚔️' : kind === 'Bowman' ? '🏹' : '❓';
+            html += `<div class="stats-row"><span class="stats-label">${emoji} ${kind}</span><span class="stats-val">${data.total || data.count || data}</span></div>`;
+        }
+        if (!html) html = '<div class="stats-row"><span class="stats-label">No settlers</span></div>';
+        body.innerHTML = html;
+    } catch(e) {
+        body.innerHTML = '<div class="stats-row"><span class="stats-label">Error loading settler stats</span></div>';
+    }
+}
+
+function renderMilitaryStats(body) {
+    try {
+        const s = JSON.parse(get_stats());
+        const gm = s.game_mode || {};
+        let html = '';
+        html += `<div class="stats-row"><span class="stats-label">⚔️ Swordsmen</span><span class="stats-val">${gm.swordsmen_produced || 0} produced / ${gm.swordsmen_killed || 0} killed</span></div>`;
+        html += `<div class="stats-row"><span class="stats-label">🏹 Bowmen</span><span class="stats-val">${gm.bowmen_produced || 0} produced / ${gm.bowmen_killed || 0} killed</span></div>`;
+        html += `<div class="stats-row"><span class="stats-label">💀 KIA (us)</span><span class="stats-val">${gm.units_lost || 0}</span></div>`;
+        html += `<div class="stats-row" style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px"><span class="stats-label">🎮 Ticks</span><span class="stats-val">${s.ticks || 0}</span></div>`;
+        body.innerHTML = html;
+    } catch(e) {
+        body.innerHTML = '<div class="stats-row"><span class="stats-label">Error loading military stats</span></div>';
+    }
+}
+
+
 // ── Error Handler ───────────────────────────────────────────────────────
 const ErrorHandler = {
   _lastError: null,
@@ -4064,6 +4295,30 @@ console.error = function (...args) {
   }
 };
 </script>
+
+
+<!-- Bottom-left action buttons -->
+<div id="bottom-left-btns">
+    <button id="btn-construction" onclick="toggleConstructionPanel()" data-i18n="construction">🏗️ Bauen</button>
+    <button id="btn-stats" onclick="toggleStatsPanel()" data-i18n="stats">📊 Statistik</button>
+</div>
+
+<!-- Construction Panel -->
+<div id="construction-panel">
+    <h4>🏗️ Bauen</h4>
+    <div id="construction-categories"></div>
+</div>
+
+<!-- Statistics Panel -->
+<div id="stats-panel">
+    <div class="stats-tabs">
+        <button class="stats-tab active" onclick="showStatsTab('resources')">📦 Ressourcen</button>
+        <button class="stats-tab" onclick="showStatsTab('settlers')">👥 Siedler</button>
+        <button class="stats-tab" onclick="showStatsTab('military')">⚔️ Militär</button>
+    </div>
+    <div class="stats-body" id="stats-body"></div>
+</div>
+<script>console.log('Panels HTML injected');</script>
 
 <!-- ── Error Dialog ────────────────────────────────────────────────────── -->
 <div id="error-overlay">
