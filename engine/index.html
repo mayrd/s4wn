@@ -692,7 +692,7 @@
     <h2>⚔️ Game Menu</h2>
     <button class="menu-btn" id="btn-load">📂 Load Map</button>
     <div class="recent-files" id="recent-files">
-      <div class="recent-title">📁 Recent Files</div>
+      <div class="recent-title" data-i18n="recent_files">📁 Recent Files</div>
       <div class="recent-list" id="recent-list"><span class="recent-empty">None yet</span></div>
     </div>
     <button class="menu-btn" id="btn-demo">🗺️ Demo Map</button>
@@ -702,7 +702,7 @@
     <button class="menu-btn secondary" onclick="window.open('https://github.com/mayrd/s4wn','_blank')">
       🔗 GitHub Repository
     </button>
-    <div class="menu-hint">or press <kbd>L</kbd> to load · <kbd>D</kbd> for demo · <kbd>S</kbd> for settings</div>
+    <div class="menu-hint" data-i18n="menu_hint">or press <kbd>L</kbd> to load · <kbd>D</kbd> for demo · <kbd>S</kbd> for settings</div>
     <div class="menu-version">2026.06.16-20.53</div>
   </div>
 </div>
@@ -712,61 +712,75 @@
 <div id="settings-panel">
   <div class="settings-header">
     <h3>⚙️ Settings</h3>
-    <button class="settings-close" onclick="closeSettings()">✕</button>
+    <button class="settings-close" onclick="closeSettings()" title="Close">✕</button>
   </div>
 
   <div class="settings-section">
-    <h4>🎮 Controls</h4>
+    <h4 data-i18n="controls">🎮 Controls</h4>
     <div class="setting-row">
-      <label for="set-zoom">Zoom Speed</label>
+      <label for="set-zoom" data-i18n="zoom_speed">Zoom Speed</label>
       <input type="range" id="set-zoom" min="0.5" max="3" step="0.1" oninput="updateSettingVal('set-zoom')">
       <span class="setting-val" id="val-set-zoom">1.0</span>
     </div>
     <div class="setting-row">
-      <label for="set-mouse-sens">Mouse Sensitivity</label>
+      <label for="set-mouse-sens" data-i18n="mouse_sensitivity">Mouse Sensitivity</label>
       <input type="range" id="set-mouse-sens" min="0.2" max="3" step="0.1" oninput="updateSettingVal('set-mouse-sens')">
       <span class="setting-val" id="val-set-mouse-sens">1.0×</span>
     </div>
     <div class="setting-row">
-      <label for="set-invert-scroll">Invert Scroll</label>
+      <label for="set-invert-scroll" data-i18n="invert_scroll">Invert Scroll</label>
       <input type="checkbox" id="set-invert-scroll" onchange="saveSettings()">
     </div>
   </div>
 
   <div class="settings-section" id="settings-keys-section">
-    <h4>⌨️ Keyboard Bindings</h4>
+    <h4 data-i18n="keyboard">⌨️ Keyboard Bindings</h4>
     <div id="key-bindings-list" style="font-size:12px;color:#999;line-height:1.8;"></div>
   </div>
 
   <div class="settings-section">
-    <h4>🎨 Graphics</h4>
+    <h4 data-i18n="graphics">🎨 Graphics</h4>
     <div class="setting-row">
-      <label for="set-detail">Terrain Detail</label>
+      <label for="set-detail" data-i18n="terrain_detail">Terrain Detail</label>
       <input type="range" id="set-detail" min="0" max="2" step="1" oninput="updateSettingVal('set-detail')">
       <span class="setting-val" id="val-set-detail">Med</span>
     </div>
   </div>
 
   <div class="settings-section">
-    <h4>🔊 Audio</h4>
+    <h4>🌐 Language</h4>
     <div class="setting-row">
-      <label for="set-master-vol">Master Volume</label>
+      <label for="set-language">Language</label>
+      <select id="set-language" onchange="setLanguage(this.value)" style="flex:1;background:#1a1a2e;color:#ccc;border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:4px 8px;font-family:inherit;font-size:13px;">
+        <option value="auto">🌐 Auto (Browser)</option>
+        <option value="en">🇬🇧 English</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="fr">🇫🇷 Français</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <h4 data-i18n="audio">🔊 Audio</h4>
+    <div class="setting-row">
+      <label for="set-master-vol" data-i18n="master_volume">Master Volume</label>
       <input type="range" id="set-master-vol" min="0" max="100" step="5" oninput="updateSettingVal('set-master-vol')">
       <span class="setting-val" id="val-set-master-vol">80</span>
     </div>
     <div class="setting-row">
-      <label for="set-music">Music</label>
+      <label for="set-music" data-i18n="music">Music</label>
       <input type="checkbox" id="set-music" onchange="saveSettings()">
     </div>
     <div class="setting-row">
-      <label for="set-sfx">Sound Effects</label>
+      <label for="set-sfx" data-i18n="sound_effects">Sound Effects</label>
       <input type="checkbox" id="set-sfx" onchange="saveSettings()">
     </div>
   </div>
 
   <div class="settings-actions">
-    <button class="btn-reset" onclick="resetSettings()">↺ Reset Defaults</button>
-    <button class="btn-back" onclick="closeSettings()">← Back to Game</button>
+    <button class="btn-reset" onclick="resetSettings()" data-i18n="reset_defaults">↺ Reset Defaults</button>
+    <button class="btn-back" onclick="closeSettings()" data-i18n="back_to_game">← Back to Game</button>
   </div>
 </div>
 
@@ -775,11 +789,11 @@
   <div class="ng-card">
     <h3>🆕 New Game</h3>
     <div class="ng-row">
-      <label>Player Name</label>
+      <label data-i18n="player_name">Player Name</label>
       <input type="text" id="ng-name" value="Player 1" maxlength="20">
     </div>
     <div class="ng-row">
-      <label>Map</label>
+      <label data-i18n="map_label">Map</label>
       <select id="ng-map">
         <option value="island">🏝️ Island</option>
         <option value="continents">🌍 Continents</option>
@@ -789,7 +803,7 @@
       </select>
     </div>
     <div class="ng-row">
-      <label>Difficulty</label>
+      <label data-i18n="difficulty">Difficulty</label>
       <select id="ng-difficulty">
         <option value="easy">🟢 Easy</option>
         <option value="medium" selected>🟡 Medium</option>
@@ -797,7 +811,7 @@
       </select>
     </div>
     <div class="ng-row">
-      <label>Nation</label>
+      <label data-i18n="nation_label">Nation</label>
       <select id="ng-nation">
         <option value="roman" selected>🏛️ Romans — Balanced Builder</option>
         <option value="viking">🪓 Vikings — Aggressive Rusher</option>
@@ -807,8 +821,8 @@
       </select>
     </div>
     <div class="ng-actions">
-      <button class="btn-start" onclick="startNewGame()">▶ Start Game</button>
-      <button class="btn-cancel" onclick="closeNewGame()">Cancel</button>
+      <button class="btn-start" onclick="startNewGame()" data-i18n="start_game">▶ Start Game</button>
+      <button class="btn-cancel" onclick="closeNewGame()" data-i18n="cancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -821,18 +835,18 @@
     <div class="mp-dimensions" id="mp-dimensions"></div>
     <div class="mp-stats">
       <div class="mp-stats-col">
-        <h4>🏔️ Terrain</h4>
+        <h4 data-i18n="terrain">🏔️ Terrain</h4>
         <div id="mp-terrain-stats"></div>
       </div>
       <div class="mp-stats-col">
-        <h4>⛏️ Resources</h4>
+        <h4 data-i18n="resources">⛏️ Resources</h4>
         <div id="mp-resource-stats"></div>
       </div>
     </div>
     <div class="mp-warning" id="mp-warning"></div>
     <div class="mp-actions">
-      <button class="btn-mp-load" onclick="confirmMapLoad()">▶ Load Map</button>
-      <button class="btn-mp-cancel" onclick="cancelMapPreview()">Cancel</button>
+      <button class="btn-mp-load" onclick="confirmMapLoad()" data-i18n="load_map_btn">▶ Load Map</button>
+      <button class="btn-mp-cancel" onclick="cancelMapPreview()" data-i18n="cancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -871,7 +885,7 @@
 <!-- Pause Overlay -->
 <div id="pause-overlay">
   <div class="pause-text">⏸ PAUSED</div>
-  <button id="btn-save-game" style="position:absolute;bottom:30%;left:50%;transform:translateX(-50%);padding:10px 24px;font-size:14px;font-family:inherit;background:rgba(200,170,100,0.1);border:1px solid rgba(200,170,100,0.3);border-radius:8px;color:#c8b878;cursor:pointer;pointer-events:auto;display:none;letter-spacing:0.05em;transition:all 0.2s;">💾 Save Game</button>
+  <button id="btn-save-game" style="position:absolute;bottom:30%;left:50%;transform:translateX(-50%);padding:10px 24px;font-size:14px;font-family:inherit;background:rgba(200,170,100,0.1);border:1px solid rgba(200,170,100,0.3);border-radius:8px;color:#c8b878;cursor:pointer;pointer-events:auto;display:none;letter-spacing:0.05em;transition:all 0.2s;" data-i18n="save_game">💾 Save Game</button>
 </div>
 
 <!-- Speed Controls -->
@@ -1895,7 +1909,7 @@ function showMapPreview(data, file) {
 
         // Restore column headers
         const terrainCol = document.getElementById('mp-terrain-stats').parentElement;
-        terrainCol.querySelector('h4').textContent = '🏔️ Terrain';
+        terrainCol.querySelector('h4').textContent = t('terrain');
         const resourceCol = document.getElementById('mp-resource-stats').parentElement;
         resourceCol.querySelector('h4').textContent = '⛏️ Resources';
 
@@ -2664,6 +2678,451 @@ function renderMinimap() {
 
 // ── Settings ────────────────────────────────────────────────────────────
 const SETTINGS_KEY = 's4wn-settings';
+
+// ── I18n Translations ─────────────────────────────────────────────────────
+const LANG = {
+    en: {
+        menu_title: '⚔️ Game Menu',
+        load_map: '📂 Load Map',
+        demo_map: '🗺️ Demo Map',
+        continue_game: '💾 Continue Game',
+        new_game: '🆕 New Game',
+        settings: '⚙️ Settings',
+        github: '🔗 GitHub Repository',
+        recent_files: '📁 Recent Files',
+        none_yet: 'None yet',
+        menu_hint: 'or press L to load · D for demo · S for settings',
+        settings_title: '⚙️ Settings',
+        controls: '🎮 Controls',
+        zoom_speed: 'Zoom Speed',
+        mouse_sensitivity: 'Mouse Sensitivity',
+        invert_scroll: 'Invert Scroll',
+        keyboard: '⌨️ Keyboard Bindings',
+        graphics: '🎨 Graphics',
+        terrain_detail: 'Terrain Detail',
+        audio: '🔊 Audio',
+        master_volume: 'Master Volume',
+        music: 'Music',
+        sound_effects: 'Sound Effects',
+        reset_defaults: '↺ Reset Defaults',
+        back_to_game: '← Back to Game',
+        language_label: '🌐 Language',
+        new_game_title: '🆕 New Game',
+        player_name: 'Player Name',
+        map_label: 'Map',
+        difficulty: 'Difficulty',
+        nation_label: 'Nation',
+        start_game: '▶ Start Game',
+        cancel: 'Cancel',
+        map_preview: '🗺️ Map Preview',
+        resources: '⛏️ Resources',
+        terrain: '🏔️ Terrain',
+        load_map_btn: '▶ Load Map',
+        pause: '⏸ PAUSED',
+        save_game: '💾 Save Game',
+        menu_btn: '☰ Menu',
+        build: 'BUILD',
+        loading_resources: 'Loading resources...',
+        generating_world: 'Generating world...',
+        generating_terrain: 'Generating terrain...',
+        building_landscape: 'Building landscape...',
+        preparing_resources: 'Preparing starting resources...',
+        ready: 'Ready!',
+        tools_zero: 'Tools: 0',
+        no_resources: 'No resources',
+        no_tools: 'No tools',
+        drop_zone: '📂 Drop .map / .sav / .json file here',
+        engine_not_ready: 'Engine not ready. Please wait for WASM to load.',
+        no_saved_game: 'No saved game found.',
+        failed_restore: 'Failed to restore saved game: ',
+        failed_new_game: 'Failed to start new game: ',
+        s4wn_engine: 'S4WN Engine',
+        map_saved_game: 'Map: Saved Game | 💾 Continue',
+        report_github: 'Report on GitHub',
+        copy_error: 'Copy Error Details',
+        detail_low: 'Low',
+        detail_med: 'Med',
+        detail_high: 'High',
+        kb_load_map: 'Load Map',
+        kb_demo_map: 'Demo Map',
+        kb_settings: 'Settings',
+        kb_pause: 'Pause / Resume',
+        kb_speed1: 'Game Speed 1×',
+        kb_speed2: 'Game Speed 2×',
+        kb_speed4: 'Game Speed 4×',
+        kb_build: 'Build Mode',
+        kb_escape: 'Menu / Cancel / Close',
+        kb_menu: 'Toggle Menu',
+        kb_click: 'Select Building/Unit',
+        kb_drag: 'Pan Camera',
+        kb_scroll: 'Zoom In/Out',
+        load_custom_map: '📂 Load Custom .map…',
+    },
+    de: {
+        menu_title: '⚔️ Spielmenü',
+        load_map: '📂 Karte laden',
+        demo_map: '🗺️ Demo-Karte',
+        continue_game: '💾 Spiel fortsetzen',
+        new_game: '🆕 Neues Spiel',
+        settings: '⚙️ Einstellungen',
+        github: '🔗 GitHub Repository',
+        recent_files: '📁 Zuletzt verwendet',
+        none_yet: 'Noch keine',
+        menu_hint: 'L zum Laden · D für Demo · S für Einstellungen',
+        settings_title: '⚙️ Einstellungen',
+        controls: '🎮 Steuerung',
+        zoom_speed: 'Zoom-Geschwindigkeit',
+        mouse_sensitivity: 'Maus-Empfindlichkeit',
+        invert_scroll: 'Scrollen umkehren',
+        keyboard: '⌨️ Tastaturbelegung',
+        graphics: '🎨 Grafik',
+        terrain_detail: 'Gelände-Details',
+        audio: '🔊 Audio',
+        master_volume: 'Gesamtlautstärke',
+        music: 'Musik',
+        sound_effects: 'Soundeffekte',
+        reset_defaults: '↺ Zurücksetzen',
+        back_to_game: '← Zurück zum Spiel',
+        language_label: '🌐 Sprache',
+        new_game_title: '🆕 Neues Spiel',
+        player_name: 'Spielername',
+        map_label: 'Karte',
+        difficulty: 'Schwierigkeit',
+        nation_label: 'Volk',
+        start_game: '▶ Spiel starten',
+        cancel: 'Abbrechen',
+        map_preview: '🗺️ Kartenvorschau',
+        resources: '⛏️ Ressourcen',
+        terrain: '🏔️ Gelände',
+        load_map_btn: '▶ Karte laden',
+        pause: '⏸ PAUSE',
+        save_game: '💾 Spiel speichern',
+        menu_btn: '☰ Menü',
+        build: 'BAUEN',
+        loading_resources: 'Lade Ressourcen...',
+        generating_world: 'Welt wird generiert...',
+        generating_terrain: 'Gelände wird generiert...',
+        building_landscape: 'Landschaft wird aufgebaut...',
+        preparing_resources: 'Startressourcen werden vorbereitet...',
+        ready: 'Bereit!',
+        tools_zero: 'Werkzeuge: 0',
+        no_resources: 'Keine Ressourcen',
+        no_tools: 'Keine Werkzeuge',
+        drop_zone: '📂 .map / .sav / .json Datei hier ablegen',
+        engine_not_ready: 'Engine nicht bereit. Bitte warten, bis WASM geladen ist.',
+        no_saved_game: 'Kein gespeichertes Spiel gefunden.',
+        failed_restore: 'Fehler beim Wiederherstellen: ',
+        failed_new_game: 'Fehler beim Starten des Spiels: ',
+        s4wn_engine: 'S4WN Engine',
+        map_saved_game: 'Karte: Gespeichert | 💾 Fortsetzen',
+        report_github: 'Auf GitHub melden',
+        copy_error: 'Fehlerdetails kopieren',
+        detail_low: 'Niedrig',
+        detail_med: 'Mittel',
+        detail_high: 'Hoch',
+        kb_load_map: 'Karte laden',
+        kb_demo_map: 'Demo-Karte',
+        kb_settings: 'Einstellungen',
+        kb_pause: 'Pause / Fortsetzen',
+        kb_speed1: 'Spielgeschw. 1×',
+        kb_speed2: 'Spielgeschw. 2×',
+        kb_speed4: 'Spielgeschw. 4×',
+        kb_build: 'Baumodus',
+        kb_escape: 'Menü / Abbrechen / Schließen',
+        kb_menu: 'Menü umschalten',
+        kb_click: 'Gebäude/Einheit auswählen',
+        kb_drag: 'Kamera schwenken',
+        kb_scroll: 'Rein-/Rauszoomen',
+        load_custom_map: '📂 Eigene .map laden…',
+    },
+    es: {
+        menu_title: '⚔️ Menú del Juego',
+        load_map: '📂 Cargar Mapa',
+        demo_map: '🗺️ Mapa Demo',
+        continue_game: '💾 Continuar Partida',
+        new_game: '🆕 Nueva Partida',
+        settings: '⚙️ Configuración',
+        github: '🔗 Repositorio GitHub',
+        recent_files: '📁 Archivos Recientes',
+        none_yet: 'Ninguno aún',
+        menu_hint: 'presiona L para cargar · D para demo · S para configuración',
+        settings_title: '⚙️ Configuración',
+        controls: '🎮 Controles',
+        zoom_speed: 'Velocidad de Zoom',
+        mouse_sensitivity: 'Sensibilidad del Ratón',
+        invert_scroll: 'Invertir Desplazamiento',
+        keyboard: '⌨️ Atajos de Teclado',
+        graphics: '🎨 Gráficos',
+        terrain_detail: 'Detalle del Terreno',
+        audio: '🔊 Audio',
+        master_volume: 'Volumen General',
+        music: 'Música',
+        sound_effects: 'Efectos de Sonido',
+        reset_defaults: '↺ Restablecer',
+        back_to_game: '← Volver al Juego',
+        language_label: '🌐 Idioma',
+        new_game_title: '🆕 Nueva Partida',
+        player_name: 'Nombre del Jugador',
+        map_label: 'Mapa',
+        difficulty: 'Dificultad',
+        nation_label: 'Nación',
+        start_game: '▶ Iniciar Partida',
+        cancel: 'Cancelar',
+        map_preview: '🗺️ Vista Previa del Mapa',
+        resources: '⛏️ Recursos',
+        terrain: '🏔️ Terreno',
+        load_map_btn: '▶ Cargar Mapa',
+        pause: '⏸ PAUSA',
+        save_game: '💾 Guardar Partida',
+        menu_btn: '☰ Menú',
+        build: 'CONSTRUIR',
+        loading_resources: 'Cargando recursos...',
+        generating_world: 'Generando mundo...',
+        generating_terrain: 'Generando terreno...',
+        building_landscape: 'Construyendo paisaje...',
+        preparing_resources: 'Preparando recursos iniciales...',
+        ready: '¡Listo!',
+        tools_zero: 'Herramientas: 0',
+        no_resources: 'Sin recursos',
+        no_tools: 'Sin herramientas',
+        drop_zone: '📂 Suelta archivo .map / .sav / .json aquí',
+        engine_not_ready: 'Motor no listo. Espera a que WASM se cargue.',
+        no_saved_game: 'No hay partida guardada.',
+        failed_restore: 'Error al restaurar partida: ',
+        failed_new_game: 'Error al iniciar nueva partida: ',
+        s4wn_engine: 'S4WN Engine',
+        map_saved_game: 'Mapa: Partida Guardada | 💾 Continuar',
+        report_github: 'Reportar en GitHub',
+        copy_error: 'Copiar Detalles del Error',
+        detail_low: 'Bajo',
+        detail_med: 'Medio',
+        detail_high: 'Alto',
+        kb_load_map: 'Cargar Mapa',
+        kb_demo_map: 'Mapa Demo',
+        kb_settings: 'Configuración',
+        kb_pause: 'Pausa / Reanudar',
+        kb_speed1: 'Velocidad 1×',
+        kb_speed2: 'Velocidad 2×',
+        kb_speed4: 'Velocidad 4×',
+        kb_build: 'Modo Construcción',
+        kb_escape: 'Menú / Cancelar / Cerrar',
+        kb_menu: 'Alternar Menú',
+        kb_click: 'Seleccionar Edificio/Unidad',
+        kb_drag: 'Mover Cámara',
+        kb_scroll: 'Acercar/Alejar',
+        load_custom_map: '📂 Cargar .map personalizado…',
+    },
+    fr: {
+        menu_title: '⚔️ Menu du Jeu',
+        load_map: '📂 Charger une Carte',
+        demo_map: '🗺️ Carte Démo',
+        continue_game: '💾 Continuer la Partie',
+        new_game: '🆕 Nouvelle Partie',
+        settings: '⚙️ Paramètres',
+        github: '🔗 Dépôt GitHub',
+        recent_files: '📁 Fichiers Récents',
+        none_yet: 'Aucun',
+        menu_hint: 'L pour charger · D pour démo · S pour paramètres',
+        settings_title: '⚙️ Paramètres',
+        controls: '🎮 Contrôles',
+        zoom_speed: 'Vitesse de Zoom',
+        mouse_sensitivity: 'Sensibilité de la Souris',
+        invert_scroll: 'Inverser le Défilement',
+        keyboard: '⌨️ Raccourcis Clavier',
+        graphics: '🎨 Graphismes',
+        terrain_detail: 'Détail du Terrain',
+        audio: '🔊 Audio',
+        master_volume: 'Volume Principal',
+        music: 'Musique',
+        sound_effects: 'Effets Sonores',
+        reset_defaults: '↺ Réinitialiser',
+        back_to_game: '← Retour au Jeu',
+        language_label: '🌐 Langue',
+        new_game_title: '🆕 Nouvelle Partie',
+        player_name: 'Nom du Joueur',
+        map_label: 'Carte',
+        difficulty: 'Difficulté',
+        nation_label: 'Nation',
+        start_game: '▶ Lancer la Partie',
+        cancel: 'Annuler',
+        map_preview: '🗺️ Aperçu de la Carte',
+        resources: '⛏️ Ressources',
+        terrain: '🏔️ Terrain',
+        load_map_btn: '▶ Charger la Carte',
+        pause: '⏸ PAUSE',
+        save_game: '💾 Sauvegarder',
+        menu_btn: '☰ Menu',
+        build: 'CONSTRUIRE',
+        loading_resources: 'Chargement des ressources...',
+        generating_world: 'Génération du monde...',
+        generating_terrain: 'Génération du terrain...',
+        building_landscape: 'Construction du paysage...',
+        preparing_resources: 'Préparation des ressources...',
+        ready: 'Prêt !',
+        tools_zero: 'Outils : 0',
+        no_resources: 'Aucune ressource',
+        no_tools: 'Aucun outil',
+        drop_zone: '📂 Déposez un fichier .map / .sav / .json ici',
+        engine_not_ready: 'Moteur non prêt. Attendez le chargement de WASM.',
+        no_saved_game: 'Aucune partie sauvegardée.',
+        failed_restore: 'Échec de la restauration : ',
+        failed_new_game: 'Échec du lancement : ',
+        s4wn_engine: 'Moteur S4WN',
+        map_saved_game: 'Carte : Partie Sauvegardée | 💾 Continuer',
+        report_github: 'Signaler sur GitHub',
+        copy_error: 'Copier les Détails',
+        detail_low: 'Bas',
+        detail_med: 'Moyen',
+        detail_high: 'Haut',
+        kb_load_map: 'Charger une Carte',
+        kb_demo_map: 'Carte Démo',
+        kb_settings: 'Paramètres',
+        kb_pause: 'Pause / Reprendre',
+        kb_speed1: 'Vitesse 1×',
+        kb_speed2: 'Vitesse 2×',
+        kb_speed4: 'Vitesse 4×',
+        kb_build: 'Mode Construction',
+        kb_escape: 'Menu / Annuler / Fermer',
+        kb_menu: 'Basculer le Menu',
+        kb_click: 'Sélectionner Bâtiment/Unité',
+        kb_drag: 'Déplacer la Caméra',
+        kb_scroll: 'Zoom Avant/Arrière',
+        load_custom_map: '📂 Charger .map personnalisée…',
+    }
+};
+
+let currentLang = 'en';
+
+function t(key) {
+    const lang = LANG[currentLang] || LANG['en'];
+    return lang[key] || LANG['en'][key] || key;
+}
+
+function detectLanguage() {
+    const browserLang = (navigator.language || 'en').split('-')[0];
+    const supported = ['en', 'de', 'es', 'fr'];
+    return supported.includes(browserLang) ? browserLang : 'en';
+}
+
+function setLanguage(lang) {
+    if (lang === 'auto') {
+        lang = detectLanguage();
+    }
+    currentLang = lang;
+    settings.language = lang;
+    applyLanguage();
+    saveSettings();
+}
+
+function applyLanguage() {
+    // Update all data-i18n elements
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (el.tagName === 'INPUT' && el.type === 'text') {
+            // Only update placeholder, not user-entered value
+        } else if (el.tagName === 'BUTTON' || el.tagName === 'A') {
+            // Keep emoji but update text for some elements
+        }
+        const text = t(key);
+        if (text) {
+            // Skip elements with kbd children (menu hint) — the HTML is the translation
+            if (el.querySelector('kbd')) {
+                // Don't replace
+            } else // For elements with placeholders (like Continue button with time)
+            if (el.hasAttribute('data-i18n-text')) {
+                el.textContent = text;
+            } else if (el.tagName === 'OPTION' || el.querySelector('kbd')) {
+                // Skip options with kbd tags and complex children
+            } else if (el.children.length === 0) {
+                el.textContent = text;
+            }
+        }
+    });
+
+    // Update menu buttons
+    const menuTitle = document.querySelector('#main-menu h2');
+    if (menuTitle) menuTitle.textContent = t('menu_title');
+
+    const btnLoad = document.getElementById('btn-load');
+    if (btnLoad) btnLoad.textContent = t('load_map');
+
+    const btnDemo = document.getElementById('btn-demo');
+    if (btnDemo) btnDemo.textContent = t('demo_map');
+
+    const btnContinue = document.getElementById('btn-continue');
+    if (btnContinue && btnContinue.style.display !== 'none') {
+        const meta = getSavedGameMeta();
+        if (meta && meta.gameTime !== null) {
+            btnContinue.textContent = `💾 ${t('continue_game').replace('💾 ', '')} (${formatGameTime(meta.gameTime)})`;
+        } else {
+            btnContinue.textContent = t('continue_game');
+        }
+    }
+
+    // Settings panel
+    const settingsTitle = document.querySelector('#settings-panel .settings-header h3');
+    if (settingsTitle) settingsTitle.textContent = t('settings_title');
+
+    // New Game panel
+    const ngTitle = document.querySelector('#new-game-panel h3');
+    if (ngTitle) ngTitle.textContent = t('new_game_title');
+
+    // Map preview
+    const mpTitle = document.querySelector('#map-preview-panel h3');
+    if (mpTitle) mpTitle.textContent = t('map_preview');
+
+    // Pause overlay
+    const pauseText = document.querySelector('.pause-text');
+    if (pauseText) pauseText.textContent = t('pause');
+
+    // Build toolbar label
+    const btLabel = document.querySelector('.bt-label');
+    if (btLabel) btLabel.textContent = t('build');
+
+    // HUD controls button
+    const controlsBtn = document.querySelector('#controls button');
+    if (controlsBtn) controlsBtn.textContent = t('menu_btn');
+
+    // Drop zone
+    const dropMsg = document.querySelector('#drop-zone .msg');
+    if (dropMsg) dropMsg.textContent = t('drop_zone');
+
+    // Loading placeholder
+    const resPlaceholder = document.querySelector('#resource-bar .res-placeholder');
+    if (resPlaceholder) resPlaceholder.textContent = t('loading_resources');
+
+    // Tool bar placeholder
+    const toolPlaceholder = document.querySelector('#tool-bar .res-placeholder');
+    if (toolPlaceholder) toolPlaceholder.textContent = t('tools_zero');
+
+    // Keyboard bindings
+    renderKeyBindings();
+
+    // Nation options
+    document.querySelectorAll('#ng-nation option').forEach(opt => {
+        const name = opt.textContent.split(' — ')[0];
+        // Keep emoji + name, translate the descriptor
+    });
+
+    // Map options
+    document.querySelectorAll('#ng-map option').forEach(opt => {
+        if (opt.value === 'custom') {
+            opt.textContent = t('load_custom_map');
+        }
+    });
+
+    // Recent files empty state
+    const recentList = document.getElementById('recent-list');
+    if (recentList && recentList.querySelector('.recent-empty')) {
+        recentList.querySelector('.recent-empty').textContent = t('none_yet');
+    }
+
+    document.querySelector('#set-language').value = currentLang;
+
+    // HTML lang attribute
+    document.documentElement.lang = currentLang;
+}
+
 const SETTINGS_DEFAULTS = {
     zoomSpeed: 1.0,
     terrainDetail: 1,   // 0=Low, 1=Med, 2=High
@@ -2672,6 +3131,7 @@ const SETTINGS_DEFAULTS = {
     sfxOn: true,
     mouseSensitivity: 1.0,
     invertScroll: false,
+    language: 'auto',
 };
 
 let settings = {};
@@ -2683,6 +3143,7 @@ function loadSettings() {
     } catch {
         settings = {...SETTINGS_DEFAULTS};
     }
+    if (!settings.language) settings.language = 'auto';
     syncSettingsToUI();
 }
 
@@ -2695,6 +3156,8 @@ function saveSettings() {
     settings.sfxOn = document.getElementById('set-sfx').checked;
     settings.mouseSensitivity = parseFloat(document.getElementById('set-mouse-sens').value);
     settings.invertScroll = document.getElementById('set-invert-scroll').checked;
+    const langEl = document.getElementById('set-language');
+    if (langEl) settings.language = langEl.value;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
@@ -2706,6 +3169,8 @@ function syncSettingsToUI() {
     document.getElementById('set-sfx').checked = settings.sfxOn;
     document.getElementById('set-mouse-sens').value = settings.mouseSensitivity;
     document.getElementById('set-invert-scroll').checked = settings.invertScroll;
+    const langEl = document.getElementById('set-language');
+    if (langEl) langEl.value = settings.language || 'auto';
     updateAllSettingVals();
 }
 
@@ -2718,7 +3183,7 @@ function updateSettingVal(id) {
             valEl.textContent = parseFloat(el.value).toFixed(1);
             break;
         case 'set-detail':
-            valEl.textContent = ['Low', 'Med', 'High'][parseInt(el.value)] || 'Med';
+            valEl.textContent = [t('detail_low'), t('detail_med'), t('detail_high')][parseInt(el.value)] || t('detail_med');
             break;
         case 'set-master-vol':
             valEl.textContent = el.value + '%';
@@ -2747,35 +3212,37 @@ function closeSettings() {
 function resetSettings() {
     settings = {...SETTINGS_DEFAULTS};
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    if (!settings.language) settings.language = 'auto';
     syncSettingsToUI();
 }
 
 // ── Keyboard Bindings Display ─────────────────────────────────────────────
 const KEY_BINDINGS = [
-    { key: 'L', desc: 'Load Map' },
-    { key: 'D', desc: 'Demo Map' },
-    { key: 'S', desc: 'Settings' },
-    { key: 'P', desc: 'Pause / Resume' },
-    { key: '1', desc: 'Game Speed 1×' },
-    { key: '2', desc: 'Game Speed 2×' },
-    { key: '3', desc: 'Game Speed 4×' },
-    { key: 'B', desc: 'Build Mode' },
-    { key: 'Esc', desc: 'Menu / Cancel / Close' },
-    { key: 'M', desc: 'Toggle Menu' },
-    { key: 'Click', desc: 'Select Building/Unit' },
-    { key: 'Drag', desc: 'Pan Camera' },
-    { key: 'Scroll', desc: 'Zoom In/Out' },
+    { key: 'L', key_i18n: 'kb_load_map' },
+    { key: 'D', key_i18n: 'kb_demo_map' },
+    { key: 'S', key_i18n: 'kb_settings' },
+    { key: 'P', key_i18n: 'kb_pause' },
+    { key: '1', key_i18n: 'kb_speed1' },
+    { key: '2', key_i18n: 'kb_speed2' },
+    { key: '3', key_i18n: 'kb_speed4' },
+    { key: 'B', key_i18n: 'kb_build' },
+    { key: 'Esc', key_i18n: 'kb_escape' },
+    { key: 'M', key_i18n: 'kb_menu' },
+    { key: 'Click', key_i18n: 'kb_click' },
+    { key: 'Drag', key_i18n: 'kb_drag' },
+    { key: 'Scroll', key_i18n: 'kb_scroll' },
 ];
 
 function renderKeyBindings() {
     const el = document.getElementById('key-bindings-list');
     if (!el) return;
-    el.innerHTML = KEY_BINDINGS.map(b =>
-        `<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;">
+    el.innerHTML = KEY_BINDINGS.map(b => {
+        const desc = t(b.key_i18n);
+        return `<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;">
             <span style="color:#c8b878;font-family:'SF Mono',monospace;background:rgba(200,170,100,0.08);padding:1px 6px;border-radius:3px;min-width:48px;text-align:center;">${b.key}</span>
-            <span style="flex:1;">${b.desc}</span>
-        </div>`
-    ).join('');
+            <span style="flex:1;">${desc}</span>
+        </div>`;
+    }).join('');
 }
 
 // Call renderKeyBindings when settings panel opens
@@ -2809,7 +3276,7 @@ function updateResourceBar() {
             const icon = RESOURCE_ICONS[name] || '📦';
             html += `<div class="res-item" title="${name}: ${count}"><span class="res-icon">${icon}</span><span class="res-count">${count}</span></div>`;
         });
-        document.getElementById('resource-bar').innerHTML = html || '<span class="res-placeholder">No resources</span>';
+        document.getElementById('resource-bar').innerHTML = html || '<span class="res-placeholder">' + t('no_resources') + '</span>';
         document.getElementById('resource-bar').classList.add('visible');
     } catch(e) {
         // Engine not initialized yet — silently skip
@@ -2843,7 +3310,7 @@ function updateToolBar() {
             html += `<div class="tool-item${cssClass}" title="${name}: ${count}"><span class="tool-icon">${icon}</span><span class="tool-count">${count}</span></div>`;
         }
         if (totalTools === 0) {
-            html = '<span class="res-placeholder">No tools</span>';
+            html = '<span class="res-placeholder">' + t('no_tools') + '</span>';
         }
         document.getElementById('tool-bar').innerHTML = html;
         document.getElementById('tool-bar').classList.add('visible');
@@ -2936,22 +3403,22 @@ async function startNewGame() {
     closeMenu();
 
     if (!engineReady || !load_map_json) {
-        alert('Engine not ready. Please wait for WASM to load.');
+        alert(t('engine_not_ready'));
         return;
     }
 
     // Show loading screen
-    showLoading('Generating world...');
+    showLoading(t('generating_world'));
 
     try {
         // Animate progress as async steps complete
-        updateLoadingProgress(20, 'Generating terrain...');
+        updateLoadingProgress(20, t('generating_terrain'));
 
         // Generate the map (64×64 default, use smaller map for easier difficulty)
         const mapSize = difficulty === 'easy' ? 48 : 64;
         const mapJson = generate_map(mapType, mapSize, mapSize);
 
-        updateLoadingProgress(60, 'Building landscape...');
+        updateLoadingProgress(60, t('building_landscape'));
 
         // Load the map into the engine
         const result = load_map_json(mapJson);
@@ -2959,7 +3426,7 @@ async function startNewGame() {
             throw new Error('Map load failed: ' + result);
         }
 
-        updateLoadingProgress(80, 'Preparing starting resources...');
+        updateLoadingProgress(80, t('preparing_resources'));
 
         // Apply starting resources based on difficulty
         const resResult = add_starting_resources(difficulty);
@@ -2983,11 +3450,11 @@ async function startNewGame() {
             updateNationHUD();
         }
 
-        updateLoadingProgress(100, 'Ready!');
+        updateLoadingProgress(100, t('ready'));
 
         // Update HUD
         const mapName = mapType.charAt(0).toUpperCase() + mapType.slice(1);
-        hudMap.textContent = `Map: ${mapName} | Player: ${name} | ${difficulty}`;
+        hudMap.textContent = `${t('map_label')}: ${mapName} | ${t('player_name')}: ${name} | ${difficulty}`;
         lastResourceUpdate = 0;
         lastPopUpdate = 0;
 
@@ -3005,7 +3472,7 @@ async function startNewGame() {
     } catch (err) {
         console.error('New Game failed:', err);
         hideLoading();
-        alert('Failed to start new game: ' + err.message);
+        alert(t('failed_new_game') + err.message);
     }
 }
 
@@ -3058,7 +3525,7 @@ function loadSavedGame() {
     }
     const stateJson = localStorage.getItem(SAVE_KEY);
     if (!stateJson) {
-        alert('No saved game found.');
+        alert(t('no_saved_game'));
         return;
     }
     try {
@@ -3067,11 +3534,11 @@ function loadSavedGame() {
             closeMenu();
             lastResourceUpdate = 0;
             lastPopUpdate = 0;
-            hudMap.textContent = 'Map: Saved Game | 💾 Continue';
+            hudMap.textContent = t('map_saved_game');
             startAutoSave();
             console.log('Game restored from auto-save');
         } else {
-            alert('Failed to restore saved game: ' + result);
+            alert(t('failed_restore') + result);
         }
     } catch (err) {
         console.error('loadSavedGame failed:', err);
@@ -3097,9 +3564,9 @@ function updateContinueButton() {
         btn.style.display = 'block';
         const meta = getSavedGameMeta();
         if (meta && meta.gameTime !== null) {
-            btn.textContent = `💾 Continue Game (${formatGameTime(meta.gameTime)})`;
+            btn.textContent = `💾 ${t('continue_game').replace('💾 ', '')} (${formatGameTime(meta.gameTime)})`;
         } else {
-            btn.textContent = '💾 Continue Game';
+            btn.textContent = t('continue_game');
         }
     } else {
         btn.style.display = 'none';
@@ -3290,6 +3757,11 @@ async function main() {
         engineReady = true;
         hudMap.textContent = 'S4WN Engine';
         loadSettings();
+        if (settings.language && settings.language !== 'auto') {
+            setLanguage(settings.language);
+        } else {
+            setLanguage('auto');
+        }
         populateBuildToolbar();
         console.log('Engine ready, starting render loop');
 
