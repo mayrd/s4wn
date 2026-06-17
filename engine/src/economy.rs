@@ -56,11 +56,12 @@ pub enum ResourceType {
     Meat = 21,       // Game → Meat (butcher)
     Flour = 22,      // Grain → Flour (mill)
     IronIngots = 23, // Iron + Coal → Iron Ingots (smelter)
+    Coins = 24,     // Gold + Coal → Coins (mint)
 }
 
 impl ResourceType {
     /// Total number of distinct resource types
-    pub const COUNT: usize = 25;
+    pub const COUNT: usize = 26;
 
     /// Whether this is a raw resource (harvested from the map)
     pub fn is_raw(self) -> bool {
@@ -93,6 +94,7 @@ impl ResourceType {
             ResourceType::Flour => "Flour",
             ResourceType::Water => "Water",
             ResourceType::IronIngots => "Iron Ingots",
+            ResourceType::Coins => "Coins",
         }
     }
 
@@ -155,6 +157,8 @@ pub enum BuildingType {
     Smelter = 15,
     /// Barracks — converts settlers into Swordsmen (requires Weapons)
     Barracks = 16,
+    /// Mint — converts Gold Ore + Coal → Coins
+    Mint = 17,
 }
 
 impl BuildingType {
@@ -178,6 +182,7 @@ impl BuildingType {
             BuildingType::Waterworks => "Waterworks",
             BuildingType::Smelter => "Smelter",
             BuildingType::Barracks => "Barracks",
+            BuildingType::Mint => "Mint",
         }
     }
 
@@ -201,6 +206,7 @@ impl BuildingType {
             "Waterworks" => Some(BuildingType::Waterworks),
             "Smelter" => Some(BuildingType::Smelter),
             "Barracks" => Some(BuildingType::Barracks),
+            "Mint" => Some(BuildingType::Mint),
             _ => None,
         }
     }
@@ -225,6 +231,7 @@ impl BuildingType {
             "Waterworks",
             "Smelter",
             "Barracks",
+            "Mint",
         ]
     }
 
@@ -256,6 +263,7 @@ impl BuildingType {
             BuildingType::Waterworks => &[(ResourceType::Wood, 4), (ResourceType::Stone, 3)],
             BuildingType::Smelter => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5)],
             BuildingType::Barracks => &[(ResourceType::Wood, 6), (ResourceType::Stone, 6)],
+            BuildingType::Mint => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5)],
         }
     }
 
@@ -274,6 +282,7 @@ impl BuildingType {
             BuildingType::Butcher => &[(ResourceType::Game, 2)],
             BuildingType::Mill => &[(ResourceType::Grain, 3)],
             BuildingType::Smelter => &[(ResourceType::Iron, 1), (ResourceType::Coal, 1)],
+            BuildingType::Mint => &[(ResourceType::Gold, 1), (ResourceType::Coal, 1)],
             _ => &[], // raw producers and storage have no inputs
         }
     }
@@ -295,6 +304,7 @@ impl BuildingType {
             BuildingType::Woodcutter => &[(ResourceType::Wood, 2)],
             BuildingType::Waterworks => &[(ResourceType::Water, 1)],
             BuildingType::Smelter => &[(ResourceType::IronIngots, 1)],
+            BuildingType::Mint => &[(ResourceType::Coins, 1)],
             _ => &[], // Barracks, Castle, Storehouse produce nothing
         }
     }
@@ -316,6 +326,7 @@ impl BuildingType {
             BuildingType::Woodcutter => 15,  // 1.5 seconds
             BuildingType::Waterworks => 30,  // 3 seconds
             BuildingType::Smelter => 30,     // 3 seconds
+            BuildingType::Mint => 30,        // 3 seconds
             _ => 0,                          // Barracks, Castle, Storehouse don't produce
         }
     }
@@ -360,6 +371,7 @@ impl BuildingType {
             BuildingType::Waterworks => 25,
             BuildingType::Smelter => 35,
             BuildingType::Barracks => 40,
+            BuildingType::Mint => 35,
         }
     }
 
@@ -378,6 +390,7 @@ impl BuildingType {
             BuildingType::Woodcutter => Some("Axe"),
             BuildingType::Waterworks => Some("Bucket"),
             BuildingType::Smelter => Some("Hammer"),
+            BuildingType::Mint => Some("Hammer"),
             _ => None, // Castle, Storehouse, Farm, Barracks — no tool needed
         }
     }
@@ -1307,6 +1320,7 @@ mod tests {
             BuildingType::Butcher,
             BuildingType::Mill,
             BuildingType::Smelter,
+            BuildingType::Mint,
         ] {
             let inputs = kind.inputs();
             let outputs = kind.outputs();
@@ -1331,6 +1345,7 @@ mod tests {
         assert_eq!(BuildingType::Fisherman.required_tool(), Some("Fishing Rod"));
         assert_eq!(BuildingType::Waterworks.required_tool(), Some("Bucket"));
         assert_eq!(BuildingType::Smelter.required_tool(), Some("Hammer"));
+        assert_eq!(BuildingType::Mint.required_tool(), Some("Hammer"));
         assert_eq!(BuildingType::Butcher.required_tool(), Some("Cleaver"));
         assert_eq!(BuildingType::Brewery.required_tool(), Some("Rolling Pin"));
         assert_eq!(BuildingType::Bakery.required_tool(), Some("Rolling Pin"));
@@ -1352,10 +1367,11 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        assert_eq!(BuildingType::all_names().len(), 17);
+        assert_eq!(BuildingType::all_names().len(), 18);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
+        assert!(BuildingType::all_names().contains(&"Mint"));
     }
 
     #[test]
@@ -1483,6 +1499,35 @@ mod tests {
         let units = UnitManager::new();
         // Sawmill requires a Saw but no settler assigned → false
         assert!(!sawmill.has_tooled_settler(&units));
+    }
+
+    #[test]
+    fn test_mint_production_chain() {
+        // Mint: 1 Gold + 1 Coal → 1 Coins every 30 ticks
+        let mut storage = ResourceStorage::new();
+        let mut mint = Building::new(BuildingType::Mint, 0, 0);
+
+        // Complete construction (35 ticks, +1 for float safety)
+        for _ in 0..36 {
+            mint.tick_construction();
+        }
+        assert!(mint.is_complete());
+
+        // Set up inputs (gold + coal)
+        mint.input_buffer[ResourceType::Gold as usize] = 10;
+        mint.input_buffer[ResourceType::Coal as usize] = 10;
+
+        let mut produced = 0;
+        for _ in 0..200 {
+            if mint.try_produce(&mut storage) {
+                produced += 1;
+            }
+        }
+        assert!(produced > 0, "Mint should produce coins");
+        assert_eq!(
+            mint.output_buffer[ResourceType::Coins as usize],
+            produced
+        );
     }
 
     #[test]

@@ -1021,6 +1021,7 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
         Waterworks => [0.2, 0.6, 1.0],  // water blue
         Smelter => [1.0, 0.5, 0.1],     // orange
         Barracks => [0.8, 0.2, 0.2],    // crimson
+        Mint => [0.9, 0.8, 0.2],          // gold coin
     }
 }
 
