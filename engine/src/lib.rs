@@ -200,6 +200,8 @@ const OVERLAY_FRAGMENT_SHADER: &str = r#"#version 300 es
 precision highp float;
 
 in vec3 v_overlay_color;
+uniform vec3 u_player_rgb; // (0,0,0) = no nation tint; otherwise nation color
+
 out vec4 out_color;
 
 void main() {
@@ -210,7 +212,13 @@ void main() {
 
     // Soft edge
     float alpha = 1.0 - smoothstep(0.3, 0.5, dist);
-    out_color = vec4(v_overlay_color, alpha);
+
+    // Tint with player nation color (40% blend) when a nation is selected
+    vec3 final_color = v_overlay_color;
+    if (u_player_rgb != vec3(0.0)) {
+        final_color = mix(v_overlay_color, u_player_rgb, 0.4);
+    }
+    out_color = vec4(final_color, alpha);
 }
 "#;
 
@@ -270,6 +278,7 @@ struct App {
     overlay_resolution_loc: web_sys::WebGlUniformLocation,
     overlay_camera_center_loc: web_sys::WebGlUniformLocation,
     overlay_zoom_loc: web_sys::WebGlUniformLocation,
+    overlay_player_rgb_loc: Option<web_sys::WebGlUniformLocation>,
     overlay_index_count: i32,
     overlay_dirty: bool,
 
@@ -522,6 +531,8 @@ impl App {
             .get_uniform_location(&overlay_program, "u_zoom")
             .ok_or("Cannot find overlay u_zoom")?;
 
+        let overlay_player_rgb_loc = gl.get_uniform_location(&overlay_program, "u_player_rgb");
+
         let start_time = window()
             .and_then(|w| w.performance())
             .map(|p| p.now())
@@ -564,6 +575,7 @@ impl App {
             overlay_resolution_loc,
             overlay_camera_center_loc,
             overlay_zoom_loc,
+            overlay_player_rgb_loc,
             overlay_index_count: 0,
             overlay_dirty: true,
             network_manager: NetworkManager::new(),
@@ -819,6 +831,17 @@ impl App {
 
         gl.uniform2f(Some(&self.overlay_camera_center_loc), iso_x, iso_y);
         gl.uniform1f(Some(&self.overlay_zoom_loc), self.camera.zoom);
+
+        // Pass player nation color for building dot tinting
+        if let Some(ref loc) = self.overlay_player_rgb_loc {
+            let rgb = if let Some(nation) = self.game_loop.state.player_nation {
+                let (r, g, b, _) = nation.color();
+                [r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0]
+            } else {
+                [0.0, 0.0, 0.0] // no nation = no tint
+            };
+            gl.uniform3f(Some(loc), rgb[0], rgb[1], rgb[2]);
+        }
 
         let canvas = gl
             .canvas()
@@ -2430,6 +2453,7 @@ mod tests {
     fn test_overlay_shaders_present() {
         assert!(OVERLAY_VERTEX_SHADER.contains("a_overlay_pos"));
         assert!(OVERLAY_FRAGMENT_SHADER.contains("gl_PointCoord"));
+        assert!(OVERLAY_FRAGMENT_SHADER.contains("u_player_rgb"));
     }
 
     #[test]
