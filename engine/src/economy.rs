@@ -165,6 +165,14 @@ pub enum BuildingType {
     Mint = 17,
     /// Guard Tower — extends territory, garrisons soldiers
     GuardTower = 18,
+    /// Fortress — larger territory expansion, stronger garrison
+    Fortress = 19,
+    /// Siege Workshop — produces Catapults and Ballistas
+    SiegeWorkshop = 20,
+    /// Shipyard — builds transport ships
+    Shipyard = 21,
+    /// Road Layer — builds paved roads for speed bonus
+    RoadLayer = 22,
 }
 
 impl BuildingType {
@@ -190,6 +198,10 @@ impl BuildingType {
             BuildingType::Barracks => "Barracks",
             BuildingType::Mint => "Mint",
             BuildingType::GuardTower => "Guard Tower",
+            BuildingType::Fortress => "Fortress",
+            BuildingType::SiegeWorkshop => "Siege Workshop",
+            BuildingType::Shipyard => "Shipyard",
+            BuildingType::RoadLayer => "Road Layer",
         }
     }
 
@@ -215,6 +227,10 @@ impl BuildingType {
             "Barracks" => Some(BuildingType::Barracks),
             "Mint" => Some(BuildingType::Mint),
             "Guard Tower" => Some(BuildingType::GuardTower),
+            "Fortress" => Some(BuildingType::Fortress),
+            "Siege Workshop" => Some(BuildingType::SiegeWorkshop),
+            "Shipyard" => Some(BuildingType::Shipyard),
+            "Road Layer" => Some(BuildingType::RoadLayer),
             _ => None,
         }
     }
@@ -241,6 +257,10 @@ impl BuildingType {
             "Barracks",
             "Mint",
             "Guard Tower",
+            "Fortress",
+            "Siege Workshop",
+            "Shipyard",
+            "Road Layer",
         ]
     }
 
@@ -274,6 +294,10 @@ impl BuildingType {
             BuildingType::Barracks => &[(ResourceType::Wood, 6), (ResourceType::Stone, 6)],
             BuildingType::Mint => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5)],
             BuildingType::GuardTower => &[(ResourceType::Stone, 8), (ResourceType::Boards, 6)],
+            BuildingType::Fortress => &[(ResourceType::Stone, 20), (ResourceType::Boards, 12), (ResourceType::Iron, 8)],
+            BuildingType::SiegeWorkshop => &[(ResourceType::Wood, 10), (ResourceType::Stone, 8), (ResourceType::Tools, 3)],
+            BuildingType::Shipyard => &[(ResourceType::Wood, 10), (ResourceType::Stone, 6), (ResourceType::Boards, 6)],
+            BuildingType::RoadLayer => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
         }
     }
 
@@ -293,6 +317,8 @@ impl BuildingType {
             BuildingType::Mill => &[(ResourceType::Grain, 3)],
             BuildingType::Smelter => &[(ResourceType::Iron, 1), (ResourceType::Coal, 1)],
             BuildingType::Mint => &[(ResourceType::Gold, 1), (ResourceType::Coal, 1)],
+            BuildingType::SiegeWorkshop => &[(ResourceType::IronIngots, 2), (ResourceType::Wood, 3)],
+            BuildingType::Shipyard => &[(ResourceType::Wood, 3), (ResourceType::Boards, 2)],
             _ => &[], // raw producers and storage have no inputs
         }
     }
@@ -315,7 +341,9 @@ impl BuildingType {
             BuildingType::Waterworks => &[(ResourceType::Water, 1)],
             BuildingType::Smelter => &[(ResourceType::IronIngots, 1)],
             BuildingType::Mint => &[(ResourceType::Coins, 1)],
-            _ => &[], // Barracks, Castle, Storehouse produce nothing
+            BuildingType::SiegeWorkshop => &[(ResourceType::Weapons, 1)], // Catapults/Ballistas = siege weapons
+            BuildingType::Shipyard => &[(ResourceType::Weapons, 1)], // Transport ships (placeholder)
+            _ => &[], // Barracks, Castle, Storehouse, Fortress, RoadLayer produce nothing
         }
     }
 
@@ -338,6 +366,10 @@ impl BuildingType {
             BuildingType::Smelter => 30,     // 3 seconds
             BuildingType::Mint => 30,        // 3 seconds
             BuildingType::GuardTower => 0,   // territory building, no production
+            BuildingType::Fortress => 0,         // territory building, no production
+            BuildingType::SiegeWorkshop => 60,    // 6 seconds — slow, expensive siege weapons
+            BuildingType::Shipyard => 50,         // 5 seconds — ships take time
+            BuildingType::RoadLayer => 25,        // 2.5 seconds — efficient road builder
             _ => 0,                          // Barracks, Castle, Storehouse don't produce
         }
     }
@@ -384,6 +416,10 @@ impl BuildingType {
             BuildingType::Barracks => 40,
             BuildingType::Mint => 35,
             BuildingType::GuardTower => 40,
+            BuildingType::Fortress => 80,
+            BuildingType::SiegeWorkshop => 60,
+            BuildingType::Shipyard => 50,
+            BuildingType::RoadLayer => 30,
         }
     }
 
@@ -404,6 +440,10 @@ impl BuildingType {
             BuildingType::Smelter => Some("Hammer"),
             BuildingType::Mint => Some("Hammer"),
             BuildingType::GuardTower => Some("Hammer"),
+            BuildingType::Fortress => Some("Hammer"),
+            BuildingType::SiegeWorkshop => Some("Hammer"),
+            BuildingType::Shipyard => Some("Saw"),
+            BuildingType::RoadLayer => None,
             _ => None, // Castle, Storehouse, Farm, Barracks — no tool needed
         }
     }
@@ -422,8 +462,12 @@ impl BuildingType {
             }
             // Military buildings
             BuildingType::Weaponsmith | BuildingType::Barracks | BuildingType::Mine
-            | BuildingType::GuardTower => {
+            | BuildingType::GuardTower | BuildingType::Fortress | BuildingType::SiegeWorkshop
+            | BuildingType::Shipyard => {
                 BuildingCategory::Military
+            }
+            BuildingType::RoadLayer => {
+                BuildingCategory::Economic
             }
         }
     }
@@ -1606,12 +1650,16 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        assert_eq!(BuildingType::all_names().len(), 19);
+        assert_eq!(BuildingType::all_names().len(), 23);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
         assert!(BuildingType::all_names().contains(&"Mint"));
         assert!(BuildingType::all_names().contains(&"Guard Tower"));
+        assert!(BuildingType::all_names().contains(&"Fortress"));
+        assert!(BuildingType::all_names().contains(&"Siege Workshop"));
+        assert!(BuildingType::all_names().contains(&"Shipyard"));
+        assert!(BuildingType::all_names().contains(&"Road Layer"));
     }
 
     #[test]

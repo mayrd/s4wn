@@ -1057,6 +1057,10 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
         Barracks => [0.8, 0.2, 0.2],    // crimson
         Mint => [0.9, 0.8, 0.2],          // gold coin
         GuardTower => [0.45, 0.4, 0.35],     // stone grey
+        Fortress => [0.4, 0.35, 0.3],          // dark stone grey
+        SiegeWorkshop => [0.6, 0.3, 0.1],       // rusty orange
+        Shipyard => [0.2, 0.4, 0.6],            // nautical blue
+        RoadLayer => [0.5, 0.45, 0.35],          // tan/sand
     }
 }
 
@@ -2493,6 +2497,10 @@ mod tests {
             Barracks,
             Mint,
             GuardTower,
+            Fortress,
+            SiegeWorkshop,
+            Shipyard,
+            RoadLayer,
         ] {
             let c = building_color(&kind);
             assert!(c[0] >= 0.0 && c[0] <= 1.0);
