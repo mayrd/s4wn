@@ -163,6 +163,8 @@ pub enum BuildingType {
     Barracks = 16,
     /// Mint — converts Gold Ore + Coal → Coins
     Mint = 17,
+    /// Guard Tower — extends territory, garrisons soldiers
+    GuardTower = 18,
 }
 
 impl BuildingType {
@@ -187,6 +189,7 @@ impl BuildingType {
             BuildingType::Smelter => "Smelter",
             BuildingType::Barracks => "Barracks",
             BuildingType::Mint => "Mint",
+            BuildingType::GuardTower => "Guard Tower",
         }
     }
 
@@ -211,6 +214,7 @@ impl BuildingType {
             "Smelter" => Some(BuildingType::Smelter),
             "Barracks" => Some(BuildingType::Barracks),
             "Mint" => Some(BuildingType::Mint),
+            "Guard Tower" => Some(BuildingType::GuardTower),
             _ => None,
         }
     }
@@ -236,6 +240,7 @@ impl BuildingType {
             "Smelter",
             "Barracks",
             "Mint",
+            "Guard Tower",
         ]
     }
 
@@ -268,6 +273,7 @@ impl BuildingType {
             BuildingType::Smelter => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5)],
             BuildingType::Barracks => &[(ResourceType::Wood, 6), (ResourceType::Stone, 6)],
             BuildingType::Mint => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5)],
+            BuildingType::GuardTower => &[(ResourceType::Stone, 8), (ResourceType::Boards, 6)],
         }
     }
 
@@ -331,6 +337,7 @@ impl BuildingType {
             BuildingType::Waterworks => 30,  // 3 seconds
             BuildingType::Smelter => 30,     // 3 seconds
             BuildingType::Mint => 30,        // 3 seconds
+            BuildingType::GuardTower => 0,   // territory building, no production
             _ => 0,                          // Barracks, Castle, Storehouse don't produce
         }
     }
@@ -376,6 +383,7 @@ impl BuildingType {
             BuildingType::Smelter => 35,
             BuildingType::Barracks => 40,
             BuildingType::Mint => 35,
+            BuildingType::GuardTower => 40,
         }
     }
 
@@ -395,6 +403,7 @@ impl BuildingType {
             BuildingType::Waterworks => Some("Bucket"),
             BuildingType::Smelter => Some("Hammer"),
             BuildingType::Mint => Some("Hammer"),
+            BuildingType::GuardTower => Some("Hammer"),
             _ => None, // Castle, Storehouse, Farm, Barracks — no tool needed
         }
     }
@@ -412,7 +421,8 @@ impl BuildingType {
                 BuildingCategory::Economic
             }
             // Military buildings
-            BuildingType::Weaponsmith | BuildingType::Barracks | BuildingType::Mine => {
+            BuildingType::Weaponsmith | BuildingType::Barracks | BuildingType::Mine
+            | BuildingType::GuardTower => {
                 BuildingCategory::Military
             }
         }
@@ -1596,11 +1606,12 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        assert_eq!(BuildingType::all_names().len(), 18);
+        assert_eq!(BuildingType::all_names().len(), 19);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
         assert!(BuildingType::all_names().contains(&"Mint"));
+        assert!(BuildingType::all_names().contains(&"Guard Tower"));
     }
 
     #[test]
