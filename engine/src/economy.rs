@@ -116,6 +116,9 @@ impl ResourceType {
 /// Ticks between settler recruitment at each Castle
 /// At 10 TPS, 50 ticks = 5 seconds per settler
 pub const CASTLE_SETTLER_INTERVAL: u32 = 50;
+/// Ticks between swordsman training at each Barracks
+/// At 10 TPS, 60 ticks = 6 seconds per swordsman
+pub const BARRACKS_TRAINING_INTERVAL: u32 = 60;
 
 // ── Building Types ─────────────────────────────────────────────────────────
 
@@ -844,6 +847,33 @@ impl Economy {
             .collect();
         for (cx, cy) in castle_spawns {
             self.units.spawn(crate::units::UnitKind::Settler, cx, cy);
+        }
+
+        // 1c. Barracks training — spawn swordsmen from completed Barracks that have Weapons
+        let barracks_spawns: Vec<(f32, f32)> = self
+            .buildings
+            .iter_mut()
+            .filter(|b| b.kind == BuildingType::Barracks && b.is_complete())
+            .filter_map(|b| {
+                b.recruitment_timer += 1;
+                if b.recruitment_timer >= BARRACKS_TRAINING_INTERVAL {
+                    // Check if we have at least 1 Weapon in storage
+                    if self.storage.amounts()[ResourceType::Weapons as usize] >= 1 {
+                        b.recruitment_timer = 0;
+                        Some((b.x as f32 + 0.5, b.y as f32 + 0.5))
+                    } else {
+                        // No weapons — hold the timer (don't reset, just wait)
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect();
+        for (bx, by) in barracks_spawns {
+            // Consume 1 Weapon from storage
+            self.storage.try_spend(&[(ResourceType::Weapons, 1)]);
+            self.units.spawn(crate::units::UnitKind::Swordsman, bx, by);
         }
 
         // Pre-compute which buildings have tooled settlers
@@ -1791,5 +1821,180 @@ mod tests {
         assert!(e.buildings[idx].is_complete());
         // Now the completed building needs a tooled settler
         assert_eq!(e.most_needed_tool(), Some(3)); // Saw = 3
+    }
+
+    #[test]
+    fn test_barracks_trains_swordsman() {
+        // Barracks should train a swordsman every BARRACKS_TRAINING_INTERVAL ticks
+        // when Weapons are available in storage.
+        let mut e = Economy::new();
+
+        // Add Weapons to storage (Weaponsmith produces these)
+        e.storage.try_spend(&[]); // nop, just to have storage populated
+        // We need Weapons in storage — use add_resource or similar
+        // Actually, ResourceStorage only adds via add()
+        e.storage.add(ResourceType::Weapons, 3);
+
+        // Place a Barracks and fully construct it (build_time = 40)
+        e.place_building(BuildingType::Barracks, 5, 5);
+        for _ in 0..41 {  // build_time + 1 for float precision
+            e.buildings[0].tick_construction();
+        }
+        assert!(e.buildings[0].is_complete(), "Barracks should be complete");
+
+        // No swordsmen yet
+        let initial_alive = e.units.alive_count();
+
+        // Run exactly BARRACKS_TRAINING_INTERVAL ticks
+        for _ in 0..BARRACKS_TRAINING_INTERVAL {
+            e.update();
+        }
+
+        let count_after = e.units.alive_count();
+        assert_eq!(
+            count_after,
+            initial_alive + 1,
+            "Barracks should train one swordsman after {} ticks; got {} alive (was {})",
+            BARRACKS_TRAINING_INTERVAL,
+            count_after,
+            initial_alive
+        );
+
+        // Weapons should be consumed (3 - 1 = 2)
+        assert_eq!(
+            e.storage.amounts()[ResourceType::Weapons as usize],
+            2,
+            "Weapons should decrease from 3 to 2 after training one swordsman"
+        );
+
+        // Run another BARRACKS_TRAINING_INTERVAL ticks — second swordsman
+        for _ in 0..BARRACKS_TRAINING_INTERVAL {
+            e.update();
+        }
+
+        let count_after2 = e.units.alive_count();
+        assert_eq!(
+            count_after2,
+            initial_alive + 2,
+            "Barracks should train two swordsmen after {} ticks",
+            BARRACKS_TRAINING_INTERVAL * 2
+        );
+        assert_eq!(
+            e.storage.amounts()[ResourceType::Weapons as usize],
+            1,
+            "Weapons should decrease from 3 to 1 after training two swordsmen"
+        );
+    }
+
+    #[test]
+    fn test_barracks_no_training_without_weapons() {
+        // Barracks should NOT train swordsmen when no Weapons are available.
+        let mut e = Economy::new();
+
+        // Place and construct Barracks
+        e.place_building(BuildingType::Barracks, 5, 5);
+        for _ in 0..41 {
+            e.buildings[0].tick_construction();
+        }
+        assert!(e.buildings[0].is_complete());
+
+        let initial_alive = e.units.alive_count();
+
+        // Run many ticks — no Weapons, so no training should happen
+        for _ in 0..BARRACKS_TRAINING_INTERVAL * 2 {
+            e.update();
+        }
+
+        assert_eq!(
+            e.units.alive_count(),
+            initial_alive,
+            "No swordsmen should be trained without Weapons"
+        );
+    }
+
+    #[test]
+    fn test_barracks_no_training_during_construction() {
+        // Barracks should NOT train swordsmen while under construction.
+        // update() ticks both construction and recruitment.
+        // Build time = 40, so first swordsman at tick 100 (40+60).
+        let mut e = Economy::new();
+
+        e.storage.add(ResourceType::Weapons, 5);
+        e.place_building(BuildingType::Barracks, 5, 5);
+
+        // Not complete yet
+        assert!(!e.buildings[0].is_complete());
+        let initial_alive = e.units.alive_count();
+
+        // Run 39 ticks — just before construction completes
+        for _ in 0..39 {
+            e.update();
+        }
+        assert!(!e.buildings[0].is_complete(), "Barracks should still be under construction");
+
+        // No swordsmen should be trained from an incomplete Barracks
+        assert_eq!(
+            e.units.alive_count(),
+            initial_alive,
+            "No swordsmen should be trained from incomplete Barracks after 39 ticks"
+        );
+
+        // Now run 1 more tick to complete construction, then BARRACKS_TRAINING_INTERVAL
+        // Total: 1 + BARRACKS_TRAINING_INTERVAL = 1 + 60 = 61 more ticks
+        for _ in 0..(1 + BARRACKS_TRAINING_INTERVAL) {
+            e.update();
+        }
+        assert!(e.buildings[0].is_complete(), "Barracks should now be complete");
+
+        // Now 1 swordsman should have been trained (after construction + interval)
+        assert_eq!(
+            e.units.alive_count(),
+            initial_alive + 1,
+            "Swordsman should be trained after construction completes + interval"
+        );
+    }
+
+    #[test]
+    fn test_multiple_barracks_train_swordsmen() {
+        // Multiple Barracks should each train swordsmen independently.
+        let mut e = Economy::new();
+
+        e.storage.add(ResourceType::Weapons, 10);
+
+        // Place 3 Barracks
+        e.place_building(BuildingType::Barracks, 3, 3);
+        e.place_building(BuildingType::Barracks, 5, 5);
+        e.place_building(BuildingType::Barracks, 7, 7);
+
+        // Fully construct all 3
+        for idx in 0..3 {
+            for _ in 0..41 {
+                e.buildings[idx].tick_construction();
+            }
+            assert!(e.buildings[idx].is_complete());
+        }
+
+        let initial_alive = e.units.alive_count();
+
+        // Run BARRACKS_TRAINING_INTERVAL ticks
+        for _ in 0..BARRACKS_TRAINING_INTERVAL {
+            e.update();
+        }
+
+        let count_after = e.units.alive_count();
+        assert_eq!(
+            count_after,
+            initial_alive + 3,
+            "3 Barracks should train 3 swordsmen after {} ticks; got {}",
+            BARRACKS_TRAINING_INTERVAL,
+            count_after
+        );
+
+        // 3 Weapons consumed
+        assert_eq!(
+            e.storage.amounts()[ResourceType::Weapons as usize],
+            7,
+            "Weapons should decrease from 10 to 7 after 3 swordsmen"
+        );
     }
 }
