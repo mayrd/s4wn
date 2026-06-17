@@ -843,7 +843,7 @@ impl App {
         gl.uniform2f(Some(&self.overlay_camera_center_loc), iso_x, iso_y);
         gl.uniform1f(Some(&self.overlay_zoom_loc), self.camera.zoom);
 
-        // Pass player nation color for building dot tinting
+        // Pass player nation color for overlay dot tinting (buildings + units)
         if let Some(ref loc) = self.overlay_player_rgb_loc {
             let rgb = if let Some(nation) = self.game_loop.state.player_nation {
                 let (r, g, b, _) = nation.color();
@@ -1648,8 +1648,11 @@ pub fn get_unit_info(id: u32) -> String {
                     Some(tid) => tid.to_string(),
                     None => "null".to_string(),
                 };
+                let tool_name = u.carried_tool
+                    .map(|tc| crate::economy::tool_code_to_name(tc))
+                    .unwrap_or("");
                 return format!(
-                    r#"{{"id":{},"kind":"{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","assigned_building":{},"target":{}}}"#,
+                    r#"{{"id":{},"kind":"{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","assigned_building":{},"target":{},"carried_tool":"{}"}}"#,
                     u.id,
                     u.kind.name(),
                     u.x,
@@ -1659,6 +1662,7 @@ pub fn get_unit_info(id: u32) -> String {
                     state_name,
                     ab,
                     target,
+                    tool_name,
                 );
             }
         }
