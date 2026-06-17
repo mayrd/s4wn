@@ -411,7 +411,29 @@ pub fn tool_code_from_name(name: &str) -> Option<u8> {
         "Rolling Pin" => Some(5),
         "Cleaver" => Some(6),
         "Bucket" => Some(7),
+        "Dagger" => Some(8),
+        "Shovel" => Some(9),
+        "Bow" => Some(10),
         _ => None,
+    }
+}
+
+/// Convert a tool code (u8 discriminant) to its name string.
+/// Returns "Unknown" for codes outside 0..=10.
+pub fn tool_code_to_name(code: u8) -> &'static str {
+    match code {
+        0 => "Hammer",
+        1 => "Pickaxe",
+        2 => "Axe",
+        3 => "Saw",
+        4 => "Fishing Rod",
+        5 => "Rolling Pin",
+        6 => "Cleaver",
+        7 => "Bucket",
+        8 => "Dagger",
+        9 => "Shovel",
+        10 => "Bow",
+        _ => "Unknown",
     }
 }
 
@@ -1796,6 +1818,26 @@ mod tests {
         assert_eq!(e.get_tool_count(3), 2);
         // Unused tool types stay at 0
         assert_eq!(e.get_tool_count(10), 0); // Scythe
+    }
+
+    #[test]
+    fn test_tool_code_to_name() {
+        assert_eq!(tool_code_to_name(0), "Hammer");
+        assert_eq!(tool_code_to_name(1), "Pickaxe");
+        assert_eq!(tool_code_to_name(4), "Fishing Rod");
+        assert_eq!(tool_code_to_name(10), "Bow");
+        assert_eq!(tool_code_to_name(11), "Unknown");
+        assert_eq!(tool_code_to_name(255), "Unknown");
+    }
+
+    #[test]
+    fn test_tool_code_from_name_all_11() {
+        // Verify all 11 tool types map round-trip
+        for code in 0..=10u8 {
+            let name = tool_code_to_name(code);
+            let back = tool_code_from_name(name);
+            assert_eq!(back, Some(code), "Round-trip failed for code {code} → '{name}'");
+        }
     }
 
     #[test]

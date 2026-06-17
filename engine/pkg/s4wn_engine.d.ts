@@ -77,6 +77,12 @@ export function get_stats(): string;
 export function get_tile_at(x: number, y: number): string;
 
 /**
+ * Get tool counts as a JSON string for the HUD.
+ * Returns: {"Hammer":3,"Pickaxe":0,"Axe":2,...} — all 11 tool types.
+ */
+export function get_tool_counts(): string;
+
+/**
  * Get detailed unit info by ID.
  * Returns JSON: {"id":1,"kind":"Settler","x":5.5,"y":3.0,"hp":50,"max_hp":50,
  *   "state":"Working","assigned_building":2,"target":null}
@@ -220,6 +226,7 @@ export interface InitOutput {
     readonly get_resource_counts: () => [number, number];
     readonly get_stats: () => [number, number];
     readonly get_tile_at: (a: number, b: number) => [number, number];
+    readonly get_tool_counts: () => [number, number];
     readonly get_unit_info: (a: number) => [number, number];
     readonly get_unit_summary: () => [number, number];
     readonly init: (a: number, b: number) => [number, number, number];

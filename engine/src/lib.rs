@@ -1382,6 +1382,25 @@ pub fn get_resource_counts() -> String {
     String::new()
 }
 
+/// Get tool counts as a JSON string for the HUD.
+/// Returns: {"Hammer":3,"Pickaxe":0,"Axe":2,...} — all 11 tool types.
+#[wasm_bindgen]
+pub fn get_tool_counts() -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            let economy = &app.game_loop.state.economy;
+            let mut parts = Vec::new();
+            for code in 0..=10u8 {
+                let count = economy.get_tool_count(code);
+                let name = crate::economy::tool_code_to_name(code);
+                parts.push(format!("\"{}\":{}", name, count));
+            }
+            return format!("{{{}}}", parts.join(","));
+        }
+    }
+    String::new()
+}
+
 /// Get building summary as a JSON string for the HUD.
 /// Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1},...]
 #[wasm_bindgen]

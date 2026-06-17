@@ -220,6 +220,24 @@ export function get_tile_at(x, y) {
 }
 
 /**
+ * Get tool counts as a JSON string for the HUD.
+ * Returns: {"Hammer":3,"Pickaxe":0,"Axe":2,...} — all 11 tool types.
+ * @returns {string}
+ */
+export function get_tool_counts() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_tool_counts();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Get detailed unit info by ID.
  * Returns JSON: {"id":1,"kind":"Settler","x":5.5,"y":3.0,"hp":50,"max_hp":50,
  *   "state":"Working","assigned_building":2,"target":null}

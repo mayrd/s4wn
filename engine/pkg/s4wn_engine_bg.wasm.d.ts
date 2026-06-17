@@ -13,6 +13,7 @@ export const get_map_data: () => [number, number];
 export const get_resource_counts: () => [number, number];
 export const get_stats: () => [number, number];
 export const get_tile_at: (a: number, b: number) => [number, number];
+export const get_tool_counts: () => [number, number];
 export const get_unit_info: (a: number) => [number, number];
 export const get_unit_summary: () => [number, number];
 export const init: (a: number, b: number) => [number, number, number];

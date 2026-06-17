@@ -402,6 +402,25 @@
   .res-count { color: #c8b878; min-width: 3em; text-align: right; }
   .res-label { color: #777; font-size: 9px; display: none; }
 
+  /* ── Tool Bar ─────────────────────────────────────────────────────────── */
+  #tool-bar {
+    position: fixed; top: 40px; left: 50%; transform: translateX(-50%);
+    z-index: 20;
+    display: flex; gap: 4px; align-items: center;
+    padding: 4px 12px;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(150,130,80,0.15);
+    border-radius: 6px;
+    font-family: monospace; font-size: 11px;
+    pointer-events: none;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  #tool-bar.visible { opacity: 1; }
+  .tool-item { display: flex; align-items: center; gap: 3px; }
+  .tool-icon { font-size: 14px; line-height: 1; }
+  .tool-count { color: #b8a060; min-width: 2em; text-align: right; }
+  .tool-item.empty { opacity: 0.35; }
+
   /* ── New Game Panel ─────────────────────────────────────────────────── */
   #new-game-panel {
     position: fixed; inset: 0; z-index: 50;
@@ -823,6 +842,7 @@
 </div>
 
 <div id="resource-bar"><span class="res-placeholder">Loading resources...</span></div>
+<div id="tool-bar"><span class="res-placeholder">Tools: 0</span></div>
 
 <div id="tile-tip"></div>
 
@@ -879,6 +899,7 @@ import init, {
     try_place_building,
     list_building_types,
     get_build_cost,
+    get_tool_counts,
     generate_map,
     add_starting_resources,
     setup_starter_base,
@@ -886,7 +907,7 @@ import init, {
     restore_game_state,
     decompress_sav_chunk,
     set_textures_ready,
-} from './pkg/s4wn_engine.js?v=20';
+} from './pkg/s4wn_engine.js?v=21';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -2784,6 +2805,42 @@ function updateResourceBar() {
     }
 }
 
+// ── Tool Bar ────────────────────────────────────────────────────────────
+const TOOL_ICONS = {
+    'Hammer': '🔨', 'Pickaxe': '⛏️', 'Axe': '🪓', 'Saw': '🪚',
+    'Fishing Rod': '🎣', 'Rolling Pin': '🫓', 'Cleaver': '🔪',
+    'Bucket': '🪣', 'Dagger': '🗡️', 'Shovel': '🪏', 'Bow': '🏹'
+};
+
+let lastToolUpdate = 0;
+function updateToolBar() {
+    if (!engineReady) return;
+    const now = performance.now();
+    if (now - lastToolUpdate < 3000) return; // Update every 3s
+    lastToolUpdate = now;
+
+    try {
+        const raw = get_tool_counts();
+        if (!raw) { lastToolUpdate = 0; return; }
+        const counts = JSON.parse(raw);
+        let html = '';
+        let totalTools = 0;
+        for (const [name, count] of Object.entries(counts)) {
+            totalTools += count;
+            const icon = TOOL_ICONS[name] || '🔧';
+            const cssClass = count > 0 ? '' : ' empty';
+            html += `<div class="tool-item${cssClass}" title="${name}: ${count}"><span class="tool-icon">${icon}</span><span class="tool-count">${count}</span></div>`;
+        }
+        if (totalTools === 0) {
+            html = '<span class="res-placeholder">No tools</span>';
+        }
+        document.getElementById('tool-bar').innerHTML = html;
+        document.getElementById('tool-bar').classList.add('visible');
+    } catch(e) {
+        // Silently skip
+    }
+}
+
 // ── Building / Unit Population ───────────────────────────────────────────
 let lastPopUpdate = 0;
 function updatePopulationSummary() {
@@ -3171,7 +3228,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=20');
+            const mod = await import('./pkg/s4wn_engine.js?v=21');
             load_map_json = mod.load_map_json || null;
             console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {
@@ -3260,6 +3317,9 @@ async function main() {
 
             // Resource bar (throttled to every 2s internally)
             updateResourceBar();
+
+            // Tool bar (throttled to every 3s internally)
+            updateToolBar();
 
             // Building/unit population summary
             updatePopulationSummary();
