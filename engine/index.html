@@ -1981,7 +1981,7 @@ function showMapPreview(data, file) {
             const color = terrainInfo ? terrainInfo.color : '#888';
             terrainHTML += `<div class="mp-stat-row">
                 <span class="swatch" style="background:${color}"></span>
-                <span class="mp-stat-name">${name}</span>
+                <span class="mp-stat-name">${tTerrain(name)}</span>
                 <span class="mp-stat-count">${count}</span>
                 <span class="mp-stat-bar"><div class="mp-stat-bar-fill" style="width:${pct}%;background:${color}"></div></span>
             </div>`;
@@ -2315,11 +2315,11 @@ const BUILDING_NAMES_DE = {
     'Toolsmith': 'Werkzeugschmiede',
     'Weaponsmith': 'Waffenschmiede',
     'Bakery': 'Bäckerei',
-    'Butcher': 'Metzger',
+    'Butcher': 'Schlachthaus',
     'Mill': 'Mühle',
-    'Farm': 'Farm',
-    'Fisherman': 'Fischer',
-    'Woodcutter': 'Holzfäller',
+    'Farm': 'Getreidefarm',
+    'Fisherman': 'Fischerhütte',
+    'Woodcutter': 'Holzfällerhütte',
     'Storehouse': 'Lagerhaus',
     'Waterworks': 'Wasserwerk',
     'Smelter': 'Schmelze',
@@ -2332,10 +2332,75 @@ const BUILDING_NAMES_DE = {
     'Road Layer': 'Straßenbauer',
 };
 
+// Authentic S4 German names for resources (matching original Siedler 4)
+const RESOURCE_NAMES_DE = {
+    'Wood': 'Holz',
+    'Stone': 'Stein',
+    'Iron': 'Eisen',
+    'Coal': 'Kohle',
+    'Gold': 'Gold',
+    'Sulfur': 'Schwefel',
+    'Fish': 'Fisch',
+    'Grain': 'Getreide',
+    'Game': 'Wild',
+    'Water': 'Wasser',
+    'Boards': 'Bretter',
+    'Tools': 'Werkzeuge',
+    'Weapons': 'Waffen',
+    'Bread': 'Brot',
+    'Meat': 'Fleisch',
+    'Flour': 'Mehl',
+    'IronIngots': 'Eisenbarren',
+    'Coins': 'Münzen',
+};
+
+// Authentic S4 German names for terrain (matching original Siedler 4)
+const TERRAIN_NAMES_DE = {
+    'Grass': 'Grasland',
+    'Forest': 'Wald',
+    'Mountain': 'Gebirge',
+    'Water': 'Wasser',
+    'DeepWater': 'Tiefes Wasser',
+    'Desert': 'Wüste',
+    'Swamp': 'Sumpf',
+    'Snow': 'Schnee',
+};
+
+// Authentic S4 German names for units (matching original Siedler 4)
+const UNIT_NAMES_DE = {
+    'Settler': 'Siedler',
+    'Swordsman': 'Schwertkämpfer',
+    'Bowman': 'Bogenschütze',
+};
+
 // Translate a building name (returns English if no translation for current language)
 function tBuilding(name) {
     if (typeof currentLang !== 'undefined' && currentLang === 'de' && BUILDING_NAMES_DE[name]) {
         return BUILDING_NAMES_DE[name];
+    }
+    return name;
+}
+
+// Translate a resource name
+function tResource(name) {
+    if (typeof currentLang !== 'undefined' && currentLang === 'de' && RESOURCE_NAMES_DE[name]) {
+        return RESOURCE_NAMES_DE[name];
+    }
+    return name;
+}
+
+// Translate a terrain name
+function tTerrain(name) {
+    if (typeof currentLang !== 'undefined' && currentLang === 'de' && TERRAIN_NAMES_DE[name]) {
+        return TERRAIN_NAMES_DE[name];
+    }
+    return name;
+}
+
+// Translate a unit name
+function tUnit(name) {
+    if (typeof currentLang !== 'undefined' && currentLang === 'de' && UNIT_NAMES_DE[name]) {
+        return UNIT_NAMES_DE[name];
     }
     return name;
 }
@@ -2504,7 +2569,7 @@ function showBuildingInfo(idx, cx, cy) {
         } catch(_) {}
 
         selInfo.innerHTML = `
-            <div class="sel-title">${b.kind}</div>
+            <div class="sel-title">${tBuilding(b.kind)}</div>
             <div class="sel-stat">Status: <span>${statusIcon}</span></div>
             <div class="sel-stat">Pos: <span>(${b.x}, ${b.y})</span></div>
             <div class="sel-stat">Workers: <span>${workers}</span></div>
@@ -2533,7 +2598,7 @@ function showUnitInfo(id, cx, cy) {
         const tool = u.carried_tool ? `🔧 ${u.carried_tool}` : '';
 
         selInfo.innerHTML = `
-            <div class="sel-title">${u.kind} #${u.id}</div>
+            <div class="sel-title">${tUnit(u.kind)} #${u.id}</div>
             <div class="sel-stat">HP: <span>${hpBar} ${u.hp}/${u.max_hp} (${hpPct}%)</span></div>
             <div class="sel-stat">State: <span>${u.state}</span></div>
             ${tool ? `<div class="sel-stat">${tool}</div>` : ''}
@@ -3338,7 +3403,7 @@ function updateResourceBar() {
             const count = counts[name];
             if (count === undefined) return;
             const icon = RESOURCE_ICONS[name] || '📦';
-            html += `<div class="res-item" title="${name}: ${count}"><span class="res-icon">${icon}</span><span class="res-count">${count}</span></div>`;
+            html += `<div class="res-item" title="${tResource(name)}: ${count}"><span class="res-icon">${icon}</span><span class="res-count">${count}</span></div>`;
         });
         document.getElementById('resource-bar').innerHTML = html || '<span class="res-placeholder">' + t('no_resources') + '</span>';
         document.getElementById('resource-bar').classList.add('visible');
