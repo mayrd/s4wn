@@ -67,7 +67,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 ## 🚀 Current Status
 
 **Phase 2.8 — Nations & Balancing** (in progress 🔨)
-- 🔨 **Phase 2.8 — Nations & Balancing** — In progress. Nation data model (5 nations, 34 unique buildings, 6 specialists, 11 tool types), nation selection UI, building tool requirements wired into game loop, Castle settler recruitment, Barracks Swordsman/Bowman training (alternating), Mint building, tool bar HUD, nation WASM integration (set/get/list, GameState storage, HUD display), **nation modifier application (production speed, building cost, unit HP/attack/defense, worker speed, worker build speed)**. 205 engine + 5 server = 210 tests passing.
+- 🔨 **Phase 2.8 — Nations & Balancing** — In progress. Nation data model (5 nations, 34 unique buildings, 6 specialists, 11 tool types), nation selection UI, building tool requirements wired into game loop, Castle settler recruitment, Barracks Swordsman/Bowman training (alternating), Mint building, tool bar HUD, nation WASM integration (set/get/list, GameState storage, HUD display), **nation modifier application (production speed, building cost, unit HP/attack/defense, worker speed, worker build speed)**. UI translations in 4 languages (EN/DE/ES/FR with auto-detect). 205 engine tests passing.
 ---
 
 AI Agent Configuration:

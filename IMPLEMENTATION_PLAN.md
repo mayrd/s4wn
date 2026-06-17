@@ -2,8 +2,8 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 2.8 — Nations & Balancing 🔨 (210 tests, 210 total)
-Last updated: 2026-06-17 (Session 67)
+## Status: Phase 2.8 — Nations & Balancing 🔨 (205 tests, 205 total)
+Last updated: 2026-06-17 (Session 68)
 
 ## 🤖 Agent Operating Rules
 
@@ -526,6 +526,7 @@ s4wn/
 || 65 | 2026-06-17 | ~10 min | **Guard Tower building:** Added BuildingType::GuardTower (discriminant 18) — S4 common military building. Cost: 8 Stone + 6 Boards, 40-tick build, Hammer tool, Military category. Stone grey overlay dot, 🗼 toolbar icon. Updated test count 18→19 types. 210 tests passing. |
 |||| 66 | 2026-06-17 | ~10 min | **Bugfix #11 — splash screen stall:** render() was missing #[wasm_bindgen], causing WASM module import failure ("does not provide an export named render"). Restored annotation, rebuilt WASM, bumped cache v=26→v=27. All 210 tests passing. |
 |||| 67 | 2026-06-17 | ~10 min | **Bugfix #12, #14, #15 — UI cleanup + capacity overflow guard.** Fixes #14: Removed "Isometric Map" from default map HUD text. Fixes #15: Moved speed buttons to bottom-right corner to prevent overlap with menu controls; removed in-game Load button (accessible via menu). Fixes #12: Added bounds guards in build_map_mesh() to prevent capacity overflow panic from degenerate viewports (1px-tall canvas). All 205 engine tests passing. |
+|||| 68 | 2026-06-17 | ~10 min | **Issue #13 — UI Translations:** Added i18n translation system with 55+ keys in 4 languages (EN/DE/ES/FR). LANG dictionary, t() lookup, setLanguage()/detectLanguage()/applyLanguage() functions. Language selector dropdown in Settings panel with Auto-detect (navigator.language). data-i18n attributes on all static UI labels, dynamic string translations for menu, loading, alerts, HUD, keyboard bindings. Persisted to localStorage settings. All 205 engine tests passing. |
 ---
 
 ## Open Items & Decisions Needed
@@ -540,6 +541,8 @@ s4wn/
 || #12 | Break on map rendering | ✅ Closed | Fixed in Session 67 — bounds guards prevent capacity overflow from degenerate viewports |
 || #14 | Remove "Isometric Map" | ✅ Closed | Fixed in Session 67 — default HUD text changed to "S4WN Engine" |
 || #15 | Load and Menu button overlap | ✅ Closed | Fixed in Session 67 — speed buttons moved to bottom-right, in-game Load button removed |
+
+| #13 | UI Translations (DE, ES, FR) | ✅ Closed | Fixed in Session 68 — 4-language i18n with auto-detect |
 
 All known issues are resolved. No open decisions needed.
 
@@ -580,7 +583,11 @@ None at the moment.
 2. **Bugfix #15:** Speed buttons moved to bottom-right, in-game Load button removed
 3. **Bugfix #12:** bounds guards in build_map_mesh() prevent capacity overflow panic
 
-### Next Session (Session 68)
+### ✅ Completed in Session 68
+
+1. **Issue #13 — UI Translations (DE, ES, FR):** ✅ Added 4-language i18n (EN/DE/ES/FR) with browser auto-detect, language selector in settings, data-i18n attributes, and translated dynamic strings. Fixes #13.
+
+### Next Session (Session 69)
 
 1. **Common building completion:** Add remaining S4 common buildings — Fortress, Siege Workshop, Shipyard, Road Layer (Guard Tower done in S65).
 2. **Guard Tower / Fortress territory expansion:** When garrisoned, extend player territory radius via shader or map overlay.
