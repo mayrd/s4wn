@@ -30,6 +30,13 @@ Last updated: 2026-06-17 (Session 58)
 - **Map & campaign import is EXCEPTED:** the engine MUST parse original `*.map` / `*.sav` files for scenario data (terrain, resources, objectives) — but always maps to our own asset IDs, never extracts original graphics.
 - If you encounter a `.dat` / `.bbf` / `.gfx` file during development, use the ARA+LZH decoder only for structural research — never extract and commit its contents.
 
+### S4 Authenticity Rule — Verify Before Building
+- **Every building, nation, unit, resource, terrain, decoration, specialist, and tool MUST exist in authentic Siedler 4 before being added to S4WN.**
+- **Source of truth:** `references/s4-authentic-content.md` in the `s4wn-development` skill (derived from S4Forge.RE C++ decompilation).
+- **Before adding ANY new game content:** cross-reference against the S4 building type IDs (0-82), settler type IDs (0-66), terrain types (8), resource deposits (8), nations (5), and naming conventions tables.
+- **Fabricated content (NEVER add):** Residence, Tannery, Archery Range, Sand terrain, Dirt terrain, Coast terrain, Leather resource, or any building/unit/resource not listed in the reference.
+- **When in doubt:** look it up in the reference FIRST, before writing code. If the reference is incomplete for a specific item, raise a `decision needed` GitHub issue.
+
 ---
 
 ## Roadmap
