@@ -2,8 +2,8 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 2.8 — Nations & Balancing 🔨 (204 tests)
-Last updated: 2026-06-17 (Session 60)
+## Status: Phase 2.8 — Nations & Balancing 🔨 (205 tests, 210 total)
+Last updated: 2026-06-17 (Session 61)
 
 ## 🤖 Agent Operating Rules
 
@@ -512,6 +512,7 @@ s4wn/
 ||| 57 | 2026-06-17 | ~10 min | **Nation integration:** Added NationType::from_name(), all_names(), emoji(). Added player_nation field to GameState. Added set_player_nation(), get_player_nation(), list_nations() WASM exports. Wired nation selection from new game panel to WASM. Added nation HUD (emoji + name + description) below tool bar. Bumped WASM cache v=21→v=22. 199 tests passing. |
 || 59 | 2026-06-17 | ~10 min | Bowman training: Barracks alternates Swordsman/Bowman each cycle, `training_kind` field, nation archer modifiers (`archer_hp/attack/range`), `attack_range_mult` on Unit used by CombatAI, 2 new tests (199 total). WASM v=24. |
 || 60 | 2026-06-17 | ~10 min | **Worker speed modifier:** Added `nation_speed_mult` field to Unit, applied in `tick_movement` (speed = base × terrain × nation). Added `set_nation_speed_mult()` to UnitManager. Wired into `Economy::set_nation_modifiers()` and Castle recruitment spawn. 5 new tests (204 total). |
+||| 61 | 2026-06-17 | ~10 min | **Worker build speed modifier:** Added `speed_mult` param to `Building::tick_construction()`, `Economy::build_speed()` reads `NationModifiers.units.worker_build_speed`, wired into `Economy::update()`. Romans build 10% faster (1.1x), Vikings/Trojans 10% slower (0.9x). 1 new test (205 engine, 210 total). |
 |||| 58 | 2026-06-17 | ~10 min | **Nation modifier application:** Economy production speed modifiers via try_produce(speed), building cost modifiers (ceil rounding), Barracks swordsmen get nation HP/attack/defense multipliers, CombatAI uses attack_mult/defense_mult for damage resolution. Unit gains attack_mult/defense_mult fields. BuildingType::building_category() for Economic/Military lookups. 3 new tests. 197 tests. WASM v=22→v=23. |
 
 
@@ -563,13 +564,13 @@ None at the moment.
 - Graceful fallback to flat colors if textures fail to load
 - Future: tune UV repeat factor, add texture blending between tile edges
 
-### Next Session (Session 61)
+### Next Session (Session 62)
 
 1. **Tool production integration — physical pickup:** Settlers physically pick up tools from Storehouse inventory (add `pickup_tool()` route), not just magically on auto_assign. This makes the tool bar HUD actionable — players see tools being consumed.
 2. **Toolsmith UI feedback:** Show which tool is currently being produced in the building info card when a Toolsmith is selected.
 3. **Nation-color tinting:** Apply nation color to building overlay dots in WebGL renderer based on player_nation.
 4. **Fog of war:** Implement unexplored territory darkening for tiles not yet seen (shader-based).
-5. **Worker build speed modifier:** Apply nation worker_build_speed modifier to construction progress (Building::tick_construction).
+5. ✅ **Worker build speed modifier:** Applied nation worker_build_speed modifier to construction progress (Building::tick_construction) — Session 61.
 
 ### Phase 2.8.2 — Common Buildings (continued)
 
