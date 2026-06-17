@@ -427,6 +427,29 @@
   .tool-count { color: #b8a060; min-width: 2em; text-align: right; }
   .tool-item.empty { opacity: 0.35; }
 
+  /* ── Toast Notifications ────────────────────────────────────────────── */
+  #toast-container {
+    position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+    z-index: 100; display: flex; flex-direction: column; gap: 6px;
+    pointer-events: none;
+  }
+  .toast {
+    background: rgba(20, 60, 20, 0.92); color: #cfc;
+    border: 1px solid rgba(100, 200, 100, 0.35);
+    border-radius: 8px; padding: 8px 18px;
+    font-size: 13px; white-space: nowrap;
+    animation: toastIn 0.35s ease-out, toastOut 0.4s ease-in 2.8s forwards;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(-14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-12px); }
+  }
+
   /* ── New Game Panel ─────────────────────────────────────────────────── */
   #new-game-panel {
     position: fixed; inset: 0; z-index: 50;
@@ -893,6 +916,8 @@
 <div id="tool-bar"><span class="res-placeholder">Tools: 0</span></div>
 <div id="nation-hud" class="nation-hud"></div>
 
+<div id="toast-container"></div>
+
 <div id="tile-tip"></div>
 
 <div id="controls">
@@ -957,7 +982,7 @@ import init, {
     get_player_nation,
     list_nations,
     get_nation_buildings,
-} from './pkg/s4wn_engine.js?v=31';
+} from './pkg/s4wn_engine.js?v=32';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -1993,6 +2018,9 @@ function showMapPreview(data, file) {
 
 function confirmMapLoad() {
     if (!pendingMapData || !load_map_json) return;
+
+    // Reset tool pickup tracking for new map/save
+    _knownToolSettlers = new Set();
 
     // .sav files: decompress terrain chunk and load map
     if (pendingMapData.type === 'sav') {
@@ -3355,6 +3383,47 @@ function updateToolBar() {
     }
 }
 
+// ── Toast Notifications ──────────────────────────────────────────────────
+function showToast(msg) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = msg;
+    container.appendChild(toast);
+    // Auto-remove after animation completes (toastOut ends at 3.2s)
+    setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 3500);
+}
+
+// Track tool-carrying settlers to detect new tool pickups
+let _knownToolSettlers = new Set();  // Set of settler IDs that had tools last check
+let _lastToolCheck = 0;
+function trackToolPickups() {
+    if (!engineReady || typeof get_unit_summary !== 'function') return;
+    const now = performance.now();
+    if (now - _lastToolCheck < 3000) return;
+    _lastToolCheck = now;
+    try {
+        const uRaw = get_unit_summary();
+        if (!uRaw) return;
+        const units = JSON.parse(uRaw);
+        const currentToolSettlers = new Set();
+        for (const u of units) {
+            if (u.kind === 'Settler' && u.carried_tool) {
+                currentToolSettlers.add(u.id);
+                if (!_knownToolSettlers.has(u.id)) {
+                    // New tool pickup detected!
+                    const toolIcon = TOOL_ICONS[u.carried_tool] || '🔧';
+                    showToast(`${toolIcon} Settler #${u.id} picked up ${u.carried_tool}`);
+                }
+            }
+        }
+        _knownToolSettlers = currentToolSettlers;
+    } catch (_) {}
+}
+
 // ── Building / Unit Population ───────────────────────────────────────────
 let lastPopUpdate = 0;
 function updatePopulationSummary() {
@@ -3438,6 +3507,9 @@ async function startNewGame() {
     console.log(`New Game: ${name}, map=${mapType}, difficulty=${difficulty}, nation=${nation}`);
     closeNewGame();
     closeMenu();
+
+    // Reset tool pickup tracking for new game
+    _knownToolSettlers = new Set();
 
     if (!engineReady || !load_map_json) {
         alert(t('engine_not_ready'));
@@ -3750,7 +3822,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=31');
+            const mod = await import('./pkg/s4wn_engine.js?v=32');
             load_map_json = mod.load_map_json || null;
             console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {
@@ -3849,6 +3921,9 @@ async function main() {
 
             // Building/unit population summary
             updatePopulationSummary();
+
+            // Tool pickup notifications
+            trackToolPickups();
 
             // Building affordability in toolbar
             refreshBuildingAffordability();

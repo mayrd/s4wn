@@ -1551,14 +1551,19 @@ pub fn get_unit_summary() -> String {
                     crate::units::UnitState::Fighting => "Fighting",
                     crate::units::UnitState::Dead => "Dead",
                 };
+                let tool_code = u.carried_tool.map(|tc| {
+                    use crate::economy::tool_code_to_name;
+                    tool_code_to_name(tc)
+                }).unwrap_or("");
                 parts.push(format!(
-                    "{{\"id\":{},\"kind\":\"{}\",\"x\":{:.1},\"y\":{:.1},\"hp\":{},\"state\":\"{}\"}}",
+                    "{{\"id\":{},\"kind\":\"{}\",\"x\":{:.1},\"y\":{:.1},\"hp\":{},\"state\":\"{}\",\"carried_tool\":\"{}\"}}",
                     u.id,
                     u.kind.name(),
                     u.x,
                     u.y,
                     u.hp,
-                    state_name
+                    state_name,
+                    tool_code
                 ));
             }
             return format!("[{}]", parts.join(","));
