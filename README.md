@@ -57,6 +57,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 * Implementation Plan: See IMPLEMENTATION_PLAN.md for the roadmap.
 * Issue Tracker: Manage all bugs and feature requests via GitHub Issues.
 * Testing: All PRs must pass regression tests before being merged into the main branch.
+* **Reference:** [siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/) — best source for Siedler 4 buildings, units, production chains, and game mechanics.
 
 ---
 
