@@ -1100,6 +1100,7 @@ pub fn set_textures_ready() {
     web_sys::console::log_1(&"Terrain textures ready (8 layers, 1024x1024)".into());
 }
 
+#[wasm_bindgen]
 pub fn render(timestamp: f64) {
     unsafe {
         if let Some(ref mut app) = APP {

@@ -152,6 +152,8 @@ export function on_mouse_up(): void;
  */
 export function on_wheel(delta_y: number): void;
 
+export function render(timestamp: number): void;
+
 /**
  * Handle window/canvas resize.
  */
@@ -256,6 +258,7 @@ export interface InitOutput {
     readonly on_mouse_move: (a: number, b: number) => void;
     readonly on_mouse_up: () => void;
     readonly on_wheel: (a: number) => void;
+    readonly render: (a: number) => void;
     readonly resize: () => void;
     readonly restore_game_state: (a: number, b: number) => [number, number];
     readonly set_game_speed: (a: number) => void;

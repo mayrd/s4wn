@@ -411,6 +411,13 @@ export function on_wheel(delta_y) {
 }
 
 /**
+ * @param {number} timestamp
+ */
+export function render(timestamp) {
+    wasm.render(timestamp);
+}
+
+/**
  * Handle window/canvas resize.
  */
 export function resize() {
@@ -617,12 +624,21 @@ function __wbg_get_imports() {
         __wbg_bindVertexArray_c391bd47303d75cd: function(arg0, arg1) {
             arg0.bindVertexArray(arg1);
         },
+        __wbg_blendFunc_b15af02643e188f1: function(arg0, arg1, arg2) {
+            arg0.blendFunc(arg1 >>> 0, arg2 >>> 0);
+        },
         __wbg_bufferData_99bbbc63f02251c4: function(arg0, arg1, arg2, arg3) {
             arg0.bufferData(arg1 >>> 0, arg2, arg3 >>> 0);
         },
         __wbg_canvas_97f6270746a06ca5: function(arg0) {
             const ret = arg0.canvas;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
+        },
+        __wbg_clearColor_0ae8a95dc1112d5f: function(arg0, arg1, arg2, arg3, arg4) {
+            arg0.clearColor(arg1, arg2, arg3, arg4);
+        },
+        __wbg_clear_dadcb3e2929388b0: function(arg0, arg1) {
+            arg0.clear(arg1 >>> 0);
         },
         __wbg_clientHeight_af66ce6b5259204b: function(arg0) {
             const ret = arg0.clientHeight;
@@ -657,12 +673,24 @@ function __wbg_get_imports() {
         __wbg_deleteShader_3339454254c7147c: function(arg0, arg1) {
             arg0.deleteShader(arg1);
         },
+        __wbg_disable_cb1b3e6c1cee5202: function(arg0, arg1) {
+            arg0.disable(arg1 >>> 0);
+        },
         __wbg_document_2634180a4c694068: function(arg0) {
             const ret = arg0.document;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
         },
+        __wbg_drawArrays_42dbb4b0349c8f34: function(arg0, arg1, arg2, arg3) {
+            arg0.drawArrays(arg1 >>> 0, arg2, arg3);
+        },
+        __wbg_drawElements_16a22ed8fb2810e3: function(arg0, arg1, arg2, arg3, arg4) {
+            arg0.drawElements(arg1 >>> 0, arg2, arg3 >>> 0, arg4);
+        },
         __wbg_enableVertexAttribArray_4f0f3da1ae1fd116: function(arg0, arg1) {
             arg0.enableVertexAttribArray(arg1 >>> 0);
+        },
+        __wbg_enable_d1f42f78be33a553: function(arg0, arg1) {
+            arg0.enable(arg1 >>> 0);
         },
         __wbg_error_a6fa202b58aa1cd3: function(arg0, arg1) {
             let deferred0_0;
@@ -796,6 +824,21 @@ function __wbg_get_imports() {
         __wbg_static_accessor_WINDOW_168f178805d978fe: function() {
             const ret = typeof window === 'undefined' ? null : window;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
+        },
+        __wbg_uniform1f_3acd3f3eb50b5e11: function(arg0, arg1, arg2) {
+            arg0.uniform1f(arg1, arg2);
+        },
+        __wbg_uniform1i_e4f13604354c28ae: function(arg0, arg1, arg2) {
+            arg0.uniform1i(arg1, arg2);
+        },
+        __wbg_uniform2f_f91d5964cfc18268: function(arg0, arg1, arg2, arg3) {
+            arg0.uniform2f(arg1, arg2, arg3);
+        },
+        __wbg_uniform3f_d1e4c9b540574821: function(arg0, arg1, arg2, arg3, arg4) {
+            arg0.uniform3f(arg1, arg2, arg3, arg4);
+        },
+        __wbg_useProgram_ab2ee2a13a1fd909: function(arg0, arg1) {
+            arg0.useProgram(arg1);
         },
         __wbg_vertexAttribPointer_4e5d289c5d224210: function(arg0, arg1, arg2, arg3, arg4, arg5, arg6) {
             arg0.vertexAttribPointer(arg1 >>> 0, arg2, arg3 >>> 0, arg4 !== 0, arg5, arg6);

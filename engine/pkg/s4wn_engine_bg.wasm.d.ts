@@ -26,6 +26,7 @@ export const on_mouse_down: (a: number, b: number) => void;
 export const on_mouse_move: (a: number, b: number) => void;
 export const on_mouse_up: () => void;
 export const on_wheel: (a: number) => void;
+export const render: (a: number) => void;
 export const resize: () => void;
 export const restore_game_state: (a: number, b: number) => [number, number];
 export const set_game_speed: (a: number) => void;
