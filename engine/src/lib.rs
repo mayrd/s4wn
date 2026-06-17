@@ -1044,7 +1044,6 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
         Mine => [0.4, 0.3, 0.3],        // dark red
         Toolsmith => [0.8, 0.2, 0.2],   // red
         Weaponsmith => [0.7, 0.1, 0.1], // dark red
-        Brewery => [0.9, 0.7, 0.2],     // amber
         Bakery => [0.8, 0.6, 0.3],      // tan
         Butcher => [0.6, 0.2, 0.2],     // maroon
         Mill => [0.5, 0.3, 0.2],        // dark brown
@@ -1504,6 +1503,15 @@ pub fn list_nations() -> String {
     }).collect();
     format!("[{}]", nations.join(","))
 }
+/// Get unique building names for a nation as JSON array.
+#[wasm_bindgen]
+pub fn get_nation_buildings(nation_name: &str) -> String {
+    use crate::nation;
+    let names = nation::get_nation_buildings(nation_name);
+    let quoted: Vec<String> = names.iter().map(|n| format!("\"{}\"", n)).collect();
+    format!("[{}]", quoted.join(","))
+}
+
 
 /// Get building summary as a JSON string for the HUD.
 /// Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1},...]
@@ -2498,7 +2506,6 @@ mod tests {
             Mine,
             Toolsmith,
             Weaponsmith,
-            Brewery,
             Bakery,
             Butcher,
             Mill,

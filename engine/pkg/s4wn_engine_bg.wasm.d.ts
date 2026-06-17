@@ -10,6 +10,7 @@ export const get_building_summary: () => [number, number];
 export const get_game_speed: () => number;
 export const get_game_state: () => [number, number];
 export const get_map_data: () => [number, number];
+export const get_nation_buildings: (a: number, b: number) => [number, number];
 export const get_player_nation: () => [number, number];
 export const get_resource_counts: () => [number, number];
 export const get_stats: () => [number, number];

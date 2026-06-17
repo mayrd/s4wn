@@ -167,6 +167,26 @@ export function get_map_data() {
 }
 
 /**
+ * Get unique building names for a nation as JSON array.
+ * @param {string} nation_name
+ * @returns {string}
+ */
+export function get_nation_buildings(nation_name) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(nation_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.get_nation_buildings(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
  * Get the player's nation as a JSON string {name, color, emoji, description}
  * Returns empty string if no nation is set.
  * @returns {string}

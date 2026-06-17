@@ -539,40 +539,6 @@
   #speed-controls .spd-btn:hover {
     background: rgba(255,255,255,0.1); color: #fff;
   }
-  /* ── Building Toolbar ────────────────────────────────────────────────── */
-  #build-toolbar {
-    position: fixed; left: 8px; top: 50%; transform: translateY(-50%);
-    z-index: 15;
-    display: flex; flex-direction: column; gap: 3px;
-    padding: 6px;
-    background: rgba(10,15,30,0.85);
-    border: 1px solid rgba(200,170,100,0.15);
-    border-radius: 8px;
-    max-height: 70vh; overflow-y: auto;
-  }
-  #build-toolbar .bt-build-btn {
-    padding: 6px 10px; border-radius: 4px; cursor: pointer;
-    font-family: 'SF Mono', 'Cascadia Code', monospace;
-    font-size: 10px; color: rgba(200,200,200,0.7);
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.06);
-    transition: all 0.15s; text-align: left; white-space: nowrap;
-  }
-  #build-toolbar .bt-build-btn:hover {
-    background: rgba(255,255,255,0.12); color: #fff;
-    border-color: rgba(200,170,100,0.3);
-  }
-  #build-toolbar .bt-build-btn.active {
-    background: rgba(200,170,100,0.25); color: #e8d5a0;
-    border-color: rgba(200,170,100,0.5);
-  }
-  #build-toolbar .bt-build-btn:disabled {
-    opacity: 0.3; cursor: not-allowed;
-  }
-  #build-toolbar .bt-build-btn.affordable:not(.active):not(:disabled) {
-    color: #8f8; border-color: rgba(100,200,100,0.3);
-  }
-  .bt-label { display: block; font-size: 8px; color: #666; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.1em; }
   /* placement mode cursor */
   canvas.placing { cursor: crosshair !important; }
   #placement-status {
@@ -956,8 +922,6 @@
   <button class="spd-btn" data-speed="4">▶▶▶ 4×</button>
 </div>
 
-<!-- Building Toolbar -->
-<div id="build-toolbar"><span class="bt-label">BUILD</span></div>
 <div id="placement-status"></div>
 <div id="selection-info"></div>
 
@@ -992,7 +956,8 @@ import init, {
     set_player_nation,
     get_player_nation,
     list_nations,
-} from './pkg/s4wn_engine.js?v=30';
+    get_nation_buildings,
+} from './pkg/s4wn_engine.js?v=31';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -2298,11 +2263,10 @@ document.addEventListener('drop', (e) => {
 });
 
 // ── Building Placement ──────────────────────────────────────────────────
-const buildToolbar = document.getElementById('build-toolbar');
 const placementStatus = document.getElementById('placement-status');
 const BUILDING_ICONS = {
     'Castle': '🏰', 'Sawmill': '🪚', 'Stonecutter': '🪨', 'Mine': '⛏️',
-    'Toolsmith': '🔨', 'Weaponsmith': '⚔️', 'Brewery': '🍺', 'Bakery': '🍞',
+    'Toolsmith': '🔨', 'Weaponsmith': '⚔️', 'Bakery': '🍞',
     'Butcher': '🔪', 'Mill': '🏭', 'Farm': '🌾', 'Fisherman': '🎣',
     'Woodcutter': '🪓', 'Storehouse': '🏚️',
     'Waterworks': '💧', 'Smelter': '🔥', 'Barracks': '⚔️',
@@ -2322,7 +2286,6 @@ const BUILDING_NAMES_DE = {
     'Mine': 'Mine',
     'Toolsmith': 'Werkzeugschmiede',
     'Weaponsmith': 'Waffenschmiede',
-    'Brewery': 'Brauerei',
     'Bakery': 'Bäckerei',
     'Butcher': 'Metzger',
     'Mill': 'Mühle',
@@ -2360,44 +2323,6 @@ function showBuildCostTooltip(kindName) {
         return `Cost: ${parts}`;
     }
     return '';
-}
-
-function populateBuildToolbar() {
-    const kinds = JSON.parse(list_building_types());
-    const label = buildToolbar.querySelector('.bt-label');
-    buildToolbar.innerHTML = '';
-    buildToolbar.appendChild(label);
-    placementButtons = [];
-    lastAffordabilityUpdate = 0; // force refresh on next check
-    kinds.forEach(name => {
-        const btn = document.createElement('button');
-        btn.className = 'bt-build-btn';
-        btn._buildingName = name;
-        const icon = BUILDING_ICONS[name] || '🏗️';
-        const costTip = showBuildCostTooltip(name);
-        btn.textContent = `${icon} ${tBuilding(name)}`;
-        btn.title = costTip || name;
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (placementMode === name) {
-                // Deselect
-                placementMode = null;
-                btn.classList.remove('active');
-                canvas.classList.remove('placing');
-                placementStatus.classList.remove('visible');
-            } else {
-                // Select new building
-                placementButtons.forEach(b => b.classList.remove('active'));
-                placementMode = name;
-                btn.classList.add('active');
-                canvas.classList.add('placing');
-                placementStatus.textContent = `Place ${tBuilding(name)} — click tile · Right-click/B to cancel`;
-                placementStatus.classList.add('visible');
-            }
-        });
-        buildToolbar.appendChild(btn);
-        placementButtons.push(btn);
-    });
 }
 
 function cancelPlacement() {
@@ -2454,9 +2379,6 @@ function refreshBuildingAffordability() {
 window.addEventListener('keydown', (e) => {
     if (showMenu) return;
     if (e.key.toLowerCase() === 'b' && !placementMode) {
-        // Select first available building
-        populateBuildToolbar(); // refresh
-        if (placementButtons.length > 0) placementButtons[0].click();
     } else if (e.key === 'Escape' && placementMode) {
         cancelPlacement();
     }
@@ -3476,6 +3398,7 @@ function formatGameTime(seconds) {
 
 // ── New Game ───────────────────────────────────────────────────────────────
 function openNewGame() {
+    closeMenu();
     document.getElementById('new-game-panel').classList.add('open');
 }
 
@@ -3827,7 +3750,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=30');
+            const mod = await import('./pkg/s4wn_engine.js?v=31');
             load_map_json = mod.load_map_json || null;
             console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {
@@ -3876,7 +3799,6 @@ async function main() {
         } else {
             setLanguage('auto');
         }
-        populateBuildToolbar();
         console.log('Engine ready, starting render loop');
 
         // Animation loop
@@ -3952,7 +3874,7 @@ main();
 
 // S4 building categories
 const BUILDING_CATEGORIES = {
-    'Food': ['Farm', 'Fisherman', 'Butcher', 'Mill', 'Bakery', 'Waterworks', 'Brewery'],
+    'Food': ['Farm', 'Fisherman', 'Butcher', 'Mill', 'Bakery', 'Waterworks'],
     'Raw Materials': ['Woodcutter', 'Sawmill', 'Stonecutter', 'Mine', 'Smelter'],
     'Processing': ['Toolsmith', 'Weaponsmith', 'Mint'],
     'Military': ['Barracks', 'Guard Tower', 'Fortress', 'Siege Workshop'],
@@ -3997,6 +3919,29 @@ function populateConstructionPanel() {
             html += '</div>';
         }
         html += '</div></div>';
+    }
+    // Nation-specific buildings
+    if (typeof get_nation_buildings === 'function') {
+        const nationName = get_player_nation ? JSON.parse(get_player_nation()).name : null;
+        if (nationName) {
+            const nationBuildings = JSON.parse(get_nation_buildings(nationName));
+            if (nationBuildings.length > 0) {
+                html += '<div class="con-category">';
+                html += `<div class="con-cat-header">🏛️ ${nationName} Buildings</div>`;
+                html += '<div class="con-cat-body">';
+                for (const name of nationBuildings) {
+                    const icon = BUILDING_ICONS[name] || '🏛️';
+                    const costStr = showBuildCostTooltip(name);
+                    const cost = costStr ? costStr.replace('Cost: ', '') : '?';
+                    html += `<div class="con-bldg" onclick="selectBuilding('${name}')" title="${costStr || name}">`;
+                    html += `<span class="con-icon">${icon}</span>`;
+                    html += `<span class="con-name">${name}</span>`;
+                    html += `<span class="con-cost">${cost}</span>`;
+                    html += '</div>';
+                }
+                html += '</div></div>';
+            }
+        }
     }
     container.innerHTML = html;
 }
@@ -4265,6 +4210,8 @@ window.confirmMapLoad = confirmMapLoad;
 window.cancelMapPreview = cancelMapPreview;
 window.toggleConstructionPanel = toggleConstructionPanel;
 window.toggleStatsPanel = toggleStatsPanel;
+window.selectBuilding = selectBuilding;
+window.showStatsTab = showStatsTab;
 
 // Global error handlers
 window.ErrorHandler = ErrorHandler;
@@ -4308,6 +4255,7 @@ console.error = function (...args) {
 
 <!-- Bottom-left action buttons -->
 <div id="bottom-left-btns">
+    <button id="btn-menu" onclick="openMenu()" data-i18n="menu">📋 Menu</button>
     <button id="btn-construction" onclick="toggleConstructionPanel()" data-i18n="construction">🏗️ Bauen</button>
     <button id="btn-stats" onclick="toggleStatsPanel()" data-i18n="stats">📊 Statistik</button>
 </div>

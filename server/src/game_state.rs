@@ -192,8 +192,7 @@ pub enum BuildingKind {
     HuntersLodge = 9,
     Blacksmith = 10,
     Armory = 11,
-    Brewery = 12,
-    Bakery = 13,
+    Bakery = 12,
     Warehouse = 14,
 }
 
@@ -212,8 +211,7 @@ impl BuildingKind {
             9 => Some(BuildingKind::HuntersLodge),
             10 => Some(BuildingKind::Blacksmith),
             11 => Some(BuildingKind::Armory),
-            12 => Some(BuildingKind::Brewery),
-            13 => Some(BuildingKind::Bakery),
+            12 => Some(BuildingKind::Bakery),
             14 => Some(BuildingKind::Warehouse),
             _ => None,
         }
@@ -233,8 +231,7 @@ impl BuildingKind {
             BuildingKind::HuntersLodge => 8, // Game
             BuildingKind::Blacksmith => 17,  // Tools
             BuildingKind::Armory => 18,      // Weapons
-            BuildingKind::Brewery => 19,     // Beer
-            BuildingKind::Bakery => 20,      // Bread
+            BuildingKind::Bakery => 19,      // Bread
             _ => 255, // HQ, Warehouse — no production
         }
     }
@@ -253,7 +250,6 @@ impl BuildingKind {
             BuildingKind::HuntersLodge => 30,
             BuildingKind::Blacksmith => 40,
             BuildingKind::Armory => 50,
-            BuildingKind::Brewery => 40,
             BuildingKind::Bakery => 35,
             _ => 0,
         }
@@ -273,7 +269,6 @@ impl BuildingKind {
             BuildingKind::GoldMine => [(0, 15), (1, 10)],
             BuildingKind::Blacksmith => [(0, 10), (1, 15)],
             BuildingKind::Armory => [(0, 15), (1, 20)],
-            BuildingKind::Brewery => [(0, 10), (1, 10)],
             BuildingKind::Bakery => [(0, 10), (1, 5)],
             BuildingKind::Warehouse => [(0, 15), (1, 15)],
             BuildingKind::Headquarters => [(0, 0), (1, 0)], // Free (placed on start)

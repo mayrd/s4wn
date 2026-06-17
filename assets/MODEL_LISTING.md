@@ -78,8 +78,7 @@ Buildings that produce resources, process goods, or extract raw materials.
 | B03 | mine | 🟡 | 21 | #664D4D | 1 | Iron, Coal, Gold extraction |
 | B04 | toolsmith | 🟡 | 44 | #CC3333 | 1 | Iron+Coal → Tools |
 | B05 | weaponsmith | 🟡 | 66 | #B31A1A | 1 | Iron+Coal+Tools → Weapons |
-| B06 | brewery | 🟡 | 74 | #E6B333 | 1 | Grain → Beer |
-| B07 | bakery | 🟡 | 32 | #CC9966 | 1 | Grain → Bread |
+| B06 | bakery | 🟡 | 32 | #CC9966 | 1 | Grain → Bread |
 | B08 | butcher | 🟡 | 44 | #993333 | 1 | Game → Meat |
 
 ---

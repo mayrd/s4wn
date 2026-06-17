@@ -590,7 +590,6 @@ pub enum UniqueBuildingType {
     DarkTemple = 40,
     DarkGarden = 41,
     MushroomFarm = 42,
-    DarkBrewery = 43,
     SanctuaryOfMorbus = 44,
     SanctuaryOfPestilence = 45,
     DarkFortress = 46,
@@ -642,7 +641,6 @@ impl UniqueBuildingType {
             UniqueBuildingType::DarkTemple => "Dark Temple",
             UniqueBuildingType::DarkGarden => "Dark Garden",
             UniqueBuildingType::MushroomFarm => "Mushroom Farm",
-            UniqueBuildingType::DarkBrewery => "Dark Brewery",
             UniqueBuildingType::SanctuaryOfMorbus => "Sanctuary of Morbus",
             UniqueBuildingType::SanctuaryOfPestilence => "Sanctuary of Pestilence",
             UniqueBuildingType::DarkFortress => "Dark Fortress",
@@ -691,7 +689,6 @@ impl UniqueBuildingType {
                 UniqueBuildingType::DarkTemple,
                 UniqueBuildingType::DarkGarden,
                 UniqueBuildingType::MushroomFarm,
-                UniqueBuildingType::DarkBrewery,
                 UniqueBuildingType::SanctuaryOfMorbus,
                 UniqueBuildingType::SanctuaryOfPestilence,
                 UniqueBuildingType::DarkFortress,
@@ -699,6 +696,18 @@ impl UniqueBuildingType {
             ],
         }
     }
+}
+
+/// Get the names of unique buildings for a nation (by name string).
+pub fn get_nation_buildings(nation_name: &str) -> Vec<String> {
+    let nation = match NationType::from_name(nation_name) {
+        Some(n) => n,
+        None => return Vec::new(),
+    };
+    UniqueBuildingType::for_nation(nation)
+        .iter()
+        .map(|ub| ub.name().to_string())
+        .collect()
 }
 
 // ── Specialist Types ──────────────────────────────────────────────────────────
@@ -931,10 +940,7 @@ mod tests {
         assert_eq!(UniqueBuildingType::for_nation(NationType::Viking).len(), 6);
         assert_eq!(UniqueBuildingType::for_nation(NationType::Maya).len(), 7);
         assert_eq!(UniqueBuildingType::for_nation(NationType::Trojan).len(), 7);
-        assert_eq!(
-            UniqueBuildingType::for_nation(NationType::DarkTribe).len(),
-            8
-        );
+        assert_eq!(UniqueBuildingType::for_nation(NationType::DarkTribe).len(), 7);
     }
 
     #[test]
@@ -1011,6 +1017,6 @@ mod tests {
             + UniqueBuildingType::for_nation(NationType::Maya).len()
             + UniqueBuildingType::for_nation(NationType::Trojan).len()
             + UniqueBuildingType::for_nation(NationType::DarkTribe).len();
-        assert_eq!(total, 34); // 6 + 6 + 7 + 7 + 8
+        assert_eq!(total, 33); // 6 + 6 + 7 + 7 + 7
     }
 }

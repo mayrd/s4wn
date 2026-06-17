@@ -64,6 +64,11 @@ export function get_game_state(): string;
 export function get_map_data(): Uint8Array;
 
 /**
+ * Get unique building names for a nation as JSON array.
+ */
+export function get_nation_buildings(nation_name: string): string;
+
+/**
  * Get the player's nation as a JSON string {name, color, emoji, description}
  * Returns empty string if no nation is set.
  */
@@ -242,6 +247,7 @@ export interface InitOutput {
     readonly get_game_speed: () => number;
     readonly get_game_state: () => [number, number];
     readonly get_map_data: () => [number, number];
+    readonly get_nation_buildings: (a: number, b: number) => [number, number];
     readonly get_player_nation: () => [number, number];
     readonly get_resource_counts: () => [number, number];
     readonly get_stats: () => [number, number];

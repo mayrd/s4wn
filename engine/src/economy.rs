@@ -52,7 +52,6 @@ pub enum ResourceType {
     Boards = 16,     // Wood → Boards (sawmill)
     Tools = 17,      // Iron + Coal → Tools (toolsmith)
     Weapons = 18,    // Iron + Coal + Tools → Weapons (weaponsmith)
-    Beer = 19,       // Grain → Beer (brewery)
     Bread = 20,      // Grain → Bread (bakery)
     Meat = 21,       // Game → Meat (butcher)
     Flour = 22,      // Grain → Flour (mill)
@@ -89,7 +88,6 @@ impl ResourceType {
             ResourceType::Boards => "Boards",
             ResourceType::Tools => "Tools",
             ResourceType::Weapons => "Weapons",
-            ResourceType::Beer => "Beer",
             ResourceType::Bread => "Bread",
             ResourceType::Meat => "Meat",
             ResourceType::Flour => "Flour",
@@ -139,8 +137,6 @@ pub enum BuildingType {
     Toolsmith = 4,
     /// Weaponsmith — Iron + Coal + Tools → Weapons
     Weaponsmith = 5,
-    /// Brewery — Grain → Beer
-    Brewery = 6,
     /// Bakery — Grain → Bread
     Bakery = 7,
     /// Butcher — Meat → Sausages
@@ -185,7 +181,6 @@ impl BuildingType {
             BuildingType::Mine => "Mine",
             BuildingType::Toolsmith => "Toolsmith",
             BuildingType::Weaponsmith => "Weaponsmith",
-            BuildingType::Brewery => "Brewery",
             BuildingType::Bakery => "Bakery",
             BuildingType::Butcher => "Butcher",
             BuildingType::Mill => "Mill",
@@ -214,7 +209,6 @@ impl BuildingType {
             "Mine" => Some(BuildingType::Mine),
             "Toolsmith" => Some(BuildingType::Toolsmith),
             "Weaponsmith" => Some(BuildingType::Weaponsmith),
-            "Brewery" => Some(BuildingType::Brewery),
             "Bakery" => Some(BuildingType::Bakery),
             "Butcher" => Some(BuildingType::Butcher),
             "Mill" => Some(BuildingType::Mill),
@@ -244,7 +238,6 @@ impl BuildingType {
             "Mine",
             "Toolsmith",
             "Weaponsmith",
-            "Brewery",
             "Bakery",
             "Butcher",
             "Mill",
@@ -281,7 +274,6 @@ impl BuildingType {
                 (ResourceType::Stone, 5),
                 (ResourceType::Tools, 3),
             ],
-            BuildingType::Brewery => &[(ResourceType::Wood, 5), (ResourceType::Stone, 2)],
             BuildingType::Bakery => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
             BuildingType::Butcher => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
             BuildingType::Mill => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
@@ -311,7 +303,6 @@ impl BuildingType {
                 (ResourceType::Coal, 1),
                 (ResourceType::Tools, 1),
             ],
-            BuildingType::Brewery => &[(ResourceType::Grain, 3)],
             BuildingType::Bakery => &[(ResourceType::Grain, 2)],
             BuildingType::Butcher => &[(ResourceType::Game, 2)],
             BuildingType::Mill => &[(ResourceType::Grain, 3)],
@@ -331,7 +322,6 @@ impl BuildingType {
             BuildingType::Mine => &[(ResourceType::Iron, 1)], // simplified: mine produces iron
             BuildingType::Toolsmith => &[(ResourceType::Tools, 1)],
             BuildingType::Weaponsmith => &[(ResourceType::Weapons, 1)],
-            BuildingType::Brewery => &[(ResourceType::Beer, 1)],
             BuildingType::Bakery => &[(ResourceType::Bread, 1)],
             BuildingType::Butcher => &[(ResourceType::Meat, 1)],
             BuildingType::Mill => &[(ResourceType::Flour, 1)],
@@ -355,7 +345,6 @@ impl BuildingType {
             BuildingType::Mine => 40,        // 4 seconds
             BuildingType::Toolsmith => 30,   // 3 seconds
             BuildingType::Weaponsmith => 50, // 5 seconds
-            BuildingType::Brewery => 25,     // 2.5 seconds
             BuildingType::Bakery => 20,      // 2 seconds
             BuildingType::Butcher => 25,     // 2.5 seconds
             BuildingType::Mill => 25,        // 2.5 seconds
@@ -408,7 +397,7 @@ impl BuildingType {
             BuildingType::Farm | BuildingType::Fisherman | BuildingType::Woodcutter => 20,
             BuildingType::Stonecutter | BuildingType::Sawmill => 30,
             BuildingType::Mine => 40,
-            BuildingType::Toolsmith | BuildingType::Brewery | BuildingType::Bakery => 35,
+            BuildingType::Toolsmith | BuildingType::Bakery => 35,
             BuildingType::Butcher | BuildingType::Mill => 30,
             BuildingType::Weaponsmith => 50,
             BuildingType::Waterworks => 25,
@@ -430,7 +419,7 @@ impl BuildingType {
             BuildingType::Stonecutter | BuildingType::Mine => Some("Pickaxe"),
             BuildingType::Sawmill => Some("Saw"),
             BuildingType::Toolsmith | BuildingType::Weaponsmith => Some("Hammer"),
-            BuildingType::Brewery | BuildingType::Bakery | BuildingType::Mill => {
+            BuildingType::Bakery | BuildingType::Mill => {
                 Some("Rolling Pin")
             }
             BuildingType::Butcher => Some("Cleaver"),
@@ -457,7 +446,7 @@ impl BuildingType {
             | BuildingType::Fisherman | BuildingType::Butcher | BuildingType::Waterworks
             | BuildingType::Woodcutter | BuildingType::Sawmill | BuildingType::Stonecutter
             | BuildingType::Smelter | BuildingType::Mint | BuildingType::Toolsmith
-            | BuildingType::Brewery | BuildingType::Castle | BuildingType::Storehouse => {
+            | BuildingType::Castle | BuildingType::Storehouse => {
                 BuildingCategory::Economic
             }
             // Military buildings
@@ -1598,7 +1587,6 @@ mod tests {
             BuildingType::Sawmill,
             BuildingType::Toolsmith,
             BuildingType::Weaponsmith,
-            BuildingType::Brewery,
             BuildingType::Bakery,
             BuildingType::Butcher,
             BuildingType::Mill,
@@ -1630,7 +1618,6 @@ mod tests {
         assert_eq!(BuildingType::Smelter.required_tool(), Some("Hammer"));
         assert_eq!(BuildingType::Mint.required_tool(), Some("Hammer"));
         assert_eq!(BuildingType::Butcher.required_tool(), Some("Cleaver"));
-        assert_eq!(BuildingType::Brewery.required_tool(), Some("Rolling Pin"));
         assert_eq!(BuildingType::Bakery.required_tool(), Some("Rolling Pin"));
         assert_eq!(BuildingType::Mill.required_tool(), Some("Rolling Pin"));
         // Buildings without tool requirements
@@ -1650,7 +1637,7 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        assert_eq!(BuildingType::all_names().len(), 23);
+        assert_eq!(BuildingType::all_names().len(), 22);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
