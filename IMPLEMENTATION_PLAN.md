@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 **Status:** Phase 2.8 — Nations & Balancing (205 tests)
-**Last updated:** 2026-06-17
+**Last updated:** 2026-06-17 (Session 72)
 
 ---
 
@@ -271,6 +271,7 @@ protocol::tests               5 tests    Message serialization, room management
 | 69 | 2026-06-17 | 4 new S4 common buildings (Fortress, SiegeWorkshop, Shipyard, RoadLayer) |
 | 70 | 2026-06-17 | Unit overlay tinting verified, carried_tool in get_unit_info |
 | **71** | **2026-06-17** | **9 issues closed: #26–#35 bugs, Brewery removal, nation buildings, Menu button** |
+| 72 | 2026-06-17 | Tool pickup toast notifications — carried_tool added to get_unit_summary(), showToast() CSS animation, trackToolPickups() in game loop, WASM v=32 |
 
 ---
 
@@ -325,6 +326,6 @@ protocol::tests               5 tests    Message serialization, room management
 
 - **S4Forge.RE:** Authoritative C++ decompilation for building IDs (0-82), settler IDs (0-66), terrain (8 types), resources (8 types), nations (5)
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
-- **WASM cache:** Current v=31. Always bump when adding new `#[wasm_bindgen]` exports.
+- **WASM cache:** Current v=32. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
 - **Test count:** 205 engine + 5 server = 210 total. `cargo test --lib` must pass before every push.
