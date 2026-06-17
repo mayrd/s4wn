@@ -2,8 +2,8 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 2.8 — Nations & Balancing 🔨 (205 tests, 205 total)
-Last updated: 2026-06-17 (Session 69)
+## Status: Phase 2.8 — Nations & Balancing 🔨 (205 tests, 210 total)
+Last updated: 2026-06-17 (Session 70)
 
 ## 🤖 Agent Operating Rules
 
@@ -528,6 +528,7 @@ s4wn/
 |||| 67 | 2026-06-17 | ~10 min | **Bugfix #12, #14, #15 — UI cleanup + capacity overflow guard.** Fixes #14: Removed "Isometric Map" from default map HUD text. Fixes #15: Moved speed buttons to bottom-right corner to prevent overlap with menu controls; removed in-game Load button (accessible via menu). Fixes #12: Added bounds guards in build_map_mesh() to prevent capacity overflow panic from degenerate viewports (1px-tall canvas). All 205 engine tests passing. |
 |||| 68 | 2026-06-17 | ~10 min | **Issue #13 — UI Translations:** Added i18n translation system with 55+ keys in 4 languages (EN/DE/ES/FR). LANG dictionary, t() lookup, setLanguage()/detectLanguage()/applyLanguage() functions. Language selector dropdown in Settings panel with Auto-detect (navigator.language). data-i18n attributes on all static UI labels, dynamic string translations for menu, loading, alerts, HUD, keyboard bindings. Persisted to localStorage settings. All 205 engine tests passing. |
 |||| 69 | 2026-06-17 | ~10 min | **4 new S4 common buildings:** Added Fortress (heavy territory, 80-tick), SiegeWorkshop (IronIngots+Wood→Weapons, 60-tick), Shipyard (Wood+Boards→Ships, Saw tool), RoadLayer (Stone→Roads, no tool). Extended all BuildingType methods + lib.rs building_color() + JS BUILDING_ICONS. 23 building types total. 205 tests passing. WASM rebuilt v=28. |
+||||| 70 | 2026-06-17 | ~10 min | **Task #3: Unit overlay tinting verified + Tool pickup polish.** Nation-color overlay tinting already applied to BOTH building AND unit dots (shader uniform shared) — fixed misleading comment. Added carried_tool field to get_unit_info() WASM export with tool_code_to_name lookup. Updated JS showUnitInfo() to display 🔧 carried tool when settler has one. Bumped WASM cache v=28→v=29. 205 engine + 5 server = 210 tests passing. |
 ---
 
 ## Open Items & Decisions Needed
@@ -594,16 +595,18 @@ None at the moment.
 
 ### Next Session (Session 70)
 
+### ✅ Completed in Session 70
+
+1. **Unit overlay dot tinting verified:** Nation-color overlay tinting already applied to BOTH building AND unit dots (shader uniform shared). Fixed misleading render_overlay comment. ✅
+2. **Tool pickup polish:** Added `carried_tool` field to `get_unit_info()` WASM export. JS `showUnitInfo()` now displays 🔧 carried tool when settler has one. ✅
+
+### Next Session (Session 71)
+
 1. **Guard Tower / Fortress territory expansion:** When garrisoned, extend player territory radius via shader or map overlay.
 2. **Fog of war:** Implement unexplored territory darkening for tiles not yet seen (shader-based, similar to edge-fog pattern).
-3. **Unit overlay dot tinting:** Verify nation-color tinting applies to unit dots (shader uniform already shared).
-4. **Tool pickup polish:** Add HUD feedback showing tool pickup in progress.
-5. **Fortress garrison mechanics:** Soldiers can enter Fortress for defense bonus.
-
-### ✅ Completed in Session 64
-
-1. **Tool production integration — physical pickup:** ✅ Settlers physically pick up tools from Storehouse inventory (add `pickup_tool()` route), not just magically on auto_assign. This makes the tool bar HUD actionable — players see tools being consumed.
-
+3. **Fortress garrison mechanics:** Soldiers can enter Fortress for defense bonus.
+4. **Tool pickup visual progress:** Add a temporary HUD notification or floating text when settler starts tool pickup route.
+5. **Continue nation-specific buildings:** Begin implementing Roman unique buildings (Temple of Bacchus, Vineyard).
 ### Phase 2.8.2 — Common Buildings (continued)
 
 ### Phase 2.8.2 — Common Buildings (continued)
