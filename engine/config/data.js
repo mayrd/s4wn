@@ -146,13 +146,11 @@ window.S4WN_CONFIG = {
         "Wood": 4,
         "Stone": 2
       },
-      "inputs": [
-        "Game"
-      ],
+      "inputs": [],
       "outputs": [
         "Meat"
       ],
-      "interval": 25,
+      "interval": 30,
       "build_time": 25,
       "tool": "Cleaver",
       "workers": 1,
@@ -307,27 +305,6 @@ window.S4WN_CONFIG = {
       "name_de": "Kaserne"
     },
     {
-      "id": "Mint",
-      "category": "Processing",
-      "cost": {
-        "Wood": 5,
-        "Stone": 5
-      },
-      "inputs": [
-        "Gold",
-        "Coal"
-      ],
-      "outputs": [
-        "Coins"
-      ],
-      "interval": 30,
-      "build_time": 35,
-      "tool": "Hammer",
-      "workers": 1,
-      "icon": "🪙",
-      "name_de": "Münzerei"
-    },
-    {
       "id": "Guard Tower",
       "category": "Military",
       "cost": {
@@ -419,6 +396,127 @@ window.S4WN_CONFIG = {
       "workers": 1,
       "icon": "🛤️",
       "name_de": "Straßenbauer"
+    },
+    {
+      "id": "ClayPit",
+      "category": "Raw Materials",
+      "cost": {
+        "Wood": 4,
+        "Stone": 2
+      },
+      "inputs": [],
+      "outputs": [
+        "Clay"
+      ],
+      "interval": 25,
+      "build_time": 25,
+      "tool": "Shovel",
+      "workers": 1,
+      "icon": "🧱",
+      "name_de": "Lehmgrube",
+      "status": "planned"
+    },
+    {
+      "id": "Brickworks",
+      "category": "Processing",
+      "cost": {
+        "Wood": 5,
+        "Stone": 5
+      },
+      "inputs": [
+        "Clay"
+      ],
+      "outputs": [
+        "Bricks"
+      ],
+      "interval": 30,
+      "build_time": 35,
+      "tool": "Hammer",
+      "workers": 1,
+      "icon": "🧱",
+      "name_de": "Ziegelei",
+      "status": "planned"
+    },
+    {
+      "id": "HempFarm",
+      "category": "Raw Materials",
+      "cost": {
+        "Wood": 3,
+        "Stone": 1
+      },
+      "inputs": [],
+      "outputs": [
+        "Hemp"
+      ],
+      "interval": 25,
+      "build_time": 20,
+      "tool": null,
+      "workers": 1,
+      "icon": "🌿",
+      "name_de": "Hanffarm",
+      "status": "planned"
+    },
+    {
+      "id": "Ropemaker",
+      "category": "Processing",
+      "cost": {
+        "Wood": 4,
+        "Stone": 3
+      },
+      "inputs": [
+        "Hemp"
+      ],
+      "outputs": [
+        "Rope"
+      ],
+      "interval": 25,
+      "build_time": 30,
+      "tool": "Hammer",
+      "workers": 1,
+      "icon": "🪢",
+      "name_de": "Seilerei",
+      "status": "planned"
+    },
+    {
+      "id": "Apiary",
+      "category": "Food",
+      "cost": {
+        "Wood": 4,
+        "Stone": 2
+      },
+      "inputs": [],
+      "outputs": [
+        "Honey"
+      ],
+      "interval": 30,
+      "build_time": 25,
+      "tool": null,
+      "workers": 1,
+      "icon": "🍯",
+      "name_de": "Bienenhaus",
+      "status": "planned"
+    },
+    {
+      "id": "MeadMaker",
+      "category": "Food",
+      "cost": {
+        "Wood": 5,
+        "Stone": 3
+      },
+      "inputs": [
+        "Honey",
+        "Water"
+      ],
+      "outputs": [
+        "Mead"
+      ],
+      "interval": 35,
+      "build_time": 30,
+      "tool": "Bucket",
+      "workers": 1,
+      "icon": "🍺",
+      "name_de": "Metbrauer",
+      "status": "planned"
     },
     {
       "id": "Temple of Bacchus",
@@ -916,10 +1014,10 @@ window.S4WN_CONFIG = {
       "name_de": "Stein"
     },
     {
-      "id": "Iron",
+      "id": "IronOre",
       "category": "raw",
       "icon": "⛏️",
-      "name_de": "Eisen"
+      "name_de": "Eisenerz"
     },
     {
       "id": "Coal",
@@ -940,22 +1038,10 @@ window.S4WN_CONFIG = {
       "name_de": "Schwefel"
     },
     {
-      "id": "Fish",
+      "id": "Clay",
       "category": "raw",
-      "icon": "🐟",
-      "name_de": "Fisch"
-    },
-    {
-      "id": "Grain",
-      "category": "raw",
-      "icon": "🌾",
-      "name_de": "Getreide"
-    },
-    {
-      "id": "Game",
-      "category": "raw",
-      "icon": "🦌",
-      "name_de": "Wild"
+      "icon": "🧱",
+      "name_de": "Lehm"
     },
     {
       "id": "Water",
@@ -964,10 +1050,46 @@ window.S4WN_CONFIG = {
       "name_de": "Wasser"
     },
     {
+      "id": "Grain",
+      "category": "raw",
+      "icon": "🌾",
+      "name_de": "Getreide"
+    },
+    {
+      "id": "Fish",
+      "category": "raw",
+      "icon": "🐟",
+      "name_de": "Fisch"
+    },
+    {
+      "id": "Meat",
+      "category": "raw",
+      "icon": "🍖",
+      "name_de": "Fleisch"
+    },
+    {
+      "id": "Hemp",
+      "category": "raw",
+      "icon": "🌿",
+      "name_de": "Hanf"
+    },
+    {
+      "id": "Honey",
+      "category": "raw",
+      "icon": "🍯",
+      "name_de": "Honig"
+    },
+    {
       "id": "Boards",
       "category": "processed",
       "icon": "🪵",
       "name_de": "Bretter"
+    },
+    {
+      "id": "IronIngots",
+      "category": "processed",
+      "icon": "🔩",
+      "name_de": "Eisenbarren"
     },
     {
       "id": "Tools",
@@ -982,34 +1104,34 @@ window.S4WN_CONFIG = {
       "name_de": "Waffen"
     },
     {
-      "id": "Bread",
-      "category": "processed",
-      "icon": "🍞",
-      "name_de": "Brot"
-    },
-    {
-      "id": "Meat",
-      "category": "processed",
-      "icon": "🍖",
-      "name_de": "Fleisch"
-    },
-    {
       "id": "Flour",
       "category": "processed",
       "icon": "🌾",
       "name_de": "Mehl"
     },
     {
-      "id": "IronIngots",
+      "id": "Bread",
       "category": "processed",
-      "icon": "🔩",
-      "name_de": "Eisenbarren"
+      "icon": "🍞",
+      "name_de": "Brot"
     },
     {
-      "id": "Coins",
+      "id": "Bricks",
       "category": "processed",
-      "icon": "🪙",
-      "name_de": "Münzen"
+      "icon": "🧱",
+      "name_de": "Ziegel"
+    },
+    {
+      "id": "Rope",
+      "category": "processed",
+      "icon": "🪢",
+      "name_de": "Seile"
+    },
+    {
+      "id": "Mead",
+      "category": "processed",
+      "icon": "🍺",
+      "name_de": "Met"
     }
   ],
   "terrain": [
@@ -1414,6 +1536,6 @@ window.S4WN_CONFIG = {
     C.units.forEach(u => { window.UNIT_STATS[u.id] = u; });
     window.NATION_CONFIG = {};
     C.nations.forEach(n => { window.NATION_CONFIG[n.id] = n; });
-    window.RESOURCE_NAMES = [null, 'Iron', 'Coal', 'Gold', 'Stone', 'Sulfur', 'Fish', 'Game', 'Grain'];
+    window.RESOURCE_NAMES = [null, "IronOre", "Coal", "Gold", "Stone", "Sulfur", "Fish", "Meat", "Grain"];
     console.log("S4WN config loaded:", C.buildings.length, "buildings,", C.resources.length, "resources,", C.terrain.length, "terrain,", C.units.length, "units,", C.nations.length, "nations");
 })();

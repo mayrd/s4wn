@@ -37,31 +37,35 @@ use crate::units::{UnitKind, UnitManager};
 #[repr(u8)]
 pub enum ResourceType {
     // Raw resources (mined/harvested from map deposits)
-    Wood = 0,   // from forests
-    Stone = 1,  // from stone deposits
-    Iron = 2,   // from iron ore
-    Coal = 3,   // from coal deposits
-    Gold = 4,   // from gold deposits
-    Sulfur = 5, // from sulfur deposits
-    Fish = 6,   // from fishing
-    Grain = 7,  // from farming
-    Game = 8,   // from hunting
-    Water = 9,  // from waterworks
+    Wood = 0,     // from forests
+    Stone = 1,    // from stone deposits
+    IronOre = 2,  // from iron ore
+    Coal = 3,     // from coal deposits
+    Gold = 4,     // from gold deposits
+    Sulfur = 5,   // from sulfur deposits
+    Fish = 6,     // from fishing
+    Grain = 7,    // from farming
+    Meat = 8,     // from hunting
+    Water = 9,    // from waterworks
+    Clay = 10,    // from clay pit
+    Hemp = 11,    // from hemp farm
+    Honey = 12,   // from apiary
 
     // Processed goods (produced by buildings)
     Boards = 16,     // Wood → Boards (sawmill)
-    Tools = 17,      // Iron + Coal → Tools (toolsmith)
-    Weapons = 18,    // Iron + Coal + Tools → Weapons (weaponsmith)
-    Bread = 20,      // Grain → Bread (bakery)
-    Meat = 21,       // Game → Meat (butcher)
+    Tools = 17,      // IronOre + Coal → Tools (toolsmith)
+    Weapons = 18,    // IronOre + Coal + Tools → Weapons (weaponsmith)
+    Bread = 20,      // Flour + Water → Bread (bakery)
     Flour = 22,      // Grain → Flour (mill)
-    IronIngots = 23, // Iron + Coal → Iron Ingots (smelter)
-    Coins = 24,     // Gold + Coal → Coins (mint)
+    IronIngots = 23, // IronOre + Coal → Iron Ingots (smelter)
+    Bricks = 25,     // Clay → Bricks (brickworks)
+    Rope = 26,       // Hemp → Rope (ropemaker)
+    Mead = 27,       // Honey + Water → Mead (mead maker)
 }
 
 impl ResourceType {
     /// Total number of distinct resource types
-    pub const COUNT: usize = 26;
+    pub const COUNT: usize = 28;
 
     /// Whether this is a raw resource (harvested from the map)
     pub fn is_raw(self) -> bool {
@@ -78,35 +82,39 @@ impl ResourceType {
         match self {
             ResourceType::Wood => "Wood",
             ResourceType::Stone => "Stone",
-            ResourceType::Iron => "Iron",
+            ResourceType::IronOre => "Iron Ore",
             ResourceType::Coal => "Coal",
             ResourceType::Gold => "Gold",
             ResourceType::Sulfur => "Sulfur",
             ResourceType::Fish => "Fish",
             ResourceType::Grain => "Grain",
-            ResourceType::Game => "Game",
+            ResourceType::Meat => "Meat",
+            ResourceType::Water => "Water",
+            ResourceType::Clay => "Clay",
+            ResourceType::Hemp => "Hemp",
+            ResourceType::Honey => "Honey",
             ResourceType::Boards => "Boards",
             ResourceType::Tools => "Tools",
             ResourceType::Weapons => "Weapons",
             ResourceType::Bread => "Bread",
-            ResourceType::Meat => "Meat",
             ResourceType::Flour => "Flour",
-            ResourceType::Water => "Water",
             ResourceType::IronIngots => "Iron Ingots",
-            ResourceType::Coins => "Coins",
+            ResourceType::Bricks => "Bricks",
+            ResourceType::Rope => "Rope",
+            ResourceType::Mead => "Mead",
         }
     }
 
     /// Convert from map Resource to economy ResourceType
     pub fn from_map_resource(r: Resource) -> Option<ResourceType> {
         match r {
-            Resource::Iron => Some(ResourceType::Iron),
+            Resource::Iron => Some(ResourceType::IronOre),
             Resource::Coal => Some(ResourceType::Coal),
             Resource::Gold => Some(ResourceType::Gold),
             Resource::Stone => Some(ResourceType::Stone),
             Resource::Sulfur => Some(ResourceType::Sulfur),
             Resource::Fish => Some(ResourceType::Fish),
-            Resource::Game => Some(ResourceType::Game),
+            Resource::Game => Some(ResourceType::Meat),
             Resource::Grain => Some(ResourceType::Grain),
         }
     }
@@ -157,8 +165,6 @@ pub enum BuildingType {
     Smelter = 15,
     /// Barracks — converts settlers into Swordsmen (requires Weapons)
     Barracks = 16,
-    /// Mint — converts Gold Ore + Coal → Coins
-    Mint = 17,
     /// Guard Tower — extends territory, garrisons soldiers
     GuardTower = 18,
     /// Fortress — larger territory expansion, stronger garrison
@@ -169,6 +175,18 @@ pub enum BuildingType {
     Shipyard = 21,
     /// Road Layer — builds paved roads for speed bonus
     RoadLayer = 22,
+    /// Clay Pit — produces Clay
+    ClayPit = 23,
+    /// Brickworks — converts Clay → Bricks
+    Brickworks = 24,
+    /// Hemp Farm — produces Hemp
+    HempFarm = 25,
+    /// Ropemaker — converts Hemp → Rope
+    Ropemaker = 26,
+    /// Apiary — produces Honey
+    Apiary = 27,
+    /// Mead Maker — converts Honey + Water → Mead
+    MeadMaker = 28,
 }
 
 impl BuildingType {
@@ -191,12 +209,17 @@ impl BuildingType {
             BuildingType::Waterworks => "Waterworks",
             BuildingType::Smelter => "Smelter",
             BuildingType::Barracks => "Barracks",
-            BuildingType::Mint => "Mint",
             BuildingType::GuardTower => "Guard Tower",
             BuildingType::Fortress => "Fortress",
             BuildingType::SiegeWorkshop => "Siege Workshop",
             BuildingType::Shipyard => "Shipyard",
             BuildingType::RoadLayer => "Road Layer",
+            BuildingType::ClayPit => "Clay Pit",
+            BuildingType::Brickworks => "Brickworks",
+            BuildingType::HempFarm => "Hemp Farm",
+            BuildingType::Ropemaker => "Ropemaker",
+            BuildingType::Apiary => "Apiary",
+            BuildingType::MeadMaker => "Mead Maker",
         }
     }
 
@@ -219,12 +242,17 @@ impl BuildingType {
             "Waterworks" => Some(BuildingType::Waterworks),
             "Smelter" => Some(BuildingType::Smelter),
             "Barracks" => Some(BuildingType::Barracks),
-            "Mint" => Some(BuildingType::Mint),
             "Guard Tower" => Some(BuildingType::GuardTower),
             "Fortress" => Some(BuildingType::Fortress),
             "Siege Workshop" => Some(BuildingType::SiegeWorkshop),
             "Shipyard" => Some(BuildingType::Shipyard),
             "Road Layer" => Some(BuildingType::RoadLayer),
+            "Clay Pit" => Some(BuildingType::ClayPit),
+            "Brickworks" => Some(BuildingType::Brickworks),
+            "Hemp Farm" => Some(BuildingType::HempFarm),
+            "Ropemaker" => Some(BuildingType::Ropemaker),
+            "Apiary" => Some(BuildingType::Apiary),
+            "Mead Maker" => Some(BuildingType::MeadMaker),
             _ => None,
         }
     }
@@ -248,12 +276,17 @@ impl BuildingType {
             "Waterworks",
             "Smelter",
             "Barracks",
-            "Mint",
             "Guard Tower",
             "Fortress",
             "Siege Workshop",
             "Shipyard",
             "Road Layer",
+            "Clay Pit",
+            "Brickworks",
+            "Hemp Farm",
+            "Ropemaker",
+            "Apiary",
+            "Mead Maker",
         ]
     }
 
@@ -267,7 +300,7 @@ impl BuildingType {
             BuildingType::Toolsmith => &[
                 (ResourceType::Wood, 5),
                 (ResourceType::Stone, 5),
-                (ResourceType::Iron, 2),
+                (ResourceType::IronOre, 2),
             ],
             BuildingType::Weaponsmith => &[
                 (ResourceType::Wood, 5),
@@ -284,12 +317,12 @@ impl BuildingType {
             BuildingType::Waterworks => &[(ResourceType::Wood, 4), (ResourceType::Stone, 3)],
             BuildingType::Smelter => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5)],
             BuildingType::Barracks => &[(ResourceType::Wood, 6), (ResourceType::Stone, 6)],
-            BuildingType::Mint => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5)],
             BuildingType::GuardTower => &[(ResourceType::Stone, 8), (ResourceType::Boards, 6)],
-            BuildingType::Fortress => &[(ResourceType::Stone, 20), (ResourceType::Boards, 12), (ResourceType::Iron, 8)],
+            BuildingType::Fortress => &[(ResourceType::Stone, 20), (ResourceType::Boards, 12), (ResourceType::IronOre, 8)],
             BuildingType::SiegeWorkshop => &[(ResourceType::Wood, 10), (ResourceType::Stone, 8), (ResourceType::Tools, 3)],
             BuildingType::Shipyard => &[(ResourceType::Wood, 10), (ResourceType::Stone, 6), (ResourceType::Boards, 6)],
             BuildingType::RoadLayer => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
+            _ => &[], // planned buildings — no cost yet
         }
     }
 
@@ -297,17 +330,16 @@ impl BuildingType {
     pub fn inputs(self) -> &'static [(ResourceType, u32)] {
         match self {
             BuildingType::Sawmill => &[(ResourceType::Wood, 2)],
-            BuildingType::Toolsmith => &[(ResourceType::Iron, 1), (ResourceType::Coal, 1)],
+            BuildingType::Toolsmith => &[(ResourceType::IronOre, 1), (ResourceType::Coal, 1)],
             BuildingType::Weaponsmith => &[
-                (ResourceType::Iron, 1),
+                (ResourceType::IronOre, 1),
                 (ResourceType::Coal, 1),
                 (ResourceType::Tools, 1),
             ],
             BuildingType::Bakery => &[(ResourceType::Grain, 2)],
-            BuildingType::Butcher => &[(ResourceType::Game, 2)],
+            BuildingType::Butcher => &[],
             BuildingType::Mill => &[(ResourceType::Grain, 3)],
-            BuildingType::Smelter => &[(ResourceType::Iron, 1), (ResourceType::Coal, 1)],
-            BuildingType::Mint => &[(ResourceType::Gold, 1), (ResourceType::Coal, 1)],
+            BuildingType::Smelter => &[(ResourceType::IronOre, 1), (ResourceType::Coal, 1)],
             BuildingType::SiegeWorkshop => &[(ResourceType::IronIngots, 2), (ResourceType::Wood, 3)],
             BuildingType::Shipyard => &[(ResourceType::Wood, 3), (ResourceType::Boards, 2)],
             _ => &[], // raw producers and storage have no inputs
@@ -319,18 +351,17 @@ impl BuildingType {
         match self {
             BuildingType::Sawmill => &[(ResourceType::Boards, 1)],
             BuildingType::Stonecutter => &[(ResourceType::Stone, 1)],
-            BuildingType::Mine => &[(ResourceType::Iron, 1)], // simplified: mine produces iron
+            BuildingType::Mine => &[(ResourceType::IronOre, 1)], // simplified: mine produces iron
             BuildingType::Toolsmith => &[(ResourceType::Tools, 1)],
             BuildingType::Weaponsmith => &[(ResourceType::Weapons, 1)],
             BuildingType::Bakery => &[(ResourceType::Bread, 1)],
-            BuildingType::Butcher => &[(ResourceType::Meat, 1)],
+            BuildingType::Butcher => &[(ResourceType::Meat, 2)],
             BuildingType::Mill => &[(ResourceType::Flour, 1)],
             BuildingType::Farm => &[(ResourceType::Grain, 2)],
             BuildingType::Fisherman => &[(ResourceType::Fish, 1)],
             BuildingType::Woodcutter => &[(ResourceType::Wood, 2)],
             BuildingType::Waterworks => &[(ResourceType::Water, 1)],
             BuildingType::Smelter => &[(ResourceType::IronIngots, 1)],
-            BuildingType::Mint => &[(ResourceType::Coins, 1)],
             BuildingType::SiegeWorkshop => &[(ResourceType::Weapons, 1)], // Catapults/Ballistas = siege weapons
             BuildingType::Shipyard => &[(ResourceType::Weapons, 1)], // Transport ships (placeholder)
             _ => &[], // Barracks, Castle, Storehouse, Fortress, RoadLayer produce nothing
@@ -353,7 +384,6 @@ impl BuildingType {
             BuildingType::Woodcutter => 15,  // 1.5 seconds
             BuildingType::Waterworks => 30,  // 3 seconds
             BuildingType::Smelter => 30,     // 3 seconds
-            BuildingType::Mint => 30,        // 3 seconds
             BuildingType::GuardTower => 0,   // territory building, no production
             BuildingType::Fortress => 0,         // territory building, no production
             BuildingType::SiegeWorkshop => 60,    // 6 seconds — slow, expensive siege weapons
@@ -403,12 +433,12 @@ impl BuildingType {
             BuildingType::Waterworks => 25,
             BuildingType::Smelter => 35,
             BuildingType::Barracks => 40,
-            BuildingType::Mint => 35,
             BuildingType::GuardTower => 40,
             BuildingType::Fortress => 80,
             BuildingType::SiegeWorkshop => 60,
             BuildingType::Shipyard => 50,
             BuildingType::RoadLayer => 30,
+            _ => 0, // planned buildings — no build time yet
         }
     }
 
@@ -427,7 +457,6 @@ impl BuildingType {
             BuildingType::Woodcutter => Some("Axe"),
             BuildingType::Waterworks => Some("Bucket"),
             BuildingType::Smelter => Some("Hammer"),
-            BuildingType::Mint => Some("Hammer"),
             BuildingType::GuardTower => Some("Hammer"),
             BuildingType::Fortress => Some("Hammer"),
             BuildingType::SiegeWorkshop => Some("Hammer"),
@@ -445,7 +474,7 @@ impl BuildingType {
             BuildingType::Farm | BuildingType::Mill | BuildingType::Bakery
             | BuildingType::Fisherman | BuildingType::Butcher | BuildingType::Waterworks
             | BuildingType::Woodcutter | BuildingType::Sawmill | BuildingType::Stonecutter
-            | BuildingType::Smelter | BuildingType::Mint | BuildingType::Toolsmith
+            | BuildingType::Smelter | BuildingType::Toolsmith
             | BuildingType::Castle | BuildingType::Storehouse => {
                 BuildingCategory::Economic
             }
@@ -458,6 +487,7 @@ impl BuildingType {
             BuildingType::RoadLayer => {
                 BuildingCategory::Economic
             }
+            _ => BuildingCategory::Economic, // planned buildings
         }
     }
 }
@@ -914,10 +944,6 @@ impl Economy {
             BuildingType::Smelter => {
                 ResourceCategory::Iron
             }
-            // Gold
-            BuildingType::Mint => {
-                ResourceCategory::Gold
-            }
             // Tools
             BuildingType::Toolsmith => {
                 ResourceCategory::Tools
@@ -1248,7 +1274,7 @@ mod tests {
     #[test]
     fn test_resource_type_is_raw() {
         assert!(ResourceType::Wood.is_raw());
-        assert!(ResourceType::Iron.is_raw());
+        assert!(ResourceType::IronOre.is_raw());
         assert!(!ResourceType::Boards.is_raw());
         assert!(!ResourceType::Tools.is_raw());
     }
@@ -1258,7 +1284,7 @@ mod tests {
         use crate::map::Resource;
         assert_eq!(
             ResourceType::from_map_resource(Resource::Iron),
-            Some(ResourceType::Iron)
+            Some(ResourceType::IronOre)
         );
         assert_eq!(
             ResourceType::from_map_resource(Resource::Coal),
@@ -1583,15 +1609,14 @@ mod tests {
     #[test]
     fn test_building_inputs_outputs() {
         // Verify all buildings with inputs have matching outputs
+        // Butcher is a raw producer (no inputs) — excluded from this test
         for kind in [
             BuildingType::Sawmill,
             BuildingType::Toolsmith,
             BuildingType::Weaponsmith,
             BuildingType::Bakery,
-            BuildingType::Butcher,
             BuildingType::Mill,
             BuildingType::Smelter,
-            BuildingType::Mint,
         ] {
             let inputs = kind.inputs();
             let outputs = kind.outputs();
@@ -1616,7 +1641,6 @@ mod tests {
         assert_eq!(BuildingType::Fisherman.required_tool(), Some("Fishing Rod"));
         assert_eq!(BuildingType::Waterworks.required_tool(), Some("Bucket"));
         assert_eq!(BuildingType::Smelter.required_tool(), Some("Hammer"));
-        assert_eq!(BuildingType::Mint.required_tool(), Some("Hammer"));
         assert_eq!(BuildingType::Butcher.required_tool(), Some("Cleaver"));
         assert_eq!(BuildingType::Bakery.required_tool(), Some("Rolling Pin"));
         assert_eq!(BuildingType::Mill.required_tool(), Some("Rolling Pin"));
@@ -1637,11 +1661,11 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        assert_eq!(BuildingType::all_names().len(), 22);
+        assert_eq!(BuildingType::all_names().len(), 27);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
-        assert!(BuildingType::all_names().contains(&"Mint"));
+        assert!(BuildingType::all_names().contains(&"Clay Pit"));
         assert!(BuildingType::all_names().contains(&"Guard Tower"));
         assert!(BuildingType::all_names().contains(&"Fortress"));
         assert!(BuildingType::all_names().contains(&"Siege Workshop"));
@@ -1697,10 +1721,10 @@ mod tests {
 
         for _ in 0..200 {
             if mine.try_produce(&mut storage, 1.0) {
-                let iron = mine.output_buffer[ResourceType::Iron as usize];
+                let iron = mine.output_buffer[ResourceType::IronOre as usize];
                 if iron > 0 {
-                    smelter.input_buffer[ResourceType::Iron as usize] += iron;
-                    mine.output_buffer[ResourceType::Iron as usize] = 0;
+                    smelter.input_buffer[ResourceType::IronOre as usize] += iron;
+                    mine.output_buffer[ResourceType::IronOre as usize] = 0;
                 }
             }
             smelter.try_produce(&mut storage, 1.0);
@@ -1776,34 +1800,6 @@ mod tests {
         assert!(!sawmill.has_tooled_settler(&units));
     }
 
-    #[test]
-    fn test_mint_production_chain() {
-        // Mint: 1 Gold + 1 Coal → 1 Coins every 30 ticks
-        let mut storage = ResourceStorage::new();
-        let mut mint = Building::new(BuildingType::Mint, 0, 0);
-
-        // Complete construction (35 ticks, +1 for float safety)
-        for _ in 0..36 {
-            mint.tick_construction(1.0);
-        }
-        assert!(mint.is_complete());
-
-        // Set up inputs (gold + coal)
-        mint.input_buffer[ResourceType::Gold as usize] = 10;
-        mint.input_buffer[ResourceType::Coal as usize] = 10;
-
-        let mut produced = 0;
-        for _ in 0..200 {
-            if mint.try_produce(&mut storage, 1.0) {
-                produced += 1;
-            }
-        }
-        assert!(produced > 0, "Mint should produce coins");
-        assert_eq!(
-            mint.output_buffer[ResourceType::Coins as usize],
-            produced
-        );
-    }
 
     #[test]
     fn test_economy_update_tool_requirement_blocks_production() {

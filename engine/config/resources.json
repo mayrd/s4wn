@@ -12,10 +12,10 @@
     "name_de": "Stein"
   },
   {
-    "id": "Iron",
+    "id": "IronOre",
     "category": "raw",
     "icon": "⛏️",
-    "name_de": "Eisen"
+    "name_de": "Eisenerz"
   },
   {
     "id": "Coal",
@@ -36,22 +36,10 @@
     "name_de": "Schwefel"
   },
   {
-    "id": "Fish",
+    "id": "Clay",
     "category": "raw",
-    "icon": "🐟",
-    "name_de": "Fisch"
-  },
-  {
-    "id": "Grain",
-    "category": "raw",
-    "icon": "🌾",
-    "name_de": "Getreide"
-  },
-  {
-    "id": "Game",
-    "category": "raw",
-    "icon": "🦌",
-    "name_de": "Wild"
+    "icon": "🧱",
+    "name_de": "Lehm"
   },
   {
     "id": "Water",
@@ -60,10 +48,46 @@
     "name_de": "Wasser"
   },
   {
+    "id": "Grain",
+    "category": "raw",
+    "icon": "🌾",
+    "name_de": "Getreide"
+  },
+  {
+    "id": "Fish",
+    "category": "raw",
+    "icon": "🐟",
+    "name_de": "Fisch"
+  },
+  {
+    "id": "Meat",
+    "category": "raw",
+    "icon": "🍖",
+    "name_de": "Fleisch"
+  },
+  {
+    "id": "Hemp",
+    "category": "raw",
+    "icon": "🌿",
+    "name_de": "Hanf"
+  },
+  {
+    "id": "Honey",
+    "category": "raw",
+    "icon": "🍯",
+    "name_de": "Honig"
+  },
+  {
     "id": "Boards",
     "category": "processed",
     "icon": "🪵",
     "name_de": "Bretter"
+  },
+  {
+    "id": "IronIngots",
+    "category": "processed",
+    "icon": "🔩",
+    "name_de": "Eisenbarren"
   },
   {
     "id": "Tools",
@@ -78,33 +102,33 @@
     "name_de": "Waffen"
   },
   {
-    "id": "Bread",
-    "category": "processed",
-    "icon": "🍞",
-    "name_de": "Brot"
-  },
-  {
-    "id": "Meat",
-    "category": "processed",
-    "icon": "🍖",
-    "name_de": "Fleisch"
-  },
-  {
     "id": "Flour",
     "category": "processed",
     "icon": "🌾",
     "name_de": "Mehl"
   },
   {
-    "id": "IronIngots",
+    "id": "Bread",
     "category": "processed",
-    "icon": "🔩",
-    "name_de": "Eisenbarren"
+    "icon": "🍞",
+    "name_de": "Brot"
   },
   {
-    "id": "Coins",
+    "id": "Bricks",
     "category": "processed",
-    "icon": "🪙",
-    "name_de": "Münzen"
+    "icon": "🧱",
+    "name_de": "Ziegel"
+  },
+  {
+    "id": "Rope",
+    "category": "processed",
+    "icon": "🪢",
+    "name_de": "Seile"
+  },
+  {
+    "id": "Mead",
+    "category": "processed",
+    "icon": "🍺",
+    "name_de": "Met"
   }
 ]

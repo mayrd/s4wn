@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-**Status:** Phase 2.8 — Nations & Balancing (205 tests)
-**Last updated:** 2026-06-17 (Session 72)
+**Status:** Phase 2.8 — Nations & Balancing (204 tests)
+**Last updated:** 2026-06-17 (Session 73 — Authentic S4 Resources)
 
 ---
 
@@ -253,7 +253,7 @@ protocol::tests               5 tests    Message serialization, room management
 | 51 | 2026-06-16 | Nano Banana 2 terrain textures, WebGL pipeline |
 | 52 | 2026-06-16 | Bugfix #10 (openMenu), tool storage, 184 tests |
 | 53 | 2026-06-16 | Physical tool pickup routing — 187 tests |
-| 54 | 2026-06-17 | Mint building + Coins — 188 tests |
+|| 54 | 2026-06-17 | ~~Mint building + Coins~~ **(REMOVED Session 73 — fabricated, no coin minting in S4)** |
 | 55 | 2026-06-17 | Barracks unit training — 192 tests |
 | 56 | 2026-06-17 | Tool counts WASM export, tool bar HUD — 199 tests |
 | 57 | 2026-06-17 | Nation integration (select, display) — 199 tests |
@@ -271,7 +271,8 @@ protocol::tests               5 tests    Message serialization, room management
 | 69 | 2026-06-17 | 4 new S4 common buildings (Fortress, SiegeWorkshop, Shipyard, RoadLayer) |
 | 70 | 2026-06-17 | Unit overlay tinting verified, carried_tool in get_unit_info |
 | **71** | **2026-06-17** | **9 issues closed: #26–#35 bugs, Brewery removal, nation buildings, Menu button** |
-| 72 | 2026-06-17 | Tool pickup toast notifications — carried_tool added to get_unit_summary(), showToast() CSS animation, trackToolPickups() in game loop, WASM v=32 |
+|| 72 | 2026-06-17 | Tool pickup toast notifications — carried_tool added to get_unit_summary(), showToast() CSS animation, trackToolPickups() in game loop, WASM v=32 |
+|| **73** | **2026-06-17** | **Authentic S4 resources: removed Coins+Mint (fabricated), renamed Iron→IronOre, Game→Meat (raw). Added 6 missing S4 resources (Clay, Hemp, Honey, Bricks, Rope, Mead) + 6 planned buildings (ClayPit, Brickworks, HempFarm, Ropemaker, Apiary, MeadMaker). Resources: 18→22. Buildings: 22→27 (21 impl + 6 planned). 204 tests pass.** |
 
 ---
 

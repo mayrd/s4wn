@@ -396,7 +396,7 @@ mod tests {
             &[
                 (ResourceType::Wood, 200),
                 (ResourceType::Stone, 100),
-                (ResourceType::Iron, 50),
+                (ResourceType::IronOre, 50),
                 (ResourceType::Coal, 50),
             ],
         );

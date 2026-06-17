@@ -1054,12 +1054,17 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
         Waterworks => [0.2, 0.6, 1.0],  // water blue
         Smelter => [1.0, 0.5, 0.1],     // orange
         Barracks => [0.8, 0.2, 0.2],    // crimson
-        Mint => [0.9, 0.8, 0.2],          // gold coin
         GuardTower => [0.45, 0.4, 0.35],     // stone grey
         Fortress => [0.4, 0.35, 0.3],          // dark stone grey
         SiegeWorkshop => [0.6, 0.3, 0.1],       // rusty orange
         Shipyard => [0.2, 0.4, 0.6],            // nautical blue
         RoadLayer => [0.5, 0.45, 0.35],          // tan/sand
+        ClayPit => [0.7, 0.5, 0.3],              // clay brown
+        Brickworks => [0.8, 0.4, 0.2],           // brick red
+        HempFarm => [0.3, 0.6, 0.2],             // hemp green
+        Ropemaker => [0.6, 0.5, 0.3],            // rope tan
+        Apiary => [0.9, 0.8, 0.2],               // honey gold
+        MeadMaker => [0.7, 0.5, 0.2],             // mead amber
     }
 }
 
@@ -1911,12 +1916,12 @@ pub fn add_starting_resources(difficulty: &str) -> String {
             let resources: Vec<(ResourceType, u32)> = vec![
                 (ResourceType::Wood, (100.0 * multiplier) as u32),
                 (ResourceType::Stone, (50.0 * multiplier) as u32),
-                (ResourceType::Iron, (20.0 * multiplier) as u32),
+                (ResourceType::IronOre, (20.0 * multiplier) as u32),
                 (ResourceType::Coal, (20.0 * multiplier) as u32),
                 (ResourceType::Gold, (10.0 * multiplier) as u32),
                 (ResourceType::Grain, (30.0 * multiplier) as u32),
                 (ResourceType::Fish, (20.0 * multiplier) as u32),
-                (ResourceType::Game, (10.0 * multiplier) as u32),
+                (ResourceType::Meat, (10.0 * multiplier) as u32),
             ];
             let economy = crate::economy::Economy::with_starting_resources(&resources);
             app.game_loop.state.economy = economy;
@@ -2521,12 +2526,17 @@ mod tests {
             Waterworks,
             Smelter,
             Barracks,
-            Mint,
             GuardTower,
             Fortress,
             SiegeWorkshop,
             Shipyard,
             RoadLayer,
+            ClayPit,
+            Brickworks,
+            HempFarm,
+            Ropemaker,
+            Apiary,
+            MeadMaker,
         ] {
             let c = building_color(&kind);
             assert!(c[0] >= 0.0 && c[0] <= 1.0);
