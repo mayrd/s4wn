@@ -3,7 +3,7 @@
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
 ## Status: Phase 2.8 — Nations & Balancing 🔨 (205 tests, 210 total)
-Last updated: 2026-06-17 (Session 61)
+Last updated: 2026-06-17 (Session 62)
 
 ## 🤖 Agent Operating Rules
 
@@ -513,6 +513,7 @@ s4wn/
 || 59 | 2026-06-17 | ~10 min | Bowman training: Barracks alternates Swordsman/Bowman each cycle, `training_kind` field, nation archer modifiers (`archer_hp/attack/range`), `attack_range_mult` on Unit used by CombatAI, 2 new tests (199 total). WASM v=24. |
 || 60 | 2026-06-17 | ~10 min | **Worker speed modifier:** Added `nation_speed_mult` field to Unit, applied in `tick_movement` (speed = base × terrain × nation). Added `set_nation_speed_mult()` to UnitManager. Wired into `Economy::set_nation_modifiers()` and Castle recruitment spawn. 5 new tests (204 total). |
 ||| 61 | 2026-06-17 | ~10 min | **Worker build speed modifier:** Added `speed_mult` param to `Building::tick_construction()`, `Economy::build_speed()` reads `NationModifiers.units.worker_build_speed`, wired into `Economy::update()`. Romans build 10% faster (1.1x), Vikings/Trojans 10% slower (0.9x). 1 new test (205 engine, 210 total). |
+|||| 62 | 2026-06-17 | ~10 min | **Toolsmith UI feedback:** Added producing_tool field to get_building_info() WASM export — when a completed Toolsmith is selected, shows which tool is currently being produced (based on most_needed_tool()). JS showBuildingInfo() displays 🔧 + tool name. Rebuilt WASM v=25. 205 tests passing. |
 |||| 58 | 2026-06-17 | ~10 min | **Nation modifier application:** Economy production speed modifiers via try_produce(speed), building cost modifiers (ceil rounding), Barracks swordsmen get nation HP/attack/defense multipliers, CombatAI uses attack_mult/defense_mult for damage resolution. Unit gains attack_mult/defense_mult fields. BuildingType::building_category() for Economic/Military lookups. 3 new tests. 197 tests. WASM v=22→v=23. |
 
 
@@ -564,10 +565,10 @@ None at the moment.
 - Graceful fallback to flat colors if textures fail to load
 - Future: tune UV repeat factor, add texture blending between tile edges
 
-### Next Session (Session 62)
+### Next Session (Session 63)
 
 1. **Tool production integration — physical pickup:** Settlers physically pick up tools from Storehouse inventory (add `pickup_tool()` route), not just magically on auto_assign. This makes the tool bar HUD actionable — players see tools being consumed.
-2. **Toolsmith UI feedback:** Show which tool is currently being produced in the building info card when a Toolsmith is selected.
+2. ✅ **Toolsmith UI feedback:** Show which tool is currently being produced in the building info card when a Toolsmith is selected. — Session 62.
 3. **Nation-color tinting:** Apply nation color to building overlay dots in WebGL renderer based on player_nation.
 4. **Fog of war:** Implement unexplored territory darkening for tiles not yet seen (shader-based).
 5. ✅ **Worker build speed modifier:** Applied nation worker_build_speed modifier to construction progress (Building::tick_construction) — Session 61.
