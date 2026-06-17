@@ -2,8 +2,8 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 2.8 — Nations ## Status: Phase 2.8 — Nations & Balancing 🔨 (199 tests) Balancing 🔨 (197 tests)
-Last updated: 2026-06-17 (Session 58)
+## Status: Phase 2.8 — Nations & Balancing 🔨 (199 tests)
+Last updated: 2026-06-17 (Session 59)
 
 ## 🤖 Agent Operating Rules
 
@@ -510,6 +510,7 @@ s4wn/
 ||| 55 | 2026-06-17 | ~10 min | **Barracks unit training:** Added BARRACKS_TRAINING_INTERVAL (60 ticks). Completed Barracks consume 1 Weapon → spawn Swordsman. Timer holds when Weapons unavailable. Construction gate (no training until built). 4 new tests. 192 tests passing (+4). |
 ||| 56 | 2026-06-17 | ~10 min | **Tool counts WASM export + tool bar HUD:** Added `get_tool_counts()` WASM export returning JSON with all 11 tool type counts. Added `tool_code_to_name()` helper in economy.rs. Extended `tool_code_from_name()` to cover Dagger/Shovel/Bow. Tool bar UI below resource bar with emoji icons + live counts (3s refresh). Bumped WASM cache v=20→v=21. 2 new tests. 194 engine + 5 server = 199 tests passing. |
 ||| 57 | 2026-06-17 | ~10 min | **Nation integration:** Added NationType::from_name(), all_names(), emoji(). Added player_nation field to GameState. Added set_player_nation(), get_player_nation(), list_nations() WASM exports. Wired nation selection from new game panel to WASM. Added nation HUD (emoji + name + description) below tool bar. Bumped WASM cache v=21→v=22. 199 tests passing. |
+| 59 | 2026-06-17 | ~10 min | Bowman training: Barracks alternates Swordsman/Bowman each cycle, `training_kind` field, nation archer modifiers (`archer_hp/attack/range`), `attack_range_mult` on Unit used by CombatAI, 2 new tests (199 total). WASM v=24. |
 |||| 58 | 2026-06-17 | ~10 min | **Nation modifier application:** Economy production speed modifiers via try_produce(speed), building cost modifiers (ceil rounding), Barracks swordsmen get nation HP/attack/defense multipliers, CombatAI uses attack_mult/defense_mult for damage resolution. Unit gains attack_mult/defense_mult fields. BuildingType::building_category() for Economic/Military lookups. 3 new tests. 197 tests. WASM v=22→v=23. |
 
 
@@ -561,13 +562,13 @@ None at the moment.
 - Graceful fallback to flat colors if textures fail to load
 - Future: tune UV repeat factor, add texture blending between tile edges
 
-### Next Session (Session 59)
+### Next Session (Session 60)
 
 1. **Tool production integration — physical pickup:** Settlers physically pick up tools from Storehouse inventory (add `pickup_tool()` route), not just magically on auto_assign. This makes the tool bar HUD actionable — players see tools being consumed.
-2. **Bowman training:** Extend Barracks to choose between Swordsman and Bowman unit types (currently only Swordsman) — add a unit type selection to barracks training logic.
-3. **Toolsmith UI feedback:** Show which tool is currently being produced in the building info card when a Toolsmith is selected.
-4. **Nation-color tinting:** Apply nation color to building overlay dots in WebGL renderer based on player_nation.
-5. **Worker speed modifier:** Apply nation worker_speed modifier to settler movement speed in pathfinding.
+2. **Toolsmith UI feedback:** Show which tool is currently being produced in the building info card when a Toolsmith is selected.
+3. **Nation-color tinting:** Apply nation color to building overlay dots in WebGL renderer based on player_nation.
+4. **Worker speed modifier:** Apply nation worker_speed modifier to settler movement speed in pathfinding.
+5. **Fog of war:** Implement unexplored territory darkening for tiles not yet seen (shader-based).
 
 ### Phase 2.8.2 — Common Buildings (continued)
 
