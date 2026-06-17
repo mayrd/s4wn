@@ -1,0 +1,110 @@
+[
+  {
+    "id": "Wood",
+    "category": "raw",
+    "icon": "🪵",
+    "name_de": "Holz"
+  },
+  {
+    "id": "Stone",
+    "category": "raw",
+    "icon": "🪨",
+    "name_de": "Stein"
+  },
+  {
+    "id": "Iron",
+    "category": "raw",
+    "icon": "⛏️",
+    "name_de": "Eisen"
+  },
+  {
+    "id": "Coal",
+    "category": "raw",
+    "icon": "🪨",
+    "name_de": "Kohle"
+  },
+  {
+    "id": "Gold",
+    "category": "raw",
+    "icon": "✨",
+    "name_de": "Gold"
+  },
+  {
+    "id": "Sulfur",
+    "category": "raw",
+    "icon": "🟡",
+    "name_de": "Schwefel"
+  },
+  {
+    "id": "Fish",
+    "category": "raw",
+    "icon": "🐟",
+    "name_de": "Fisch"
+  },
+  {
+    "id": "Grain",
+    "category": "raw",
+    "icon": "🌾",
+    "name_de": "Getreide"
+  },
+  {
+    "id": "Game",
+    "category": "raw",
+    "icon": "🦌",
+    "name_de": "Wild"
+  },
+  {
+    "id": "Water",
+    "category": "raw",
+    "icon": "💧",
+    "name_de": "Wasser"
+  },
+  {
+    "id": "Boards",
+    "category": "processed",
+    "icon": "🪵",
+    "name_de": "Bretter"
+  },
+  {
+    "id": "Tools",
+    "category": "processed",
+    "icon": "🔧",
+    "name_de": "Werkzeuge"
+  },
+  {
+    "id": "Weapons",
+    "category": "processed",
+    "icon": "⚔️",
+    "name_de": "Waffen"
+  },
+  {
+    "id": "Bread",
+    "category": "processed",
+    "icon": "🍞",
+    "name_de": "Brot"
+  },
+  {
+    "id": "Meat",
+    "category": "processed",
+    "icon": "🍖",
+    "name_de": "Fleisch"
+  },
+  {
+    "id": "Flour",
+    "category": "processed",
+    "icon": "🌾",
+    "name_de": "Mehl"
+  },
+  {
+    "id": "IronIngots",
+    "category": "processed",
+    "icon": "🔩",
+    "name_de": "Eisenbarren"
+  },
+  {
+    "id": "Coins",
+    "category": "processed",
+    "icon": "🪙",
+    "name_de": "Münzen"
+  }
+]

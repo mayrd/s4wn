@@ -952,6 +952,7 @@
 
 <input type="file" id="fileInput" accept=".json,.map,.sav">
 
+<script src="config/data.js"></script>
 <script type="module">
 import init, {
     init as engineInit,
@@ -991,18 +992,7 @@ let load_map_json = null;
 let pendingMapData = null;   // { width, height, tiles, filename }
 let pendingMapFile = null;   // File object for recent-files tracking
 
-// ── Terrain lookup (for binary .map parser) ──────────────────────────────
-const TERRAIN_BY_ID = [
-    { id: 0, name: 'Grass', color: '#3d993d' },
-    { id: 1, name: 'Forest', color: '#267326' },
-    { id: 2, name: 'Mountain', color: '#8c8073' },
-    { id: 3, name: 'Water', color: '#2659b3' },
-    { id: 4, name: 'DeepWater', color: '#143380' },
-    { id: 5, name: 'Desert', color: '#d9bf66' },
-    { id: 6, name: 'Swamp', color: '#4d6640' },
-    { id: 7, name: 'Snow', color: '#e6ebf2' },
-];
-const RESOURCE_NAMES = [null, 'Iron', 'Coal', 'Gold', 'Stone', 'Sulfur', 'Fish', 'Game', 'Grain'];
+// ── Terrain lookup (loaded from config/data.js) ─────────────────────────
 const MAP_RESOURCE_ICONS = { Iron:'⛓️', Coal:'🪨', Gold:'🪙', Stone:'🪨', Sulfur:'🟡', Fish:'🐟', Game:'🦌', Grain:'🌾' };
 
 // ── .sav Chunk Type Names ─────────────────────────────────────────────────
@@ -2292,86 +2282,14 @@ document.addEventListener('drop', (e) => {
 
 // ── Building Placement ──────────────────────────────────────────────────
 const placementStatus = document.getElementById('placement-status');
-const BUILDING_ICONS = {
-    'Castle': '🏰', 'Sawmill': '🪚', 'Stonecutter': '🪨', 'Mine': '⛏️',
-    'Toolsmith': '🔨', 'Weaponsmith': '⚔️', 'Bakery': '🍞',
-    'Butcher': '🔪', 'Mill': '🏭', 'Farm': '🌾', 'Fisherman': '🎣',
-    'Woodcutter': '🪓', 'Storehouse': '🏚️',
-    'Waterworks': '💧', 'Smelter': '🔥', 'Barracks': '⚔️',
-    'Mint': '🪙',
-    'Guard Tower': '🗼',
-    'Fortress': '🏯',
-    'Siege Workshop': '🏹',
-    'Shipyard': '⛵',
-    'Road Layer': '🛤️',
-};
-
-// German translations for building names (S4 authentic — matches Rust all_names() output)
-const BUILDING_NAMES_DE = {
-    'Castle': 'Burg',
-    'Sawmill': 'Sägewerk',
-    'Stonecutter': 'Steinmetz',
-    'Mine': 'Mine',
-    'Toolsmith': 'Werkzeugschmiede',
-    'Weaponsmith': 'Waffenschmiede',
-    'Bakery': 'Bäckerei',
-    'Butcher': 'Schlachthaus',
-    'Mill': 'Mühle',
-    'Farm': 'Getreidefarm',
-    'Fisherman': 'Fischerhütte',
-    'Woodcutter': 'Holzfällerhütte',
-    'Storehouse': 'Lagerhaus',
-    'Waterworks': 'Wasserwerk',
-    'Smelter': 'Schmelze',
-    'Barracks': 'Kaserne',
-    'Mint': 'Münzerei',
-    'Guard Tower': 'Wachturm',
-    'Fortress': 'Festung',
-    'Siege Workshop': 'Belagerungswerkstatt',
-    'Shipyard': 'Werft',
-    'Road Layer': 'Straßenbauer',
-};
-
-// Authentic S4 German names for resources (matching original Siedler 4)
-const RESOURCE_NAMES_DE = {
-    'Wood': 'Holz',
-    'Stone': 'Stein',
-    'Iron': 'Eisen',
-    'Coal': 'Kohle',
-    'Gold': 'Gold',
-    'Sulfur': 'Schwefel',
-    'Fish': 'Fisch',
-    'Grain': 'Getreide',
-    'Game': 'Wild',
-    'Water': 'Wasser',
-    'Boards': 'Bretter',
-    'Tools': 'Werkzeuge',
-    'Weapons': 'Waffen',
-    'Bread': 'Brot',
-    'Meat': 'Fleisch',
-    'Flour': 'Mehl',
-    'IronIngots': 'Eisenbarren',
-    'Coins': 'Münzen',
-};
-
-// Authentic S4 German names for terrain (matching original Siedler 4)
-const TERRAIN_NAMES_DE = {
-    'Grass': 'Grasland',
-    'Forest': 'Wald',
-    'Mountain': 'Gebirge',
-    'Water': 'Wasser',
-    'DeepWater': 'Tiefes Wasser',
-    'Desert': 'Wüste',
-    'Swamp': 'Sumpf',
-    'Snow': 'Schnee',
-};
-
-// Authentic S4 German names for units (matching original Siedler 4)
-const UNIT_NAMES_DE = {
-    'Settler': 'Siedler',
-    'Swordsman': 'Schwertkämpfer',
-    'Bowman': 'Bogenschütze',
-};
+// Config loaded from ../config/data.js — destructure for module access
+const {
+    BUILDING_ICONS, BUILDING_NAMES_DE,
+    RESOURCE_ICONS, RESOURCE_NAMES_DE, RESOURCE_ORDER, RESOURCE_NAMES,
+    TERRAIN_BY_ID, TERRAIN_NAMES_DE, TERRAIN_NAMES,
+    UNIT_NAMES_DE, UNIT_STATS,
+    BUILDING_CATEGORIES, NATION_CONFIG
+} = window;
 
 // Translate a building name (returns English if no translation for current language)
 function tBuilding(name) {
@@ -3380,12 +3298,7 @@ openSettings = function() {
     _origOpenSettings();
     renderKeyBindings();
 };
-const RESOURCE_ICONS = {
-    Wood: '🪵', Stone: '🪨', Iron: '⛏️', Coal: '⬛',
-    Gold: '🪙', Sulfur: '🟡', Fish: '🐟', Game: '🍖',
-    Grain: '🌾', Planks: '📋', Tools: '🔧', Weapons: '⚔️',
-};
-const RESOURCE_ORDER = ['Wood','Stone','Iron','Coal','Gold','Grain','Fish','Game','Sulfur'];
+// Resource icons and order loaded from config/data.js
 
 let lastResourceUpdate = 0;
 function updateResourceBar() {
@@ -4012,14 +3925,7 @@ main();
 
 // ── Construction Panel (#18) ──────────────────────────────────────────────
 
-// S4 building categories
-const BUILDING_CATEGORIES = {
-    'Food': ['Farm', 'Fisherman', 'Butcher', 'Mill', 'Bakery', 'Waterworks'],
-    'Raw Materials': ['Woodcutter', 'Sawmill', 'Stonecutter', 'Mine', 'Smelter'],
-    'Processing': ['Toolsmith', 'Weaponsmith', 'Mint'],
-    'Military': ['Barracks', 'Guard Tower', 'Fortress', 'Siege Workshop'],
-    'Infrastructure': ['Castle', 'Storehouse', 'Shipyard', 'Road Layer'],
-};
+// S4 building categories — loaded from config/data.js
 
 function toggleConstructionPanel() {
     const panel = document.getElementById('construction-panel');
