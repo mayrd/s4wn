@@ -3,7 +3,7 @@
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
 ## Status: Phase 2.8 — Nations & Balancing 🔨 (205 tests, 210 total)
-Last updated: 2026-06-17 (Session 62)
+Last updated: 2026-06-17 (Session 63)
 
 ## 🤖 Agent Operating Rules
 
@@ -521,6 +521,7 @@ s4wn/
 || 50 | 2026-06-16 | ~10 min | Castle settler recruitment: added recruitment_timer to Building, CASTLE_SETTLER_INTERVAL=50, Economy::update() spawns idle settlers from completed Castles. Fixed Building::new() zero-build-time buildings. 174 tests passing. |
 ||| 49 | 2026-06-16 | ~25 min | Comprehensive S4 authenticity audit of nations, people, goods, resources, terrain, decorations, and objects. No fabricated content beyond Residence (removed S48). Cleaned old names from docs. 171 tests passing. |
 | 48 | 2026-06-16 | ~10 min | Fixed black screen (Session 47 carryover): removed unused u_map_dims uniform from vertex shader — GPU drivers optimized it away, causing get_uniform_location to return None and default (0,0) to blanket map in edge-fog color matching clear color. Updated edge-fog shader test. Bumped WASM cache to v=15. All 171 tests passing. |
+|| 63 | 2026-06-17 | ~10 min | **Nation-color tinting on building overlay dots:** Added `u_player_rgb` uniform to overlay fragment shader — when a player nation is selected, building dots are tinted 40% with the nation color (Romans=red, Vikings=blue, Maya=green, Trojans=gold, DarkTribe=purple). No tint when no nation selected. `overlay_player_rgb_loc` stored as Option for GPU safety. WASM rebuilt (v=25). All 210 tests passing (205 engine + 5 server). |
 ---
 
 ## Open Items & Decisions Needed
@@ -565,13 +566,13 @@ None at the moment.
 - Graceful fallback to flat colors if textures fail to load
 - Future: tune UV repeat factor, add texture blending between tile edges
 
-### Next Session (Session 63)
+### Next Session (Session 64)
 
 1. **Tool production integration — physical pickup:** Settlers physically pick up tools from Storehouse inventory (add `pickup_tool()` route), not just magically on auto_assign. This makes the tool bar HUD actionable — players see tools being consumed.
-2. ✅ **Toolsmith UI feedback:** Show which tool is currently being produced in the building info card when a Toolsmith is selected. — Session 62.
-3. **Nation-color tinting:** Apply nation color to building overlay dots in WebGL renderer based on player_nation.
-4. **Fog of war:** Implement unexplored territory darkening for tiles not yet seen (shader-based).
-5. ✅ **Worker build speed modifier:** Applied nation worker_build_speed modifier to construction progress (Building::tick_construction) — Session 61.
+2. **Fog of war:** Implement unexplored territory darkening for tiles not yet seen (shader-based, similar to edge-fog pattern).
+3. **Unit overlay dot tinting:** Extend nation-color overlay tinting to unit dots as well (not just buildings).
+4. **Guard Tower / Fortress territory expansion:** When garrisoned, extend player territory radius.
+5. **Common building completion:** Add remaining S4 common buildings (Shipyard, Siege Workshop, Guard Tower, Fortress, Road Layer).
 
 ### Phase 2.8.2 — Common Buildings (continued)
 
@@ -593,7 +594,7 @@ None at the moment.
 
 ### Phase 4.7 — Visual Polish
 - [ ] Fog of war / unexplored territory (darken unseen tiles via shader)
-- [ ] Nation-color tinting on buildings in WebGL overlay
+- [x] Nation-color tinting on buildings in WebGL overlay
 
 ---
 
