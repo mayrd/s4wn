@@ -3,7 +3,7 @@
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
 ## Status: Phase 2.8 — Nations & Balancing 🔨 (205 tests, 210 total)
-Last updated: 2026-06-17 (Session 70)
+Last updated: 2026-06-17 (Session 71)
 
 ## 🤖 Agent Operating Rules
 
@@ -529,6 +529,7 @@ s4wn/
 |||| 68 | 2026-06-17 | ~10 min | **Issue #13 — UI Translations:** Added i18n translation system with 55+ keys in 4 languages (EN/DE/ES/FR). LANG dictionary, t() lookup, setLanguage()/detectLanguage()/applyLanguage() functions. Language selector dropdown in Settings panel with Auto-detect (navigator.language). data-i18n attributes on all static UI labels, dynamic string translations for menu, loading, alerts, HUD, keyboard bindings. Persisted to localStorage settings. All 205 engine tests passing. |
 |||| 69 | 2026-06-17 | ~10 min | **4 new S4 common buildings:** Added Fortress (heavy territory, 80-tick), SiegeWorkshop (IronIngots+Wood→Weapons, 60-tick), Shipyard (Wood+Boards→Ships, Saw tool), RoadLayer (Stone→Roads, no tool). Extended all BuildingType methods + lib.rs building_color() + JS BUILDING_ICONS. 23 building types total. 205 tests passing. WASM rebuilt v=28. |
 ||||| 70 | 2026-06-17 | ~10 min | **Task #3: Unit overlay tinting verified + Tool pickup polish.** Nation-color overlay tinting already applied to BOTH building AND unit dots (shader uniform shared) — fixed misleading comment. Added carried_tool field to get_unit_info() WASM export with tool_code_to_name lookup. Updated JS showUnitInfo() to display 🔧 carried tool when settler has one. Bumped WASM cache v=28→v=29. 205 engine + 5 server = 210 tests passing. |
+| 71 | 2026-06-17 | ~10 min | **Bugfixes #23, #24, #25, #26:** Exposed `toggleConstructionPanel` and `toggleStatsPanel` to `window` object (module-scope functions invisible to inline onclick, same class as #10). Added `tiles_len()` method to Map; `get_map_data()` now validates tile_count matches w×h, uses checked arithmetic to prevent overflow panics. JS `renderMinimap()` wraps `get_map_data()` in try/catch as defense-in-depth. WASM rebuilt v=30. 205 tests passing. |
 ---
 
 ## Open Items & Decisions Needed
@@ -545,6 +546,10 @@ s4wn/
 || #15 | Load and Menu button overlap | ✅ Closed | Fixed in Session 67 — speed buttons moved to bottom-right, in-game Load button removed |
 
 | #13 | UI Translations (DE, ES, FR) | ✅ Closed | Fixed in Session 68 — 4-language i18n with auto-detect |
+| #23 | toggleConstructionPanel not defined | ✅ Closed | Fixed in Session 71 — exposed module-scoped functions to window |
+| #24 | toggleStatsPanel not defined | ✅ Closed | Fixed in Session 71 — same exposure fix |
+| #25 | RuntimeError: unreachable (get_map_data) | ✅ Closed | Fixed in Session 71 — map consistency checks + try/catch wrapper |
+| #26 | RuntimeError: unreachable (get_map_data) | ✅ Closed | Fixed in Session 71 — same defense-in-depth fix |
 
 All known issues are resolved. No open decisions needed.
 
@@ -593,14 +598,13 @@ None at the moment.
 
 1. **Common building completion:** ✅ Added Fortress, SiegeWorkshop, Shipyard, RoadLayer (23 BuildingType variants, 205 tests)
 
-### Next Session (Session 70)
+### ✅ Completed in Session 71
 
-### ✅ Completed in Session 70
+1. **Bugfixes #23, #24:** Exposed `toggleConstructionPanel` and `toggleStatsPanel` to `window` — same class of bug as #10 (module-scoped functions invisible to inline onclick handlers). ✅
+2. **Bugfixes #25, #26:** Fixed `RuntimeError: unreachable` in `get_map_data` — added `tiles_len()` public method to Map, `get_map_data()` now validates tile_count consistency with checked arithmetic, JS `renderMinimap()` wraps call in try/catch. ✅
+3. **WASM rebuilt** v=29→v=30 with all fixes.
 
-1. **Unit overlay dot tinting verified:** Nation-color overlay tinting already applied to BOTH building AND unit dots (shader uniform shared). Fixed misleading render_overlay comment. ✅
-2. **Tool pickup polish:** Added `carried_tool` field to `get_unit_info()` WASM export. JS `showUnitInfo()` now displays 🔧 carried tool when settler has one. ✅
-
-### Next Session (Session 71)
+### Next Session (Session 72)
 
 1. **Guard Tower / Fortress territory expansion:** When garrisoned, extend player territory radius via shader or map overlay.
 2. **Fog of war:** Implement unexplored territory darkening for tiles not yet seen (shader-based, similar to edge-fog pattern).
