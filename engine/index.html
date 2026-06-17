@@ -526,7 +526,7 @@
 
   /* ── Speed Controls ─────────────────────────────────────────────────── */
   #speed-controls {
-    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+    position: fixed; bottom: 12px; right: 16px;
     z-index: 20; display: flex; gap: 4px;
   }
   #speed-controls .spd-btn {
@@ -855,7 +855,6 @@
 <div id="tile-tip"></div>
 
 <div id="controls">
-  <button class="accent" id="btn-load2">📂 Load</button>
   <button onclick="openMenu()">☰ Menu</button>
 </div>
 
@@ -2533,7 +2532,6 @@ document.addEventListener('keydown', (e) => {
 
 // ── Buttons ────────────────────────────────────────────────────────────
 document.getElementById('btn-load').addEventListener('click', triggerLoad);
-document.getElementById('btn-load2').addEventListener('click', triggerLoad);
 document.getElementById('btn-demo').addEventListener('click', closeMenu);
 document.getElementById('btn-continue').addEventListener('click', loadSavedGame);
 
@@ -3290,7 +3288,7 @@ async function main() {
         }
 
         engineReady = true;
-        hudMap.textContent = 'S4WN Engine | 64×64 isometric map';
+        hudMap.textContent = 'S4WN Engine';
         loadSettings();
         populateBuildToolbar();
         console.log('Engine ready, starting render loop');

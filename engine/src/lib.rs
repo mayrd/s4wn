@@ -333,6 +333,12 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
     let mut mesh = MeshData::new();
     let (min_x, max_x, min_y, max_y) = camera.visible_bounds(map.width, map.height);
 
+    // Guard against degenerate viewport (e.g., 1px-tall canvas) that could cause
+    // integer underflow or capacity overflow when computing row/col counts.
+    if max_x < min_x || max_y < min_y {
+        return mesh;
+    }
+
     // Expand a bit to avoid pop-in at edges
     let extra = 2usize;
     let min_x = min_x.saturating_sub(extra);
@@ -341,6 +347,11 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
     let max_x = (max_x + extra).min(map.width.saturating_sub(2));
     let min_y = min_y.saturating_sub(extra);
     let max_y = (max_y + extra).min(map.height.saturating_sub(2));
+
+    // Extra guard: if expansion/clamping produced invalid bounds, bail
+    if max_x < min_x || max_y < min_y {
+        return mesh;
+    }
 
     let rows = max_y - min_y + 1;
     let cols = max_x - min_x + 1;
