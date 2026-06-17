@@ -1,6 +1,6 @@
-# Siedler 4 Web-Native (S4WN)
+# Siedler 4 Wildering New-Dawn (S4WN)
 
-Welcome to the Siedler 4 Web-Native (S4WN) project. Our mission is to preserve the spirit of the classic *Siedler 4* (The Settlers IV) experience while evolving it for the modern era. By migrating the game engine to a web-based architecture, we ensure accessibility across desktop and mobile browsers, ensuring this timeless classic remains playable for generations to come.
+Welcome to the Siedler 4 Wildering New-Dawn (S4WN) project, initially known as Siedler 4 Web Native. Our mission is to preserve the spirit of the classic *Siedler 4* (The Settlers IV) experience while evolving it for the modern era. By migrating the game engine to a web-based architecture, we ensure accessibility across desktop and mobile browsers, ensuring this timeless classic remains playable for generations to come.
 
 ---
 
@@ -60,20 +60,15 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ---
 
-*This project is dedicated to the Settlers United community. Our goal is to maintain the legacy of Siedler 4 by embracing modern web standards.*
+*This project is dedicated to the Settlers community. Our goal is to maintain the legacy of Siedler 4 by embracing modern web standards.*
 
 ---
 
 ## 🚀 Current Status
 
 **Phase 2.8 — Nations & Balancing** (in progress 🔨)
-
-- ✅ **Phase 1 — Core Engine** — Complete. Rust/WASM engine, WebGL2 rendering, map, camera, game loop, asset pipeline.
-- ✅ **Phase 2 — Game Logic** — Complete. Economy (26 resources, 18 buildings), units, pathfinding, worker AI, combat.
-- ✅ **Phase 3 — Multiplayer** — Complete. WebSocket server, lobby UI, server-authoritative tick, client interpolation.
 - 🔨 **Phase 2.8 — Nations & Balancing** — In progress. Nation data model (5 nations, 34 unique buildings, 6 specialists, 11 tool types), nation selection UI, building tool requirements wired into game loop, Castle settler recruitment, Barracks Swordsman/Bowman training (alternating), Mint building, tool bar HUD, nation WASM integration (set/get/list, GameState storage, HUD display), **nation modifier application (production speed, building cost, unit HP/attack/defense, worker speed, worker build speed)**. 205 engine + 5 server = 210 tests passing.
-- ✅ **Phase 4 — UI & Single Player** — Mostly complete. Splash/title, main menu, settings, new game flow, building placement, selection HUD, save/load, .map/.sav loading, visual polish.
-
+- 
 ---
 
 AI Agent Configuration:
