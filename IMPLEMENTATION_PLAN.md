@@ -2,8 +2,8 @@
 
 > This document is maintained by the AI agent. It reflects the current state and roadmap.
 
-## Status: Phase 2.8 — Nations & Balancing 🔨 (206 tests, 211 total)
-Last updated: 2026-06-17 (Session 66)
+## Status: Phase 2.8 — Nations & Balancing 🔨 (210 tests, 210 total)
+Last updated: 2026-06-17 (Session 67)
 
 ## 🤖 Agent Operating Rules
 
@@ -524,7 +524,8 @@ s4wn/
 || 63 | 2026-06-17 | ~10 min | **Nation-color tinting on building overlay dots:** Added `u_player_rgb` uniform to overlay fragment shader — when a player nation is selected, building dots are tinted 40% with the nation color (Romans=red, Vikings=blue, Maya=green, Trojans=gold, DarkTribe=purple). No tint when no nation selected. `overlay_player_rgb_loc` stored as Option for GPU safety. WASM rebuilt (v=25). All 210 tests passing (205 engine + 5 server). |
 || 64 | 2026-06-17 | ~10 min | **Physical tool pickup:** Settlers now route through Storehouse/Castle to physically pick up tools from inventory before heading to buildings. Economy::pickup_tool() withdraws tool, assigns to settler. 210 tests passing. |
 || 65 | 2026-06-17 | ~10 min | **Guard Tower building:** Added BuildingType::GuardTower (discriminant 18) — S4 common military building. Cost: 8 Stone + 6 Boards, 40-tick build, Hammer tool, Military category. Stone grey overlay dot, 🗼 toolbar icon. Updated test count 18→19 types. 210 tests passing. |
-||| 66 | 2026-06-17 | ~10 min | **Bugfix #11 — splash screen stall:** render() was missing #[wasm_bindgen], causing WASM module import failure ("does not provide an export named render"). Restored annotation, rebuilt WASM, bumped cache v=26→v=27. All 210 tests passing. |
+|||| 66 | 2026-06-17 | ~10 min | **Bugfix #11 — splash screen stall:** render() was missing #[wasm_bindgen], causing WASM module import failure ("does not provide an export named render"). Restored annotation, rebuilt WASM, bumped cache v=26→v=27. All 210 tests passing. |
+|||| 67 | 2026-06-17 | ~10 min | **Bugfix #12, #14, #15 — UI cleanup + capacity overflow guard.** Fixes #14: Removed "Isometric Map" from default map HUD text. Fixes #15: Moved speed buttons to bottom-right corner to prevent overlap with menu controls; removed in-game Load button (accessible via menu). Fixes #12: Added bounds guards in build_map_mesh() to prevent capacity overflow panic from degenerate viewports (1px-tall canvas). All 205 engine tests passing. |
 ---
 
 ## Open Items & Decisions Needed
@@ -535,7 +536,10 @@ s4wn/
 | #10 | openMenu is not defined | ✅ Closed | Fixed in Session 52 — module-scoped functions exposed to window |
 || #11 | Stuck on Splash screen | ✅ Closed | Fixed in Session 66 — render() was missing #[wasm_bindgen], WASM module export restored |
 | #3 | Cannot find u_time | ✅ Closed | Fixed in Session 7 — u_time now used in vertex shader |
-| #8 | Create S4WN Icon and Logo | ✅ Closed | Resolved in Session 17 — SVG + PNG favicon suite, loading screen logo, web manifest |
+|| #8 | Create S4WN Icon and Logo | ✅ Closed | Resolved in Session 17 — SVG + PNG favicon suite, loading screen logo, web manifest |
+|| #12 | Break on map rendering | ✅ Closed | Fixed in Session 67 — bounds guards prevent capacity overflow from degenerate viewports |
+|| #14 | Remove "Isometric Map" | ✅ Closed | Fixed in Session 67 — default HUD text changed to "S4WN Engine" |
+|| #15 | Load and Menu button overlap | ✅ Closed | Fixed in Session 67 — speed buttons moved to bottom-right, in-game Load button removed |
 
 All known issues are resolved. No open decisions needed.
 
@@ -570,7 +574,13 @@ None at the moment.
 - Graceful fallback to flat colors if textures fail to load
 - Future: tune UV repeat factor, add texture blending between tile edges
 
-### Next Session (Session 67)
+### ✅ Completed in Session 67
+
+1. **Bugfix #14:** Removed "Isometric Map" text from default HUD (now "S4WN Engine")
+2. **Bugfix #15:** Speed buttons moved to bottom-right, in-game Load button removed
+3. **Bugfix #12:** bounds guards in build_map_mesh() prevent capacity overflow panic
+
+### Next Session (Session 68)
 
 1. **Common building completion:** Add remaining S4 common buildings — Fortress, Siege Workshop, Shipyard, Road Layer (Guard Tower done in S65).
 2. **Guard Tower / Fortress territory expansion:** When garrisoned, extend player territory radius via shader or map overlay.
