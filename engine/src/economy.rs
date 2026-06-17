@@ -576,12 +576,13 @@ impl Building {
         self.construction >= 1.0
     }
 
-    /// Advance construction by one tick
-    pub fn tick_construction(&mut self) {
+    /// Advance construction by one tick.
+    /// `speed_mult` applies nation build speed modifiers (1.0 = normal).
+    pub fn tick_construction(&mut self, speed_mult: f32) {
         if !self.is_complete() {
             let build_ticks = self.kind.build_time();
             if build_ticks > 0 {
-                self.construction += 1.0 / build_ticks as f32;
+                self.construction += speed_mult / build_ticks as f32;
                 if self.construction >= 1.0 {
                     self.construction = 1.0;
                 }
@@ -907,6 +908,15 @@ impl Economy {
         }
     }
 
+    /// Get the build speed multiplier from nation modifiers (default 1.0).
+    fn build_speed(&self) -> f32 {
+        if let Some(ref mods) = self.nation_modifiers {
+            mods.units.worker_build_speed
+        } else {
+            1.0
+        }
+    }
+
     /// Get the number of idle settlers
     pub fn idle_settlers(&self) -> usize {
         self.units.idle_settler_count()
@@ -953,9 +963,10 @@ impl Economy {
 
     /// Advance economy by one tick.
     pub fn update(&mut self) {
-        // 1. Tick construction for all buildings
+        // 1. Tick construction for all buildings (with nation build speed modifier)
+        let build_speed = self.build_speed();
         for building in self.buildings.iter_mut() {
-            building.tick_construction();
+            building.tick_construction(build_speed);
         }
 
         // 1b. Castle recruitment — spawn idle settlers from completed Castles
@@ -1240,7 +1251,7 @@ mod tests {
         assert!(!b.is_complete());
         // Sawmill build_time = 30 ticks
         for _ in 0..30 {
-            b.tick_construction();
+            b.tick_construction(1.0);
         }
         assert!(b.is_complete());
     }
@@ -1343,7 +1354,7 @@ mod tests {
 
         // Complete construction
         for _ in 0..30 {
-            building.tick_construction();
+            building.tick_construction(1.0);
         }
         assert!(building.is_complete());
 
@@ -1371,7 +1382,7 @@ mod tests {
 
         // Complete construction
         for _ in 0..20 {
-            building.tick_construction();
+            building.tick_construction(1.0);
         }
         assert!(building.is_complete());
 
@@ -1396,7 +1407,7 @@ mod tests {
 
         // Complete construction
         for _ in 0..30 {
-            building.tick_construction();
+            building.tick_construction(1.0);
         }
 
         // No inputs → no production
@@ -1473,10 +1484,10 @@ mod tests {
 
         // Complete construction
         for _ in 0..20 {
-            lumberjack.tick_construction();
+            lumberjack.tick_construction(1.0);
         }
         for _ in 0..30 {
-            sawmill.tick_construction();
+            sawmill.tick_construction(1.0);
         }
 
         // Lumberjack: no inputs, produces 2 Wood every 15 ticks
@@ -1578,7 +1589,7 @@ mod tests {
 
         // Complete construction (25 ticks)
         for _ in 0..25 {
-            building.tick_construction();
+            building.tick_construction(1.0);
         }
         assert!(building.is_complete());
 
@@ -1604,10 +1615,10 @@ mod tests {
 
         // Complete construction (extra tick for float safety)
         for _ in 0..41 {
-            mine.tick_construction();
+            mine.tick_construction(1.0);
         }
         for _ in 0..36 {
-            smelter.tick_construction();
+            smelter.tick_construction(1.0);
         }
         assert!(mine.is_complete());
         assert!(smelter.is_complete());
@@ -1706,7 +1717,7 @@ mod tests {
 
         // Complete construction (35 ticks, +1 for float safety)
         for _ in 0..36 {
-            mint.tick_construction();
+            mint.tick_construction(1.0);
         }
         assert!(mint.is_complete());
 
@@ -2003,7 +2014,7 @@ mod tests {
         // Advance construction to completion
         let build_ticks = BuildingType::Sawmill.build_time();
         for _ in 0..build_ticks + 1 {
-            e.buildings[idx].tick_construction();
+            e.buildings[idx].tick_construction(1.0);
         }
         assert!(e.buildings[idx].is_complete());
         // Now the completed building needs a tooled settler
@@ -2025,7 +2036,7 @@ mod tests {
         // Place a Barracks and fully construct it (build_time = 40)
         e.place_building(BuildingType::Barracks, 5, 5);
         for _ in 0..41 {  // build_time + 1 for float precision
-            e.buildings[0].tick_construction();
+            e.buildings[0].tick_construction(1.0);
         }
         assert!(e.buildings[0].is_complete(), "Barracks should be complete");
 
@@ -2081,7 +2092,7 @@ mod tests {
         // Place and construct Barracks
         e.place_building(BuildingType::Barracks, 5, 5);
         for _ in 0..41 {
-            e.buildings[0].tick_construction();
+            e.buildings[0].tick_construction(1.0);
         }
         assert!(e.buildings[0].is_complete());
 
@@ -2156,7 +2167,7 @@ mod tests {
         // Fully construct all 3
         for idx in 0..3 {
             for _ in 0..41 {
-                e.buildings[idx].tick_construction();
+                e.buildings[idx].tick_construction(1.0);
             }
             assert!(e.buildings[idx].is_complete());
         }
@@ -2212,7 +2223,7 @@ mod tests {
 
         // Place and construct a Farm (no tool needed, no inputs)
         e.place_building(BuildingType::Farm, 5, 5);
-        for _ in 0..41 { e.buildings[0].tick_construction(); }
+        for _ in 0..41 { e.buildings[0].tick_construction(1.0); }
         assert!(e.buildings[0].is_complete());
 
         // Assign a settler (no tool needed for Farm, so has_tooled_settler returns true)
@@ -2336,7 +2347,7 @@ mod tests {
         // Place and construct a Barracks with Weapons
         e.storage.add(ResourceType::Weapons, 5);
         e.place_building(BuildingType::Barracks, 5, 5);
-        for _ in 0..41 { e.buildings[0].tick_construction(); }
+        for _ in 0..41 { e.buildings[0].tick_construction(1.0); }
         assert!(e.buildings[0].is_complete());
 
         // Run BARRACKS_TRAINING_INTERVAL ticks to spawn a swordsman
@@ -2365,7 +2376,7 @@ mod tests {
         e.storage.add(ResourceType::Weapons, 5);
 
         e.place_building(BuildingType::Barracks, 3, 3);
-        for _ in 0..41 { e.buildings[0].tick_construction(); }
+        for _ in 0..41 { e.buildings[0].tick_construction(1.0); }
         assert!(e.buildings[0].is_complete());
 
         // Run 2 training cycles
@@ -2436,7 +2447,7 @@ mod tests {
         // We need to skip the first cycle to get a Bowman.
         e.storage.add(ResourceType::Weapons, 5);
         e.place_building(BuildingType::Barracks, 5, 5);
-        for _ in 0..41 { e.buildings[0].tick_construction(); }
+        for _ in 0..41 { e.buildings[0].tick_construction(1.0); }
         assert!(e.buildings[0].is_complete());
 
         // Run first cycle → Swordsman (ignore)
@@ -2462,5 +2473,76 @@ mod tests {
         assert!((unit.attack_mult - 1.1).abs() < 0.01, "Attack mult should be 1.1");
         assert!((unit.defense_mult - 1.0).abs() < 0.01, "Defense mult should be 1.0");
         assert!((unit.attack_range_mult - 1.05).abs() < 0.01, "Range mult should be 1.05");
+    }
+
+    #[test]
+    fn test_nation_build_speed_modifier() {
+        // Buildings should construct faster with nation build speed > 1.0.
+        // Romans have worker_build_speed = 1.1 (10% faster construction).
+        // A Farm normally completes in 20 ticks. With 1.1x speed:
+        //   progress per tick = 1.1 / 20 = 0.055
+        //   ticks to complete = ceil(1.0 / 0.055) = 19
+        use crate::nation::{NationModifiers, ProductionModifier, CostModifier, UnitModifier, AIPersonality};
+
+        let mut e = Economy::new();
+        let roman_mods = NationModifiers {
+            production: ProductionModifier {
+                food: 1.0, wood: 1.0, stone: 1.0, iron: 1.0,
+                coal: 1.0, gold: 1.0, tools: 1.0, weapons: 1.0,
+            },
+            cost: CostModifier { economic: 1.0, military: 1.0, unique: 1.0 },
+            units: UnitModifier {
+                worker_speed: 1.0, worker_build_speed: 1.1,
+                soldier_hp: 1.0, soldier_attack: 1.0, soldier_defense: 1.0,
+                archer_hp: 1.0, archer_attack: 1.0, archer_range: 1.0,
+            },
+            ai: AIPersonality {
+                aggression: 0.5, expansion_rate: 0.5, defense_priority: 0.5, trade_focus: 0.5,
+            },
+        };
+        e.set_nation_modifiers(roman_mods);
+
+        // Place a Farm (build_time = 20)
+        e.place_building(BuildingType::Farm, 5, 5);
+
+        // With 1.1x build speed, should complete in 19 ticks (vs 20 normally)
+        for _ in 0..18 {
+            e.update();
+        }
+        // After 18 updates: 18 * 1.1/20 = 0.99 → not quite complete
+        assert!(!e.buildings[0].is_complete(),
+            "Farm should NOT be complete after 18 ticks with 1.1x speed (18*1.1/20 = 0.99)");
+        e.update();
+        assert!(e.buildings[0].is_complete(),
+            "Farm should be complete after 19 ticks with 1.1x speed");
+
+        // Verify baseline: with 1.0x speed, takes 20 ticks
+        let mut e2 = Economy::new();
+        let neutral_mods = NationModifiers {
+            production: ProductionModifier {
+                food: 1.0, wood: 1.0, stone: 1.0, iron: 1.0,
+                coal: 1.0, gold: 1.0, tools: 1.0, weapons: 1.0,
+            },
+            cost: CostModifier { economic: 1.0, military: 1.0, unique: 1.0 },
+            units: UnitModifier {
+                worker_speed: 1.0, worker_build_speed: 1.0,
+                soldier_hp: 1.0, soldier_attack: 1.0, soldier_defense: 1.0,
+                archer_hp: 1.0, archer_attack: 1.0, archer_range: 1.0,
+            },
+            ai: AIPersonality {
+                aggression: 0.5, expansion_rate: 0.5, defense_priority: 0.5, trade_focus: 0.5,
+            },
+        };
+        e2.set_nation_modifiers(neutral_mods);
+        e2.place_building(BuildingType::Farm, 5, 5);
+        // At 1.0x: after 19 ticks = 0.95, after 20 ticks complete
+        for _ in 0..19 {
+            e2.update();
+        }
+        assert!(!e2.buildings[0].is_complete(),
+            "Farm should NOT be complete after 19 ticks with 1.0x speed");
+        e2.update();
+        assert!(e2.buildings[0].is_complete(),
+            "Farm should be complete after 20 ticks with 1.0x speed");
     }
 }
