@@ -69,9 +69,9 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 **Phase 2.8 — Tool System** (in progress 🔨)
 
 - ✅ **Phase 1 — Core Engine** — Complete. Rust/WASM engine, WebGL2 rendering, map, camera, game loop, asset pipeline.
-- ✅ **Phase 2 — Game Logic** — Complete. Economy (25 resources, 18 buildings), units, pathfinding, worker AI, combat.
+- ✅ **Phase 2 — Game Logic** — Complete. Economy (26 resources, 18 buildings), units, pathfinding, worker AI, combat.
 - ✅ **Phase 3 — Multiplayer** — Complete. WebSocket server, lobby UI, server-authoritative tick, client interpolation.
-- 🔨 **Phase 2.8 — Nations & Balancing** — In progress. Nation data model (5 nations, 34 unique buildings, 6 specialists, 11 tool types), nation selection UI, building tool requirements wired into game loop, Castle settler recruitment (auto-spawn settlers every 50 ticks). 187 tests passing.
+- 🔨 **Phase 2.8 — Nations & Balancing** — In progress. Nation data model (5 nations, 34 unique buildings, 6 specialists, 11 tool types), nation selection UI, building tool requirements wired into game loop, Castle settler recruitment (auto-spawn settlers every 50 ticks). 188 tests passing.
 - ✅ **Phase 4 — UI & Single Player** — Mostly complete. Splash/title, main menu, settings, new game flow, building placement, selection HUD, save/load, .map/.sav loading, visual polish.
 
 ---
