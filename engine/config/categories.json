@@ -7,7 +7,7 @@
     "Bakery",
     "Waterworks",
     "Apiary",
-    "MeadMaker"
+    "Mead Maker"
   ],
   "Raw Materials": [
     "Woodcutter",
@@ -15,8 +15,8 @@
     "Stonecutter",
     "Mine",
     "Smelter",
-    "ClayPit",
-    "HempFarm"
+    "Clay Pit",
+    "Hemp Farm"
   ],
   "Processing": [
     "Toolsmith",

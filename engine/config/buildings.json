@@ -397,7 +397,7 @@
     "name_de": "Straßenbauer"
   },
   {
-    "id": "ClayPit",
+    "id": "Clay Pit",
     "category": "Raw Materials",
     "cost": {
       "Wood": 4,
@@ -436,7 +436,7 @@
     "name_de": "Ziegelei"
   },
   {
-    "id": "HempFarm",
+    "id": "Hemp Farm",
     "category": "Raw Materials",
     "cost": {
       "Wood": 3,
@@ -493,7 +493,7 @@
     "name_de": "Bienenhaus"
   },
   {
-    "id": "MeadMaker",
+    "id": "Mead Maker",
     "category": "Food",
     "cost": {
       "Wood": 5,

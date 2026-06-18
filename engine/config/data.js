@@ -398,7 +398,7 @@ window.S4WN_CONFIG = {
       "name_de": "Straßenbauer"
     },
     {
-      "id": "ClayPit",
+      "id": "Clay Pit",
       "category": "Raw Materials",
       "cost": {
         "Wood": 4,
@@ -437,7 +437,7 @@ window.S4WN_CONFIG = {
       "name_de": "Ziegelei"
     },
     {
-      "id": "HempFarm",
+      "id": "Hemp Farm",
       "category": "Raw Materials",
       "cost": {
         "Wood": 3,
@@ -494,7 +494,7 @@ window.S4WN_CONFIG = {
       "name_de": "Bienenhaus"
     },
     {
-      "id": "MeadMaker",
+      "id": "Mead Maker",
       "category": "Food",
       "cost": {
         "Wood": 5,
@@ -1494,7 +1494,7 @@ window.S4WN_CONFIG = {
       "Bakery",
       "Waterworks",
       "Apiary",
-      "MeadMaker"
+      "Mead Maker"
     ],
     "Raw Materials": [
       "Woodcutter",
@@ -1502,8 +1502,8 @@ window.S4WN_CONFIG = {
       "Stonecutter",
       "Mine",
       "Smelter",
-      "ClayPit",
-      "HempFarm"
+      "Clay Pit",
+      "Hemp Farm"
     ],
     "Processing": [
       "Toolsmith",
