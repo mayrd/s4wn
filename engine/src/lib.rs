@@ -1128,6 +1128,13 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
         SanctuaryOfQuetzalcoatl => [0.5, 0.8, 0.6],   // wind green
         SanctuaryOfHuitzilopochtli => [0.8, 0.2, 0.1], // war red
         Observatory => [0.9, 0.85, 0.7],               // limestone
+        OracleOfApollo => [0.9, 0.85, 0.4],               // golden oracle
+        OliveGrove => [0.4, 0.6, 0.25],                   // olive green
+        OilPress => [0.7, 0.6, 0.3],                      // amber oil
+        SanctuaryOfArtemis => [0.6, 0.85, 0.5],          // forest green
+        SanctuaryOfPoseidon => [0.2, 0.5, 0.8],          // ocean blue
+        SanctuaryOfApollo => [0.95, 0.85, 0.3],          // sun gold
+        Amphitheater => [0.85, 0.8, 0.65],               // marble
     }
 }
 
@@ -2708,6 +2715,13 @@ mod tests {
             SanctuaryOfQuetzalcoatl,
             SanctuaryOfHuitzilopochtli,
             Observatory,
+            OracleOfApollo,
+            OliveGrove,
+            OilPress,
+            SanctuaryOfArtemis,
+            SanctuaryOfPoseidon,
+            SanctuaryOfApollo,
+            Amphitheater,
         ] {
             let c = building_color(&kind);
             assert!(c[0] >= 0.0 && c[0] <= 1.0);

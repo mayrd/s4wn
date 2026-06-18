@@ -2,133 +2,145 @@
   {
     "id": "Wood",
     "category": "raw",
-    "icon": "🪵",
+    "icon": "\ud83e\udeb5",
     "name_de": "Holz"
   },
   {
     "id": "Stone",
     "category": "raw",
-    "icon": "🪨",
+    "icon": "\ud83e\udea8",
     "name_de": "Stein"
   },
   {
     "id": "IronOre",
     "category": "raw",
-    "icon": "⛏️",
+    "icon": "\u26cf\ufe0f",
     "name_de": "Eisenerz"
   },
   {
     "id": "Coal",
     "category": "raw",
-    "icon": "🪨",
+    "icon": "\ud83e\udea8",
     "name_de": "Kohle"
   },
   {
     "id": "Gold",
     "category": "raw",
-    "icon": "✨",
+    "icon": "\u2728",
     "name_de": "Gold"
   },
   {
     "id": "Sulfur",
     "category": "raw",
-    "icon": "🟡",
+    "icon": "\ud83d\udfe1",
     "name_de": "Schwefel"
   },
   {
     "id": "Clay",
     "category": "raw",
-    "icon": "🧱",
+    "icon": "\ud83e\uddf1",
     "name_de": "Lehm"
   },
   {
     "id": "Water",
     "category": "raw",
-    "icon": "💧",
+    "icon": "\ud83d\udca7",
     "name_de": "Wasser"
   },
   {
     "id": "Grain",
     "category": "raw",
-    "icon": "🌾",
+    "icon": "\ud83c\udf3e",
     "name_de": "Getreide"
   },
   {
     "id": "Fish",
     "category": "raw",
-    "icon": "🐟",
+    "icon": "\ud83d\udc1f",
     "name_de": "Fisch"
+  },
+  {
+    "id": "Olives",
+    "category": "raw",
+    "icon": "\ud83e\uded2",
+    "name_de": "Oliven"
   },
   {
     "id": "Meat",
     "category": "raw",
-    "icon": "🍖",
+    "icon": "\ud83c\udf56",
     "name_de": "Fleisch"
   },
   {
     "id": "Hemp",
     "category": "raw",
-    "icon": "🌿",
+    "icon": "\ud83c\udf3f",
     "name_de": "Hanf"
   },
   {
     "id": "Honey",
     "category": "raw",
-    "icon": "🍯",
+    "icon": "\ud83c\udf6f",
     "name_de": "Honig"
   },
   {
     "id": "Boards",
     "category": "processed",
-    "icon": "🪵",
+    "icon": "\ud83e\udeb5",
     "name_de": "Bretter"
   },
   {
     "id": "IronIngots",
     "category": "processed",
-    "icon": "🔩",
+    "icon": "\ud83d\udd29",
     "name_de": "Eisenbarren"
   },
   {
     "id": "Tools",
     "category": "processed",
-    "icon": "🔧",
+    "icon": "\ud83d\udd27",
     "name_de": "Werkzeuge"
   },
   {
     "id": "Weapons",
     "category": "processed",
-    "icon": "⚔️",
+    "icon": "\u2694\ufe0f",
     "name_de": "Waffen"
   },
   {
     "id": "Flour",
     "category": "processed",
-    "icon": "🌾",
+    "icon": "\ud83c\udf3e",
     "name_de": "Mehl"
   },
   {
     "id": "Bread",
     "category": "processed",
-    "icon": "🍞",
+    "icon": "\ud83c\udf5e",
     "name_de": "Brot"
   },
   {
     "id": "Bricks",
     "category": "processed",
-    "icon": "🧱",
+    "icon": "\ud83e\uddf1",
     "name_de": "Ziegel"
   },
   {
     "id": "Rope",
     "category": "processed",
-    "icon": "🪢",
+    "icon": "\ud83e\udea2",
     "name_de": "Seile"
+  },
+  {
+    "id": "OliveOil",
+    "category": "processed",
+    "icon": "\ud83e\uded2",
+    "name_de": "Oliven\u00f6l"
   },
   {
     "id": "Mead",
     "category": "processed",
-    "icon": "🍺",
+    "icon": "\ud83c\udf7a",
     "name_de": "Met"
   }
 ]

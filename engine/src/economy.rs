@@ -65,13 +65,17 @@ pub enum ResourceType {
     // ── Roman Unique Resources ──────────────────────────────────────────────
     /// Grapes — harvested from Vineyard
     Grapes = 13,
+    /// Olives — harvested from Olive Grove (Trojan unique)
+    Olives = 14,
     /// Wine — produced from Grapes at Wine Press
     Wine = 28,
+    /// Olive Oil — produced from Olives at Oil Press (Trojan unique)
+    OliveOil = 29,
 }
 
 impl ResourceType {
     /// Total number of distinct resource types
-    pub const COUNT: usize = 28;
+    pub const COUNT: usize = 30;
 
     /// Whether this is a raw resource (harvested from the map)
     pub fn is_raw(self) -> bool {
@@ -109,6 +113,8 @@ impl ResourceType {
             ResourceType::Rope => "Rope",
             ResourceType::Mead => "Mead",
             ResourceType::Grapes => "Grapes",
+            ResourceType::Olives => "Olives",
+            ResourceType::OliveOil => "OliveOil",
             ResourceType::Wine => "Wine",
         }
     }
@@ -237,6 +243,22 @@ pub enum BuildingType {
     SanctuaryOfHuitzilopochtli = 45,
     /// Observatory — stargazing, extends territory (Maya unique)
     Observatory = 46,
+
+    // ── Trojan Unique Buildings ────────────────────────────────────────────
+    /// Oracle of Apollo — divine oracle, produces Wine (Trojan unique)
+    OracleOfApollo = 47,
+    /// Olive Grove — produces Olives (Trojan unique)
+    OliveGrove = 48,
+    /// Oil Press — converts Olives → OliveOil (Trojan unique)
+    OilPress = 49,
+    /// Sanctuary of Artemis — hunting goddess (Trojan unique)
+    SanctuaryOfArtemis = 50,
+    /// Sanctuary of Poseidon — sea god (Trojan unique)
+    SanctuaryOfPoseidon = 51,
+    /// Sanctuary of Apollo — sun god (Trojan unique)
+    SanctuaryOfApollo = 52,
+    /// Amphitheater — cultural venue, extends territory (Trojan unique)
+    Amphitheater = 53,
 }
 
 impl BuildingType {
@@ -288,6 +310,13 @@ impl BuildingType {
             BuildingType::SanctuaryOfQuetzalcoatl => "Sanctuary of Quetzalcoatl",
             BuildingType::SanctuaryOfHuitzilopochtli => "Sanctuary of Huitzilopochtli",
             BuildingType::Observatory => "Observatory",
+            BuildingType::OracleOfApollo => "Oracle of Apollo",
+            BuildingType::OliveGrove => "Olive Grove",
+            BuildingType::OilPress => "Oil Press",
+            BuildingType::SanctuaryOfArtemis => "Sanctuary of Artemis",
+            BuildingType::SanctuaryOfPoseidon => "Sanctuary of Poseidon",
+            BuildingType::SanctuaryOfApollo => "Sanctuary of Apollo",
+            BuildingType::Amphitheater => "Amphitheater",
         }
     }
 
@@ -339,6 +368,13 @@ impl BuildingType {
             "Sanctuary of Quetzalcoatl" => Some(BuildingType::SanctuaryOfQuetzalcoatl),
             "Sanctuary of Huitzilopochtli" => Some(BuildingType::SanctuaryOfHuitzilopochtli),
             "Observatory" => Some(BuildingType::Observatory),
+            "Oracle of Apollo" => Some(BuildingType::OracleOfApollo),
+            "Olive Grove" => Some(BuildingType::OliveGrove),
+            "Oil Press" => Some(BuildingType::OilPress),
+            "Sanctuary of Artemis" => Some(BuildingType::SanctuaryOfArtemis),
+            "Sanctuary of Poseidon" => Some(BuildingType::SanctuaryOfPoseidon),
+            "Sanctuary of Apollo" => Some(BuildingType::SanctuaryOfApollo),
+            "Amphitheater" => Some(BuildingType::Amphitheater),
             _ => None,
         }
     }
@@ -391,6 +427,13 @@ impl BuildingType {
             "Sanctuary of Quetzalcoatl",
             "Sanctuary of Huitzilopochtli",
             "Observatory",
+            "Oracle of Apollo",
+            "Olive Grove",
+            "Oil Press",
+            "Sanctuary of Artemis",
+            "Sanctuary of Poseidon",
+            "Sanctuary of Apollo",
+            "Amphitheater",
         ]
     }
 
@@ -433,6 +476,13 @@ impl BuildingType {
             BuildingType::SanctuaryOfQuetzalcoatl => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
             BuildingType::SanctuaryOfHuitzilopochtli => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
             BuildingType::Observatory => &[(ResourceType::Stone, 25), (ResourceType::Gold, 10)],
+            BuildingType::OracleOfApollo => &[(ResourceType::Stone, 20), (ResourceType::Gold, 10)],
+            BuildingType::OliveGrove => &[(ResourceType::Wood, 5)],
+            BuildingType::OilPress => &[(ResourceType::Wood, 5), (ResourceType::Stone, 3)],
+            BuildingType::SanctuaryOfArtemis => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
+            BuildingType::SanctuaryOfPoseidon => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
+            BuildingType::SanctuaryOfApollo => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
+            BuildingType::Amphitheater => &[(ResourceType::Stone, 30), (ResourceType::Gold, 15)],
             _ => &[], // planned buildings — no cost yet
         }
     }
@@ -455,6 +505,7 @@ impl BuildingType {
             BuildingType::Shipyard => &[(ResourceType::Wood, 3), (ResourceType::Boards, 2)],
             BuildingType::WinePress => &[(ResourceType::Grapes, 2)],
             BuildingType::Distillery => &[(ResourceType::Grapes, 2)], // Agave → Pulque (uses Grapes as placeholder)
+            BuildingType::OilPress => &[(ResourceType::Olives, 3)],
             _ => &[], // raw producers and storage have no inputs
         }
     }
@@ -483,6 +534,9 @@ impl BuildingType {
             BuildingType::TempleOfChac => &[(ResourceType::Water, 2)], // Rain god temple produces Water
             BuildingType::AgaveFarm => &[(ResourceType::Grapes, 2)], // Agave harvest (uses Grapes as placeholder)
             BuildingType::Distillery => &[(ResourceType::Wine, 1)], // Agave → Pulque (uses Wine as placeholder)
+            BuildingType::OliveGrove => &[(ResourceType::Olives, 2)],
+            BuildingType::OilPress => &[(ResourceType::OliveOil, 1)],
+            BuildingType::OracleOfApollo => &[(ResourceType::Wine, 1)], // Divine wine production (Trojan)
             _ => &[], // Barracks, Castle, Storehouse, Fortress, RoadLayer, Colosseum, Sanctuaries produce nothing
         }
     }
@@ -514,6 +568,9 @@ impl BuildingType {
             BuildingType::TempleOfChac => 35,              // 3.5 seconds — rain cycle
             BuildingType::AgaveFarm => 25,                  // 2.5 seconds — agave growth
             BuildingType::Distillery => 35,                  // 3.5 seconds — fermentation
+            BuildingType::OliveGrove => 25,                      // 2.5 seconds — olive harvest
+            BuildingType::OilPress => 30,                        // 3 seconds — oil pressing
+            BuildingType::OracleOfApollo => 40,                   // 4 seconds — divine inspiration (Trojan)
             _ => 0,                          // Barracks, Castle, Storehouse, Colosseum, Sanctuaries don't produce
         }
     }
@@ -590,6 +647,8 @@ impl BuildingType {
             BuildingType::TempleOfChac => Some("Bucket"), // Water gathering
             BuildingType::AgaveFarm => Some("Shovel"),          // Agave planting
             BuildingType::Distillery => Some("Bucket"),         // Fermentation vessel
+            BuildingType::OliveGrove => Some("Shovel"),            // Olive planting
+            BuildingType::OilPress => Some("Hammer"),              // Press operation
             _ => None, // Castle, Storehouse, Farm, Barracks — no tool needed
         }
     }
@@ -635,7 +694,15 @@ impl BuildingType {
             | BuildingType::SanctuaryOfKukulkan
             | BuildingType::SanctuaryOfQuetzalcoatl
             | BuildingType::SanctuaryOfHuitzilopochtli
-            | BuildingType::Observatory => BuildingCategory::Unique,
+            | BuildingType::Observatory
+            // Trojan unique buildings
+            | BuildingType::OracleOfApollo
+            | BuildingType::OliveGrove
+            | BuildingType::OilPress
+            | BuildingType::SanctuaryOfArtemis
+            | BuildingType::SanctuaryOfPoseidon
+            | BuildingType::SanctuaryOfApollo
+            | BuildingType::Amphitheater => BuildingCategory::Unique,
             _ => BuildingCategory::Economic, // planned buildings
         }
     }
@@ -662,6 +729,13 @@ impl BuildingType {
             | BuildingType::SanctuaryOfQuetzalcoatl
             | BuildingType::SanctuaryOfHuitzilopochtli
             | BuildingType::Observatory => Some(NationType::Maya),
+            BuildingType::OracleOfApollo
+            | BuildingType::OliveGrove
+            | BuildingType::OilPress
+            | BuildingType::SanctuaryOfArtemis
+            | BuildingType::SanctuaryOfPoseidon
+            | BuildingType::SanctuaryOfApollo
+            | BuildingType::Amphitheater => Some(NationType::Trojan),
             _ => None,
         }
     }
@@ -1898,8 +1972,8 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        // 33 original + 5 Viking unique + 7 Maya unique = 45 total
-        assert_eq!(BuildingType::all_names().len(), 45);
+        // 33 original + 5 Viking unique + 7 Maya unique + 7 Trojan unique = 52 total
+        assert_eq!(BuildingType::all_names().len(), 52);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
@@ -3291,9 +3365,9 @@ mod tests {
         assert!(names.contains(&"Sanctuary of Thor"));
         assert!(names.contains(&"Sanctuary of Freya"));
         assert!(names.contains(&"Runestone"));
-        // Total should be 45 (33 original + 5 Viking unique + 7 Maya unique)
+        // Total should be 52 (33 original + 5 Viking + 7 Maya + 7 Trojan)
         // Note: Apiary is common, already counted in the 33
-        assert_eq!(names.len(), 45, "Should have 45 total building names");
+        assert_eq!(names.len(), 52, "Should have 52 total building names");
     }
 
     #[test]
@@ -3325,5 +3399,107 @@ mod tests {
         // Viking CANNOT place Roman unique buildings
         let result2 = e.try_place_building_checked(BuildingType::Vineyard, 10, 11, 0, &map);
         assert!(result2.is_none(), "Viking should NOT be able to place Vineyard");
+    }
+
+    // ── Trojan Unique Building Tests ─────────────────────────────────────
+
+    #[test]
+    fn test_nation_for_building_trojan_unique() {
+        assert_eq!(
+            BuildingType::OracleOfApollo.nation_for_building(),
+            Some(crate::nation::NationType::Trojan)
+        );
+        assert_eq!(
+            BuildingType::OliveGrove.nation_for_building(),
+            Some(crate::nation::NationType::Trojan)
+        );
+        assert_eq!(
+            BuildingType::OilPress.nation_for_building(),
+            Some(crate::nation::NationType::Trojan)
+        );
+        assert_eq!(
+            BuildingType::SanctuaryOfArtemis.nation_for_building(),
+            Some(crate::nation::NationType::Trojan)
+        );
+        assert_eq!(
+            BuildingType::SanctuaryOfPoseidon.nation_for_building(),
+            Some(crate::nation::NationType::Trojan)
+        );
+        assert_eq!(
+            BuildingType::SanctuaryOfApollo.nation_for_building(),
+            Some(crate::nation::NationType::Trojan)
+        );
+        assert_eq!(
+            BuildingType::Amphitheater.nation_for_building(),
+            Some(crate::nation::NationType::Trojan)
+        );
+    }
+
+    #[test]
+    fn test_is_building_available_trojan() {
+        let mut e = Economy::new();
+        e.set_player_nation(crate::nation::NationType::Trojan);
+
+        assert!(e.is_building_available(BuildingType::OracleOfApollo));
+        assert!(e.is_building_available(BuildingType::OliveGrove));
+        assert!(e.is_building_available(BuildingType::OilPress));
+        assert!(e.is_building_available(BuildingType::Amphitheater));
+        assert!(e.is_building_available(BuildingType::Farm));
+        assert!(e.is_building_available(BuildingType::Barracks));
+    }
+
+    #[test]
+    fn test_is_building_available_roman_cannot_build_trojan() {
+        let mut e = Economy::new();
+        e.set_player_nation(crate::nation::NationType::Roman);
+
+        assert!(!e.is_building_available(BuildingType::OracleOfApollo));
+        assert!(!e.is_building_available(BuildingType::OliveGrove));
+        assert!(!e.is_building_available(BuildingType::OilPress));
+        assert!(!e.is_building_available(BuildingType::Amphitheater));
+    }
+
+    #[test]
+    fn test_all_names_includes_trojan_unique() {
+        let names = BuildingType::all_names();
+        assert!(names.contains(&"Oracle of Apollo"));
+        assert!(names.contains(&"Olive Grove"));
+        assert!(names.contains(&"Oil Press"));
+        assert!(names.contains(&"Sanctuary of Artemis"));
+        assert!(names.contains(&"Sanctuary of Poseidon"));
+        assert!(names.contains(&"Sanctuary of Apollo"));
+        assert!(names.contains(&"Amphitheater"));
+    }
+
+    #[test]
+    fn test_from_name_trojan_unique() {
+        assert_eq!(BuildingType::from_name("Oracle of Apollo"), Some(BuildingType::OracleOfApollo));
+        assert_eq!(BuildingType::from_name("Olive Grove"), Some(BuildingType::OliveGrove));
+        assert_eq!(BuildingType::from_name("Oil Press"), Some(BuildingType::OilPress));
+        assert_eq!(BuildingType::from_name("Sanctuary of Artemis"), Some(BuildingType::SanctuaryOfArtemis));
+        assert_eq!(BuildingType::from_name("Sanctuary of Poseidon"), Some(BuildingType::SanctuaryOfPoseidon));
+        assert_eq!(BuildingType::from_name("Sanctuary of Apollo"), Some(BuildingType::SanctuaryOfApollo));
+        assert_eq!(BuildingType::from_name("Amphitheater"), Some(BuildingType::Amphitheater));
+    }
+
+    #[test]
+    fn test_try_place_trojan_unique_in_territory() {
+        use crate::map::Map;
+
+        let mut map = Map::new(30, 30);
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.set_player_nation(crate::nation::NationType::Trojan);
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+        e.storage.add(ResourceType::Gold, 50);
+
+        let result = e.try_place_building_checked(BuildingType::OliveGrove, 10, 12, 0, &map);
+        assert!(result.is_some(), "Trojan should be able to place Olive Grove");
+
+        let result2 = e.try_place_building_checked(BuildingType::Vineyard, 10, 11, 0, &map);
+        assert!(result2.is_none(), "Trojan should NOT be able to place Vineyard");
     }
 }
