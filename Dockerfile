@@ -7,7 +7,11 @@ FROM caddy:2-alpine
 # Copy the game engine (pre-built WASM + JS + HTML)
 COPY engine/pkg/ /usr/share/caddy/pkg/
 COPY engine/index.html /usr/share/caddy/index.html
+COPY engine/config/ /usr/share/caddy/config/
 COPY web/Caddyfile /etc/caddy/Caddyfile
+
+# Copy game assets (textures, sprites, etc.)
+COPY assets/ /usr/share/caddy/assets/
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
