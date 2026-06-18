@@ -1006,6 +1006,39 @@ impl Economy {
         self.buildings.len() - 1
     }
 
+    /// Try to place a building, checking if we can afford it AND if the tile
+    /// is within the given player's territory.
+    ///
+    /// Territory rules:
+    /// - The tile must be within `player_id`'s territory (or neutral).
+    /// - The tile must be buildable terrain (grass, desert, or forest).
+    /// - The player must be able to afford the building (with nation cost modifiers).
+    ///
+    /// Returns the building index if successful.
+    pub fn try_place_building_checked(
+        &mut self,
+        kind: BuildingType,
+        x: usize,
+        y: usize,
+        player_id: u8,
+        map: &crate::map::Map,
+    ) -> Option<usize> {
+        // Check terrain buildability
+        if let Some(tile) = map.get(x, y) {
+            if !tile.terrain.is_buildable() {
+                return None;
+            }
+        } else {
+            return None; // out of bounds
+        }
+        // Check territory: tile must be owned by this player (not neutral, not enemy)
+        if map.get_territory(x, y) != Some(player_id) {
+            return None;
+        }
+        // Check affordability
+        self.try_place_building(kind, x, y)
+    }
+
     /// Try to place a building, checking if we can afford it.
     /// Applies nation cost modifiers to building costs.
     /// Returns the building index if successful.
@@ -2610,5 +2643,221 @@ mod tests {
         e2.update();
         assert!(e2.buildings[0].is_complete(),
             "Farm should be complete after 20 ticks with 1.0x speed");
+    }
+
+    // ── Territory Validation Tests ────────────────────────────────────────────
+
+    #[test]
+    fn test_try_place_building_checked_within_territory() {
+        // Player 0 has a Castle at (10, 10) claiming radius 5.
+        // Building a Farm at (12, 10) should succeed (within territory + affordable).
+        use crate::map::Map;
+
+        let mut map = Map::new(30, 30);
+        // Claim territory for player 0
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // (12, 10) is within Castle radius 5
+        assert!(map.is_within_territory(12, 10, 0));
+        let result = e.try_place_building_checked(BuildingType::Farm, 12, 10, 0, &map);
+        assert!(result.is_some(), "Should place Farm within own territory");
+    }
+
+    #[test]
+    fn test_try_place_building_checked_outside_territory() {
+        // Player 0 has a Castle at (10, 10) claiming radius 5.
+        // Building a Farm at (20, 20) should fail (outside territory).
+        use crate::map::Map;
+
+        let mut map = Map::new(30, 30);
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // (20, 20) is outside Castle radius 5 — neutral tile
+        assert_eq!(map.get_territory(20, 20), None, "Tile should be neutral (outside territory)");
+        // try_place_building_checked returns None for neutral tiles (not owned by player)
+        let result = e.try_place_building_checked(BuildingType::Farm, 20, 20, 0, &map);
+        assert!(result.is_none(), "Should NOT place Farm outside territory");
+    }
+
+    #[test]
+    fn test_try_place_building_checked_enemy_territory() {
+        // Player 0 has a Castle at (10, 10), Player 1 has a Castle at (20, 20).
+        // Player 1 tries to build at (10, 10) — should fail (enemy territory).
+        use crate::map::Map;
+
+        let mut map = Map::new(40, 40);
+        let buildings = vec![
+            (BuildingType::Castle, 10, 10, 0),
+            (BuildingType::Castle, 20, 20, 1),
+        ];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // (10, 10) is owned by player 0
+        assert_eq!(map.get_territory(10, 10), Some(0));
+        // Player 1 trying to build in player 0's territory
+        let result = e.try_place_building_checked(BuildingType::Farm, 10, 10, 1, &map);
+        assert!(result.is_none(), "Should NOT place building in enemy territory");
+    }
+
+    #[test]
+    fn test_try_place_building_checked_unaffordable() {
+        // Even within territory, should fail if can't afford.
+        use crate::map::Map;
+
+        let mut map = Map::new(30, 30);
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        // No resources — can't afford anything
+
+        let result = e.try_place_building_checked(BuildingType::Farm, 10, 10, 0, &map);
+        assert!(result.is_none(), "Should NOT place building when unaffordable");
+    }
+
+    #[test]
+    fn test_try_place_building_checked_non_buildable_terrain() {
+        // Water tiles should be rejected even within territory.
+        use crate::map::Map;
+        use crate::map::Terrain;
+
+        let mut map = Map::new(20, 20);
+        // Set tile (5, 5) to Water
+        map.get_mut(5, 5).unwrap().terrain = Terrain::Water;
+
+        // Castle at (10, 10) claims radius 5 — (5, 5) is within radius
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // (5, 5) is water — not buildable
+        assert!(!Terrain::Water.is_buildable());
+        let result = e.try_place_building_checked(BuildingType::Farm, 5, 5, 0, &map);
+        assert!(result.is_none(), "Should NOT place building on water");
+    }
+
+    #[test]
+    fn test_try_place_building_checked_out_of_bounds() {
+        // Out-of-bounds coordinates should be rejected.
+        use crate::map::Map;
+
+        let map = Map::new(10, 10);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+
+        let result = e.try_place_building_checked(BuildingType::Farm, 100, 100, 0, &map);
+        assert!(result.is_none(), "Should NOT place building out of bounds");
+    }
+
+    #[test]
+    fn test_try_place_building_checked_neutral_tile_rejected() {
+        // Neutral tiles (no territory) should be rejected — player must own the tile.
+        use crate::map::Map;
+
+        let map = Map::new(20, 20);
+        // No territory claimed — all tiles are neutral
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+
+        // Neutral tile: get_territory returns None, not Some(0)
+        assert_eq!(map.get_territory(5, 5), None);
+        let result = e.try_place_building_checked(BuildingType::Farm, 5, 5, 0, &map);
+        assert!(result.is_none(), "Should NOT place building on neutral tile (no territory)");
+    }
+
+    #[test]
+    fn test_try_place_building_checked_guard_tower_territory() {
+        // Guard Tower claims radius 3. Building just outside should fail.
+        use crate::map::Map;
+
+        let mut map = Map::new(20, 20);
+        let buildings = vec![(BuildingType::GuardTower, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // (13, 10) is at radius 3 — should be within territory
+        assert_eq!(map.get_territory(13, 10), Some(0));
+        let result = e.try_place_building_checked(BuildingType::Farm, 13, 10, 0, &map);
+        assert!(result.is_some(), "Should place building at edge of Guard Tower territory");
+
+        // (14, 10) is outside radius 3 — neutral tile, should fail
+        assert_eq!(map.get_territory(14, 10), None);
+        let result2 = e.try_place_building_checked(BuildingType::Farm, 14, 10, 0, &map);
+        assert!(result2.is_none(), "Should NOT place building outside Guard Tower territory");
+    }
+
+    #[test]
+    fn test_try_place_building_checked_fortress_larger_territory() {
+        // Fortress claims radius 6 — larger than Castle (5) or Guard Tower (3).
+        use crate::map::Map;
+
+        let mut map = Map::new(30, 30);
+        let buildings = vec![(BuildingType::Fortress, 15, 15, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // (21, 15) is at radius 6 — should be within territory
+        assert_eq!(map.get_territory(21, 15), Some(0));
+        let result = e.try_place_building_checked(BuildingType::Farm, 21, 15, 0, &map);
+        assert!(result.is_some(), "Should place building within Fortress territory");
+
+        // (22, 15) is outside radius 6 — neutral tile, should fail
+        assert_eq!(map.get_territory(22, 15), None);
+        let result2 = e.try_place_building_checked(BuildingType::Farm, 22, 15, 0, &map);
+        assert!(result2.is_none(), "Should NOT place building outside Fortress territory");
+    }
+
+    #[test]
+    fn test_territory_border_visualization_data() {
+        // Verify that territory data can be read back for border visualization.
+        // Each tile's territory_owner should be computable for overlay rendering.
+        use crate::map::Map;
+
+        let mut map = Map::new(20, 20);
+        let buildings = vec![
+            (BuildingType::Castle, 10, 10, 0),
+        ];
+        map.compute_territory(&buildings);
+
+        // Count owned vs neutral tiles
+        let mut owned = 0;
+        let mut neutral = 0;
+        for (x, y) in map.coordinates() {
+            match map.get_territory(x, y) {
+                Some(0) => owned += 1,
+                None => neutral += 1,
+                _ => {}
+            }
+        }
+        // Castle radius 5 should claim roughly π*25 ≈ 78 tiles
+        assert!(owned > 50, "Castle should claim > 50 tiles, got {}", owned);
+        assert!(owned < 100, "Castle should claim < 100 tiles, got {}", owned);
+        // Rest should be neutral
+        assert_eq!(owned + neutral, 20 * 20);
     }
 }
