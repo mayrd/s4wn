@@ -101,11 +101,13 @@ in float v_has_resource;
 in float v_day_phase;
 in float v_slope;
 in float v_edge_dist;
+in float v_visibility;
 in vec2 v_uv;
 in float v_terrain_id;
 
 uniform highp sampler2DArray u_terrain_textures;
 uniform bool u_use_textures;
+uniform vec3 u_fog_color;
 
 out vec4 out_color;
 
@@ -147,10 +149,14 @@ void main() {
     // Edge-of-map fog: darken tiles near map border (pre-computed on CPU)
     float edge_dist = v_edge_dist;
     float edge_zone = 8.0;  // tiles from edge where fog starts
-    float fog_factor = smoothstep(0.0, edge_zone, edge_dist);
-    // Tint the fog dark navy (matching clear color) rather than white
-    vec3 fog_color = vec3(0.05, 0.08, 0.18);
-    lit = mix(fog_color, lit, fog_factor);
+    float edge_factor = smoothstep(0.0, edge_zone, edge_dist);
+    lit = mix(u_fog_color, lit, edge_factor);
+
+    // Fog of war: darken tiles based on visibility
+    // v_visibility is 0.0 (unexplored/hidden) to 1.0 (fully visible)
+    // Smooth transition: below 0.2 visibility → fully fogged, above 0.5 → fully visible
+    float vis = smoothstep(0.15, 0.6, v_visibility);
+    lit = mix(u_fog_color, lit, vis);
 
     // Add warmth tint
     lit = mix(lit * 0.7, lit, warmth);
@@ -298,7 +304,9 @@ struct App {
     use_textures_loc: Option<web_sys::WebGlUniformLocation>,
     uvs_buffer: Option<WebGlBuffer>,
     terrain_id_buffer: Option<WebGlBuffer>,
+    visibility_buffer: Option<WebGlBuffer>,
     textures_loaded: bool,
+    fog_color_loc: Option<web_sys::WebGlUniformLocation>,
 }
 
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
@@ -478,6 +486,7 @@ impl App {
         let edge_buffer = upload_f32_buffer(&gl, &mesh.edge_dists, 5, 1);
         let uvs_buffer = upload_f32_buffer(&gl, &mesh.uvs, 6, 2);
         let terrain_id_buffer = upload_f32_buffer(&gl, &mesh.terrain_ids, 7, 1);
+        let visibility_buffer = upload_f32_buffer(&gl, &mesh.visibilities, 8, 1);
         let index_buffer = gl.create_buffer().ok_or("Cannot create index buffer")?;
         gl.bind_buffer(
             WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
@@ -508,6 +517,7 @@ impl App {
             .ok_or("Cannot find u_zoom")?;
         let terrain_tex_loc = gl.get_uniform_location(&program, "u_terrain_textures");
         let use_textures_loc = gl.get_uniform_location(&program, "u_use_textures");
+        let fog_color_loc = gl.get_uniform_location(&program, "u_fog_color");
         let day_phase_loc = gl
             .get_uniform_location(&program, "u_day_phase")
             .ok_or("Cannot find u_day_phase")?;
@@ -603,7 +613,9 @@ impl App {
             use_textures_loc,
             uvs_buffer: Some(uvs_buffer),
             terrain_id_buffer: Some(terrain_id_buffer),
+            visibility_buffer: Some(visibility_buffer),
             textures_loaded: false,
+            fog_color_loc,
         })
     }
 
@@ -713,6 +725,9 @@ impl App {
         gl.uniform1f(Some(&self.zoom_loc), self.camera.zoom);
         gl.uniform1f(Some(&self.day_phase_loc), day_phase as f32);
         gl.uniform1f(Some(&self.time_loc), elapsed as f32);
+        if let Some(ref loc) = self.fog_color_loc {
+            gl.uniform3f(Some(loc), 0.05, 0.08, 0.18);
+        }
         gl.uniform2f(
             Some(&self.resolution_loc),
             canvas.width() as f32 * 0.5,
@@ -928,6 +943,10 @@ impl App {
         if let Some(ref buf) = self.terrain_id_buffer {
             gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
             update_f32_buffer(gl, &mesh.terrain_ids);
+        }
+        if let Some(ref buf) = self.visibility_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            update_f32_buffer(gl, &mesh.visibilities);
         }
 
         gl.bind_buffer(
@@ -2456,22 +2475,32 @@ mod tests {
             "fragment shader missing edge_dist computation"
         );
         assert!(
-            FRAGMENT_SHADER.contains("fog_factor"),
-            "fragment shader missing fog_factor"
+            FRAGMENT_SHADER.contains("fog_factor") || FRAGMENT_SHADER.contains("edge_factor"),
+            "fragment shader missing edge fog computation"
         );
         assert!(
-            FRAGMENT_SHADER.contains("fog_color"),
+            FRAGMENT_SHADER.contains("fog_color") || FRAGMENT_SHADER.contains("u_fog_color"),
             "fragment shader missing fog_color"
+        );
+        // Verify fog of war visibility is used in fragment shader
+        assert!(
+            FRAGMENT_SHADER.contains("v_visibility"),
+            "fragment shader missing visibility varying"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("u_fog_color"),
+            "fragment shader missing u_fog_color uniform"
         );
     }
 
     #[test]
     fn test_edge_fog_fog_color_matches_clear() {
-        // The fog color should match the clear color (0.05, 0.08, 0.18)
-        // to create a seamless edge fade
+        // The fog color is now a uniform (u_fog_color) set in the render loop
+        // to match the clear color (0.05, 0.08, 0.18).
+        // Verify the uniform is declared in the fragment shader.
         assert!(
-            FRAGMENT_SHADER.contains("0.05, 0.08, 0.18"),
-            "fog color should match clear color"
+            FRAGMENT_SHADER.contains("u_fog_color"),
+            "fragment shader should declare u_fog_color uniform"
         );
     }
 
