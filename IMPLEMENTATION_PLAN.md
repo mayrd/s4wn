@@ -340,19 +340,19 @@ protocol::tests               5 tests    Message serialization, room management
 |
 ### 4. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
-**Status:** In progress — responsive CSS added (Session 90). Touch interactions next.
+**Status:** In progress — touch interactions implemented (Session 91). Remaining: building placement tap UX, mobile testing.
 **Test Cases (to write first):**
 - [x] Viewport < 768px: menu and panels adapt to mobile (responsive CSS media queries)
-- [ ] Touch drag works for camera pan
-- [ ] Pinch zoom works
-- [ ] Construction panel fits mobile screen without scrolling
+- [x] Touch drag works for camera pan
+- [x] Pinch zoom works (proportional scaling)
+- [x] Construction panel fits mobile screen with overflow scrolling
 
 **Next concrete steps:**
-1. Implement touch event handlers for camera pan (touchstart/touchmove/touchend on canvas)
-2. Implement pinch-to-zoom gesture detection (two-finger distance tracking)
-3. Add touch event handlers for building placement (tap to place)
-4. Test on actual mobile viewport via Chrome DevTools responsive mode
-5. Update IMPLEMENTATION_PLAN.md with touch interaction test results
+1. Add tap-to-place visual feedback (pulse animation on selected tile) for touch building placement
+2. Add long-press context menu for tile info (inspector) on mobile
+3. Test touch interactions on actual mobile viewport via Chrome DevTools responsive mode
+4. Add orientation-change handler to recalculate viewport layout
+5. Optimize construction panel category collapse for small screens (accordion)
 
 ---
 
