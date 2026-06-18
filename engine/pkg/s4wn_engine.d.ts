@@ -85,6 +85,12 @@ export function get_resource_counts(): string;
  */
 export function get_stats(): string;
 
+/**
+ * Get territory border tiles for the local player as a JSON string.
+ * Returns: [{"x":5,"y":10}, ...] — tiles at the edge of player 0's territory.
+ */
+export function get_territory_border_tiles_json(): string;
+
 export function get_tile_at(x: number, y: number): string;
 
 /**
@@ -251,6 +257,7 @@ export interface InitOutput {
     readonly get_player_nation: () => [number, number];
     readonly get_resource_counts: () => [number, number];
     readonly get_stats: () => [number, number];
+    readonly get_territory_border_tiles_json: () => [number, number];
     readonly get_tile_at: (a: number, b: number) => [number, number];
     readonly get_tool_counts: () => [number, number];
     readonly get_unit_info: (a: number) => [number, number];

@@ -14,6 +14,7 @@ export const get_nation_buildings: (a: number, b: number) => [number, number];
 export const get_player_nation: () => [number, number];
 export const get_resource_counts: () => [number, number];
 export const get_stats: () => [number, number];
+export const get_territory_border_tiles_json: () => [number, number];
 export const get_tile_at: (a: number, b: number) => [number, number];
 export const get_tool_counts: () => [number, number];
 export const get_unit_info: (a: number) => [number, number];

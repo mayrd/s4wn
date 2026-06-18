@@ -2082,7 +2082,27 @@ pub fn setup_starter_base(settler_count: u32) -> String {
                     .spawn(UnitKind::Settler, wx, wy);
             }
 
+            // Recompute visibility from the new starter base entities
+            let buildings: Vec<(crate::economy::BuildingType, usize, usize)> = app
+                .game_loop
+                .state
+                .economy
+                .buildings
+                .iter()
+                .map(|b| (b.kind, b.x, b.y))
+                .collect();
+            let units: Vec<(crate::units::UnitKind, f32, f32)> = app
+                .game_loop
+                .state
+                .economy
+                .units
+                .alive_units()
+                .map(|u| (u.kind, u.x, u.y))
+                .collect();
+            app.map.compute_visibility_from_entities(&buildings, &units);
+
             app.overlay_dirty = true;
+            app.mesh_dirty = true;
             format!(
                 r#"{{"ok":true,"hq_x":{},"hq_y":{},"settlers":{}}}"#,
                 hq_x, hq_y, count

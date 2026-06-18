@@ -240,6 +240,24 @@ export function get_stats() {
 }
 
 /**
+ * Get territory border tiles for the local player as a JSON string.
+ * Returns: [{"x":5,"y":10}, ...] — tiles at the edge of player 0's territory.
+ * @returns {string}
+ */
+export function get_territory_border_tiles_json() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_territory_border_tiles_json();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * @param {number} x
  * @param {number} y
  * @returns {string}
