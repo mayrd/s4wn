@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-**Status:** Phase 2.8 — Nations & Balancing (238 tests)
-**Last updated:** 2026-06-18 (Session 78 — Building Placement Territory Validation)
+**Status:** Phase 2.9 — Territory Border Visual Overlay (244 tests)
+**Last updated:** 2026-06-18 (Session 79 — Territory Border Visual Overlay)
 
 ---
 
@@ -150,12 +150,12 @@ Each phase lists objectives with test cases and implementation status.
 
 ## Test Suite Reference
 
-### Engine Tests (238 passing)
+### Engine Tests (244 passing)
 ```
 economy::tests              ~90 tests    Production chains, costs, tools, nation modifiers, territory validation
 nation::tests                21 tests    Nation data, unique buildings, specialists
 units::tests                 15 tests    Spawn, assign, movement, HP
-map::tests                   30 tests    Terrain, resources, generation, fog of war, territory
+map::tests                   36 tests    Terrain, resources, generation, fog of war, territory, border
 pathfinding::tests           10 tests    A* correctness, terrain costs
 combat::tests                 8 tests    Attack resolution, damage, range
 worker_ai::tests              6 tests    Auto-assign, tool pickup
@@ -284,15 +284,7 @@ protocol::tests               5 tests    Message serialization, room management
 
 ## Next Objectives (TDD Order)
 
-### 1. Territory Border Visual Overlay
-**Objective:** Draw a visual border on the map showing where player territory ends. Tiles at the edge of owned territory get a colored border.
-**Test Cases (to write first):**
-- [ ] `get_territory_border_tiles(player_id)` returns tiles at territory edge
-- [ ] Border tiles are correctly identified (adjacent to neutral/enemy tile)
-- [ ] Border color matches player nation color
-- [ ] No border rendered for neutral-only maps
-
-### 2. Nation-Specific Unique Buildings (Roman)
+### 1. Nation-Specific Unique Buildings (Roman)
 **Objective:** Romans can build Temple of Bacchus, Vineyard, Wine Press, Colosseum, and Sanctuaries.
 **Test Cases (to write first):**
 - [ ] `get_nation_buildings("Roman")` returns 6 building names
@@ -301,20 +293,27 @@ protocol::tests               5 tests    Message serialization, room management
 - [ ] Colosseum provides territory + morale bonus
 - [ ] Non-Roman nations CANNOT build Roman unique buildings
 
-### 3. Balance Simulation
+### 2. Balance Simulation
 **Objective:** Automated test simulates first 10 minutes for each nation, verifies similar resource totals (±15%).
 **Test Cases (to write first):**
 - [ ] `simulate_nation(Roman, 600 ticks)` produces resources within expected range
 - [ ] All 5 nations reach similar total resource value at 600 ticks
 - [ ] No nation has strictly better units than another (cost/stat ratio)
 
-### 4. Mobile UI Adaptation
+### 3. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
 **Test Cases (to write first):**
 - [ ] Viewport < 768px: menu buttons stack vertically
 - [ ] Touch drag works for camera pan
 - [ ] Pinch zoom works
 - [ ] Construction panel fits mobile screen without scrolling
+
+### 4. Viking Unique Buildings
+**Objective:** Vikings can build their 6 unique buildings (S4-authentic).
+**Test Cases (to write first):**
+- [ ] `get_nation_buildings("Viking")` returns 6 building names
+- [ ] All Viking unique buildings are buildable when Viking nation is selected
+- [ ] Non-Viking nations CANNOT build Viking unique buildings
 
 ---
 
@@ -325,4 +324,4 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=32. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 238 engine + 5 server = 243 total. `cargo test --lib` must pass before every push.
+- **Test count:** 244 engine + 5 server = 249 total. `cargo test --lib` must pass before every push.

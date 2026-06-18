@@ -446,6 +446,48 @@ impl Map {
         self.tiles[y * self.width + x].territory_owner
     }
 
+    /// Get border tiles for a player's territory.
+    ///
+    /// A border tile is a tile owned by `player_id` that has at least one neighbor
+    /// (4-directional: up, down, left, right) that is either neutral (None) or
+    /// owned by a different player. Tiles at the map edge are also considered border
+    /// tiles if owned by the player.
+    ///
+    /// Returns a Vec of (x, y) coordinates of border tiles.
+    pub fn get_territory_border_tiles(&self, player_id: u8) -> Vec<(usize, usize)> {
+        let mut borders = Vec::new();
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let idx = y * self.width + x;
+                if self.tiles[idx].territory_owner != Some(player_id) {
+                    continue;
+                }
+                // Check if any neighbor is neutral or different owner
+                let is_border = [
+                    (x.wrapping_sub(1), y),
+                    (x + 1, y),
+                    (x, y.wrapping_sub(1)),
+                    (x, y + 1),
+                ]
+                .iter()
+                .any(|&(nx, ny)| {
+                    if nx >= self.width || ny >= self.height {
+                        // Map edge counts as border
+                        true
+                    } else {
+                        let nidx = ny * self.width + nx;
+                        let neighbor_owner = self.tiles[nidx].territory_owner;
+                        neighbor_owner.is_none() || neighbor_owner != Some(player_id)
+                    }
+                });
+                if is_border {
+                    borders.push((x, y));
+                }
+            }
+        }
+        borders
+    }
+
     /// Serialize the map to a JSON string for export/sharing.
     /// Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":null},...]}
     /// t = terrain type (u8), e = elevation (f32), r = resource (string or null)
@@ -1036,5 +1078,115 @@ mod tests {
 
         // Beyond both
         assert_eq!(map.get_territory(15, 29), None);
+    }
+
+    // ── Territory Border Tests ────────────────────────────────────────────────
+
+    #[test]
+    fn test_border_no_territory_returns_empty() {
+        let map = Map::new(10, 10);
+        let borders = map.get_territory_border_tiles(0);
+        assert!(borders.is_empty());
+    }
+
+    #[test]
+    fn test_border_single_tile_is_border() {
+        let mut map = Map::new(10, 10);
+        use crate::economy::BuildingType;
+
+        // A Farm at (5, 5) claims radius 1 — all its owned tiles are borders
+        // because every owned tile touches neutral territory or map edge
+        let buildings = vec![(BuildingType::Farm, 5, 5, 0)];
+        map.compute_territory(&buildings);
+
+        let borders = map.get_territory_border_tiles(0);
+        // All owned tiles should be border tiles (every tile touches neutral)
+        assert!(!borders.is_empty());
+        // The outer ring tiles like (6,5) are definitely borders
+        assert!(borders.contains(&(6, 5)));
+        assert!(borders.contains(&(5, 6)));
+        // Center (5,5) is NOT a border — it's surrounded by owned tiles
+        assert!(!borders.contains(&(5, 5)));
+    }
+
+    #[test]
+    fn test_border_castle_center_not_border() {
+        let mut map = Map::new(20, 20);
+        use crate::economy::BuildingType;
+
+        // Castle at (10, 10) with radius 5
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        let borders = map.get_territory_border_tiles(0);
+
+        // Center tile (10, 10) is surrounded by owned tiles — NOT a border
+        assert!(!borders.contains(&(10, 10)));
+
+        // Edge tiles of the territory should be borders
+        // (15, 10) is at the right edge of radius 5
+        assert!(borders.contains(&(15, 10)));
+        assert!(borders.contains(&(10, 15)));
+    }
+
+    #[test]
+    fn test_border_only_player_tiles() {
+        let mut map = Map::new(20, 20);
+        use crate::economy::BuildingType;
+
+        // Player 0 has a Castle at (5, 5), Player 1 has a Castle at (15, 15)
+        let buildings = vec![
+            (BuildingType::Castle, 5, 5, 0),
+            (BuildingType::Castle, 15, 15, 1),
+        ];
+        map.compute_territory(&buildings);
+
+        let borders_p0 = map.get_territory_border_tiles(0);
+        let borders_p1 = map.get_territory_border_tiles(1);
+
+        // Player 0's borders should only contain player 0's tiles
+        for &(x, y) in &borders_p0 {
+            assert_eq!(map.get_territory(x, y), Some(0));
+        }
+        // Player 1's borders should only contain player 1's tiles
+        for &(x, y) in &borders_p1 {
+            assert_eq!(map.get_territory(x, y), Some(1));
+        }
+    }
+
+    #[test]
+    fn test_border_map_edge_counts() {
+        let mut map = Map::new(10, 10);
+        use crate::economy::BuildingType;
+
+        // Castle at (0, 0) — territory extends to map edge
+        let buildings = vec![(BuildingType::Castle, 0, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let borders = map.get_territory_border_tiles(0);
+
+        // Tiles at map edge that are owned should be borders
+        // (0, 0) is at the corner — it's a border
+        assert!(borders.contains(&(0, 0)));
+    }
+
+    #[test]
+    fn test_border_two_players_no_overlap() {
+        let mut map = Map::new(30, 30);
+        use crate::economy::BuildingType;
+
+        let buildings = vec![
+            (BuildingType::Castle, 8, 8, 0),
+            (BuildingType::Castle, 22, 22, 1),
+        ];
+        map.compute_territory(&buildings);
+
+        let borders_p0 = map.get_territory_border_tiles(0);
+        let borders_p1 = map.get_territory_border_tiles(1);
+
+        // No tile should appear in both border lists
+        for &tile in &borders_p0 {
+            assert!(!borders_p1.contains(&tile), "Tile {:?} in both borders", tile);
+        }
     }
 }

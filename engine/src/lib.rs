@@ -807,6 +807,27 @@ impl App {
             sizes.push(5.0);
         }
 
+        // Territory border tiles: render as small colored dots with player nation color
+        let border_player_id: u8 = 0; // local player is always player 0
+        let border_tiles = self.game_loop.state.map.get_territory_border_tiles(border_player_id);
+        if !border_tiles.is_empty() {
+            // Get player nation color for border tint
+            let border_color = if let Some(nation) = self.game_loop.state.player_nation {
+                let (r, g, b, _) = nation.color();
+                [r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0]
+            } else {
+                [0.5, 0.8, 1.0] // default blue-ish for no nation
+            };
+            for &(bx, by) in &border_tiles {
+                positions.push(bx as f32 + 0.5);
+                positions.push(by as f32 + 0.5);
+                colors.push(border_color[0]);
+                colors.push(border_color[1]);
+                colors.push(border_color[2]);
+                sizes.push(4.0); // smaller than buildings, visible but not dominant
+            }
+        }
+
         if positions.is_empty() {
             return;
         }
@@ -1560,6 +1581,22 @@ pub fn get_nation_buildings(nation_name: &str) -> String {
     format!("[{}]", quoted.join(","))
 }
 
+/// Get territory border tiles for the local player as a JSON string.
+/// Returns: [{"x":5,"y":10}, ...] — tiles at the edge of player 0's territory.
+#[wasm_bindgen]
+pub fn get_territory_border_tiles_json() -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            let border_tiles = app.game_loop.state.map.get_territory_border_tiles(0);
+            let parts: Vec<String> = border_tiles
+                .iter()
+                .map(|&(x, y)| format!("{{\"x\":{},\"y\":{}}}", x, y))
+                .collect();
+            return format!("[{}]", parts.join(","));
+        }
+    }
+    String::new()
+}
 
 /// Get building summary as a JSON string for the HUD.
 /// Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1},...]
