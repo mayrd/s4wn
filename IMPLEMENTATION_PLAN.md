@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-**Status:** Phase 2.10 — Roman Unique Buildings (244 tests)
-**Last updated:** 2026-06-18 (Session 80 — Roman Unique Buildings)
+**Status:** Phase 2.10 — Fog-of-War Visibility Fix (244 tests)
+**Last updated:** 2026-06-18 (Session 81 — Fog visibility fix)
 
 ---
 
@@ -280,7 +280,8 @@ protocol::tests               5 tests    Message serialization, room management
 |||| **77** | **2026-06-18** | **Territory expansion: territory_owner field on Tile, compute_territory() from buildings (Castle=5, GuardTower=3, Fortress=6, Storehouse=2, others=1), is_within_territory() for placement validation, owner_id on Building, integrated into game_loop every 100 ticks. 12 new tests, 228 total passing.** |
 |||| **78** | **2026-06-18** | **Building placement territory validation: Economy::try_place_building_checked() validates terrain buildability, territory ownership (not neutral/enemy), affordability, and map bounds. 10 new tests, 238 total passing.** |
 |||| **79** | **2026-06-18** | **Territory border visual overlay: border tiles computed and rendered as colored dots with nation color tinting. 6 new tests, 244 total passing.** |
-|||| **80** | **2026-06-18** | **Roman Unique Buildings: Added 6 Roman unique building types (Vineyard, WinePress, TempleOfBacchus, Colosseum, SanctuaryOfMinerva, SanctuaryOfVulcan) + 2 new resources (Grapes, Wine). Production chains: Vineyard→Grapes, WinePress→Wine (from Grapes), TempleOfBacchus→Wine. Building colors in renderer. All 244 tests pass. 33 total building types.** |
+||||| **80** | **2026-06-18** | **Roman Unique Buildings: Added 6 Roman unique building types (Vineyard, WinePress, TempleOfBacchus, Colosseum, SanctuaryOfMinerva, SanctuaryOfVulcan) + 2 new resources (Grapes, Wine). Production chains: Vineyard→Grapes, WinePress→Wine (from Grapes), TempleOfBacchus→Wine. Building colors in renderer. All 244 tests pass. 33 total building types.** |
+||||| **81** | **2026-06-18** | **Bugfix #38: No tiles visible on startup or map load. Root cause: setup_starter_base() placed Castle + settlers but never called compute_visibility_from_entities(), leaving all tiles at visibility=0.0 (fully fogged → black screen). Fixed by adding visibility recomputation + mesh_dirty=true at end of setup_starter_base(). All 244 tests pass.** |
 
 ---
 
