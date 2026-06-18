@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-**Status:** Phase 2.8 — Nations & Balancing (216 tests)
-**Last updated:** 2026-06-18 (Session 76 — Fog of War Shader Integration)
+**Status:** Phase 2.8 — Nations & Balancing (228 tests)
+**Last updated:** 2026-06-18 (Session 77 — Territory Expansion)
 
 ---
 
@@ -120,7 +120,7 @@ Each phase lists objectives with test cases and implementation status.
 || WorkerAI tool pickup (physical routing via Storehouse) | 6 | ✅ |
 ||| **Fog of war** | 12 | ✅ |
 ||| **Fog of war shader integration** | 4 | ✅ |
-||| **Territory expansion (Guard Tower, Fortress)** | 0 | ❌ |
+||| **Territory expansion (Guard Tower, Fortress)** | 12 | ✅ |
 || **Balance simulation (first 10 min per nation)** | 0 | ❌ |
 
 ### Phase 3 — Multiplayer ✅ (30 server tests pass)
@@ -149,12 +149,12 @@ Each phase lists objectives with test cases and implementation status.
 
 ## Test Suite Reference
 
-### Engine Tests (216 passing)
+### Engine Tests (228 passing)
 ```
 economy::tests              ~80 tests    Production chains, costs, tools, nation modifiers
 nation::tests                21 tests    Nation data, unique buildings, specialists
 units::tests                 15 tests    Spawn, assign, movement, HP
-map::tests                   18 tests    Terrain, resources, generation, fog of war
+map::tests                   30 tests    Terrain, resources, generation, fog of war, territory
 pathfinding::tests           10 tests    A* correctness, terrain costs
 combat::tests                 8 tests    Attack resolution, damage, range
 worker_ai::tests              6 tests    Auto-assign, tool pickup
@@ -275,20 +275,19 @@ protocol::tests               5 tests    Message serialization, room management
 ||| **73** | **2026-06-17** | **Authentic S4 resources: removed Coins+Mint (fabricated), renamed Iron→IronOre, Game→Meat (raw). Added 6 missing S4 resources (Clay, Hemp, Honey, Bricks, Rope, Mead) + 6 planned buildings (ClayPit, Brickworks, HempFarm, Ropemaker, Apiary, MeadMaker). Resources: 18→22. Buildings: 22→27 (21 impl + 6 planned). 204 tests pass.** |
 ||| **74** | **2026-06-17** | **Fog of war: visibility field on Tile, compute_visibility() with linear falloff, compute_visibility_from_entities() for buildings (Castle=5, GuardTower=7, Fortress=10, Storehouse=3, others=2) and units (Settler=3, Swordsman=4, Bowman=4). 12 new tests. Visibility integrated into mesh vertex attribute for shader fog rendering. 216 tests pass.** |
 ||| **75** | **2026-06-17** | **Bugfix #37: toggleSpeed() was module-scoped, inaccessible to inline onclick. Added window.toggleSpeed to exposure block. 216 tests pass.** |
-||| **76** | **2026-06-18** | **Fog of war shader integration: Fragment shader now uses v_visibility to darken unexplored/unvisible tiles. Added u_fog_color uniform, visibility_buffer GPU buffer at location 8. Smooth transition with smoothstep(0.15, 0.6, v_visibility). Updated shader tests. 216 tests pass.** |
+|||| **76** | **2026-06-18** | **Fog of war shader integration: Fragment shader now uses v_visibility to darken unexplored/unvisible tiles. Added u_fog_color uniform, visibility_buffer GPU buffer at location 8. Smooth transition with smoothstep(0.15, 0.6, v_visibility). Updated shader tests. 216 tests pass.** |
+|||| **77** | **2026-06-18** | **Territory expansion: territory_owner field on Tile, compute_territory() from buildings (Castle=5, GuardTower=3, Fortress=6, Storehouse=2, others=1), is_within_territory() for placement validation, owner_id on Building, integrated into game_loop every 100 ticks. 12 new tests, 228 total passing.** |
 
 ---
 
 ## Next Objectives (TDD Order)
 
-### 1. Territory Expansion
-**Objective:** Guard Towers and Fortresses extend player territory border when garrisoned.
+### 1. Building Placement Territory Validation
+**Objective:** Players can only build within their own territory. Attempting to build outside territory fails with a clear error.
 **Test Cases (to write first):**
-- [ ] `Garrisoned GuardTower` → territory radius +3 tiles
-- [ ] `Garrisoned Fortress` → territory radius +6 tiles
-- [ ] Territory border renders as colored line or tinted ground
-- [ ] Buildings can only be placed within own territory
-- [ ] Enemy buildings in contested territory are flagged
+- [ ] `try_place_building(Farm, x, y)` fails if (x,y) is outside player's territory
+- [ ] `try_place_building(Farm, x, y)` succeeds if (x,y) is within player's territory
+- [ ] Territory border is visually indicated on the map overlay
 
 ### 2. Nation-Specific Unique Buildings (Roman)
 **Objective:** Romans can build Temple of Bacchus, Vineyard, Wine Press, Colosseum, and Sanctuaries.
@@ -324,4 +323,4 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=32. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 205 engine + 5 server = 210 total. `cargo test --lib` must pass before every push.
+- **Test count:** 228 engine + 5 server = 233 total. `cargo test --lib` must pass before every push.
