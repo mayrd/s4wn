@@ -120,6 +120,12 @@ export function get_unit_summary(): string;
 export function init(canvas_id: string): boolean;
 
 /**
+ * Check if a building type is available for a given nation.
+ * Returns "true" or "false".
+ */
+export function is_building_available_for_nation(building_name: string, nation_name: string): string;
+
+/**
  * Get the current pause state.
  */
 export function is_paused(): boolean;
@@ -263,6 +269,7 @@ export interface InitOutput {
     readonly get_unit_info: (a: number) => [number, number];
     readonly get_unit_summary: () => [number, number];
     readonly init: (a: number, b: number) => [number, number, number];
+    readonly is_building_available_for_nation: (a: number, b: number, c: number, d: number) => [number, number];
     readonly is_paused: () => number;
     readonly list_building_types: () => [number, number];
     readonly list_nations: () => [number, number];

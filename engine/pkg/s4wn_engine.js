@@ -349,6 +349,30 @@ export function init(canvas_id) {
 }
 
 /**
+ * Check if a building type is available for a given nation.
+ * Returns "true" or "false".
+ * @param {string} building_name
+ * @param {string} nation_name
+ * @returns {string}
+ */
+export function is_building_available_for_nation(building_name, nation_name) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const ptr0 = passStringToWasm0(building_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(nation_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.is_building_available_for_nation(ptr0, len0, ptr1, len1);
+        deferred3_0 = ret[0];
+        deferred3_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
  * Get the current pause state.
  * @returns {boolean}
  */

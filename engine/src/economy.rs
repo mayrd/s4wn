@@ -88,7 +88,7 @@ impl ResourceType {
         match self {
             ResourceType::Wood => "Wood",
             ResourceType::Stone => "Stone",
-            ResourceType::IronOre => "Iron Ore",
+            ResourceType::IronOre => "IronOre",
             ResourceType::Coal => "Coal",
             ResourceType::Gold => "Gold",
             ResourceType::Sulfur => "Sulfur",
@@ -104,7 +104,7 @@ impl ResourceType {
             ResourceType::Weapons => "Weapons",
             ResourceType::Bread => "Bread",
             ResourceType::Flour => "Flour",
-            ResourceType::IronIngots => "Iron Ingots",
+            ResourceType::IronIngots => "IronIngots",
             ResourceType::Bricks => "Bricks",
             ResourceType::Rope => "Rope",
             ResourceType::Mead => "Mead",
@@ -1891,7 +1891,7 @@ mod tests {
     #[test]
     fn test_new_resource_types() {
         assert_eq!(ResourceType::Water.name(), "Water");
-        assert_eq!(ResourceType::IronIngots.name(), "Iron Ingots");
+        assert_eq!(ResourceType::IronIngots.name(), "IronIngots");
         assert!(ResourceType::Water.is_raw());
         assert!(ResourceType::IronIngots.is_processed());
     }
