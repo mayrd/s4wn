@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-|**Status:** Phase 2.12 — Maya Unique Buildings (264 tests)
-**Last updated:** 2026-06-18 (Session 84 — Maya unique buildings)
+| **Status:** Phase 2.13 — Trojan Unique Buildings (259 tests)
+| **Last updated:** 2026-06-18 (Session 85 — Config sync, plan cleanup, next objectives reset)
 
 ---
 
@@ -284,54 +284,57 @@ protocol::tests               5 tests    Message serialization, room management
 |||||| **82** | **2026-06-18** | **Nation-gated building placement: Added player_nation field to Economy, nation_for_building() to BuildingType (Roman unique buildings require Roman nation), is_building_available() check in try_place_building_checked(), set_player_nation() on Economy, WASM export is_building_available_for_nation(). Roman unique buildings categorized as BuildingCategory::Unique. 8 new tests, 252 total passing.** |
 | **83** | **2026-06-18** | **Viking unique buildings: Added 5 new BuildingType variants (MeadHall, SanctuaryOfOdin, SanctuaryOfThor, SanctuaryOfFreya, Runestone) with nation_for_building() requiring Viking nation, BuildingCategory::Unique, building colors, from_name/all_names wiring. 7 new tests, 259 total passing.** |
 || **84** | **2026-06-18** | **Maya unique buildings: 7 BuildingType variants (TempleOfChac, AgaveFarm, Distillery, 3 Sanctuaries, Observatory), nation-gated placement (Maya only), 259→259 tests (no new test file — existing coverage maintained).** |
+||| **85** | **2026-06-18** | **Config sync: 22 buildings marked implemented, Next Objectives rewritten (Trojan/DarkTribe/Balance/Mobile), ClayPit/HempFarm/MeadMaker naming gap identified, data.js regenerated, config validation passes** |
 
 ---
 
 ## Next Objectives (TDD Order)
 
-### 1. Nation-Specific Unique Buildings (Roman) — ✅ Complete
-**Objective:** Romans can build Temple of Bacchus, Vineyard, Wine Press, Colosseum, and Sanctuaries.
-**Status:** ✅ Roman unique buildings added with production chains, nation-gated placement (Session 82).
-**Remaining Test Cases:**
-- [ ] Colosseum provides territory + morale bonus (needs territory radius implementation)
-- [ ] SanctuaryOfMinerva and SanctuaryOfVulcan special effects
-- [x] Non-Roman nations CANNOT build Roman unique buildings (nation-gated placement)
+### 1. Trojan Unique Buildings (S4-Authentic)
+**Objective:** Trojans can build their 7 unique buildings: Oracle of Apollo, Olive Grove, Oil Press, Sanctuary of Artemis, Sanctuary of Poseidon, Sanctuary of Apollo, Amphitheater.
+**Status:** 🔨 Not started. Configured as planned in buildings.json. BuildingType enum variants, production chains, and nation-gated placement needed.
+**Pre-work:** Add Olives and OliveOil resources to ResourceType enum + resources.json.
+**Test Cases (to write first):**
+- [ ] `get_nation_buildings("Trojan")` returns 7 building names
+- [ ] OliveGrove produces Olives (new resource)
+- [ ] OilPress consumes Olives → produces OliveOil (new resource)
+- [ ] All Trojan unique buildings are buildable when Trojan nation is selected
+- [ ] Non-Trojan nations CANNOT build Trojan unique buildings
+- [ ] All 52 building names in all_names() (45 + 7 new)
 
-### 2. Viking Unique Buildings — ✅ Complete
-**Objective:** Vikings can build Mead Hall, Sanctuary of Odin, Sanctuary of Thor, Sanctuary of Freya, Runestone.
-**Status:** ✅ Viking unique buildings added with nation-gated placement (Session 83).
-**Test Cases:**
-- [x] `get_nation_buildings("Viking")` returns 6 building names (via UniqueBuildingType)
-- [x] All Viking unique buildings are buildable when Viking nation is selected
-- [x] Non-Viking nations CANNOT build Viking unique buildings
-- [x] All 38 building names in all_names()
+### 2. Dark Tribe Unique Buildings (S4-Authentic)
+**Objective:** Dark Tribe can build their 7 unique buildings: Dark Temple, Dark Garden, Mushroom Farm, Sanctuary of Morbus, Sanctuary of Pestilence, Dark Fortress, Demon Gate.
+**Status:** 🔨 Not started. Configured as planned in buildings.json.
+**Test Cases (to write first):**
+- [ ] `get_nation_buildings("Dark Tribe")` returns 7 building names
+- [ ] All DarkTribe unique buildings are buildable when DarkTribe nation is selected
+- [ ] Non-DarkTribe nations CANNOT build DarkTribe unique buildings
+- [ ] All 59 building names in all_names() (52 + 7 new)
 
 ### 3. Balance Simulation
-**Objective:** Vikings can build their 6 unique buildings (S4-authentic: MeadHall, Apiary, SanctuaryOfOdin, SanctuaryOfThor, SanctuaryOfFreya, Runestone).
+**Objective:** Simulate the first 10 minutes of gameplay for each nation to verify economic balance. No single nation should dominate all metrics.
 **Test Cases (to write first):**
-- [ ] `get_nation_buildings("Viking")` returns 6 building names
-- [ ] All Viking unique buildings are buildable when Viking nation is selected
-- [ ] MeadHall production chain (Mead + Beer)
-- [ ] Non-Viking nations CANNOT build Viking unique buildings
+- [ ] All 5 nations reach 10+ settlers within 10 minutes
+- [ ] All 5 nations produce at least 3 unique resources
+- [ ] No nation exceeds 200% of the median resource output
+- [ ] Simulation runs deterministically with fixed seed
 
-### 4. Mobile UI Adaptation
+### 4. Config Name Normalization
+**Objective:** Fix naming inconsistency between config (ClayPit/HempFarm/MeadMaker) and Rust (Clay Pit/Hemp Farm/Mead Maker). Config IDs should match Rust all_names() output.
+**Status:** 🔨 Config uses no-space IDs; Rust uses space-separated names. 3 buildings affected.
+**Test Cases:**
+- [ ] Config ID "Clay Pit" matches Rust `BuildingType::from_name("Clay Pit")`
+- [ ] Config ID "Hemp Farm" matches Rust `BuildingType::from_name("Hemp Farm")`
+- [ ] Config ID "Mead Maker" matches Rust `BuildingType::from_name("Mead Maker")`
+- [ ] `data.js` regenerated after fix, all 42 buildings resolve correctly
+
+### 5. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
 **Test Cases (to write first):**
 - [ ] Viewport < 768px: menu buttons stack vertically
 - [ ] Touch drag works for camera pan
 - [ ] Pinch zoom works
 - [ ] Construction panel fits mobile screen without scrolling
-
-### 5. Maya Unique Buildings — ✅ Complete
-**Objective:** Maya can build their 7 unique buildings (S4-authentic).
-**Status:** ✅ Maya unique buildings added with nation-gated placement (Session 84).
-**Test Cases:**
-- [x] `get_nation_buildings("Maya")` returns 7 building names
-- [x] Temple of Chac production chain
-- [x] AgaveFarm and Distillery production chain
-- [x] All Maya unique buildings are buildable when Maya nation is selected
-- [x] Non-Maya nations CANNOT build Maya unique buildings
-- [x] All 45 building names in all_names()
 
 ---
 

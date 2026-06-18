@@ -67,10 +67,10 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 2.12 — Maya Unique Buildings** (in progress 🔨)
-- ✅ Nation-gated building placement — Roman unique buildings require Roman nation. `Economy::is_building_available()` checks player nation. 252 tests.
-- ✅ Viking unique buildings — MeadHall, SanctuaryOfOdin, SanctuaryOfThor, SanctuaryOfFreya, Runestone added with nation-gated placement. 259 tests.
-- ✅ Maya unique buildings — TempleOfChac, AgaveFarm, Distillery, SanctuaryOfKukulkan, SanctuaryOfQuetzalcoatl, SanctuaryOfHuitzilopochtli, Observatory added with nation-gated placement. 264 tests.
+**Phase 2.13 — Trojan Unique Buildings** (in progress 🔨)
+- ✅ Nation-gated building placement — Roman, Viking, and Maya unique buildings require correct nation selection. `Economy::is_building_available()` checks player nation. 259 tests.
+- 🔨 Trojan unique buildings (7) — configured as planned in buildings.json, ready for implementation
+- 🔨 Dark Tribe unique buildings (7) — configured as planned
 ---
 
 AI Agent Configuration:

@@ -284,8 +284,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 1,
       "icon": "🔥",
-      "name_de": "Schmelze",
-      "status": "planned"
+      "name_de": "Schmelze"
     },
     {
       "id": "Barracks",
@@ -435,8 +434,7 @@ window.S4WN_CONFIG = {
       "tool": "Hammer",
       "workers": 1,
       "icon": "🧱",
-      "name_de": "Ziegelei",
-      "status": "planned"
+      "name_de": "Ziegelei"
     },
     {
       "id": "HempFarm",
@@ -475,8 +473,7 @@ window.S4WN_CONFIG = {
       "tool": "Hammer",
       "workers": 1,
       "icon": "🪢",
-      "name_de": "Seilerei",
-      "status": "planned"
+      "name_de": "Seilerei"
     },
     {
       "id": "Apiary",
@@ -494,8 +491,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 1,
       "icon": "🍯",
-      "name_de": "Bienenhaus",
-      "status": "planned"
+      "name_de": "Bienenhaus"
     },
     {
       "id": "MeadMaker",
@@ -530,8 +526,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Bacchus-Tempel",
-      "status": "planned"
+      "name_de": "Bacchus-Tempel"
     },
     {
       "id": "Vineyard",
@@ -544,8 +539,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Weinberg",
-      "status": "planned"
+      "name_de": "Weinberg"
     },
     {
       "id": "Wine Press",
@@ -558,8 +552,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Kelterei",
-      "status": "planned"
+      "name_de": "Kelterei"
     },
     {
       "id": "Sanctuary of Minerva",
@@ -572,8 +565,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Schrein der Minerva",
-      "status": "planned"
+      "name_de": "Schrein der Minerva"
     },
     {
       "id": "Sanctuary of Vulcan",
@@ -586,8 +578,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Schrein des Vulcan",
-      "status": "planned"
+      "name_de": "Schrein des Vulcan"
     },
     {
       "id": "Colosseum",
@@ -600,8 +591,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Kolosseum",
-      "status": "planned"
+      "name_de": "Kolosseum"
     },
     {
       "id": "Mead Hall",
@@ -614,8 +604,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Methalle",
-      "status": "planned"
+      "name_de": "Methalle"
     },
     {
       "id": "Sanctuary of Odin",
@@ -628,8 +617,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Schrein des Odin",
-      "status": "planned"
+      "name_de": "Schrein des Odin"
     },
     {
       "id": "Sanctuary of Thor",
@@ -642,8 +630,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Schrein des Thor",
-      "status": "planned"
+      "name_de": "Schrein des Thor"
     },
     {
       "id": "Sanctuary of Freya",
@@ -656,8 +643,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Schrein der Freya",
-      "status": "planned"
+      "name_de": "Schrein der Freya"
     },
     {
       "id": "Runestone",
@@ -670,8 +656,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Runenstein",
-      "status": "planned"
+      "name_de": "Runenstein"
     },
     {
       "id": "Temple of Chac",
@@ -684,8 +669,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Tempel des Chac",
-      "status": "planned"
+      "name_de": "Tempel des Chac"
     },
     {
       "id": "Agave Farm",
@@ -698,8 +682,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Agavenfarm",
-      "status": "planned"
+      "name_de": "Agavenfarm"
     },
     {
       "id": "Distillery",
@@ -712,8 +695,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Brennerei",
-      "status": "planned"
+      "name_de": "Brennerei"
     },
     {
       "id": "Sanctuary of Kukulkan",
@@ -726,8 +708,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Schrein des Kukulkan",
-      "status": "planned"
+      "name_de": "Schrein des Kukulkan"
     },
     {
       "id": "Sanctuary of Quetzalcoatl",
@@ -740,8 +721,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Schrein des Quetzalcoatl",
-      "status": "planned"
+      "name_de": "Schrein des Quetzalcoatl"
     },
     {
       "id": "Sanctuary of Huitzilopochtli",
@@ -754,8 +734,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Schrein des Huitzilopochtli",
-      "status": "planned"
+      "name_de": "Schrein des Huitzilopochtli"
     },
     {
       "id": "Observatory",
@@ -768,8 +747,7 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Observatorium",
-      "status": "planned"
+      "name_de": "Observatorium"
     },
     {
       "id": "Oracle of Apollo",
