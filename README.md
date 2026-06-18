@@ -67,9 +67,9 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 2.13 — Trojan Unique Buildings** (in progress 🔨)
-- ✅ Nation-gated building placement — Roman, Viking, and Maya unique buildings require correct nation selection. `Economy::is_building_available()` checks player nation. 259 tests.
-- 🔨 Trojan unique buildings (7) — configured as planned in buildings.json, ready for implementation
+**Phase 2.14 — Dark Tribe Unique Buildings** (in progress 🔨)
+- ✅ Nation-gated building placement — Roman, Viking, Maya, and Trojan unique buildings require correct nation selection. `Economy::is_building_available()` checks player nation. 265 tests.
+- ✅ Trojan unique buildings (7) — OracleOfApollo, OliveGrove, OilPress, SanctuaryOfArtemis, SanctuaryOfPoseidon, SanctuaryOfApollo, Amphitheater. Nation-gated placement. 265 tests.
 - 🔨 Dark Tribe unique buildings (7) — configured as planned
 ---
 

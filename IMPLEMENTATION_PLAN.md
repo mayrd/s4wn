@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 2.13 — Trojan Unique Buildings (259 tests)
-| **Last updated:** 2026-06-18 (Session 85 — Config sync, plan cleanup, next objectives reset)
+| **Status:** Phase 2.14 — Dark Tribe Unique Buildings (265 tests)
+| **Last updated:** 2026-06-18 (Session 86 — Trojan Unique Buildings)
 
 ---
 
@@ -43,7 +43,7 @@ For EVERY feature, follow this exact sequence:
 - [ ] `get_nation_buildings("Roman")` returns `["Temple of Bacchus", "Vineyard", ...]` (6 buildings)
 - [ ] `get_nation_buildings("Viking")` returns 6 buildings
 - [ ] `get_nation_buildings("Maya")` returns 7 buildings
-- [ ] `get_nation_buildings("Trojan")` returns 7 buildings
+- [x] `get_nation_buildings("Trojan")` returns 7 buildings
 - [ ] `get_nation_buildings("Dark Tribe")` returns 7 buildings
 - [ ] `get_nation_buildings("unknown")` returns `[]` (no crash)
 - [ ] `populateConstructionPanel()` does NOT crash when no nation is selected (`get_player_nation()` returns `""`)
@@ -294,14 +294,14 @@ protocol::tests               5 tests    Message serialization, room management
 ### 1. Trojan Unique Buildings (S4-Authentic)
 **Objective:** Trojans can build their 7 unique buildings: Oracle of Apollo, Olive Grove, Oil Press, Sanctuary of Artemis, Sanctuary of Poseidon, Sanctuary of Apollo, Amphitheater.
 **Status:** 🔨 Not started. Configured as planned in buildings.json. BuildingType enum variants, production chains, and nation-gated placement needed.
-**Pre-work:** Add Olives and OliveOil resources to ResourceType enum + resources.json.
+**Pre-work:** ✅ Done — Olives and OliveOil added to ResourceType enum + resources.json.
 **Test Cases (to write first):**
-- [ ] `get_nation_buildings("Trojan")` returns 7 building names
-- [ ] OliveGrove produces Olives (new resource)
-- [ ] OilPress consumes Olives → produces OliveOil (new resource)
-- [ ] All Trojan unique buildings are buildable when Trojan nation is selected
-- [ ] Non-Trojan nations CANNOT build Trojan unique buildings
-- [ ] All 52 building names in all_names() (45 + 7 new)
+- [x] `get_nation_buildings("Trojan")` returns 7 building names
+- [x] OliveGrove produces Olives (new resource)
+- [x] OilPress consumes Olives → produces OliveOil (new resource)
+- [x] All Trojan unique buildings are buildable when Trojan nation is selected
+- [x] Non-Trojan nations CANNOT build Trojan unique buildings
+- [x] All 52 building names in all_names() (45 + 7 new)
 
 ### 2. Dark Tribe Unique Buildings (S4-Authentic)
 **Objective:** Dark Tribe can build their 7 unique buildings: Dark Temple, Dark Garden, Mushroom Farm, Sanctuary of Morbus, Sanctuary of Pestilence, Dark Fortress, Demon Gate.
@@ -346,4 +346,4 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=32. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 259 engine + 5 server = 264 total. `cargo test --lib` must pass before every push.
+- **Test count:** 265 engine + 5 server = 270 total. `cargo test --lib` must pass before every push.
