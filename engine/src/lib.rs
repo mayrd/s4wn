@@ -1110,6 +1110,12 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
         Ropemaker => [0.6, 0.5, 0.3],            // rope tan
         Apiary => [0.9, 0.8, 0.2],               // honey gold
         MeadMaker => [0.7, 0.5, 0.2],             // mead amber
+        Vineyard => [0.6, 0.3, 0.6],             // grape purple
+        WinePress => [0.5, 0.2, 0.4],            // wine dark purple
+        TempleOfBacchus => [0.8, 0.6, 0.2],      // temple gold
+        Colosseum => [0.7, 0.5, 0.3],            // arena sandstone
+        SanctuaryOfMinerva => [0.9, 0.8, 0.6],   // marble white
+        SanctuaryOfVulcan => [0.8, 0.3, 0.1],    // forge orange-red
     }
 }
 

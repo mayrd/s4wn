@@ -61,6 +61,12 @@ pub enum ResourceType {
     Bricks = 25,     // Clay → Bricks (brickworks)
     Rope = 26,       // Hemp → Rope (ropemaker)
     Mead = 27,       // Honey + Water → Mead (mead maker)
+
+    // ── Roman Unique Resources ──────────────────────────────────────────────
+    /// Grapes — harvested from Vineyard
+    Grapes = 13,
+    /// Wine — produced from Grapes at Wine Press
+    Wine = 28,
 }
 
 impl ResourceType {
@@ -102,6 +108,8 @@ impl ResourceType {
             ResourceType::Bricks => "Bricks",
             ResourceType::Rope => "Rope",
             ResourceType::Mead => "Mead",
+            ResourceType::Grapes => "Grapes",
+            ResourceType::Wine => "Wine",
         }
     }
 
@@ -187,6 +195,20 @@ pub enum BuildingType {
     Apiary = 27,
     /// Mead Maker — converts Honey + Water → Mead
     MeadMaker = 28,
+
+    // ── Roman Unique Buildings ───────────────────────────────────────────────
+    /// Vineyard — produces Grapes (Roman unique)
+    Vineyard = 29,
+    /// Wine Press — converts Grapes → Wine (Roman unique)
+    WinePress = 30,
+    /// Temple of Bacchus — produces Wine from divine inspiration (Roman unique)
+    TempleOfBacchus = 31,
+    /// Colosseum — military morale building, extends territory (Roman unique)
+    Colosseum = 32,
+    /// Sanctuary of Minerva — special Roman building
+    SanctuaryOfMinerva = 33,
+    /// Sanctuary of Vulcan — special Roman building
+    SanctuaryOfVulcan = 34,
 }
 
 impl BuildingType {
@@ -220,6 +242,12 @@ impl BuildingType {
             BuildingType::Ropemaker => "Ropemaker",
             BuildingType::Apiary => "Apiary",
             BuildingType::MeadMaker => "Mead Maker",
+            BuildingType::Vineyard => "Vineyard",
+            BuildingType::WinePress => "Wine Press",
+            BuildingType::TempleOfBacchus => "Temple of Bacchus",
+            BuildingType::Colosseum => "Colosseum",
+            BuildingType::SanctuaryOfMinerva => "Sanctuary of Minerva",
+            BuildingType::SanctuaryOfVulcan => "Sanctuary of Vulcan",
         }
     }
 
@@ -253,6 +281,12 @@ impl BuildingType {
             "Ropemaker" => Some(BuildingType::Ropemaker),
             "Apiary" => Some(BuildingType::Apiary),
             "Mead Maker" => Some(BuildingType::MeadMaker),
+            "Vineyard" => Some(BuildingType::Vineyard),
+            "Wine Press" => Some(BuildingType::WinePress),
+            "Temple of Bacchus" => Some(BuildingType::TempleOfBacchus),
+            "Colosseum" => Some(BuildingType::Colosseum),
+            "Sanctuary of Minerva" => Some(BuildingType::SanctuaryOfMinerva),
+            "Sanctuary of Vulcan" => Some(BuildingType::SanctuaryOfVulcan),
             _ => None,
         }
     }
@@ -287,6 +321,12 @@ impl BuildingType {
             "Ropemaker",
             "Apiary",
             "Mead Maker",
+            "Vineyard",
+            "Wine Press",
+            "Temple of Bacchus",
+            "Colosseum",
+            "Sanctuary of Minerva",
+            "Sanctuary of Vulcan",
         ]
     }
 
@@ -342,6 +382,7 @@ impl BuildingType {
             BuildingType::Smelter => &[(ResourceType::IronOre, 1), (ResourceType::Coal, 1)],
             BuildingType::SiegeWorkshop => &[(ResourceType::IronIngots, 2), (ResourceType::Wood, 3)],
             BuildingType::Shipyard => &[(ResourceType::Wood, 3), (ResourceType::Boards, 2)],
+            BuildingType::WinePress => &[(ResourceType::Grapes, 2)],
             _ => &[], // raw producers and storage have no inputs
         }
     }
@@ -364,7 +405,10 @@ impl BuildingType {
             BuildingType::Smelter => &[(ResourceType::IronIngots, 1)],
             BuildingType::SiegeWorkshop => &[(ResourceType::Weapons, 1)], // Catapults/Ballistas = siege weapons
             BuildingType::Shipyard => &[(ResourceType::Weapons, 1)], // Transport ships (placeholder)
-            _ => &[], // Barracks, Castle, Storehouse, Fortress, RoadLayer produce nothing
+            BuildingType::Vineyard => &[(ResourceType::Grapes, 2)],
+            BuildingType::WinePress => &[(ResourceType::Wine, 1)],
+            BuildingType::TempleOfBacchus => &[(ResourceType::Wine, 1)], // Divine wine production
+            _ => &[], // Barracks, Castle, Storehouse, Fortress, RoadLayer, Colosseum, Sanctuaries produce nothing
         }
     }
 
@@ -389,7 +433,10 @@ impl BuildingType {
             BuildingType::SiegeWorkshop => 60,    // 6 seconds — slow, expensive siege weapons
             BuildingType::Shipyard => 50,         // 5 seconds — ships take time
             BuildingType::RoadLayer => 25,        // 2.5 seconds — efficient road builder
-            _ => 0,                          // Barracks, Castle, Storehouse don't produce
+            BuildingType::Vineyard => 25,         // 2.5 seconds — grape growth
+            BuildingType::WinePress => 30,        // 3 seconds — wine fermentation
+            BuildingType::TempleOfBacchus => 40,  // 4 seconds — divine inspiration
+            _ => 0,                          // Barracks, Castle, Storehouse, Colosseum, Sanctuaries don't produce
         }
     }
 
@@ -1697,7 +1744,8 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        assert_eq!(BuildingType::all_names().len(), 27);
+        // 27 common + 6 Roman unique = 33 total
+        assert_eq!(BuildingType::all_names().len(), 33);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
@@ -1707,6 +1755,11 @@ mod tests {
         assert!(BuildingType::all_names().contains(&"Siege Workshop"));
         assert!(BuildingType::all_names().contains(&"Shipyard"));
         assert!(BuildingType::all_names().contains(&"Road Layer"));
+        // Roman unique buildings
+        assert!(BuildingType::all_names().contains(&"Vineyard"));
+        assert!(BuildingType::all_names().contains(&"Wine Press"));
+        assert!(BuildingType::all_names().contains(&"Temple of Bacchus"));
+        assert!(BuildingType::all_names().contains(&"Colosseum"));
     }
 
     #[test]

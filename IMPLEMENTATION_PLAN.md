@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-**Status:** Phase 2.9 — Territory Border Visual Overlay (244 tests)
-**Last updated:** 2026-06-18 (Session 79 — Territory Border Visual Overlay)
+**Status:** Phase 2.10 — Roman Unique Buildings (244 tests)
+**Last updated:** 2026-06-18 (Session 80 — Roman Unique Buildings)
 
 ---
 
@@ -279,28 +279,37 @@ protocol::tests               5 tests    Message serialization, room management
 |||| **76** | **2026-06-18** | **Fog of war shader integration: Fragment shader now uses v_visibility to darken unexplored/unvisible tiles. Added u_fog_color uniform, visibility_buffer GPU buffer at location 8. Smooth transition with smoothstep(0.15, 0.6, v_visibility). Updated shader tests. 216 tests pass.** |
 |||| **77** | **2026-06-18** | **Territory expansion: territory_owner field on Tile, compute_territory() from buildings (Castle=5, GuardTower=3, Fortress=6, Storehouse=2, others=1), is_within_territory() for placement validation, owner_id on Building, integrated into game_loop every 100 ticks. 12 new tests, 228 total passing.** |
 |||| **78** | **2026-06-18** | **Building placement territory validation: Economy::try_place_building_checked() validates terrain buildability, territory ownership (not neutral/enemy), affordability, and map bounds. 10 new tests, 238 total passing.** |
+|||| **79** | **2026-06-18** | **Territory border visual overlay: border tiles computed and rendered as colored dots with nation color tinting. 6 new tests, 244 total passing.** |
+|||| **80** | **2026-06-18** | **Roman Unique Buildings: Added 6 Roman unique building types (Vineyard, WinePress, TempleOfBacchus, Colosseum, SanctuaryOfMinerva, SanctuaryOfVulcan) + 2 new resources (Grapes, Wine). Production chains: Vineyard→Grapes, WinePress→Wine (from Grapes), TempleOfBacchus→Wine. Building colors in renderer. All 244 tests pass. 33 total building types.** |
 
 ---
 
 ## Next Objectives (TDD Order)
 
-### 1. Nation-Specific Unique Buildings (Roman)
+### 1. Nation-Specific Unique Buildings (Roman) — ✅ In Progress
 **Objective:** Romans can build Temple of Bacchus, Vineyard, Wine Press, Colosseum, and Sanctuaries.
-**Test Cases (to write first):**
-- [ ] `get_nation_buildings("Roman")` returns 6 building names
-- [ ] Temple of Bacchus produces Manna (1 unit/30 ticks)
-- [ ] Vineyard produces Grapes, Wine Press converts Grapes → Wine
-- [ ] Colosseum provides territory + morale bonus
-- [ ] Non-Roman nations CANNOT build Roman unique buildings
+**Status:** ✅ Roman unique buildings added to BuildingType enum with production chains (Session 80).
+**Remaining Test Cases:**
+- [ ] Colosseum provides territory + morale bonus (needs territory radius implementation)
+- [ ] SanctuaryOfMinerva and SanctuaryOfVulcan special effects
+- [ ] Non-Roman nations CANNOT build Roman unique buildings (nation-gated placement)
 
-### 2. Balance Simulation
+### 2. Viking Unique Buildings
+**Objective:** Vikings can build their 6 unique buildings (S4-authentic: MeadHall, Apiary, SanctuaryOfOdin, SanctuaryOfThor, SanctuaryOfFreya, Runestone).
+**Test Cases (to write first):**
+- [ ] `get_nation_buildings("Viking")` returns 6 building names
+- [ ] All Viking unique buildings are buildable when Viking nation is selected
+- [ ] MeadHall production chain (Mead + Beer)
+- [ ] Non-Viking nations CANNOT build Viking unique buildings
+
+### 3. Balance Simulation
 **Objective:** Automated test simulates first 10 minutes for each nation, verifies similar resource totals (±15%).
 **Test Cases (to write first):**
 - [ ] `simulate_nation(Roman, 600 ticks)` produces resources within expected range
 - [ ] All 5 nations reach similar total resource value at 600 ticks
 - [ ] No nation has strictly better units than another (cost/stat ratio)
 
-### 3. Mobile UI Adaptation
+### 4. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
 **Test Cases (to write first):**
 - [ ] Viewport < 768px: menu buttons stack vertically
@@ -308,12 +317,12 @@ protocol::tests               5 tests    Message serialization, room management
 - [ ] Pinch zoom works
 - [ ] Construction panel fits mobile screen without scrolling
 
-### 4. Viking Unique Buildings
-**Objective:** Vikings can build their 6 unique buildings (S4-authentic).
+### 5. Maya Unique Buildings
+**Objective:** Maya can build their 7 unique buildings (S4-authentic).
 **Test Cases (to write first):**
-- [ ] `get_nation_buildings("Viking")` returns 6 building names
-- [ ] All Viking unique buildings are buildable when Viking nation is selected
-- [ ] Non-Viking nations CANNOT build Viking unique buildings
+- [ ] `get_nation_buildings("Maya")` returns 7 building names
+- [ ] Temple of Chac production chain
+- [ ] AgaveFarm and Distillery production chain
 
 ---
 

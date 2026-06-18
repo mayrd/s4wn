@@ -67,8 +67,8 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 2.8 — Nations & Balancing** (in progress 🔨)
-- 🔨 **Phase 2.8 — Nations & Balancing** — In progress. Nation data model (5 nations, 34 unique buildings, 6 specialists, 11 tool types), nation selection UI, building tool requirements wired into game loop, Castle settler recruitment, Barracks Swordsman/Bowman training (alternating), Mint building, tool bar HUD, nation WASM integration (set/get/list, GameState storage, HUD display), **23 common buildings (Fortress, SiegeWorkshop, Shipyard, RoadLayer added S69)**, **nation modifier application (production speed, building cost, unit HP/attack/defense, worker speed, worker build speed)**. UI translations in 4 languages (EN/DE/ES/FR with auto-detect). **Fog of war: visibility computation with linear falloff from buildings and units, fragment shader integration with smooth-edge darkening**. **Territory expansion: territory_owner on Tile, compute_territory() from buildings (Castle=5, GuardTower=3, Fortress=6, Storehouse=2, others=1), is_within_territory() for placement validation, owner_id on Building, integrated into game loop**. **Building placement territory validation: try_place_building_checked() validates terrain, territory ownership, affordability, bounds**. 238 engine tests passing.
+**Phase 2.10 — Roman Unique Buildings** (in progress 🔨)
+- 🔨 **Phase 2.10 — Roman Unique Buildings** — In progress. 6 Roman unique buildings (Vineyard, WinePress, TempleOfBacchus, Colosseum, SanctuaryOfMinerva, SanctuaryOfVulcan) + 2 new resources (Grapes, Wine). Production chains: Vineyard→Grapes, WinePress→Wine (Grapes input), TempleOfBacchus→Wine. Building colors in renderer. 33 total building types. 244 engine tests passing.
 ---
 
 AI Agent Configuration:
