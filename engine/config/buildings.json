@@ -62,7 +62,7 @@
     },
     "inputs": [],
     "outputs": [
-      "Iron",
+      "IronOre",
       "Coal",
       "Gold",
       "Sulfur"
@@ -82,7 +82,7 @@
       "Stone": 5
     },
     "inputs": [
-      "Iron",
+      "IronOre",
       "Coal"
     ],
     "outputs": [
@@ -103,7 +103,7 @@
       "Stone": 5
     },
     "inputs": [
-      "Iron",
+      "IronOre",
       "Coal",
       "Tools"
     ],
@@ -272,7 +272,7 @@
       "Stone": 5
     },
     "inputs": [
-      "Iron",
+      "IronOre",
       "Coal"
     ],
     "outputs": [
@@ -283,7 +283,8 @@
     "tool": null,
     "workers": 1,
     "icon": "🔥",
-    "name_de": "Schmelze"
+    "name_de": "Schmelze",
+    "status": "planned"
   },
   {
     "id": "Barracks",
@@ -325,7 +326,7 @@
     "cost": {
       "Stone": 20,
       "Boards": 12,
-      "Iron": 8
+      "IronOre": 8
     },
     "inputs": [],
     "outputs": [],
@@ -613,20 +614,6 @@
     "workers": 0,
     "icon": "🏛️",
     "name_de": "Methalle",
-    "status": "planned"
-  },
-  {
-    "id": "Apiary",
-    "category": "Nation",
-    "cost": {},
-    "inputs": [],
-    "outputs": [],
-    "interval": 0,
-    "build_time": 0,
-    "tool": null,
-    "workers": 0,
-    "icon": "🏛️",
-    "name_de": "Bienenhaus",
     "status": "planned"
   },
   {

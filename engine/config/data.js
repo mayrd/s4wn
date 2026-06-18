@@ -63,7 +63,7 @@ window.S4WN_CONFIG = {
       },
       "inputs": [],
       "outputs": [
-        "Iron",
+        "IronOre",
         "Coal",
         "Gold",
         "Sulfur"
@@ -83,7 +83,7 @@ window.S4WN_CONFIG = {
         "Stone": 5
       },
       "inputs": [
-        "Iron",
+        "IronOre",
         "Coal"
       ],
       "outputs": [
@@ -104,7 +104,7 @@ window.S4WN_CONFIG = {
         "Stone": 5
       },
       "inputs": [
-        "Iron",
+        "IronOre",
         "Coal",
         "Tools"
       ],
@@ -273,7 +273,7 @@ window.S4WN_CONFIG = {
         "Stone": 5
       },
       "inputs": [
-        "Iron",
+        "IronOre",
         "Coal"
       ],
       "outputs": [
@@ -284,7 +284,8 @@ window.S4WN_CONFIG = {
       "tool": null,
       "workers": 1,
       "icon": "🔥",
-      "name_de": "Schmelze"
+      "name_de": "Schmelze",
+      "status": "planned"
     },
     {
       "id": "Barracks",
@@ -326,7 +327,7 @@ window.S4WN_CONFIG = {
       "cost": {
         "Stone": 20,
         "Boards": 12,
-        "Iron": 8
+        "IronOre": 8
       },
       "inputs": [],
       "outputs": [],
@@ -614,20 +615,6 @@ window.S4WN_CONFIG = {
       "workers": 0,
       "icon": "🏛️",
       "name_de": "Methalle",
-      "status": "planned"
-    },
-    {
-      "id": "Apiary",
-      "category": "Nation",
-      "cost": {},
-      "inputs": [],
-      "outputs": [],
-      "interval": 0,
-      "build_time": 0,
-      "tool": null,
-      "workers": 0,
-      "icon": "🏛️",
-      "name_de": "Bienenhaus",
       "status": "planned"
     },
     {
@@ -1449,18 +1436,24 @@ window.S4WN_CONFIG = {
       "Butcher",
       "Mill",
       "Bakery",
-      "Waterworks"
+      "Waterworks",
+      "Apiary",
+      "MeadMaker"
     ],
     "Raw Materials": [
       "Woodcutter",
       "Sawmill",
       "Stonecutter",
       "Mine",
-      "Smelter"
+      "Smelter",
+      "ClayPit",
+      "HempFarm"
     ],
     "Processing": [
       "Toolsmith",
-      "Weaponsmith"
+      "Weaponsmith",
+      "Brickworks",
+      "Ropemaker"
     ],
     "Military": [
       "Barracks",
@@ -1482,7 +1475,6 @@ window.S4WN_CONFIG = {
       "Sanctuary of Vulcan",
       "Colosseum",
       "Mead Hall",
-      "Apiary",
       "Sanctuary of Odin",
       "Sanctuary of Thor",
       "Sanctuary of Freya",
