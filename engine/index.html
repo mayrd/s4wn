@@ -255,6 +255,30 @@
     font-family: 'SF Mono', monospace;
   }
 
+  /* ── Tile Inspector (long-press on mobile) ─────────────────────────── */
+  #tile-inspector {
+    position: fixed; z-index: 25;
+    background: rgba(10,15,30,0.93);
+    border: 1px solid rgba(100,160,220,0.45);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px; color: #cdd6e8;
+    pointer-events: auto;
+    display: none;
+    min-width: 160px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    font-family: 'SF Mono', monospace;
+  }
+  #tile-inspector.show { display: block; }
+  #tile-inspector .ti-row {
+    display: flex; justify-content: space-between;
+    padding: 2px 0; gap: 16px;
+  }
+  #tile-inspector .ti-label { color: #789; }
+  #tile-inspector .ti-value { color: #bcd; font-weight: 600; }
+  #tile-inspector .ti-terrain { color: #8c8; }
+  #tile-inspector .ti-resource { color: #e8c84a; }
+
   /* ── Controls ──────────────────────────────────────────────────────── */
   #controls {
     position: fixed; bottom: 16px; left: 50%;
@@ -812,6 +836,9 @@
 
     /* Tile tooltip: smaller */
     #tile-tip { font-size: 10px; padding: 3px 8px; }
+
+    /* Tile inspector: smaller on mobile */
+    #tile-inspector { font-size: 11px; padding: 8px 12px; min-width: 140px; }
 
     /* Error dialog: full-width */
     .error-dialog { width: calc(100vw - 32px); max-width: none; }
@@ -2763,17 +2790,68 @@ canvas.addEventListener('wheel', (e) => {
 //   1 finger drag  → camera pan (via on_mouse_down/move/up)
 //   2 finger pinch → proportional zoom (via on_wheel with scale ratio)
 //   Tap (no drag)  → building placement / selection (via click event)
+//   Long press      → tile inspector context menu
 //   didDrag guard  → prevents accidental placement after pan/pinch
 let lastTouchDist = 0, touchActive = false, touchDidDrag = false;
+let longPressTimer = null, longPressPos = { x: 0, y: 0 };
+
+function closeTileInspector() {
+    const ti = document.getElementById('tile-inspector');
+    if (ti) ti.classList.remove('show');
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+}
+
+function showTileInspector(cx, cy) {
+    if (!engineReady) return;
+    let info;
+    try { info = JSON.parse(get_tile_at(cx, cy)); } catch (e) { return; }
+    if (!info || !info.terrain) return;
+
+    let ti = document.getElementById('tile-inspector');
+    if (!ti) {
+        ti = document.createElement('div');
+        ti.id = 'tile-inspector';
+        document.body.appendChild(ti);
+    }
+    const rn = info.resource ? '<span class="ti-resource">' + info.resource + '</span>' : '—';
+    ti.innerHTML =
+        '<div class="ti-row"><span class="ti-label">Position</span><span class="ti-value">(' + info.x + ', ' + info.y + ')</span></div>' +
+        '<div class="ti-row"><span class="ti-label">Terrain</span><span class="ti-terrain">' + info.terrain + '</span></div>' +
+        '<div class="ti-row"><span class="ti-label">Elevation</span><span class="ti-value">' + info.elevation.toFixed(2) + '</span></div>' +
+        '<div class="ti-row"><span class="ti-label">Resource</span>' + rn + '</div>';
+
+    // Position near touch point but stay on screen
+    const pw = 180, ph = 120;
+    let left = cx + 12, top = cy - 10;
+    if (left + pw > window.innerWidth) left = cx - pw - 12;
+    if (top + ph > window.innerHeight) top = cy - ph - 10;
+    if (left < 4) left = 4;
+    if (top < 4) top = 4;
+    ti.style.left = left + 'px';
+    ti.style.top = top + 'px';
+    ti.classList.add('show');
+
+    // Auto-close after 4s
+    setTimeout(() => ti.classList.remove('show'), 4000);
+}
+
 canvas.addEventListener('touchstart', (e) => {
     if (showMenu) return;
     e.preventDefault();
     touchDidDrag = false;
+    closeTileInspector();
     const rect = canvas.getBoundingClientRect();
     if (e.touches.length === 1) {
         touchActive = true;
-        on_mouse_down(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+        const cx = e.touches[0].clientX, cy = e.touches[0].clientY;
+        longPressPos = { x: cx, y: cy };
+        longPressTimer = setTimeout(() => {
+            if (!touchDidDrag) showTileInspector(cx, cy);
+            longPressTimer = null;
+        }, 500);
+        on_mouse_down(cx - rect.left, cy - rect.top);
     } else if (e.touches.length === 2) {
+        closeTileInspector();
         touchActive = false;
         lastTouchDist = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX,
@@ -2785,6 +2863,7 @@ canvas.addEventListener('touchmove', (e) => {
     if (showMenu) return;
     e.preventDefault();
     touchDidDrag = true;
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
     const rect = canvas.getBoundingClientRect();
     if (e.touches.length === 1 && touchActive) {
         on_mouse_move(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
@@ -2807,10 +2886,19 @@ canvas.addEventListener('touchmove', (e) => {
 canvas.addEventListener('touchend', (e) => {
     on_mouse_up();
     touchActive = false;
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
     // Prevent click (building placement) after drag
     if (touchDidDrag) {
         const suppress = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
         canvas.addEventListener('click', suppress, { once: true, capture: true });
+    }
+});
+
+// Close tile inspector on click outside
+document.addEventListener('click', (e) => {
+    const ti = document.getElementById('tile-inspector');
+    if (ti && ti.classList.contains('show') && !ti.contains(e.target)) {
+        ti.classList.remove('show');
     }
 });
 

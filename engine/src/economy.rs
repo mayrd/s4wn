@@ -1671,7 +1671,9 @@ impl Economy {
                 *demand.entry(tool_code).or_insert(0) += 1;
             }
         }
-        demand.into_iter().max_by_key(|&(_, count)| count).map(|(code, _)| code)
+                // Stable tiebreaker: when counts tie, pick higher tool code.
+        // HashMap iteration non-deterministic, but (count,code) tuple is deterministic.
+        demand.into_iter().max_by_key(|&(code, count)| (count, code)).map(|(code, _)| code)
     }
 }
 
