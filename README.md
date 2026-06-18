@@ -67,10 +67,10 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 2.15 — Dark Tribe Unique Buildings** ✅
-- ✅ Nation-gated building placement — Roman, Viking, Maya, and Trojan unique buildings require correct nation selection. `Economy::is_building_available()` checks player nation. 265 tests.
-- ✅ Trojan unique buildings (7) — OracleOfApollo, OliveGrove, OilPress, SanctuaryOfArtemis, SanctuaryOfPoseidon, SanctuaryOfApollo, Amphitheater. Nation-gated placement. 265 tests.
+**Phase 2.16 — Config Name Normalization** ✅
+- ✅ Nation-gated building placement — Roman, Viking, Maya, Trojan, and Dark Tribe unique buildings. `Economy::is_building_available()` checks player nation. 295 tests.
 - ✅ Dark Tribe unique buildings (7) — DarkTemple, DarkGarden, MushroomFarm, SanctuaryOfMorbus, SanctuaryOfPestilence, DarkFortress, DemonGate
+- ✅ Config name normalization — ClayPit→Clay Pit, HempFarm→Hemp Farm, MeadMaker→Mead Maker. JS config IDs now match Rust `BuildingType::name()` output.
 ---
 
 AI Agent Configuration:

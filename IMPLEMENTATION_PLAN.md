@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 2.15 — Dark Tribe Unique Buildings ✅ (265 tests)
-| **Last updated:** 2026-06-18 (Session 87 — Dark Tribe Unique Buildings)
+| **Status:** Phase 2.16 — Config Name Normalization ✅ (295 tests)
+| **Last updated:** 2026-06-18 (Session 88 — Config Name Normalization)
 
 ---
 
@@ -312,7 +312,7 @@ protocol::tests               5 tests    Message serialization, room management
 - [x] Non-DarkTribe nations CANNOT build DarkTribe unique buildings
 - [x] All 59 building names in all_names() (52 + 7 new)
 
-### 3. Balance Simulation
+### 4. Balance Simulation
 **Objective:** Simulate the first 10 minutes of gameplay for each nation to verify economic balance. No single nation should dominate all metrics.
 **Test Cases (to write first):**
 - [ ] All 5 nations reach 10+ settlers within 10 minutes
@@ -320,17 +320,17 @@ protocol::tests               5 tests    Message serialization, room management
 - [ ] No nation exceeds 200% of the median resource output
 - [ ] Simulation runs deterministically with fixed seed
 
-### 2. Config Name Normalization
-**Objective:** Fix naming inconsistency between config (ClayPit/HempFarm/MeadMaker) and Rust (Clay Pit/Hemp Farm/Mead Maker). Config IDs should match Rust all_names() output.
-**Status:** 🔨 Config uses no-space IDs; Rust uses space-separated names. 3 buildings affected.
+### 3. Config Name Normalization
+**Status:** ✅ Done (Session 88) — 3 config IDs renamed (ClayPit→Clay Pit, HempFarm→Hemp Farm, MeadMaker→Mead Maker). buildings.json, categories.json updated; data.js regenerated. Now matches Rust `BuildingType::name()` output.
 **Test Cases:**
-- [ ] Config ID "Clay Pit" matches Rust `BuildingType::from_name("Clay Pit")`
-- [ ] Config ID "Hemp Farm" matches Rust `BuildingType::from_name("Hemp Farm")`
-- [ ] Config ID "Mead Maker" matches Rust `BuildingType::from_name("Mead Maker")`
-- [ ] `data.js` regenerated after fix, all 42 buildings resolve correctly
+- [x] Config ID "Clay Pit" matches Rust `BuildingType::from_name("Clay Pit")`
+- [x] Config ID "Hemp Farm" matches Rust `BuildingType::from_name("Hemp Farm")`
+- [x] Config ID "Mead Maker" matches Rust `BuildingType::from_name("Mead Maker")`
+- [x] `data.js` regenerated after fix, all 60 buildings resolve correctly
 
 || **87** | **2026-06-18** | **Dark Tribe unique buildings: 7 BuildingType variants (DarkTemple=54..DemonGate=60), nation-gated placement, production chains (DarkTemple→Wine, DarkGarden→Grapes, MushroomFarm→Grain, DemonGate→Weapons), building colors, costs, tools, config. Added Grapes+Wine to resources.json. 265 tests pass.** |
 |
+|| **88** | **2026-06-18** | **Config name normalization: ClayPit→Clay Pit, HempFarm→Hemp Farm, MeadMaker→Mead Maker. Fixed naming gap between JS config (CamelCase) and Rust from_name() (space-separated). buildings.json, categories.json, data.js updated. All 295 tests pass.** |
 |
 |
 |
@@ -338,7 +338,7 @@ protocol::tests               5 tests    Message serialization, room management
 |
 |
 |
-### 3. Mobile UI Adaptation
+### 5. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
 **Test Cases (to write first):**
 - [ ] Viewport < 768px: menu buttons stack vertically
@@ -355,4 +355,4 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=32. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 265 engine + 5 server = 270 total. `cargo test --lib` must pass before every push.
+- **Test count:** 265 engine + 30 server = 295 total. `cargo test --lib` must pass before every push.
