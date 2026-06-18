@@ -742,23 +742,27 @@
     #settings-panel { width: 100vw; max-width: 100vw; padding: 20px 16px; }
     #settings-panel .settings-header h3 { font-size: 18px; }
 
-    /* Construction panel: full width, anchored to bottom */
+    /* Construction panel: full width, anchored to bottom, scrollable */
     #construction-panel {
       left: 0; right: 0; bottom: 56px;
-      width: 100vw; max-height: 40vh;
+      width: 100vw; max-width: 100%; max-height: 40vh;
       border-radius: 8px 8px 0 0;
       padding: 10px;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
     #construction-panel .con-bldg { padding: 6px 8px; gap: 8px; }
     #construction-panel .con-bldg .con-icon { font-size: 20px; width: 28px; }
     #construction-panel .con-bldg .con-name { font-size: 13px; }
 
-    /* Statistics panel: full width */
+    /* Statistics panel: full width, scrollable */
     #stats-panel {
       left: 0; right: 0; bottom: 56px;
-      width: 100vw; max-height: 40vh;
+      width: 100vw; max-width: 100%; max-height: 40vh;
       border-radius: 8px 8px 0 0;
       padding: 10px;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
     #stats-panel .stats-tab { font-size: 12px; padding: 6px; }
 
@@ -2721,11 +2725,17 @@ canvas.addEventListener('wheel', (e) => {
     on_wheel(e.deltaY * invert);
 }, { passive: false });
 
-// Touch support
-let lastTouchDist = 0, touchActive = false;
+// ── Touch support ──────────────────────────────────────────────────────
+// Touch interaction model:
+//   1 finger drag  → camera pan (via on_mouse_down/move/up)
+//   2 finger pinch → proportional zoom (via on_wheel with scale ratio)
+//   Tap (no drag)  → building placement / selection (via click event)
+//   didDrag guard  → prevents accidental placement after pan/pinch
+let lastTouchDist = 0, touchActive = false, touchDidDrag = false;
 canvas.addEventListener('touchstart', (e) => {
     if (showMenu) return;
     e.preventDefault();
+    touchDidDrag = false;
     const rect = canvas.getBoundingClientRect();
     if (e.touches.length === 1) {
         touchActive = true;
@@ -2741,6 +2751,7 @@ canvas.addEventListener('touchstart', (e) => {
 canvas.addEventListener('touchmove', (e) => {
     if (showMenu) return;
     e.preventDefault();
+    touchDidDrag = true;
     const rect = canvas.getBoundingClientRect();
     if (e.touches.length === 1 && touchActive) {
         on_mouse_move(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
@@ -2749,13 +2760,26 @@ canvas.addEventListener('touchmove', (e) => {
             e.touches[0].clientX - e.touches[1].clientX,
             e.touches[0].clientY - e.touches[1].clientY
         );
-        if (lastTouchDist > 0) {
-            on_wheel(dist < lastTouchDist ? 5 : -5);
+        if (lastTouchDist > 0 && dist > 0) {
+            // Proportional pinch-to-zoom: scale deltaY proportional to distance ratio
+            const scale = lastTouchDist / dist;
+            const delta = Math.round((1.0 - scale) * 120);
+            if (Math.abs(delta) > 2) {
+                on_wheel(delta);
+            }
         }
         lastTouchDist = dist;
     }
 }, { passive: false });
-canvas.addEventListener('touchend', () => { on_mouse_up(); touchActive = false; });
+canvas.addEventListener('touchend', (e) => {
+    on_mouse_up();
+    touchActive = false;
+    // Prevent click (building placement) after drag
+    if (touchDidDrag) {
+        const suppress = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+        canvas.addEventListener('click', suppress, { once: true, capture: true });
+    }
+});
 
 // ── Minimap click ─────────────────────────────────────────────────────
 minimapEl.addEventListener('click', (e) => {
