@@ -73,10 +73,11 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Touch pinch-to-zoom — two-finger proportional pinch with distance ratio scaling
 - ✅ Drag guard — accidental building placement suppressed after touch pan/zoom
 - ✅ Panel scrolling — construction & stats panels overflow-y:auto with momentum scrolling on mobile
-- ✅ Nation-gated building placement — Roman, Viking, Maya, Trojan, and Dark Tribe unique buildings. `Economy::is_building_available()` checks player nation. 295 tests.
+- ✅ Nation-gated building placement — Roman, Viking, Maya, Trojan, and Dark Tribe unique buildings. `Economy::is_building_available()` checks player nation.
 - ✅ Dark Tribe unique buildings (7) — DarkTemple, DarkGarden, MushroomFarm, SanctuaryOfMorbus, SanctuaryOfPestilence, DarkFortress, DemonGate
-- ✅ Balance simulation — all 5 nations reach 10+ settlers in 10 min, produce 3+ unique resources, no nation exceeds 200% of median output. 4 new tests, deterministic. 299 tests total.
-- 🚧 Mobile responsive CSS — @media queries for sub-768px viewports: full-width panels, larger touch targets, flex-wrap controls. 299 tests pass.
+- ✅ Balance simulation — all 5 nations reach 10+ settlers in 10 min, produce 3+ unique resources, no nation exceeds 200% of median output. 4 new tests, deterministic.
+- ✅ Tap-to-place pulse feedback — green/red ripple animation at tap point for building placement confirmation on both mouse and touch. 269 tests pass.
+- 🚧 Long-press context menu, orientation handler, construction accordion
 ---
 
 AI Agent Configuration:

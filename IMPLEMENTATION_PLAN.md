@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 4 — Mobile UI Adaptation (responsive CSS) (299 tests)
-| **Last updated:** 2026-06-18 (Session 90 — Mobile Responsive CSS)
+| **Status:** Phase 4 — Mobile UI Adaptation (tap-to-place pulse feedback) (269 tests)
+| **Last updated:** 2026-06-18 (Session 92 — Tap-to-Place Pulse Feedback)
 
 ---
 
@@ -340,15 +340,16 @@ protocol::tests               5 tests    Message serialization, room management
 |
 ### 4. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
-**Status:** In progress — touch interactions implemented (Session 91). Remaining: building placement tap UX, mobile testing.
+**Status:** In progress — touch interactions + pulse feedback (Session 92). Remaining: long-press, orientation, accordion.
 **Test Cases (to write first):**
 - [x] Viewport < 768px: menu and panels adapt to mobile (responsive CSS media queries)
 - [x] Touch drag works for camera pan
 - [x] Pinch zoom works (proportional scaling)
 - [x] Construction panel fits mobile screen with overflow scrolling
+- [x] Tap-to-place visual feedback (pulse animation on placed tile)
 
 **Next concrete steps:**
-1. Add tap-to-place visual feedback (pulse animation on selected tile) for touch building placement
+1. ~~Add tap-to-place visual feedback (pulse animation on selected tile)~~ ✅ Done (Session 92)
 2. Add long-press context menu for tile info (inspector) on mobile
 3. Test touch interactions on actual mobile viewport via Chrome DevTools responsive mode
 4. Add orientation-change handler to recalculate viewport layout
