@@ -1121,6 +1121,13 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
         SanctuaryOfThor => [0.6, 0.3, 0.1],       // thunder bronze
         SanctuaryOfFreya => [0.5, 0.7, 0.4],      // nature green
         Runestone => [0.55, 0.5, 0.45],           // stone grey-blue
+        TempleOfChac => [0.2, 0.6, 0.9],             // rain blue
+        AgaveFarm => [0.3, 0.7, 0.3],                 // agave green
+        Distillery => [0.7, 0.5, 0.3],                 // pulque amber
+        SanctuaryOfKukulkan => [0.3, 0.7, 0.5],       // jungle green
+        SanctuaryOfQuetzalcoatl => [0.5, 0.8, 0.6],   // wind green
+        SanctuaryOfHuitzilopochtli => [0.8, 0.2, 0.1], // war red
+        Observatory => [0.9, 0.85, 0.7],               // limestone
     }
 }
 
@@ -2683,6 +2690,24 @@ mod tests {
             Ropemaker,
             Apiary,
             MeadMaker,
+            Vineyard,
+            WinePress,
+            TempleOfBacchus,
+            Colosseum,
+            SanctuaryOfMinerva,
+            SanctuaryOfVulcan,
+            MeadHall,
+            SanctuaryOfOdin,
+            SanctuaryOfThor,
+            SanctuaryOfFreya,
+            Runestone,
+            TempleOfChac,
+            AgaveFarm,
+            Distillery,
+            SanctuaryOfKukulkan,
+            SanctuaryOfQuetzalcoatl,
+            SanctuaryOfHuitzilopochtli,
+            Observatory,
         ] {
             let c = building_color(&kind);
             assert!(c[0] >= 0.0 && c[0] <= 1.0);

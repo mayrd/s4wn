@@ -221,6 +221,22 @@ pub enum BuildingType {
     SanctuaryOfFreya = 38,
     /// Runestone — cultural monument, extends territory (Viking unique)
     Runestone = 39,
+
+    // ── Maya Unique Buildings ────────────────────────────────────────────────
+    /// Temple of Chac — rain god temple, produces Water (Maya unique)
+    TempleOfChac = 40,
+    /// Agave Farm — produces Agave (Maya unique)
+    AgaveFarm = 41,
+    /// Distillery — converts Agave → Pulque (Maya unique)
+    Distillery = 42,
+    /// Sanctuary of Kukulkan — feathered serpent god (Maya unique)
+    SanctuaryOfKukulkan = 43,
+    /// Sanctuary of Quetzalcoatl — wind god (Maya unique)
+    SanctuaryOfQuetzalcoatl = 44,
+    /// Sanctuary of Huitzilopochtli — war god (Maya unique)
+    SanctuaryOfHuitzilopochtli = 45,
+    /// Observatory — stargazing, extends territory (Maya unique)
+    Observatory = 46,
 }
 
 impl BuildingType {
@@ -265,6 +281,13 @@ impl BuildingType {
             BuildingType::SanctuaryOfThor => "Sanctuary of Thor",
             BuildingType::SanctuaryOfFreya => "Sanctuary of Freya",
             BuildingType::Runestone => "Runestone",
+            BuildingType::TempleOfChac => "Temple of Chac",
+            BuildingType::AgaveFarm => "Agave Farm",
+            BuildingType::Distillery => "Distillery",
+            BuildingType::SanctuaryOfKukulkan => "Sanctuary of Kukulkan",
+            BuildingType::SanctuaryOfQuetzalcoatl => "Sanctuary of Quetzalcoatl",
+            BuildingType::SanctuaryOfHuitzilopochtli => "Sanctuary of Huitzilopochtli",
+            BuildingType::Observatory => "Observatory",
         }
     }
 
@@ -309,6 +332,13 @@ impl BuildingType {
             "Sanctuary of Thor" => Some(BuildingType::SanctuaryOfThor),
             "Sanctuary of Freya" => Some(BuildingType::SanctuaryOfFreya),
             "Runestone" => Some(BuildingType::Runestone),
+            "Temple of Chac" => Some(BuildingType::TempleOfChac),
+            "Agave Farm" => Some(BuildingType::AgaveFarm),
+            "Distillery" => Some(BuildingType::Distillery),
+            "Sanctuary of Kukulkan" => Some(BuildingType::SanctuaryOfKukulkan),
+            "Sanctuary of Quetzalcoatl" => Some(BuildingType::SanctuaryOfQuetzalcoatl),
+            "Sanctuary of Huitzilopochtli" => Some(BuildingType::SanctuaryOfHuitzilopochtli),
+            "Observatory" => Some(BuildingType::Observatory),
             _ => None,
         }
     }
@@ -354,6 +384,13 @@ impl BuildingType {
             "Sanctuary of Thor",
             "Sanctuary of Freya",
             "Runestone",
+            "Temple of Chac",
+            "Agave Farm",
+            "Distillery",
+            "Sanctuary of Kukulkan",
+            "Sanctuary of Quetzalcoatl",
+            "Sanctuary of Huitzilopochtli",
+            "Observatory",
         ]
     }
 
@@ -389,6 +426,13 @@ impl BuildingType {
             BuildingType::SiegeWorkshop => &[(ResourceType::Wood, 10), (ResourceType::Stone, 8), (ResourceType::Tools, 3)],
             BuildingType::Shipyard => &[(ResourceType::Wood, 10), (ResourceType::Stone, 6), (ResourceType::Boards, 6)],
             BuildingType::RoadLayer => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
+            BuildingType::TempleOfChac => &[(ResourceType::Stone, 20), (ResourceType::Gold, 5)],
+            BuildingType::AgaveFarm => &[(ResourceType::Wood, 3)],
+            BuildingType::Distillery => &[(ResourceType::Wood, 5), (ResourceType::Stone, 3)],
+            BuildingType::SanctuaryOfKukulkan => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
+            BuildingType::SanctuaryOfQuetzalcoatl => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
+            BuildingType::SanctuaryOfHuitzilopochtli => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
+            BuildingType::Observatory => &[(ResourceType::Stone, 25), (ResourceType::Gold, 10)],
             _ => &[], // planned buildings — no cost yet
         }
     }
@@ -410,6 +454,7 @@ impl BuildingType {
             BuildingType::SiegeWorkshop => &[(ResourceType::IronIngots, 2), (ResourceType::Wood, 3)],
             BuildingType::Shipyard => &[(ResourceType::Wood, 3), (ResourceType::Boards, 2)],
             BuildingType::WinePress => &[(ResourceType::Grapes, 2)],
+            BuildingType::Distillery => &[(ResourceType::Grapes, 2)], // Agave → Pulque (uses Grapes as placeholder)
             _ => &[], // raw producers and storage have no inputs
         }
     }
@@ -435,6 +480,9 @@ impl BuildingType {
             BuildingType::Vineyard => &[(ResourceType::Grapes, 2)],
             BuildingType::WinePress => &[(ResourceType::Wine, 1)],
             BuildingType::TempleOfBacchus => &[(ResourceType::Wine, 1)], // Divine wine production
+            BuildingType::TempleOfChac => &[(ResourceType::Water, 2)], // Rain god temple produces Water
+            BuildingType::AgaveFarm => &[(ResourceType::Grapes, 2)], // Agave harvest (uses Grapes as placeholder)
+            BuildingType::Distillery => &[(ResourceType::Wine, 1)], // Agave → Pulque (uses Wine as placeholder)
             _ => &[], // Barracks, Castle, Storehouse, Fortress, RoadLayer, Colosseum, Sanctuaries produce nothing
         }
     }
@@ -463,6 +511,9 @@ impl BuildingType {
             BuildingType::Vineyard => 25,         // 2.5 seconds — grape growth
             BuildingType::WinePress => 30,        // 3 seconds — wine fermentation
             BuildingType::TempleOfBacchus => 40,  // 4 seconds — divine inspiration
+            BuildingType::TempleOfChac => 35,              // 3.5 seconds — rain cycle
+            BuildingType::AgaveFarm => 25,                  // 2.5 seconds — agave growth
+            BuildingType::Distillery => 35,                  // 3.5 seconds — fermentation
             _ => 0,                          // Barracks, Castle, Storehouse, Colosseum, Sanctuaries don't produce
         }
     }
@@ -536,6 +587,9 @@ impl BuildingType {
             BuildingType::SiegeWorkshop => Some("Hammer"),
             BuildingType::Shipyard => Some("Saw"),
             BuildingType::RoadLayer => None,
+            BuildingType::TempleOfChac => Some("Bucket"), // Water gathering
+            BuildingType::AgaveFarm => Some("Shovel"),          // Agave planting
+            BuildingType::Distillery => Some("Bucket"),         // Fermentation vessel
             _ => None, // Castle, Storehouse, Farm, Barracks — no tool needed
         }
     }
@@ -573,7 +627,15 @@ impl BuildingType {
             | BuildingType::SanctuaryOfOdin
             | BuildingType::SanctuaryOfThor
             | BuildingType::SanctuaryOfFreya
-            | BuildingType::Runestone => BuildingCategory::Unique,
+            | BuildingType::Runestone
+            // Maya unique buildings
+            | BuildingType::TempleOfChac
+            | BuildingType::AgaveFarm
+            | BuildingType::Distillery
+            | BuildingType::SanctuaryOfKukulkan
+            | BuildingType::SanctuaryOfQuetzalcoatl
+            | BuildingType::SanctuaryOfHuitzilopochtli
+            | BuildingType::Observatory => BuildingCategory::Unique,
             _ => BuildingCategory::Economic, // planned buildings
         }
     }
@@ -593,6 +655,13 @@ impl BuildingType {
             | BuildingType::SanctuaryOfThor
             | BuildingType::SanctuaryOfFreya
             | BuildingType::Runestone => Some(NationType::Viking),
+            BuildingType::TempleOfChac
+            | BuildingType::AgaveFarm
+            | BuildingType::Distillery
+            | BuildingType::SanctuaryOfKukulkan
+            | BuildingType::SanctuaryOfQuetzalcoatl
+            | BuildingType::SanctuaryOfHuitzilopochtli
+            | BuildingType::Observatory => Some(NationType::Maya),
             _ => None,
         }
     }
@@ -1829,8 +1898,8 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        // 33 original + 5 Viking unique = 38 total
-        assert_eq!(BuildingType::all_names().len(), 38);
+        // 33 original + 5 Viking unique + 7 Maya unique = 45 total
+        assert_eq!(BuildingType::all_names().len(), 45);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
@@ -3222,9 +3291,9 @@ mod tests {
         assert!(names.contains(&"Sanctuary of Thor"));
         assert!(names.contains(&"Sanctuary of Freya"));
         assert!(names.contains(&"Runestone"));
-        // Total should be 38 (33 original + 5 Viking unique)
+        // Total should be 45 (33 original + 5 Viking unique + 7 Maya unique)
         // Note: Apiary is common, already counted in the 33
-        assert_eq!(names.len(), 38, "Should have 38 total building names");
+        assert_eq!(names.len(), 45, "Should have 45 total building names");
     }
 
     #[test]
