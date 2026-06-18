@@ -561,6 +561,8 @@ pub struct Building {
     pub required_tool: Option<u8>,
     /// Which unit kind this barracks is currently training (alternates Swordsman/Bowman)
     pub training_kind: UnitKind,
+    /// Owner player ID (0 = player 1, 1 = player 2, etc.)
+    pub owner_id: u8,
 }
 
 impl Building {
@@ -584,6 +586,7 @@ impl Building {
             max_settlers,
             required_tool,
             training_kind: UnitKind::Swordsman,
+            owner_id: 0,
         }
     }
 

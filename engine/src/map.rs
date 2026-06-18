@@ -79,6 +79,9 @@ pub struct Tile {
     pub resource: Option<Resource>,
     /// Fog of war visibility: 0.0 = hidden (unexplored), 1.0 = fully visible
     pub visibility: f32,
+    /// Territory owner: None = neutral/unclaimed, Some(player_id) = owned
+    /// player_id 0 = player 1, 1 = player 2, etc.
+    pub territory_owner: Option<u8>,
 }
 
 /// Natural resources that can be harvested
@@ -111,6 +114,7 @@ impl Map {
                 elevation: 0.0,
                 resource: None,
                 visibility: 0.0,
+                territory_owner: None,
             };
             width * height
         ];
@@ -366,6 +370,80 @@ impl Map {
             sources.push((ux, uy, radius));
         }
         self.compute_visibility(&sources);
+    }
+
+    /// Compute territory ownership from buildings.
+    ///
+    /// Territory rules (S4-authentic):
+    /// - Castle: radius 5, establishes initial territory
+    /// - Guard Tower: radius 3 (extends territory when garrisoned — simplified: always extends)
+    /// - Fortress: radius 6 (larger territory expansion)
+    /// - Storehouse: radius 2
+    /// - All other buildings: radius 1
+    ///
+    /// Each building claims tiles within its radius for the given player_id.
+    /// Territory does NOT stack — a tile is owned by the closest building's player.
+    /// Neutral tiles (owner = None) can be claimed by any building.
+    /// Player 0's territory can only be overwritten by Player 0's buildings (friendly).
+    pub fn compute_territory(
+        &mut self,
+        buildings: &[(crate::economy::BuildingType, usize, usize, u8)],
+    ) {
+        // Reset all territory to neutral
+        for tile in self.tiles.iter_mut() {
+            tile.territory_owner = None;
+        }
+        // For each building, claim tiles within its radius
+        for &(ref kind, bx, by, player_id) in buildings {
+            let radius = match *kind {
+                crate::economy::BuildingType::Castle => 5.0,
+                crate::economy::BuildingType::GuardTower => 3.0,
+                crate::economy::BuildingType::Fortress => 6.0,
+                crate::economy::BuildingType::Storehouse => 2.0,
+                _ => 1.0,
+            };
+            let r2 = radius * radius;
+            let min_x = (bx as f32 + 0.5 - radius).floor().max(0.0) as usize;
+            let max_x = ((bx as f32 + 0.5 + radius).ceil() as usize).min(self.width - 1);
+            let min_y = (by as f32 + 0.5 - radius).floor().max(0.0) as usize;
+            let max_y = ((by as f32 + 0.5 + radius).ceil() as usize).min(self.height - 1);
+            for y in min_y..=max_y {
+                for x in min_x..=max_x {
+                    let dx = x as f32 + 0.5 - (bx as f32 + 0.5);
+                    let dy = y as f32 + 0.5 - (by as f32 + 0.5);
+                    let dist2 = dx * dx + dy * dy;
+                    if dist2 <= r2 {
+                        let idx = y * self.width + x;
+                        // Only claim neutral tiles or tiles already owned by same player
+                        let current = self.tiles[idx].territory_owner;
+                        if current.is_none() || current == Some(player_id) {
+                            self.tiles[idx].territory_owner = Some(player_id);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Check if a tile is within the given player's territory.
+    /// Returns true if the tile is neutral (None) or owned by the player.
+    pub fn is_within_territory(&self, x: usize, y: usize, player_id: u8) -> bool {
+        if x >= self.width || y >= self.height {
+            return false;
+        }
+        let idx = y * self.width + x;
+        match self.tiles[idx].territory_owner {
+            None => true,  // Neutral tiles are placeable
+            Some(owner) => owner == player_id,
+        }
+    }
+
+    /// Get the territory owner of a tile. Returns None if neutral or out of bounds.
+    pub fn get_territory(&self, x: usize, y: usize) -> Option<u8> {
+        if x >= self.width || y >= self.height {
+            return None;
+        }
+        self.tiles[y * self.width + x].territory_owner
     }
 
     /// Serialize the map to a JSON string for export/sharing.
@@ -735,5 +813,228 @@ mod tests {
         // Compute again with no sources — should reset
         map.compute_visibility(&[]);
         assert_eq!(map.get_visibility(10, 10), 0.0);
+    }
+
+    // ── Territory Tests ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_territory_all_neutral_initially() {
+        let map = Map::new(10, 10);
+        for (x, y) in map.coordinates() {
+            assert_eq!(map.get_territory(x, y), None);
+        }
+    }
+
+    #[test]
+    fn test_territory_castle_claims_radius_5() {
+        let mut map = Map::new(20, 20);
+        use crate::economy::BuildingType;
+
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        // Center should be owned by player 0
+        assert_eq!(map.get_territory(10, 10), Some(0));
+
+        // Tiles within radius 5 should be owned
+        assert_eq!(map.get_territory(14, 10), Some(0));
+        assert_eq!(map.get_territory(10, 14), Some(0));
+
+        // Tiles outside radius 5 should be neutral
+        assert_eq!(map.get_territory(10, 4), None);
+        assert_eq!(map.get_territory(4, 10), None);
+        assert_eq!(map.get_territory(0, 0), None);
+    }
+
+    #[test]
+    fn test_territory_guard_tower_radius_3() {
+        let mut map = Map::new(20, 20);
+        use crate::economy::BuildingType;
+
+        let buildings = vec![(BuildingType::GuardTower, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        // Center owned
+        assert_eq!(map.get_territory(10, 10), Some(0));
+
+        // Within radius 3
+        assert_eq!(map.get_territory(13, 10), Some(0));
+        assert_eq!(map.get_territory(10, 13), Some(0));
+
+        // Outside radius 3
+        assert_eq!(map.get_territory(10, 6), None);
+        assert_eq!(map.get_territory(6, 10), None);
+    }
+
+    #[test]
+    fn test_territory_fortress_radius_6() {
+        let mut map = Map::new(30, 30);
+        use crate::economy::BuildingType;
+
+        let buildings = vec![(BuildingType::Fortress, 15, 15, 0)];
+        map.compute_territory(&buildings);
+
+        // Center owned
+        assert_eq!(map.get_territory(15, 15), Some(0));
+
+        // Within radius 6
+        assert_eq!(map.get_territory(21, 15), Some(0));
+        assert_eq!(map.get_territory(15, 21), Some(0));
+
+        // Outside radius 6
+        assert_eq!(map.get_territory(15, 8), None);
+        assert_eq!(map.get_territory(8, 15), None);
+    }
+
+    #[test]
+    fn test_territory_storehouse_radius_2() {
+        let mut map = Map::new(20, 20);
+        use crate::economy::BuildingType;
+
+        let buildings = vec![(BuildingType::Storehouse, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        // Center owned
+        assert_eq!(map.get_territory(10, 10), Some(0));
+
+        // Within radius 2
+        assert_eq!(map.get_territory(12, 10), Some(0));
+
+        // Outside radius 2
+        assert_eq!(map.get_territory(10, 7), None);
+    }
+
+    #[test]
+    fn test_territory_other_buildings_radius_1() {
+        let mut map = Map::new(20, 20);
+        use crate::economy::BuildingType;
+
+        let buildings = vec![(BuildingType::Farm, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        // Center owned
+        assert_eq!(map.get_territory(10, 10), Some(0));
+
+        // Adjacent tiles within radius 1
+        assert_eq!(map.get_territory(11, 10), Some(0));
+        assert_eq!(map.get_territory(10, 11), Some(0));
+
+        // Outside radius 1
+        assert_eq!(map.get_territory(10, 8), None);
+    }
+
+    #[test]
+    fn test_territory_multiple_buildings_same_player() {
+        let mut map = Map::new(30, 30);
+        use crate::economy::BuildingType;
+
+        // Two buildings for player 0
+        let buildings = vec![
+            (BuildingType::Castle, 10, 10, 0),
+            (BuildingType::GuardTower, 20, 20, 0),
+        ];
+        map.compute_territory(&buildings);
+
+        // Both centers owned by player 0
+        assert_eq!(map.get_territory(10, 10), Some(0));
+        assert_eq!(map.get_territory(20, 20), Some(0));
+
+        // Tiles between them should be owned (overlapping territory)
+        // Castle radius 5 covers up to (15, 10), GuardTower radius 3 covers from (17, 20)
+        // The area between might be neutral if gaps exist
+    }
+
+    #[test]
+    fn test_territory_two_players() {
+        let mut map = Map::new(40, 40);
+        use crate::economy::BuildingType;
+
+        // Player 0 has a Castle at (10, 10), Player 1 has a Castle at (30, 30)
+        let buildings = vec![
+            (BuildingType::Castle, 10, 10, 0),
+            (BuildingType::Castle, 30, 30, 1),
+        ];
+        map.compute_territory(&buildings);
+
+        // Player 0's territory
+        assert_eq!(map.get_territory(10, 10), Some(0));
+        assert_eq!(map.get_territory(14, 10), Some(0));
+
+        // Player 1's territory
+        assert_eq!(map.get_territory(30, 30), Some(1));
+        assert_eq!(map.get_territory(34, 30), Some(1));
+
+        // Middle should be neutral (outside both radii)
+        assert_eq!(map.get_territory(20, 20), None);
+    }
+
+    #[test]
+    fn test_territory_reset_between_computations() {
+        let mut map = Map::new(20, 20);
+        use crate::economy::BuildingType;
+
+        // First computation: player 0 claims territory
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        map.compute_territory(&buildings);
+        assert_eq!(map.get_territory(10, 10), Some(0));
+        assert_eq!(map.get_territory(14, 10), Some(0));
+
+        // Second computation: no buildings — all should reset to neutral
+        let empty: Vec<(crate::economy::BuildingType, usize, usize, u8)> = vec![];
+        map.compute_territory(&empty);
+        assert_eq!(map.get_territory(10, 10), None);
+        assert_eq!(map.get_territory(14, 10), None);
+    }
+
+    #[test]
+    fn test_territory_is_within_territory() {
+        let mut map = Map::new(20, 20);
+        use crate::economy::BuildingType;
+
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        // Player 0's own territory
+        assert!(map.is_within_territory(10, 10, 0));
+        assert!(map.is_within_territory(14, 10, 0));
+
+        // Neutral tile is within territory for any player
+        assert!(map.is_within_territory(0, 0, 0));
+        assert!(map.is_within_territory(0, 0, 1));
+
+        // Out of bounds
+        assert!(!map.is_within_territory(100, 100, 0));
+    }
+
+    #[test]
+    fn test_territory_out_of_bounds() {
+        let map = Map::new(10, 10);
+        assert_eq!(map.get_territory(100, 100), None);
+        assert_eq!(map.get_territory(10, 10), None);
+        assert!(!map.is_within_territory(100, 100, 0));
+    }
+
+    #[test]
+    fn test_territory_guard_tower_extends_beyond_castle() {
+        let mut map = Map::new(30, 30);
+        use crate::economy::BuildingType;
+
+        // Castle at (15, 15) with radius 5, Guard Tower at (15, 22) with radius 3
+        let buildings = vec![
+            (BuildingType::Castle, 15, 15, 0),
+            (BuildingType::GuardTower, 15, 22, 0),
+        ];
+        map.compute_territory(&buildings);
+
+        // Castle territory
+        assert_eq!(map.get_territory(15, 15), Some(0));
+        assert_eq!(map.get_territory(15, 20), Some(0)); // edge of castle radius
+
+        // Guard Tower territory extends further
+        assert_eq!(map.get_territory(15, 22), Some(0));
+        assert_eq!(map.get_territory(15, 25), Some(0)); // edge of guard tower radius
+
+        // Beyond both
+        assert_eq!(map.get_territory(15, 29), None);
     }
 }

@@ -116,6 +116,16 @@ impl GameState {
                 .map(|u| (u.kind, u.x, u.y))
                 .collect();
             self.map.compute_visibility_from_entities(&buildings, &units);
+
+            // Recompute territory from buildings (with owner_id)
+            let territory_buildings: Vec<(crate::economy::BuildingType, usize, usize, u8)> = self
+                .economy
+                .buildings
+                .iter()
+                .filter(|b| b.is_complete())
+                .map(|b| (b.kind, b.x, b.y, b.owner_id))
+                .collect();
+            self.map.compute_territory(&territory_buildings);
         }
     }
 
