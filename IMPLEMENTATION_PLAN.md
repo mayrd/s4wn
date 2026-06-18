@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-**Status:** Phase 2.8 — Nations & Balancing (228 tests)
-**Last updated:** 2026-06-18 (Session 77 — Territory Expansion)
+**Status:** Phase 2.8 — Nations & Balancing (238 tests)
+**Last updated:** 2026-06-18 (Session 78 — Building Placement Territory Validation)
 
 ---
 
@@ -120,7 +120,8 @@ Each phase lists objectives with test cases and implementation status.
 || WorkerAI tool pickup (physical routing via Storehouse) | 6 | ✅ |
 ||| **Fog of war** | 12 | ✅ |
 ||| **Fog of war shader integration** | 4 | ✅ |
-||| **Territory expansion (Guard Tower, Fortress)** | 12 | ✅ |
+|| **Territory expansion (Guard Tower, Fortress)** | 12 | ✅ |
+|| **Building placement territory validation** | 10 | ✅ |
 || **Balance simulation (first 10 min per nation)** | 0 | ❌ |
 
 ### Phase 3 — Multiplayer ✅ (30 server tests pass)
@@ -149,9 +150,9 @@ Each phase lists objectives with test cases and implementation status.
 
 ## Test Suite Reference
 
-### Engine Tests (228 passing)
+### Engine Tests (238 passing)
 ```
-economy::tests              ~80 tests    Production chains, costs, tools, nation modifiers
+economy::tests              ~90 tests    Production chains, costs, tools, nation modifiers, territory validation
 nation::tests                21 tests    Nation data, unique buildings, specialists
 units::tests                 15 tests    Spawn, assign, movement, HP
 map::tests                   30 tests    Terrain, resources, generation, fog of war, territory
@@ -277,17 +278,19 @@ protocol::tests               5 tests    Message serialization, room management
 ||| **75** | **2026-06-17** | **Bugfix #37: toggleSpeed() was module-scoped, inaccessible to inline onclick. Added window.toggleSpeed to exposure block. 216 tests pass.** |
 |||| **76** | **2026-06-18** | **Fog of war shader integration: Fragment shader now uses v_visibility to darken unexplored/unvisible tiles. Added u_fog_color uniform, visibility_buffer GPU buffer at location 8. Smooth transition with smoothstep(0.15, 0.6, v_visibility). Updated shader tests. 216 tests pass.** |
 |||| **77** | **2026-06-18** | **Territory expansion: territory_owner field on Tile, compute_territory() from buildings (Castle=5, GuardTower=3, Fortress=6, Storehouse=2, others=1), is_within_territory() for placement validation, owner_id on Building, integrated into game_loop every 100 ticks. 12 new tests, 228 total passing.** |
+|||| **78** | **2026-06-18** | **Building placement territory validation: Economy::try_place_building_checked() validates terrain buildability, territory ownership (not neutral/enemy), affordability, and map bounds. 10 new tests, 238 total passing.** |
 
 ---
 
 ## Next Objectives (TDD Order)
 
-### 1. Building Placement Territory Validation
-**Objective:** Players can only build within their own territory. Attempting to build outside territory fails with a clear error.
+### 1. Territory Border Visual Overlay
+**Objective:** Draw a visual border on the map showing where player territory ends. Tiles at the edge of owned territory get a colored border.
 **Test Cases (to write first):**
-- [ ] `try_place_building(Farm, x, y)` fails if (x,y) is outside player's territory
-- [ ] `try_place_building(Farm, x, y)` succeeds if (x,y) is within player's territory
-- [ ] Territory border is visually indicated on the map overlay
+- [ ] `get_territory_border_tiles(player_id)` returns tiles at territory edge
+- [ ] Border tiles are correctly identified (adjacent to neutral/enemy tile)
+- [ ] Border color matches player nation color
+- [ ] No border rendered for neutral-only maps
 
 ### 2. Nation-Specific Unique Buildings (Roman)
 **Objective:** Romans can build Temple of Bacchus, Vineyard, Wine Press, Colosseum, and Sanctuaries.
@@ -297,7 +300,6 @@ protocol::tests               5 tests    Message serialization, room management
 - [ ] Vineyard produces Grapes, Wine Press converts Grapes → Wine
 - [ ] Colosseum provides territory + morale bonus
 - [ ] Non-Roman nations CANNOT build Roman unique buildings
-- [ ] `try_place_building("Temple of Bacchus")` fails for Viking player
 
 ### 3. Balance Simulation
 **Objective:** Automated test simulates first 10 minutes for each nation, verifies similar resource totals (±15%).
@@ -323,4 +325,4 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=32. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 228 engine + 5 server = 233 total. `cargo test --lib` must pass before every push.
+- **Test count:** 238 engine + 5 server = 243 total. `cargo test --lib` must pass before every push.
