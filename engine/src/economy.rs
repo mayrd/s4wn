@@ -209,6 +209,18 @@ pub enum BuildingType {
     SanctuaryOfMinerva = 33,
     /// Sanctuary of Vulcan — special Roman building
     SanctuaryOfVulcan = 34,
+
+    // ── Viking Unique Buildings ──────────────────────────────────────────────
+    /// Mead Hall — produces Mead from Honey+Water (Viking unique)
+    MeadHall = 35,
+    /// Sanctuary of Odin — special Viking building
+    SanctuaryOfOdin = 36,
+    /// Sanctuary of Thor — special Viking building
+    SanctuaryOfThor = 37,
+    /// Sanctuary of Freya — special Viking building
+    SanctuaryOfFreya = 38,
+    /// Runestone — cultural monument, extends territory (Viking unique)
+    Runestone = 39,
 }
 
 impl BuildingType {
@@ -248,6 +260,11 @@ impl BuildingType {
             BuildingType::Colosseum => "Colosseum",
             BuildingType::SanctuaryOfMinerva => "Sanctuary of Minerva",
             BuildingType::SanctuaryOfVulcan => "Sanctuary of Vulcan",
+            BuildingType::MeadHall => "Mead Hall",
+            BuildingType::SanctuaryOfOdin => "Sanctuary of Odin",
+            BuildingType::SanctuaryOfThor => "Sanctuary of Thor",
+            BuildingType::SanctuaryOfFreya => "Sanctuary of Freya",
+            BuildingType::Runestone => "Runestone",
         }
     }
 
@@ -287,6 +304,11 @@ impl BuildingType {
             "Colosseum" => Some(BuildingType::Colosseum),
             "Sanctuary of Minerva" => Some(BuildingType::SanctuaryOfMinerva),
             "Sanctuary of Vulcan" => Some(BuildingType::SanctuaryOfVulcan),
+            "Mead Hall" => Some(BuildingType::MeadHall),
+            "Sanctuary of Odin" => Some(BuildingType::SanctuaryOfOdin),
+            "Sanctuary of Thor" => Some(BuildingType::SanctuaryOfThor),
+            "Sanctuary of Freya" => Some(BuildingType::SanctuaryOfFreya),
+            "Runestone" => Some(BuildingType::Runestone),
             _ => None,
         }
     }
@@ -327,6 +349,11 @@ impl BuildingType {
             "Colosseum",
             "Sanctuary of Minerva",
             "Sanctuary of Vulcan",
+            "Mead Hall",
+            "Sanctuary of Odin",
+            "Sanctuary of Thor",
+            "Sanctuary of Freya",
+            "Runestone",
         ]
     }
 
@@ -540,7 +567,13 @@ impl BuildingType {
             | BuildingType::TempleOfBacchus
             | BuildingType::Colosseum
             | BuildingType::SanctuaryOfMinerva
-            | BuildingType::SanctuaryOfVulcan => BuildingCategory::Unique,
+            | BuildingType::SanctuaryOfVulcan
+            // Viking unique buildings
+            | BuildingType::MeadHall
+            | BuildingType::SanctuaryOfOdin
+            | BuildingType::SanctuaryOfThor
+            | BuildingType::SanctuaryOfFreya
+            | BuildingType::Runestone => BuildingCategory::Unique,
             _ => BuildingCategory::Economic, // planned buildings
         }
     }
@@ -555,6 +588,11 @@ impl BuildingType {
             | BuildingType::Colosseum
             | BuildingType::SanctuaryOfMinerva
             | BuildingType::SanctuaryOfVulcan => Some(NationType::Roman),
+            BuildingType::MeadHall
+            | BuildingType::SanctuaryOfOdin
+            | BuildingType::SanctuaryOfThor
+            | BuildingType::SanctuaryOfFreya
+            | BuildingType::Runestone => Some(NationType::Viking),
             _ => None,
         }
     }
@@ -1791,8 +1829,8 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        // 27 common + 6 Roman unique = 33 total
-        assert_eq!(BuildingType::all_names().len(), 33);
+        // 33 original + 5 Viking unique = 38 total
+        assert_eq!(BuildingType::all_names().len(), 38);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
@@ -3101,5 +3139,122 @@ mod tests {
         // Viking CAN place common buildings
         let result2 = e.try_place_building_checked(BuildingType::Farm, 10, 11, 0, &map);
         assert!(result2.is_some(), "Viking should be able to place Farm");
+    }
+
+    // ── Viking Unique Buildings Tests ────────────────────────────────────────
+
+    #[test]
+    fn test_nation_for_building_viking_unique() {
+        assert_eq!(
+            BuildingType::MeadHall.nation_for_building(),
+            Some(crate::nation::NationType::Viking)
+        );
+        assert_eq!(
+            BuildingType::SanctuaryOfOdin.nation_for_building(),
+            Some(crate::nation::NationType::Viking)
+        );
+        assert_eq!(
+            BuildingType::SanctuaryOfThor.nation_for_building(),
+            Some(crate::nation::NationType::Viking)
+        );
+        assert_eq!(
+            BuildingType::SanctuaryOfFreya.nation_for_building(),
+            Some(crate::nation::NationType::Viking)
+        );
+        assert_eq!(
+            BuildingType::Runestone.nation_for_building(),
+            Some(crate::nation::NationType::Viking)
+        );
+    }
+
+    #[test]
+    fn test_building_category_viking_unique() {
+        use crate::nation::BuildingCategory;
+        assert_eq!(BuildingType::MeadHall.building_category(), BuildingCategory::Unique);
+        assert_eq!(BuildingType::SanctuaryOfOdin.building_category(), BuildingCategory::Unique);
+        assert_eq!(BuildingType::SanctuaryOfThor.building_category(), BuildingCategory::Unique);
+        assert_eq!(BuildingType::SanctuaryOfFreya.building_category(), BuildingCategory::Unique);
+        assert_eq!(BuildingType::Runestone.building_category(), BuildingCategory::Unique);
+    }
+
+    #[test]
+    fn test_is_building_available_viking_unique() {
+        let mut e = Economy::new();
+        e.set_player_nation(crate::nation::NationType::Viking);
+
+        // Viking can build Viking unique buildings
+        assert!(e.is_building_available(BuildingType::MeadHall));
+        assert!(e.is_building_available(BuildingType::SanctuaryOfOdin));
+        assert!(e.is_building_available(BuildingType::SanctuaryOfThor));
+        assert!(e.is_building_available(BuildingType::SanctuaryOfFreya));
+        assert!(e.is_building_available(BuildingType::Runestone));
+
+        // Viking CANNOT build Roman unique buildings
+        assert!(!e.is_building_available(BuildingType::Vineyard));
+        assert!(!e.is_building_available(BuildingType::WinePress));
+        assert!(!e.is_building_available(BuildingType::TempleOfBacchus));
+
+        // Viking can still build common buildings
+        assert!(e.is_building_available(BuildingType::Farm));
+        assert!(e.is_building_available(BuildingType::Barracks));
+    }
+
+    #[test]
+    fn test_is_building_available_roman_cannot_build_viking() {
+        let mut e = Economy::new();
+        e.set_player_nation(crate::nation::NationType::Roman);
+
+        // Roman CANNOT build Viking unique buildings
+        assert!(!e.is_building_available(BuildingType::MeadHall));
+        assert!(!e.is_building_available(BuildingType::SanctuaryOfOdin));
+        assert!(!e.is_building_available(BuildingType::Runestone));
+
+        // Roman CAN build Roman unique buildings
+        assert!(e.is_building_available(BuildingType::Vineyard));
+        assert!(e.is_building_available(BuildingType::Colosseum));
+    }
+
+    #[test]
+    fn test_all_names_includes_viking_unique() {
+        let names = BuildingType::all_names();
+        assert!(names.contains(&"Mead Hall"));
+        assert!(names.contains(&"Sanctuary of Odin"));
+        assert!(names.contains(&"Sanctuary of Thor"));
+        assert!(names.contains(&"Sanctuary of Freya"));
+        assert!(names.contains(&"Runestone"));
+        // Total should be 38 (33 original + 5 Viking unique)
+        // Note: Apiary is common, already counted in the 33
+        assert_eq!(names.len(), 38, "Should have 38 total building names");
+    }
+
+    #[test]
+    fn test_from_name_viking_unique() {
+        assert_eq!(BuildingType::from_name("Mead Hall"), Some(BuildingType::MeadHall));
+        assert_eq!(BuildingType::from_name("Sanctuary of Odin"), Some(BuildingType::SanctuaryOfOdin));
+        assert_eq!(BuildingType::from_name("Sanctuary of Thor"), Some(BuildingType::SanctuaryOfThor));
+        assert_eq!(BuildingType::from_name("Sanctuary of Freya"), Some(BuildingType::SanctuaryOfFreya));
+        assert_eq!(BuildingType::from_name("Runestone"), Some(BuildingType::Runestone));
+    }
+
+    #[test]
+    fn test_try_place_viking_unique_in_territory() {
+        use crate::map::Map;
+
+        let mut map = Map::new(30, 30);
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.set_player_nation(crate::nation::NationType::Viking);
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Viking CAN place Viking unique buildings within territory
+        let result = e.try_place_building_checked(BuildingType::MeadHall, 10, 12, 0, &map);
+        assert!(result.is_some(), "Viking should be able to place Mead Hall");
+
+        // Viking CANNOT place Roman unique buildings
+        let result2 = e.try_place_building_checked(BuildingType::Vineyard, 10, 11, 0, &map);
+        assert!(result2.is_none(), "Viking should NOT be able to place Vineyard");
     }
 }

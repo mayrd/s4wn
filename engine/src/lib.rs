@@ -1116,6 +1116,11 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
         Colosseum => [0.7, 0.5, 0.3],            // arena sandstone
         SanctuaryOfMinerva => [0.9, 0.8, 0.6],   // marble white
         SanctuaryOfVulcan => [0.8, 0.3, 0.1],    // forge orange-red
+        MeadHall => [0.7, 0.6, 0.3],             // mead amber/tan
+        SanctuaryOfOdin => [0.3, 0.4, 0.7],      // Norse blue
+        SanctuaryOfThor => [0.6, 0.3, 0.1],       // thunder bronze
+        SanctuaryOfFreya => [0.5, 0.7, 0.4],      // nature green
+        Runestone => [0.55, 0.5, 0.45],           // stone grey-blue
     }
 }
 
