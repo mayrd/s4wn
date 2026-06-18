@@ -67,10 +67,10 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 2.16 — Config Name Normalization** ✅
+**Phase 2.16 — Balance Simulation** ✅
 - ✅ Nation-gated building placement — Roman, Viking, Maya, Trojan, and Dark Tribe unique buildings. `Economy::is_building_available()` checks player nation. 295 tests.
 - ✅ Dark Tribe unique buildings (7) — DarkTemple, DarkGarden, MushroomFarm, SanctuaryOfMorbus, SanctuaryOfPestilence, DarkFortress, DemonGate
-- ✅ Config name normalization — ClayPit→Clay Pit, HempFarm→Hemp Farm, MeadMaker→Mead Maker. JS config IDs now match Rust `BuildingType::name()` output.
+- ✅ Balance simulation — all 5 nations reach 10+ settlers in 10 min, produce 3+ unique resources, no nation exceeds 200% of median output. 4 new tests, deterministic. 299 tests total.
 ---
 
 AI Agent Configuration:

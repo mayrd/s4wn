@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 2.16 — Config Name Normalization ✅ (295 tests)
-| **Last updated:** 2026-06-18 (Session 88 — Config Name Normalization)
+| **Status:** Phase 2.16 — Balance Simulation ✅ (299 tests)
+| **Last updated:** 2026-06-18 (Session 89 — Balance Simulation)
 
 ---
 
@@ -150,7 +150,7 @@ Each phase lists objectives with test cases and implementation status.
 
 ## Test Suite Reference
 
-### Engine Tests (259 passing)
+### Engine Tests (269 passing)
 ```
 economy::tests              ~90 tests    Production chains, costs, tools, nation modifiers, territory validation
 nation::tests                21 tests    Nation data, unique buildings, specialists
@@ -312,13 +312,13 @@ protocol::tests               5 tests    Message serialization, room management
 - [x] Non-DarkTribe nations CANNOT build DarkTribe unique buildings
 - [x] All 59 building names in all_names() (52 + 7 new)
 
-### 4. Balance Simulation
+### 4. Balance Simulation ✅ (Session 89)
 **Objective:** Simulate the first 10 minutes of gameplay for each nation to verify economic balance. No single nation should dominate all metrics.
 **Test Cases (to write first):**
-- [ ] All 5 nations reach 10+ settlers within 10 minutes
-- [ ] All 5 nations produce at least 3 unique resources
-- [ ] No nation exceeds 200% of the median resource output
-- [ ] Simulation runs deterministically with fixed seed
+- [x] All 5 nations reach 10+ settlers within 10 minutes
+- [x] All 5 nations produce at least 3 unique resources
+- [x] No nation exceeds 200% of the median resource output
+- [x] Simulation runs deterministically with fixed seed
 
 ### 3. Config Name Normalization
 **Status:** ✅ Done (Session 88) — 3 config IDs renamed (ClayPit→Clay Pit, HempFarm→Hemp Farm, MeadMaker→Mead Maker). buildings.json, categories.json updated; data.js regenerated. Now matches Rust `BuildingType::name()` output.
@@ -338,7 +338,7 @@ protocol::tests               5 tests    Message serialization, room management
 |
 |
 |
-### 5. Mobile UI Adaptation
+### 4. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
 **Test Cases (to write first):**
 - [ ] Viewport < 768px: menu buttons stack vertically
@@ -355,4 +355,4 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=32. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 265 engine + 30 server = 295 total. `cargo test --lib` must pass before every push.
+- **Test count:** 269 engine + 30 server = 299 total. `cargo test --lib` must pass before every push.

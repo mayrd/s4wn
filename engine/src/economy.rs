@@ -129,7 +129,41 @@ impl ResourceType {
             Resource::Sulfur => Some(ResourceType::Sulfur),
             Resource::Fish => Some(ResourceType::Fish),
             Resource::Game => Some(ResourceType::Meat),
-            Resource::Grain => Some(ResourceType::Grain),
+Resource::Grain => Some(ResourceType::Grain),
+        }
+    }
+
+    /// Convert a u8 discriminant to a ResourceType.
+    /// Returns None for invalid discriminant values (gaps in the enum).
+    pub fn from_u8(v: u8) -> Option<Self> {
+        match v {
+            0 => Some(ResourceType::Wood),
+            1 => Some(ResourceType::Stone),
+            2 => Some(ResourceType::IronOre),
+            3 => Some(ResourceType::Coal),
+            4 => Some(ResourceType::Gold),
+            5 => Some(ResourceType::Sulfur),
+            6 => Some(ResourceType::Fish),
+            7 => Some(ResourceType::Grain),
+            8 => Some(ResourceType::Meat),
+            9 => Some(ResourceType::Water),
+            10 => Some(ResourceType::Clay),
+            11 => Some(ResourceType::Hemp),
+            12 => Some(ResourceType::Honey),
+            13 => Some(ResourceType::Grapes),
+            14 => Some(ResourceType::Olives),
+            16 => Some(ResourceType::Boards),
+            17 => Some(ResourceType::Tools),
+            18 => Some(ResourceType::Weapons),
+            20 => Some(ResourceType::Bread),
+            22 => Some(ResourceType::Flour),
+            23 => Some(ResourceType::IronIngots),
+            25 => Some(ResourceType::Bricks),
+            26 => Some(ResourceType::Rope),
+            27 => Some(ResourceType::Mead),
+            28 => Some(ResourceType::Wine),
+            29 => Some(ResourceType::OliveOil),
+            _ => None,
         }
     }
 }
@@ -3580,5 +3614,137 @@ mod tests {
 
         let result2 = e.try_place_building_checked(BuildingType::Vineyard, 10, 11, 0, &map);
         assert!(result2.is_none(), "Trojan should NOT be able to place Vineyard");
+    }
+    // ── Balance Simulation ─────────────────────────────────────────────────
+    use crate::nation::{NationType, NationRegistry};
+    use crate::map::Map;
+
+    /// Result of a balance simulation for one nation.
+    #[derive(Debug)]
+    struct BalanceResult {
+        nation_name: &'static str,
+        settlers: usize,
+        soldiers: usize,
+        bowmen: usize,
+        total_resources: u32,
+        unique_resources: u32,
+        resource_amounts: [u32; ResourceType::COUNT],
+    }
+
+    /// Run a 10-minute simulation for a nation. Returns key metrics.
+    fn simulate_nation(nation: NationType) -> BalanceResult {
+        let mut map = Map::new(16, 16);
+        for y in 0..16 {
+            for x in 0..16 {
+                if let Some(tile) = map.get_mut(x, y) {
+                    tile.terrain = crate::map::Terrain::Grass;
+                }
+            }
+        }
+        for y in 3..13 {
+            for x in 3..13 {
+                if let Some(tile) = map.get_mut(x, y) {
+                    tile.territory_owner = Some(0);
+                }
+            }
+        }
+        let starting: &[(ResourceType, u32)] = &[
+            (ResourceType::Wood, 200), (ResourceType::Stone, 200),
+            (ResourceType::IronOre, 80), (ResourceType::Coal, 80), (ResourceType::Gold, 50),
+            (ResourceType::Grain, 60), (ResourceType::Meat, 40), (ResourceType::Fish, 40),
+            (ResourceType::Water, 30), (ResourceType::Clay, 40), (ResourceType::Hemp, 30),
+            (ResourceType::Honey, 30), (ResourceType::Tools, 20), (ResourceType::Weapons, 15),
+            (ResourceType::Boards, 30), (ResourceType::Bricks, 20), (ResourceType::IronIngots, 15),
+            (ResourceType::Flour, 20),
+        ];
+        let mut eco = Economy::with_starting_resources(starting);
+        eco.set_player_nation(nation);
+        eco.set_nation_modifiers(NationRegistry::modifiers(nation));
+        eco.place_building(BuildingType::Castle, 7, 7);
+        let buildings: &[(BuildingType, usize, usize)] = &[
+            (BuildingType::Woodcutter, 5, 7), (BuildingType::Sawmill, 5, 8),
+            (BuildingType::Stonecutter, 9, 7), (BuildingType::Farm, 7, 5),
+            (BuildingType::Fisherman, 9, 8), (BuildingType::Mill, 6, 5),
+            (BuildingType::Bakery, 10, 5), (BuildingType::Toolsmith, 8, 6),
+            (BuildingType::Weaponsmith, 8, 5), (BuildingType::Barracks, 9, 5),
+            (BuildingType::Smelter, 6, 6), (BuildingType::Mine, 8, 8),
+            (BuildingType::Waterworks, 10, 7), (BuildingType::Butcher, 10, 8),
+            (BuildingType::Storehouse, 6, 8), (BuildingType::ClayPit, 5, 9),
+            (BuildingType::Brickworks, 5, 10), (BuildingType::HempFarm, 9, 9),
+            (BuildingType::Ropemaker, 9, 10), (BuildingType::Apiary, 11, 7),
+            (BuildingType::MeadMaker, 11, 8),
+        ];
+        for (kind, x, y) in buildings { eco.place_building(*kind, *x, *y); }
+        for _ in 0..20 { eco.auto_assign_settlers(); }
+        for tick in 0..6000u64 {
+            eco.update();
+            if tick % 10 == 0 { let _ = eco.auto_assign_settlers(); }
+        }
+        let settlers = eco.total_settlers();
+        let soldiers = eco.units.alive_of_kind(UnitKind::Swordsman).count();
+        let bowmen = eco.units.alive_of_kind(UnitKind::Bowman).count();
+        let mut unique_resources: u32 = 0;
+        let mut total_resources: u32 = 0;
+        let mut resource_amounts = [0u32; ResourceType::COUNT];
+        for i in 0..ResourceType::COUNT {
+            if let Some(rt) = ResourceType::from_u8(i as u8) {
+                let amt = eco.storage.get(rt);
+                resource_amounts[i] = amt;
+                total_resources = total_resources.saturating_add(amt);
+                if amt > 0 { unique_resources += 1; }
+            }
+        }
+        BalanceResult {
+            nation_name: nation.name(), settlers, soldiers, bowmen,
+            total_resources, unique_resources, resource_amounts,
+        }
+    }
+
+    #[test]
+    fn test_balance_all_nations_reach_10_settlers() {
+        for nation in NationType::ALL {
+            let result = simulate_nation(nation);
+            assert!(result.settlers >= 10,
+                "{} only reached {} settlers (need >=10)", result.nation_name, result.settlers);
+        }
+    }
+
+    #[test]
+    fn test_balance_all_nations_produce_3_unique_resources() {
+        for nation in NationType::ALL {
+            let result = simulate_nation(nation);
+            assert!(result.unique_resources >= 3,
+                "{} only produced {} unique resource types (need >=3)",
+                result.nation_name, result.unique_resources);
+        }
+    }
+
+    #[test]
+    fn test_balance_no_nation_exceeds_200pct_of_median() {
+        let results: Vec<BalanceResult> = NationType::ALL.iter().map(|&n| simulate_nation(n)).collect();
+        let mut totals: Vec<u32> = results.iter().map(|r| r.total_resources).collect();
+        totals.sort_unstable();
+        let median = totals[2];
+        for r in &results {
+            let pct = if median > 0 {
+                (r.total_resources as f64 / median as f64) * 100.0
+            } else { 0.0 };
+            assert!(pct <= 200.0,
+                "{} total resources ({}) is {:.1}% of median ({}), exceeds 200%",
+                r.nation_name, r.total_resources, pct, median);
+        }
+    }
+
+    #[test]
+    fn test_balance_simulation_deterministic() {
+        let first: Vec<String> = NationType::ALL.iter().map(|&n| {
+            let r = simulate_nation(n);
+            format!("{}:{}:{}", r.settlers, r.total_resources, r.unique_resources)
+        }).collect();
+        let second: Vec<String> = NationType::ALL.iter().map(|&n| {
+            let r = simulate_nation(n);
+            format!("{}:{}:{}", r.settlers, r.total_resources, r.unique_resources)
+        }).collect();
+        assert_eq!(first, second, "Balance simulation must be deterministic");
     }
 }
