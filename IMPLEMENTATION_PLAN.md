@@ -29,7 +29,7 @@ For EVERY feature, follow this exact sequence:
 - **Tests are the spec.** If a test isn't written, the behavior doesn't exist.
 - **Red → Green → Refactor.** Write failing test → make it pass → clean up.
 - **Regression tests for every bug.** Every bugfix adds a test proving the bug is fixed.
-- **216 tests must always pass.** `cargo test --lib` is the gatekeeper.
+- **259 tests must always pass.** `cargo test --lib` is the gatekeeper.
 
 ---
 
@@ -281,6 +281,7 @@ protocol::tests               5 tests    Message serialization, room management
 |||| **78** | **2026-06-18** | **Building placement territory validation: Economy::try_place_building_checked() validates terrain buildability, territory ownership (not neutral/enemy), affordability, and map bounds. 10 new tests, 238 total passing.** |
 |||| **79** | **2026-06-18** | **Territory border visual overlay: border tiles computed and rendered as colored dots with nation color tinting. 6 new tests, 244 total passing.** |
 |||||| **81** | **2026-06-18** | **Bugfix #38: No tiles visible on startup or map load. Root cause: setup_starter_base() placed Castle + settlers but never called compute_visibility_from_entities(), leaving all tiles at visibility=0.0 (fully fogged → black screen). Fixed by adding visibility recomputation + mesh_dirty=true at end of setup_starter_base(). All 244 tests pass.** |
+|||||| **82** | **2026-06-18** | **Bugfix #39: German translation not working for resources. Root cause: ResourceType::name() returned spaced names ("Iron Ore", "Iron Ingots") but config resources.json IDs are CamelCase ("IronOre", "IronIngots"). tResource() looked up the dictionary with wrong keys. Fixed by aligning name() to return CamelCase. All 259 tests pass.** |
 |||||| **82** | **2026-06-18** | **Nation-gated building placement: Added player_nation field to Economy, nation_for_building() to BuildingType (Roman unique buildings require Roman nation), is_building_available() check in try_place_building_checked(), set_player_nation() on Economy, WASM export is_building_available_for_nation(). Roman unique buildings categorized as BuildingCategory::Unique. 8 new tests, 252 total passing.** |
 | **83** | **2026-06-18** | **Viking unique buildings: Added 5 new BuildingType variants (MeadHall, SanctuaryOfOdin, SanctuaryOfThor, SanctuaryOfFreya, Runestone) with nation_for_building() requiring Viking nation, BuildingCategory::Unique, building colors, from_name/all_names wiring. 7 new tests, 259 total passing.** |
 || **84** | **2026-06-18** | **Maya unique buildings: 7 BuildingType variants (TempleOfChac, AgaveFarm, Distillery, 3 Sanctuaries, Observatory), nation-gated placement (Maya only), 259→259 tests (no new test file — existing coverage maintained).** |
