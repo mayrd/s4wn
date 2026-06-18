@@ -100,6 +100,23 @@ impl GameState {
         // Update combat AI (soldiers seek enemies, fight)
         self.combat_ai
             .update(&mut self.economy.units, &self.map, TICK_DURATION as f32);
+
+        // Recompute fog-of-war visibility every 100 ticks (~10 seconds)
+        if self.tick_count % 100 == 0 {
+            let buildings: Vec<(crate::economy::BuildingType, usize, usize)> = self
+                .economy
+                .buildings
+                .iter()
+                .map(|b| (b.kind, b.x, b.y))
+                .collect();
+            let units: Vec<(crate::units::UnitKind, f32, f32)> = self
+                .economy
+                .units
+                .alive_units()
+                .map(|u| (u.kind, u.x, u.y))
+                .collect();
+            self.map.compute_visibility_from_entities(&buildings, &units);
+        }
     }
 
     /// Get a seeded pseudo-random value in [0, 1)

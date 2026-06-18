@@ -1294,6 +1294,25 @@ pub fn load_map_json(json: &str) -> String {
                     app.overlay_dirty = true;
                     // Reset game state for the new map
                     app.game_loop = GameLoop::new(GameState::new(app.map.clone()));
+                    // Compute initial visibility from the starter base entities
+                    // (all tiles start at 0.0 visibility = fully fogged)
+                    let buildings: Vec<(crate::economy::BuildingType, usize, usize)> = app
+                        .game_loop
+                        .state
+                        .economy
+                        .buildings
+                        .iter()
+                        .map(|b| (b.kind, b.x, b.y))
+                        .collect();
+                    let units: Vec<(crate::units::UnitKind, f32, f32)> = app
+                        .game_loop
+                        .state
+                        .economy
+                        .units
+                        .alive_units()
+                        .map(|u| (u.kind, u.x, u.y))
+                        .collect();
+                    app.map.compute_visibility_from_entities(&buildings, &units);
                     String::from("ok")
                 }
                 Err(e) => format!("error: {}", e),
