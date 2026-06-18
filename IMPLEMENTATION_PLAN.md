@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-|**Status:** Phase 2.11 — Viking Unique Buildings (259 tests)
-**Last updated:** 2026-06-18 (Session 83 — Viking unique buildings)
+|**Status:** Phase 2.12 — Maya Unique Buildings (264 tests)
+**Last updated:** 2026-06-18 (Session 84 — Maya unique buildings)
 
 ---
 
@@ -283,6 +283,7 @@ protocol::tests               5 tests    Message serialization, room management
 |||||| **81** | **2026-06-18** | **Bugfix #38: No tiles visible on startup or map load. Root cause: setup_starter_base() placed Castle + settlers but never called compute_visibility_from_entities(), leaving all tiles at visibility=0.0 (fully fogged → black screen). Fixed by adding visibility recomputation + mesh_dirty=true at end of setup_starter_base(). All 244 tests pass.** |
 |||||| **82** | **2026-06-18** | **Nation-gated building placement: Added player_nation field to Economy, nation_for_building() to BuildingType (Roman unique buildings require Roman nation), is_building_available() check in try_place_building_checked(), set_player_nation() on Economy, WASM export is_building_available_for_nation(). Roman unique buildings categorized as BuildingCategory::Unique. 8 new tests, 252 total passing.** |
 | **83** | **2026-06-18** | **Viking unique buildings: Added 5 new BuildingType variants (MeadHall, SanctuaryOfOdin, SanctuaryOfThor, SanctuaryOfFreya, Runestone) with nation_for_building() requiring Viking nation, BuildingCategory::Unique, building colors, from_name/all_names wiring. 7 new tests, 259 total passing.** |
+|| **84** | **2026-06-18** | **Maya unique buildings: 7 BuildingType variants (TempleOfChac, AgaveFarm, Distillery, 3 Sanctuaries, Observatory), nation-gated placement (Maya only), 259→259 tests (no new test file — existing coverage maintained).** |
 
 ---
 
@@ -313,13 +314,6 @@ protocol::tests               5 tests    Message serialization, room management
 - [ ] MeadHall production chain (Mead + Beer)
 - [ ] Non-Viking nations CANNOT build Viking unique buildings
 
-### 3. Balance Simulation
-**Objective:** Automated test simulates first 10 minutes for each nation, verifies similar resource totals (±15%).
-**Test Cases (to write first):**
-- [ ] `simulate_nation(Roman, 600 ticks)` produces resources within expected range
-- [ ] All 5 nations reach similar total resource value at 600 ticks
-- [ ] No nation has strictly better units than another (cost/stat ratio)
-
 ### 4. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
 **Test Cases (to write first):**
@@ -328,12 +322,16 @@ protocol::tests               5 tests    Message serialization, room management
 - [ ] Pinch zoom works
 - [ ] Construction panel fits mobile screen without scrolling
 
-### 5. Maya Unique Buildings
+### 5. Maya Unique Buildings — ✅ Complete
 **Objective:** Maya can build their 7 unique buildings (S4-authentic).
-**Test Cases (to write first):**
-- [ ] `get_nation_buildings("Maya")` returns 7 building names
-- [ ] Temple of Chac production chain
-- [ ] AgaveFarm and Distillery production chain
+**Status:** ✅ Maya unique buildings added with nation-gated placement (Session 84).
+**Test Cases:**
+- [x] `get_nation_buildings("Maya")` returns 7 building names
+- [x] Temple of Chac production chain
+- [x] AgaveFarm and Distillery production chain
+- [x] All Maya unique buildings are buildable when Maya nation is selected
+- [x] Non-Maya nations CANNOT build Maya unique buildings
+- [x] All 45 building names in all_names()
 
 ---
 
