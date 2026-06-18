@@ -67,8 +67,8 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 2.10 — Roman Unique Buildings** (in progress 🔨)
-- 🔨 **Phase 2.10 — Roman Unique Buildings** — In progress. 6 Roman unique buildings (Vineyard, WinePress, TempleOfBacchus, Colosseum, SanctuaryOfMinerva, SanctuaryOfVulcan) + 2 new resources (Grapes, Wine). Production chains: Vineyard→Grapes, WinePress→Wine (Grapes input), TempleOfBacchus→Wine. Building colors in renderer. 33 total building types. 244 engine tests passing.
+**Phase 2.10 — Nation-Gated Building Placement** (in progress 🔨)
+- ✅ Nation-gated building placement — Roman unique buildings (Vineyard, WinePress, TempleOfBacchus, Colosseum, SanctuaryOfMinerva, SanctuaryOfVulcan) require Roman nation. Non-Roman nations cannot build them. `Economy::is_building_available()` checks player nation against building's required nation. WASM export `is_building_available_for_nation()`. 252 engine tests passing.
 ---
 
 AI Agent Configuration:

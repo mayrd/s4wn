@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-**Status:** Phase 2.10 — Fog-of-War Visibility Fix (244 tests)
-**Last updated:** 2026-06-18 (Session 81 — Fog visibility fix)
+**Status:** Phase 2.10 — Nation-Gated Building Placement (252 tests)
+**Last updated:** 2026-06-18 (Session 82 — Nation-gated building placement)
 
 ---
 
@@ -150,7 +150,7 @@ Each phase lists objectives with test cases and implementation status.
 
 ## Test Suite Reference
 
-### Engine Tests (244 passing)
+### Engine Tests (252 passing)
 ```
 economy::tests              ~90 tests    Production chains, costs, tools, nation modifiers, territory validation
 nation::tests                21 tests    Nation data, unique buildings, specialists
@@ -280,16 +280,16 @@ protocol::tests               5 tests    Message serialization, room management
 |||| **77** | **2026-06-18** | **Territory expansion: territory_owner field on Tile, compute_territory() from buildings (Castle=5, GuardTower=3, Fortress=6, Storehouse=2, others=1), is_within_territory() for placement validation, owner_id on Building, integrated into game_loop every 100 ticks. 12 new tests, 228 total passing.** |
 |||| **78** | **2026-06-18** | **Building placement territory validation: Economy::try_place_building_checked() validates terrain buildability, territory ownership (not neutral/enemy), affordability, and map bounds. 10 new tests, 238 total passing.** |
 |||| **79** | **2026-06-18** | **Territory border visual overlay: border tiles computed and rendered as colored dots with nation color tinting. 6 new tests, 244 total passing.** |
-||||| **80** | **2026-06-18** | **Roman Unique Buildings: Added 6 Roman unique building types (Vineyard, WinePress, TempleOfBacchus, Colosseum, SanctuaryOfMinerva, SanctuaryOfVulcan) + 2 new resources (Grapes, Wine). Production chains: Vineyard→Grapes, WinePress→Wine (from Grapes), TempleOfBacchus→Wine. Building colors in renderer. All 244 tests pass. 33 total building types.** |
-||||| **81** | **2026-06-18** | **Bugfix #38: No tiles visible on startup or map load. Root cause: setup_starter_base() placed Castle + settlers but never called compute_visibility_from_entities(), leaving all tiles at visibility=0.0 (fully fogged → black screen). Fixed by adding visibility recomputation + mesh_dirty=true at end of setup_starter_base(). All 244 tests pass.** |
+|||||| **81** | **2026-06-18** | **Bugfix #38: No tiles visible on startup or map load. Root cause: setup_starter_base() placed Castle + settlers but never called compute_visibility_from_entities(), leaving all tiles at visibility=0.0 (fully fogged → black screen). Fixed by adding visibility recomputation + mesh_dirty=true at end of setup_starter_base(). All 244 tests pass.** |
+|||||| **82** | **2026-06-18** | **Nation-gated building placement: Added player_nation field to Economy, nation_for_building() to BuildingType (Roman unique buildings require Roman nation), is_building_available() check in try_place_building_checked(), set_player_nation() on Economy, WASM export is_building_available_for_nation(). Roman unique buildings categorized as BuildingCategory::Unique. 8 new tests, 252 total passing.** |
 
 ---
 
 ## Next Objectives (TDD Order)
 
-### 1. Nation-Specific Unique Buildings (Roman) — ✅ In Progress
+### 1. Nation-Specific Unique Buildings (Roman) — ✅ Complete
 **Objective:** Romans can build Temple of Bacchus, Vineyard, Wine Press, Colosseum, and Sanctuaries.
-**Status:** ✅ Roman unique buildings added to BuildingType enum with production chains (Session 80).
+**Status:** ✅ Roman unique buildings added with production chains, nation-gated placement (Session 82).
 **Remaining Test Cases:**
 - [ ] Colosseum provides territory + morale bonus (needs territory radius implementation)
 - [ ] SanctuaryOfMinerva and SanctuaryOfVulcan special effects
@@ -334,4 +334,4 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=32. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 244 engine + 5 server = 249 total. `cargo test --lib` must pass before every push.
+- **Test count:** 252 engine + 5 server = 257 total. `cargo test --lib` must pass before every push.
