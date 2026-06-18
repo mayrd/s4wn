@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 4 — Mobile UI Adaptation (tap-to-place pulse feedback) (269 tests)
-| **Last updated:** 2026-06-18 (Session 92 — Tap-to-Place Pulse Feedback)
+| **Status:** Phase 4 — Mobile UI Adaptation (long-press tile inspector) (269 tests)
+| **Last updated:** 2026-06-18 (Session 93 — Long-Press Tile Inspector + Deterministic Fix)
 
 ---
 
@@ -330,7 +330,8 @@ protocol::tests               5 tests    Message serialization, room management
 
 || **87** | **2026-06-18** | **Dark Tribe unique buildings: 7 BuildingType variants (DarkTemple=54..DemonGate=60), nation-gated placement, production chains (DarkTemple→Wine, DarkGarden→Grapes, MushroomFarm→Grain, DemonGate→Weapons), building colors, costs, tools, config. Added Grapes+Wine to resources.json. 265 tests pass.** |
 |
-|| **88** | **2026-06-18** | **Config name normalization: ClayPit→Clay Pit, HempFarm→Hemp Farm, MeadMaker→Mead Maker. Fixed naming gap between JS config (CamelCase) and Rust from_name() (space-separated). buildings.json, categories.json, data.js updated. All 295 tests pass.** |
+|| **93** | **2026-06-18** | **Flaky balance test fix (HashMap non-determinism in most_needed_tool) + Long-press tile inspector for mobile (500ms hold → floating info panel with terrain, elevation, resource). 269 tests pass.** |
+| **88** | **2026-06-18** | **Config name normalization: ClayPit→Clay Pit, HempFarm→Hemp Farm, MeadMaker→Mead Maker. Fixed naming gap between JS config (CamelCase) and Rust from_name() (space-separated). buildings.json, categories.json, data.js updated. All 295 tests pass.** |
 |
 |
 |
@@ -340,7 +341,7 @@ protocol::tests               5 tests    Message serialization, room management
 |
 ### 4. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
-**Status:** In progress — touch interactions + pulse feedback (Session 92). Remaining: long-press, orientation, accordion.
+**Status:** In progress — long-press tile inspector (Session 93). Remaining: orientation, accordion, mobile testing.
 **Test Cases (to write first):**
 - [x] Viewport < 768px: menu and panels adapt to mobile (responsive CSS media queries)
 - [x] Touch drag works for camera pan
@@ -350,7 +351,8 @@ protocol::tests               5 tests    Message serialization, room management
 
 **Next concrete steps:**
 1. ~~Add tap-to-place visual feedback (pulse animation on selected tile)~~ ✅ Done (Session 92)
-2. Add long-press context menu for tile info (inspector) on mobile
+2. ~~Add long-press context menu for tile info (inspector) on mobile~~ ✅ Done (Session 93)
+3. Test touch interactions on actual mobile viewport via Chrome DevTools responsive mode
 3. Test touch interactions on actual mobile viewport via Chrome DevTools responsive mode
 4. Add orientation-change handler to recalculate viewport layout
 5. Optimize construction panel category collapse for small screens (accordion)
