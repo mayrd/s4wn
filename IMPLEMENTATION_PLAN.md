@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 2.16 — Balance Simulation ✅ (299 tests)
-| **Last updated:** 2026-06-18 (Session 89 — Balance Simulation)
+| **Status:** Phase 4 — Mobile UI Adaptation (responsive CSS) (299 tests)
+| **Last updated:** 2026-06-18 (Session 90 — Mobile Responsive CSS)
 
 ---
 
@@ -340,11 +340,19 @@ protocol::tests               5 tests    Message serialization, room management
 |
 ### 4. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
+**Status:** In progress — responsive CSS added (Session 90). Touch interactions next.
 **Test Cases (to write first):**
-- [ ] Viewport < 768px: menu buttons stack vertically
+- [x] Viewport < 768px: menu and panels adapt to mobile (responsive CSS media queries)
 - [ ] Touch drag works for camera pan
 - [ ] Pinch zoom works
 - [ ] Construction panel fits mobile screen without scrolling
+
+**Next concrete steps:**
+1. Implement touch event handlers for camera pan (touchstart/touchmove/touchend on canvas)
+2. Implement pinch-to-zoom gesture detection (two-finger distance tracking)
+3. Add touch event handlers for building placement (tap to place)
+4. Test on actual mobile viewport via Chrome DevTools responsive mode
+5. Update IMPLEMENTATION_PLAN.md with touch interaction test results
 
 ---
 

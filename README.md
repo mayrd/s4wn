@@ -67,10 +67,11 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 2.16 — Balance Simulation** ✅
+**Phase 4 — Mobile UI Adaptation** 🚧
 - ✅ Nation-gated building placement — Roman, Viking, Maya, Trojan, and Dark Tribe unique buildings. `Economy::is_building_available()` checks player nation. 295 tests.
 - ✅ Dark Tribe unique buildings (7) — DarkTemple, DarkGarden, MushroomFarm, SanctuaryOfMorbus, SanctuaryOfPestilence, DarkFortress, DemonGate
 - ✅ Balance simulation — all 5 nations reach 10+ settlers in 10 min, produce 3+ unique resources, no nation exceeds 200% of median output. 4 new tests, deterministic. 299 tests total.
+- 🚧 Mobile responsive CSS — @media queries for sub-768px viewports: full-width panels, larger touch targets, flex-wrap controls. 299 tests pass.
 ---
 
 AI Agent Configuration:
