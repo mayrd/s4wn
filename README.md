@@ -67,8 +67,9 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 2.10 — Nation-Gated Building Placement** (in progress 🔨)
-- ✅ Nation-gated building placement — Roman unique buildings (Vineyard, WinePress, TempleOfBacchus, Colosseum, SanctuaryOfMinerva, SanctuaryOfVulcan) require Roman nation. Non-Roman nations cannot build them. `Economy::is_building_available()` checks player nation against building's required nation. WASM export `is_building_available_for_nation()`. 252 engine tests passing.
+**Phase 2.11 — Viking Unique Buildings** (in progress 🔨)
+- ✅ Nation-gated building placement — Roman unique buildings require Roman nation. `Economy::is_building_available()` checks player nation. 252 tests.
+- ✅ Viking unique buildings — MeadHall, SanctuaryOfOdin, SanctuaryOfThor, SanctuaryOfFreya, Runestone added with nation-gated placement. 259 tests.
 ---
 
 AI Agent Configuration:

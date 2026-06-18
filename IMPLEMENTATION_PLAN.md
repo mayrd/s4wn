@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-**Status:** Phase 2.10 — Nation-Gated Building Placement (252 tests)
-**Last updated:** 2026-06-18 (Session 82 — Nation-gated building placement)
+|**Status:** Phase 2.11 — Viking Unique Buildings (259 tests)
+**Last updated:** 2026-06-18 (Session 83 — Viking unique buildings)
 
 ---
 
@@ -150,7 +150,7 @@ Each phase lists objectives with test cases and implementation status.
 
 ## Test Suite Reference
 
-### Engine Tests (252 passing)
+### Engine Tests (259 passing)
 ```
 economy::tests              ~90 tests    Production chains, costs, tools, nation modifiers, territory validation
 nation::tests                21 tests    Nation data, unique buildings, specialists
@@ -282,6 +282,7 @@ protocol::tests               5 tests    Message serialization, room management
 |||| **79** | **2026-06-18** | **Territory border visual overlay: border tiles computed and rendered as colored dots with nation color tinting. 6 new tests, 244 total passing.** |
 |||||| **81** | **2026-06-18** | **Bugfix #38: No tiles visible on startup or map load. Root cause: setup_starter_base() placed Castle + settlers but never called compute_visibility_from_entities(), leaving all tiles at visibility=0.0 (fully fogged → black screen). Fixed by adding visibility recomputation + mesh_dirty=true at end of setup_starter_base(). All 244 tests pass.** |
 |||||| **82** | **2026-06-18** | **Nation-gated building placement: Added player_nation field to Economy, nation_for_building() to BuildingType (Roman unique buildings require Roman nation), is_building_available() check in try_place_building_checked(), set_player_nation() on Economy, WASM export is_building_available_for_nation(). Roman unique buildings categorized as BuildingCategory::Unique. 8 new tests, 252 total passing.** |
+| **83** | **2026-06-18** | **Viking unique buildings: Added 5 new BuildingType variants (MeadHall, SanctuaryOfOdin, SanctuaryOfThor, SanctuaryOfFreya, Runestone) with nation_for_building() requiring Viking nation, BuildingCategory::Unique, building colors, from_name/all_names wiring. 7 new tests, 259 total passing.** |
 
 ---
 
@@ -293,9 +294,18 @@ protocol::tests               5 tests    Message serialization, room management
 **Remaining Test Cases:**
 - [ ] Colosseum provides territory + morale bonus (needs territory radius implementation)
 - [ ] SanctuaryOfMinerva and SanctuaryOfVulcan special effects
-- [ ] Non-Roman nations CANNOT build Roman unique buildings (nation-gated placement)
+- [x] Non-Roman nations CANNOT build Roman unique buildings (nation-gated placement)
 
-### 2. Viking Unique Buildings
+### 2. Viking Unique Buildings — ✅ Complete
+**Objective:** Vikings can build Mead Hall, Sanctuary of Odin, Sanctuary of Thor, Sanctuary of Freya, Runestone.
+**Status:** ✅ Viking unique buildings added with nation-gated placement (Session 83).
+**Test Cases:**
+- [x] `get_nation_buildings("Viking")` returns 6 building names (via UniqueBuildingType)
+- [x] All Viking unique buildings are buildable when Viking nation is selected
+- [x] Non-Viking nations CANNOT build Viking unique buildings
+- [x] All 38 building names in all_names()
+
+### 3. Balance Simulation
 **Objective:** Vikings can build their 6 unique buildings (S4-authentic: MeadHall, Apiary, SanctuaryOfOdin, SanctuaryOfThor, SanctuaryOfFreya, Runestone).
 **Test Cases (to write first):**
 - [ ] `get_nation_buildings("Viking")` returns 6 building names
@@ -334,4 +344,4 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=32. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 252 engine + 5 server = 257 total. `cargo test --lib` must pass before every push.
+- **Test count:** 259 engine + 5 server = 264 total. `cargo test --lib` must pass before every push.
