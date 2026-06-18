@@ -571,6 +571,28 @@
     display: none; pointer-events: none;
   }
   #placement-status.visible { display: block; }
+  /* ── Placement pulse feedback ────────────────────────────────────── */
+  @keyframes placementPulse {
+    0%   { transform: translate(-50%,-50%) scale(0.3); opacity: 0.9; }
+    100% { transform: translate(-50%,-50%) scale(2.0); opacity: 0; }
+  }
+  @keyframes placementPulseFail {
+    0%   { transform: translate(-50%,-50%) scale(0.3); opacity: 0.9; }
+    50%  { transform: translate(-50%,-50%) scale(1.2); opacity: 0.6; }
+    100% { transform: translate(-50%,-50%) scale(1.8); opacity: 0; }
+  }
+  .placement-pulse {
+    position: fixed; z-index: 90; pointer-events: none;
+    width: 64px; height: 64px; border-radius: 50%;
+    border: 3px solid rgba(100,220,100,0.8);
+    background: radial-gradient(circle, rgba(100,220,100,0.2) 0%, transparent 70%);
+    animation: placementPulse 0.5s ease-out forwards;
+  }
+  .placement-pulse.fail {
+    border-color: rgba(220,100,100,0.8);
+    background: radial-gradient(circle, rgba(220,100,100,0.2) 0%, transparent 70%);
+    animation: placementPulseFail 0.6s ease-out forwards;
+  }
   #selection-info {
     position: fixed;
     z-index: 26; padding: 10px 14px; border-radius: 6px;
@@ -2425,6 +2447,16 @@ function showBuildCostTooltip(kindName) {
     return '';
 }
 
+
+// ── Placement pulse visual feedback ──────────────────────────────────
+function showPlacementPulse(clientX, clientY, success) {
+    const pulse = document.createElement('div');
+    pulse.className = 'placement-pulse' + (success ? '' : ' fail');
+    pulse.style.left = clientX + 'px';
+    pulse.style.top = clientY + 'px';
+    document.body.appendChild(pulse);
+    setTimeout(() => pulse.remove(), success ? 500 : 600);
+}
 function cancelPlacement() {
     placementMode = null;
     placementButtons.forEach(b => b.classList.remove('active'));
@@ -2495,6 +2527,7 @@ canvas.addEventListener('click', (e) => {
         const t = JSON.parse(info);
         const result = try_place_building(placementMode, t.x, t.y);
         const r = JSON.parse(result);
+        showPlacementPulse(e.clientX, e.clientY, r.ok);
         if (r.ok) {
             placementStatus.textContent = `✅ ${r.kind} placed at (${t.x},${t.y})`;
             lastAffordabilityUpdate = 0; // immediate refresh
