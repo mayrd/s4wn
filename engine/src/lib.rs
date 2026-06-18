@@ -1537,6 +1537,8 @@ pub fn set_player_nation(nation_name: &str) -> bool {
                 app.game_loop.state.player_nation = Some(nation_type);
                 // Apply nation modifiers to economy
                 app.game_loop.state.economy.set_nation_modifiers(nation.modifiers);
+                // Set player nation on economy for nation-gated building placement
+                app.game_loop.state.economy.set_player_nation(nation_type);
                 return true;
             }
         }
@@ -1602,6 +1604,29 @@ pub fn get_territory_border_tiles_json() -> String {
         }
     }
     String::new()
+}
+
+/// Check if a building type is available for a given nation.
+/// Returns "true" or "false".
+#[wasm_bindgen]
+pub fn is_building_available_for_nation(building_name: &str, nation_name: &str) -> String {
+    let kind = match crate::economy::BuildingType::from_name(building_name) {
+        Some(k) => k,
+        None => return String::from("false"),
+    };
+    let nation = match crate::nation::NationType::from_name(nation_name) {
+        Some(n) => n,
+        None => return String::from("false"),
+    };
+    if let Some(required) = kind.nation_for_building() {
+        if required == nation {
+            String::from("true")
+        } else {
+            String::from("false")
+        }
+    } else {
+        String::from("true") // common building
+    }
 }
 
 /// Get building summary as a JSON string for the HUD.

@@ -25,7 +25,7 @@
 //! - An output buffer (resources produced, waiting to be collected)
 
 use crate::map::Resource;
-use crate::nation::{NationModifiers, ResourceCategory};
+use crate::nation::{NationModifiers, NationType, ResourceCategory};
 use crate::units::{UnitKind, UnitManager};
 
 // ── Resource Types ──────────────────────────────────────────────────────────
@@ -534,7 +534,28 @@ impl BuildingType {
             BuildingType::RoadLayer => {
                 BuildingCategory::Economic
             }
+            // Roman unique buildings
+            BuildingType::Vineyard
+            | BuildingType::WinePress
+            | BuildingType::TempleOfBacchus
+            | BuildingType::Colosseum
+            | BuildingType::SanctuaryOfMinerva
+            | BuildingType::SanctuaryOfVulcan => BuildingCategory::Unique,
             _ => BuildingCategory::Economic, // planned buildings
+        }
+    }
+
+    /// If this building is nation-locked, return the required NationType.
+    /// Common buildings return None (available to all nations).
+    pub fn nation_for_building(self) -> Option<NationType> {
+        match self {
+            BuildingType::Vineyard
+            | BuildingType::WinePress
+            | BuildingType::TempleOfBacchus
+            | BuildingType::Colosseum
+            | BuildingType::SanctuaryOfMinerva
+            | BuildingType::SanctuaryOfVulcan => Some(NationType::Roman),
+            _ => None,
         }
     }
 }
@@ -896,6 +917,8 @@ pub struct Economy {
     pub tool_storage: [u32; 12],
     /// Nation modifiers applied to production costs and speeds (None = unset)
     pub nation_modifiers: Option<NationModifiers>,
+    /// The nation this economy belongs to (None = unset / spectator)
+    pub player_nation: Option<NationType>,
 }
 
 impl Economy {
@@ -909,6 +932,7 @@ impl Economy {
             resources_collected: 0,
             tool_storage: [0u32; 12],
             nation_modifiers: None,
+            player_nation: None,
         }
     }
 
@@ -972,6 +996,25 @@ impl Economy {
     pub fn set_nation_modifiers(&mut self, modifiers: NationModifiers) {
         self.nation_modifiers = Some(modifiers);
         self.units.set_nation_speed_mult(modifiers.units.worker_speed);
+    }
+
+    /// Set the player nation for this economy.
+    /// Used for nation-gated building placement.
+    pub fn set_player_nation(&mut self, nation: NationType) {
+        self.player_nation = Some(nation);
+    }
+
+    /// Check if a building type is available for the player's nation.
+    /// Returns true if the building is common (not nation-locked) or if it
+    /// belongs to the player's current nation.
+    pub fn is_building_available(&self, kind: BuildingType) -> bool {
+        if let Some(required) = kind.nation_for_building() {
+            // Nation-locked building: check player's nation
+            self.player_nation.map_or(false, |n| n == required)
+        } else {
+            // Common building: available to all
+            true
+        }
     }
 
     /// Map a building type to its resource category for nation production speed lookups.
@@ -1080,6 +1123,10 @@ impl Economy {
         }
         // Check territory: tile must be owned by this player (not neutral, not enemy)
         if map.get_territory(x, y) != Some(player_id) {
+            return None;
+        }
+        // Check nation gating: building must be available for player's nation
+        if !self.is_building_available(kind) {
             return None;
         }
         // Check affordability
@@ -2912,5 +2959,147 @@ mod tests {
         assert!(owned < 100, "Castle should claim < 100 tiles, got {}", owned);
         // Rest should be neutral
         assert_eq!(owned + neutral, 20 * 20);
+    }
+
+    // ── Nation-Gated Building Placement Tests ──────────────────────────────────
+
+    #[test]
+    fn test_nation_for_building_roman_unique() {
+        assert_eq!(
+            BuildingType::Vineyard.nation_for_building(),
+            Some(crate::nation::NationType::Roman)
+        );
+        assert_eq!(
+            BuildingType::WinePress.nation_for_building(),
+            Some(crate::nation::NationType::Roman)
+        );
+        assert_eq!(
+            BuildingType::TempleOfBacchus.nation_for_building(),
+            Some(crate::nation::NationType::Roman)
+        );
+        assert_eq!(
+            BuildingType::Colosseum.nation_for_building(),
+            Some(crate::nation::NationType::Roman)
+        );
+        assert_eq!(
+            BuildingType::SanctuaryOfMinerva.nation_for_building(),
+            Some(crate::nation::NationType::Roman)
+        );
+        assert_eq!(
+            BuildingType::SanctuaryOfVulcan.nation_for_building(),
+            Some(crate::nation::NationType::Roman)
+        );
+    }
+
+    #[test]
+    fn test_nation_for_building_common() {
+        // Common buildings return None
+        assert_eq!(BuildingType::Farm.nation_for_building(), None);
+        assert_eq!(BuildingType::Castle.nation_for_building(), None);
+        assert_eq!(BuildingType::Barracks.nation_for_building(), None);
+        assert_eq!(BuildingType::Sawmill.nation_for_building(), None);
+        assert_eq!(BuildingType::Toolsmith.nation_for_building(), None);
+    }
+
+    #[test]
+    fn test_building_category_unique() {
+        // Roman unique buildings should be categorized as Unique
+        use crate::nation::BuildingCategory;
+        assert_eq!(
+            BuildingType::Vineyard.building_category(),
+            BuildingCategory::Unique
+        );
+        assert_eq!(
+            BuildingType::WinePress.building_category(),
+            BuildingCategory::Unique
+        );
+        assert_eq!(
+            BuildingType::Colosseum.building_category(),
+            BuildingCategory::Unique
+        );
+    }
+
+    #[test]
+    fn test_is_building_available_roman() {
+        let mut e = Economy::new();
+        e.set_player_nation(crate::nation::NationType::Roman);
+
+        // Roman can build Roman unique buildings
+        assert!(e.is_building_available(BuildingType::Vineyard));
+        assert!(e.is_building_available(BuildingType::WinePress));
+        assert!(e.is_building_available(BuildingType::Colosseum));
+
+        // Roman can also build common buildings
+        assert!(e.is_building_available(BuildingType::Farm));
+        assert!(e.is_building_available(BuildingType::Barracks));
+    }
+
+    #[test]
+    fn test_is_building_available_viking() {
+        let mut e = Economy::new();
+        e.set_player_nation(crate::nation::NationType::Viking);
+
+        // Viking CANNOT build Roman unique buildings
+        assert!(!e.is_building_available(BuildingType::Vineyard));
+        assert!(!e.is_building_available(BuildingType::WinePress));
+        assert!(!e.is_building_available(BuildingType::Colosseum));
+
+        // Viking can build common buildings
+        assert!(e.is_building_available(BuildingType::Farm));
+        assert!(e.is_building_available(BuildingType::Barracks));
+    }
+
+    #[test]
+    fn test_is_building_available_no_nation() {
+        let e = Economy::new();
+        // No nation set: unique buildings unavailable
+        assert!(!e.is_building_available(BuildingType::Vineyard));
+        assert!(!e.is_building_available(BuildingType::Colosseum));
+        // Common buildings still available
+        assert!(e.is_building_available(BuildingType::Farm));
+    }
+
+    #[test]
+    fn test_try_place_building_checked_nation_gate() {
+        use crate::map::Map;
+
+        let mut map = Map::new(30, 30);
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.set_player_nation(crate::nation::NationType::Roman);
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Roman can place Vineyard (Roman unique) within territory
+        let result = e.try_place_building_checked(BuildingType::Vineyard, 10, 12, 0, &map);
+        assert!(result.is_some(), "Roman should be able to place Vineyard");
+
+        // Roman can place common buildings
+        let result2 = e.try_place_building_checked(BuildingType::Farm, 10, 11, 0, &map);
+        assert!(result2.is_some(), "Roman should be able to place Farm");
+    }
+
+    #[test]
+    fn test_try_place_building_checked_nation_gate_blocks() {
+        use crate::map::Map;
+
+        let mut map = Map::new(30, 30);
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.set_player_nation(crate::nation::NationType::Viking);
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Viking CANNOT place Roman unique buildings
+        let result = e.try_place_building_checked(BuildingType::Vineyard, 10, 12, 0, &map);
+        assert!(result.is_none(), "Viking should NOT be able to place Vineyard");
+
+        // Viking CAN place common buildings
+        let result2 = e.try_place_building_checked(BuildingType::Farm, 10, 11, 0, &map);
+        assert!(result2.is_some(), "Viking should be able to place Farm");
     }
 }
