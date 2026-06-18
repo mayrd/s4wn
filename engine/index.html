@@ -726,6 +726,74 @@
   }
   #stats-panel .stats-row .stats-label { color: #aaa; }
   #stats-panel .stats-row .stats-val { color: #e6b422; font-weight: bold; }
+
+  /* ── Mobile Responsive (viewport < 768px) ─────────────────────────── */
+  @media (max-width: 767px) {
+    /* Menu: full-width card, larger touch targets */
+    .menu-card {
+      min-width: 0; width: calc(100vw - 32px);
+      padding: 28px 20px; border-radius: 12px;
+    }
+    .menu-card h2 { font-size: 20px; margin-bottom: 18px; }
+    .menu-btn { padding: 14px 16px; font-size: 15px; margin: 6px 0; }
+    .recent-files { max-height: 100px; }
+
+    /* Settings panel: full width slide-over */
+    #settings-panel { width: 100vw; max-width: 100vw; padding: 20px 16px; }
+    #settings-panel .settings-header h3 { font-size: 18px; }
+
+    /* Construction panel: full width, anchored to bottom */
+    #construction-panel {
+      left: 0; right: 0; bottom: 56px;
+      width: 100vw; max-height: 40vh;
+      border-radius: 8px 8px 0 0;
+      padding: 10px;
+    }
+    #construction-panel .con-bldg { padding: 6px 8px; gap: 8px; }
+    #construction-panel .con-bldg .con-icon { font-size: 20px; width: 28px; }
+    #construction-panel .con-bldg .con-name { font-size: 13px; }
+
+    /* Statistics panel: full width */
+    #stats-panel {
+      left: 0; right: 0; bottom: 56px;
+      width: 100vw; max-height: 40vh;
+      border-radius: 8px 8px 0 0;
+      padding: 10px;
+    }
+    #stats-panel .stats-tab { font-size: 12px; padding: 6px; }
+
+    /* Bottom-left buttons: larger touch targets */
+    #bottom-left-btns { bottom: 8px; left: 4px; gap: 6px; }
+    #bottom-left-btns button { padding: 8px 14px; font-size: 13px; border-radius: 6px; }
+
+    /* Controls bar: wrap, larger buttons */
+    #controls {
+      bottom: 8px; gap: 4px;
+      flex-wrap: wrap; justify-content: center;
+      max-width: 100vw; padding: 0 8px;
+    }
+    #controls button { padding: 8px 12px; font-size: 12px; }
+
+    /* HUD: smaller, repositioned */
+    #hud-top-left { top: 6px; left: 8px; font-size: 9px; }
+    #hud-top-right { top: 6px; right: 8px; font-size: 9px; }
+    #fps { font-size: 11px; }
+
+    /* Splash: smaller title */
+    #splash .title { font-size: clamp(32px, 12vw, 56px); }
+    #splash .subtitle { font-size: 13px; }
+    #splash .logo-img { max-width: 160px; }
+
+    /* Tile tooltip: smaller */
+    #tile-tip { font-size: 10px; padding: 3px 8px; }
+
+    /* Error dialog: full-width */
+    .error-dialog { width: calc(100vw - 32px); max-width: none; }
+
+    /* General mobile tweaks */
+    canvas { touch-action: none; }
+    body { -webkit-tap-highlight-color: transparent; }
+  }
 </style>
 </head>
 <body>
