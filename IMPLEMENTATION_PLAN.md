@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 2.14 — Dark Tribe Unique Buildings (265 tests)
-| **Last updated:** 2026-06-18 (Session 86 — Trojan Unique Buildings)
+| **Status:** Phase 2.15 — Dark Tribe Unique Buildings ✅ (265 tests)
+| **Last updated:** 2026-06-18 (Session 87 — Dark Tribe Unique Buildings)
 
 ---
 
@@ -40,14 +40,14 @@ For EVERY feature, follow this exact sequence:
 **Goal:** When a player opens the construction panel, buildings unique to their chosen nation appear in a dedicated category.
 
 **Test Cases:**
-- [ ] `get_nation_buildings("Roman")` returns `["Temple of Bacchus", "Vineyard", ...]` (6 buildings)
-- [ ] `get_nation_buildings("Viking")` returns 6 buildings
-- [ ] `get_nation_buildings("Maya")` returns 7 buildings
+- [x] `get_nation_buildings("Roman")` returns `["Temple of Bacchus", "Vineyard", ...]` (6 buildings)
+- [x] `get_nation_buildings("Viking")` returns 6 buildings
+- [x] `get_nation_buildings("Maya")` returns 7 buildings
 - [x] `get_nation_buildings("Trojan")` returns 7 buildings
-- [ ] `get_nation_buildings("Dark Tribe")` returns 7 buildings
-- [ ] `get_nation_buildings("unknown")` returns `[]` (no crash)
-- [ ] `populateConstructionPanel()` does NOT crash when no nation is selected (`get_player_nation()` returns `""`)
-- [ ] JS `BUILDING_ICONS` has entries for all unique building names
+- [x] `get_nation_buildings("Dark Tribe")` returns 7 buildings
+- [x] `get_nation_buildings("unknown")` returns `[]` (no crash)
+- [x] `populateConstructionPanel()` does NOT crash when no nation is selected (`get_player_nation()` returns `""`)
+- [x] JS `BUILDING_ICONS` has entries for all unique building names
 
 **Implementation:** ✅ Done (Session 71) — WASM export `get_nation_buildings()`, JS dynamic category in `populateConstructionPanel()`, try/catch guard for empty nation state.
 
@@ -291,9 +291,9 @@ protocol::tests               5 tests    Message serialization, room management
 
 ## Next Objectives (TDD Order)
 
-### 1. Trojan Unique Buildings (S4-Authentic)
+### 1. Trojan Unique Buildings ✅ (Session 86)
 **Objective:** Trojans can build their 7 unique buildings: Oracle of Apollo, Olive Grove, Oil Press, Sanctuary of Artemis, Sanctuary of Poseidon, Sanctuary of Apollo, Amphitheater.
-**Status:** 🔨 Not started. Configured as planned in buildings.json. BuildingType enum variants, production chains, and nation-gated placement needed.
+**Status:** ✅ Done (Session 87). BuildingType enum variants, production chains, and nation-gated placement needed.
 **Pre-work:** ✅ Done — Olives and OliveOil added to ResourceType enum + resources.json.
 **Test Cases (to write first):**
 - [x] `get_nation_buildings("Trojan")` returns 7 building names
@@ -303,14 +303,14 @@ protocol::tests               5 tests    Message serialization, room management
 - [x] Non-Trojan nations CANNOT build Trojan unique buildings
 - [x] All 52 building names in all_names() (45 + 7 new)
 
-### 2. Dark Tribe Unique Buildings (S4-Authentic)
+### 2. Dark Tribe Unique Buildings ✅ (Session 87)
 **Objective:** Dark Tribe can build their 7 unique buildings: Dark Temple, Dark Garden, Mushroom Farm, Sanctuary of Morbus, Sanctuary of Pestilence, Dark Fortress, Demon Gate.
-**Status:** 🔨 Not started. Configured as planned in buildings.json.
+**Status:** ✅ Done (Session 87).
 **Test Cases (to write first):**
-- [ ] `get_nation_buildings("Dark Tribe")` returns 7 building names
-- [ ] All DarkTribe unique buildings are buildable when DarkTribe nation is selected
-- [ ] Non-DarkTribe nations CANNOT build DarkTribe unique buildings
-- [ ] All 59 building names in all_names() (52 + 7 new)
+- [x] `get_nation_buildings("Dark Tribe")` returns 7 building names
+- [x] All DarkTribe unique buildings are buildable when DarkTribe nation is selected
+- [x] Non-DarkTribe nations CANNOT build DarkTribe unique buildings
+- [x] All 59 building names in all_names() (52 + 7 new)
 
 ### 3. Balance Simulation
 **Objective:** Simulate the first 10 minutes of gameplay for each nation to verify economic balance. No single nation should dominate all metrics.
@@ -320,7 +320,7 @@ protocol::tests               5 tests    Message serialization, room management
 - [ ] No nation exceeds 200% of the median resource output
 - [ ] Simulation runs deterministically with fixed seed
 
-### 4. Config Name Normalization
+### 2. Config Name Normalization
 **Objective:** Fix naming inconsistency between config (ClayPit/HempFarm/MeadMaker) and Rust (Clay Pit/Hemp Farm/Mead Maker). Config IDs should match Rust all_names() output.
 **Status:** 🔨 Config uses no-space IDs; Rust uses space-separated names. 3 buildings affected.
 **Test Cases:**
@@ -329,7 +329,16 @@ protocol::tests               5 tests    Message serialization, room management
 - [ ] Config ID "Mead Maker" matches Rust `BuildingType::from_name("Mead Maker")`
 - [ ] `data.js` regenerated after fix, all 42 buildings resolve correctly
 
-### 5. Mobile UI Adaptation
+|| **87** | **2026-06-18** | **Dark Tribe unique buildings: 7 BuildingType variants (DarkTemple=54..DemonGate=60), nation-gated placement, production chains (DarkTemple→Wine, DarkGarden→Grapes, MushroomFarm→Grain, DemonGate→Weapons), building colors, costs, tools, config. Added Grapes+Wine to resources.json. 265 tests pass.** |
+|
+|
+|
+|
+|
+|
+|
+|
+### 3. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
 **Test Cases (to write first):**
 - [ ] Viewport < 768px: menu buttons stack vertically

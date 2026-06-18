@@ -752,198 +752,250 @@ window.S4WN_CONFIG = {
     {
       "id": "Oracle of Apollo",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Stone": 20,
+        "Gold": 10
+      },
       "inputs": [],
-      "outputs": [],
-      "interval": 0,
-      "build_time": 0,
-      "tool": null,
-      "workers": 0,
+      "outputs": [
+        "Wine"
+      ],
+      "interval": 40,
+      "build_time": 50,
+      "tool": "Hammer",
+      "workers": 1,
       "icon": "🏛️",
-      "name_de": "Orakel des Apollo",
-      "status": "planned"
+      "name_de": "Orakel des Apollo"
     },
     {
       "id": "Olive Grove",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Wood": 5
+      },
       "inputs": [],
-      "outputs": [],
-      "interval": 0,
-      "build_time": 0,
-      "tool": null,
-      "workers": 0,
+      "outputs": [
+        "Olives"
+      ],
+      "interval": 25,
+      "build_time": 25,
+      "tool": "Shovel",
+      "workers": 1,
       "icon": "🏛️",
-      "name_de": "Olivenhain",
-      "status": "planned"
+      "name_de": "Olivenhain"
     },
     {
       "id": "Oil Press",
       "category": "Nation",
-      "cost": {},
-      "inputs": [],
-      "outputs": [],
-      "interval": 0,
-      "build_time": 0,
-      "tool": null,
-      "workers": 0,
+      "cost": {
+        "Wood": 5,
+        "Stone": 3
+      },
+      "inputs": [
+        "Olives"
+      ],
+      "outputs": [
+        "OliveOil"
+      ],
+      "interval": 30,
+      "build_time": 30,
+      "tool": "Hammer",
+      "workers": 1,
       "icon": "🏛️",
-      "name_de": "Ölpresse",
-      "status": "planned"
+      "name_de": "Ölpresse"
     },
     {
       "id": "Sanctuary of Artemis",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Stone": 15,
+        "Gold": 5
+      },
       "inputs": [],
       "outputs": [],
       "interval": 0,
-      "build_time": 0,
+      "build_time": 40,
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Schrein der Artemis",
-      "status": "planned"
+      "name_de": "Schrein der Artemis"
     },
     {
       "id": "Sanctuary of Poseidon",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Stone": 15,
+        "Gold": 5
+      },
       "inputs": [],
       "outputs": [],
       "interval": 0,
-      "build_time": 0,
+      "build_time": 40,
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Schrein des Poseidon",
-      "status": "planned"
+      "name_de": "Schrein des Poseidon"
     },
     {
       "id": "Sanctuary of Apollo",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Stone": 15,
+        "Gold": 5
+      },
       "inputs": [],
       "outputs": [],
       "interval": 0,
-      "build_time": 0,
+      "build_time": 40,
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Schrein des Apollo",
-      "status": "planned"
+      "name_de": "Schrein des Apollo"
     },
     {
       "id": "Amphitheater",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Stone": 30,
+        "Gold": 15
+      },
       "inputs": [],
       "outputs": [],
       "interval": 0,
-      "build_time": 0,
+      "build_time": 60,
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
-      "name_de": "Amphitheater",
-      "status": "planned"
+      "name_de": "Amphitheater"
     },
     {
       "id": "Dark Temple",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Stone": 20,
+        "Gold": 10
+      },
       "inputs": [],
-      "outputs": [],
-      "interval": 0,
-      "build_time": 0,
-      "tool": null,
-      "workers": 0,
+      "outputs": [
+        "Wine"
+      ],
+      "interval": 40,
+      "build_time": 50,
+      "tool": "Bucket",
+      "workers": 1,
       "icon": "🏛️",
       "name_de": "Dunkler Tempel",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "id": "Dark Garden",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Wood": 5,
+        "Stone": 3
+      },
       "inputs": [],
-      "outputs": [],
-      "interval": 0,
-      "build_time": 0,
-      "tool": null,
-      "workers": 0,
+      "outputs": [
+        "Grapes"
+      ],
+      "interval": 25,
+      "build_time": 25,
+      "tool": "Shovel",
+      "workers": 1,
       "icon": "🏛️",
       "name_de": "Dunkler Garten",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "id": "Mushroom Farm",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Wood": 8,
+        "Stone": 4
+      },
       "inputs": [],
-      "outputs": [],
-      "interval": 0,
-      "build_time": 0,
-      "tool": null,
-      "workers": 0,
+      "outputs": [
+        "Grain"
+      ],
+      "interval": 25,
+      "build_time": 30,
+      "tool": "Shovel",
+      "workers": 1,
       "icon": "🏛️",
       "name_de": "Pilzfarm",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "id": "Sanctuary of Morbus",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Stone": 15,
+        "Gold": 5
+      },
       "inputs": [],
       "outputs": [],
       "interval": 0,
-      "build_time": 0,
+      "build_time": 45,
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
       "name_de": "Schrein des Morbus",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "id": "Sanctuary of Pestilence",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Stone": 15,
+        "Gold": 5
+      },
       "inputs": [],
       "outputs": [],
       "interval": 0,
-      "build_time": 0,
+      "build_time": 45,
       "tool": null,
       "workers": 0,
       "icon": "🏛️",
       "name_de": "Schrein der Pestilenz",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "id": "Dark Fortress",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Stone": 25,
+        "Boards": 15,
+        "IronOre": 10
+      },
       "inputs": [],
       "outputs": [],
       "interval": 0,
-      "build_time": 0,
-      "tool": null,
+      "build_time": 80,
+      "tool": "Hammer",
       "workers": 0,
       "icon": "🏛️",
       "name_de": "Dunkle Festung",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "id": "Demon Gate",
       "category": "Nation",
-      "cost": {},
+      "cost": {
+        "Stone": 30,
+        "IronIngots": 15,
+        "Gold": 20
+      },
       "inputs": [],
-      "outputs": [],
-      "interval": 0,
-      "build_time": 0,
-      "tool": null,
-      "workers": 0,
+      "outputs": [
+        "Weapons"
+      ],
+      "interval": 50,
+      "build_time": 60,
+      "tool": "Hammer",
+      "workers": 1,
       "icon": "🏛️",
       "name_de": "Dämonentor",
-      "status": "planned"
+      "status": "implemented"
     },
     {
       "id": "Hunter",
@@ -1027,6 +1079,19 @@ window.S4WN_CONFIG = {
       "name_de": "Fisch"
     },
     {
+      "id": "Olives",
+      "category": "raw",
+      "icon": "🫒",
+      "name_de": "Oliven"
+    },
+    {
+      "id": "Grapes",
+      "category": "raw",
+      "icon": "🍇",
+      "name_de": "Trauben",
+      "stack_size": 50
+    },
+    {
       "id": "Meat",
       "category": "raw",
       "icon": "🍖",
@@ -1091,6 +1156,19 @@ window.S4WN_CONFIG = {
       "category": "processed",
       "icon": "🪢",
       "name_de": "Seile"
+    },
+    {
+      "id": "OliveOil",
+      "category": "processed",
+      "icon": "🫒",
+      "name_de": "Olivenöl"
+    },
+    {
+      "id": "Wine",
+      "category": "processed",
+      "icon": "🍷",
+      "name_de": "Wein",
+      "stack_size": 30
     },
     {
       "id": "Mead",

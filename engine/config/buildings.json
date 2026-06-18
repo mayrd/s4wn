@@ -12,7 +12,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udff0",
+    "icon": "🏰",
     "name_de": "Burg"
   },
   {
@@ -32,8 +32,8 @@
     "build_time": 30,
     "tool": "Saw",
     "workers": 1,
-    "icon": "\ud83e\ude9a",
-    "name_de": "S\u00e4gewerk"
+    "icon": "🪚",
+    "name_de": "Sägewerk"
   },
   {
     "id": "Stonecutter",
@@ -50,7 +50,7 @@
     "build_time": 25,
     "tool": "Pickaxe",
     "workers": 1,
-    "icon": "\ud83e\udea8",
+    "icon": "🪨",
     "name_de": "Steinmetz"
   },
   {
@@ -71,7 +71,7 @@
     "build_time": 35,
     "tool": "Pickaxe",
     "workers": 1,
-    "icon": "\u26cf\ufe0f",
+    "icon": "⛏️",
     "name_de": "Mine"
   },
   {
@@ -92,7 +92,7 @@
     "build_time": 35,
     "tool": "Hammer",
     "workers": 1,
-    "icon": "\ud83d\udd28",
+    "icon": "🔨",
     "name_de": "Werkzeugschmiede"
   },
   {
@@ -114,7 +114,7 @@
     "build_time": 40,
     "tool": "Hammer",
     "workers": 1,
-    "icon": "\u2694\ufe0f",
+    "icon": "⚔️",
     "name_de": "Waffenschmiede"
   },
   {
@@ -135,8 +135,8 @@
     "build_time": 20,
     "tool": "Rolling Pin",
     "workers": 1,
-    "icon": "\ud83c\udf5e",
-    "name_de": "B\u00e4ckerei"
+    "icon": "🍞",
+    "name_de": "Bäckerei"
   },
   {
     "id": "Butcher",
@@ -153,7 +153,7 @@
     "build_time": 25,
     "tool": "Cleaver",
     "workers": 1,
-    "icon": "\ud83d\udd2a",
+    "icon": "🔪",
     "name_de": "Schlachthaus"
   },
   {
@@ -173,8 +173,8 @@
     "build_time": 25,
     "tool": "Rolling Pin",
     "workers": 1,
-    "icon": "\ud83c\udfed",
-    "name_de": "M\u00fchle"
+    "icon": "🏭",
+    "name_de": "Mühle"
   },
   {
     "id": "Farm",
@@ -191,7 +191,7 @@
     "build_time": 20,
     "tool": null,
     "workers": 1,
-    "icon": "\ud83c\udf3e",
+    "icon": "🌾",
     "name_de": "Getreidefarm"
   },
   {
@@ -209,8 +209,8 @@
     "build_time": 20,
     "tool": "Fishing Rod",
     "workers": 1,
-    "icon": "\ud83c\udfa3",
-    "name_de": "Fischerh\u00fctte"
+    "icon": "🎣",
+    "name_de": "Fischerhütte"
   },
   {
     "id": "Woodcutter",
@@ -227,8 +227,8 @@
     "build_time": 15,
     "tool": "Axe",
     "workers": 1,
-    "icon": "\ud83e\ude93",
-    "name_de": "Holzf\u00e4llerh\u00fctte"
+    "icon": "🪓",
+    "name_de": "Holzfällerhütte"
   },
   {
     "id": "Storehouse",
@@ -243,7 +243,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfda\ufe0f",
+    "icon": "🏚️",
     "name_de": "Lagerhaus"
   },
   {
@@ -261,7 +261,7 @@
     "build_time": 30,
     "tool": "Bucket",
     "workers": 1,
-    "icon": "\ud83d\udca7",
+    "icon": "💧",
     "name_de": "Wasserwerk"
   },
   {
@@ -282,7 +282,7 @@
     "build_time": 35,
     "tool": null,
     "workers": 1,
-    "icon": "\ud83d\udd25",
+    "icon": "🔥",
     "name_de": "Schmelze"
   },
   {
@@ -300,7 +300,7 @@
     "build_time": 40,
     "tool": null,
     "workers": 0,
-    "icon": "\u2694\ufe0f",
+    "icon": "⚔️",
     "name_de": "Kaserne"
   },
   {
@@ -316,7 +316,7 @@
     "build_time": 40,
     "tool": "Hammer",
     "workers": 0,
-    "icon": "\ud83d\uddfc",
+    "icon": "🗼",
     "name_de": "Wachturm"
   },
   {
@@ -333,7 +333,7 @@
     "build_time": 80,
     "tool": "Hammer",
     "workers": 0,
-    "icon": "\ud83c\udfef",
+    "icon": "🏯",
     "name_de": "Festung"
   },
   {
@@ -355,7 +355,7 @@
     "build_time": 60,
     "tool": "Hammer",
     "workers": 1,
-    "icon": "\ud83d\udd2b",
+    "icon": "🔫",
     "name_de": "Belagerungswerkstatt"
   },
   {
@@ -375,7 +375,7 @@
     "build_time": 50,
     "tool": "Saw",
     "workers": 1,
-    "icon": "\ud83d\udea2",
+    "icon": "🚢",
     "name_de": "Werft"
   },
   {
@@ -393,8 +393,8 @@
     "build_time": 25,
     "tool": null,
     "workers": 1,
-    "icon": "\ud83d\udee4\ufe0f",
-    "name_de": "Stra\u00dfenbauer"
+    "icon": "🛤️",
+    "name_de": "Straßenbauer"
   },
   {
     "id": "ClayPit",
@@ -411,7 +411,7 @@
     "build_time": 25,
     "tool": "Shovel",
     "workers": 1,
-    "icon": "\ud83e\uddf1",
+    "icon": "🧱",
     "name_de": "Lehmgrube",
     "status": "planned"
   },
@@ -432,7 +432,7 @@
     "build_time": 35,
     "tool": "Hammer",
     "workers": 1,
-    "icon": "\ud83e\uddf1",
+    "icon": "🧱",
     "name_de": "Ziegelei"
   },
   {
@@ -450,7 +450,7 @@
     "build_time": 20,
     "tool": null,
     "workers": 1,
-    "icon": "\ud83c\udf3f",
+    "icon": "🌿",
     "name_de": "Hanffarm",
     "status": "planned"
   },
@@ -471,7 +471,7 @@
     "build_time": 30,
     "tool": "Hammer",
     "workers": 1,
-    "icon": "\ud83e\udea2",
+    "icon": "🪢",
     "name_de": "Seilerei"
   },
   {
@@ -489,7 +489,7 @@
     "build_time": 25,
     "tool": null,
     "workers": 1,
-    "icon": "\ud83c\udf6f",
+    "icon": "🍯",
     "name_de": "Bienenhaus"
   },
   {
@@ -510,7 +510,7 @@
     "build_time": 30,
     "tool": "Bucket",
     "workers": 1,
-    "icon": "\ud83c\udf7a",
+    "icon": "🍺",
     "name_de": "Metbrauer",
     "status": "planned"
   },
@@ -524,7 +524,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Bacchus-Tempel"
   },
   {
@@ -537,7 +537,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Weinberg"
   },
   {
@@ -550,7 +550,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Kelterei"
   },
   {
@@ -563,7 +563,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein der Minerva"
   },
   {
@@ -576,7 +576,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein des Vulcan"
   },
   {
@@ -589,7 +589,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Kolosseum"
   },
   {
@@ -602,7 +602,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Methalle"
   },
   {
@@ -615,7 +615,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein des Odin"
   },
   {
@@ -628,7 +628,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein des Thor"
   },
   {
@@ -641,7 +641,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein der Freya"
   },
   {
@@ -654,7 +654,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Runenstein"
   },
   {
@@ -667,7 +667,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Tempel des Chac"
   },
   {
@@ -680,7 +680,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Agavenfarm"
   },
   {
@@ -693,7 +693,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Brennerei"
   },
   {
@@ -706,7 +706,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein des Kukulkan"
   },
   {
@@ -719,7 +719,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein des Quetzalcoatl"
   },
   {
@@ -732,7 +732,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein des Huitzilopochtli"
   },
   {
@@ -745,7 +745,7 @@
     "build_time": 0,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Observatorium"
   },
   {
@@ -763,7 +763,7 @@
     "build_time": 50,
     "tool": "Hammer",
     "workers": 1,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Orakel des Apollo"
   },
   {
@@ -780,7 +780,7 @@
     "build_time": 25,
     "tool": "Shovel",
     "workers": 1,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Olivenhain"
   },
   {
@@ -800,8 +800,8 @@
     "build_time": 30,
     "tool": "Hammer",
     "workers": 1,
-    "icon": "\ud83c\udfdb\ufe0f",
-    "name_de": "\u00d6lpresse"
+    "icon": "🏛️",
+    "name_de": "Ölpresse"
   },
   {
     "id": "Sanctuary of Artemis",
@@ -816,7 +816,7 @@
     "build_time": 40,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein der Artemis"
   },
   {
@@ -832,7 +832,7 @@
     "build_time": 40,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein des Poseidon"
   },
   {
@@ -848,7 +848,7 @@
     "build_time": 40,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein des Apollo"
   },
   {
@@ -864,106 +864,137 @@
     "build_time": 60,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Amphitheater"
   },
   {
     "id": "Dark Temple",
     "category": "Nation",
-    "cost": {},
+    "cost": {
+      "Stone": 20,
+      "Gold": 10
+    },
     "inputs": [],
-    "outputs": [],
-    "interval": 0,
-    "build_time": 0,
-    "tool": null,
-    "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "outputs": [
+      "Wine"
+    ],
+    "interval": 40,
+    "build_time": 50,
+    "tool": "Bucket",
+    "workers": 1,
+    "icon": "🏛️",
     "name_de": "Dunkler Tempel",
-    "status": "planned"
+    "status": "implemented"
   },
   {
     "id": "Dark Garden",
     "category": "Nation",
-    "cost": {},
+    "cost": {
+      "Wood": 5,
+      "Stone": 3
+    },
     "inputs": [],
-    "outputs": [],
-    "interval": 0,
-    "build_time": 0,
-    "tool": null,
-    "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "outputs": [
+      "Grapes"
+    ],
+    "interval": 25,
+    "build_time": 25,
+    "tool": "Shovel",
+    "workers": 1,
+    "icon": "🏛️",
     "name_de": "Dunkler Garten",
-    "status": "planned"
+    "status": "implemented"
   },
   {
     "id": "Mushroom Farm",
     "category": "Nation",
-    "cost": {},
+    "cost": {
+      "Wood": 8,
+      "Stone": 4
+    },
     "inputs": [],
-    "outputs": [],
-    "interval": 0,
-    "build_time": 0,
-    "tool": null,
-    "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "outputs": [
+      "Grain"
+    ],
+    "interval": 25,
+    "build_time": 30,
+    "tool": "Shovel",
+    "workers": 1,
+    "icon": "🏛️",
     "name_de": "Pilzfarm",
-    "status": "planned"
+    "status": "implemented"
   },
   {
     "id": "Sanctuary of Morbus",
     "category": "Nation",
-    "cost": {},
+    "cost": {
+      "Stone": 15,
+      "Gold": 5
+    },
     "inputs": [],
     "outputs": [],
     "interval": 0,
-    "build_time": 0,
+    "build_time": 45,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein des Morbus",
-    "status": "planned"
+    "status": "implemented"
   },
   {
     "id": "Sanctuary of Pestilence",
     "category": "Nation",
-    "cost": {},
+    "cost": {
+      "Stone": 15,
+      "Gold": 5
+    },
     "inputs": [],
     "outputs": [],
     "interval": 0,
-    "build_time": 0,
+    "build_time": 45,
     "tool": null,
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Schrein der Pestilenz",
-    "status": "planned"
+    "status": "implemented"
   },
   {
     "id": "Dark Fortress",
     "category": "Nation",
-    "cost": {},
+    "cost": {
+      "Stone": 25,
+      "Boards": 15,
+      "IronOre": 10
+    },
     "inputs": [],
     "outputs": [],
     "interval": 0,
-    "build_time": 0,
-    "tool": null,
+    "build_time": 80,
+    "tool": "Hammer",
     "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
+    "icon": "🏛️",
     "name_de": "Dunkle Festung",
-    "status": "planned"
+    "status": "implemented"
   },
   {
     "id": "Demon Gate",
     "category": "Nation",
-    "cost": {},
+    "cost": {
+      "Stone": 30,
+      "IronIngots": 15,
+      "Gold": 20
+    },
     "inputs": [],
-    "outputs": [],
-    "interval": 0,
-    "build_time": 0,
-    "tool": null,
-    "workers": 0,
-    "icon": "\ud83c\udfdb\ufe0f",
-    "name_de": "D\u00e4monentor",
-    "status": "planned"
+    "outputs": [
+      "Weapons"
+    ],
+    "interval": 50,
+    "build_time": 60,
+    "tool": "Hammer",
+    "workers": 1,
+    "icon": "🏛️",
+    "name_de": "Dämonentor",
+    "status": "implemented"
   },
   {
     "id": "Hunter",
@@ -980,8 +1011,8 @@
     "build_time": 25,
     "tool": "Bow",
     "workers": 1,
-    "icon": "\ud83c\udff9",
-    "name_de": "J\u00e4gerh\u00fctte",
+    "icon": "🏹",
+    "name_de": "Jägerhütte",
     "status": "planned"
   }
 ]

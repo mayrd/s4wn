@@ -259,6 +259,22 @@ pub enum BuildingType {
     SanctuaryOfApollo = 52,
     /// Amphitheater — cultural venue, extends territory (Trojan unique)
     Amphitheater = 53,
+
+    // ── Dark Tribe Unique Buildings ────────────────────────────────────────────
+    /// Dark Temple — spiritual center, produces Wine (DarkTribe unique)
+    DarkTemple = 54,
+    /// Dark Garden — grows dark crops (DarkTribe unique)
+    DarkGarden = 55,
+    /// Mushroom Farm — produces mushrooms/food (DarkTribe unique)
+    MushroomFarm = 56,
+    /// Sanctuary of Morbus — disease god (DarkTribe unique)
+    SanctuaryOfMorbus = 57,
+    /// Sanctuary of Pestilence — pestilence god (DarkTribe unique)
+    SanctuaryOfPestilence = 58,
+    /// Dark Fortress — military stronghold (DarkTribe unique)
+    DarkFortress = 59,
+    /// Demon Gate — spawns dark units (DarkTribe unique)
+    DemonGate = 60,
 }
 
 impl BuildingType {
@@ -317,6 +333,13 @@ impl BuildingType {
             BuildingType::SanctuaryOfPoseidon => "Sanctuary of Poseidon",
             BuildingType::SanctuaryOfApollo => "Sanctuary of Apollo",
             BuildingType::Amphitheater => "Amphitheater",
+            BuildingType::DarkTemple => "Dark Temple",
+            BuildingType::DarkGarden => "Dark Garden",
+            BuildingType::MushroomFarm => "Mushroom Farm",
+            BuildingType::SanctuaryOfMorbus => "Sanctuary of Morbus",
+            BuildingType::SanctuaryOfPestilence => "Sanctuary of Pestilence",
+            BuildingType::DarkFortress => "Dark Fortress",
+            BuildingType::DemonGate => "Demon Gate",
         }
     }
 
@@ -375,6 +398,13 @@ impl BuildingType {
             "Sanctuary of Poseidon" => Some(BuildingType::SanctuaryOfPoseidon),
             "Sanctuary of Apollo" => Some(BuildingType::SanctuaryOfApollo),
             "Amphitheater" => Some(BuildingType::Amphitheater),
+            "Dark Temple" => Some(BuildingType::DarkTemple),
+            "Dark Garden" => Some(BuildingType::DarkGarden),
+            "Mushroom Farm" => Some(BuildingType::MushroomFarm),
+            "Sanctuary of Morbus" => Some(BuildingType::SanctuaryOfMorbus),
+            "Sanctuary of Pestilence" => Some(BuildingType::SanctuaryOfPestilence),
+            "Dark Fortress" => Some(BuildingType::DarkFortress),
+            "Demon Gate" => Some(BuildingType::DemonGate),
             _ => None,
         }
     }
@@ -434,6 +464,13 @@ impl BuildingType {
             "Sanctuary of Poseidon",
             "Sanctuary of Apollo",
             "Amphitheater",
+            "Dark Temple",
+            "Dark Garden",
+            "Mushroom Farm",
+            "Sanctuary of Morbus",
+            "Sanctuary of Pestilence",
+            "Dark Fortress",
+            "Demon Gate",
         ]
     }
 
@@ -483,6 +520,13 @@ impl BuildingType {
             BuildingType::SanctuaryOfPoseidon => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
             BuildingType::SanctuaryOfApollo => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
             BuildingType::Amphitheater => &[(ResourceType::Stone, 30), (ResourceType::Gold, 15)],
+            BuildingType::DarkTemple => &[(ResourceType::Stone, 20), (ResourceType::Gold, 10)],
+            BuildingType::DarkGarden => &[(ResourceType::Wood, 5), (ResourceType::Stone, 3)],
+            BuildingType::MushroomFarm => &[(ResourceType::Wood, 8), (ResourceType::Stone, 4)],
+            BuildingType::SanctuaryOfMorbus => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
+            BuildingType::SanctuaryOfPestilence => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
+            BuildingType::DarkFortress => &[(ResourceType::Stone, 25), (ResourceType::Boards, 15), (ResourceType::IronOre, 10)],
+            BuildingType::DemonGate => &[(ResourceType::Stone, 30), (ResourceType::IronIngots, 15), (ResourceType::Gold, 20)],
             _ => &[], // planned buildings — no cost yet
         }
     }
@@ -537,6 +581,10 @@ impl BuildingType {
             BuildingType::OliveGrove => &[(ResourceType::Olives, 2)],
             BuildingType::OilPress => &[(ResourceType::OliveOil, 1)],
             BuildingType::OracleOfApollo => &[(ResourceType::Wine, 1)], // Divine wine production (Trojan)
+            BuildingType::DarkTemple => &[(ResourceType::Wine, 1)], // Dark divine wine production (DarkTribe)
+            BuildingType::DarkGarden => &[(ResourceType::Grapes, 2)], // Dark garden harvest (DarkTribe)
+            BuildingType::MushroomFarm => &[(ResourceType::Grain, 2)], // Mushroom harvest (DarkTribe)
+            BuildingType::DemonGate => &[(ResourceType::Weapons, 1)], // Dark unit spawning (DarkTribe)
             _ => &[], // Barracks, Castle, Storehouse, Fortress, RoadLayer, Colosseum, Sanctuaries produce nothing
         }
     }
@@ -571,6 +619,10 @@ impl BuildingType {
             BuildingType::OliveGrove => 25,                      // 2.5 seconds — olive harvest
             BuildingType::OilPress => 30,                        // 3 seconds — oil pressing
             BuildingType::OracleOfApollo => 40,                   // 4 seconds — divine inspiration (Trojan)
+            BuildingType::DarkTemple => 40,                       // 4 seconds — dark divine inspiration (DarkTribe)
+            BuildingType::DarkGarden => 25,                       // 2.5 seconds — dark garden harvest
+            BuildingType::MushroomFarm => 25,                     // 2.5 seconds — mushroom growth
+            BuildingType::DemonGate => 50,                        // 5 seconds — dark unit spawning (DarkTribe)
             _ => 0,                          // Barracks, Castle, Storehouse, Colosseum, Sanctuaries don't produce
         }
     }
@@ -620,6 +672,13 @@ impl BuildingType {
             BuildingType::SiegeWorkshop => 60,
             BuildingType::Shipyard => 50,
             BuildingType::RoadLayer => 30,
+            BuildingType::DarkTemple => 50,
+            BuildingType::DarkGarden => 25,
+            BuildingType::MushroomFarm => 30,
+            BuildingType::SanctuaryOfMorbus => 45,
+            BuildingType::SanctuaryOfPestilence => 45,
+            BuildingType::DarkFortress => 80,
+            BuildingType::DemonGate => 60,
             _ => 0, // planned buildings — no build time yet
         }
     }
@@ -649,6 +708,11 @@ impl BuildingType {
             BuildingType::Distillery => Some("Bucket"),         // Fermentation vessel
             BuildingType::OliveGrove => Some("Shovel"),            // Olive planting
             BuildingType::OilPress => Some("Hammer"),              // Press operation
+            BuildingType::DarkTemple => Some("Bucket"),             // Ritual vessel (DarkTribe)
+            BuildingType::DarkGarden => Some("Shovel"),             // Dark garden planting (DarkTribe)
+            BuildingType::MushroomFarm => Some("Shovel"),           // Mushroom planting (DarkTribe)
+            BuildingType::DarkFortress => Some("Hammer"),           // Construction (DarkTribe)
+            BuildingType::DemonGate => Some("Hammer"),              // Construction (DarkTribe)
             _ => None, // Castle, Storehouse, Farm, Barracks — no tool needed
         }
     }
@@ -702,7 +766,15 @@ impl BuildingType {
             | BuildingType::SanctuaryOfArtemis
             | BuildingType::SanctuaryOfPoseidon
             | BuildingType::SanctuaryOfApollo
-            | BuildingType::Amphitheater => BuildingCategory::Unique,
+            | BuildingType::Amphitheater
+            // DarkTribe unique buildings
+            | BuildingType::DarkTemple
+            | BuildingType::DarkGarden
+            | BuildingType::MushroomFarm
+            | BuildingType::SanctuaryOfMorbus
+            | BuildingType::SanctuaryOfPestilence
+            | BuildingType::DarkFortress
+            | BuildingType::DemonGate => BuildingCategory::Unique,
             _ => BuildingCategory::Economic, // planned buildings
         }
     }
@@ -736,6 +808,13 @@ impl BuildingType {
             | BuildingType::SanctuaryOfPoseidon
             | BuildingType::SanctuaryOfApollo
             | BuildingType::Amphitheater => Some(NationType::Trojan),
+            BuildingType::DarkTemple
+            | BuildingType::DarkGarden
+            | BuildingType::MushroomFarm
+            | BuildingType::SanctuaryOfMorbus
+            | BuildingType::SanctuaryOfPestilence
+            | BuildingType::DarkFortress
+            | BuildingType::DemonGate => Some(NationType::DarkTribe),
             _ => None,
         }
     }
@@ -1972,8 +2051,8 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        // 33 original + 5 Viking unique + 7 Maya unique + 7 Trojan unique = 52 total
-        assert_eq!(BuildingType::all_names().len(), 52);
+        // 33 original + 5 Viking + 7 Maya + 7 Trojan + 7 DarkTribe = 59 total
+        assert_eq!(BuildingType::all_names().len(), 59);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
@@ -3367,7 +3446,7 @@ mod tests {
         assert!(names.contains(&"Runestone"));
         // Total should be 52 (33 original + 5 Viking + 7 Maya + 7 Trojan)
         // Note: Apiary is common, already counted in the 33
-        assert_eq!(names.len(), 52, "Should have 52 total building names");
+        assert_eq!(names.len(), 59, "Should have 59 total building names");
     }
 
     #[test]
