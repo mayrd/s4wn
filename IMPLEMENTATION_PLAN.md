@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 **Status:** Phase 2.8 — Nations & Balancing (216 tests)
-**Last updated:** 2026-06-17 (Session 75 — Bugfix #37 toggleSpeed)
+**Last updated:** 2026-06-18 (Session 76 — Fog of War Shader Integration)
 
 ---
 
@@ -118,9 +118,9 @@ Each phase lists objectives with test cases and implementation status.
 | Barracks unit training (Swordsman/Bowman alternating) | 4 | ✅ |
 | Nation modifiers applied (production speed, costs, unit stats) | 12 | ✅ |
 || WorkerAI tool pickup (physical routing via Storehouse) | 6 | ✅ |
-|| **Fog of war** | 12 | ✅ |
-|| **Nation-specific unique building implementation** | 0 | 🔨 |
-|| **Territory expansion (Guard Tower, Fortress)** | 0 | ❌ |
+||| **Fog of war** | 12 | ✅ |
+||| **Fog of war shader integration** | 4 | ✅ |
+||| **Territory expansion (Guard Tower, Fortress)** | 0 | ❌ |
 || **Balance simulation (first 10 min per nation)** | 0 | ❌ |
 
 ### Phase 3 — Multiplayer ✅ (30 server tests pass)
@@ -274,21 +274,14 @@ protocol::tests               5 tests    Message serialization, room management
 || 72 | 2026-06-17 | Tool pickup toast notifications — carried_tool added to get_unit_summary(), showToast() CSS animation, trackToolPickups() in game loop, WASM v=32 |
 ||| **73** | **2026-06-17** | **Authentic S4 resources: removed Coins+Mint (fabricated), renamed Iron→IronOre, Game→Meat (raw). Added 6 missing S4 resources (Clay, Hemp, Honey, Bricks, Rope, Mead) + 6 planned buildings (ClayPit, Brickworks, HempFarm, Ropemaker, Apiary, MeadMaker). Resources: 18→22. Buildings: 22→27 (21 impl + 6 planned). 204 tests pass.** |
 ||| **74** | **2026-06-17** | **Fog of war: visibility field on Tile, compute_visibility() with linear falloff, compute_visibility_from_entities() for buildings (Castle=5, GuardTower=7, Fortress=10, Storehouse=3, others=2) and units (Settler=3, Swordsman=4, Bowman=4). 12 new tests. Visibility integrated into mesh vertex attribute for shader fog rendering. 216 tests pass.** |
-|| **75** | **2026-06-17** | **Bugfix #37: toggleSpeed() was module-scoped, inaccessible to inline onclick. Added window.toggleSpeed to exposure block. 216 tests pass.** |
+||| **75** | **2026-06-17** | **Bugfix #37: toggleSpeed() was module-scoped, inaccessible to inline onclick. Added window.toggleSpeed to exposure block. 216 tests pass.** |
+||| **76** | **2026-06-18** | **Fog of war shader integration: Fragment shader now uses v_visibility to darken unexplored/unvisible tiles. Added u_fog_color uniform, visibility_buffer GPU buffer at location 8. Smooth transition with smoothstep(0.15, 0.6, v_visibility). Updated shader tests. 216 tests pass.** |
 
 ---
 
 ## Next Objectives (TDD Order)
 
-### 1. Fog of War Shader Integration
-**Objective:** Fragment shader darkens unexplored/unvisible tiles using the visibility vertex attribute.
-**Test Cases (to write first):**
-- [ ] `Tile::visibility` field is 0.0 for unexplored, 1.0 for fully visible
-- [ ] Fragment shader reads `a_visibility` and darkens tiles below threshold
-- [ ] Smooth transition at visibility edges (no hard cutoffs)
-**Remaining:** Wire visibility attribute into fragment shader (`u_fog_color` uniform + `a_visibility` attribute).
-
-### 2. Territory Expansion
+### 1. Territory Expansion
 **Objective:** Guard Towers and Fortresses extend player territory border when garrisoned.
 **Test Cases (to write first):**
 - [ ] `Garrisoned GuardTower` → territory radius +3 tiles
@@ -297,7 +290,7 @@ protocol::tests               5 tests    Message serialization, room management
 - [ ] Buildings can only be placed within own territory
 - [ ] Enemy buildings in contested territory are flagged
 
-### 3. Nation-Specific Unique Buildings (Roman)
+### 2. Nation-Specific Unique Buildings (Roman)
 **Objective:** Romans can build Temple of Bacchus, Vineyard, Wine Press, Colosseum, and Sanctuaries.
 **Test Cases (to write first):**
 - [ ] `get_nation_buildings("Roman")` returns 6 building names
@@ -307,14 +300,14 @@ protocol::tests               5 tests    Message serialization, room management
 - [ ] Non-Roman nations CANNOT build Roman unique buildings
 - [ ] `try_place_building("Temple of Bacchus")` fails for Viking player
 
-### 4. Balance Simulation
+### 3. Balance Simulation
 **Objective:** Automated test simulates first 10 minutes for each nation, verifies similar resource totals (±15%).
 **Test Cases (to write first):**
 - [ ] `simulate_nation(Roman, 600 ticks)` produces resources within expected range
 - [ ] All 5 nations reach similar total resource value at 600 ticks
 - [ ] No nation has strictly better units than another (cost/stat ratio)
 
-### 5. Mobile UI Adaptation
+### 4. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
 **Test Cases (to write first):**
 - [ ] Viewport < 768px: menu buttons stack vertically
