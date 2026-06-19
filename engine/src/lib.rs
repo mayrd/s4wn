@@ -3283,6 +3283,15 @@ pub fn populate_model_instances_from_game() -> i32 {
 }
 
 impl App {
+    /// Map a unit kind to a 3D model ID.
+    fn model_id_for_unit(kind: units::UnitKind) -> &'static str {
+        match kind {
+            units::UnitKind::Settler => "worker",
+            units::UnitKind::Swordsman => "soldier",
+            units::UnitKind::Bowman => "archer",
+        }
+    }
+
     /// Map a building type name to a 3D model ID.
     fn model_id_for_building(kind_name: &str) -> &'static str {
         match kind_name {
@@ -3332,6 +3341,17 @@ impl App {
                 b.x as f32 + 0.5,
                 b.y as f32 + 0.5,
             ).with_scale(scale));
+            count += 1;
+        }
+
+        // Units
+        for u in self.game_loop.state.economy.units.alive_units() {
+            let model_id = Self::model_id_for_unit(u.kind);
+            self.model_instances.push(model::ModelInstance::new(
+                model_id,
+                u.x,
+                u.y,
+            ));
             count += 1;
         }
 
@@ -4108,6 +4128,58 @@ mod tests {
         let json = r#"{"version":1}"#;
         let result = load_model_json("Missing", json);
         assert!(result.starts_with("error:"), "expected error for missing fields, got: {}", result);
+    }
+
+    #[test]
+    fn test_model_id_for_unit_settler() {
+        // Settler -> "worker" model
+        assert_eq!(App::model_id_for_unit(units::UnitKind::Settler), "worker");
+    }
+
+    #[test]
+    fn test_model_id_for_unit_swordsman() {
+        assert_eq!(App::model_id_for_unit(units::UnitKind::Swordsman), "soldier");
+    }
+
+    #[test]
+    fn test_model_id_for_unit_bowman() {
+        assert_eq!(App::model_id_for_unit(units::UnitKind::Bowman), "archer");
+    }
+
+    #[test]
+    fn test_model_id_for_unit_all_variants_covered() {
+        // Verify all 3 unit kinds have model mappings
+        use units::UnitKind;
+        let kinds = [UnitKind::Settler, UnitKind::Swordsman, UnitKind::Bowman];
+        for kind in kinds {
+            let model_id = App::model_id_for_unit(kind);
+            assert!(!model_id.is_empty(), "{:?} should map to a model", kind);
+        }
+    }
+
+    #[test]
+    fn test_unit_model_json_files_exist() {
+        // Verify the JSON model files for units exist on disk
+        // These are needed for the game to render unit models
+        let unit_models = ["worker", "soldier", "archer"];
+        for name in unit_models {
+            let path = std::path::Path::new("../assets/models/json").join(format!("{}.json", name));
+            assert!(path.exists(), "missing unit model: {}", path.display());
+        }
+    }
+
+    #[test]
+    fn test_unit_model_json_parsable() {
+        // Verify all 3 unit models parse correctly
+        let unit_models = ["worker", "soldier", "archer"];
+        for name in unit_models {
+            let path = std::path::Path::new("../assets/models/json").join(format!("{}.json", name));
+            let json_str = std::fs::read_to_string(&path).expect(&format!("cannot read {}", path.display()));
+            let mesh = crate::model::parse_json_mesh(&json_str)
+                .expect(&format!("cannot parse unit model {}", name));
+            assert!(mesh.positions.len() >= 16, "{} has too few vertices", name);
+            assert!(mesh.indices.len() >= 12, "{} has too few indices", name);
+        }
     }
 
 }

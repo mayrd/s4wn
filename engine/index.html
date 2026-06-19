@@ -1138,7 +1138,7 @@ import init, {
     load_model_json,
     populate_model_instances_from_game,
     add_model_instance,
-} from './pkg/s4wn_engine.js?v=35';
+} from './pkg/s4wn_engine.js?v=36';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -4232,7 +4232,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=35');
+            const mod = await import('./pkg/s4wn_engine.js?v=36');
             load_map_json = mod.load_map_json || null;
             console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {
