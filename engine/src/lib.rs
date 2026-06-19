@@ -318,6 +318,77 @@ void main() {
 }
 "#;
 
+// ── Model 3D Shaders ─────────────────────────────────────────────────────────
+// Phase 5 Step 8: GPU model rendering pass for buildings and units.
+
+const MODEL_VERTEX_SHADER: &str = r#"#version 300 es
+precision highp float;
+
+in vec3 a_position;
+in vec3 a_normal;
+in vec2 a_uv;
+
+uniform mat4 u_mvp;
+uniform mat4 u_model;
+uniform vec3 u_view_pos;
+uniform vec3 u_light_dir;
+
+out vec3 v_normal;
+out vec3 v_world_pos;
+out vec2 v_uv;
+out vec3 v_light_dir;
+out vec3 v_view_dir;
+
+void main() {
+    vec4 world_pos = u_model * vec4(a_position, 1.0);
+    v_world_pos = world_pos.xyz;
+    v_normal = normalize(mat3(u_model) * a_normal);
+    v_uv = a_uv;
+    v_light_dir = normalize(u_light_dir);
+    v_view_dir = normalize(u_view_pos - world_pos.xyz);
+    gl_Position = u_mvp * vec4(a_position, 1.0);
+}
+"#;
+
+const MODEL_FRAGMENT_SHADER: &str = r#"#version 300 es
+precision highp float;
+
+in vec3 v_normal;
+in vec3 v_world_pos;
+in vec2 v_uv;
+in vec3 v_light_dir;
+in vec3 v_view_dir;
+
+uniform vec4 u_model_color;
+uniform float u_roughness;
+uniform float u_metallic;
+
+out vec4 out_color;
+
+void main() {
+    vec3 N = normalize(v_normal);
+    vec3 L = normalize(v_light_dir);
+    vec3 V = normalize(v_view_dir);
+    vec3 H = normalize(L + V);
+
+    // Diffuse (Lambert)
+    float NdotL = max(dot(N, L), 0.0);
+    vec3 diffuse = u_model_color.rgb * NdotL;
+
+    // Ambient
+    vec3 ambient = u_model_color.rgb * 0.15;
+
+    // Specular (Blinn-Phong with roughness)
+    float NdotH = max(dot(N, H), 0.0);
+    float spec = pow(NdotH, 2.0 / (u_roughness * u_roughness + 0.001));
+    vec3 specular = mix(vec3(0.04), u_model_color.rgb, u_metallic) * spec * 0.5;
+
+    vec3 final_color = ambient + diffuse + specular;
+    out_color = vec4(final_color, u_model_color.a);
+}
+"#;
+
+
 /// Scale factor for converting tile elevation (0.0–1.0) to world-space Y units.
 /// Default 0.5 means a full-height tile displaces upward by 0.5 world units.
 const ELEVATION_SCALE: f32 = 0.5;
@@ -409,6 +480,24 @@ struct App {
     splat_buffer: Option<WebGlBuffer>,
     // Water animation time uniform
     water_time_loc: Option<web_sys::WebGlUniformLocation>,
+    // ── Phase 5 Step 8: Model 3D rendering ──────────────────────────
+    model_program: Option<WebGlProgram>,
+    model_vao: Option<WebGlVertexArrayObject>,
+    model_pos_buffer: Option<WebGlBuffer>,
+    model_normal_buffer: Option<WebGlBuffer>,
+    model_uv_buffer: Option<WebGlBuffer>,
+    model_index_buffer: Option<WebGlBuffer>,
+    model_index_count: i32,
+    model_mvp_loc: Option<web_sys::WebGlUniformLocation>,
+    model_model_loc: Option<web_sys::WebGlUniformLocation>,
+    model_view_pos_loc: Option<web_sys::WebGlUniformLocation>,
+    model_light_dir_loc: Option<web_sys::WebGlUniformLocation>,
+    model_color_loc: Option<web_sys::WebGlUniformLocation>,
+    model_roughness_loc: Option<web_sys::WebGlUniformLocation>,
+    model_metallic_loc: Option<web_sys::WebGlUniformLocation>,
+    /// Model instances to render this frame
+    model_instances: Vec<model::ModelInstance>,
+
 }
 
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
@@ -707,6 +796,50 @@ impl App {
         let day_phase_loc = gl
             .get_uniform_location(&program, "u_day_phase")
             .ok_or("Cannot find u_day_phase")?;
+        // ── Phase 5 Step 8: Initialize model rendering ──────────────
+        let model_program = compile_shader(
+            &gl,
+            WebGl2RenderingContext::VERTEX_SHADER,
+            MODEL_VERTEX_SHADER,
+        )
+        .and_then(|vert| {
+            compile_shader(
+                &gl,
+                WebGl2RenderingContext::FRAGMENT_SHADER,
+                MODEL_FRAGMENT_SHADER,
+            )
+            .and_then(|frag| link_program(&gl, &vert, &frag))
+        })
+        .ok();
+
+        let (model_vao, model_pos_buffer, model_normal_buffer, model_uv_buffer, model_index_buffer,
+             model_mvp_loc, model_model_loc, model_view_pos_loc, model_light_dir_loc,
+             model_color_loc, model_roughness_loc, model_metallic_loc) = 
+            if let Some(ref prog) = model_program {
+                let vao = gl.create_vertex_array();
+                if let Some(ref v) = vao {
+                    gl.bind_vertex_array(Some(v));
+                }
+                let pos_buf = gl.create_buffer();
+                let norm_buf = gl.create_buffer();
+                let uv_buf = gl.create_buffer();
+                let idx_buf = gl.create_buffer();
+                gl.bind_vertex_array(None);
+                (
+                    vao,
+                    pos_buf, norm_buf, uv_buf, idx_buf,
+                    gl.get_uniform_location(prog, "u_mvp"),
+                    gl.get_uniform_location(prog, "u_model"),
+                    gl.get_uniform_location(prog, "u_view_pos"),
+                    gl.get_uniform_location(prog, "u_light_dir"),
+                    gl.get_uniform_location(prog, "u_model_color"),
+                    gl.get_uniform_location(prog, "u_roughness"),
+                    gl.get_uniform_location(prog, "u_metallic"),
+                )
+            } else {
+                (None, None, None, None, None, None, None, None, None, None, None, None)
+            };
+
 
         // Compile overlay shaders
         let overlay_vert = compile_shader(
@@ -807,7 +940,23 @@ impl App {
             use_vp_loc,
             light_dir_loc,
             splat_buffer: Some(splat_buffer),
-            water_time_loc,
+            
+            model_program,
+            model_vao,
+            model_pos_buffer,
+            model_normal_buffer,
+            model_uv_buffer,
+            model_index_buffer,
+            model_index_count: 0,
+            model_mvp_loc,
+            model_model_loc,
+            model_view_pos_loc,
+            model_light_dir_loc,
+            model_color_loc,
+            model_roughness_loc,
+            model_metallic_loc,
+            model_instances: Vec::new(),
+water_time_loc,
         })
     }
 
@@ -1005,9 +1154,180 @@ impl App {
             0,
         );
 
-        // ── Overlay: draw buildings and units as colored dots ─────────────
+                // ── Model 3D: draw placed building/unit models ──────────
+        self.render_models();
+
+// ── Overlay: draw buildings and units as colored dots ─────────────
         self.render_overlay();
     }
+
+    // ── Phase 5 Step 8: Model 3D Rendering Pass ──────────────────────
+
+    /// Upload a model mesh to GPU buffers for rendering.
+    fn upload_model_to_gpu(&mut self, mesh: &model::ModelMesh) {
+        let gl = &self.gl;
+        let prog = match self.model_program.as_ref() {
+            Some(p) => p,
+            None => return,
+        };
+        let vao = match self.model_vao.as_ref() {
+            Some(v) => v,
+            None => return,
+        };
+
+        gl.use_program(Some(prog));
+        gl.bind_vertex_array(Some(vao));
+
+        // Upload position buffer (location 0)
+        if let Some(ref buf) = self.model_pos_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            unsafe {
+                let view = js_sys::Float32Array::view(&mesh.positions);
+                gl.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    &view,
+                    WebGl2RenderingContext::STATIC_DRAW,
+                );
+            }
+            gl.vertex_attrib_pointer_with_i32(0, 3, WebGl2RenderingContext::FLOAT, false, 0, 0);
+            gl.enable_vertex_attrib_array(0);
+        }
+
+        // Upload normal buffer (location 1)
+        if let Some(ref buf) = self.model_normal_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            unsafe {
+                let view = js_sys::Float32Array::view(&mesh.normals);
+                gl.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    &view,
+                    WebGl2RenderingContext::STATIC_DRAW,
+                );
+            }
+            gl.vertex_attrib_pointer_with_i32(1, 3, WebGl2RenderingContext::FLOAT, false, 0, 0);
+            gl.enable_vertex_attrib_array(1);
+        }
+
+        // Upload UV buffer (location 2)
+        if let Some(ref buf) = self.model_uv_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            unsafe {
+                let view = js_sys::Float32Array::view(&mesh.uvs);
+                gl.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    &view,
+                    WebGl2RenderingContext::STATIC_DRAW,
+                );
+            }
+            gl.vertex_attrib_pointer_with_i32(2, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
+            gl.enable_vertex_attrib_array(2);
+        }
+
+        // Upload index buffer
+        if let Some(ref buf) = self.model_index_buffer {
+            gl.bind_buffer(
+                WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
+                Some(buf),
+            );
+            unsafe {
+                let view = js_sys::Uint16Array::view(&mesh.indices);
+                gl.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
+                    &view,
+                    WebGl2RenderingContext::STATIC_DRAW,
+                );
+            }
+        }
+
+        // Store index count for draw calls
+        self.model_index_count = mesh.indices.len() as i32;
+
+        gl.bind_vertex_array(None);
+    }
+
+    fn render_models(&mut self) {
+        if self.model_instances.is_empty() {
+            return;
+        }
+        let gl = &self.gl;
+        let prog = match self.model_program.as_ref() {
+            Some(p) => p,
+            None => return,
+        };
+        let vao = match self.model_vao.as_ref() {
+            Some(v) => v,
+            None => return,
+        };
+
+        gl.use_program(Some(prog));
+        gl.bind_vertex_array(Some(vao));
+
+        // Compute VP matrix from orbital camera (reuse existing infrastructure)
+        let (ex, ey, ez) = self.camera.eye();
+        let (tx, ty, tz) = self.camera.look_at_target();
+        let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
+        let proj = model::perspective(45.0, aspect, 0.1, 500.0);
+        let view = model::look_at(&[ex, ey, ez], &[tx, ty, tz], &[0.0, 1.0, 0.0]);
+
+        // View position for specular lighting
+        if let Some(ref loc) = self.model_view_pos_loc {
+            gl.uniform3f(Some(loc), ex, ey, ez);
+        }
+
+        // Light direction (same as terrain — sun arc from day_phase)
+        let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
+        let sun_angle = day_phase as f32 * std::f32::consts::TAU;
+        let sun_elev = sun_angle.sin() * 0.8 + 0.2;
+        let lx = sun_angle.cos() * sun_elev.max(0.1);
+        let ly = sun_elev.max(0.1);
+        let lz = sun_angle.sin() * sun_elev.max(0.1);
+        let len = (lx*lx + ly*ly + lz*lz).sqrt();
+        if let Some(ref loc) = self.model_light_dir_loc {
+            gl.uniform3f(Some(loc), lx/len, ly/len, lz/len);
+        }
+
+        // Draw each model instance
+        for inst in &self.model_instances {
+            let mvp = model::compute_mvp(inst, &view, &proj);
+
+            // Model matrix for world-space normal transform
+            let s = inst.scale;
+            let ry = inst.rotation_y.to_radians();
+            let cos_y = ry.cos();
+            let sin_y = ry.sin();
+            let model_mat: [f32; 16] = [
+                s * cos_y, 0.0, s * sin_y, 0.0,
+                0.0, s, 0.0, 0.0,
+                -s * sin_y, 0.0, s * cos_y, 0.0,
+                inst.x, 0.0, inst.y, 1.0,
+            ];
+
+            if let Some(ref loc) = self.model_mvp_loc {
+                gl.uniform_matrix4fv_with_f32_array(Some(loc), false, &mvp);
+            }
+            if let Some(ref loc) = self.model_model_loc {
+                gl.uniform_matrix4fv_with_f32_array(Some(loc), false, &model_mat);
+            }
+            if let Some(ref loc) = self.model_color_loc {
+                // Building/unit color — use a default stone gray
+                gl.uniform4f(Some(loc), 0.7, 0.65, 0.55, 1.0);
+            }
+            if let Some(ref loc) = self.model_roughness_loc {
+                gl.uniform1f(Some(loc), 0.6);
+            }
+            if let Some(ref loc) = self.model_metallic_loc {
+                gl.uniform1f(Some(loc), 0.0);
+            }
+
+            gl.draw_elements_with_i32(
+                WebGl2RenderingContext::TRIANGLES,
+                self.model_index_count,
+                WebGl2RenderingContext::UNSIGNED_SHORT,
+                0,
+            );
+        }
+    }
+
 
     fn render_overlay(&mut self) {
         // Build overlay points from game state
@@ -2845,16 +3165,24 @@ pub fn restore_game_state(json: &str) -> String {
     String::from("error: engine not initialized")
 }
 
-/// Load a model from a JSON mesh string and validate it.
-/// Returns "ok:{name}" if successful, or "error:{message}" on failure.
+/// Load a model from a JSON mesh string, validate it, and upload to GPU buffers.
+/// Returns "ok:{name}:{indices}tri" if successful, or "error:{message}" on failure.
 #[wasm_bindgen]
 pub fn load_model_json(name: &str, json_str: &str) -> String {
-    match model::parse_json_mesh(json_str) {
-        Ok(_mesh) => {
-            format!("ok:{}", name)
-        }
-        Err(e) => format!("error:{}", e),
+    let mesh = match model::parse_json_mesh(json_str) {
+        Ok(m) => m,
+        Err(e) => return format!("error:{}", e),
+    };
+    if mesh.is_empty() {
+        return format!("error:empty mesh");
     }
+    let tri_count = mesh.triangle_count;
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            app.upload_model_to_gpu(&mesh);
+        }
+    }
+    format!("ok:{}:{}tri", name, tri_count)
 }
 
 /// Parse an OBJ model string and return vertex count, triangle count, and AABB as JSON.
@@ -2912,6 +3240,44 @@ pub fn decompress_sav_chunk(data: &[u8], expected_length: usize) -> Vec<u8> {
     let mut ara = AraCrypt::new_s4();
     let decrypted = ara.decrypt(data);
     Decompressor::unpack(&decrypted, 0, decrypted.len(), expected_length)
+}
+
+/// Add a model instance to the render list for this frame.
+/// Called from JS each frame for every building/unit to render.
+#[wasm_bindgen]
+pub fn add_model_instance(model_id: &str, x: f32, y: f32, scale: f32, rotation_y: f32) -> bool {
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            let inst = model::ModelInstance::new(model_id, x, y)
+                .with_scale(scale)
+                .with_rotation_y(rotation_y);
+            app.model_instances.push(inst);
+            return true;
+        }
+    }
+    false
+}
+
+/// Clear all model instances (called at start of each frame).
+#[wasm_bindgen]
+pub fn clear_model_instances() {
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            app.model_instances.clear();
+        }
+    }
+}
+
+/// Get the number of loaded model instances for this frame.
+#[wasm_bindgen]
+pub fn model_instance_count() -> i32 {
+    unsafe {
+        if let Some(ref app) = APP.as_ref() {
+            app.model_instances.len() as i32
+        } else {
+            0
+        }
+    }
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
@@ -3475,7 +3841,6 @@ mod tests {
             "fragment shader missing / 4.0 atlas UV remap"
         );
     }
-}
 
     // ── Water Shader Tests ─────────────────────────────────────────────────────
 
@@ -3603,3 +3968,75 @@ mod tests {
             "fragment shader missing UV-based depth variation"
         );
     }
+
+    // ── Model 3D Rendering Tests ──────────────────────────────────────────
+
+    #[test]
+    fn test_model_vertex_shader_has_required_uniforms() {
+        assert!(MODEL_VERTEX_SHADER.contains("u_mvp"), "model vertex shader missing u_mvp");
+        assert!(MODEL_VERTEX_SHADER.contains("u_model"), "model vertex shader missing u_model");
+        assert!(MODEL_VERTEX_SHADER.contains("a_position"), "model vertex shader missing a_position");
+        assert!(MODEL_VERTEX_SHADER.contains("a_normal"), "model vertex shader missing a_normal");
+        assert!(MODEL_VERTEX_SHADER.contains("a_uv"), "model vertex shader missing a_uv");
+    }
+
+    #[test]
+    fn test_model_fragment_shader_has_required_uniforms() {
+        assert!(MODEL_FRAGMENT_SHADER.contains("u_model_color"), "model fragment shader missing u_model_color");
+        assert!(MODEL_FRAGMENT_SHADER.contains("u_roughness"), "model fragment shader missing u_roughness");
+        assert!(MODEL_FRAGMENT_SHADER.contains("u_metallic"), "model fragment shader missing u_metallic");
+    }
+
+    #[test]
+    fn test_load_model_json_valid() {
+        let json = r#"{"version":1,"vertices":[[0,0,0],[1,0,0],[0,1,0]],"normals":[[0,1,0],[0,1,0],[0,1,0]],"uvs":[[0,0],[1,0],[0,1]],"indices":[0,1,2],"aabb":[0,0,0,1,1,0]}"#;
+        let result = load_model_json("TestModel", json);
+        assert!(result.starts_with("ok:TestModel:"), "expected ok, got: {}", result);
+    }
+
+    #[test]
+    fn test_load_model_json_invalid_json() {
+        let result = load_model_json("Bad", "not json");
+        assert!(result.starts_with("error:"), "expected error, got: {}", result);
+    }
+
+    #[test]
+    fn test_load_model_json_wrong_version() {
+        let json = r#"{"version":99,"vertices":[[0,0,0],[1,0,0]],"normals":[[0,1,0],[0,1,0]],"uvs":[[0,0],[1,0]],"indices":[0,1,2],"aabb":[0,0,0,0,0,0]}"#;
+        let result = load_model_json("BadVer", json);
+        assert!(result.starts_with("error:"), "expected error for wrong version, got: {}", result);
+    }
+
+    #[test]
+    fn test_model_instance_count_zero_when_no_app() {
+        // model_instance_count returns 0 when APP is None (no WebGL context)
+        assert_eq!(model_instance_count(), 0);
+    }
+
+    #[test]
+    fn test_clear_model_instances_no_app() {
+        // clear_model_instances should not panic when APP is None
+        clear_model_instances();
+    }
+
+    #[test]
+    fn test_add_model_instance_no_app() {
+        // add_model_instance should return false when APP is None
+        assert!(!add_model_instance("test", 1.0, 2.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn test_load_model_json_empty_mesh() {
+        let json = r#"{"version":1,"vertices":[],"normals":[],"uvs":[],"indices":[],"aabb":[0,0,0,0,0,0]}"#;
+        let result = load_model_json("Empty", json);
+        assert!(result.starts_with("error:"), "expected error for empty mesh, got: {}", result);
+    }
+
+    #[test]
+    fn test_load_model_json_missing_fields() {
+        let json = r#"{"version":1}"#;
+        let result = load_model_json("Missing", json);
+        assert!(result.starts_with("error:"), "expected error for missing fields, got: {}", result);
+    }
+
+}
