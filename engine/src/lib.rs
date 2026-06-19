@@ -52,6 +52,7 @@ uniform float u_day_phase;
 // Phase 5: Orbital camera View-Projection matrix (dual-path migration)
 uniform mat4 u_vp;
 uniform bool u_use_vp;
+uniform float u_water_time;
 
 out vec3 v_color;
 out float v_elevation;
@@ -72,6 +73,20 @@ void main() {
 
     // Subtle terrain animation: slight elevation wave driven by u_time
     elev += sin(u_time * 0.5 + x * 0.3 + y * 0.3) * 0.02;
+
+    // Water vertex animation: sine-wave displacement for water tiles
+    // Water=3, DeepWater=4 — animate with u_water_time for independent control
+    if (a_terrain_id > 2.5 && a_terrain_id < 4.5) {
+        float wave1 = sin(u_water_time * 1.8 + x * 1.2 + y * 0.8) * 0.06;
+        float wave2 = sin(u_water_time * 2.4 + x * 0.5 - y * 1.1) * 0.04;
+        float wave3 = sin(u_water_time * 0.7 + (x + y) * 1.5) * 0.03;
+        float water_anim = wave1 + wave2 + wave3;
+        // DeepWater gets slightly smaller waves
+        if (a_terrain_id > 3.5) {
+            water_anim *= 0.7;
+        }
+        elev += water_anim;
+    }
 
     if (u_use_vp) {
         // Phase 5: Orbital camera — use View-Projection matrix
@@ -173,10 +188,41 @@ void main() {
 
     vec3 lit = base_color * shade * light;
 
-    // Water animation: subtle wave color shift
-    if (v_color.b > v_color.r && v_color.b > v_color.g) {
-        float wave = 0.85 + 0.15 * sin(v_day_phase * 6.2831853 * 3.0 + v_elevation * 10.0);
-        lit = lit * wave;
+    // Water rendering path: Fresnel-based transparency + specular + depth color ramp
+    // Water=3, DeepWater=4
+    bool is_water = (v_terrain_id > 2.5 && v_terrain_id < 4.5);
+    bool is_deep_water = (v_terrain_id > 3.5);
+    if (is_water) {
+        // Animated specular highlight (sun reflection on waves)
+        vec3 view_dir = vec3(0.0, 1.0, 0.0); // simplified top-down-ish view
+        vec3 n_w = normalize(v_normal);
+        vec3 l_w = normalize(u_light_direction);
+        vec3 h = normalize(l_w + view_dir);
+        float spec = pow(max(dot(n_w, h), 0.0), 64.0);
+        float specular_strength = spec * (0.4 + day_light * 0.6);
+
+        // Fresnel: stronger reflection at grazing edges
+        float fresnel = pow(1.0 - max(dot(n_w, view_dir), 0.0), 3.0);
+        fresnel = mix(0.04, 1.0, fresnel);
+
+        // Depth-based color ramp
+        vec3 shallow_color = vec3(0.1, 0.45, 0.55);  // turquoise shallow
+        vec3 deep_color    = vec3(0.02, 0.12, 0.35);  // dark navy deep
+        float depth_t = is_deep_water ? 0.7 : 0.3;
+        // Add spatial variation
+        depth_t += 0.15 * sin(u_water_time * 1.5 + v_uv.x * 6.28 + v_uv.y * 6.28);
+        depth_t = clamp(depth_t, 0.0, 1.0);
+        vec3 water_color = mix(shallow_color, deep_color, depth_t);
+
+        // Blend water color with terrain base using fresnel
+        vec3 water_surface = water_color * light;
+        // Add specular sparkle
+        water_surface += vec3(1.0, 0.95, 0.8) * specular_strength * 0.6;
+        // Fresnel blend with underlying terrain
+        lit = mix(water_surface, lit * vec3(0.3, 0.5, 0.6), fresnel * 0.6);
+        // Slight transparency simulation via color desaturation at edges
+        float alpha_sim = mix(0.85, 1.0, fresnel);
+        lit *= alpha_sim;
     }
 
     // Resource glow: tiles with resources get a subtle pulsing overlay
@@ -359,6 +405,8 @@ struct App {
     light_dir_loc: Option<web_sys::WebGlUniformLocation>,
     // Splat-map buffer
     splat_buffer: Option<WebGlBuffer>,
+    // Water animation time uniform
+    water_time_loc: Option<web_sys::WebGlUniformLocation>,
 }
 
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
@@ -653,6 +701,7 @@ impl App {
         let vp_loc = gl.get_uniform_location(&program, "u_vp");
         let use_vp_loc = gl.get_uniform_location(&program, "u_use_vp");
         let light_dir_loc = gl.get_uniform_location(&program, "u_light_direction");
+        let water_time_loc = gl.get_uniform_location(&program, "u_water_time");
         let day_phase_loc = gl
             .get_uniform_location(&program, "u_day_phase")
             .ok_or("Cannot find u_day_phase")?;
@@ -756,6 +805,7 @@ impl App {
             use_vp_loc,
             light_dir_loc,
             splat_buffer: Some(splat_buffer),
+            water_time_loc,
         })
     }
 
@@ -877,6 +927,10 @@ impl App {
             let lz = sun_angle.sin() * sun_elev.max(0.1);
             let len = (lx*lx + ly*ly + lz*lz).sqrt();
             gl.uniform3f(Some(loc), lx/len, ly/len, lz/len);
+        }
+        // Pass water animation time (independent of game time for visual smoothness)
+        if let Some(ref loc) = self.water_time_loc {
+            gl.uniform1f(Some(loc), elapsed as f32);
         }
         // Phase 5: Pass orbital camera View-Projection matrix to shader
         // When enabled (u_use_vp=true), shader uses VP matrix instead of legacy iso params
@@ -3364,3 +3418,122 @@ mod tests {
         );
     }
 }
+
+    // ── Water Shader Tests ─────────────────────────────────────────────────────
+
+    #[test]
+    fn test_vertex_shader_has_water_time_uniform() {
+        assert!(
+            VERTEX_SHADER.contains("uniform float u_water_time"),
+            "vertex shader missing u_water_time uniform"
+        );
+    }
+
+    #[test]
+    fn test_vertex_shader_water_animation_for_water_tiles() {
+        assert!(
+            VERTEX_SHADER.contains("a_terrain_id > 2.5 && a_terrain_id < 4.5"),
+            "vertex shader missing water terrain ID check"
+        );
+        assert!(
+            VERTEX_SHADER.contains("water_anim"),
+            "vertex shader missing water_anim variable"
+        );
+    }
+
+    #[test]
+    fn test_vertex_shader_water_wave_components() {
+        // Three wave components for realistic water animation
+        assert!(
+            VERTEX_SHADER.contains("u_water_time * 1.8"),
+            "vertex shader missing wave1 frequency"
+        );
+        assert!(
+            VERTEX_SHADER.contains("u_water_time * 2.4"),
+            "vertex shader missing wave2 frequency"
+        );
+        assert!(
+            VERTEX_SHADER.contains("u_water_time * 0.7"),
+            "vertex shader missing wave3 frequency"
+        );
+    }
+
+    #[test]
+    fn test_vertex_shader_deep_water_smaller_waves() {
+        assert!(
+            VERTEX_SHADER.contains("a_terrain_id > 3.5"),
+            "vertex shader missing deep water check"
+        );
+        assert!(
+            VERTEX_SHADER.contains("water_anim *= 0.7"),
+            "vertex shader missing deep water wave reduction"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_water_rendering_path() {
+        assert!(
+            FRAGMENT_SHADER.contains("is_water"),
+            "fragment shader missing is_water boolean"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("Water=3, DeepWater=4"),
+            "fragment shader missing water terrain ID comment"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_water_specular_highlight() {
+        assert!(
+            FRAGMENT_SHADER.contains("specular_strength"),
+            "fragment shader missing specular_strength"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("pow(max(dot(n_w, h), 0.0), 64.0)"),
+            "fragment shader missing Blinn-Phong specular computation"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_water_fresnel() {
+        assert!(
+            FRAGMENT_SHADER.contains("fresnel"),
+            "fragment shader missing fresnel variable"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("pow(1.0 - max(dot(n_w, view_dir), 0.0), 3.0)"),
+            "fragment shader missing fresnel computation"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_water_depth_color_ramp() {
+        assert!(
+            FRAGMENT_SHADER.contains("shallow_color"),
+            "fragment shader missing shallow water color"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("deep_color"),
+            "fragment shader missing deep water color"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("vec3(0.1, 0.45, 0.55)"),
+            "fragment shader missing turquoise shallow color"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("vec3(0.02, 0.12, 0.35)"),
+            "fragment shader missing dark navy deep color"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_water_depth_animation() {
+        assert!(
+            FRAGMENT_SHADER.contains("u_water_time * 1.5"),
+            "fragment shader missing water depth animation"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("v_uv.x * 6.28"),
+            "fragment shader missing UV-based depth variation"
+        );
+    }
