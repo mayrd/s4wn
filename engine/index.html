@@ -840,6 +840,12 @@
     /* Tile inspector: smaller on mobile */
     #tile-inspector { font-size: 11px; padding: 8px 12px; min-width: 140px; }
 
+
+    /* Construction panel: accordion collapse on mobile */
+    #construction-panel .con-cat-body { overflow: hidden; transition: max-height 0.3s ease; }
+    #construction-panel .con-cat-body.collapsed { max-height: 0 !important; }
+    #construction-panel .con-cat-header .accordion-arrow { transition: transform 0.3s ease; }
+
     /* Error dialog: full-width */
     .error-dialog { width: calc(100vw - 32px); max-width: none; }
 
@@ -4563,6 +4569,7 @@ console.error = function (...args) {
     <div class="stats-body" id="stats-body"></div>
 </div>
 <script>console.log('Panels HTML injected');</script>
+<script src="mobile-enhancements.js"></script>
 
 <!-- ── Error Dialog ────────────────────────────────────────────────────── -->
 <div id="error-overlay">
