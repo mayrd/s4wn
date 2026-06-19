@@ -2,12 +2,30 @@
 /* eslint-disable */
 
 /**
+ * Add a model instance to the render list for this frame.
+ * Called from JS each frame for every building/unit to render.
+ */
+export function add_model_instance(model_id: string, x: number, y: number, scale: number, rotation_y: number): boolean;
+
+/**
  * Apply starting resources based on difficulty level.
  * Should be called AFTER load_map_json() to seed the new game state.
  * difficulty: "easy" (2× resources), "medium" (1×), "hard" (0.5×)
  * Returns "ok" on success or an error message.
  */
 export function add_starting_resources(difficulty: string): string;
+
+/**
+ * Clear all model instances (called at start of each frame).
+ */
+export function clear_model_instances(): void;
+
+/**
+ * Compute a model-view-projection matrix for a model instance.
+ * Takes JSON input: {x, y, scale, rotation_y, view: [16], projection: [16]}
+ * Returns JSON array of 16 floats (column-major MVP matrix).
+ */
+export function compute_mvp_json(input_json: string): string;
 
 /**
  * Decompress a .sav savegame chunk: ARA-decrypt then LZ+Huffman decompress.
@@ -150,6 +168,17 @@ export function list_nations(): string;
 export function load_map_json(json: string): string;
 
 /**
+ * Load a model from a JSON mesh string, validate it, and upload to GPU buffers.
+ * Returns "ok:{name}:{indices}tri" if successful, or "error:{message}" on failure.
+ */
+export function load_model_json(name: string, json_str: string): string;
+
+/**
+ * Get the number of loaded model instances for this frame.
+ */
+export function model_instance_count(): number;
+
+/**
  * Handle mouse down for panning
  */
 export function on_mouse_down(x: number, y: number): void;
@@ -168,6 +197,17 @@ export function on_mouse_up(): void;
  * Handle scroll wheel for zooming
  */
 export function on_wheel(delta_y: number): void;
+
+/**
+ * Parse an OBJ model string and return vertex count, triangle count, and AABB as JSON.
+ */
+export function parse_obj_info(obj_str: string): string;
+
+/**
+ * Populate model_instances from current game state (buildings).
+ * Maps building types to model IDs. Called from JS each frame before render().
+ */
+export function populate_model_instances_from_game(): number;
 
 export function render(timestamp: number): void;
 
@@ -265,7 +305,10 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
+    readonly clear_model_instances: () => void;
+    readonly compute_mvp_json: (a: number, b: number) => [number, number];
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
     readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
     readonly get_build_cost: (a: number, b: number) => [number, number];
@@ -289,10 +332,14 @@ export interface InitOutput {
     readonly list_building_types: () => [number, number];
     readonly list_nations: () => [number, number];
     readonly load_map_json: (a: number, b: number) => [number, number];
+    readonly load_model_json: (a: number, b: number, c: number, d: number) => [number, number];
+    readonly model_instance_count: () => number;
     readonly on_mouse_down: (a: number, b: number) => void;
     readonly on_mouse_move: (a: number, b: number) => void;
     readonly on_mouse_up: () => void;
     readonly on_wheel: (a: number) => void;
+    readonly parse_obj_info: (a: number, b: number) => [number, number];
+    readonly populate_model_instances_from_game: () => number;
     readonly render: (a: number) => void;
     readonly resize: () => void;
     readonly restore_game_state: (a: number, b: number) => [number, number];

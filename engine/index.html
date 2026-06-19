@@ -1136,7 +1136,9 @@ import init, {
     list_nations,
     get_nation_buildings,
     load_model_json,
-} from './pkg/s4wn_engine.js?v=34';
+    populate_model_instances_from_game,
+    add_model_instance,
+} from './pkg/s4wn_engine.js?v=35';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -2645,6 +2647,11 @@ canvas.addEventListener('click', (e) => {
         showPlacementPulse(e.clientX, e.clientY, r.ok);
         if (r.ok) {
             placementStatus.textContent = `✅ ${r.kind} placed at (${t.x},${t.y})`;
+            // Spawn 3D model instance for the newly placed building
+            if (typeof add_model_instance === 'function') {
+                const mid = modelIdForBuilding(r.kind);
+                add_model_instance(mid, t.x + 0.5, t.y + 0.5, 0.7, 0.0);
+            }
             lastAffordabilityUpdate = 0; // immediate refresh
         } else {
             placementStatus.textContent = `❌ ${r.error}`;
@@ -4119,6 +4126,19 @@ function loadImage(url) {
 }
 
 
+// ── Model ID Mapping ────────────────────────────────────────────────────
+
+/// Map a building type name to its 3D model ID.
+function modelIdForBuilding(name) {
+    const map = {
+        'Sawmill': 'sawmill', 'Mine': 'mine', 'Bakery': 'bakery',
+        'Butcher': 'butcher', 'Farm': 'farm', 'Fisherman': 'fishery',
+        'Woodcutter': 'lumberjack', 'Castle': 'headquarters',
+        'Armory': 'armory', 'Blacksmith': 'blacksmith',
+    };
+    return map[name] || 'construction';
+}
+
 // ── Model Loading ────────────────────────────────────────────────────────
 
 // Map model names to their JSON asset files.
@@ -4197,7 +4217,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=34');
+            const mod = await import('./pkg/s4wn_engine.js?v=35');
             load_map_json = mod.load_map_json || null;
             console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {

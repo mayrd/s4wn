@@ -1,7 +1,10 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export const add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
 export const add_starting_resources: (a: number, b: number) => [number, number];
+export const clear_model_instances: () => void;
+export const compute_mvp_json: (a: number, b: number) => [number, number];
 export const decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
 export const generate_map: (a: number, b: number, c: number, d: number) => [number, number];
 export const get_build_cost: (a: number, b: number) => [number, number];
@@ -25,10 +28,14 @@ export const is_paused: () => number;
 export const list_building_types: () => [number, number];
 export const list_nations: () => [number, number];
 export const load_map_json: (a: number, b: number) => [number, number];
+export const load_model_json: (a: number, b: number, c: number, d: number) => [number, number];
+export const model_instance_count: () => number;
 export const on_mouse_down: (a: number, b: number) => void;
 export const on_mouse_move: (a: number, b: number) => void;
 export const on_mouse_up: () => void;
 export const on_wheel: (a: number) => void;
+export const parse_obj_info: (a: number, b: number) => [number, number];
+export const populate_model_instances_from_game: () => number;
 export const render: (a: number) => void;
 export const resize: () => void;
 export const restore_game_state: (a: number, b: number) => [number, number];

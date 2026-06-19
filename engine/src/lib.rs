@@ -1154,7 +1154,8 @@ water_time_loc,
             0,
         );
 
-                // ── Model 3D: draw placed building/unit models ──────────
+        // ── Model 3D: auto-populate instances from game state, then draw ──
+        self.populate_model_instances_from_game_state();
         self.render_models();
 
 // ── Overlay: draw buildings and units as colored dots ─────────────
@@ -3265,6 +3266,76 @@ pub fn clear_model_instances() {
         if let Some(ref mut app) = APP.as_mut() {
             app.model_instances.clear();
         }
+    }
+}
+
+/// Populate model_instances from current game state (buildings).
+/// Maps building types to model IDs. Called from JS each frame before render().
+#[wasm_bindgen]
+pub fn populate_model_instances_from_game() -> i32 {
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            app.populate_model_instances_from_game_state()
+        } else {
+            0
+        }
+    }
+}
+
+impl App {
+    /// Map a building type name to a 3D model ID.
+    fn model_id_for_building(kind_name: &str) -> &'static str {
+        match kind_name {
+            "Sawmill" => "sawmill",
+            "Mine" => "mine",
+            "Bakery" => "bakery",
+            "Butcher" => "butcher",
+            "Farm" => "farm",
+            "Fisherman" => "fishery",
+            "Woodcutter" => "lumberjack",
+            "Castle" => "headquarters",
+            "Armory" => "armory",
+            "Blacksmith" => "blacksmith",
+            "Mill" => "construction",
+            "Toolsmith" => "construction",
+            "Weaponsmith" => "construction",
+            "Stonecutter" => "construction",
+            "Storehouse" => "construction",
+            "Waterworks" => "construction",
+            "Smelter" => "construction",
+            "Barracks" => "construction",
+            "Guard Tower" => "construction",
+            "Fortress" => "construction",
+            "Siege Workshop" => "construction",
+            "Shipyard" => "construction",
+            "Road Layer" => "construction",
+            "Clay Pit" => "construction",
+            "Brickworks" => "construction",
+            "Hemp Farm" => "construction",
+            "Ropemaker" => "construction",
+            "Apiary" => "construction",
+            "Mead Maker" => "construction",
+            _ => "construction",
+        }
+    }
+
+    fn populate_model_instances_from_game_state(&mut self) -> i32 {
+        self.model_instances.clear();
+        let mut count = 0i32;
+
+        // Buildings
+        for b in self.game_loop.state.economy.buildings.iter() {
+            let model_id = Self::model_id_for_building(b.kind.name());
+            let scale = if b.is_complete() { 1.0 } else { 0.7 };
+            self.model_instances.push(model::ModelInstance::new(
+                model_id,
+                b.x as f32 + 0.5,
+                b.y as f32 + 0.5,
+            ).with_scale(scale));
+            count += 1;
+        }
+
+        count
     }
 }
 

@@ -1,6 +1,23 @@
 /* @ts-self-types="./s4wn_engine.d.ts" */
 
 /**
+ * Add a model instance to the render list for this frame.
+ * Called from JS each frame for every building/unit to render.
+ * @param {string} model_id
+ * @param {number} x
+ * @param {number} y
+ * @param {number} scale
+ * @param {number} rotation_y
+ * @returns {boolean}
+ */
+export function add_model_instance(model_id, x, y, scale, rotation_y) {
+    const ptr0 = passStringToWasm0(model_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.add_model_instance(ptr0, len0, x, y, scale, rotation_y);
+    return ret !== 0;
+}
+
+/**
  * Apply starting resources based on difficulty level.
  * Should be called AFTER load_map_json() to seed the new game state.
  * difficulty: "easy" (2× resources), "medium" (1×), "hard" (0.5×)
@@ -15,6 +32,35 @@ export function add_starting_resources(difficulty) {
         const ptr0 = passStringToWasm0(difficulty, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.add_starting_resources(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
+ * Clear all model instances (called at start of each frame).
+ */
+export function clear_model_instances() {
+    wasm.clear_model_instances();
+}
+
+/**
+ * Compute a model-view-projection matrix for a model instance.
+ * Takes JSON input: {x, y, scale, rotation_y, view: [16], projection: [16]}
+ * Returns JSON array of 16 floats (column-major MVP matrix).
+ * @param {string} input_json
+ * @returns {string}
+ */
+export function compute_mvp_json(input_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(input_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.compute_mvp_json(ptr0, len0);
         deferred2_0 = ret[0];
         deferred2_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);
@@ -440,6 +486,39 @@ export function load_map_json(json) {
 }
 
 /**
+ * Load a model from a JSON mesh string, validate it, and upload to GPU buffers.
+ * Returns "ok:{name}:{indices}tri" if successful, or "error:{message}" on failure.
+ * @param {string} name
+ * @param {string} json_str
+ * @returns {string}
+ */
+export function load_model_json(name, json_str) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(json_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.load_model_json(ptr0, len0, ptr1, len1);
+        deferred3_0 = ret[0];
+        deferred3_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
+ * Get the number of loaded model instances for this frame.
+ * @returns {number}
+ */
+export function model_instance_count() {
+    const ret = wasm.model_instance_count();
+    return ret;
+}
+
+/**
  * Handle mouse down for panning
  * @param {number} x
  * @param {number} y
@@ -470,6 +549,36 @@ export function on_mouse_up() {
  */
 export function on_wheel(delta_y) {
     wasm.on_wheel(delta_y);
+}
+
+/**
+ * Parse an OBJ model string and return vertex count, triangle count, and AABB as JSON.
+ * @param {string} obj_str
+ * @returns {string}
+ */
+export function parse_obj_info(obj_str) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(obj_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.parse_obj_info(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
+ * Populate model_instances from current game state (buildings).
+ * Maps building types to model IDs. Called from JS each frame before render().
+ * @returns {number}
+ */
+export function populate_model_instances_from_game() {
+    const ret = wasm.populate_model_instances_from_game();
+    return ret;
 }
 
 /**
@@ -922,6 +1031,9 @@ function __wbg_get_imports() {
         },
         __wbg_uniform3f_d1e4c9b540574821: function(arg0, arg1, arg2, arg3, arg4) {
             arg0.uniform3f(arg1, arg2, arg3, arg4);
+        },
+        __wbg_uniform4f_a5008773cfb47d1a: function(arg0, arg1, arg2, arg3, arg4, arg5) {
+            arg0.uniform4f(arg1, arg2, arg3, arg4, arg5);
         },
         __wbg_uniformMatrix4fv_61b1a000cfdc35cc: function(arg0, arg1, arg2, arg3, arg4) {
             arg0.uniformMatrix4fv(arg1, arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
