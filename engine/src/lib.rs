@@ -327,11 +327,16 @@ precision highp float;
 in vec3 a_position;
 in vec3 a_normal;
 in vec2 a_uv;
+// Instanced model matrix (4 vec4 attributes at locations 3-6)
+in mat4 a_model;
+// Per-instance world offset (location 7)
+in vec3 a_offset;
 
-uniform mat4 u_mvp;
+uniform mat4 u_vp;
 uniform mat4 u_model;
 uniform vec3 u_view_pos;
 uniform vec3 u_light_dir;
+uniform float u_use_instanced;
 
 out vec3 v_normal;
 out vec3 v_world_pos;
@@ -340,13 +345,14 @@ out vec3 v_light_dir;
 out vec3 v_view_dir;
 
 void main() {
-    vec4 world_pos = u_model * vec4(a_position, 1.0);
+    mat4 model = (u_use_instanced > 0.5) ? a_model : u_model;
+    vec4 world_pos = model * vec4(a_position + a_offset, 1.0);
     v_world_pos = world_pos.xyz;
-    v_normal = normalize(mat3(u_model) * a_normal);
+    v_normal = normalize(mat3(model) * a_normal);
     v_uv = a_uv;
     v_light_dir = normalize(u_light_dir);
     v_view_dir = normalize(u_view_pos - world_pos.xyz);
-    gl_Position = u_mvp * vec4(a_position, 1.0);
+    gl_Position = u_vp * world_pos;
 }
 "#;
 
@@ -497,6 +503,12 @@ struct App {
     model_metallic_loc: Option<web_sys::WebGlUniformLocation>,
     /// Model instances to render this frame
     model_instances: Vec<model::ModelInstance>,
+    // Instanced rendering: per-instance model matrix buffer (4 vec4 = 16 floats per instance)
+    model_instance_buffer: Option<WebGlBuffer>,
+    // Per-instance offset buffer (3 floats for x,y,z offset)
+    model_offset_buffer: Option<WebGlBuffer>,
+    model_vp_loc: Option<web_sys::WebGlUniformLocation>,
+    model_use_instanced_loc: Option<web_sys::WebGlUniformLocation>,
 
 }
 
@@ -814,7 +826,8 @@ impl App {
 
         let (model_vao, model_pos_buffer, model_normal_buffer, model_uv_buffer, model_index_buffer,
              model_mvp_loc, model_model_loc, model_view_pos_loc, model_light_dir_loc,
-             model_color_loc, model_roughness_loc, model_metallic_loc) = 
+             model_color_loc, model_roughness_loc, model_metallic_loc,
+             model_instance_buffer, model_offset_buffer, model_vp_loc, model_use_instanced_loc) = 
             if let Some(ref prog) = model_program {
                 let vao = gl.create_vertex_array();
                 if let Some(ref v) = vao {
@@ -825,6 +838,8 @@ impl App {
                 let uv_buf = gl.create_buffer();
                 let idx_buf = gl.create_buffer();
                 gl.bind_vertex_array(None);
+                let inst_buf = gl.create_buffer();
+                let offs_buf = gl.create_buffer();
                 (
                     vao,
                     pos_buf, norm_buf, uv_buf, idx_buf,
@@ -835,9 +850,13 @@ impl App {
                     gl.get_uniform_location(prog, "u_model_color"),
                     gl.get_uniform_location(prog, "u_roughness"),
                     gl.get_uniform_location(prog, "u_metallic"),
+                    inst_buf,
+                    offs_buf,
+                    gl.get_uniform_location(prog, "u_vp"),
+                    gl.get_uniform_location(prog, "u_use_instanced"),
                 )
             } else {
-                (None, None, None, None, None, None, None, None, None, None, None, None)
+                (None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
             };
 
 
@@ -956,6 +975,10 @@ impl App {
             model_roughness_loc,
             model_metallic_loc,
             model_instances: Vec::new(),
+            model_instance_buffer,
+            model_offset_buffer,
+            model_vp_loc,
+            model_use_instanced_loc,
 water_time_loc,
         })
     }
@@ -1269,6 +1292,12 @@ water_time_loc,
         let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
         let proj = model::perspective(45.0, aspect, 0.1, 500.0);
         let view = model::look_at(&[ex, ey, ez], &[tx, ty, tz], &[0.0, 1.0, 0.0]);
+        let vp = model::mat4_mul(&proj, &view);
+
+        // Set VP matrix uniform (shared across all instances)
+        if let Some(ref loc) = self.model_vp_loc {
+            gl.uniform_matrix4fv_with_f32_array(Some(loc), false, &vp);
+        }
 
         // View position for specular lighting
         if let Some(ref loc) = self.model_view_pos_loc {
@@ -1287,45 +1316,114 @@ water_time_loc,
             gl.uniform3f(Some(loc), lx/len, ly/len, lz/len);
         }
 
-        // Draw each model instance
-        for inst in &self.model_instances {
-            let mvp = model::compute_mvp(inst, &view, &proj);
+        // Color/material uniforms (same for all instances)
+        if let Some(ref loc) = self.model_color_loc {
+            gl.uniform4f(Some(loc), 0.7, 0.65, 0.55, 1.0);
+        }
+        if let Some(ref loc) = self.model_roughness_loc {
+            gl.uniform1f(Some(loc), 0.6);
+        }
+        if let Some(ref loc) = self.model_metallic_loc {
+            gl.uniform1f(Some(loc), 0.0);
+        }
 
-            // Model matrix for world-space normal transform
+        // Build model matrix helper
+        let build_model_mat = |inst: &model::ModelInstance| -> [f32; 16] {
             let s = inst.scale;
             let ry = inst.rotation_y.to_radians();
             let cos_y = ry.cos();
             let sin_y = ry.sin();
-            let model_mat: [f32; 16] = [
+            [
                 s * cos_y, 0.0, s * sin_y, 0.0,
                 0.0, s, 0.0, 0.0,
                 -s * sin_y, 0.0, s * cos_y, 0.0,
                 inst.x, 0.0, inst.y, 1.0,
-            ];
+            ]
+        };
 
-            if let Some(ref loc) = self.model_mvp_loc {
-                gl.uniform_matrix4fv_with_f32_array(Some(loc), false, &mvp);
-            }
-            if let Some(ref loc) = self.model_model_loc {
-                gl.uniform_matrix4fv_with_f32_array(Some(loc), false, &model_mat);
-            }
-            if let Some(ref loc) = self.model_color_loc {
-                // Building/unit color — use a default stone gray
-                gl.uniform4f(Some(loc), 0.7, 0.65, 0.55, 1.0);
-            }
-            if let Some(ref loc) = self.model_roughness_loc {
-                gl.uniform1f(Some(loc), 0.6);
-            }
-            if let Some(ref loc) = self.model_metallic_loc {
-                gl.uniform1f(Some(loc), 0.0);
-            }
+        // Group instances by model_id for instanced rendering
+        use std::collections::HashMap;
+        let mut groups: HashMap<String, Vec<(f32, f32, f32)>> = HashMap::new();
+        // Store (model_id, scale, rotation_y, x, y) for each instance
+        let mut instance_data: Vec<(&str, [f32; 16], [f32; 3])> = Vec::new();
+        for inst in &self.model_instances {
+            let model_mat = build_model_mat(inst);
+            let offset = [0.0f32, 0.0, 0.0];
+            instance_data.push((&inst.model_id, model_mat, offset));
+            let entry = groups.entry(inst.model_id.clone()).or_insert(Vec::new());
+            entry.push((inst.x, inst.y, inst.scale));
+        }
 
-            gl.draw_elements_with_i32(
-                WebGl2RenderingContext::TRIANGLES,
-                self.model_index_count,
-                WebGl2RenderingContext::UNSIGNED_SHORT,
-                0,
-            );
+        // Build instance buffers: flat arrays of model matrices + offsets
+        let mut model_mats: Vec<f32> = Vec::new();
+        let mut offsets: Vec<f32> = Vec::new();
+        for (_, mat, off) in &instance_data {
+            model_mats.extend_from_slice(mat);
+            offsets.extend_from_slice(off);
+        }
+
+        // Upload instance data to GPU buffers
+        let instance_count = instance_data.len() as i32;
+        if let Some(ref buf) = self.model_instance_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            unsafe {
+                let view = js_sys::Float32Array::view(&model_mats);
+                gl.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    &view,
+                    WebGl2RenderingContext::DYNAMIC_DRAW,
+                );
+            }
+            // Configure instanced attributes (locations 3-6 for mat4)
+            let stride = 64; // 16 floats * 4 bytes
+            for i in 0..4 {
+                let loc = 3 + i;
+                gl.vertex_attrib_pointer_with_i32(
+                    loc, 4, WebGl2RenderingContext::FLOAT, false, stride, (i * 16) as i32,
+                );
+                gl.enable_vertex_attrib_array(loc);
+                gl.vertex_attrib_divisor(loc, 1);
+            }
+        }
+        if let Some(ref buf) = self.model_offset_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            unsafe {
+                let view = js_sys::Float32Array::view(&offsets);
+                gl.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    &view,
+                    WebGl2RenderingContext::DYNAMIC_DRAW,
+                );
+            }
+            gl.vertex_attrib_pointer_with_i32(7, 3, WebGl2RenderingContext::FLOAT, false, 0, 0);
+            gl.enable_vertex_attrib_array(7);
+            gl.vertex_attrib_divisor(7, 1);
+        }
+
+        // Enable instanced path
+        if let Some(ref loc) = self.model_use_instanced_loc {
+            gl.uniform1f(Some(loc), 1.0);
+        }
+
+        // Single instanced draw call for all instances
+        gl.draw_elements_instanced_with_i32(
+            WebGl2RenderingContext::TRIANGLES,
+            self.model_index_count,
+            WebGl2RenderingContext::UNSIGNED_SHORT,
+            0,
+            instance_count,
+        );
+
+        // Reset instanced divisor for next frame
+        for i in 0..4 {
+            gl.vertex_attrib_divisor(3 + i, 0);
+        }
+        gl.vertex_attrib_divisor(7, 0);
+
+        // Also set u_model for non-instanced fallback compatibility
+        if let Some(ref loc) = self.model_model_loc {
+            let identity: [f32; 16] = [1.0,0.0,0.0,0.0, 0.0,1.0,0.0,0.0, 0.0,0.0,1.0,0.0, 0.0,0.0,0.0,1.0];
+            gl.uniform_matrix4fv_with_f32_array(Some(loc), false, &identity);
         }
     }
 
@@ -4064,8 +4162,10 @@ mod tests {
 
     #[test]
     fn test_model_vertex_shader_has_required_uniforms() {
-        assert!(MODEL_VERTEX_SHADER.contains("u_mvp"), "model vertex shader missing u_mvp");
+        assert!(MODEL_VERTEX_SHADER.contains("u_vp"), "model vertex shader missing u_vp");
         assert!(MODEL_VERTEX_SHADER.contains("u_model"), "model vertex shader missing u_model");
+        assert!(MODEL_VERTEX_SHADER.contains("u_use_instanced"), "model vertex shader missing u_use_instanced");
+        assert!(MODEL_VERTEX_SHADER.contains("a_model"), "model vertex shader missing a_model (instanced)");
         assert!(MODEL_VERTEX_SHADER.contains("a_position"), "model vertex shader missing a_position");
         assert!(MODEL_VERTEX_SHADER.contains("a_normal"), "model vertex shader missing a_normal");
         assert!(MODEL_VERTEX_SHADER.contains("a_uv"), "model vertex shader missing a_uv");
