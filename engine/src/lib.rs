@@ -123,6 +123,7 @@ in vec3 v_normal;
 uniform highp sampler2DArray u_terrain_textures;
 uniform bool u_use_textures;
 uniform vec3 u_fog_color;
+uniform vec3 u_light_direction;
 
 out vec4 out_color;
 
@@ -143,10 +144,16 @@ void main() {
 
     // Day/night cycle: day_phase is 0..1, 0.0=midnight, 0.5=noon
     float day_light = 0.5 + 0.5 * sin(v_day_phase * 6.2831853);
-    float ambient = 0.2 + day_light * 0.8;
     float warmth = 0.5 + day_light * 0.5;
 
-    vec3 lit = base_color * shade * ambient;
+    // Diffuse lighting from vertex normal
+    vec3 n = normalize(v_normal);
+    vec3 l = normalize(u_light_direction);
+    float diffuse = max(dot(n, l), 0.0);
+    float ambient_base = 0.15 + day_light * 0.35;
+    float light = ambient_base + diffuse * 0.7;
+
+    vec3 lit = base_color * shade * light;
 
     // Water animation: subtle wave color shift
     if (v_color.b > v_color.r && v_color.b > v_color.g) {
@@ -330,6 +337,8 @@ struct App {
     // Phase 5: Orbital camera VP matrix
     vp_loc: Option<web_sys::WebGlUniformLocation>,
     use_vp_loc: Option<web_sys::WebGlUniformLocation>,
+    // Fragment shader light direction
+    light_dir_loc: Option<web_sys::WebGlUniformLocation>,
 }
 
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
@@ -571,6 +580,7 @@ impl App {
         let fog_color_loc = gl.get_uniform_location(&program, "u_fog_color");
         let vp_loc = gl.get_uniform_location(&program, "u_vp");
         let use_vp_loc = gl.get_uniform_location(&program, "u_use_vp");
+        let light_dir_loc = gl.get_uniform_location(&program, "u_light_direction");
         let day_phase_loc = gl
             .get_uniform_location(&program, "u_day_phase")
             .ok_or("Cannot find u_day_phase")?;
@@ -672,6 +682,7 @@ impl App {
             fog_color_loc,
             vp_loc,
             use_vp_loc,
+            light_dir_loc,
         })
     }
 
@@ -783,6 +794,16 @@ impl App {
         gl.uniform1f(Some(&self.time_loc), elapsed as f32);
         if let Some(ref loc) = self.fog_color_loc {
             gl.uniform3f(Some(loc), 0.05, 0.08, 0.18);
+        }
+        // Pass light direction (tied to day/night cycle: sun arc)
+        if let Some(ref loc) = self.light_dir_loc {
+            let sun_angle = day_phase as f32 * 6.2831853;
+            let sun_elev = sun_angle.sin() * 0.8 + 0.2;
+            let lx = sun_angle.cos() * sun_elev.max(0.1);
+            let ly = sun_elev.max(0.1);
+            let lz = sun_angle.sin() * sun_elev.max(0.1);
+            let len = (lx*lx + ly*ly + lz*lz).sqrt();
+            gl.uniform3f(Some(loc), lx/len, ly/len, lz/len);
         }
         // Phase 5: Pass orbital camera View-Projection matrix to shader
         // When enabled (u_use_vp=true), shader uses VP matrix instead of legacy iso params
@@ -3099,6 +3120,47 @@ mod tests {
         assert!(
             FRAGMENT_SHADER.contains("uniform bool u_use_textures"),
             "fragment shader missing u_use_textures declaration"
+        );
+    }
+
+    // ── Phase 5: Fragment Shader Diffuse Lighting Tests ──────────────────────
+
+    #[test]
+    fn test_fragment_shader_has_light_direction_uniform() {
+        assert!(
+            FRAGMENT_SHADER.contains("uniform vec3 u_light_direction"),
+            "fragment shader missing u_light_direction uniform"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_uses_v_normal_for_diffuse() {
+        // Fragment shader must normalize v_normal and compute dot product with light dir
+        assert!(
+            FRAGMENT_SHADER.contains("normalize(v_normal)"),
+            "fragment shader missing normalize(v_normal)"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("dot(n, l)"),
+            "fragment shader missing dot(n, l) diffuse calculation"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_combined_lighting() {
+        // Fragment shader must combine ambient + diffuse (not just ambient alone)
+        assert!(
+            FRAGMENT_SHADER.contains("ambient_base"),
+            "fragment shader missing ambient_base"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("diffuse"),
+            "fragment shader missing diffuse lighting"
+        );
+        // The old ambient-only vec3 lit = base_color * shade * ambient should be gone
+        assert!(
+            FRAGMENT_SHADER.contains("base_color * shade * light"),
+            "fragment shader should use combined light (ambient+diffuse), not just ambient"
         );
     }
 }
