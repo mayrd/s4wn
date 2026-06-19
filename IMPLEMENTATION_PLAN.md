@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 5 — 3D Pipeline 🔬 (344 tests)
-| **Last updated:** 2026-06-19 (Session 103 — Phase 5 Step 7: JSON mesh parser + ModelInstance + WASM exports + 30 JSON models)
+| **Status:** Phase 5 — 3D Pipeline 🔬 (354 tests)
+| **Last updated:** 2026-06-19 (Session 104 — Phase 5 Step 8: GPU model shaders + rendering infra + WASM exports, Fixes #45)
 
 ---
 
@@ -287,7 +287,8 @@ protocol::tests               5 tests    Message serialization, room management
 || **84** | **2026-06-18** | **Maya unique buildings: 7 BuildingType variants (TempleOfChac, AgaveFarm, Distillery, 3 Sanctuaries, Observatory), nation-gated placement (Maya only), 259→259 tests (no new test file — existing coverage maintained).** |
 ||| **85** | **2026-06-18** | **Config sync: 22 buildings marked implemented, Next Objectives rewritten (Trojan/DarkTribe/Balance/Mobile), ClayPit/HempFarm/MeadMaker naming gap identified, data.js regenerated, config validation passes** |
 
-|||||| **103** | **2026-06-19** | **Phase 5 Step 7: JSON mesh parser (`parse_json_mesh`), `ModelInstance` struct, `compute_mvp`/`perspective`/`look_at` matrix functions, WASM exports (`load_model_json`, `parse_obj_info`, `compute_mvp_json`), 30 JSON models converted from OBJ. 39 new tests, 344 total.** |
+|||||| **104** | **2026-06-19** | **Phase 5 Step 8: GPU model shaders (MODEL_VERTEX/FRAGMENT_SHADER with PBR), model VAO/buffer management in App struct, upload_model_to_gpu(), render_models() draw pass, WASM exports (add_model_instance, clear_model_instances, model_instance_count). Bugfix #45 (updateSettingVal window exposure). 10 new tests, 354 total.** |
+||| **103** | **2026-06-19** | **Phase 5 Step 7: JSON mesh parser (`parse_json_mesh`), `ModelInstance` struct, `compute_mvp`/`perspective`/`look_at` matrix functions, WASM exports (`load_model_json`, `parse_obj_info`, `compute_mvp_json`), 30 JSON models converted from OBJ. 39 new tests, 344 total.** |
 || **102** | **2026-06-19** | **Bugfix #38: Shader compile error — u_water_time undeclared identifier in fragment shader. Root cause: u_water_time uniform was declared in vertex shader but not in fragment shader, even though line 213 uses it for water depth animation. Added 'uniform float u_water_time;' to fragment shader. Added regression test test_fragment_shader_has_water_time_uniform. 305 tests pass.** |
 ---
 
@@ -369,7 +370,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=34. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 305 engine + 30 server = 335 total (305 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 315 engine + 30 server = 345 total (315 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
 ## Next Session — Concrete Steps
 
@@ -391,6 +392,10 @@ Status: ✅ Done — 3-component sine-wave vertex displacement, Blinn-Phong spec
 
 Objective: Load and render 3D models for buildings and units.
 
+Objective: Load 3D models into GPU buffers and render them via a dedicated shader pass.
+
+Status: 🚧 In progress — Core infrastructure complete. Next: JS-side integration.
+
 Concrete steps:
 1. Define model format — JSON-based mesh format (vertices, normals, UVs, indices)
 2. Add model loader in Rust — parse model JSON, upload to GPU buffers
@@ -400,14 +405,15 @@ Concrete steps:
 
 ### Next Session — Concrete Steps
 
-**Phase 5 Step 7: 3D Model Loading & Rendering — ✅ Core Complete**
+**Phase 5 Step 8: GPU Model Rendering — 🚧 In Progress**
 
-Completed: JSON mesh parser, ModelInstance struct, MVP matrix math, WASM exports, 30 JSON models.
+Completed: Model shaders (vertex+fragment with PBR), model VAO/buffer management, upload_model_to_gpu(), render_models() draw pass, WASM exports (add_model_instance, clear_model_instances, model_instance_count). 10 new tests, 354 total.
 
-**Phase 5 Step 8: GPU Model Rendering**
+**Phase 5 Step 8 continued:**
 
-1. Add model VAO/buffer management to App struct in lib.rs
-2. Implement model instance rendering pass — bind model VAO, set MVP uniform, draw
-3. Add JS-side model loading — fetch JSON models, upload to GPU via WASM
-4. Connect building placement to model instance creation
-5. Add instanced rendering for units (many instances, one draw call)
+1. ✅ Add model VAO/buffer management to App struct in lib.rs — DONE
+2. ✅ Implement model instance rendering pass — DONE (render_models with per-instance MVP)
+3. Add JS-side model loading — fetch JSON models from assets/, call load_model_json() per model
+4. Connect building placement to model instances — call add_model_instance() when building is placed
+5. Connect units to model instances — one model instance per unit
+6. Add instanced rendering for units (many instances, one draw call — performance optimization)
