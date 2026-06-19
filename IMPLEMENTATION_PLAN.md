@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 | **Status:** Phase 5 — 3D Pipeline 🔬 (360 tests)
-| **Last updated:** 2026-06-19 (Session 108 — Unit model instances: 3 procgen unit models, unit to instance mapping, 360 tests)
+| **Last updated:** 2026-06-19 (Session 109 — Instanced rendering: single draw_elements_instanced call, a_model/a_offset instanced attributes, u_vp uniform, 360 tests)
 
 ---
 
@@ -409,20 +409,24 @@ Concrete steps:
 
 ### Next Session — Concrete Steps
 
+**Phase 5 Step 7: Instanced Rendering ✅ (Session 109)**
+
+Instanced rendering implemented: single draw_elements_instanced call replaces per-instance draw loop. Model vertex shader uses instanced attributes a_model (locations 3-6, mat4) and a_offset (location 7, vec3). VP matrix (u_vp) computed once per frame and shared. Legacy u_model uniform retained for fallback. 360 tests pass.
+
 **Phase 5 Step 8: GPU Model Rendering — 🚧 In Progress**
 
-Completed: Model shaders, VAO/buffer management, JS model loading (30 JSON models), building→model instance connection, auto-population each frame. WASM cache v=35. 354 tests pass.
+Completed: Model shaders, VAO/buffer management, JS model loading (30 JSON models), building→model instance connection, auto-population each frame, unit model instances, instanced rendering. WASM cache v=36. 360 tests pass.
 
-**Phase 5 Step 8 continued:**
+**Remaining work:**
 
-1. ✅ Add model VAO/buffer management to App struct in lib.rs — DONE (Session 104)
+1. ✅ Add model VAO/buffer management — DONE (Session 104)
 2. ✅ Implement model instance rendering pass — DONE (Session 104)
-3. ✅ Add JS-side model loading — DONE (Session 105): loadGameModels() fetches 30 JSON models, load_model_json() uploads to GPU
-4. ✅ Connect building placement to model instances — DONE (Session 106): populate_model_instances_from_game_state() called each frame, model_id_for_building() mapping (10 exact + construction fallback), add_model_instance() JS call on placement
-5. Done Connect units to model instances - DONE (Session 108): model_id_for_unit() maps UnitKind to model_id, alive_units() iteration, 3 procgen JSON unit models
-6. ✅ WASM rebuild — DONE (Session 105, v=34 to v=35 in S106; v=35 to v=36 in S108)
-7. Add instanced rendering for units (many instances, one draw call — performance optimization)
-8. Generate missing building JSON models (Castle, Fortress, GuardTower, etc.) — only 30 decorative/resource models exist
+3. ✅ JS-side model loading — DONE (Session 105)
+4. ✅ Building placement → model instances — DONE (Session 106)
+5. ✅ Unit model instances — DONE (Session 108)
+6. ✅ Instanced rendering — DONE (Session 109)
+7. Generate missing building JSON models (Storehouse, Fortress, GuardTower, Mill, + 33 unique buildings) — only 10 buildings have models; 30+ fall back to construction.json
+8. WASM rebuild with instanced rendering (cache v=37)
 
 ---
 
