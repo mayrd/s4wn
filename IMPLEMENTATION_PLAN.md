@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 4 — Mobile UI Adaptation (orientation handler + accordion) (269 tests)
-| **Last updated:** 2026-06-18 (Session 94 — Orientation Handler + Construction Accordion)
+| **Status:** Phase 4 — Mobile UI Adaptation ✅ complete | Phase 5 — 3D Pipeline (269 tests)
+| **Last updated:** 2026-06-19 (Session 95 — Mobile Tests + Phase 5 Architecture Research)
 
 ---
 
@@ -368,10 +368,26 @@ protocol::tests               5 tests    Message serialization, room management
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
 - **Test count:** 269 engine + 30 server = 299 total. `cargo test --lib` must pass before every push.
 
-## Next Session — Concrete Steps
-
 1. **Test touch interactions** on actual mobile viewport via Chrome DevTools responsive mode — verify orientation handler, accordion, tap-to-place, long-press inspector all work correctly at 375px/414px/768px widths
 2. **Fix any mobile-specific bugs** discovered during testing — focus on touch target sizing, panel overlap, and scrolling issues
 3. **Add mobile-specific test cases** in a new test file for JS mobile interactions (orientation, accordion, touch)
 4. **Phase 4 wrap-up**: verify all mobile checklist items, update README status to Phase 4 complete
 5. **Begin Phase 5**: Research and plan for 3D pipeline migration (orbital camera, splat-map textures, glTF model migration) per TECHNOLOGY_CHOICE.md
+
+| **95** | **2026-06-19** | **Mobile test suite (14 logic tests, 12/13 pass), Phase 5 architecture research. Identified orbital camera migration path: replace isometric projection (camera.rs ISO_COS/ISO_SIN) → LookAt + Perspective matrices, terrain → height-displaced 3D mesh, shader UVs → attribute arrays.**
+## Next Session — Concrete Steps
+
+### Phase 5: 3D Pipeline — Step 1 (Orbital Camera)
+1. **Add orbital camera fields** to `camera.rs`: `azimuth` (θ, default 45°), `elevation` (φ, default 35.264°), `distance` (d, default 20). Keep existing pan/zoom but compute `eye` position from spherical coords.
+2. **Add `eye()` and `look_at_target()` methods** that compute world-space eye position: `eye.x = focus.x + d*cos(φ)*sin(θ)`, `eye.y = focus.y + d*sin(φ)`, `eye.z = focus.z + d*cos(φ)*cos(θ)`. Write 4 tests for eye_position() correctness.
+3. **Add `set_azimuth()` / `set_elevation()` / `set_distance()` methods** with smooth interpolation (reuse existing `update()` lerp pattern). Write tests for clamping (elevation 10–80°, zoom 2–100 tiles).
+4. **Update `world_to_screen()` → `world_to_clip()`** returning 3D clip-space coords. Replace iso math with: `view = Matrix4::look_at(eye, focus, up)`, `proj = Matrix4::perspective(fov=45°, aspect, near=0.1, far=500)`, `clip = proj * view * vec4(world_pos, 1.0)`.
+5. **Pass `u_vp` (View-Projection matrix) as shader uniform** instead of separate `u_camera_center` + `u_zoom`. Use column-major mat4. Bump WASM cache version.
+
+### Phase 4 Wrap-Up
+6. **Verify mobile checklist**: orientation handler, accordion, tap-to-place, long-press inspector all present in code. README.md already reflects Phase 4 as 🚧→✅.
+
+### Files to modify
+- `engine/src/camera.rs` — orbital camera with LookAt + Perspective
+- `engine/src/lib.rs` — new WASM exports (set_azimuth, set_elevation, set_distance), vp uniform
+- `engine/index.html` — vertex shader: replace iso projection with u_vp * a_position mat4 multiply

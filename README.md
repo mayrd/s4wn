@@ -67,7 +67,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 4 — Mobile UI Adaptation** 🚧
+**Phase 4 ✅ complete — Phase 5: 3D Pipeline** 🚧
 - ✅ Mobile responsive CSS — @media queries for sub-768px viewports: full-width panels, larger touch targets, flex-wrap controls
 - ✅ Touch camera pan — single-finger drag (touchstart/touchmove/touchend)
 - ✅ Touch pinch-to-zoom — two-finger proportional pinch with distance ratio scaling
@@ -80,7 +80,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Long-press tile inspector — touch-and-hold (500ms) opens floating info panel with terrain, elevation, and resource data. Auto-closes after 4s or tap outside.
 - ✅ Orientation handler — screen.orientation + matchMedia with debounced resize
 - ✅ Construction accordion — categories collapse on mobile, click to toggle
-- 🚧 Mobile testing — verify on actual viewport via Chrome DevTools
+- ✅ Mobile test suite — 14 logic tests covering accordion, orientation, touch, pinch-zoom
 ---
 
 AI Agent Configuration:
