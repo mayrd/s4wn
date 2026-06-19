@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 5 — 3D Pipeline 🔬 (284 tests)
-| **Last updated:** 2026-06-19 (Session 98 — Height-displaced terrain mesh with vertex normals)
+| **Status:** Phase 5 — 3D Pipeline 🔬 (287 tests)
+| **Last updated:** 2026-06-19 (Session 99 — Fragment shader diffuse lighting with day/night sun arc)
 
 ---
 
@@ -364,31 +364,33 @@ protocol::tests               5 tests    Message serialization, room management
 - **🌐 Best source of Siedler 4 info:** [siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/) — buildings, units, production chains, game mechanics, maps, guides. Always consult this first when researching authentic S4 behavior.
 - **S4Forge.RE:** Authoritative C++ decompilation for building IDs (0-82), settler IDs (0-66), terrain (8 types), resources (8 types), nations (5)
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
-- **WASM cache:** Current v=32. Always bump when adding new `#[wasm_bindgen]` exports.
+- **WASM cache:** Current v=34. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 284 engine + 30 server = 314 total (284 `cargo test --lib`; 10 new orbital camera tests). `cargo test --lib` must pass before every push.
+- **Test count:** 287 engine + 30 server = 317 total (287 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
-1. **Test touch interactions** on actual mobile viewport via Chrome DevTools responsive mode — verify orientation handler, accordion, tap-to-place, long-press inspector all work correctly at 375px/414px/768px widths
-2. **Fix any mobile-specific bugs** discovered during testing — focus on touch target sizing, panel overlap, and scrolling issues
-3. **Add mobile-specific test cases** in a new test file for JS mobile interactions (orientation, accordion, touch)
-4. **Phase 4 wrap-up**: verify all mobile checklist items, update README status to Phase 4 complete
-5. **Begin Phase 5**: Research and plan for 3D pipeline migration (orbital camera, splat-map textures, glTF model migration) per TECHNOLOGY_CHOICE.md
-
-| **98** | **2026-06-19** | **Phase 5 Step 3: Height-displaced terrain mesh with vertex normals. ELEVATION_SCALE=0.5, 3-float positions (x,elev*scale,y), central-difference normals, normal_buffer attribute 9, vertex shader a_position vec2→vec3, a_normal+v_normal varyings. 5 new tests. 284 tests pass (was 279).** |
-|| **96** | **2026-06-19** | **Phase 5 Step 1: Orbital camera model. Added azimuth/elevation/distance fields with smoothing targets to Camera struct. Implemented eye() (spherical→world-space), look_at_target(), world_to_clip() (LookAt+Perspective), set_azimuth()/set_elevation()/set_distance() with clamping, set_focus(), snap_to_isometric(). normalize() helper for 3D vectors. 10 new tests: orbital defaults, az wrap, elev clamp, dist clamp, eye classic iso, az moves z-axis, elevation→height, clip valid w, snap, lerp smoothing. All 279 tests pass (was 269).**
-| **95** | **2026-06-19** | **Mobile test suite (14 logic tests, 12/13 pass), Phase 5 architecture research. Identified orbital camera migration path: replace isometric projection (camera.rs ISO_COS/ISO_SIN) → LookAt + Perspective matrices, terrain → height-displaced 3D mesh, shader UVs → attribute arrays.**
 ## Next Session — Concrete Steps
 
-### Phase 5: 3D Pipeline — Step 1 Complete, Step 2 (Shader Integration)
-Steps 1–4 ✅ DONE (Session 96). Remaining:
+### Phase 5: 3D Pipeline — Steps 1-4 Complete
 
-5. ✅ **Pass `u_vp` (View-Projection matrix) as shader uniform** to the vertex shader instead of separate `u_camera_center` + `u_zoom`. Add the 4×4 mat4 uniform to the shader, update `App` struct in lib.rs to store the new uniform location, and pass `eye()` + projection values each frame. Keep the legacy iso uniforms for backward compat (dual-path during migration). **Done (Session 97)**.
-6. ✅ **Add WASM exports** for `set_azimuth()`, `set_elevation()`, `set_distance()` so JS can control the orbital camera. Bump WASM cache version to v=33. **Done (Session 97).**
+| Step | Description | Session | Status |
+|------|-------------|---------|--------|
+| 1 | Orbital camera model (azimuth/elevation/distance) | 96 | done |
+| 2 | u_vp mat4 uniform + WASM camera exports | 97 | done |
+| 3 | Height-displaced terrain mesh + vertex normals | 98 | done |
+| 4 | Fragment shader diffuse lighting (n.l) + sun arc | 99 | done |
 
-### Phase 5: 3D Pipeline — Step 3 (Terrain Height Mesh)
-7. **Replace flat vertex grid with height-displaced mesh**: modify `build_map_mesh()` to compute per-vertex Y from `tile.elevation * ELEVATION_SCALE` (default 0.5). Add vertex normals from heightmap gradient. Update vertex shader attributes to include `a_position.z` and `a_normal`.
+### Phase 5: Step 5 — Terrain Texture Generation & Splat-Map Blending
 
-### Files to modify
-- `engine/src/lib.rs` — add WASM exports (set_azimuth/set_elevation/set_distance), u_vp uniform, shader changes
-- `engine/index.html` — JS camera orbit controls (right-drag for azimuth/elevation, scroll for distance)
-- `engine/src/camera.rs` — no changes needed (model done)
+Objective: Replace solid vertex colors with procedurally generated terrain textures, blended via 4-layer splat map.
+
+Concrete steps:
+1. Generate procedural terrain textures — 4 layers (grass, rock, sand, snow) at 512x512 each, packed into 2048x2048 atlas. Use Perlin noise + color ramps via scripts/generate_assets.py.
+2. Add splat-map vertex attribute — compute per-vertex texture weights (R=grass, G=rock, B=sand, A=snow) based on terrain type + slope. Wire into vertex shader at location 10.
+3. Update fragment shader for 4-layer splat blending — sample from terrain atlas using splat weights, combine with diffuse lighting from Step 4.
+4. Write shader tests — verify splat uniform/attribute, blending math, texture sampling.
+5. Enable u_use_textures flag in JS after terrain atlas is generated and loaded.
+
+Files to modify:
+- engine/src/lib.rs — splat attribute (location 10), fragment shader splat blending, texture atlas uniform
+- scripts/generate_assets.py — procedural terrain texture generation
+- engine/assets/ — new terrain atlas WebP
