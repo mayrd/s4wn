@@ -47,6 +47,9 @@ uniform float u_time;
 uniform vec2 u_camera_center;
 uniform float u_zoom;
 uniform float u_day_phase;
+// Phase 5: Orbital camera View-Projection matrix (dual-path migration)
+uniform mat4 u_vp;
+uniform bool u_use_vp;
 
 out vec3 v_color;
 out float v_elevation;
@@ -66,21 +69,28 @@ void main() {
     // Subtle terrain animation: slight elevation wave driven by u_time
     elev += sin(u_time * 0.5 + x * 0.3 + y * 0.3) * 0.02;
 
-    // Isometric projection
-    float iso_x = (x - y) * 0.866;  // cos(30°)
-    float iso_y = (x + y) * 0.5 - elev * 0.3;
+    if (u_use_vp) {
+        // Phase 5: Orbital camera — use View-Projection matrix
+        // Y is elevation for height-displacement (flat grid currently, will be 3D mesh later)
+        float world_y = elev * 0.5;
+        gl_Position = u_vp * vec4(x, world_y, y, 1.0);
+    } else {
+        // Legacy isometric projection
+        float iso_x = (x - y) * 0.866;  // cos(30°)
+        float iso_y = (x + y) * 0.5 - elev * 0.3;
 
-    // Camera transform
-    iso_x -= u_camera_center.x;
-    iso_y -= u_camera_center.y;
-    iso_x *= u_zoom;
-    iso_y *= u_zoom;
+        // Camera transform
+        iso_x -= u_camera_center.x;
+        iso_y -= u_camera_center.y;
+        iso_x *= u_zoom;
+        iso_y *= u_zoom;
 
-    // Convert to clip space
-    vec2 clip = (vec2(iso_x, iso_y) / u_resolution) * 2.0;
-    clip.y = -clip.y;
+        // Convert to clip space
+        vec2 clip = (vec2(iso_x, iso_y) / u_resolution) * 2.0;
+        clip.y = -clip.y;
 
-    gl_Position = vec4(clip, 0.0, 1.0);
+        gl_Position = vec4(clip, 0.0, 1.0);
+    }
     v_color = a_color;
     v_elevation = elev;
     v_has_resource = a_has_resource;
@@ -307,6 +317,9 @@ struct App {
     visibility_buffer: Option<WebGlBuffer>,
     textures_loaded: bool,
     fog_color_loc: Option<web_sys::WebGlUniformLocation>,
+    // Phase 5: Orbital camera VP matrix
+    vp_loc: Option<web_sys::WebGlUniformLocation>,
+    use_vp_loc: Option<web_sys::WebGlUniformLocation>,
 }
 
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
@@ -518,6 +531,8 @@ impl App {
         let terrain_tex_loc = gl.get_uniform_location(&program, "u_terrain_textures");
         let use_textures_loc = gl.get_uniform_location(&program, "u_use_textures");
         let fog_color_loc = gl.get_uniform_location(&program, "u_fog_color");
+        let vp_loc = gl.get_uniform_location(&program, "u_vp");
+        let use_vp_loc = gl.get_uniform_location(&program, "u_use_vp");
         let day_phase_loc = gl
             .get_uniform_location(&program, "u_day_phase")
             .ok_or("Cannot find u_day_phase")?;
@@ -616,6 +631,8 @@ impl App {
             visibility_buffer: Some(visibility_buffer),
             textures_loaded: false,
             fog_color_loc,
+            vp_loc,
+            use_vp_loc,
         })
     }
 
@@ -727,6 +744,62 @@ impl App {
         gl.uniform1f(Some(&self.time_loc), elapsed as f32);
         if let Some(ref loc) = self.fog_color_loc {
             gl.uniform3f(Some(loc), 0.05, 0.08, 0.18);
+        }
+        // Phase 5: Pass orbital camera View-Projection matrix to shader
+        // When enabled (u_use_vp=true), shader uses VP matrix instead of legacy iso params
+        if let (Some(ref vp_loc), Some(ref use_loc)) = (&self.vp_loc, &self.use_vp_loc) {
+            // Compute VP from orbital camera params
+            let (ex, ey, ez) = self.camera.eye();
+            let (tx, ty, tz) = self.camera.look_at_target();
+            let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
+            let fov = 45.0f32.to_radians();
+            let near = 0.1_f32;
+            let far = 500.0_f32;
+            let f = 1.0 / (fov * 0.5).tan();
+            let range_inv = 1.0 / (near - far);
+            // LookAt: forward, right, up
+            let fwd_x = tx - ex;
+            let fwd_y = ty - ey;
+            let fwd_z = tz - ez;
+            let fwd_len = (fwd_x*fwd_x + fwd_y*fwd_y + fwd_z*fwd_z).sqrt();
+            let fwd_x = fwd_x / fwd_len;
+            let fwd_y = fwd_y / fwd_len;
+            let fwd_z = fwd_z / fwd_len;
+            let world_up = (0.0_f32, 1.0_f32, 0.0_f32);
+            let right_x = fwd_y * world_up.2 - fwd_z * world_up.1;
+            let right_y = fwd_z * world_up.0 - fwd_x * world_up.2;
+            let right_z = fwd_x * world_up.1 - fwd_y * world_up.0;
+            let right_len = (right_x*right_x + right_y*right_y + right_z*right_z).sqrt();
+            let right_x = right_x / right_len;
+            let right_y = right_y / right_len;
+            let right_z = right_z / right_len;
+            let up_x = right_y * fwd_z - right_z * fwd_y;
+            let up_y = right_z * fwd_x - right_x * fwd_z;
+            let up_z = right_x * fwd_y - right_y * fwd_x;
+            // Translation part of view: -eye
+            let v_tx = -(right_x * ex + right_y * ey + right_z * ez);
+            let v_ty = -(up_x * ex + up_y * ey + up_z * ez);
+            let v_tz = -(-fwd_x * ex - fwd_y * ey - fwd_z * ez);
+            // Perspective projection matrix (column-major)
+            let p00 = f / aspect;
+            let p11 = f;
+            let p22 = (near + far) * range_inv;
+            let p23 = 2.0 * near * far * range_inv;
+            let p32 = -1.0;
+            // VP = P * V (column-major for WebGL)
+            let vp: [f32; 16] = [
+                p00 * right_x,  p11 * up_x,    p22 * (-fwd_x),  p32 * (-fwd_x),
+                p00 * right_y,  p11 * up_y,    p22 * (-fwd_y),  p32 * (-fwd_y),
+                p00 * right_z,  p11 * up_z,    p22 * (-fwd_z),  p32 * (-fwd_z),
+                p00 * v_tx,     p11 * v_ty,    p22 * v_tz + p23, p32 * v_tz,
+            ];
+            gl.uniform_matrix4fv_with_f32_array(Some(vp_loc), false, &vp);
+            gl.uniform1i(Some(use_loc), 1);
+        } else {
+            // No VP — shader falls back to legacy iso
+            if let Some(ref loc) = self.use_vp_loc {
+                gl.uniform1i(Some(loc), 0);
+            }
         }
         gl.uniform2f(
             Some(&self.resolution_loc),
@@ -1272,6 +1345,39 @@ pub fn on_wheel(delta_y: f32) {
         if let Some(ref mut app) = APP {
             let factor = if delta_y > 0.0 { 0.9 } else { 1.1 };
             app.camera.zoom_by(factor);
+            app.mesh_dirty = true;
+        }
+    }
+}
+
+/// Phase 5: Set orbital camera azimuth (horizontal orbit), degrees [0–360).
+#[wasm_bindgen]
+pub fn set_azimuth(degrees: f32) {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.camera.set_azimuth(degrees);
+            app.mesh_dirty = true;
+        }
+    }
+}
+
+/// Phase 5: Set orbital camera elevation (vertical angle), degrees [10–80].
+#[wasm_bindgen]
+pub fn set_elevation(degrees: f32) {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.camera.set_elevation(degrees);
+            app.mesh_dirty = true;
+        }
+    }
+}
+
+/// Phase 5: Set orbital camera distance from focus, tile units [2–100].
+#[wasm_bindgen]
+pub fn set_distance(dist: f32) {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.camera.set_distance(dist);
             app.mesh_dirty = true;
         }
     }
@@ -2580,6 +2686,9 @@ mod tests {
         assert!(FRAGMENT_SHADER.contains("out_color"));
         assert!(VERTEX_SHADER.contains("u_camera_center"));
         assert!(VERTEX_SHADER.contains("u_zoom"));
+        // Phase 5: Orbital camera uniforms
+        assert!(VERTEX_SHADER.contains("u_vp"), "missing u_vp uniform");
+        assert!(VERTEX_SHADER.contains("u_use_vp"), "missing u_use_vp uniform");
     }
 
     #[test]

@@ -1104,7 +1104,7 @@ import init, {
     get_player_nation,
     list_nations,
     get_nation_buildings,
-} from './pkg/s4wn_engine.js?v=32';
+} from './pkg/s4wn_engine.js?v=33';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -4036,7 +4036,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=32');
+            const mod = await import('./pkg/s4wn_engine.js?v=33');
             load_map_json = mod.load_map_json || null;
             console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {
