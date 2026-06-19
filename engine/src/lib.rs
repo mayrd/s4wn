@@ -32,7 +32,7 @@ use web_sys::{
 const VERTEX_SHADER: &str = r#"#version 300 es
 precision highp float;
 
-in vec2 a_position;
+in vec3 a_position;
 in vec3 a_color;
 in float a_elevation;
 in float a_has_resource;
@@ -41,6 +41,7 @@ in float a_edge_dist;
 in float a_visibility;
 in vec2 a_uv;
 in float a_terrain_id;
+in vec3 a_normal;
 
 uniform vec2 u_resolution;
 uniform float u_time;
@@ -60,6 +61,7 @@ out float v_edge_dist;
 out float v_visibility;
 out vec2 v_uv;
 out float v_terrain_id;
+out vec3 v_normal;
 
 void main() {
     float x = a_position.x;
@@ -99,6 +101,8 @@ void main() {
     v_edge_dist = a_edge_dist;
     v_uv = a_uv;
     v_terrain_id = a_terrain_id;
+    v_visibility = a_visibility;
+    v_normal = a_normal;
 }
 "#;
 
@@ -114,6 +118,7 @@ in float v_edge_dist;
 in float v_visibility;
 in vec2 v_uv;
 in float v_terrain_id;
+in vec3 v_normal;
 
 uniform highp sampler2DArray u_terrain_textures;
 uniform bool u_use_textures;
@@ -240,6 +245,10 @@ void main() {
 }
 "#;
 
+/// Scale factor for converting tile elevation (0.0–1.0) to world-space Y units.
+/// Default 0.5 means a full-height tile displaces upward by 0.5 world units.
+const ELEVATION_SCALE: f32 = 0.5;
+
 // ── Application State ─────────────────────────────────────────────────────────
 
 static mut APP: Option<App> = None;
@@ -315,6 +324,7 @@ struct App {
     uvs_buffer: Option<WebGlBuffer>,
     terrain_id_buffer: Option<WebGlBuffer>,
     visibility_buffer: Option<WebGlBuffer>,
+    normal_buffer: Option<WebGlBuffer>,
     textures_loaded: bool,
     fog_color_loc: Option<web_sys::WebGlUniformLocation>,
     // Phase 5: Orbital camera VP matrix
@@ -332,6 +342,7 @@ struct MeshData {
     slopes: Vec<f32>,
     edge_dists: Vec<f32>,
     visibilities: Vec<f32>,
+    normals: Vec<f32>,
     uvs: Vec<f32>,
     terrain_ids: Vec<f32>,
     indices: Vec<u16>,
@@ -347,6 +358,7 @@ impl MeshData {
             slopes: Vec::new(),
             edge_dists: Vec::new(),
             visibilities: Vec::new(),
+            normals: Vec::new(),
             uvs: Vec::new(),
             terrain_ids: Vec::new(),
             indices: Vec::new(),
@@ -389,6 +401,7 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
             let tile = map.get(mx, my).unwrap();
 
             mesh.positions.push(mx as f32);
+            mesh.positions.push(tile.elevation * ELEVATION_SCALE);
             mesh.positions.push(my as f32);
 
             let c = tile.terrain.color();
@@ -439,6 +452,30 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
             mesh.uvs.push(v);
             mesh.terrain_ids.push(tile.terrain as u8 as f32);
             mesh.visibilities.push(tile.visibility);
+
+            // Compute vertex normal from heightmap gradient (central differences)
+            let h_scale = ELEVATION_SCALE;
+            let h_c = tile.elevation * h_scale;
+            let get_h = |x: isize, y: isize| -> f32 {
+                if x >= 0 && y >= 0 && (x as usize) < map.width && (y as usize) < map.height {
+                    map.get(x as usize, y as usize).unwrap().elevation * h_scale
+                } else {
+                    h_c
+                }
+            };
+            let nx = -(get_h(mx as isize + 1, my as isize) - get_h(mx as isize - 1, my as isize)) / 2.0;
+            let nz = -(get_h(mx as isize, my as isize + 1) - get_h(mx as isize, my as isize - 1)) / 2.0;
+            let ny = 1.0;
+            let n_len = (nx * nx + ny * ny + nz * nz).sqrt();
+            if n_len > 1e-10 {
+                mesh.normals.push(nx / n_len);
+                mesh.normals.push(ny / n_len);
+                mesh.normals.push(nz / n_len);
+            } else {
+                mesh.normals.push(0.0);
+                mesh.normals.push(1.0);
+                mesh.normals.push(0.0);
+            }
 
             // Build triangle strip indices
             if row < rows && col < cols {
@@ -491,7 +528,7 @@ impl App {
         let vao = gl.create_vertex_array().ok_or("Cannot create VAO")?;
         gl.bind_vertex_array(Some(&vao));
 
-        let position_buffer = upload_f32_buffer(&gl, &mesh.positions, 0, 2);
+        let position_buffer = upload_f32_buffer(&gl, &mesh.positions, 0, 3);
         let color_buffer = upload_f32_buffer(&gl, &mesh.colors, 1, 3);
         let elevation_buffer = upload_f32_buffer(&gl, &mesh.elevations, 2, 1);
         let resource_buffer = upload_f32_buffer(&gl, &mesh.has_resources, 3, 1);
@@ -500,6 +537,7 @@ impl App {
         let uvs_buffer = upload_f32_buffer(&gl, &mesh.uvs, 6, 2);
         let terrain_id_buffer = upload_f32_buffer(&gl, &mesh.terrain_ids, 7, 1);
         let visibility_buffer = upload_f32_buffer(&gl, &mesh.visibilities, 8, 1);
+        let normal_buffer = upload_f32_buffer(&gl, &mesh.normals, 9, 3);
         let index_buffer = gl.create_buffer().ok_or("Cannot create index buffer")?;
         gl.bind_buffer(
             WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
@@ -629,6 +667,7 @@ impl App {
             uvs_buffer: Some(uvs_buffer),
             terrain_id_buffer: Some(terrain_id_buffer),
             visibility_buffer: Some(visibility_buffer),
+            normal_buffer: Some(normal_buffer),
             textures_loaded: false,
             fog_color_loc,
             vp_loc,
@@ -1041,6 +1080,10 @@ impl App {
         if let Some(ref buf) = self.visibility_buffer {
             gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
             update_f32_buffer(gl, &mesh.visibilities);
+        }
+        if let Some(ref buf) = self.normal_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            update_f32_buffer(gl, &mesh.normals);
         }
 
         gl.bind_buffer(
@@ -2881,7 +2924,7 @@ mod tests {
         let camera = Camera::new(8.0, 8.0, 800, 600);
         let mesh = build_map_mesh(&map, &camera);
 
-        let vertex_count = mesh.positions.len() / 2;
+        let vertex_count = mesh.positions.len() / 3;
         assert!(vertex_count > 0, "mesh should have vertices");
 
         // UVs: 2 floats per vertex
@@ -2920,8 +2963,8 @@ mod tests {
         // Vertices are laid out in row-major order (row, col)
         // terrain_ids follow the same order as positions
         for v in 0..mesh.terrain_ids.len() {
-            let x = mesh.positions[v * 2] as usize;
-            let y = mesh.positions[v * 2 + 1] as usize;
+            let x = mesh.positions[v * 3] as usize;
+            let y = mesh.positions[v * 3 + 2] as usize;
             let expected = map.get(x, y).unwrap().terrain as u8 as f32;
             assert_eq!(
                 mesh.terrain_ids[v], expected,
@@ -2973,6 +3016,77 @@ mod tests {
             FRAGMENT_SHADER.contains("in float v_terrain_id"),
             "fragment shader missing v_terrain_id input"
         );
+    }
+
+    // ── Phase 5: Height-Displaced Mesh & Vertex Normals Tests ──────────
+
+    #[test]
+    fn test_height_displaced_positions() {
+        // Positions must be 3-float: (tile_x, elevation * ELEVATION_SCALE, tile_y)
+        let map = Map::generate_demo(16, 16);
+        let camera = Camera::new(8.0, 8.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+
+        let vertex_count = mesh.positions.len() / 3;
+        assert!(vertex_count > 0, "mesh should have vertices");
+
+        // Check that all position heights match tile elevation * ELEVATION_SCALE
+        for v in 0..vertex_count {
+            let idx = v * 3;
+            let mx = mesh.positions[idx] as usize;
+            let h = mesh.positions[idx + 1];
+            let my = mesh.positions[idx + 2] as usize;
+
+            let tile = map.get(mx, my).unwrap();
+            let expected_h = tile.elevation * ELEVATION_SCALE;
+            assert!((h - expected_h).abs() < 0.001,
+                "height mismatch at ({},{}): {} vs {}", mx, my, h, expected_h);
+        }
+    }
+
+    #[test]
+    fn test_mesh_normals_count() {
+        // Normals must be 3 floats per vertex
+        let map = Map::generate_demo(16, 16);
+        let camera = Camera::new(8.0, 8.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+
+        let vertex_count = mesh.positions.len() / 3;
+        assert_eq!(mesh.normals.len(), vertex_count * 3, "normals count mismatch");
+    }
+
+    #[test]
+    fn test_normals_are_unit_vectors() {
+        // All computed normals must be unit vectors (or default up)
+        let map = Map::generate_demo(16, 16);
+        let camera = Camera::new(8.0, 8.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+
+        let vertex_count = mesh.normals.len() / 3;
+        for v in 0..vertex_count {
+            let idx = v * 3;
+            let nx = mesh.normals[idx];
+            let ny = mesh.normals[idx + 1];
+            let nz = mesh.normals[idx + 2];
+            let len = (nx * nx + ny * ny + nz * nz).sqrt();
+            assert!((len - 1.0).abs() < 0.01, "normal at vertex {} not unit: {}", v, len);
+        }
+    }
+
+    #[test]
+    fn test_vertex_shader_has_position_z_and_normal() {
+        assert!(VERTEX_SHADER.contains("in vec3 a_position"),
+            "vertex shader missing in vec3 a_position");
+        assert!(VERTEX_SHADER.contains("in vec3 a_normal"),
+            "vertex shader missing in vec3 a_normal");
+        assert!(VERTEX_SHADER.contains("out vec3 v_normal"),
+            "vertex shader missing out vec3 v_normal");
+    }
+
+    #[test]
+    fn test_fragment_shader_has_v_normal() {
+        assert!(FRAGMENT_SHADER.contains("in vec3 v_normal"),
+            "fragment shader missing in vec3 v_normal");
     }
 
     #[test]
