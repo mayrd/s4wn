@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 5 — 3D Pipeline 🔬 (287 tests)
-| **Last updated:** 2026-06-19 (Session 99 — Fragment shader diffuse lighting with day/night sun arc)
+| **Status:** Phase 5 — 3D Pipeline 🔬 (295 tests)
+| **Last updated:** 2026-06-19 (Session 100 — Terrain splat-map atlas + 4-layer blending)
 
 ---
 
@@ -330,6 +330,7 @@ protocol::tests               5 tests    Message serialization, room management
 
 || **87** | **2026-06-18** | **Dark Tribe unique buildings: 7 BuildingType variants (DarkTemple=54..DemonGate=60), nation-gated placement, production chains (DarkTemple→Wine, DarkGarden→Grapes, MushroomFarm→Grain, DemonGate→Weapons), building colors, costs, tools, config. Added Grapes+Wine to resources.json. 265 tests pass.** |
 |
+|| **100** | **2026-06-19** | **Phase 5 Step 5: Terrain splat-map atlas (2048x512, 4 layers), a_splat vertex attribute (location 10), 4-layer splat blending in fragment shader, 8 new tests. 295 total.** |
 || **93** | **2026-06-18** | **Flaky balance test fix (HashMap non-determinism in most_needed_tool) + Long-press tile inspector for mobile (500ms hold → floating info panel with terrain, elevation, resource). 269 tests pass.** |
 | **88** | **2026-06-18** | **Config name normalization: ClayPit→Clay Pit, HempFarm→Hemp Farm, MeadMaker→Mead Maker. Fixed naming gap between JS config (CamelCase) and Rust from_name() (space-separated). buildings.json, categories.json, data.js updated. All 295 tests pass.** |
 |
@@ -366,7 +367,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=34. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 287 engine + 30 server = 317 total (287 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 295 engine + 30 server = 325 total (295 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
 ## Next Session — Concrete Steps
 
@@ -379,18 +380,28 @@ protocol::tests               5 tests    Message serialization, room management
 | 3 | Height-displaced terrain mesh + vertex normals | 98 | done |
 | 4 | Fragment shader diffuse lighting (n.l) + sun arc | 99 | done |
 
-### Phase 5: Step 5 — Terrain Texture Generation & Splat-Map Blending
+### Phase 5: Step 6 — Water Shader & Refraction
 
-Objective: Replace solid vertex colors with procedurally generated terrain textures, blended via 4-layer splat map.
+Objective: Add animated water surface with refraction/distortion effect.
 
 Concrete steps:
-1. Generate procedural terrain textures — 4 layers (grass, rock, sand, snow) at 512x512 each, packed into 2048x2048 atlas. Use Perlin noise + color ramps via scripts/generate_assets.py.
-2. Add splat-map vertex attribute — compute per-vertex texture weights (R=grass, G=rock, B=sand, A=snow) based on terrain type + slope. Wire into vertex shader at location 10.
-3. Update fragment shader for 4-layer splat blending — sample from terrain atlas using splat weights, combine with diffuse lighting from Step 4.
-4. Write shader tests — verify splat uniform/attribute, blending math, texture sampling.
-5. Enable u_use_textures flag in JS after terrain atlas is generated and loaded.
+1. Add water vertex animation — sine-wave displacement for water tiles (Water/DeepWater terrain IDs 3/4)
+2. Add water fragment shader path — Fresnel-based transparency, specular highlight, depth color ramp
+3. Add u_water_time uniform — passed from JS render loop for animation
+4. Write water shader tests — verify water animation uniforms, fragment shader water path
+5. Update JS to set u_water_time uniform each frame
 
 Files to modify:
-- engine/src/lib.rs — splat attribute (location 10), fragment shader splat blending, texture atlas uniform
-- scripts/generate_assets.py — procedural terrain texture generation
-- engine/assets/ — new terrain atlas WebP
+- engine/src/lib.rs — water animation in vertex shader, water fragment path, u_water_time uniform
+- map-viewer.html — pass u_water_time from JS render loop
+
+### Phase 5: Step 7 — 3D Model Loading & Rendering
+
+Objective: Load and render 3D models for buildings and units.
+
+Concrete steps:
+1. Define model format — JSON-based mesh format (vertices, normals, UVs, indices)
+2. Add model loader in Rust — parse model JSON, upload to GPU buffers
+3. Add model instance rendering — per-instance model-view-projection, texture binding
+4. Write model loader tests — verify parsing, buffer upload
+5. Generate starter models — Castle, Farm, Sawmill, Worker, Soldier, Bowman
