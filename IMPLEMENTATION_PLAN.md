@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 4 — Mobile UI Adaptation (long-press tile inspector) (269 tests)
-| **Last updated:** 2026-06-18 (Session 93 — Long-Press Tile Inspector + Deterministic Fix)
+| **Status:** Phase 4 — Mobile UI Adaptation (orientation handler + accordion) (269 tests)
+| **Last updated:** 2026-06-18 (Session 94 — Orientation Handler + Construction Accordion)
 
 ---
 
@@ -341,7 +341,7 @@ protocol::tests               5 tests    Message serialization, room management
 |
 ### 4. Mobile UI Adaptation
 **Objective:** Game is playable on mobile devices (touch-friendly buttons, responsive layout).
-**Status:** In progress — long-press tile inspector (Session 93). Remaining: orientation, accordion, mobile testing.
+**Status:** In progress — orientation handler + accordion (Session 94). Remaining: mobile testing.
 **Test Cases (to write first):**
 - [x] Viewport < 768px: menu and panels adapt to mobile (responsive CSS media queries)
 - [x] Touch drag works for camera pan
@@ -367,3 +367,11 @@ protocol::tests               5 tests    Message serialization, room management
 - **WASM cache:** Current v=32. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
 - **Test count:** 269 engine + 30 server = 299 total. `cargo test --lib` must pass before every push.
+
+## Next Session — Concrete Steps
+
+1. **Test touch interactions** on actual mobile viewport via Chrome DevTools responsive mode — verify orientation handler, accordion, tap-to-place, long-press inspector all work correctly at 375px/414px/768px widths
+2. **Fix any mobile-specific bugs** discovered during testing — focus on touch target sizing, panel overlap, and scrolling issues
+3. **Add mobile-specific test cases** in a new test file for JS mobile interactions (orientation, accordion, touch)
+4. **Phase 4 wrap-up**: verify all mobile checklist items, update README status to Phase 4 complete
+5. **Begin Phase 5**: Research and plan for 3D pipeline migration (orbital camera, splat-map textures, glTF model migration) per TECHNOLOGY_CHOICE.md

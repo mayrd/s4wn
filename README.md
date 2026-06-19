@@ -78,7 +78,9 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Balance simulation — all 5 nations reach 10+ settlers in 10 min, produce 3+ unique resources, no nation exceeds 200% of median output. 4 new tests, deterministic.
 - ✅ Tap-to-place pulse feedback — green/red ripple animation at tap point for building placement confirmation on both mouse and touch. 269 tests pass.
 - ✅ Long-press tile inspector — touch-and-hold (500ms) opens floating info panel with terrain, elevation, and resource data. Auto-closes after 4s or tap outside.
-- 🚧 Orientation handler, construction accordion, mobile testing
+- ✅ Orientation handler — screen.orientation + matchMedia with debounced resize
+- ✅ Construction accordion — categories collapse on mobile, click to toggle
+- 🚧 Mobile testing — verify on actual viewport via Chrome DevTools
 ---
 
 AI Agent Configuration:
