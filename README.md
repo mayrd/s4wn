@@ -82,12 +82,13 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Construction accordion — categories collapse on mobile, click to toggle
 - ✅ Mobile test suite — 14 logic tests covering accordion, orientation, touch, pinch-zoom
 
-**Phase 5 — 3D Pipeline** 🔬 (295 tests)
+**Phase 5 — 3D Pipeline** 🔬 (304 tests)
 - ✅ Orbital camera model — azimuth/elevation/distance spherical coords, eye()/look_at_target()/world_to_clip() (LookAt + Perspective). set_azimuth/set_elevation/set_distance with clamping + smoothing. snap_to_isometric() reset. 10 tests.
 - ✅ u_vp (View+Projection) mat4 uniform — dual-path vertex shader (legacy iso + orbital VP). WASM exports: set_azimuth/set_elevation/set_distance. WASM cache v=33.
 - ✅ Fragment shader diffuse lighting — n·l ambient+diffuse model, sun arc from day_phase. 3 new tests, 287 total.
 - ✅ Height-displaced terrain mesh — 3-float positions (x, elev*0.5, y), vertex normals from central-difference gradient, a_normal attribute at location 9, v_normal varying for future lighting. 5 new tests, 284 total.
 - ✅ Terrain splat-map atlas — 2048x512 atlas with 4 procedurally-generated layers (grass, rock, sand, snow at 512x512 each). Splat weights (a_splat, location 10) computed from terrain type + slope. Fragment shader 4-layer blending with UV remapping. 8 new tests, 295 total.
+- ✅ Water shader — 3-component sine-wave vertex displacement (u_water_time uniform) for water/DeepWater tiles; DeepWater waves scaled 0.7x. Fragment shader water path: Blinn-Phong specular highlight, Fresnel-based transparency, depth color ramp (turquoise shallow → dark navy deep). 9 new tests, 304 total.
 ---
 
 AI Agent Configuration:

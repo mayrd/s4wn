@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 5 — 3D Pipeline 🔬 (295 tests)
-| **Last updated:** 2026-06-19 (Session 100 — Terrain splat-map atlas + 4-layer blending)
+| **Status:** Phase 5 — 3D Pipeline 🔬 (304 tests)
+| **Last updated:** 2026-06-19 (Session 101 — Water shader: animated waves + Fresnel + specular + depth ramp)
 
 ---
 
@@ -367,7 +367,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=34. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 295 engine + 30 server = 325 total (295 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 304 engine + 30 server = 334 total (304 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
 ## Next Session — Concrete Steps
 
@@ -380,20 +380,10 @@ protocol::tests               5 tests    Message serialization, room management
 | 3 | Height-displaced terrain mesh + vertex normals | 98 | done |
 | 4 | Fragment shader diffuse lighting (n.l) + sun arc | 99 | done |
 
-### Phase 5: Step 6 — Water Shader & Refraction
+### Phase 5: Step 6 — Water Shader & Refraction ✅ (Session 101)
 
 Objective: Add animated water surface with refraction/distortion effect.
-
-Concrete steps:
-1. Add water vertex animation — sine-wave displacement for water tiles (Water/DeepWater terrain IDs 3/4)
-2. Add water fragment shader path — Fresnel-based transparency, specular highlight, depth color ramp
-3. Add u_water_time uniform — passed from JS render loop for animation
-4. Write water shader tests — verify water animation uniforms, fragment shader water path
-5. Update JS to set u_water_time uniform each frame
-
-Files to modify:
-- engine/src/lib.rs — water animation in vertex shader, water fragment path, u_water_time uniform
-- map-viewer.html — pass u_water_time from JS render loop
+Status: ✅ Done — 3-component sine-wave vertex displacement, Blinn-Phong specular, Fresnel transparency, depth color ramp.
 
 ### Phase 5: Step 7 — 3D Model Loading & Rendering
 
@@ -404,4 +394,14 @@ Concrete steps:
 2. Add model loader in Rust — parse model JSON, upload to GPU buffers
 3. Add model instance rendering — per-instance model-view-projection, texture binding
 4. Write model loader tests — verify parsing, buffer upload
+5. Generate starter models — Castle, Farm, Sawmill, Worker, Soldier, Bowman
+
+### Next Session — Concrete Steps
+
+**Phase 5 Step 7: 3D Model Loading & Rendering**
+
+1. Define a JSON mesh format (vertices, normals, UVs, indices) for model data
+2. Implement model loader in Rust — parse JSON, upload to GPU buffers via web-sys
+3. Add per-instance model rendering — model-view-projection matrix per building/unit
+4. Write model loader tests — verify JSON parsing, buffer upload correctness
 5. Generate starter models — Castle, Farm, Sawmill, Worker, Soldier, Bowman
