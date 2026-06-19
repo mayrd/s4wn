@@ -81,6 +81,9 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Orientation handler — screen.orientation + matchMedia with debounced resize
 - ✅ Construction accordion — categories collapse on mobile, click to toggle
 - ✅ Mobile test suite — 14 logic tests covering accordion, orientation, touch, pinch-zoom
+
+**Phase 5 — 3D Pipeline** 🔬 (289 tests)
+- 🔬 Orbital camera model — azimuth/elevation/distance spherical coords, eye()/look_at_target()/world_to_clip() (LookAt + Perspective). set_azimuth/set_elevation/set_distance with clamping + smoothing. snap_to_isometric() reset. 10 new tests.
 ---
 
 AI Agent Configuration:
