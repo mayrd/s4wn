@@ -1,70 +1,33 @@
 # S4WN — Siedler 4 Web-Native
-# Docker Compose configuration for development and production
+# Docker Compose configuration (single-container mode)
 #
 # Usage:
-#   docker compose up -d              # Production (HTTP on 8080, WS on 8081)
+#   docker compose up -d              # Start (HTTP on 8080, WS on same port /ws)
 #   docker compose up -d --build      # Rebuild and start
 #   docker compose down               # Stop
 #
 # Environment variables:
-#   CADDY_PORT         — HTTP listen port (default: 8080)
-#   S4WN_WS_PORT       — WebSocket server port (default: 8081)
-#   CADDY_DOMAIN        — Domain for auto-HTTPS (empty = HTTP only)
-#   S4WN_LOG_LEVEL      — Caddy log level: debug, info, warn, error (default: info)
-
-version: "3.9"
+#   S4WN_PORT          — HTTP listen port (default: 8080)
+#   S4WN_SERVER_ADDR   — Game server bind address (default: 0.0.0.0:8080)
 
 services:
-  # ── Web Server (Caddy) ──────────────────────────────────────────
-  s4wn-web:
+  s4wn:
     build:
       context: .
       dockerfile: Dockerfile
     image: s4wn:latest
-    container_name: s4wn-web
+    container_name: s4wn
     restart: unless-stopped
 
     ports:
-      # Map container port 80 to host
-      - "${CADDY_PORT:-8080}:80"
-      # Optional HTTPS port
-      - "${CADDY_HTTPS_PORT:-8443}:443"
+      - "${S4WN_PORT:-8080}:80"
 
     environment:
-      - CADDY_DOMAIN=${CADDY_DOMAIN:-}
+      - S4WN_SERVER_ADDR=${S4WN_SERVER_ADDR:-0.0.0.0:8080}
+      - RUST_LOG=${RUST_LOG:-info}
 
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
-      interval: 30s
-      timeout: 3s
-      start_period: 5s
-      retries: 3
-
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-        reservations:
-          memory: 64M
-
-  # ── WebSocket Game Server ──────────────────────────────────────
-  s4wn-server:
-    build:
-      context: .
-      dockerfile: server/Dockerfile
-    image: s4wn-server:latest
-    container_name: s4wn-server
-    restart: unless-stopped
-
-    ports:
-      - "${S4WN_WS_PORT:-8081}:8080"
-
-    environment:
-      - S4WN_SERVER_ADDR=0.0.0.0:8080
-      - RUST_LOG=info
-
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/engine/index.html"]
       interval: 30s
       timeout: 3s
       start_period: 10s

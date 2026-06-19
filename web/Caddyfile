@@ -1,8 +1,11 @@
-# S4WN Web Server Configuration
-# Serves the game engine, static assets, and proxies WebSocket connections
+# S4WN — Caddy configuration (single-container mode)
+# Serves static game files + proxies WebSocket connections to local game server
 
 :80 {
+    # Root for static files (engine pages, assets, map viewer)
     root * /usr/share/caddy
+
+    # Serve static files
     file_server
 
     # WASM requires proper MIME type
@@ -17,6 +20,9 @@
     header *.js Cross-Origin-Embedder-Policy require-corp
     header *.wasm Cross-Origin-Embedder-Policy require-corp
 
-    # WebSocket game server proxy
-    reverse_proxy /ws* s4wn-server:8080
+    # WebSocket game server proxy → localhost (same container)
+    reverse_proxy /ws* localhost:8080
+
+    # Rewrite root / to /engine/ for convenience
+    redir / /engine/
 }
