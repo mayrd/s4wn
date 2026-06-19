@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 | **Status:** Phase 5 — 3D Pipeline 🔬 (354 tests)
-| **Last updated:** 2026-06-19 (Session 105 — Phase 5 Step 8: JS-side model loading, WASM cache v=34)
+| **Last updated:** 2026-06-19 (Session 106 — Phase 5 Step 8: building→model instance connection, WASM cache v=35)
 
 ---
 
@@ -288,6 +288,8 @@ protocol::tests               5 tests    Message serialization, room management
 ||| **85** | **2026-06-18** | **Config sync: 22 buildings marked implemented, Next Objectives rewritten (Trojan/DarkTribe/Balance/Mobile), ClayPit/HempFarm/MeadMaker naming gap identified, data.js regenerated, config validation passes** |
 
 |||||| **104** | **2026-06-19** | **Phase 5 Step 8: GPU model shaders (MODEL_VERTEX/FRAGMENT_SHADER with PBR), model VAO/buffer management in App struct, upload_model_to_gpu(), render_models() draw pass, WASM exports (add_model_instance, clear_model_instances, model_instance_count). Bugfix #45 (updateSettingVal window exposure). 10 new tests, 354 total.** |
+
+||| **106** | **2026-06-19** | **Phase 5 Step 8: Connected building placement to 3D model instances. Added populate_model_instances_from_game() WASM export, model_id_for_building() mapping (10 exact matches + construction fallback), auto-population each frame in render(). JS: add_model_instance() call on placement, modelIdForBuilding() helper. WASM cache v=35. 354 tests pass.** |
 ||| **103** | **2026-06-19** | **Phase 5 Step 7: JSON mesh parser (`parse_json_mesh`), `ModelInstance` struct, `compute_mvp`/`perspective`/`look_at` matrix functions, WASM exports (`load_model_json`, `parse_obj_info`, `compute_mvp_json`), 30 JSON models converted from OBJ. 39 new tests, 344 total.** |
 || **102** | **2026-06-19** | **Bugfix #38: Shader compile error — u_water_time undeclared identifier in fragment shader. Root cause: u_water_time uniform was declared in vertex shader but not in fragment shader, even though line 213 uses it for water depth animation. Added 'uniform float u_water_time;' to fragment shader. Added regression test test_fragment_shader_has_water_time_uniform. 305 tests pass.** |
 ---
@@ -368,7 +370,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **🌐 Best source of Siedler 4 info:** [siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/) — buildings, units, production chains, game mechanics, maps, guides. Always consult this first when researching authentic S4 behavior.
 - **S4Forge.RE:** Authoritative C++ decompilation for building IDs (0-82), settler IDs (0-66), terrain (8 types), resources (8 types), nations (5)
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
-- **WASM cache:** Current v=34. Always bump when adding new `#[wasm_bindgen]` exports.
+- **WASM cache:** Current v=35. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
 - **Test count:** 315 engine + 30 server = 345 total (315 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
@@ -407,15 +409,15 @@ Concrete steps:
 
 **Phase 5 Step 8: GPU Model Rendering — 🚧 In Progress**
 
-Completed: Model shaders (vertex+fragment with PBR), model VAO/buffer management, upload_model_to_gpu(), render_models() draw pass, WASM exports (add_model_instance, clear_model_instances, model_instance_count). 10 new tests, 354 total.
+Completed: Model shaders, VAO/buffer management, JS model loading (30 JSON models), building→model instance connection, auto-population each frame. WASM cache v=35. 354 tests pass.
 
 **Phase 5 Step 8 continued:**
 
 1. ✅ Add model VAO/buffer management to App struct in lib.rs — DONE (Session 104)
 2. ✅ Implement model instance rendering pass — DONE (Session 104)
 3. ✅ Add JS-side model loading — DONE (Session 105): loadGameModels() fetches 30 JSON models, load_model_json() uploads to GPU
-4. Connect building placement to model instances — call add_model_instance() when building is placed
+4. ✅ Connect building placement to model instances — DONE (Session 106): populate_model_instances_from_game_state() called each frame, model_id_for_building() mapping (10 exact + construction fallback), add_model_instance() JS call on placement
 5. Connect units to model instances — one model instance per unit
-6. Add WASM rebuild — run `./build.sh` to produce updated pkg/ with load_model_json export (v=34)
+6. ✅ WASM rebuild — DONE (Session 105, v=34→v=35 in Session 106)
 7. Add instanced rendering for units (many instances, one draw call — performance optimization)
 8. Generate missing building JSON models (Castle, Fortress, GuardTower, etc.) — only 30 decorative/resource models exist
