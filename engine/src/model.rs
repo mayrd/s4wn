@@ -1,7 +1,8 @@
 //! 3D Model Loading & Mesh Data
 //!
-//! Phase 5 Step 7: OBJ parser + JSON model format.
+//! Phase 5 Step 7: OBJ parser + JSON model format + model instance rendering.
 
+use serde::Deserialize;
 use std::collections::HashMap;
 
 /// A single 3D model loaded from OBJ or JSON.
@@ -181,6 +182,242 @@ impl ModelRegistry {
     pub fn clear(&mut self) { self.models.clear(); }
     pub fn names(&self) -> impl Iterator<Item = &str> { self.models.keys().map(|s| s.as_str()) }
 }
+
+
+// ── JSON Mesh Format ────────────────────────────────────────────────────────────
+
+/// JSON-serializable mesh format for model data exchange.
+///
+/// Format:
+/// ```json
+/// {
+///   "version": 1,
+///   "vertices": [[x,y,z], ...],
+///   "normals": [[nx,ny,nz], ...],
+///   "uvs": [[u,v], ...],
+///   "indices": [i0, i1, i2, ...],
+///   "aabb": [min_x, min_y, min_z, max_x, max_y, max_z]
+/// }
+/// ```
+#[derive(Debug, Deserialize, PartialEq)]
+pub struct JsonMesh {
+    pub version: u32,
+    pub vertices: Vec<[f32; 3]>,
+    pub normals: Vec<[f32; 3]>,
+    pub uvs: Vec<[f32; 2]>,
+    pub indices: Vec<u16>,
+    pub aabb: [f32; 6],
+}
+
+/// Parse a JSON mesh string into a ModelMesh.
+pub fn parse_json_mesh(src: &str) -> Result<ModelMesh, String> {
+    let json: JsonMesh = serde_json::from_str(src)
+        .map_err(|e| format!("JSON parse error: {}", e))?;
+
+    if json.version != 1 {
+        return Err(format!("unsupported version: {}", json.version));
+    }
+
+    if json.vertices.is_empty() || json.indices.is_empty() {
+        return Ok(ModelMesh::empty());
+    }
+
+    let vertex_count = json.vertices.len();
+    let mut positions: Vec<f32> = Vec::with_capacity(vertex_count * 3);
+    for v in &json.vertices {
+        positions.push(v[0]);
+        positions.push(v[1]);
+        positions.push(v[2]);
+    }
+
+    let mut normals: Vec<f32> = Vec::with_capacity(vertex_count * 3);
+    if json.normals.len() == vertex_count {
+        for n in &json.normals {
+            let len = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
+            if len > 1e-8 {
+                normals.push(n[0] / len);
+                normals.push(n[1] / len);
+                normals.push(n[2] / len);
+            } else {
+                normals.push(0.0);
+                normals.push(1.0);
+                normals.push(0.0);
+            }
+        }
+    } else {
+        // Generate flat normals if not provided
+        for _ in 0..vertex_count {
+            normals.push(0.0);
+            normals.push(1.0);
+            normals.push(0.0);
+        }
+    }
+
+    let mut uvs: Vec<f32> = Vec::with_capacity(vertex_count * 2);
+    if json.uvs.len() == vertex_count {
+        for uv in &json.uvs {
+            uvs.push(uv[0]);
+            uvs.push(uv[1]);
+        }
+    } else {
+        for _ in 0..vertex_count {
+            uvs.push(0.0);
+            uvs.push(0.0);
+        }
+    }
+
+    let triangle_count = json.indices.len() / 3;
+
+    Ok(ModelMesh {
+        positions,
+        normals,
+        uvs,
+        indices: json.indices,
+        vertex_count,
+        triangle_count,
+        aabb: (
+            json.aabb[0], json.aabb[1], json.aabb[2],
+            json.aabb[3], json.aabb[4], json.aabb[5],
+        ),
+    })
+}
+
+// ── Model Instance Rendering ─────────────────────────────────────────────────
+
+/// A placed instance of a model in the world.
+/// Used for buildings, units, and resource objects.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ModelInstance {
+    /// World-space X position (tile coordinates)
+    pub x: f32,
+    /// World-space Y position (tile coordinates)
+    pub y: f32,
+    /// Scale factor (1.0 = default size)
+    pub scale: f32,
+    /// Rotation around Y axis in degrees
+    pub rotation_y: f32,
+    /// Index into the ModelRegistry
+    pub model_id: String,
+}
+
+impl ModelInstance {
+    pub fn new(model_id: &str, x: f32, y: f32) -> Self {
+        ModelInstance {
+            x,
+            y,
+            scale: 1.0,
+            rotation_y: 0.0,
+            model_id: model_id.to_string(),
+        }
+    }
+
+    pub fn with_scale(mut self, scale: f32) -> Self {
+        self.scale = scale;
+        self
+    }
+
+    pub fn with_rotation_y(mut self, degrees: f32) -> Self {
+        self.rotation_y = degrees;
+        self
+    }
+}
+
+/// Compute a 4x4 model-view-projection matrix for a model instance.
+/// Returns column-major array of 16 floats.
+pub fn compute_mvp(
+    instance: &ModelInstance,
+    view: &[f32; 16],
+    projection: &[f32; 16],
+) -> [f32; 16] {
+    // Build model matrix: scale * rotation_y * translation
+    let s = instance.scale;
+    let ry = instance.rotation_y.to_radians();
+    let cos_y = ry.cos();
+    let sin_y = ry.sin();
+    let tx = instance.x;
+    let ty = 0.0; // models sit on ground plane
+    let tz = instance.y;
+
+    // Model matrix (column-major)
+    let model: [f32; 16] = [
+        s * cos_y, 0.0, s * sin_y, 0.0,
+        0.0, s, 0.0, 0.0,
+        -s * sin_y, 0.0, s * cos_y, 0.0,
+        tx, ty, tz, 1.0,
+    ];
+
+    // MVP = Projection * View * Model
+    let mv = mat4_mul(view, &model);
+    mat4_mul(projection, &mv)
+}
+
+/// Column-major 4x4 matrix multiplication: C = A * B
+pub fn mat4_mul(a: &[f32; 16], b: &[f32; 16]) -> [f32; 16] {
+    let mut c = [0.0f32; 16];
+    for row in 0..4 {
+        for col in 0..4 {
+            let mut sum = 0.0f32;
+            for k in 0..4 {
+                sum += a[row + k * 4] * b[k + col * 4];
+            }
+            c[row + col * 4] = sum;
+        }
+    }
+    c
+}
+
+/// Create a perspective projection matrix (column-major, GL convention).
+pub fn perspective(fov_degrees: f32, aspect: f32, near: f32, far: f32) -> [f32; 16] {
+    let fov = fov_radians(fov_degrees);
+    let f = 1.0 / (fov * 0.5).tan();
+    let range_inv = 1.0 / (near - far);
+    [
+        f / aspect, 0.0, 0.0, 0.0,
+        0.0, f, 0.0, 0.0,
+        0.0, 0.0, (near + far) * range_inv, -1.0,
+        0.0, 0.0, 2.0 * near * far * range_inv, 0.0,
+    ]
+}
+
+/// Create a LookAt view matrix (column-major, GL convention).
+pub fn look_at(eye: &[f32; 3], target: &[f32; 3], up: &[f32; 3]) -> [f32; 16] {
+    let f = normalize3(target[0] - eye[0], target[1] - eye[1], target[2] - eye[2]);
+    let s = normalize3(
+        f[1] * up[2] - f[2] * up[1],
+        f[2] * up[0] - f[0] * up[2],
+        f[0] * up[1] - f[1] * up[0],
+    );
+    let u = [
+        s[1] * f[2] - s[2] * f[1],
+        s[2] * f[0] - s[0] * f[2],
+        s[0] * f[1] - s[1] * f[0],
+    ];
+
+    [
+        s[0], u[0], -f[0], 0.0,
+        s[1], u[1], -f[1], 0.0,
+        s[2], u[2], -f[2], 0.0,
+        -dot3(&s, eye), -dot3(&u, eye), dot3(&f, eye), 1.0,
+    ]
+}
+
+fn dot3(a: &[f32; 3], b: &[f32; 3]) -> f32 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+
+fn normalize3(x: f32, y: f32, z: f32) -> [f32; 3] {
+    let len = (x * x + y * y + z * z).sqrt();
+    if len < 1e-10 {
+        [0.0, 0.0, 1.0]
+    } else {
+        [x / len, y / len, z / len]
+    }
+}
+
+fn fov_radians(degrees: f32) -> f32 {
+    degrees * std::f32::consts::PI / 180.0
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -377,5 +614,240 @@ mod tests {
             assert_eq!(mesh.uvs.len(), mesh.vertex_count * 2);
             assert_eq!(mesh.indices.len(), mesh.triangle_count * 3);
         }
+    }
+
+    // ── JSON Mesh Tests ──────────────────────────────────────────────────
+
+    #[test]
+    fn test_parse_json_mesh_empty() {
+        let result = parse_json_mesh("{}");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_json_mesh_invalid_version() {
+        let src = r#"{"version": 99, "vertices": [], "normals": [], "uvs": [], "indices": [], "aabb": [0,0,0,0,0,0]}"#;
+        let result = parse_json_mesh(src);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("unsupported"));
+    }
+
+    #[test]
+    fn test_parse_json_mesh_empty_vertices() {
+        let src = r#"{"version": 1, "vertices": [], "normals": [], "uvs": [], "indices": [], "aabb": [0,0,0,0,0,0]}"#;
+        let mesh = parse_json_mesh(src).unwrap();
+        assert!(mesh.is_empty());
+    }
+
+    #[test]
+    fn test_parse_json_mesh_single_triangle() {
+        let src = r#"{
+            "version": 1,
+            "vertices": [[0.0,0.0,0.0],[1.0,0.0,0.0],[0.5,1.0,0.0]],
+            "normals": [[0.0,1.0,0.0],[0.0,1.0,0.0],[0.0,1.0,0.0]],
+            "uvs": [[0.0,0.0],[1.0,0.0],[0.5,1.0]],
+            "indices": [0,1,2],
+            "aabb": [0.0,0.0,0.0,1.0,1.0,0.0]
+        }"#;
+        let mesh = parse_json_mesh(src).unwrap();
+        assert!(!mesh.is_empty());
+        assert_eq!(mesh.vertex_count, 3);
+        assert_eq!(mesh.triangle_count, 1);
+        assert_eq!(mesh.positions.len(), 9);
+        assert_eq!(mesh.normals.len(), 9);
+        assert_eq!(mesh.uvs.len(), 6);
+        assert_eq!(mesh.indices, vec![0, 1, 2]);
+    }
+
+    #[test]
+    fn test_parse_json_mesh_aabb() {
+        let src = r#"{
+            "version": 1,
+            "vertices": [[-1.0,-2.0,-3.0],[4.0,5.0,6.0],[0.0,0.0,0.0]],
+            "normals": [[0,1,0],[0,1,0],[0,1,0]],
+            "uvs": [[0,0],[0,0],[0,0]],
+            "indices": [0,1,2],
+            "aabb": [-1.0,-2.0,-3.0,4.0,5.0,6.0]
+        }"#;
+        let mesh = parse_json_mesh(src).unwrap();
+        assert_eq!(mesh.aabb, (-1.0, -2.0, -3.0, 4.0, 5.0, 6.0));
+    }
+
+    #[test]
+    fn test_parse_json_mesh_generates_default_normals() {
+        let src = r#"{
+            "version": 1,
+            "vertices": [[0.0,0.0,0.0],[1.0,0.0,0.0],[0.5,1.0,0.0]],
+            "normals": [],
+            "uvs": [],
+            "indices": [0,1,2],
+            "aabb": [0,0,0,1,1,0]
+        }"#;
+        let mesh = parse_json_mesh(src).unwrap();
+        assert_eq!(mesh.normals.len(), 9);
+        // Default normals should be +Y
+        for i in 0..3 {
+            assert!((mesh.normals[i * 3 + 1] - 1.0).abs() < 0.001);
+        }
+    }
+
+    #[test]
+    fn test_parse_json_mesh_generates_default_uvs() {
+        let src = r#"{
+            "version": 1,
+            "vertices": [[0.0,0.0,0.0],[1.0,0.0,0.0],[0.5,1.0,0.0]],
+            "normals": [[0,1,0],[0,1,0],[0,1,0]],
+            "uvs": [],
+            "indices": [0,1,2],
+            "aabb": [0,0,0,1,1,0]
+        }"#;
+        let mesh = parse_json_mesh(src).unwrap();
+        assert_eq!(mesh.uvs.len(), 6);
+        assert_eq!(mesh.uvs, vec![0.0; 6]);
+    }
+
+    // ── Model Instance Tests ─────────────────────────────────────────────
+
+    #[test]
+    fn test_model_instance_new() {
+        let inst = ModelInstance::new("castle", 5.0, 10.0);
+        assert_eq!(inst.model_id, "castle");
+        assert_eq!(inst.x, 5.0);
+        assert_eq!(inst.y, 10.0);
+        assert_eq!(inst.scale, 1.0);
+        assert_eq!(inst.rotation_y, 0.0);
+    }
+
+    #[test]
+    fn test_model_instance_with_scale() {
+        let inst = ModelInstance::new("farm", 0.0, 0.0).with_scale(2.0);
+        assert_eq!(inst.scale, 2.0);
+    }
+
+    #[test]
+    fn test_model_instance_with_rotation() {
+        let inst = ModelInstance::new("worker", 1.0, 1.0).with_rotation_y(90.0);
+        assert_eq!(inst.rotation_y, 90.0);
+    }
+
+    // ── Matrix Tests ─────────────────────────────────────────────────────
+
+    #[test]
+    fn test_mat4_mul_identity() {
+        let identity = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        ];
+        let m = [
+            1.0, 2.0, 3.0, 4.0,
+            5.0, 6.0, 7.0, 8.0,
+            9.0, 10.0, 11.0, 12.0,
+            13.0, 14.0, 15.0, 16.0,
+        ];
+        let result = mat4_mul(&identity, &m);
+        assert_eq!(result, m);
+    }
+
+    #[test]
+    fn test_mat4_mul_translation() {
+        let translation = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            10.0, 20.0, 30.0, 1.0,
+        ];
+        let identity = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        ];
+        let result = mat4_mul(&translation, &identity);
+        assert_eq!(result[12], 10.0);
+        assert_eq!(result[13], 20.0);
+        assert_eq!(result[14], 30.0);
+    }
+
+    #[test]
+    fn test_perspective_matrix() {
+        let p = perspective(45.0, 1.78, 0.1, 500.0);
+        // Check it's not all zeros
+        assert!(p[0] > 0.0);
+        assert!(p[5] > 0.0);
+        // Check perspective divide
+        assert_eq!(p[11], -1.0);
+    }
+
+    #[test]
+    fn test_look_at_identity() {
+        let eye = [0.0, 0.0, 5.0];
+        let target = [0.0, 0.0, 0.0];
+        let up = [0.0, 1.0, 0.0];
+        let view = look_at(&eye, &target, &up);
+        // f = normalize(target - eye) = [0, 0, -1]
+        // Column-major: view[10] = -f.z = 1.0
+        assert!(view[10] > 0.0, "view[10] should be positive, got {}", view[10]);
+        // view[12] = -dot(s, eye) = 0 (s = [1,0,0], eye = [0,0,5])
+        assert!(view[12].abs() < 0.001, "view[12] should be 0, got {}", view[12]);
+        // view[15] = 1.0 (homogeneous)
+        assert!((view[15] - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_compute_mvp() {
+        let inst = ModelInstance::new("castle", 10.0, 20.0);
+        let view = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, -20.0, 1.0,
+        ];
+        let proj = perspective(45.0, 1.78, 0.1, 500.0);
+        let mvp = compute_mvp(&inst, &view, &proj);
+        // MVP should not be all zeros
+        let sum: f32 = mvp.iter().map(|v| v.abs()).sum();
+        assert!(sum > 0.0);
+        // Translation should be reflected
+        assert!(mvp[12] != 0.0 || mvp[14] != 0.0);
+    }
+
+    #[test]
+    fn test_compute_mvp_with_rotation() {
+        let inst = ModelInstance::new("worker", 0.0, 0.0).with_rotation_y(90.0);
+        let view = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, -10.0, 1.0,
+        ];
+        let proj = perspective(45.0, 1.0, 0.1, 100.0);
+        let mvp = compute_mvp(&inst, &view, &proj);
+        // With 90 degree Y rotation, the X and Z columns should swap
+        assert!(mvp[0].abs() < 0.01); // cos(90) ≈ 0
+        assert!(mvp[2].abs() > 0.99); // sin(90) ≈ 1
+    }
+
+    #[test]
+    fn test_compute_mvp_with_scale() {
+        let inst = ModelInstance::new("farm", 0.0, 0.0).with_scale(2.0);
+        let view = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, -10.0, 1.0,
+        ];
+        let proj = perspective(45.0, 1.0, 0.1, 100.0);
+        let mvp = compute_mvp(&inst, &view, &proj);
+        // Scale of 2.0: model matrix has 2.0 on diagonal
+        // After view (translation by -10 in z), then projection,
+        // the scale effect is visible but mixed with perspective.
+        // Check that the matrix is not identity-like (scale had effect)
+        let mvp_sum: f32 = mvp.iter().map(|v| v.abs()).sum();
+        assert!(mvp_sum > 5.0, "MVP should have significant values");
+        // The model matrix diagonal should be 2.0 before projection
+        // After projection, mvp[0] = proj[0] * 2.0 (approximately)
+        assert!(mvp[0].abs() > 1.5, "mvp[0] should reflect scale 2.0, got {}", mvp[0]);
     }
 }

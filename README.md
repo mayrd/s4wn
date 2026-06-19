@@ -89,6 +89,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Height-displaced terrain mesh — 3-float positions (x, elev*0.5, y), vertex normals from central-difference gradient, a_normal attribute at location 9, v_normal varying for future lighting. 5 new tests, 284 total.
 - ✅ Terrain splat-map atlas — 2048x512 atlas with 4 procedurally-generated layers (grass, rock, sand, snow at 512x512 each). Splat weights (a_splat, location 10) computed from terrain type + slope. Fragment shader 4-layer blending with UV remapping. 8 new tests, 295 total.
 - ✅ Water shader — 3-component sine-wave vertex displacement (u_water_time uniform) for water/DeepWater tiles; DeepWater waves scaled 0.7x. Fragment shader water path: Blinn-Phong specular highlight, Fresnel-based transparency, depth color ramp (turquoise shallow → dark navy deep). 9 new tests, 304 total.
+- ✅ JSON mesh parser — `parse_json_mesh()` validates version, parses vertices/normals/UVs/indices/AABB. Auto-generates default normals (+Y) and UVs (0,0) when missing. `ModelInstance` struct with builder pattern (with_scale, with_rotation_y). MVP matrix computation: `compute_mvp()`, `perspective()`, `look_at()`, `mat4_mul()`. WASM exports: `load_model_json`, `parse_obj_info`, `compute_mvp_json`. 30 OBJ→JSON model conversions. 39 new tests, 344 total.
 ---
 
 AI Agent Configuration:

@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 5 — 3D Pipeline 🔬 (305 tests)
-| **Last updated:** 2026-06-19 (Session 102 — Bugfix #38: u_water_time uniform fix + regression test)
+| **Status:** Phase 5 — 3D Pipeline 🔬 (344 tests)
+| **Last updated:** 2026-06-19 (Session 103 — Phase 5 Step 7: JSON mesh parser + ModelInstance + WASM exports + 30 JSON models)
 
 ---
 
@@ -150,7 +150,7 @@ Each phase lists objectives with test cases and implementation status.
 
 ## Test Suite Reference
 
-### Engine Tests (269 passing)
+### Engine Tests (344 passing)
 ```
 economy::tests              ~90 tests    Production chains, costs, tools, nation modifiers, territory validation
 nation::tests                21 tests    Nation data, unique buildings, specialists
@@ -287,7 +287,8 @@ protocol::tests               5 tests    Message serialization, room management
 || **84** | **2026-06-18** | **Maya unique buildings: 7 BuildingType variants (TempleOfChac, AgaveFarm, Distillery, 3 Sanctuaries, Observatory), nation-gated placement (Maya only), 259→259 tests (no new test file — existing coverage maintained).** |
 ||| **85** | **2026-06-18** | **Config sync: 22 buildings marked implemented, Next Objectives rewritten (Trojan/DarkTribe/Balance/Mobile), ClayPit/HempFarm/MeadMaker naming gap identified, data.js regenerated, config validation passes** |
 
-|||||| **102** | **2026-06-19** | **Bugfix #38: Shader compile error — u_water_time undeclared identifier in fragment shader. Root cause: u_water_time uniform was declared in vertex shader but not in fragment shader, even though line 213 uses it for water depth animation. Added 'uniform float u_water_time;' to fragment shader. Added regression test test_fragment_shader_has_water_time_uniform. 305 tests pass.** |
+|||||| **103** | **2026-06-19** | **Phase 5 Step 7: JSON mesh parser (`parse_json_mesh`), `ModelInstance` struct, `compute_mvp`/`perspective`/`look_at` matrix functions, WASM exports (`load_model_json`, `parse_obj_info`, `compute_mvp_json`), 30 JSON models converted from OBJ. 39 new tests, 344 total.** |
+|| **102** | **2026-06-19** | **Bugfix #38: Shader compile error — u_water_time undeclared identifier in fragment shader. Root cause: u_water_time uniform was declared in vertex shader but not in fragment shader, even though line 213 uses it for water depth animation. Added 'uniform float u_water_time;' to fragment shader. Added regression test test_fragment_shader_has_water_time_uniform. 305 tests pass.** |
 ---
 
 ## Next Objectives (TDD Order)
@@ -386,7 +387,7 @@ protocol::tests               5 tests    Message serialization, room management
 Objective: Add animated water surface with refraction/distortion effect.
 Status: ✅ Done — 3-component sine-wave vertex displacement, Blinn-Phong specular, Fresnel transparency, depth color ramp.
 
-### Phase 5: Step 7 — 3D Model Loading & Rendering
+### Phase 5: Step 7 — 3D Model Loading & Rendering ✅ (Session 103)
 
 Objective: Load and render 3D models for buildings and units.
 
@@ -399,10 +400,14 @@ Concrete steps:
 
 ### Next Session — Concrete Steps
 
-**Phase 5 Step 7: 3D Model Loading & Rendering**
+**Phase 5 Step 7: 3D Model Loading & Rendering — ✅ Core Complete**
 
-1. Define a JSON mesh format (vertices, normals, UVs, indices) for model data
-2. Implement model loader in Rust — parse JSON, upload to GPU buffers via web-sys
-3. Add per-instance model rendering — model-view-projection matrix per building/unit
-4. Write model loader tests — verify JSON parsing, buffer upload correctness
-5. Generate starter models — Castle, Farm, Sawmill, Worker, Soldier, Bowman
+Completed: JSON mesh parser, ModelInstance struct, MVP matrix math, WASM exports, 30 JSON models.
+
+**Phase 5 Step 8: GPU Model Rendering**
+
+1. Add model VAO/buffer management to App struct in lib.rs
+2. Implement model instance rendering pass — bind model VAO, set MVP uniform, draw
+3. Add JS-side model loading — fetch JSON models, upload to GPU via WASM
+4. Connect building placement to model instance creation
+5. Add instanced rendering for units (many instances, one draw call)

@@ -10,6 +10,7 @@ pub mod combat;
 pub mod decompress;
 pub mod economy;
 pub mod game_loop;
+pub mod model;
 pub mod map;
 pub mod nation;
 pub mod network;
@@ -2842,6 +2843,62 @@ pub fn restore_game_state(json: &str) -> String {
         }
     }
     String::from("error: engine not initialized")
+}
+
+/// Load a model from a JSON mesh string and validate it.
+/// Returns "ok:{name}" if successful, or "error:{message}" on failure.
+#[wasm_bindgen]
+pub fn load_model_json(name: &str, json_str: &str) -> String {
+    match model::parse_json_mesh(json_str) {
+        Ok(_mesh) => {
+            format!("ok:{}", name)
+        }
+        Err(e) => format!("error:{}", e),
+    }
+}
+
+/// Parse an OBJ model string and return vertex count, triangle count, and AABB as JSON.
+#[wasm_bindgen]
+pub fn parse_obj_info(obj_str: &str) -> String {
+    let mesh = model::parse_obj(obj_str);
+    if mesh.is_empty() {
+        return String::from("{\"error\":\"empty mesh\"}");
+    }
+    format!(
+        "{{\"vertices\":{},\"triangles\":{},\"aabb\":[{},{},{},{},{},{}]}}",
+        mesh.vertex_count,
+        mesh.triangle_count,
+        mesh.aabb.0, mesh.aabb.1, mesh.aabb.2,
+        mesh.aabb.3, mesh.aabb.4, mesh.aabb.5,
+    )
+}
+
+/// Compute a model-view-projection matrix for a model instance.
+/// Takes JSON input: {x, y, scale, rotation_y, view: [16], projection: [16]}
+/// Returns JSON array of 16 floats (column-major MVP matrix).
+#[wasm_bindgen]
+pub fn compute_mvp_json(input_json: &str) -> String {
+    #[derive(serde::Deserialize)]
+    struct MvpInput {
+        x: f32,
+        y: f32,
+        scale: f32,
+        rotation_y: f32,
+        view: [f32; 16],
+        projection: [f32; 16],
+    }
+
+    let input: MvpInput = match serde_json::from_str(input_json) {
+        Ok(v) => v,
+        Err(e) => return format!("{{\"error\":\"{}\"}}", e),
+    };
+
+    let instance = model::ModelInstance::new("", input.x, input.y)
+        .with_scale(input.scale)
+        .with_rotation_y(input.rotation_y);
+
+    let mvp = model::compute_mvp(&instance, &input.view, &input.projection);
+    serde_json::to_string(&mvp.to_vec()).unwrap_or_else(|_| String::from("{\"error\":\"serialize failed\"}"))
 }
 
 /// Decompress a .sav savegame chunk: ARA-decrypt then LZ+Huffman decompress.
