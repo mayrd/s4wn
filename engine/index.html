@@ -1135,7 +1135,8 @@ import init, {
     get_player_nation,
     list_nations,
     get_nation_buildings,
-} from './pkg/s4wn_engine.js?v=33';
+    load_model_json,
+} from './pkg/s4wn_engine.js?v=34';
 
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
@@ -4117,6 +4118,76 @@ function loadImage(url) {
     });
 }
 
+
+// ── Model Loading ────────────────────────────────────────────────────────
+
+// Map model names to their JSON asset files.
+// Models are loaded via load_model_json() after WebGL init.
+const MODEL_FILES = {
+    armory: '../assets/models/json/armory.json',
+    bakery: '../assets/models/json/bakery.json',
+    blacksmith: '../assets/models/json/blacksmith.json',
+    boat: '../assets/models/json/boat.json',
+    bridge: '../assets/models/json/bridge.json',
+    bush: '../assets/models/json/bush.json',
+    butcher: '../assets/models/json/butcher.json',
+    cactus: '../assets/models/json/cactus.json',
+    cart: '../assets/models/json/cart.json',
+    construction: '../assets/models/json/construction.json',
+    deposit_coal: '../assets/models/json/deposit_coal.json',
+    deposit_fish: '../assets/models/json/deposit_fish.json',
+    deposit_game: '../assets/models/json/deposit_game.json',
+    deposit_gold: '../assets/models/json/deposit_gold.json',
+    deposit_grain: '../assets/models/json/deposit_grain.json',
+    deposit_iron: '../assets/models/json/deposit_iron.json',
+    deposit_stone: '../assets/models/json/deposit_stone.json',
+    deposit_sulfur: '../assets/models/json/deposit_sulfur.json',
+    driftwood: '../assets/models/json/driftwood.json',
+    farm: '../assets/models/json/farm.json',
+    fishery: '../assets/models/json/fishery.json',
+    flag: '../assets/models/json/flag.json',
+    flowers: '../assets/models/json/flowers.json',
+    geyser: '../assets/models/json/geyser.json',
+    grain_field: '../assets/models/json/grain_field.json',
+    headquarters: '../assets/models/json/headquarters.json',
+    lumberjack: '../assets/models/json/lumberjack.json',
+    mine: '../assets/models/json/mine.json',
+    mushrooms: '../assets/models/json/mushrooms.json',
+    sawmill: '../assets/models/json/sawmill.json',
+};
+let modelsLoaded = false;
+let loadedModelCount = 0;
+
+async function loadGameModels() {
+    if (modelsLoaded) return;
+    if (typeof load_model_json !== 'function') {
+        console.warn('load_model_json not available — model loading skipped');
+        return;
+    }
+    console.log('Loading ' + Object.keys(MODEL_FILES).length + ' 3D models…');
+    for (const [name, path] of Object.entries(MODEL_FILES)) {
+        try {
+            const resp = await fetch(path);
+            if (!resp.ok) {
+                console.warn('Model ' + name + ' fetch failed: ' + resp.status);
+                continue;
+            }
+            const jsonStr = await resp.text();
+            const result = load_model_json(name, jsonStr);
+            if (result.startsWith('ok:')) {
+                loadedModelCount++;
+                console.log('  Model loaded: ' + name + ' (' + result + ')');
+            } else {
+                console.warn('  Model ' + name + ' rejected: ' + result);
+            }
+        } catch (e) {
+            console.warn('  Model ' + name + ' error: ' + e.message);
+        }
+    }
+    modelsLoaded = true;
+    console.log('Model loading complete: ' + loadedModelCount + '/' + Object.keys(MODEL_FILES).length + ' models on GPU');
+}
+
 // ── Main ────────────────────────────────────────────────────────────────
 async function main() {
     try {
@@ -4126,7 +4197,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=33');
+            const mod = await import('./pkg/s4wn_engine.js?v=34');
             load_map_json = mod.load_map_json || null;
             console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {
@@ -4143,6 +4214,9 @@ async function main() {
             return;
         }
         console.log('engineInit returned:', ok);
+
+        // Load 3D models (non-blocking — models stream in while engine runs)
+        loadGameModels();
 
         // Check WebGL context
         const gl = canvas.getContext('webgl2');
