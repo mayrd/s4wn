@@ -143,6 +143,7 @@ uniform highp sampler2DArray u_terrain_textures;
 uniform bool u_use_textures;
 uniform vec3 u_fog_color;
 uniform vec3 u_light_direction;
+uniform float u_water_time;
 
 out vec4 out_color;
 
@@ -3426,6 +3427,14 @@ mod tests {
         assert!(
             VERTEX_SHADER.contains("uniform float u_water_time"),
             "vertex shader missing u_water_time uniform"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_has_water_time_uniform() {
+        assert!(
+            FRAGMENT_SHADER.contains("uniform float u_water_time"),
+            "fragment shader missing u_water_time uniform declaration"
         );
     }
 
