@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 | **Status:** Phase 5 — 3D Pipeline 🔬 (354 tests)
-| **Last updated:** 2026-06-19 (Session 106 — Phase 5 Step 8: building→model instance connection, WASM cache v=35)
+| **Last updated:** 2026-06-19 (Session 107 — Docker single-image consolidation, auto-start demo map)
 
 ---
 
@@ -421,3 +421,17 @@ Completed: Model shaders, VAO/buffer management, JS model loading (30 JSON model
 6. ✅ WASM rebuild — DONE (Session 105, v=34→v=35 in Session 106)
 7. Add instanced rendering for units (many instances, one draw call — performance optimization)
 8. Generate missing building JSON models (Castle, Fortress, GuardTower, etc.) — only 30 decorative/resource models exist
+
+---
+
+### Session 107 — Docker consolidation & auto-start demo map ✅
+
+- Auto-load demo map on page load (splash hides → generate_map → add resources/HQ → render)
+- Fixed: tiles weren't rendering because no map was loaded on startup
+- Consolidated Docker into single image: one Dockerfile builds both Caddy + Rust WS server
+- Multi-stage: `rust:1.96-alpine` builds musl binary → copied to `caddy:2-alpine`
+- Single `start.sh` launches s4wn-server in background, then Caddy foreground via dumb-init
+- Caddy `reverse_proxy /ws* localhost:8080` (in-container)
+- docker-compose.yml simplified to one `s4wn` service (single port 8080)
+- Now serves: engine/ (index, lobby, pkg, config, mobile-enhancements), assets/, map-viewer.html
+- `redir / /engine/` for convenience
