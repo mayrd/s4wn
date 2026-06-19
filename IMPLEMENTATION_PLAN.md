@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 5 — 3D Pipeline 🔬 (304 tests)
-| **Last updated:** 2026-06-19 (Session 101 — Water shader: animated waves + Fresnel + specular + depth ramp)
+| **Status:** Phase 5 — 3D Pipeline 🔬 (305 tests)
+| **Last updated:** 2026-06-19 (Session 102 — Bugfix #38: u_water_time uniform fix + regression test)
 
 ---
 
@@ -287,6 +287,7 @@ protocol::tests               5 tests    Message serialization, room management
 || **84** | **2026-06-18** | **Maya unique buildings: 7 BuildingType variants (TempleOfChac, AgaveFarm, Distillery, 3 Sanctuaries, Observatory), nation-gated placement (Maya only), 259→259 tests (no new test file — existing coverage maintained).** |
 ||| **85** | **2026-06-18** | **Config sync: 22 buildings marked implemented, Next Objectives rewritten (Trojan/DarkTribe/Balance/Mobile), ClayPit/HempFarm/MeadMaker naming gap identified, data.js regenerated, config validation passes** |
 
+|||||| **102** | **2026-06-19** | **Bugfix #38: Shader compile error — u_water_time undeclared identifier in fragment shader. Root cause: u_water_time uniform was declared in vertex shader but not in fragment shader, even though line 213 uses it for water depth animation. Added 'uniform float u_water_time;' to fragment shader. Added regression test test_fragment_shader_has_water_time_uniform. 305 tests pass.** |
 ---
 
 ## Next Objectives (TDD Order)
@@ -367,7 +368,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=34. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 304 engine + 30 server = 334 total (304 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 305 engine + 30 server = 335 total (305 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
 ## Next Session — Concrete Steps
 
