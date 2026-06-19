@@ -183,6 +183,21 @@ export function resize(): void;
 export function restore_game_state(json: string): string;
 
 /**
+ * Phase 5: Set orbital camera azimuth (horizontal orbit), degrees [0–360).
+ */
+export function set_azimuth(degrees: number): void;
+
+/**
+ * Phase 5: Set orbital camera distance from focus, tile units [2–100].
+ */
+export function set_distance(dist: number): void;
+
+/**
+ * Phase 5: Set orbital camera elevation (vertical angle), degrees [10–80].
+ */
+export function set_elevation(degrees: number): void;
+
+/**
  * Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
  */
 export function set_game_speed(multiplier: number): void;
@@ -281,6 +296,9 @@ export interface InitOutput {
     readonly render: (a: number) => void;
     readonly resize: () => void;
     readonly restore_game_state: (a: number, b: number) => [number, number];
+    readonly set_azimuth: (a: number) => void;
+    readonly set_distance: (a: number) => void;
+    readonly set_elevation: (a: number) => void;
     readonly set_game_speed: (a: number) => void;
     readonly set_paused: (a: number) => void;
     readonly set_player_nation: (a: number, b: number) => number;

@@ -508,6 +508,30 @@ export function restore_game_state(json) {
 }
 
 /**
+ * Phase 5: Set orbital camera azimuth (horizontal orbit), degrees [0–360).
+ * @param {number} degrees
+ */
+export function set_azimuth(degrees) {
+    wasm.set_azimuth(degrees);
+}
+
+/**
+ * Phase 5: Set orbital camera distance from focus, tile units [2–100].
+ * @param {number} dist
+ */
+export function set_distance(dist) {
+    wasm.set_distance(dist);
+}
+
+/**
+ * Phase 5: Set orbital camera elevation (vertical angle), degrees [10–80].
+ * @param {number} degrees
+ */
+export function set_elevation(degrees) {
+    wasm.set_elevation(degrees);
+}
+
+/**
  * Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
  * @param {number} multiplier
  */
@@ -898,6 +922,9 @@ function __wbg_get_imports() {
         },
         __wbg_uniform3f_d1e4c9b540574821: function(arg0, arg1, arg2, arg3, arg4) {
             arg0.uniform3f(arg1, arg2, arg3, arg4);
+        },
+        __wbg_uniformMatrix4fv_61b1a000cfdc35cc: function(arg0, arg1, arg2, arg3, arg4) {
+            arg0.uniformMatrix4fv(arg1, arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
         },
         __wbg_useProgram_ab2ee2a13a1fd909: function(arg0, arg1) {
             arg0.useProgram(arg1);

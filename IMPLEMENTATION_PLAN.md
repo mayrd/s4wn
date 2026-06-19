@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 5 — 3D Pipeline 🔬 (279 tests)
-| **Last updated:** 2026-06-19 (Session 97 — u_vp shader uniform + orbital camera WASM exports)
+| **Status:** Phase 5 — 3D Pipeline 🔬 (284 tests)
+| **Last updated:** 2026-06-19 (Session 98 — Height-displaced terrain mesh with vertex normals)
 
 ---
 
@@ -366,7 +366,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=32. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 279 engine + 30 server = 309 total (289 `cargo test --lib`; 10 new orbital camera tests). `cargo test --lib` must pass before every push.
+- **Test count:** 284 engine + 30 server = 314 total (284 `cargo test --lib`; 10 new orbital camera tests). `cargo test --lib` must pass before every push.
 
 1. **Test touch interactions** on actual mobile viewport via Chrome DevTools responsive mode — verify orientation handler, accordion, tap-to-place, long-press inspector all work correctly at 375px/414px/768px widths
 2. **Fix any mobile-specific bugs** discovered during testing — focus on touch target sizing, panel overlap, and scrolling issues
@@ -374,6 +374,7 @@ protocol::tests               5 tests    Message serialization, room management
 4. **Phase 4 wrap-up**: verify all mobile checklist items, update README status to Phase 4 complete
 5. **Begin Phase 5**: Research and plan for 3D pipeline migration (orbital camera, splat-map textures, glTF model migration) per TECHNOLOGY_CHOICE.md
 
+| **98** | **2026-06-19** | **Phase 5 Step 3: Height-displaced terrain mesh with vertex normals. ELEVATION_SCALE=0.5, 3-float positions (x,elev*scale,y), central-difference normals, normal_buffer attribute 9, vertex shader a_position vec2→vec3, a_normal+v_normal varyings. 5 new tests. 284 tests pass (was 279).** |
 || **96** | **2026-06-19** | **Phase 5 Step 1: Orbital camera model. Added azimuth/elevation/distance fields with smoothing targets to Camera struct. Implemented eye() (spherical→world-space), look_at_target(), world_to_clip() (LookAt+Perspective), set_azimuth()/set_elevation()/set_distance() with clamping, set_focus(), snap_to_isometric(). normalize() helper for 3D vectors. 10 new tests: orbital defaults, az wrap, elev clamp, dist clamp, eye classic iso, az moves z-axis, elevation→height, clip valid w, snap, lerp smoothing. All 279 tests pass (was 269).**
 | **95** | **2026-06-19** | **Mobile test suite (14 logic tests, 12/13 pass), Phase 5 architecture research. Identified orbital camera migration path: replace isometric projection (camera.rs ISO_COS/ISO_SIN) → LookAt + Perspective matrices, terrain → height-displaced 3D mesh, shader UVs → attribute arrays.**
 ## Next Session — Concrete Steps
