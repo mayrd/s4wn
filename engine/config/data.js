@@ -20,14 +20,14 @@ window.S4WN_CONFIG = {
       "id": "Sawmill",
       "category": "Raw Materials",
       "cost": {
-        "Wood": 5,
-        "Stone": 3
+        "Stone": 3,
+        "Planks": 5
       },
       "inputs": [
         "Wood"
       ],
       "outputs": [
-        "Boards"
+        "Planks"
       ],
       "interval": 20,
       "build_time": 30,
@@ -40,8 +40,8 @@ window.S4WN_CONFIG = {
       "id": "Stonecutter",
       "category": "Raw Materials",
       "cost": {
-        "Wood": 4,
-        "Stone": 2
+        "Stone": 2,
+        "Planks": 4
       },
       "inputs": [],
       "outputs": [
@@ -58,8 +58,8 @@ window.S4WN_CONFIG = {
       "id": "Mine",
       "category": "Raw Materials",
       "cost": {
-        "Wood": 5,
-        "Stone": 3
+        "Stone": 3,
+        "Planks": 5
       },
       "inputs": [],
       "outputs": [
@@ -79,8 +79,8 @@ window.S4WN_CONFIG = {
       "id": "Toolsmith",
       "category": "Processing",
       "cost": {
-        "Wood": 5,
-        "Stone": 5
+        "Stone": 5,
+        "Planks": 5
       },
       "inputs": [
         "IronOre",
@@ -100,8 +100,8 @@ window.S4WN_CONFIG = {
       "id": "Weaponsmith",
       "category": "Processing",
       "cost": {
-        "Wood": 5,
-        "Stone": 5
+        "Stone": 5,
+        "Planks": 5
       },
       "inputs": [
         "IronOre",
@@ -122,8 +122,8 @@ window.S4WN_CONFIG = {
       "id": "Bakery",
       "category": "Food",
       "cost": {
-        "Wood": 4,
-        "Stone": 2
+        "Stone": 2,
+        "Planks": 4
       },
       "inputs": [
         "Flour",
@@ -143,8 +143,8 @@ window.S4WN_CONFIG = {
       "id": "Butcher",
       "category": "Food",
       "cost": {
-        "Wood": 4,
-        "Stone": 2
+        "Stone": 2,
+        "Planks": 4
       },
       "inputs": [],
       "outputs": [
@@ -161,8 +161,8 @@ window.S4WN_CONFIG = {
       "id": "Mill",
       "category": "Food",
       "cost": {
-        "Wood": 4,
-        "Stone": 3
+        "Stone": 3,
+        "Planks": 4
       },
       "inputs": [
         "Grain"
@@ -181,8 +181,8 @@ window.S4WN_CONFIG = {
       "id": "Farm",
       "category": "Food",
       "cost": {
-        "Wood": 3,
-        "Stone": 1
+        "Stone": 1,
+        "Planks": 3
       },
       "inputs": [],
       "outputs": [
@@ -199,8 +199,8 @@ window.S4WN_CONFIG = {
       "id": "Fisherman",
       "category": "Food",
       "cost": {
-        "Wood": 4,
-        "Stone": 1
+        "Stone": 1,
+        "Planks": 4
       },
       "inputs": [],
       "outputs": [
@@ -217,8 +217,8 @@ window.S4WN_CONFIG = {
       "id": "Woodcutter",
       "category": "Raw Materials",
       "cost": {
-        "Wood": 3,
-        "Stone": 1
+        "Stone": 1,
+        "Planks": 3
       },
       "inputs": [],
       "outputs": [
@@ -235,8 +235,8 @@ window.S4WN_CONFIG = {
       "id": "Storehouse",
       "category": "Infrastructure",
       "cost": {
-        "Wood": 4,
-        "Stone": 4
+        "Stone": 4,
+        "Planks": 4
       },
       "inputs": [],
       "outputs": [],
@@ -251,8 +251,8 @@ window.S4WN_CONFIG = {
       "id": "Waterworks",
       "category": "Food",
       "cost": {
-        "Wood": 4,
-        "Stone": 3
+        "Stone": 3,
+        "Planks": 4
       },
       "inputs": [],
       "outputs": [
@@ -269,8 +269,8 @@ window.S4WN_CONFIG = {
       "id": "Smelter",
       "category": "Raw Materials",
       "cost": {
-        "Wood": 5,
-        "Stone": 5
+        "Stone": 5,
+        "Planks": 5
       },
       "inputs": [
         "IronOre",
@@ -290,8 +290,8 @@ window.S4WN_CONFIG = {
       "id": "Barracks",
       "category": "Military",
       "cost": {
-        "Wood": 6,
-        "Stone": 6
+        "Stone": 6,
+        "Planks": 6
       },
       "inputs": [
         "Weapons"
@@ -309,7 +309,7 @@ window.S4WN_CONFIG = {
       "category": "Military",
       "cost": {
         "Stone": 8,
-        "Boards": 6
+        "Planks": 6
       },
       "inputs": [],
       "outputs": [],
@@ -325,8 +325,8 @@ window.S4WN_CONFIG = {
       "category": "Military",
       "cost": {
         "Stone": 20,
-        "Boards": 12,
-        "IronOre": 8
+        "IronOre": 8,
+        "Planks": 12
       },
       "inputs": [],
       "outputs": [],
@@ -341,9 +341,9 @@ window.S4WN_CONFIG = {
       "id": "Siege Workshop",
       "category": "Military",
       "cost": {
-        "Wood": 10,
         "Stone": 8,
-        "Tools": 3
+        "Tools": 3,
+        "Planks": 10
       },
       "inputs": [
         "IronIngots",
@@ -365,11 +365,11 @@ window.S4WN_CONFIG = {
       "cost": {
         "Wood": 10,
         "Stone": 6,
-        "Boards": 6
+        "Planks": 6
       },
       "inputs": [
         "Wood",
-        "Boards"
+        "Planks"
       ],
       "outputs": [],
       "interval": 50,
@@ -420,8 +420,8 @@ window.S4WN_CONFIG = {
       "id": "Brickworks",
       "category": "Processing",
       "cost": {
-        "Wood": 5,
-        "Stone": 5
+        "Stone": 5,
+        "Planks": 5
       },
       "inputs": [
         "Clay"
@@ -459,8 +459,8 @@ window.S4WN_CONFIG = {
       "id": "Ropemaker",
       "category": "Processing",
       "cost": {
-        "Wood": 4,
-        "Stone": 3
+        "Stone": 3,
+        "Planks": 4
       },
       "inputs": [
         "Hemp"
@@ -479,8 +479,8 @@ window.S4WN_CONFIG = {
       "id": "Apiary",
       "category": "Food",
       "cost": {
-        "Wood": 4,
-        "Stone": 2
+        "Stone": 2,
+        "Planks": 4
       },
       "inputs": [],
       "outputs": [
@@ -771,7 +771,7 @@ window.S4WN_CONFIG = {
       "id": "Olive Grove",
       "category": "Nation",
       "cost": {
-        "Wood": 5
+        "Planks": 5
       },
       "inputs": [],
       "outputs": [
@@ -788,8 +788,8 @@ window.S4WN_CONFIG = {
       "id": "Oil Press",
       "category": "Nation",
       "cost": {
-        "Wood": 5,
-        "Stone": 3
+        "Stone": 3,
+        "Planks": 5
       },
       "inputs": [
         "Olives"
@@ -891,8 +891,8 @@ window.S4WN_CONFIG = {
       "id": "Dark Garden",
       "category": "Nation",
       "cost": {
-        "Wood": 5,
-        "Stone": 3
+        "Stone": 3,
+        "Planks": 5
       },
       "inputs": [],
       "outputs": [
@@ -910,8 +910,8 @@ window.S4WN_CONFIG = {
       "id": "Mushroom Farm",
       "category": "Nation",
       "cost": {
-        "Wood": 8,
-        "Stone": 4
+        "Stone": 4,
+        "Planks": 8
       },
       "inputs": [],
       "outputs": [
@@ -964,8 +964,8 @@ window.S4WN_CONFIG = {
       "category": "Nation",
       "cost": {
         "Stone": 25,
-        "Boards": 15,
-        "IronOre": 10
+        "IronOre": 10,
+        "Planks": 15
       },
       "inputs": [],
       "outputs": [],
@@ -1110,10 +1110,11 @@ window.S4WN_CONFIG = {
       "name_de": "Honig"
     },
     {
-      "id": "Boards",
+      "id": "Planks",
       "category": "processed",
       "icon": "🪵",
-      "name_de": "Bretter"
+      "name_de": "Bretter",
+      "name_en": "Planks"
     },
     {
       "id": "IronIngots",

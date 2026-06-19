@@ -91,10 +91,11 @@
     "name_de": "Honig"
   },
   {
-    "id": "Boards",
+    "id": "Planks",
     "category": "processed",
     "icon": "🪵",
-    "name_de": "Bretter"
+    "name_de": "Bretter",
+    "name_en": "Planks"
   },
   {
     "id": "IronIngots",

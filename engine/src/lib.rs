@@ -1816,7 +1816,7 @@ pub fn get_tile_at(x: f32, y: f32) -> String {
 }
 
 /// Get resource counts as a JSON string for the HUD.
-/// Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Boards":0,...}
+/// Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Planks":0,...}
 #[wasm_bindgen]
 pub fn get_resource_counts() -> String {
     unsafe {
@@ -2020,7 +2020,7 @@ pub fn get_unit_summary() -> String {
 /// Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
 ///   "active":true,"settlers":[1],"max_settlers":1,
 ///   "build_ticks":20,"production_interval":20,"inputs":[["Wood",2]],
-///   "outputs":[["Boards",1]],"output_buffer":{"Boards":5}}
+///   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
 /// or {"error":"Building not found"}
 #[wasm_bindgen]
 pub fn get_building_info(idx: usize) -> String {

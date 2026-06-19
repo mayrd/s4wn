@@ -122,13 +122,28 @@
 
   /* ── Splash ────────────────────────────────────────────────────────── */
   #splash {
-    position: fixed; inset: 0; z-index: 100;
+    position: fixed; inset: 0; z-index: 9999;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     background: radial-gradient(ellipse at center, #0f1528 0%, #060a14 100%);
     transition: opacity 0.8s ease-out;
   }
   #splash.hidden { opacity: 0; pointer-events: none; }
+  /* Hide all game UI during splash */
+  body.splash-active #menu,
+  body.splash-active #hud-top-left,
+  body.splash-active #hud-top-right,
+  body.splash-active #resource-bar,
+  body.splash-active #tool-bar,
+  body.splash-active #nation-hud,
+  body.splash-active #minimap,
+  body.splash-active #selection-info,
+  body.splash-active #bottom-left-btns,
+  body.splash-active #construction-panel,
+  body.splash-active #stats-panel,
+  body.splash-active #controls,
+  body.splash-active #drop-zone,
+  body.splash-active #toast-container { opacity: 0 !important; pointer-events: none !important; }
   #splash .subtitle {
     font-size: clamp(14px, 3vw, 22px);
     color: #8a8578; letter-spacing: 0.2em;
@@ -241,7 +256,8 @@
     font-size: 11px; color: rgba(200,200,200,0.6);
     pointer-events: none; text-align: right; line-height: 1.6;
   }
-  #fps { color: #5a8; font-size: 13px; font-weight: 600; }
+  #fps { color: #5a8; font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; }
+  #fps:hover { color: #8cf; }
   #hud-pop { color: rgba(200,180,140,0.65); font-size: 10px; margin-top: 2px; }
 
   /* ── Tile tooltip ───────────────────────────────────────────────────── */
@@ -773,6 +789,16 @@
   #stats-panel .stats-row .stats-label { color: #aaa; }
   #stats-panel .stats-row .stats-val { color: #e6b422; font-weight: bold; }
 
+
+  /* ── Debug Panel (bottom-right) ──────────────────────────────────── */
+  #debug-panel {
+    position: fixed; bottom: 12px; right: 12px; z-index: 30;
+    font-family: monospace; font-size: 11px; color: #5a8;
+    background: rgba(0,0,0,0.55); border: 1px solid rgba(90,136,90,0.25);
+    border-radius: 6px; padding: 4px 10px; text-align: right;
+    pointer-events: auto; user-select: none;
+  }
+  #debug-extra { margin-top: 4px; opacity: 0.7; }
   /* ── Mobile Responsive (viewport < 768px) ─────────────────────────── */
   @media (max-width: 767px) {
     /* Menu: full-width card, larger touch targets */
@@ -855,7 +881,7 @@
   }
 </style>
 </head>
-<body>
+<body class="splash-active">
 
 <div id="splash">
   <div class="splash-particles" id="splash-particles"></div>
@@ -1035,8 +1061,13 @@
   <div id="hud-pop"></div>
 </div>
 <div id="hud-top-right">
-  <div id="fps">--</div>
   <div id="hud-stats"></div>
+</div>
+<div id="debug-panel">
+  <div id="fps" title="Click to toggle debug panel">--</div>
+  <div id="debug-extra" style="display:none">
+    <span id="debug-time"></span> | <span id="debug-tiles"></span> | <span id="debug-buildings"></span>
+  </div>
 </div>
 
 <div id="resource-bar"><span class="res-placeholder">Loading resources...</span></div>
@@ -1592,6 +1623,18 @@ const dropZone = document.getElementById('drop-zone');
 const selInfo = document.getElementById('selection-info');
 
 let engineReady = false;
+let debugPanelOpen = false;
+document.addEventListener('DOMContentLoaded', () => {
+    const fpsEl = document.getElementById('fps');
+    if (fpsEl) {
+        fpsEl.addEventListener('click', () => {
+            const extra = document.getElementById('debug-extra');
+            if (!extra) return;
+            debugPanelOpen = !debugPanelOpen;
+            extra.style.display = debugPanelOpen ? 'block' : 'none';
+        });
+    }
+});
 let showMenu = true;
 let selectedBuilding = null; // building index or null
 let selectedUnit = null;     // unit id or null
@@ -1619,6 +1662,7 @@ let selectedUnit = null;     // unit id or null
 
 setTimeout(() => {
     splash.classList.add('hidden');
+    document.body.classList.remove('splash-active');
     setTimeout(openMenu, 800);
 }, 2500);
 
@@ -3548,7 +3592,14 @@ function updateResourceBar() {
         if (!raw) { lastResourceUpdate = 0; return; }
         const counts = JSON.parse(raw);
         let html = '';
-        RESOURCE_ORDER.forEach(name => {
+        const ELEMENTARY_RESOURCES = ['Wood', 'Stone', 'Tools', 'Planks'];
+        const displayOrder = ELEMENTARY_RESOURCES.filter(n => counts[n] !== undefined);
+        // If none of the elementary resources exist, show all raw resources
+        const showNames = displayOrder.length > 0 ? displayOrder : Object.keys(counts).filter(n => {
+            // Fallback: show all raw resources
+            return true;
+        });
+        showNames.forEach(name => {
             const count = counts[name];
             if (count === undefined) return;
             const icon = RESOURCE_ICONS[name] || '📦';
@@ -3588,7 +3639,9 @@ function updateToolBar() {
             html += `<div class="tool-item${cssClass}" title="${name}: ${count}"><span class="tool-icon">${icon}</span><span class="tool-count">${count}</span></div>`;
         }
         if (totalTools === 0) {
-            html = '<span class="res-placeholder">' + t('no_tools') + '</span>';
+            html = '';
+            document.getElementById('tool-bar').classList.remove('visible');
+            return;
         }
         document.getElementById('tool-bar').innerHTML = html;
         document.getElementById('tool-bar').classList.add('visible');
@@ -4124,6 +4177,13 @@ async function main() {
             if (s) {
                 const d = JSON.parse(s);
                 fpsEl.textContent = currentFps + ' FPS';
+                // Update extra debug info
+                const dbgTime = document.getElementById('debug-time');
+                const dbgTiles = document.getElementById('debug-tiles');
+                const dbgBldgs = document.getElementById('debug-buildings');
+                if (dbgTime) dbgTime.textContent = new Date().toLocaleTimeString();
+                if (dbgTiles) { try { const md = get_map_data(); if (md) { const m = JSON.parse(md); dbgTiles.textContent = m.width + '×' + m.height; } } catch(e) {} }
+                if (dbgBldgs) { try { const bs = get_building_summary(); if (dbgBldgs) dbgBldgs.textContent = JSON.parse(bs).length + ' bldgs'; } catch(e) {} }
                 hudStats.textContent = `ticks: ${d.ticks} | ⏱ ${formatGameTime(d.game_time)} | 🔍 ${d.zoom}×`;
             }
 
@@ -4306,7 +4366,9 @@ function renderResourceStats(body) {
         const total = Object.values(counts).reduce((a, b) => a + b, 0);
         for (const [name, count] of Object.entries(counts)) {
             const pct = total > 0 ? (count / total * 100).toFixed(1) : '0.0';
-            html += `<div class="stats-row"><span class="stats-label">${name}</span><span class="stats-val">${count} (${pct}%)</span></div>`;
+            const icon = RESOURCE_ICONS[name] || '📦';
+            const label = tResource(name);
+            html += `<div class="stats-row"><span class="stats-label"><span class="res-icon">${icon}</span> ${label}</span><span class="stats-val">${count} (${pct}%)</span></div>`;
         }
         if (!html) html = '<div class="stats-row"><span class="stats-label">No resources</span></div>';
         html += `<div class="stats-row" style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px"><span class="stats-label">Total</span><span class="stats-val">${total}</span></div>`;

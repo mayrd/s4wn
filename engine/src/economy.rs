@@ -52,7 +52,7 @@ pub enum ResourceType {
     Honey = 12,   // from apiary
 
     // Processed goods (produced by buildings)
-    Boards = 16,     // Wood → Boards (sawmill)
+    Planks = 16,     // Wood → Planks (sawmill)
     Tools = 17,      // IronOre + Coal → Tools (toolsmith)
     Weapons = 18,    // IronOre + Coal + Tools → Weapons (weaponsmith)
     Bread = 20,      // Flour + Water → Bread (bakery)
@@ -103,7 +103,7 @@ impl ResourceType {
             ResourceType::Clay => "Clay",
             ResourceType::Hemp => "Hemp",
             ResourceType::Honey => "Honey",
-            ResourceType::Boards => "Boards",
+            ResourceType::Planks => "Planks",
             ResourceType::Tools => "Tools",
             ResourceType::Weapons => "Weapons",
             ResourceType::Bread => "Bread",
@@ -152,7 +152,7 @@ Resource::Grain => Some(ResourceType::Grain),
             12 => Some(ResourceType::Honey),
             13 => Some(ResourceType::Grapes),
             14 => Some(ResourceType::Olives),
-            16 => Some(ResourceType::Boards),
+            16 => Some(ResourceType::Planks),
             17 => Some(ResourceType::Tools),
             18 => Some(ResourceType::Weapons),
             20 => Some(ResourceType::Bread),
@@ -183,7 +183,7 @@ pub const BARRACKS_TRAINING_INTERVAL: u32 = 60;
 pub enum BuildingType {
     /// Castle — stores resources, spawns settlers
     Castle = 0,
-    /// Sawmill — converts Wood → Boards
+    /// Sawmill — converts Wood → Planks
     Sawmill = 1,
     /// Stonecutter — produces Stone (requires settler + stone deposit nearby)
     Stonecutter = 2,
@@ -535,10 +535,10 @@ impl BuildingType {
             BuildingType::Waterworks => &[(ResourceType::Wood, 4), (ResourceType::Stone, 3)],
             BuildingType::Smelter => &[(ResourceType::Wood, 5), (ResourceType::Stone, 5)],
             BuildingType::Barracks => &[(ResourceType::Wood, 6), (ResourceType::Stone, 6)],
-            BuildingType::GuardTower => &[(ResourceType::Stone, 8), (ResourceType::Boards, 6)],
-            BuildingType::Fortress => &[(ResourceType::Stone, 20), (ResourceType::Boards, 12), (ResourceType::IronOre, 8)],
+            BuildingType::GuardTower => &[(ResourceType::Stone, 8), (ResourceType::Planks, 6)],
+            BuildingType::Fortress => &[(ResourceType::Stone, 20), (ResourceType::Planks, 12), (ResourceType::IronOre, 8)],
             BuildingType::SiegeWorkshop => &[(ResourceType::Wood, 10), (ResourceType::Stone, 8), (ResourceType::Tools, 3)],
-            BuildingType::Shipyard => &[(ResourceType::Wood, 10), (ResourceType::Stone, 6), (ResourceType::Boards, 6)],
+            BuildingType::Shipyard => &[(ResourceType::Wood, 10), (ResourceType::Stone, 6), (ResourceType::Planks, 6)],
             BuildingType::RoadLayer => &[(ResourceType::Wood, 4), (ResourceType::Stone, 2)],
             BuildingType::TempleOfChac => &[(ResourceType::Stone, 20), (ResourceType::Gold, 5)],
             BuildingType::AgaveFarm => &[(ResourceType::Wood, 3)],
@@ -559,7 +559,7 @@ impl BuildingType {
             BuildingType::MushroomFarm => &[(ResourceType::Wood, 8), (ResourceType::Stone, 4)],
             BuildingType::SanctuaryOfMorbus => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
             BuildingType::SanctuaryOfPestilence => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
-            BuildingType::DarkFortress => &[(ResourceType::Stone, 25), (ResourceType::Boards, 15), (ResourceType::IronOre, 10)],
+            BuildingType::DarkFortress => &[(ResourceType::Stone, 25), (ResourceType::Planks, 15), (ResourceType::IronOre, 10)],
             BuildingType::DemonGate => &[(ResourceType::Stone, 30), (ResourceType::IronIngots, 15), (ResourceType::Gold, 20)],
             _ => &[], // planned buildings — no cost yet
         }
@@ -580,7 +580,7 @@ impl BuildingType {
             BuildingType::Mill => &[(ResourceType::Grain, 3)],
             BuildingType::Smelter => &[(ResourceType::IronOre, 1), (ResourceType::Coal, 1)],
             BuildingType::SiegeWorkshop => &[(ResourceType::IronIngots, 2), (ResourceType::Wood, 3)],
-            BuildingType::Shipyard => &[(ResourceType::Wood, 3), (ResourceType::Boards, 2)],
+            BuildingType::Shipyard => &[(ResourceType::Wood, 3), (ResourceType::Planks, 2)],
             BuildingType::WinePress => &[(ResourceType::Grapes, 2)],
             BuildingType::Distillery => &[(ResourceType::Grapes, 2)], // Agave → Pulque (uses Grapes as placeholder)
             BuildingType::OilPress => &[(ResourceType::Olives, 3)],
@@ -591,7 +591,7 @@ impl BuildingType {
     /// Output resources produced per production cycle
     pub fn outputs(self) -> &'static [(ResourceType, u32)] {
         match self {
-            BuildingType::Sawmill => &[(ResourceType::Boards, 1)],
+            BuildingType::Sawmill => &[(ResourceType::Planks, 1)],
             BuildingType::Stonecutter => &[(ResourceType::Stone, 1)],
             BuildingType::Mine => &[(ResourceType::IronOre, 1)], // simplified: mine produces iron
             BuildingType::Toolsmith => &[(ResourceType::Tools, 1)],
@@ -1693,7 +1693,7 @@ mod tests {
     #[test]
     fn test_resource_type_name() {
         assert_eq!(ResourceType::Wood.name(), "Wood");
-        assert_eq!(ResourceType::Boards.name(), "Boards");
+        assert_eq!(ResourceType::Planks.name(), "Planks");
         assert_eq!(ResourceType::Weapons.name(), "Weapons");
     }
 
@@ -1701,7 +1701,7 @@ mod tests {
     fn test_resource_type_is_raw() {
         assert!(ResourceType::Wood.is_raw());
         assert!(ResourceType::IronOre.is_raw());
-        assert!(!ResourceType::Boards.is_raw());
+        assert!(!ResourceType::Planks.is_raw());
         assert!(!ResourceType::Tools.is_raw());
     }
 
@@ -1877,7 +1877,7 @@ mod tests {
         // Add inputs
         building.input_buffer[ResourceType::Wood as usize] = 10;
 
-        // Sawmill: 20 ticks per cycle, consumes 2 Wood → produces 1 Boards
+        // Sawmill: 20 ticks per cycle, consumes 2 Wood → produces 1 Planks
         let mut produced = 0;
         for _ in 0..100 {
             if building.try_produce(&mut storage, 1.0) {
@@ -1886,7 +1886,7 @@ mod tests {
         }
         assert!(produced > 0, "Should have produced planks");
         assert_eq!(
-            building.output_buffer[ResourceType::Boards as usize],
+            building.output_buffer[ResourceType::Planks as usize],
             produced
         );
     }
@@ -1993,7 +1993,7 @@ mod tests {
 
     #[test]
     fn test_production_chain_wood_to_planks() {
-        // Full chain: Lumberjack produces Wood → Sawmill converts to Boards
+        // Full chain: Lumberjack produces Wood → Sawmill converts to Planks
         let mut storage = ResourceStorage::new();
         let mut lumberjack = Building::new(BuildingType::Woodcutter, 0, 0);
         let mut sawmill = Building::new(BuildingType::Sawmill, 1, 0);
@@ -3656,7 +3656,7 @@ mod tests {
             (ResourceType::Grain, 60), (ResourceType::Meat, 40), (ResourceType::Fish, 40),
             (ResourceType::Water, 30), (ResourceType::Clay, 40), (ResourceType::Hemp, 30),
             (ResourceType::Honey, 30), (ResourceType::Tools, 20), (ResourceType::Weapons, 15),
-            (ResourceType::Boards, 30), (ResourceType::Bricks, 20), (ResourceType::IronIngots, 15),
+            (ResourceType::Planks, 30), (ResourceType::Bricks, 20), (ResourceType::IronIngots, 15),
             (ResourceType::Flour, 20),
         ];
         let mut eco = Economy::with_starting_resources(starting);

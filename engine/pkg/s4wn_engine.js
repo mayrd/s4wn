@@ -90,7 +90,7 @@ export function get_build_cost(kind_name) {
  * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
  *   "active":true,"settlers":[1],"max_settlers":1,
  *   "build_ticks":20,"production_interval":20,"inputs":[["Wood",2]],
- *   "outputs":[["Boards",1]],"output_buffer":{"Boards":5}}
+ *   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
  * or {"error":"Building not found"}
  * @param {number} idx
  * @returns {string}
@@ -206,7 +206,7 @@ export function get_player_nation() {
 
 /**
  * Get resource counts as a JSON string for the HUD.
- * Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Boards":0,...}
+ * Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Planks":0,...}
  * @returns {string}
  */
 export function get_resource_counts() {
