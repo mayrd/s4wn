@@ -1663,8 +1663,45 @@ let selectedUnit = null;     // unit id or null
 setTimeout(() => {
     splash.classList.add('hidden');
     document.body.classList.remove('splash-active');
-    setTimeout(openMenu, 800);
-}, 2500);
+    // Auto-load demo map so tiles are visible immediately
+    // Wait for engine to be ready (WASM init + map load)
+    let autoLoadAttempts = 0;
+    const autoLoadInterval = setInterval(() => {
+        autoLoadAttempts++;
+        if (autoLoadAttempts > 30) { // 30 × 200ms = 6s max wait
+            clearInterval(autoLoadInterval);
+            console.warn('Engine init timeout — opening menu');
+            openMenu();
+            return;
+        }
+        if (typeof generate_map !== 'function' || typeof load_map_json !== 'function') {
+            return; // Engine not ready yet
+        }
+        try {
+            const mapJson = generate_map('normal', 64, 64);
+            const result = load_map_json(mapJson);
+            if (result === 'ok') {
+                add_starting_resources('easy');
+                setup_starter_base(3);
+                set_player_nation('Roman');
+                console.log('Demo map auto-loaded successfully');
+                clearInterval(autoLoadInterval);
+                // Close menu so tiles are visible
+                showMenu = false;
+                const menuEl = document.getElementById('menu');
+                if (menuEl) menuEl.classList.remove('active');
+            } else {
+                console.warn('Map load returned:', result);
+                clearInterval(autoLoadInterval);
+                openMenu();
+            }
+        } catch(e) {
+            console.warn('Demo map auto-load failed:', e);
+            clearInterval(autoLoadInterval);
+            openMenu();
+        }
+    }, 200);
+}, 2000);
 
 function openMenu() {
     showMenu = true;
