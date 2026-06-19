@@ -42,6 +42,7 @@ in float a_visibility;
 in vec2 a_uv;
 in float a_terrain_id;
 in vec3 a_normal;
+in vec4 a_splat;
 
 uniform vec2 u_resolution;
 uniform float u_time;
@@ -62,6 +63,7 @@ out float v_visibility;
 out vec2 v_uv;
 out float v_terrain_id;
 out vec3 v_normal;
+out vec4 v_splat;
 
 void main() {
     float x = a_position.x;
@@ -103,6 +105,7 @@ void main() {
     v_terrain_id = a_terrain_id;
     v_visibility = a_visibility;
     v_normal = a_normal;
+    v_splat = a_splat;
 }
 "#;
 
@@ -119,6 +122,7 @@ in float v_visibility;
 in vec2 v_uv;
 in float v_terrain_id;
 in vec3 v_normal;
+in vec4 v_splat;
 
 uniform highp sampler2DArray u_terrain_textures;
 uniform bool u_use_textures;
@@ -128,10 +132,24 @@ uniform vec3 u_light_direction;
 out vec4 out_color;
 
 void main() {
-    // Base color: sample terrain texture or fall back to vertex color
+    // Base color: splat-blended terrain atlas or fall back to vertex color
+    // Atlas layout: 4 horizontal slices (grass=0, rock=1, sand=2, snow=3), each 512x512 in 2048x512 image
+    // v_splat.rgba = weights for grass/rock/sand/snow
     vec3 base_color;
     if (u_use_textures) {
-        base_color = texture(u_terrain_textures, vec3(v_uv, v_terrain_id)).rgb;
+        // Remap UV into each 512-wide slice: U = (layer + uv.x) / 4.0, V = uv.y
+        vec2 atlas_uv_grass = vec2((0.0 + v_uv.x) / 4.0, v_uv.y);
+        vec2 atlas_uv_rock  = vec2((1.0 + v_uv.x) / 4.0, v_uv.y);
+        vec2 atlas_uv_sand  = vec2((2.0 + v_uv.x) / 4.0, v_uv.y);
+        vec2 atlas_uv_snow  = vec2((3.0 + v_uv.x) / 4.0, v_uv.y);
+        vec3 tex_grass = texture(u_terrain_textures, vec3(atlas_uv_grass, 0.0)).rgb;
+        vec3 tex_rock  = texture(u_terrain_textures, vec3(atlas_uv_rock,  0.0)).rgb;
+        vec3 tex_sand  = texture(u_terrain_textures, vec3(atlas_uv_sand,  0.0)).rgb;
+        vec3 tex_snow  = texture(u_terrain_textures, vec3(atlas_uv_snow,  0.0)).rgb;
+        float w = dot(v_splat, vec4(1.0)); // total weight for normalization
+        if (w < 0.001) w = 1.0; // avoid division by zero
+        base_color = (tex_grass * v_splat.r + tex_rock * v_splat.g
+                    + tex_sand * v_splat.b + tex_snow * v_splat.a) / w;
     } else {
         base_color = v_color;
     }
@@ -339,6 +357,8 @@ struct App {
     use_vp_loc: Option<web_sys::WebGlUniformLocation>,
     // Fragment shader light direction
     light_dir_loc: Option<web_sys::WebGlUniformLocation>,
+    // Splat-map buffer
+    splat_buffer: Option<WebGlBuffer>,
 }
 
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
@@ -354,6 +374,8 @@ struct MeshData {
     normals: Vec<f32>,
     uvs: Vec<f32>,
     terrain_ids: Vec<f32>,
+    /// Splat-map weights: 4 floats per vertex (R=grass, G=rock, B=sand, A=snow)
+    splats: Vec<f32>,
     indices: Vec<u16>,
 }
 
@@ -370,6 +392,7 @@ impl MeshData {
             normals: Vec::new(),
             uvs: Vec::new(),
             terrain_ids: Vec::new(),
+            splats: Vec::new(),
             indices: Vec::new(),
         }
     }
@@ -486,6 +509,54 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
                 mesh.normals.push(0.0);
             }
 
+            // Compute splat-map weights based on terrain type + slope
+            // R=grass, G=rock, B=sand, A=snow
+            let terrain = tile.terrain;
+            let slope_val = max_diff;
+            let mut splat_r = 0.0f32;
+            let mut splat_g = 0.0f32;
+            let mut splat_b = 0.0f32;
+            let mut splat_a = 0.0f32;
+            match terrain {
+                Terrain::Grass | Terrain::Forest => {
+                    // Grass-dominant, with rock on steep slopes
+                    let rock = ((slope_val - 0.15) / 0.3).clamp(0.0, 1.0);
+                    splat_r = 1.0 - rock;
+                    splat_g = rock;
+                }
+                Terrain::Mountain => {
+                    // Rock-dominant, more rock on steeper slopes
+                    let rock = if slope_val > 0.3 { 1.0 } else { 0.8 };
+                    splat_g = rock;
+                    splat_r = 1.0 - rock;
+                }
+                Terrain::Desert | Terrain::Swamp => {
+                    splat_b = 0.8;
+                    splat_r = 0.2;
+                }
+                Terrain::Snow => {
+                    splat_a = 1.0;
+                }
+                Terrain::Water | Terrain::DeepWater => {
+                    // Underwater: mix sand / rock / grass
+                    splat_b = 0.5;
+                    splat_g = 0.3;
+                    splat_r = 0.2;
+                }
+            }
+            // Normalize splats so they sum to ~1.0
+            let splat_sum = splat_r + splat_g + splat_b + splat_a;
+            if splat_sum > 0.0 {
+                splat_r /= splat_sum;
+                splat_g /= splat_sum;
+                splat_b /= splat_sum;
+                splat_a /= splat_sum;
+            }
+            mesh.splats.push(splat_r);
+            mesh.splats.push(splat_g);
+            mesh.splats.push(splat_b);
+            mesh.splats.push(splat_a);
+
             // Build triangle strip indices
             if row < rows && col < cols {
                 let tl = (row as u16) * grid_w + (col as u16);
@@ -547,6 +618,7 @@ impl App {
         let terrain_id_buffer = upload_f32_buffer(&gl, &mesh.terrain_ids, 7, 1);
         let visibility_buffer = upload_f32_buffer(&gl, &mesh.visibilities, 8, 1);
         let normal_buffer = upload_f32_buffer(&gl, &mesh.normals, 9, 3);
+        let splat_buffer = upload_f32_buffer(&gl, &mesh.splats, 10, 4);
         let index_buffer = gl.create_buffer().ok_or("Cannot create index buffer")?;
         gl.bind_buffer(
             WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
@@ -683,6 +755,7 @@ impl App {
             vp_loc,
             use_vp_loc,
             light_dir_loc,
+            splat_buffer: Some(splat_buffer),
         })
     }
 
@@ -1105,6 +1178,10 @@ impl App {
         if let Some(ref buf) = self.normal_buffer {
             gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
             update_f32_buffer(gl, &mesh.normals);
+        }
+        if let Some(ref buf) = self.splat_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            update_f32_buffer(gl, &mesh.splats);
         }
 
         gl.bind_buffer(
@@ -3161,6 +3238,129 @@ mod tests {
         assert!(
             FRAGMENT_SHADER.contains("base_color * shade * light"),
             "fragment shader should use combined light (ambient+diffuse), not just ambient"
+        );
+    }
+
+    // ── Phase 5: Splat-Map Tests ──────────────────────────────────────────
+
+    #[test]
+    fn test_vertex_shader_has_splat_attribute() {
+        assert!(
+            VERTEX_SHADER.contains("in vec4 a_splat"),
+            "vertex shader missing in vec4 a_splat"
+        );
+        assert!(
+            VERTEX_SHADER.contains("out vec4 v_splat"),
+            "vertex shader missing out vec4 v_splat"
+        );
+        assert!(
+            VERTEX_SHADER.contains("v_splat = a_splat"),
+            "vertex shader missing v_splat = a_splat pass-through"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_has_splat_varying() {
+        assert!(
+            FRAGMENT_SHADER.contains("in vec4 v_splat"),
+            "fragment shader missing in vec4 v_splat"
+        );
+    }
+
+    #[test]
+    fn test_mesh_contains_splat_data() {
+        // build_map_mesh must populate splats (4 floats per vertex)
+        let map = Map::generate_demo(16, 16);
+        let camera = Camera::new(8.0, 8.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+
+        let vertex_count = mesh.positions.len() / 3;
+        assert!(vertex_count > 0, "mesh should have vertices");
+
+        // Splats: 4 floats per vertex (R=grass, G=rock, B=sand, A=snow)
+        assert_eq!(mesh.splats.len(), vertex_count * 4, "splats count mismatch");
+    }
+
+    #[test]
+    fn test_splat_weights_sum_to_one() {
+        // All splat weights at each vertex should sum to approximately 1.0
+        let map = Map::generate_demo(16, 16);
+        let camera = Camera::new(8.0, 8.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+
+        let vertex_count = mesh.splats.len() / 4;
+        for v in 0..vertex_count {
+            let s = v * 4;
+            let sum = mesh.splats[s] + mesh.splats[s + 1] + mesh.splats[s + 2] + mesh.splats[s + 3];
+            assert!(
+                (sum - 1.0).abs() < 0.01,
+                "splat weights at vertex {} sum to {} (expected ~1.0)",
+                v,
+                sum
+            );
+        }
+    }
+
+    #[test]
+    fn test_splat_weights_non_negative() {
+        // All splat weights should be non-negative
+        let map = Map::generate_demo(16, 16);
+        let camera = Camera::new(8.0, 8.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+
+        for (i, &w) in mesh.splats.iter().enumerate() {
+            assert!(w >= 0.0, "splat weight at index {} is negative: {}", i, w);
+        }
+    }
+
+    #[test]
+    fn test_grass_terrain_has_grass_splat() {
+        // A grass tile should have non-zero grass (R) splat weight
+        let map = Map::generate_demo(32, 32);
+        let camera = Camera::new(16.0, 16.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+
+        // Find a grass vertex and check it has grass-dominant splat
+        let mut found_grass = false;
+        for v in 0..mesh.terrain_ids.len() {
+            if mesh.terrain_ids[v] == 0.0 {
+                // Grass terrain
+                let s = v * 4;
+                assert!(
+                    mesh.splats[s] > 0.01,
+                    "grass tile vertex should have non-trivial R (grass) splat, got {}",
+                    mesh.splats[s]
+                );
+                found_grass = true;
+                break;
+            }
+        }
+        assert!(found_grass, "should have found at least one grass vertex");
+    }
+
+    #[test]
+    fn test_fragment_shader_splat_blending() {
+        // Fragment shader must contain splat-based atlas sampling
+        assert!(
+            FRAGMENT_SHADER.contains("atlas_uv_grass"),
+            "fragment shader missing grass atlas UV computation"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("v_splat.r"),
+            "fragment shader missing splat.r weight"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("/ w"),
+            "fragment shader missing splat normalization by total weight"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_splat_atlas_uv_remap() {
+        // Verify the UV remapping divides by 4.0 (4 horizontal slices)
+        assert!(
+            FRAGMENT_SHADER.contains("/ 4.0"),
+            "fragment shader missing / 4.0 atlas UV remap"
         );
     }
 }
