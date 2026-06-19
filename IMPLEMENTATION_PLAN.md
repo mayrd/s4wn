@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 | **Status:** Phase 5 — 3D Pipeline 🔬 (354 tests)
-| **Last updated:** 2026-06-19 (Session 104 — Phase 5 Step 8: GPU model shaders + rendering infra + WASM exports, Fixes #45)
+| **Last updated:** 2026-06-19 (Session 105 — Phase 5 Step 8: JS-side model loading, WASM cache v=34)
 
 ---
 
@@ -411,9 +411,11 @@ Completed: Model shaders (vertex+fragment with PBR), model VAO/buffer management
 
 **Phase 5 Step 8 continued:**
 
-1. ✅ Add model VAO/buffer management to App struct in lib.rs — DONE
-2. ✅ Implement model instance rendering pass — DONE (render_models with per-instance MVP)
-3. Add JS-side model loading — fetch JSON models from assets/, call load_model_json() per model
+1. ✅ Add model VAO/buffer management to App struct in lib.rs — DONE (Session 104)
+2. ✅ Implement model instance rendering pass — DONE (Session 104)
+3. ✅ Add JS-side model loading — DONE (Session 105): loadGameModels() fetches 30 JSON models, load_model_json() uploads to GPU
 4. Connect building placement to model instances — call add_model_instance() when building is placed
 5. Connect units to model instances — one model instance per unit
-6. Add instanced rendering for units (many instances, one draw call — performance optimization)
+6. Add WASM rebuild — run `./build.sh` to produce updated pkg/ with load_model_json export (v=34)
+7. Add instanced rendering for units (many instances, one draw call — performance optimization)
+8. Generate missing building JSON models (Castle, Fortress, GuardTower, etc.) — only 30 decorative/resource models exist
