@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 5 — 3D Pipeline 🔬 (354 tests)
-| **Last updated:** 2026-06-19 (Session 107 — Docker single-image consolidation, auto-start demo map)
+| **Status:** Phase 5 — 3D Pipeline 🔬 (360 tests)
+| **Last updated:** 2026-06-19 (Session 108 — Unit model instances: 3 procgen unit models, unit to instance mapping, 360 tests)
 
 ---
 
@@ -296,6 +296,8 @@ protocol::tests               5 tests    Message serialization, room management
 
 ## Next Objectives (TDD Order)
 
+||| **108** | **2026-06-19** | **Phase 5 Step 8.5: Unit model instances. Added model_id_for_unit(), alive_units() iteration, 3 procgen JSON unit models (worker/soldier/archer), 5 new tests. WASM cache v=36. 360 tests pass.** |
+|
 ### 1. Trojan Unique Buildings ✅ (Session 86)
 **Objective:** Trojans can build their 7 unique buildings: Oracle of Apollo, Olive Grove, Oil Press, Sanctuary of Artemis, Sanctuary of Poseidon, Sanctuary of Apollo, Amphitheater.
 **Status:** ✅ Done (Session 87). BuildingType enum variants, production chains, and nation-gated placement needed.
@@ -370,9 +372,9 @@ protocol::tests               5 tests    Message serialization, room management
 - **🌐 Best source of Siedler 4 info:** [siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/) — buildings, units, production chains, game mechanics, maps, guides. Always consult this first when researching authentic S4 behavior.
 - **S4Forge.RE:** Authoritative C++ decompilation for building IDs (0-82), settler IDs (0-66), terrain (8 types), resources (8 types), nations (5)
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
-- **WASM cache:** Current v=35. Always bump when adding new `#[wasm_bindgen]` exports.
+- **WASM cache:** Current v=36. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 315 engine + 30 server = 345 total (315 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 360 engine + 30 server = 390 total (360 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
 ## Next Session — Concrete Steps
 
@@ -417,14 +419,21 @@ Completed: Model shaders, VAO/buffer management, JS model loading (30 JSON model
 2. ✅ Implement model instance rendering pass — DONE (Session 104)
 3. ✅ Add JS-side model loading — DONE (Session 105): loadGameModels() fetches 30 JSON models, load_model_json() uploads to GPU
 4. ✅ Connect building placement to model instances — DONE (Session 106): populate_model_instances_from_game_state() called each frame, model_id_for_building() mapping (10 exact + construction fallback), add_model_instance() JS call on placement
-5. Connect units to model instances — one model instance per unit
-6. ✅ WASM rebuild — DONE (Session 105, v=34→v=35 in Session 106)
+5. Done Connect units to model instances - DONE (Session 108): model_id_for_unit() maps UnitKind to model_id, alive_units() iteration, 3 procgen JSON unit models
+6. ✅ WASM rebuild — DONE (Session 105, v=34 to v=35 in S106; v=35 to v=36 in S108)
 7. Add instanced rendering for units (many instances, one draw call — performance optimization)
 8. Generate missing building JSON models (Castle, Fortress, GuardTower, etc.) — only 30 decorative/resource models exist
 
 ---
 
-### Session 107 — Docker consolidation & auto-start demo map ✅
+### Session 108 — Unit model instances ✅
+
+- Added model_id_for_unit() mapping: Settler to worker, Swordsman to soldier, Bowman to archer
+- Extended populate_model_instances_from_game_state() to iterate alive units
+- Generated 3 procgen unit JSON models (worker.json, soldier.json, archer.json)
+- 5 new tests, 360 total passing, WASM cache v=36
+
+### Session 107 — Docker consolidation ✅
 
 - Auto-load demo map on page load (splash hides → generate_map → add resources/HQ → render)
 - Fixed: tiles weren't rendering because no map was loaded on startup
