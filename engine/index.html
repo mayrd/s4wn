@@ -3768,6 +3768,21 @@ function updatePopulationSummary() {
     }
 }
 
+function updateNationHUD() {
+    const hud = document.getElementById('nation-hud');
+    if (!hud) return;
+    try {
+        const nationJson = get_player_nation ? get_player_nation() : null;
+        if (!nationJson) { hud.textContent = ''; return; }
+        const nation = JSON.parse(nationJson);
+        const flags = { Roman: '🏛️', Viking: '🪓', Maya: '🗿' };
+        const flag = flags[nation.name] || '🏳️';
+        hud.textContent = `${flag} ${nation.name}`;
+    } catch(e) {
+        hud.textContent = '';
+    }
+}
+
 // ── Game time ──────────────────────────────────────────────────────────────
 function formatGameTime(seconds) {
     const s = Math.floor(seconds);
