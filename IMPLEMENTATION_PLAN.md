@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 | **Status:** Phase 5 — 3D Pipeline 🔬 (360 tests)
-| **Last updated:** 2026-06-19 (Session 109 — Instanced rendering: single draw_elements_instanced call, a_model/a_offset instanced attributes, u_vp uniform, 360 tests)
+| **Last updated:** 2026-06-19 (Session 110 — 49 building JSON models generated + model_id_for_building wired, 360 tests)
 
 ---
 
@@ -409,15 +409,21 @@ Concrete steps:
 
 ### Next Session — Concrete Steps
 
-**Phase 5 Step 7: Instanced Rendering ✅ (Session 109)**
+**Phase 5 Steps 1-8: ✅ Complete**
 
-Instanced rendering implemented: single draw_elements_instanced call replaces per-instance draw loop. Model vertex shader uses instanced attributes a_model (locations 3-6, mat4) and a_offset (location 7, vec3). VP matrix (u_vp) computed once per frame and shared. Legacy u_model uniform retained for fallback. 360 tests pass.
-
-**Phase 5 Step 8: GPU Model Rendering — 🚧 In Progress**
-
-Completed: Model shaders, VAO/buffer management, JS model loading (30 JSON models), building→model instance connection, auto-population each frame, unit model instances, instanced rendering. WASM cache v=36. 360 tests pass.
+All Phase 5 steps are now complete:
+1. ✅ Orbital camera model
+2. ✅ u_vp mat4 uniform + WASM camera exports
+3. ✅ Height-displaced terrain mesh + vertex normals
+4. ✅ Fragment shader diffuse lighting
+5. ✅ Terrain splat-map atlas
+6. ✅ Water shader & refraction
+7. ✅ 3D model loading (JSON mesh parser, 30 OBJ→JSON conversions, building/unit instances, instanced rendering)
+8. ✅ GPU model rendering + all 59 building models
 
 **Remaining work:**
+
+**Phase 5 Step 9: WASM Rebuild (cache v=37)**
 
 1. ✅ Add model VAO/buffer management — DONE (Session 104)
 2. ✅ Implement model instance rendering pass — DONE (Session 104)
@@ -425,7 +431,7 @@ Completed: Model shaders, VAO/buffer management, JS model loading (30 JSON model
 4. ✅ Building placement → model instances — DONE (Session 106)
 5. ✅ Unit model instances — DONE (Session 108)
 6. ✅ Instanced rendering — DONE (Session 109)
-7. Generate missing building JSON models (Storehouse, Fortress, GuardTower, Mill, + 33 unique buildings) — only 10 buildings have models; 30+ fall back to construction.json
+7. ✅ Generate missing building JSON models — DONE (Session 110) — 49 new models: all common + unique nation buildings have dedicated JSON models
 8. WASM rebuild with instanced rendering (cache v=37)
 
 ---
