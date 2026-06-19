@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 4 — Mobile UI Adaptation ✅ complete | Phase 5 — 3D Pipeline 🔬 (289 tests)
-| **Last updated:** 2026-06-19 (Session 96 — Orbital Camera model: fields + methods + 10 tests)
+| **Status:** Phase 5 — 3D Pipeline 🔬 (279 tests)
+| **Last updated:** 2026-06-19 (Session 97 — u_vp shader uniform + orbital camera WASM exports)
 
 ---
 
@@ -381,8 +381,8 @@ protocol::tests               5 tests    Message serialization, room management
 ### Phase 5: 3D Pipeline — Step 1 Complete, Step 2 (Shader Integration)
 Steps 1–4 ✅ DONE (Session 96). Remaining:
 
-5. **Pass `u_vp` (View-Projection matrix) as shader uniform** to the vertex shader instead of separate `u_camera_center` + `u_zoom`. Add the 4×4 mat4 uniform to the shader, update `App` struct in lib.rs to store the new uniform location, and pass `eye()` + projection values each frame. Keep the legacy iso uniforms for backward compat (dual-path during migration).
-6. **Add WASM exports** for `set_azimuth()`, `set_elevation()`, `set_distance()` so JS can control the orbital camera. Bump WASM cache version to v=33.
+5. ✅ **Pass `u_vp` (View-Projection matrix) as shader uniform** to the vertex shader instead of separate `u_camera_center` + `u_zoom`. Add the 4×4 mat4 uniform to the shader, update `App` struct in lib.rs to store the new uniform location, and pass `eye()` + projection values each frame. Keep the legacy iso uniforms for backward compat (dual-path during migration). **Done (Session 97)**.
+6. ✅ **Add WASM exports** for `set_azimuth()`, `set_elevation()`, `set_distance()` so JS can control the orbital camera. Bump WASM cache version to v=33. **Done (Session 97).**
 
 ### Phase 5: 3D Pipeline — Step 3 (Terrain Height Mesh)
 7. **Replace flat vertex grid with height-displaced mesh**: modify `build_map_mesh()` to compute per-vertex Y from `tile.elevation * ELEVATION_SCALE` (default 0.5). Add vertex normals from heightmap gradient. Update vertex shader attributes to include `a_position.z` and `a_normal`.
