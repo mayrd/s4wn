@@ -211,6 +211,41 @@
     font-family: 'Courier New', monospace;
   }
 
+  /* ── Tutorial Panel ──────────────────────────────────────────────────── */
+  #tutorial-panel {
+    position: fixed; left: 0; top: 60px;
+    width: 340px; max-height: calc(100vh - 80px);
+    background: rgba(10, 12, 18, 0.95);
+    border-right: 1px solid rgba(180, 150, 80, 0.3);
+    z-index: 100; transform: translateX(-360px);
+    transition: transform 0.35s ease; overflow-y: auto;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  #tutorial-panel.open { transform: translateX(0); }
+  .tutorial-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; background: rgba(180, 150, 80, 0.12);
+    border-bottom: 1px solid rgba(180, 150, 80, 0.2);
+  }
+  .tutorial-header h3 { margin: 0; font-size: 15px; color: #d4b840; }
+  .tutorial-progress { font-size: 11px; color: #888; }
+  .tutorial-body { padding: 14px 16px; }
+  .tutorial-instruction { color: #ddd; font-size: 13px; line-height: 1.6; white-space: pre-line; margin: 0 0 10px 0; }
+  .tutorial-tip { color: #b8a060; font-size: 12px; font-style: italic; margin: 0; }
+  .tutorial-extra { 
+    margin-top: 10px; padding: 10px 12px; background: rgba(0,0,0,0.3);
+    border-left: 3px solid #d4b840; font-size: 12px; color: #bbb;
+    white-space: pre-line; line-height: 1.5;
+  }
+  .tutorial-target { margin-top: 10px; font-size: 13px; color: #e07050; font-weight: bold; }
+  .tutorial-complete {
+    margin: 10px 16px 14px; padding: 10px 12px;
+    background: rgba(60, 180, 60, 0.15); border-radius: 4px;
+    display: flex; align-items: center; gap: 8px;
+    color: #8c8; font-size: 13px;
+  }
+  .tut-check { font-size: 18px; }
+
   /* ── Recent Files ───────────────────────────────────────────────────── */
   .recent-files {
     margin: 8px 0; padding: 8px 10px;
@@ -924,6 +959,7 @@
       <div class="recent-list" id="recent-list"><span class="recent-empty">None yet</span></div>
     </div>
     <button class="menu-btn" id="btn-demo">🗺️ Demo Map</button>
+    <button class="menu-btn" id="btn-tutorial">📖 Tutorial</button>
     <button class="menu-btn" id="btn-continue" style="display:none">💾 Continue Game</button>
     <button class="menu-btn" onclick="openNewGame()" data-i18n="new_game">🆕 New Game</button>
     <button class="menu-btn" onclick="openSettings()">⚙️ Settings</button>
@@ -932,6 +968,24 @@
     </button>
     <div class="menu-hint" data-i18n="menu_hint">or press <kbd>L</kbd> to load · <kbd>D</kbd> for demo · <kbd>S</kbd> for settings</div>
     <div class="menu-version">2026.06.16-20.53</div>
+  </div>
+</div>
+
+<!-- Tutorial Panel (slide-in from left during tutorial game) -->
+<div id="tutorial-panel">
+  <div class="tutorial-header">
+    <h3 id="tut-title">📖 Tutorial</h3>
+    <span class="tutorial-progress" id="tut-progress">Step 0/13</span>
+  </div>
+  <div class="tutorial-body" id="tut-body">
+    <p class="tutorial-instruction" id="tut-instruction"></p>
+    <p class="tutorial-tip" id="tut-tip"></p>
+    <div class="tutorial-extra" id="tut-extra" style="display:none"></div>
+    <div class="tutorial-target" id="tut-target" style="display:none"></div>
+  </div>
+  <div class="tutorial-complete" id="tut-complete" style="display:none">
+    <span class="tut-check">✅</span>
+    <span id="tut-complete-msg"></span>
   </div>
 </div>
 
@@ -1023,6 +1077,7 @@
     <div class="ng-row">
       <label data-i18n="map_label">Map</label>
       <select id="ng-map">
+        <option value="tutorial">📖 Tutorial Campaign</option>
         <option value="island">🏝️ Island</option>
         <option value="continents">🌍 Continents</option>
         <option value="rivervalley">🏞️ River Valley</option>
@@ -5089,5 +5144,254 @@ console.error = function (...args) {
 <!-- Swipe navigation hints (mobile) -->
 <div class="swipe-hint left" id="swipe-hint-left">◀ Swipe for Construction</div>
 <div class="swipe-hint right" id="swipe-hint-right">Swipe for Stats ▶</div>
+
+<!-- Tutorial config data -->
+<script src="config/tutorial.js"></script>
+<!-- Tutorial engine logic -->
+<script>
+// ── Tutorial Engine ───────────────────────────────────────────────────────────
+const Tutorial = {
+  _state: {
+    active: false,
+    currentIdx: 0,
+    objectives: [],
+    completed: new Set(),
+    _knownBuildings: null,
+    _knownUnits: null,
+    _victory: false,
+    _introShown: false,
+  },
+
+  init() {
+    if (!window.S4WN_TUTORIAL) return;
+    this._state.objectives = window.S4WN_TUTORIAL.objectives || [];
+  },
+
+  start() {
+    const t = window.S4WN_TUTORIAL;
+    if (!t) { console.warn('Tutorial data not loaded'); return; }
+    this._state.active = true;
+    this._state.currentIdx = 0;
+    this._state.completed = new Set();
+    this._state._victory = false;
+    this._state._knownBuildings = null;
+    this._state._knownUnits = null;
+    document.getElementById('tutorial-panel').classList.add('open');
+    this.showIntro(t);
+  },
+
+  showIntro(t) {
+    if (this._state._introShown) return;
+    this._state._introShown = true;
+    const title = document.getElementById('tut-title');
+    title.textContent = '📖 ' + t.title;
+    document.getElementById('tut-instruction').textContent = t.intro.join('\n');
+    document.getElementById('tut-tip').textContent = '';
+    document.getElementById('tut-extra').style.display = 'none';
+    document.getElementById('tut-target').style.display = 'none';
+    document.getElementById('tut-complete').style.display = 'none';
+    document.getElementById('tut-progress').textContent = `Step 0/${t.objectives.length}`;
+    // Auto-advance after 8 seconds
+    setTimeout(() => this.nextObjective(), 8000);
+  },
+
+  nextObjective() {
+    const t = window.S4WN_TUTORIAL;
+    if (!t || this._state._victory) return;
+    const idx = this._state.currentIdx;
+    if (idx >= t.objectives.length) {
+      this.checkVictory();
+      return;
+    }
+    const obj = t.objectives[idx];
+    document.getElementById('tut-title').textContent = obj.title;
+    document.getElementById('tut-instruction').textContent = obj.instruction;
+    document.getElementById('tut-tip').textContent = obj.tip || '';
+    document.getElementById('tut-progress').textContent = `Step ${idx + 1}/${t.objectives.length}`;
+    document.getElementById('tut-complete').style.display = 'none';
+
+    // Show extra info
+    const extra = document.getElementById('tut-extra');
+    if (obj.extra_info) {
+      extra.textContent = obj.extra_info.join('\n');
+      extra.style.display = 'block';
+    } else {
+      extra.style.display = 'none';
+    }
+
+    // Show target
+    const target = document.getElementById('tut-target');
+    if (obj.target) {
+      target.textContent = `🎯 Goal: ${obj.target.count} ${obj.target.unit}`;
+      target.style.display = 'block';
+    } else {
+      target.style.display = 'none';
+    }
+    this._state.currentIdx++;
+  },
+
+  completeObjective(obj) {
+    if (this._state.completed.has(obj.id)) return;
+    this._state.completed.add(obj.id);
+    const complete = document.getElementById('tut-complete');
+    document.getElementById('tut-complete-msg').textContent = obj.complete_msg || 'Done!';
+    complete.style.display = 'flex';
+    // Auto-advance after 5 seconds
+    setTimeout(() => this.nextObjective(), 5000);
+  },
+
+  checkTriggers() {
+    if (!this._state.active || this._state._victory) return;
+    const t = window.S4WN_TUTORIAL;
+    if (!t) return;
+
+    // Get current objective (the one we're working on, not yet completed)
+    const currentObj = this._state.currentIdx > 0 ?
+      t.objectives[this._state.currentIdx - 1] : null;
+    if (!currentObj || this._state.completed.has(currentObj.id)) return;
+
+    const trig = currentObj.trigger;
+    if (!trig) return;
+
+    let triggered = false;
+
+    // Check building triggers
+    if (trig.building || trig.buildings) {
+      const buildings = this.snapshotBuildings();
+      if (trig.building) {
+        const count = buildings.filter(b => b.type === trig.building).length;
+        if (count >= (trig.min || 1)) triggered = true;
+      }
+      if (trig.buildings && trig.minTotal) {
+        let total = 0;
+        for (const bt of trig.buildings) {
+          total += buildings.filter(b => b.type === bt).length;
+        }
+        if (total >= trig.minTotal) triggered = true;
+      }
+    }
+
+    // Check unit triggers
+    if (trig.unit) {
+      const units = this.snapshotUnits();
+      const count = units.filter(u => u.type === trig.unit).length;
+      if (count >= (trig.min || 1)) triggered = true;
+    }
+
+    // Check target (e.g., 50 soldiers)
+    if (currentObj.target) {
+      const units = this.snapshotUnits();
+      const count = units.filter(u => u.type === currentObj.target.unit).length;
+      if (count >= currentObj.target.count) triggered = true;
+    }
+
+    // message_shown trigger (for info-only steps)
+    if (trig.message_shown) triggered = true;
+
+    if (triggered) {
+      this.completeObjective(currentObj);
+    }
+  },
+
+  snapshotBuildings() {
+    // Try to get buildings from game state
+    const result = [];
+    try {
+      if (typeof get_buildings === 'function') {
+        const json = get_buildings();
+        if (json) {
+          const data = JSON.parse(json);
+          for (const b of (data.buildings || [])) {
+            result.push({ type: b.type || b.kind || b.id || '', owner: b.owner_id || 0 });
+          }
+        }
+      }
+    } catch(e) { /* silently ignore — DOM/poll approach */ }
+    return result;
+  },
+
+  snapshotUnits() {
+    const result = [];
+    try {
+      if (typeof get_units === 'function') {
+        const json = get_units();
+        if (json) {
+          const data = JSON.parse(json);
+          for (const u of (data.units || [])) {
+            result.push({ type: u.type || u.kind || '', owner: u.owner_id || 0 });
+          }
+        }
+      }
+    } catch(e) {}
+    return result;
+  },
+
+  checkVictory() {
+    if (this._state._victory) return;
+    const t = window.S4WN_TUTORIAL;
+    const v = t.victory;
+    document.getElementById('tut-title').textContent = v.title;
+    document.getElementById('tut-instruction').textContent = v.message.join('\n');
+    document.getElementById('tut-tip').textContent = '';
+    document.getElementById('tut-extra').style.display = 'none';
+    document.getElementById('tut-target').style.display = 'none';
+    document.getElementById('tut-complete').style.display = 'none';
+    document.getElementById('tut-progress').textContent = '🏆 Complete!';
+    this._state._victory = true;
+  },
+
+  tick() {
+    if (!this._state.active) return;
+    this.checkTriggers();
+  },
+
+  stop() {
+    this._state.active = false;
+    document.getElementById('tutorial-panel').classList.remove('open');
+  },
+};
+
+// Initialize when DOM loads
+document.addEventListener('DOMContentLoaded', () => Tutorial.init());
+
+// ── Tutorial Button Handler ──────────────────────────────────────────────────
+document.getElementById('btn-tutorial')?.addEventListener('click', () => {
+  closeMenu();
+  // Set map to tutorial and start
+  const mapSelect = document.getElementById('ng-map');
+  if (mapSelect) mapSelect.value = 'tutorial';
+  const diffSelect = document.getElementById('ng-difficulty');
+  if (diffSelect) diffSelect.value = 'easy';
+  const nameInput = document.getElementById('ng-name');
+  if (nameInput) nameInput.value = 'Young Chieftain';
+  // Start the game directly
+  document.getElementById('ng-name').value = 'Young Chieftain';
+  document.getElementById('ng-map').value = 'tutorial';
+  document.getElementById('ng-difficulty').value = 'easy';
+  startNewGame().then(() => {
+    Tutorial.start();
+    // Register tick callback
+    const origTick = window._tutorialTick;
+    if (!origTick) {
+      window._tutorialTick = setInterval(() => Tutorial.tick(), 1000);
+    }
+  });
+});
+
+// Override startNewGame to start tutorial when appropriate
+const _origStartNewGame = startNewGame;
+startNewGame = async function() {
+  await _origStartNewGame.apply(this, arguments);
+  const mapType = document.getElementById('ng-map').value;
+  if (mapType === 'tutorial') {
+    setTimeout(() => Tutorial.start(), 500);
+    if (!window._tutorialTick) {
+      window._tutorialTick = setInterval(() => Tutorial.tick(), 1000);
+    }
+  } else {
+    Tutorial.stop();
+  }
+};
+</script>
 </body>
 </html>

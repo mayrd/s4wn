@@ -36,12 +36,6 @@
     "name_de": "Schwefel"
   },
   {
-    "id": "Clay",
-    "category": "raw",
-    "icon": "🧱",
-    "name_de": "Lehm"
-  },
-  {
     "id": "Water",
     "category": "raw",
     "icon": "💧",

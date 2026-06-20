@@ -946,7 +946,7 @@ window.S4WN_CONFIG = {
     {
       "id": "Planks",
       "category": "processed",
-      "icon": "🪵",
+      "icon": "🟫",
       "name_de": "Bretter",
       "name_en": "Planks"
     },
@@ -1319,13 +1319,11 @@ window.S4WN_CONFIG = {
       "Stonecutter",
       "Mine",
       "Smelter",
-      "Clay Pit",
       "Hemp Farm"
     ],
     "Processing": [
       "Toolsmith",
       "Weaponsmith",
-      "Brickworks",
       "Ropemaker"
     ],
     "Military": [

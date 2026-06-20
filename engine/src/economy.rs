@@ -47,7 +47,6 @@ pub enum ResourceType {
     Grain = 7,    // from farming
     Meat = 8,     // from hunting
     Water = 9,    // from waterworks
-    Clay = 10,    // from clay pit
     Honey = 12,   // from apiary
 
     // Processed goods (produced by buildings)
@@ -65,7 +64,7 @@ pub enum ResourceType {
 
 impl ResourceType {
     /// Total number of distinct resource types
-    pub const COUNT: usize = 24;
+    pub const COUNT: usize = 23;
 
     /// Whether this is a raw resource (harvested from the map)
     pub fn is_raw(self) -> bool {
@@ -90,7 +89,6 @@ impl ResourceType {
             ResourceType::Grain => "Grain",
             ResourceType::Meat => "Meat",
             ResourceType::Water => "Water",
-            ResourceType::Clay => "Clay",
             ResourceType::Honey => "Honey",
             ResourceType::Planks => "Planks",
             ResourceType::Tools => "Tools",
@@ -131,7 +129,6 @@ Resource::Grain => Some(ResourceType::Grain),
             7 => Some(ResourceType::Grain),
             8 => Some(ResourceType::Meat),
             9 => Some(ResourceType::Water),
-            10 => Some(ResourceType::Clay),
             12 => Some(ResourceType::Honey),
             16 => Some(ResourceType::Planks),
             17 => Some(ResourceType::Tools),
@@ -148,7 +145,7 @@ Resource::Grain => Some(ResourceType::Grain),
     /// Resource group for UI categorization (#47).
     pub fn group_name(self) -> &'static str {
         match self {
-            ResourceType::Wood | ResourceType::Stone | ResourceType::Planks | ResourceType::Clay => "Construction",
+            ResourceType::Wood | ResourceType::Stone | ResourceType::Planks => "Construction",
             ResourceType::Water
             | ResourceType::Grain
             | ResourceType::Fish
@@ -3576,7 +3573,7 @@ mod tests {
             (ResourceType::Wood, 200), (ResourceType::Stone, 200),
             (ResourceType::IronOre, 80), (ResourceType::Coal, 80), (ResourceType::Gold, 50),
             (ResourceType::Grain, 60), (ResourceType::Meat, 40), (ResourceType::Fish, 40),
-            (ResourceType::Water, 30), (ResourceType::Clay, 40), (ResourceType::Honey, 30),
+            (ResourceType::Water, 30), (ResourceType::Honey, 30),
             (ResourceType::Honey, 30), (ResourceType::Tools, 20), (ResourceType::Weapons, 15),
             (ResourceType::Planks, 30), (ResourceType::Planks, 20), (ResourceType::IronIngots, 15),
             (ResourceType::Flour, 20),
@@ -3682,7 +3679,6 @@ mod tests {
         assert_eq!(ResourceType::Coal.group_name(), "Metal");
         assert_eq!(ResourceType::Gold.group_name(), "Metal");
         assert_eq!(ResourceType::Sulfur.group_name(), "Metal");
-        assert_eq!(ResourceType::Clay.group_name(), "Construction");
         // Metal Products group
         assert_eq!(ResourceType::Tools.group_name(), "Metal Products");
         assert_eq!(ResourceType::Weapons.group_name(), "Metal Products");

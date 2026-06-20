@@ -218,6 +218,119 @@ impl Map {
         map
     }
 
+    /// Generate a tutorial map — hand-crafted for the guided campaign.
+    /// Creates a player-friendly valley with forests, mountains with ore,
+    /// farmland, a lake for fishing, and an enemy outpost in the NE corner.
+    pub fn generate_tutorial(width: usize, height: usize) -> Self {
+        let mut map = Map::new(width, height);
+        let cx = width / 2;
+        let cy = height;
+
+        for y in 0..height {
+            for x in 0..width {
+                let t = map.get_mut(x, y).unwrap();
+
+                // Distance from player HQ (south-center)
+                let dx = x as f32 - cx as f32;
+                let dy = y as f32 - (cy - 16) as f32;
+                let dist_from_hq = (dx * dx + dy * dy).sqrt();
+
+                // NE corner enemy outpost area
+                let ex = x as f32 - (width - 8) as f32;
+                let ey = y as f32 - 8.0;
+                let dist_from_enemy = (ex * ex + ey * ey).sqrt();
+
+                // West lake
+                let lake_dx = x as f32 - 10.0;
+                let lake_dy = y as f32 - 20.0;
+                let dist_from_lake = (lake_dx * lake_dx * 0.5 + lake_dy * lake_dy).sqrt();
+
+                // Mountains in the north
+                let mt_dx = x as f32 - cx as f32 * 0.9;
+                let mt_dy = y as f32 - 20.0;
+                let dist_from_mt = (mt_dx * mt_dx * 0.3 + mt_dy * mt_dy).sqrt();
+
+                // Determine terrain
+                if dist_from_lake < 3.5 {
+                    t.terrain = Terrain::Water;
+                } else if dist_from_enemy < 4.0 {
+                    // Enemy base area — flat deforested ground
+                    t.terrain = Terrain::Grass;
+                } else if dist_from_mt < 7.0 && dist_from_mt > 4.0 {
+                    t.terrain = Terrain::Mountain;
+                } else if dist_from_hq < 6.0 && y > (height - 20) {
+                    // Immediate HQ area — flat grass for building
+                    t.terrain = Terrain::Grass;
+                } else if x < 18 && y < 15 && dist_from_lake > 4.0 {
+                    t.terrain = Terrain::Water; // NW shallow water
+                } else {
+                    // Procedural biome for remaining tiles
+                    let nx = x as f32 / width as f32;
+                    let ny = y as f32 / height as f32;
+                    let n = layered_noise(nx + 0.3, ny, 99);
+                    if n > 0.55 {
+                        t.terrain = Terrain::Forest;
+                    } else if n < -0.45 {
+                        t.terrain = Terrain::Grass;
+                    } else if n < 0.1 && n > -0.1 {
+                        t.terrain = Terrain::Grass; // patches of grass in forest
+                    } else {
+                        t.terrain = Terrain::Grass;
+                    }
+                }
+
+                t.elevation = match t.terrain {
+                    Terrain::Mountain => 0.7,
+                    Terrain::Water => -0.3,
+                    _ => 0.15,
+                };
+            }
+        }
+
+        // Place specific resources
+        let resources = [
+            // Forest near HQ for Woodcutter (south)
+            (28, 44, Terrain::Forest, None::<Resource>),
+            (30, 43, Terrain::Forest, None),
+            (32, 42, Terrain::Forest, None),
+            (34, 43, Terrain::Forest, None),
+            (36, 44, Terrain::Forest, None),
+            (26, 46, Terrain::Forest, None),
+            (38, 46, Terrain::Forest, None),
+            // Stone near HQ
+            (38, 48, Terrain::Grass, Some(Resource::Stone)),
+            (40, 49, Terrain::Grass, Some(Resource::Stone)),
+            (42, 47, Terrain::Grass, Some(Resource::Stone)),
+            // Mountains with ore (north)
+            (28, 20, Terrain::Mountain, Some(Resource::Iron)),
+            (30, 18, Terrain::Mountain, Some(Resource::Coal)),
+            (32, 19, Terrain::Mountain, Some(Resource::Gold)),
+            (35, 21, Terrain::Mountain, Some(Resource::Iron)),
+            (37, 19, Terrain::Mountain, Some(Resource::Sulfur)),
+            (25, 22, Terrain::Mountain, Some(Resource::Coal)),
+            // Farmland (east of HQ)
+            (42, 40, Terrain::Grass, Some(Resource::Grain)),
+            (44, 42, Terrain::Grass, Some(Resource::Grain)),
+            (46, 40, Terrain::Grass, Some(Resource::Grain)),
+            // Forest with game for hunting (west)
+            (15, 35, Terrain::Forest, Some(Resource::Game)),
+            (17, 37, Terrain::Forest, Some(Resource::Game)),
+            // Fish in lake
+            (10, 20, Terrain::Water, Some(Resource::Fish)),
+            (12, 22, Terrain::Water, Some(Resource::Fish)),
+        ];
+
+        for (x, y, terrain, resource) in resources {
+            if x < width && y < height {
+                let t = map.get_mut(x, y).unwrap();
+                t.terrain = terrain;
+                t.resource = resource;
+            }
+        }
+
+        map
+    }
+
     /// Place resources on appropriate terrain tiles
     fn place_resources(&mut self, seed: u64) {
         for y in 0..self.height {

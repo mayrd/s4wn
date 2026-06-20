@@ -397,45 +397,6 @@
     "name_de": "Straßenbauer"
   },
   {
-    "id": "Clay Pit",
-    "category": "Raw Materials",
-    "cost": {
-      "Wood": 4,
-      "Stone": 2
-    },
-    "inputs": [],
-    "outputs": [
-      "Clay"
-    ],
-    "interval": 25,
-    "build_time": 25,
-    "tool": "Shovel",
-    "workers": 1,
-    "icon": "🧱",
-    "name_de": "Lehmgrube",
-    "status": "planned"
-  },
-  {
-    "id": "Brickworks",
-    "category": "Processing",
-    "cost": {
-      "Stone": 5,
-      "Planks": 5
-    },
-    "inputs": [
-      "Clay"
-    ],
-    "outputs": [
-      "Bricks"
-    ],
-    "interval": 30,
-    "build_time": 35,
-    "tool": "Hammer",
-    "workers": 1,
-    "icon": "🧱",
-    "name_de": "Ziegelei"
-  },
-  {
     "id": "Hemp Farm",
     "category": "Raw Materials",
     "cost": {

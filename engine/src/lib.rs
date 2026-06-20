@@ -2883,6 +2883,7 @@ pub fn generate_map(map_type: &str, width: u32, height: u32) -> String {
             // All types use the same procedural gen for now; distinct biomes TBD
             Map::generate_demo(w, h)
         }
+        "tutorial" => Map::generate_tutorial(w, h),
         _ => Map::generate_demo(w, h),
     };
     map.to_json()
@@ -3548,7 +3549,6 @@ impl App {
             "Siege Workshop" => "siegeworkshop",
             "Shipyard" => "shipyard",
             "Road Layer" => "roadlayer",
-            "Clay Pit" => "claypit",
             "Apiary" => "apiary",
             "Mead Maker" => "meadmaker",
             // Roman unique

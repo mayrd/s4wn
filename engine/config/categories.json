@@ -15,13 +15,11 @@
     "Stonecutter",
     "Mine",
     "Smelter",
-    "Clay Pit",
     "Hemp Farm"
   ],
   "Processing": [
     "Toolsmith",
     "Weaponsmith",
-    "Brickworks",
     "Ropemaker"
   ],
   "Military": [
