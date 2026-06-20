@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6 — Sound Effects 🔈 (424 tests)
-| **Last updated:** 2026-06-20 (Session 118 — Sound effects system via Web Audio API)
+| **Status:** Phase 6 — Day/Night Lighting Fix 🌗 (435 tests)
+| **Last updated:** 2026-06-20 (Session 119 — Corrected day/night cycle + Hermite smoothstep)
 
 ---
 
@@ -20,6 +20,7 @@ For EVERY feature, follow this exact sequence:
 2. TEST CASES    — What tests must pass? Write them FIRST (they WILL fail initially).
 3. IMPLEMENT     — Write the minimum code to make tests pass.
 4. VERIFY        — cargo test must be green. No exceptions.
+7. Add map editor mode (toggle grid overlay, click to paint terrain)
 5. COMMIT        — Push with tests passing.
 ```
 
@@ -150,7 +151,7 @@ Each phase lists objectives with test cases and implementation status.
 
 ## Test Suite Reference
 
-### Engine Tests (415 passing)
+### Engine Tests (435 passing)
 ```
 economy::tests              ~90 tests    Production chains, costs, tools, nation modifiers, territory validation
 nation::tests                21 tests    Nation data, unique buildings, specialists
@@ -340,6 +341,7 @@ protocol::tests               5 tests    Message serialization, room management
 
 
 || 118 | 2026-06-20 | Sound effects: procedural Web Audio API Sfx module (6 sounds: UIClick, Build, Combat, Death, Error, MenuToggle), hooked into building placement/UI/menu, 16 JS tests, all 424 engine tests green |
+|| 119 | 2026-06-20 | Day/night lighting fix: corrected sun_angle (shift by -π/2 so noon=overhead, midnight=nadir), fixed day_light + resource glow in fragment shader, Hermite smoothstep for natural transitions, 11 new tests, 435 engine + 30 server = 465 total |
 || **87** | **2026-06-18** | **Dark Tribe unique buildings: 7 BuildingType variants (DarkTemple=54..DemonGate=60), nation-gated placement, production chains (DarkTemple→Wine, DarkGarden→Grapes, MushroomFarm→Grain, DemonGate→Weapons), building colors, costs, tools, config. Added Grapes+Wine to resources.json. 265 tests pass.** |
 |
 || **100** | **2026-06-19** | **Phase 5 Step 5: Terrain splat-map atlas (2048x512, 4 layers), a_splat vertex attribute (location 10), 4-layer splat blending in fragment shader, 8 new tests. 295 total.** |
@@ -367,6 +369,7 @@ protocol::tests               5 tests    Message serialization, room management
 2. ~~Add long-press context menu for tile info (inspector) on mobile~~ ✅ Done (Session 93)
 3. ~~Add orientation-change handler to recalculate viewport layout~~ ✅ Done (Session 94)
 4. ~~Optimize construction panel category collapse for small screens (accordion)~~ ✅ Done (Session 94)
+7. Add map editor mode (toggle grid overlay, click to paint terrain)
 5. ~~Add swipe gesture navigation for panel toggling~~ ✅ Done (Session 115)
 6. Test touch interactions on actual mobile viewport via Chrome DevTools responsive mode
 
@@ -410,6 +413,7 @@ Concrete steps:
 2. Add model loader in Rust — parse model JSON, upload to GPU buffers
 3. Add model instance rendering — per-instance model-view-projection, texture binding
 4. Write model loader tests — verify parsing, buffer upload
+7. Add map editor mode (toggle grid overlay, click to paint terrain)
 5. Generate starter models — Castle, Farm, Sawmill, Worker, Soldier, Bowman
 
 ### Next Session — Concrete Steps
@@ -421,6 +425,7 @@ All Phase 5 steps are now complete:
 2. ✅ u_vp mat4 uniform + WASM camera exports
 3. ✅ Height-displaced terrain mesh + vertex normals
 4. ✅ Fragment shader diffuse lighting
+7. Add map editor mode (toggle grid overlay, click to paint terrain)
 5. ✅ Terrain splat-map atlas
 6. ✅ Water shader & refraction
 7. ✅ 3D model loading (JSON mesh parser, 30 OBJ→JSON conversions, building/unit instances, instanced rendering)
@@ -435,6 +440,7 @@ All Phase 5 steps are now complete:
 2. ~~Add model animation support (unit wobble)~~ ✅ Done (Session 113)
 3. ~~Add particle effects for building placement/combat~~ ✅ Done (Session 114) — green sparkles on build, orange explosions on unit death, 32 new tests
 4. ~~Improve mobile UI: add swipe gestures for panel navigation~~ ✅ Done (Session 115) — handlePanelSwipe() with 60px/400ms threshold, swipe hint indicators, CSS slide transitions
+7. Add map editor mode (toggle grid overlay, click to paint terrain)
 5. ~~Add ambient particle effects (foliage, chimney smoke)~~ ✅ Done (Session 115) — spawn_smoke_effect + spawn_leaf_effect with WASM exports, game loop integration
 6. ~~Add unit death animation (scale-down + fade before removal)~~ ✅ Done (Session 116) — Dying state, 1.0s timer, death_animation_progress() WASM export, 8 new tests
 7. Add sound effects system (Web Audio API)
@@ -443,11 +449,11 @@ All Phase 5 steps are now complete:
 
 1. ✅ Add Web Audio API sound effects module (Done Session 118)
 2. ✅ Fix issue #48: Add debug mode with console commands (Done Session 117)
-3. Optimize particle rendering: use instanced rendering for better performance
-4. Add day/night lighting transition smoothing
-5. Add map editor mode (toggle grid overlay, click to paint terrain)
-6. Hook death sounds into unit death animation callback
-7. Hook combat sounds into combat events from Rust engine
+3. ✅ Add day/night lighting transition smoothing (Done Session 119)
+4. Optimize particle rendering: use instanced rendering for better performance
+5. Hook death sounds into unit death animation callback
+6. Hook combat sounds into combat events from Rust engine
+7. Add map editor mode (toggle grid overlay, click to paint terrain)
 
 ---
 
