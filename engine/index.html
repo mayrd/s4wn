@@ -1190,6 +1190,171 @@ const D = {
 };
 // ───────────────────────────────────────────────────────────────────────
 
+// ── Sound Effects System ────────────────────────────────────────────────
+// Procedural audio via Web Audio API — no external assets needed.
+// All sounds are generated from oscillators, noise, and filters in real time.
+const Sfx = (() => {
+    let ctx = null;
+
+    function getCtx() {
+        if (!ctx) {
+            try { ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+            catch(e) { return null; }
+        }
+        if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+        }
+        return ctx;
+    }
+
+    function vol() {
+        if (typeof settings !== 'undefined' && settings) {
+            if (!settings.sfxOn) return 0;
+            return (settings.masterVolume || 80) / 100;
+        }
+        return 0.8;
+    }
+
+    function gainNow(audioCtx, v, dur) {
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(v, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        return g;
+    }
+
+    function playUIClick() {
+        const c = getCtx(); if (!c) return;
+        const v = vol(); if (v <= 0) return;
+        const osc = c.createOscillator();
+        const g = gainNow(c, v * 0.15, 0.06);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, c.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, c.currentTime + 0.04);
+        osc.connect(g).connect(c.destination);
+        osc.start(c.currentTime);
+        osc.stop(c.currentTime + 0.06);
+    }
+
+    /** Building placement — solid thud + sparkle */
+    function playBuild() {
+        const c = getCtx(); if (!c) return;
+        const v = vol(); if (v <= 0) return;
+        const now = c.currentTime;
+        const osc1 = c.createOscillator();
+        const g1 = gainNow(c, v * 0.25, 0.25);
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(150, now);
+        osc1.frequency.exponentialRampToValueAtTime(60, now + 0.2);
+        osc1.connect(g1).connect(c.destination);
+        osc1.start(now); osc1.stop(now + 0.25);
+        const osc2 = c.createOscillator();
+        const g2 = gainNow(c, v * 0.12, 0.15);
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1800, now);
+        osc2.frequency.exponentialRampToValueAtTime(2400, now + 0.08);
+        osc2.connect(g2).connect(c.destination);
+        osc2.start(now); osc2.stop(now + 0.15);
+    }
+
+    /** Combat impact — noise burst + metallic ring */
+    function playCombat() {
+        const c = getCtx(); if (!c) return;
+        const v = vol(); if (v <= 0) return;
+        const now = c.currentTime;
+        const bufSize = Math.floor(c.sampleRate * 0.2);
+        const buf = c.createBuffer(1, bufSize, c.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (c.sampleRate * 0.04));
+        }
+        const noise = c.createBufferSource();
+        noise.buffer = buf;
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.setValueAtTime(800, now);
+        bp.Q.setValueAtTime(0.8, now);
+        const gn = gainNow(c, v * 0.3, 0.2);
+        noise.connect(bp).connect(gn).connect(c.destination);
+        noise.start(now); noise.stop(now + 0.2);
+        const osc = c.createOscillator();
+        const gr = gainNow(c, v * 0.1, 0.3);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.25);
+        osc.connect(gr).connect(c.destination);
+        osc.start(now); osc.stop(now + 0.3);
+    }
+
+    /** Unit death — descending tone */
+    function playDeath() {
+        const c = getCtx(); if (!c) return;
+        const v = vol(); if (v <= 0) return;
+        const now = c.currentTime;
+        const osc = c.createOscillator();
+        const g = gainNow(c, v * 0.2, 0.5);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.45);
+        const lp = c.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.setValueAtTime(2000, now);
+        lp.frequency.exponentialRampToValueAtTime(300, now + 0.4);
+        osc.connect(lp).connect(g).connect(c.destination);
+        osc.start(now); osc.stop(now + 0.5);
+    }
+
+    /** Error / placement fail — buzzy rejection */
+    function playError() {
+        const c = getCtx(); if (!c) return;
+        const v = vol(); if (v <= 0) return;
+        const now = c.currentTime;
+        const osc = c.createOscillator();
+        const g = gainNow(c, v * 0.12, 0.25);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.setValueAtTime(160, now + 0.1);
+        osc.connect(g).connect(c.destination);
+        osc.start(now); osc.stop(now + 0.25);
+    }
+
+    /** Menu open/close — soft whoosh */
+    function playMenuToggle() {
+        const c = getCtx(); if (!c) return;
+        const v = vol(); if (v <= 0) return;
+        const now = c.currentTime;
+        const bufSize = Math.floor(c.sampleRate * 0.15);
+        const buf = c.createBuffer(1, bufSize, c.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (c.sampleRate * 0.06));
+        }
+        const noise = c.createBufferSource();
+        noise.buffer = buf;
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.setValueAtTime(3000, now);
+        bp.Q.setValueAtTime(0.5, now);
+        const gn = gainNow(c, v * 0.08, 0.15);
+        noise.connect(bp).connect(gn).connect(c.destination);
+        noise.start(now); noise.stop(now + 0.15);
+    }
+
+    // ── Test interface ──────────────────────────────────────────────
+    function test() {
+        const c = getCtx();
+        return JSON.stringify({
+            ctxAvailable: !!c,
+            state: c ? c.state : 'none',
+            sampleRate: c ? c.sampleRate : 0,
+        });
+    }
+
+    return { playUIClick, playBuild, playCombat, playDeath, playError, playMenuToggle, test };
+})();
+
+window.Sfx = Sfx;
+// ────────────────────────────────────────────────────────────────────────
+
 // load_map_json is accessed dynamically to avoid cache mismatches
 let load_map_json = null;
 
@@ -1758,6 +1923,7 @@ setTimeout(() => {
 
 function openMenu() {
     showMenu = true;
+    try { Sfx.playMenuToggle(); } catch(e) {}
     menu.classList.add('active');
     updateContinueButton();
     renderRecentFiles();
@@ -2706,9 +2872,12 @@ canvas.addEventListener('click', (e) => {
             if (typeof spawn_build_effect === 'function') {
                 spawn_build_effect(t.x + 0.5, t.y + 0.5);
             }
+            // Sound effect for successful building placement
+            try { Sfx.playBuild(); } catch(e) {}
             lastAffordabilityUpdate = 0; // immediate refresh
         } else {
             placementStatus.textContent = `❌ ${r.error}`;
+            try { Sfx.playError(); } catch(e) {}
             setTimeout(() => {
                 if (placementMode) placementStatus.textContent = `Place ${placementMode} — click tile · Esc to cancel`;
             }, 2000);
@@ -4546,6 +4715,7 @@ function populateConstructionPanel() {
 }
 
 function selectBuilding(name) {
+    try { Sfx.playUIClick(); } catch(e) {}
     // Use the existing placement system
     placementButtons.forEach(b => b.classList.remove('active'));
     placementMode = name;
