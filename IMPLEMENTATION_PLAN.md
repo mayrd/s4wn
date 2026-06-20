@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6 — Death Animation ✨ (423 tests)
-| **Last updated:** 2026-06-20 (Session 116 — unit death animation, 423 tests)
+| **Status:** Phase 6 — Death Animation ✨ (424 tests)
+| **Last updated:** 2026-06-20 (Session 117 — remove non-S4 resources, resource categorization)
 
 ---
 
@@ -377,7 +377,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=36. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 423 engine + 30 server = 453 total (423 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 424 engine + 30 server = 454 total (424 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
 ## Next Session — Concrete Steps
 
@@ -440,10 +440,10 @@ All Phase 5 steps are now complete:
 **Next Session — Concrete Steps:**
 
 1. Add Web Audio API sound effects module with procedurally generated sounds (UI clicks, building placement, combat)
-2. Optimize particle rendering: use instanced rendering for better performance
-3. Add day/night lighting transition smoothing
-4. Add map editor mode (toggle grid overlay, click to paint terrain)
-5. Add building damage/health system (buildings can be attacked and destroyed)
+2. Fix issue #48: Add debug mode with console commands for UI display debugging
+3. Optimize particle rendering: use instanced rendering for better performance
+4. Add day/night lighting transition smoothing
+5. Add map editor mode (toggle grid overlay, click to paint terrain)
 
 ---
 
