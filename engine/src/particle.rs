@@ -95,21 +95,29 @@ impl ParticleSystem {
         false
     }
 
+    /// Spawn a burst of particles in a circular pattern.
+    /// Uses O(n) scanning for dead slots (not O(n^2) per burst iteration).
     pub fn spawn_burst(&mut self, x: f32, y: f32, z: f32, count: u32,
                         color_r: f32, color_g: f32, color_b: f32,
                         speed: f32, life: f32, size: f32) -> u32 {
         let mut spawned = 0u32;
+        let max = self.particles.len();
+        let mut dead_idx = 0usize;
         for i in 0..count {
-            if self.particles.iter().filter(|p| !p.alive).count() == 0 { break; }
+            // Find next dead particle slot (single-pass cursor, O(n) total)
+            while dead_idx < max && self.particles[dead_idx].alive {
+                dead_idx += 1;
+            }
+            if dead_idx >= max { break; }
             let angle = (i as f32 / count as f32) * 6.28318;
             let up = 0.5 + (i as f32 * 0.17).sin().abs() * 0.5;
             let h_speed = speed * (1.0 - up) * 0.7;
             let vx = angle.cos() * h_speed;
             let vy = angle.sin() * h_speed;
             let vz = up * speed * 1.5;
-            if self.spawn(x, y, z, vx, vy, vz, life, color_r, color_g, color_b, size) {
-                spawned += 1;
-            }
+            self.particles[dead_idx].spawn(x, y, z, vx, vy, vz, life, color_r, color_g, color_b, size);
+            spawned += 1;
+            dead_idx += 1;
         }
         spawned
     }
@@ -409,6 +417,20 @@ mod tests {
         for p in &alive {
             assert!(p.vz > 0.0, "smoke particles should rise (vz > 0)");
         }
+    }
+
+    #[test]
+    #[test]
+    fn test_burst_alive_count_after_clear_then_burst() {
+        // Regression: burst should work after clearing and re-spawning
+        let mut ps = ParticleSystem::new();
+        ps.spawn_burst(0.0, 0.0, 0.0, 50, 1.0, 0.0, 0.0, 2.0, 1.0, 6.0);
+        assert_eq!(ps.alive_count(), 50);
+        ps.clear();
+        assert_eq!(ps.alive_count(), 0);
+        let n = ps.spawn_burst(0.0, 0.0, 0.0, 30, 0.0, 1.0, 0.0, 2.0, 1.0, 6.0);
+        assert_eq!(n, 30);
+        assert_eq!(ps.alive_count(), 30);
     }
 
     #[test]
