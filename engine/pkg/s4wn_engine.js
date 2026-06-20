@@ -180,6 +180,24 @@ export function get_building_summary() {
 }
 
 /**
+ * Get camera state for minimap viewport calculation.
+ * Returns JSON: {"center_x":10.5,"center_y":12.3,"zoom":1.0,"vp_w":1280,"vp_h":720}
+ * @returns {string}
+ */
+export function get_camera_state() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_camera_state();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Get the current game speed multiplier.
  * @returns {number}
  */

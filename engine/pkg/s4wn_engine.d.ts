@@ -69,6 +69,12 @@ export function get_building_info(idx: number): string;
 export function get_building_summary(): string;
 
 /**
+ * Get camera state for minimap viewport calculation.
+ * Returns JSON: {"center_x":10.5,"center_y":12.3,"zoom":1.0,"vp_w":1280,"vp_h":720}
+ */
+export function get_camera_state(): string;
+
+/**
  * Get the current game speed multiplier.
  */
 export function get_game_speed(): number;
@@ -373,6 +379,7 @@ export interface InitOutput {
     readonly get_build_cost: (a: number, b: number) => [number, number];
     readonly get_building_info: (a: number) => [number, number];
     readonly get_building_summary: () => [number, number];
+    readonly get_camera_state: () => [number, number];
     readonly get_game_speed: () => number;
     readonly get_game_state: () => [number, number];
     readonly get_map_data: () => [number, number];

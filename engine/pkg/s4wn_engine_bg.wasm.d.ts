@@ -11,6 +11,7 @@ export const generate_map: (a: number, b: number, c: number, d: number) => [numb
 export const get_build_cost: (a: number, b: number) => [number, number];
 export const get_building_info: (a: number) => [number, number];
 export const get_building_summary: () => [number, number];
+export const get_camera_state: () => [number, number];
 export const get_game_speed: () => number;
 export const get_game_state: () => [number, number];
 export const get_map_data: () => [number, number];

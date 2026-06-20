@@ -960,7 +960,6 @@
       <div class="recent-title" data-i18n="recent_files">📁 Recent Files</div>
       <div class="recent-list" id="recent-list"><span class="recent-empty">None yet</span></div>
     </div>
-    <button class="menu-btn" id="btn-demo">🗺️ Demo Map</button>
     <button class="menu-btn" id="btn-tutorial">📖 Tutorial</button>
     <button class="menu-btn" id="btn-continue" style="display:none">💾 Continue Game</button>
     <button class="menu-btn" onclick="openNewGame()" data-i18n="new_game">🆕 New Game</button>
@@ -968,7 +967,7 @@
     <button class="menu-btn secondary" onclick="window.open('https://github.com/mayrd/s4wn','_blank')">
       🔗 GitHub Repository
     </button>
-    <div class="menu-hint" data-i18n="menu_hint">or press <kbd>L</kbd> to load · <kbd>D</kbd> for demo · <kbd>S</kbd> for settings</div>
+    <div class="menu-hint" data-i18n="menu_hint">or press <kbd>L</kbd> to load · <kbd>S</kbd> for settings</div>
     <div class="menu-version">2026.06.16-20.53</div>
   </div>
 </div>
@@ -1148,7 +1147,7 @@
 <div id="debug-panel">
   <div id="fps" title="Click to toggle debug panel">--</div>
   <div id="debug-extra" style="display:none">
-    <span id="debug-time"></span> | <span id="debug-tiles"></span> | <span id="debug-buildings"></span>
+    <span id="debug-time"></span> | <span id="debug-ticks"></span> | <span id="debug-tiles"></span> | <span id="debug-buildings"></span>
   </div>
 </div>
 
@@ -1220,7 +1219,8 @@ import init, {
     load_model_json,
     populate_model_instances_from_game,
     add_model_instance,
-} from './pkg/s4wn_engine.js?v=38';
+    get_camera_state,
+} from './pkg/s4wn_engine.js?v=40';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -1934,49 +1934,6 @@ let selectedUnit = null;     // unit id or null
         container.appendChild(p);
     }
 })();
-
-setTimeout(() => {
-    splash.classList.add('hidden');
-    document.body.classList.remove('splash-active');
-    // Auto-load demo map so tiles are visible immediately
-    // Wait for engine to be ready (WASM init + map load)
-    let autoLoadAttempts = 0;
-    const autoLoadInterval = setInterval(() => {
-        autoLoadAttempts++;
-        if (autoLoadAttempts > 30) { // 30 × 200ms = 6s max wait
-            clearInterval(autoLoadInterval);
-            console.warn('Engine init timeout — opening menu');
-            openMenu();
-            return;
-        }
-        if (typeof generate_map !== 'function' || typeof load_map_json !== 'function') {
-            return; // Engine not ready yet
-        }
-        try {
-            const mapJson = generate_map('normal', 64, 64);
-            const result = load_map_json(mapJson);
-            if (result === 'ok') {
-                add_starting_resources('easy');
-                setup_starter_base(3);
-                set_player_nation('Roman');
-                console.log('Demo map auto-loaded successfully');
-                clearInterval(autoLoadInterval);
-                // Close menu so tiles are visible
-                showMenu = false;
-                const menuEl = document.getElementById('menu');
-                if (menuEl) menuEl.classList.remove('active');
-            } else {
-                console.warn('Map load returned:', result);
-                clearInterval(autoLoadInterval);
-                openMenu();
-            }
-        } catch(e) {
-            console.warn('Demo map auto-load failed:', e);
-            clearInterval(autoLoadInterval);
-            openMenu();
-        }
-    }, 200);
-}, 2000);
 
 function openMenu() {
     showMenu = true;
@@ -3084,9 +3041,6 @@ document.addEventListener('keydown', (e) => {
             openMenu();
             triggerLoad();
             break;
-        case 'd':
-            closeMenu();
-            break;
         case 's':
             openSettings();
             break;
@@ -3105,7 +3059,6 @@ document.addEventListener('keydown', (e) => {
 
 // ── Buttons ────────────────────────────────────────────────────────────
 document.getElementById('btn-load').addEventListener('click', triggerLoad);
-document.getElementById('btn-demo').addEventListener('click', closeMenu);
 document.getElementById('btn-continue').addEventListener('click', loadSavedGame);
 
 // Save Game button in pause overlay
@@ -3338,6 +3291,45 @@ function renderMinimap() {
     // Scale up display
     minimapEl.style.width = '150px';
     minimapEl.style.height = '150px';
+
+    // ── Draw viewport rectangle (red box) ──────────────────────────
+    try {
+        const camJson = get_camera_state ? get_camera_state() : null;
+        if (camJson) {
+            const cam = JSON.parse(camJson);
+            const iso_cos = 0.8660254;
+            const iso_sin = 0.5;
+            const base_tile = 48.0;
+            const tile_size = base_tile * cam.zoom;
+            const inv_cos = 1.0 / iso_cos;
+            const inv_sin = 1.0 / iso_sin;
+            const vpW = cam.vp_w;
+            const vpH = cam.vp_h;
+
+            function screenToWorld(sx, sy) {
+                const csx = sx - vpW * 0.5;
+                const csy = sy - vpH * 0.25;
+                const wx = (csx * inv_cos + csy * inv_sin) / tile_size + cam.center_x;
+                const wy = (csy * inv_sin - csx * inv_cos) / tile_size + cam.center_y;
+                return [Math.round(wx), Math.round(wy)];
+            }
+
+            const [tlX, tlY] = screenToWorld(0, 0);
+            const [trX, trY] = screenToWorld(vpW, 0);
+            const [brX, brY] = screenToWorld(vpW, vpH);
+            const [blX, blY] = screenToWorld(0, vpH);
+
+            mctx.strokeStyle = 'rgba(255, 60, 60, 0.9)';
+            mctx.lineWidth = 1;
+            mctx.beginPath();
+            mctx.moveTo(tlX, tlY);
+            mctx.lineTo(trX, trY);
+            mctx.lineTo(brX, brY);
+            mctx.lineTo(blX, blY);
+            mctx.closePath();
+            mctx.stroke();
+        }
+    } catch(e) { /* ignore minimap viewport errors */ }
 }
 
 // ── Settings ────────────────────────────────────────────────────────────
@@ -3348,7 +3340,6 @@ const LANG = {
     en: {
         menu_title: '⚔️ Game Menu',
         load_map: '📂 Load Map',
-        demo_map: '🗺️ Demo Map',
         continue_game: '💾 Continue Game',
         new_game: '🆕 New Game',
         settings: '⚙️ Settings',
@@ -3410,7 +3401,6 @@ const LANG = {
         detail_med: 'Med',
         detail_high: 'High',
         kb_load_map: 'Load Map',
-        kb_demo_map: 'Demo Map',
         kb_settings: 'Settings',
         kb_pause: 'Pause / Resume',
         kb_speed1: 'Game Speed 1×',
@@ -3489,7 +3479,6 @@ const LANG = {
         detail_med: 'Mittel',
         detail_high: 'Hoch',
         kb_load_map: 'Karte laden',
-        kb_demo_map: 'Demo-Karte',
         kb_settings: 'Einstellungen',
         kb_pause: 'Pause / Fortsetzen',
         kb_speed1: 'Spielgeschw. 1×',
@@ -3566,7 +3555,6 @@ const LANG = {
         detail_med: 'Medio',
         detail_high: 'Alto',
         kb_load_map: 'Cargar Mapa',
-        kb_demo_map: 'Mapa Demo',
         kb_settings: 'Configuración',
         kb_pause: 'Pausa / Reanudar',
         kb_speed1: 'Velocidad 1×',
@@ -3643,7 +3631,6 @@ const LANG = {
         detail_med: 'Moyen',
         detail_high: 'Haut',
         kb_load_map: 'Charger une Carte',
-        kb_demo_map: 'Carte Démo',
         kb_settings: 'Paramètres',
         kb_pause: 'Pause / Reprendre',
         kb_speed1: 'Vitesse 1×',
@@ -3888,7 +3875,6 @@ function resetSettings() {
 // ── Keyboard Bindings Display ─────────────────────────────────────────────
 const KEY_BINDINGS = [
     { key: 'L', key_i18n: 'kb_load_map' },
-    { key: 'D', key_i18n: 'kb_demo_map' },
     { key: 'S', key_i18n: 'kb_settings' },
     { key: 'P', key_i18n: 'kb_pause' },
     { key: '1', key_i18n: 'kb_speed1' },
@@ -4624,12 +4610,17 @@ async function main() {
                 fpsEl.textContent = currentFps + ' FPS';
                 // Update extra debug info
                 const dbgTime = document.getElementById('debug-time');
+                const dbgTicks = document.getElementById('debug-ticks');
                 const dbgTiles = document.getElementById('debug-tiles');
                 const dbgBldgs = document.getElementById('debug-buildings');
                 if (dbgTime) dbgTime.textContent = new Date().toLocaleTimeString();
+                if (dbgTicks) dbgTicks.textContent = `T${d.ticks}`;
                 if (dbgTiles) { try { const md = get_map_data(); if (md) { const m = JSON.parse(md); dbgTiles.textContent = m.width + '×' + m.height; } } catch(e) {} }
                 if (dbgBldgs) { try { const bs = get_building_summary(); if (dbgBldgs) dbgBldgs.textContent = JSON.parse(bs).length + ' bldgs'; } catch(e) {} }
                 hudStats.textContent = `ticks: ${d.ticks} | ⏱ ${formatGameTime(d.game_time)} | 🔍 ${d.zoom}×`;
+
+                // Nation HUD update (every frame, cheap)
+                updateNationHUD();
             }
 
             // Resource bar (throttled to every 2s internally)
@@ -5103,6 +5094,7 @@ window.__s4wn_debug = {
   add_starting_resources,
   set_game_speed,
   get_game_speed,
+  get_camera_state,
   get_game_state,
   restore_game_state,
   get_resource_counts,

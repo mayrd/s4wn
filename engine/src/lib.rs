@@ -2845,6 +2845,25 @@ pub fn set_paused(paused: bool) {
     }
 }
 
+/// Get camera state for minimap viewport calculation.
+/// Returns JSON: {"center_x":10.5,"center_y":12.3,"zoom":1.0,"vp_w":1280,"vp_h":720}
+#[wasm_bindgen]
+pub fn get_camera_state() -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            return format!(
+                r#"{{"center_x":{:.2},"center_y":{:.2},"zoom":{:.2},"vp_w":{},"vp_h":{}}}"#,
+                app.camera.center_x,
+                app.camera.center_y,
+                app.camera.zoom,
+                app.camera.viewport_width,
+                app.camera.viewport_height,
+            );
+        }
+    }
+    String::new()
+}
+
 /// Toggle the game pause state. Returns the new state.
 #[wasm_bindgen]
 pub fn toggle_pause() -> bool {
