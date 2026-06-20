@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6 — Bugfixes + Map Editor (439 tests)
-| **Last updated:** 2026-06-20 (Session 126 — Particle burst O(n) optimization + L3 deep-dive)
+| **Status:** Phase 6 — Bugfixes + Map Editor (446 tests)
+| **Last updated:** 2026-06-20 (Session 127 — Marquee drag-select for military units)
 
 ---
 
@@ -348,7 +348,8 @@ protocol::tests               5 tests    Message serialization, room management
 ||| **123** | **2026-06-20** | **Map editor mode: Ctrl+Click terrain painting + grid overlay dots. Ctrl+Click paints terrain at tile position via set_tile_terrain() WASM export. Shift+Click cycles terrain type 0-7. Grid overlay dots rendered at tile corners via Rust editor_grid flag. All 436 tests pass.** |
 ||| **124** | **2026-06-20** | **Map editor terrain palette UI: clickable 8-terrain type selector (Grass, Forest, Mountain, Water, Deep Water, Desert, Swamp, Snow) in floating panel. Edit button in bottom-left HUD toggles editor mode + grid overlay. Selected terrain highlighted with gold border. Shift+Click cycling preserved as secondary input, now updates palette. All 436 tests pass.** |
 ||| **125** | **2026-06-20** | **Map editor export: added `export_map_json()` WASM export that serializes current map to JSON. Added "Export JSON" button to terrain palette UI with Blob-triggered download. New test_export_map_json() test. 437 tests pass.** |
-||| **126** | **2026-06-20** | **Particle burst optimization: O(n) cursor-based dead-slot scan replaces per-iteration filter. New regression test. L3 deep-dive: confirmed encrypted data (256/256 unique bytes, no std compression). Format BLOCKED pending community docs. 439 engine + 30 server = 469 tests pass.** |
+||| **126** | **2026-06-20** | **Particle burst optimization: O(n) cursor-based dead-slot scan replaces per-iteration filter.
+|| **127** | **2026-06-20** | **Marquee drag-select for military units: Shift+drag box selection, WASM get_units_in_rect, multi-select UI, 5+2 new tests, WASM cache v=42** | New regression test. L3 deep-dive: confirmed encrypted data (256/256 unique bytes, no std compression). Format BLOCKED pending community docs. 439 engine + 30 server = 469 tests pass.** |
 || **87** | **2026-06-18** | **Dark Tribe unique buildings: 7 BuildingType variants (DarkTemple=54..DemonGate=60), nation-gated placement, production chains (DarkTemple→Wine, DarkGarden→Grapes, MushroomFarm→Grain, DemonGate→Weapons), building colors, costs, tools, config. Added Grapes+Wine to resources.json. 265 tests pass.** |
 |
 || **100** | **2026-06-19** | **Phase 5 Step 5: Terrain splat-map atlas (2048x512, 4 layers), a_splat vertex attribute (location 10), 4-layer splat blending in fragment shader, 8 new tests. 295 total.** |
@@ -389,7 +390,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=38. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 425 engine + 30 server = 455 total (425 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 446 engine + 30 server = 476 total (425 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
 ## Next Session — Concrete Steps
 
@@ -460,11 +461,15 @@ All Phase 5 steps are now complete:
 4. ✅ Hook death/combat sounds into Rust engine events via WASM (Done Session 120)
 5. ✅ Investigated issue #49 (Session 122) — L3 magic analyzed, error messages improved, findings documented on GitHub
 6. ✅ Add map editor mode (Ctrl+Click terrain painting + grid overlay) — Done Session 123
-7. Done: Optimize particle spawn_burst O(n) cursor scan (Session 126)
-8. Implement L3 map format parser — need to identify which community editor produces L3, get format docs
-9. Add unit selection box / marquee drag select for military units
+7. ✅ Done: Optimize particle spawn_burst O(n) cursor scan (Session 126)
+8. ✅ Add unit selection box / marquee drag select for military units — Done Session 127
+9. Implement L3 map format parser — need to identify which community editor produces L3, get format docs (BLOCKED)
 10. ✅ Add map editor terrain palette UI — Done Session 124
 11. ✅ Add map editor save/export functionality — Done Session 125
+12. Wire right-click move command for selected units — pathfinding integration for multi-unit orders
+13. Add selection highlight indicators on canvas (colored circles under selected units)
+14. Add attack-move command (A+click) for selected military units
+15. Implement .sav full campaign state restoration from parsed chunk data
 
 ---
 
