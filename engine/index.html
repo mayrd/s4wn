@@ -1228,7 +1228,8 @@ import init, {
     populate_model_instances_from_game,
     add_model_instance,
     get_camera_state,
-} from './pkg/s4wn_engine.js?v=40';
+    load_map_json,
+} from './pkg/s4wn_engine.js?v=41';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -1419,9 +1420,6 @@ const Sfx = (() => {
 
 window.Sfx = Sfx;
 // ────────────────────────────────────────────────────────────────────────
-
-// load_map_json is accessed dynamically to avoid cache mismatches
-let load_map_json = null;
 
 // ── Map preview state ────────────────────────────────────────────────────
 let pendingMapData = null;   // { width, height, tiles, filename }
@@ -4626,15 +4624,6 @@ async function main() {
         console.log('main() starting...');
         await init();
         console.log('WASM init complete');
-
-        // Dynamically import load_map_json to avoid cache-mismatch crashes
-        try {
-            const mod = await import('./pkg/s4wn_engine.js?v=38');
-            load_map_json = mod.load_map_json || null;
-            console.log('load_map_json loaded:', !!load_map_json);
-        } catch (e) {
-            console.warn('load_map_json not available (old WASM cache?) — map loading disabled');
-        }
 
         const w = window.innerWidth || document.documentElement.clientWidth || 1024;
         const h = window.innerHeight || document.documentElement.clientHeight || 768;

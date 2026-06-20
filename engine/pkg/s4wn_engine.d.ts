@@ -40,6 +40,11 @@ export function compute_mvp_json(input_json: string): string;
 export function decompress_sav_chunk(data: Uint8Array, expected_length: number): Uint8Array;
 
 /**
+ * Check if editor grid overlay is active.
+ */
+export function editor_grid_enabled(): boolean;
+
+/**
  * Generate a procedural map and return it as a JSON string.
  * map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
  * width/height: map dimensions (clamped to 16..1024)
@@ -293,6 +298,12 @@ export function set_player_nation(nation_name: string): boolean;
 export function set_textures_ready(): void;
 
 /**
+ * Set the terrain type at a tile position (map editor).
+ * terrain_id: 0=Grass, 1=Forest, 2=Mountain, 3=Water, 4=DeepWater, 5=Desert, 6=Swamp, 7=Snow
+ */
+export function set_tile_terrain(x: number, y: number, terrain_id: number): boolean;
+
+/**
  * Place a free Castle near map center and spawn starter settlers.
  * Called after load_map_json() + add_starting_resources() to set up the initial base.
  * settler_count: number of idle settlers to spawn (clamped to 1..8).
@@ -330,6 +341,11 @@ export function spawn_particle_burst(x: number, y: number, count: number, r: num
  * Spawn chimney smoke puffs at a building location.
  */
 export function spawn_smoke_effect(tile_x: number, tile_y: number): void;
+
+/**
+ * Toggle map editor grid overlay on/off. Returns new state.
+ */
+export function toggle_editor_grid(): boolean;
 
 /**
  * Toggle the game pause state. Returns the new state.
@@ -375,6 +391,7 @@ export interface InitOutput {
     readonly clear_particles: () => void;
     readonly compute_mvp_json: (a: number, b: number) => [number, number];
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
+    readonly editor_grid_enabled: () => number;
     readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
     readonly get_build_cost: (a: number, b: number) => [number, number];
     readonly get_building_info: (a: number) => [number, number];
@@ -420,6 +437,7 @@ export interface InitOutput {
     readonly set_paused: (a: number) => void;
     readonly set_player_nation: (a: number, b: number) => number;
     readonly set_textures_ready: () => void;
+    readonly set_tile_terrain: (a: number, b: number, c: number) => number;
     readonly setup_starter_base: (a: number) => [number, number];
     readonly spawn_build_effect: (a: number, b: number) => void;
     readonly spawn_combat_effect: (a: number, b: number) => void;
@@ -427,6 +445,7 @@ export interface InitOutput {
     readonly spawn_particle: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number) => number;
     readonly spawn_particle_burst: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => number;
     readonly spawn_smoke_effect: (a: number, b: number) => void;
+    readonly toggle_editor_grid: () => number;
     readonly toggle_pause: () => number;
     readonly try_place_building: (a: number, b: number, c: number, d: number) => [number, number];
     readonly ws_connect: (a: number, b: number) => number;

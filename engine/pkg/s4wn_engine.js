@@ -94,6 +94,15 @@ export function decompress_sav_chunk(data, expected_length) {
 }
 
 /**
+ * Check if editor grid overlay is active.
+ * @returns {boolean}
+ */
+export function editor_grid_enabled() {
+    const ret = wasm.editor_grid_enabled();
+    return ret !== 0;
+}
+
+/**
  * Generate a procedural map and return it as a JSON string.
  * map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
  * width/height: map dimensions (clamped to 16..1024)
@@ -749,6 +758,19 @@ export function set_textures_ready() {
 }
 
 /**
+ * Set the terrain type at a tile position (map editor).
+ * terrain_id: 0=Grass, 1=Forest, 2=Mountain, 3=Water, 4=DeepWater, 5=Desert, 6=Swamp, 7=Snow
+ * @param {number} x
+ * @param {number} y
+ * @param {number} terrain_id
+ * @returns {boolean}
+ */
+export function set_tile_terrain(x, y, terrain_id) {
+    const ret = wasm.set_tile_terrain(x, y, terrain_id);
+    return ret !== 0;
+}
+
+/**
  * Place a free Castle near map center and spawn starter settlers.
  * Called after load_map_json() + add_starting_resources() to set up the initial base.
  * settler_count: number of idle settlers to spawn (clamped to 1..8).
@@ -842,6 +864,15 @@ export function spawn_particle_burst(x, y, count, r, g, b, speed, life, size) {
  */
 export function spawn_smoke_effect(tile_x, tile_y) {
     wasm.spawn_smoke_effect(tile_x, tile_y);
+}
+
+/**
+ * Toggle map editor grid overlay on/off. Returns new state.
+ * @returns {boolean}
+ */
+export function toggle_editor_grid() {
+    const ret = wasm.toggle_editor_grid();
+    return ret !== 0;
 }
 
 /**
