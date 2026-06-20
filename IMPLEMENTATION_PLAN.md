@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6 — Particle Effects ✨ (411 tests)
-| **Last updated:** 2026-06-20 (Session 115 — swipe gestures + ambient particles, 415 tests)
+| **Status:** Phase 6 — Death Animation ✨ (423 tests)
+| **Last updated:** 2026-06-20 (Session 116 — unit death animation, 423 tests)
 
 ---
 
@@ -377,7 +377,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=36. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 415 engine + 30 server = 445 total (415 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 423 engine + 30 server = 453 total (423 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
 ## Next Session — Concrete Steps
 
@@ -434,15 +434,16 @@ All Phase 5 steps are now complete:
 3. ~~Add particle effects for building placement/combat~~ ✅ Done (Session 114) — green sparkles on build, orange explosions on unit death, 32 new tests
 4. ~~Improve mobile UI: add swipe gestures for panel navigation~~ ✅ Done (Session 115) — handlePanelSwipe() with 60px/400ms threshold, swipe hint indicators, CSS slide transitions
 5. ~~Add ambient particle effects (foliage, chimney smoke)~~ ✅ Done (Session 115) — spawn_smoke_effect + spawn_leaf_effect with WASM exports, game loop integration
-6. Add sound effects system (Web Audio API)
+6. ~~Add unit death animation (scale-down + fade before removal)~~ ✅ Done (Session 116) — Dying state, 1.0s timer, death_animation_progress() WASM export, 8 new tests
+7. Add sound effects system (Web Audio API)
 
 **Next Session — Concrete Steps:**
 
 1. Add Web Audio API sound effects module with procedurally generated sounds (UI clicks, building placement, combat)
 2. Optimize particle rendering: use instanced rendering for better performance
-3. Add unit death animation (scale-down + fade before removal)
-4. Add day/night lighting transition smoothing
-5. Add map editor mode (toggle grid overlay, click to paint terrain)
+3. Add day/night lighting transition smoothing
+4. Add map editor mode (toggle grid overlay, click to paint terrain)
+5. Add building damage/health system (buildings can be attacked and destroyed)
 
 ---
 

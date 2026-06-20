@@ -67,7 +67,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 4 ✅ complete — Phase 5: 3D Pipeline** ✅ — **Phase 6: Particles + Mobile** ✅ (415 tests)
+**Phase 4 ✅ complete — Phase 5: 3D Pipeline** ✅ — **Phase 6: Particles + Mobile** ✅ — **Phase 6.5: Death Animation** ✅ (423 tests)
 - ✅ Mobile responsive CSS — @media queries for sub-768px viewports: full-width panels, larger touch targets, flex-wrap controls
 - ✅ Touch camera pan — single-finger drag (touchstart/touchmove/touchend)
 - ✅ Touch pinch-to-zoom — two-finger proportional pinch with distance ratio scaling
@@ -83,6 +83,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Mobile test suite — 14 logic tests covering accordion, orientation, touch, pinch-zoom
 - ✅ Swipe gesture navigation — swipe left/right on canvas to toggle construction/stats panels (60px/400ms threshold), swipe hint indicators with auto-hide, CSS slide transitions
 - ✅ Particle effects system — Particle struct + ParticleSystem (MAX_PARTICLES=256), CPU-simulated with gravity/bounce/alpha fade, GPU point-sprite rendering via overlay shader, WASM exports (spawn_particle, spawn_build_effect, spawn_combat_effect, spawn_smoke_effect, spawn_leaf_effect, particle_count, clear_particles, get_particles_json), green sparkles on building placement, orange/red explosions on combat death, chimney smoke from buildings, floating leaves near forests, 36 new tests
+- ✅ Unit death animation — Dying state with 1.0s timer, tick_dying() countdown, death_animation_progress() for JS scale-down + fade rendering, tick_dying_units() in game loop, dying_progress in get_unit_info JSON. 8 new tests, 423 total.
 
 **Phase 5 — 3D Pipeline** ✅ (365 tests)
 - ✅ Orbital camera model — azimuth/elevation/distance spherical coords, eye()/look_at_target()/world_to_clip() (LookAt + Perspective). set_azimuth/set_elevation/set_distance with clamping + smoothing. snap_to_isometric() reset. 10 tests.
