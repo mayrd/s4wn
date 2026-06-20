@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 | **Status:** Phase 6 — Particle Effects ✨ (411 tests)
-| **Last updated:** 2026-06-20 (Session 114 — particle effects system, 411 tests)
+| **Last updated:** 2026-06-20 (Session 115 — swipe gestures + ambient particles, 415 tests)
 
 ---
 
@@ -150,7 +150,7 @@ Each phase lists objectives with test cases and implementation status.
 
 ## Test Suite Reference
 
-### Engine Tests (411 passing)
+### Engine Tests (415 passing)
 ```
 economy::tests              ~90 tests    Production chains, costs, tools, nation modifiers, territory validation
 nation::tests                21 tests    Nation data, unique buildings, specialists
@@ -363,10 +363,10 @@ protocol::tests               5 tests    Message serialization, room management
 **Next concrete steps:**
 1. ~~Add tap-to-place visual feedback (pulse animation on selected tile)~~ ✅ Done (Session 92)
 2. ~~Add long-press context menu for tile info (inspector) on mobile~~ ✅ Done (Session 93)
-3. Test touch interactions on actual mobile viewport via Chrome DevTools responsive mode
-3. Test touch interactions on actual mobile viewport via Chrome DevTools responsive mode
-4. Add orientation-change handler to recalculate viewport layout
-5. Optimize construction panel category collapse for small screens (accordion)
+3. ~~Add orientation-change handler to recalculate viewport layout~~ ✅ Done (Session 94)
+4. ~~Optimize construction panel category collapse for small screens (accordion)~~ ✅ Done (Session 94)
+5. ~~Add swipe gesture navigation for panel toggling~~ ✅ Done (Session 115)
+6. Test touch interactions on actual mobile viewport via Chrome DevTools responsive mode
 
 ---
 
@@ -377,7 +377,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=36. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 411 engine + 30 server = 441 total (411 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 415 engine + 30 server = 445 total (415 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
 ## Next Session — Concrete Steps
 
@@ -432,16 +432,17 @@ All Phase 5 steps are now complete:
 1. ~~Add building construction animation~~ ✅ Done (Session 112)
 2. ~~Add model animation support (unit wobble)~~ ✅ Done (Session 113)
 3. ~~Add particle effects for building placement/combat~~ ✅ Done (Session 114) — green sparkles on build, orange explosions on unit death, 32 new tests
-4. Improve mobile UI: add swipe gestures for panel navigation
-5. Add ambient particle effects (foliage, chimney smoke)
+4. ~~Improve mobile UI: add swipe gestures for panel navigation~~ ✅ Done (Session 115) — handlePanelSwipe() with 60px/400ms threshold, swipe hint indicators, CSS slide transitions
+5. ~~Add ambient particle effects (foliage, chimney smoke)~~ ✅ Done (Session 115) — spawn_smoke_effect + spawn_leaf_effect with WASM exports, game loop integration
 6. Add sound effects system (Web Audio API)
 
 **Next Session — Concrete Steps:**
 
-1. Add swipe gesture detection for mobile panel navigation (swipe left/right to toggle construction/stats panels)
-2. Add ambient particles: gentle floating leaves/dust in forests, smoke puffs from building chimneys
-3. Add Web Audio API sound effects module with procedurally generated sounds
-4. Optimize particle rendering: use instanced rendering for better performance
+1. Add Web Audio API sound effects module with procedurally generated sounds (UI clicks, building placement, combat)
+2. Optimize particle rendering: use instanced rendering for better performance
+3. Add unit death animation (scale-down + fade before removal)
+4. Add day/night lighting transition smoothing
+5. Add map editor mode (toggle grid overlay, click to paint terrain)
 
 ---
 
