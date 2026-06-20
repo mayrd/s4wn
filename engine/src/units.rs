@@ -329,6 +329,8 @@ pub struct UnitManager {
     units: Vec<Unit>,
     /// Next unit ID to assign
     next_id: u32,
+    /// Positions of units that died since last drain (for particle effects)
+    pub recently_died_positions: Vec<(f32, f32)>,
 }
 
 impl UnitManager {
@@ -337,6 +339,7 @@ impl UnitManager {
         UnitManager {
             units: Vec::new(),
             next_id: 1,
+            recently_died_positions: Vec::new(),
         }
     }
 
@@ -464,6 +467,30 @@ impl UnitManager {
     }
 
     /// Remove dead units (call periodically to clean up)
+    /// Drain the list of recently-died unit positions (for particle effects).
+    /// Returns positions of units that died since last call.
+    pub fn drain_recently_died(&mut self) -> Vec<(f32, f32)> {
+        let positions = self.recently_died_positions.clone();
+        self.recently_died_positions.clear();
+        positions
+    }
+
+    /// Apply damage to a unit and record death position if it dies.
+    /// Returns true if the unit died from this damage.
+    pub fn apply_damage_and_record_death(&mut self, unit_id: u32, amount: u32) -> bool {
+        let died = if let Some(unit) = self.get_mut(unit_id) {
+            unit.take_damage(amount)
+        } else {
+            false
+        };
+        if died {
+            if let Some(unit) = self.get(unit_id) {
+                self.recently_died_positions.push((unit.x, unit.y));
+            }
+        }
+        died
+    }
+
     pub fn remove_dead(&mut self) {
         self.units.retain(|u| u.is_alive());
     }

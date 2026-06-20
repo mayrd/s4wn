@@ -2652,6 +2652,10 @@ canvas.addEventListener('click', (e) => {
                 const mid = modelIdForBuilding(r.kind);
                 add_model_instance(mid, t.x + 0.5, t.y + 0.5, 0.7, 0.0);
             }
+            // Spawn particle effect for building placement (green sparkles)
+            if (typeof spawn_build_effect === 'function') {
+                spawn_build_effect(t.x + 0.5, t.y + 0.5);
+            }
             lastAffordabilityUpdate = 0; // immediate refresh
         } else {
             placementStatus.textContent = `❌ ${r.error}`;

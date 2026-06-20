@@ -16,6 +16,7 @@ pub mod nation;
 pub mod network;
 pub mod pathfinding;
 pub mod units;
+pub mod particle;
 pub mod worker_ai;
 
 use camera::Camera;
@@ -533,6 +534,8 @@ struct App {
     model_use_instanced_loc: Option<web_sys::WebGlUniformLocation>,
     model_time_loc: Option<web_sys::WebGlUniformLocation>,
     model_anim_phase_buffer: Option<WebGlBuffer>,
+    // ── Phase 6: Particle System ──────────────────────────────────────────
+    particle_system: particle::ParticleSystem,
 
 }
 
@@ -999,7 +1002,10 @@ impl App {
             model_use_instanced_loc,
             model_time_loc,
             model_anim_phase_buffer,
-water_time_loc,
+            water_time_loc,
+
+            // Phase 6: Particle system
+            particle_system: particle::ParticleSystem::new(),
         })
     }
 
@@ -1036,6 +1042,15 @@ water_time_loc,
         // Compute day_phase from game time: cycle ~ 5 minutes of real-time per day
         // Day cycle = 300 seconds / 10 TPS = 3000 ticks per day
         let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
+
+        // Update particles (always runs, even when paused, for visual effects)
+        self.particle_system.update(0.016);
+
+        // Spawn combat particles for recently died units
+        let dead_positions = self.game_loop.state.economy.units.drain_recently_died();
+        for (dx, dy) in dead_positions {
+            particle::spawn_combat_effect(&mut self.particle_system, dx, dy);
+        }
 
         // Smooth camera
         self.camera.update(0.016); // ~60fps
@@ -1568,6 +1583,14 @@ water_time_loc,
                 colors.push(border_color[2]);
                 sizes.push(4.0); // smaller than buildings, visible but not dominant
             }
+        }
+
+        // Phase 6: Append particle overlay data
+        let (p_positions, p_colors, p_sizes) = self.particle_system.get_overlay_data();
+        if !p_positions.is_empty() {
+            positions.extend(p_positions);
+            colors.extend(p_colors);
+            sizes.extend(p_sizes);
         }
 
         if positions.is_empty() {
@@ -3579,6 +3602,98 @@ pub fn model_instance_count() -> i32 {
     }
 }
 
+// ── Phase 6: Particle System WASM Exports ─────────────────────────────────────
+
+/// Spawn a single particle.
+/// Parameters: x, y, z, vx, vy, vz, life, r, g, b, size
+#[wasm_bindgen]
+pub fn spawn_particle(
+    x: f32, y: f32, z: f32,
+    vx: f32, vy: f32, vz: f32,
+    life: f32,
+    r: f32, g: f32, b: f32,
+    size: f32,
+) -> bool {
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            app.particle_system.spawn(x, y, z, vx, vy, vz, life, r, g, b, size)
+        } else {
+            false
+        }
+    }
+}
+
+/// Spawn a burst of particles. Returns number spawned.
+#[wasm_bindgen]
+pub fn spawn_particle_burst(
+    x: f32, y: f32,
+    count: u32,
+    r: f32, g: f32, b: f32,
+    speed: f32, life: f32, size: f32,
+) -> u32 {
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            app.particle_system.spawn_burst(x, y, 0.0, count, r, g, b, speed, life, size)
+        } else {
+            0
+        }
+    }
+}
+
+/// Spawn a green "build success" effect at the given tile.
+#[wasm_bindgen]
+pub fn spawn_build_effect(tile_x: f32, tile_y: f32) {
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            particle::spawn_build_effect(&mut app.particle_system, tile_x, tile_y);
+        }
+    }
+}
+
+/// Spawn a red/orange "combat hit" effect at the given tile.
+#[wasm_bindgen]
+pub fn spawn_combat_effect(tile_x: f32, tile_y: f32) {
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            particle::spawn_combat_effect(&mut app.particle_system, tile_x, tile_y);
+        }
+    }
+}
+
+/// Get the number of alive particles.
+#[wasm_bindgen]
+pub fn particle_count() -> i32 {
+    unsafe {
+        if let Some(ref app) = APP.as_ref() {
+            app.particle_system.alive_count() as i32
+        } else {
+            0
+        }
+    }
+}
+
+/// Clear all particles.
+#[wasm_bindgen]
+pub fn clear_particles() {
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            app.particle_system.clear();
+        }
+    }
+}
+
+/// Get particles as JSON for JS-side rendering fallback.
+#[wasm_bindgen]
+pub fn get_particles_json() -> String {
+    unsafe {
+        if let Some(ref app) = APP.as_ref() {
+            app.particle_system.to_json()
+        } else {
+            String::from("[]")
+        }
+    }
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -4476,4 +4591,107 @@ mod tests {
         assert!((s_over - s_one).abs() < 0.001, ">1.0 should clamp to 1.0");
     }
 
+    // ── Phase 6: Particle System Tests ──────────────────────────────────────
+
+    #[test]
+    fn test_particle_system_new_empty() {
+        let ps = particle::ParticleSystem::new();
+        assert_eq!(ps.alive_count(), 0);
+    }
+
+    #[test]
+    fn test_particle_spawn_and_update() {
+        let mut ps = particle::ParticleSystem::new();
+        assert!(ps.spawn(1.0, 2.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.5, 0.5, 8.0));
+        assert_eq!(ps.alive_count(), 1);
+        ps.update(0.5);
+        assert_eq!(ps.alive_count(), 1);
+        ps.update(0.6);
+        assert_eq!(ps.alive_count(), 0);
+    }
+
+    #[test]
+    fn test_particle_burst() {
+        let mut ps = particle::ParticleSystem::new();
+        let n = ps.spawn_burst(5.0, 5.0, 0.0, 10, 1.0, 0.0, 0.0, 2.0, 1.0, 6.0);
+        assert_eq!(n, 10);
+        assert_eq!(ps.alive_count(), 10);
+    }
+
+    #[test]
+    fn test_particle_overlay_data() {
+        let mut ps = particle::ParticleSystem::new();
+        ps.spawn(3.0, 4.0, 0.5, 0.0, 0.0, 0.0, 1.0, 0.2, 0.8, 0.3, 10.0);
+        let (pos, col, sizes) = ps.get_overlay_data();
+        assert_eq!(pos.len(), 2);
+        assert_eq!(col.len(), 3);
+        assert_eq!(sizes.len(), 1);
+        assert_eq!(pos[0], 3.0);
+        assert!((sizes[0] - 11.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_particle_to_json() {
+        let mut ps = particle::ParticleSystem::new();
+        assert_eq!(ps.to_json(), "[]");
+        ps.spawn(1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.2, 8.0);
+        let json = ps.to_json();
+        assert!(json.contains("\"x\":1.00"), "json: {}", json);
+    }
+
+    #[test]
+    fn test_build_effect() {
+        let mut ps = particle::ParticleSystem::new();
+        particle::spawn_build_effect(&mut ps, 10.0, 20.0);
+        assert!(ps.alive_count() > 0 && ps.alive_count() <= 12);
+    }
+
+    #[test]
+    fn test_combat_effect() {
+        let mut ps = particle::ParticleSystem::new();
+        particle::spawn_combat_effect(&mut ps, 5.0, 5.0);
+        assert!(ps.alive_count() > 0 && ps.alive_count() <= 16);
+    }
+
+    #[test]
+    fn test_particle_max_pool() {
+        let mut ps = particle::ParticleSystem::new();
+        for i in 0..particle::MAX_PARTICLES + 10 {
+            let spawned = ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+            if (i as usize) < particle::MAX_PARTICLES {
+                assert!(spawned);
+            } else {
+                assert!(!spawned);
+            }
+        }
+        assert_eq!(ps.alive_count(), particle::MAX_PARTICLES);
+    }
+
+    #[test]
+    fn test_particle_clear() {
+        let mut ps = particle::ParticleSystem::new();
+        ps.spawn_burst(0.0, 0.0, 0.0, 20, 1.0, 1.0, 1.0, 2.0, 1.0, 6.0);
+        assert_eq!(ps.alive_count(), 20);
+        ps.clear();
+        assert_eq!(ps.alive_count(), 0);
+    }
+
+    #[test]
+    fn test_particle_alpha_fade() {
+        let mut p = particle::Particle::new();
+        p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 8.0);
+        assert!((p.alpha() - 1.0).abs() < 0.001);
+        p.life = 0.5;
+        let alpha = p.alpha();
+        assert!(alpha < 1.0 && alpha > 0.0, "alpha: {}", alpha);
+    }
+
+    #[test]
+    fn test_particle_bounce() {
+        let mut p = particle::Particle::new();
+        p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 1.0, 8.0);
+        p.vz = -5.0;
+        p.tick(0.5);
+        assert!(p.z >= 0.0, "z: {}", p.z);
+    }
 }

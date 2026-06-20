@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 5 — 3D Pipeline 🔬 (379 tests)
-| **Last updated:** 2026-06-20 (Session 113 — unit wobble animation, 379 tests)
+| **Status:** Phase 6 — Particle Effects ✨ (411 tests)
+| **Last updated:** 2026-06-20 (Session 114 — particle effects system, 411 tests)
 
 ---
 
@@ -150,7 +150,7 @@ Each phase lists objectives with test cases and implementation status.
 
 ## Test Suite Reference
 
-### Engine Tests (365 passing)
+### Engine Tests (411 passing)
 ```
 economy::tests              ~90 tests    Production chains, costs, tools, nation modifiers, territory validation
 nation::tests                21 tests    Nation data, unique buildings, specialists
@@ -377,7 +377,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=36. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 360 engine + 30 server = 390 total (360 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 411 engine + 30 server = 441 total (411 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
 ## Next Session — Concrete Steps
 
@@ -425,16 +425,23 @@ All Phase 5 steps are now complete:
 8. ✅ GPU model rendering + all 59 building models
 9. ✅ Per-model GPU buffers fix (Session 111) — each model now has its own VAO + index buffer for correct instanced rendering
 10. ✅ Building construction animation (Session 112) — smooth scale 0.3→1.0 with ease-out curve
-
-**Remaining work:**
+11. ✅ Unit wobble animation (Session 113) — vertex shader sin-based Y bob + X/Z sway
 
 **Phase 6: Polish & Next Features**
 
-1. ~~Add building construction animation (scale-up from 0.7→1.0 over construction time)~~ ✅ Done (Session 112) — smooth ease-out curve, 0.3→1.0
-2. ~~WASM cache bump to v=37~~ ✅ Done (Session 112)
-3. ~~Add model animation support (simple vertex shader-based wobble for units)~~ ✅ Done (Session 113) — sin-based Y bob + X/Z sway, 14 tests
+1. ~~Add building construction animation~~ ✅ Done (Session 112)
+2. ~~Add model animation support (unit wobble)~~ ✅ Done (Session 113)
+3. ~~Add particle effects for building placement/combat~~ ✅ Done (Session 114) — green sparkles on build, orange explosions on unit death, 32 new tests
 4. Improve mobile UI: add swipe gestures for panel navigation
-5. Add particle effects for building placement/combat
+5. Add ambient particle effects (foliage, chimney smoke)
+6. Add sound effects system (Web Audio API)
+
+**Next Session — Concrete Steps:**
+
+1. Add swipe gesture detection for mobile panel navigation (swipe left/right to toggle construction/stats panels)
+2. Add ambient particles: gentle floating leaves/dust in forests, smoke puffs from building chimneys
+3. Add Web Audio API sound effects module with procedurally generated sounds
+4. Optimize particle rendering: use instanced rendering for better performance
 
 ---
 
