@@ -21,6 +21,11 @@ export function add_starting_resources(difficulty: string): string;
 export function clear_model_instances(): void;
 
 /**
+ * Clear all particles.
+ */
+export function clear_particles(): void;
+
+/**
  * Compute a model-view-projection matrix for a model instance.
  * Takes JSON input: {x, y, scale, rotation_y, view: [16], projection: [16]}
  * Returns JSON array of 16 floats (column-major MVP matrix).
@@ -85,6 +90,11 @@ export function get_map_data(): Uint8Array;
  * Get unique building names for a nation as JSON array.
  */
 export function get_nation_buildings(nation_name: string): string;
+
+/**
+ * Get particles as JSON for JS-side rendering fallback.
+ */
+export function get_particles_json(): string;
 
 /**
  * Get the player's nation as a JSON string {name, color, emoji, description}
@@ -204,6 +214,11 @@ export function on_wheel(delta_y: number): void;
 export function parse_obj_info(obj_str: string): string;
 
 /**
+ * Get the number of alive particles.
+ */
+export function particle_count(): number;
+
+/**
  * Populate model_instances from current game state (buildings).
  * Maps building types to model IDs. Called from JS each frame before render().
  */
@@ -268,6 +283,37 @@ export function set_textures_ready(): void;
 export function setup_starter_base(settler_count: number): string;
 
 /**
+ * Spawn a green "build success" effect at the given tile.
+ */
+export function spawn_build_effect(tile_x: number, tile_y: number): void;
+
+/**
+ * Spawn a red/orange "combat hit" effect at the given tile.
+ */
+export function spawn_combat_effect(tile_x: number, tile_y: number): void;
+
+/**
+ * Spawn a floating leaf particle (forest ambient).
+ */
+export function spawn_leaf_effect(tile_x: number, tile_y: number): void;
+
+/**
+ * Spawn a single particle.
+ * Parameters: x, y, z, vx, vy, vz, life, r, g, b, size
+ */
+export function spawn_particle(x: number, y: number, z: number, vx: number, vy: number, vz: number, life: number, r: number, g: number, b: number, size: number): boolean;
+
+/**
+ * Spawn a burst of particles. Returns number spawned.
+ */
+export function spawn_particle_burst(x: number, y: number, count: number, r: number, g: number, b: number, speed: number, life: number, size: number): number;
+
+/**
+ * Spawn chimney smoke puffs at a building location.
+ */
+export function spawn_smoke_effect(tile_x: number, tile_y: number): void;
+
+/**
  * Toggle the game pause state. Returns the new state.
  */
 export function toggle_pause(): boolean;
@@ -308,6 +354,7 @@ export interface InitOutput {
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
     readonly clear_model_instances: () => void;
+    readonly clear_particles: () => void;
     readonly compute_mvp_json: (a: number, b: number) => [number, number];
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
     readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
@@ -318,6 +365,7 @@ export interface InitOutput {
     readonly get_game_state: () => [number, number];
     readonly get_map_data: () => [number, number];
     readonly get_nation_buildings: (a: number, b: number) => [number, number];
+    readonly get_particles_json: () => [number, number];
     readonly get_player_nation: () => [number, number];
     readonly get_resource_counts: () => [number, number];
     readonly get_stats: () => [number, number];
@@ -339,6 +387,7 @@ export interface InitOutput {
     readonly on_mouse_up: () => void;
     readonly on_wheel: (a: number) => void;
     readonly parse_obj_info: (a: number, b: number) => [number, number];
+    readonly particle_count: () => number;
     readonly populate_model_instances_from_game: () => number;
     readonly render: (a: number) => void;
     readonly resize: () => void;
@@ -351,6 +400,12 @@ export interface InitOutput {
     readonly set_player_nation: (a: number, b: number) => number;
     readonly set_textures_ready: () => void;
     readonly setup_starter_base: (a: number) => [number, number];
+    readonly spawn_build_effect: (a: number, b: number) => void;
+    readonly spawn_combat_effect: (a: number, b: number) => void;
+    readonly spawn_leaf_effect: (a: number, b: number) => void;
+    readonly spawn_particle: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number) => number;
+    readonly spawn_particle_burst: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => number;
+    readonly spawn_smoke_effect: (a: number, b: number) => void;
     readonly toggle_pause: () => number;
     readonly try_place_building: (a: number, b: number, c: number, d: number) => [number, number];
     readonly ws_connect: (a: number, b: number) => number;

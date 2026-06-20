@@ -48,6 +48,13 @@ export function clear_model_instances() {
 }
 
 /**
+ * Clear all particles.
+ */
+export function clear_particles() {
+    wasm.clear_particles();
+}
+
+/**
  * Compute a model-view-projection matrix for a model instance.
  * Takes JSON input: {x, y, scale, rotation_y, view: [16], projection: [16]}
  * Returns JSON array of 16 floats (column-major MVP matrix).
@@ -229,6 +236,23 @@ export function get_nation_buildings(nation_name) {
         return getStringFromWasm0(ret[0], ret[1]);
     } finally {
         wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
+ * Get particles as JSON for JS-side rendering fallback.
+ * @returns {string}
+ */
+export function get_particles_json() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_particles_json();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
     }
 }
 
@@ -572,6 +596,15 @@ export function parse_obj_info(obj_str) {
 }
 
 /**
+ * Get the number of alive particles.
+ * @returns {number}
+ */
+export function particle_count() {
+    const ret = wasm.particle_count();
+    return ret;
+}
+
+/**
  * Populate model_instances from current game state (buildings).
  * Maps building types to model IDs. Called from JS each frame before render().
  * @returns {number}
@@ -696,6 +729,81 @@ export function setup_starter_base(settler_count) {
     } finally {
         wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
     }
+}
+
+/**
+ * Spawn a green "build success" effect at the given tile.
+ * @param {number} tile_x
+ * @param {number} tile_y
+ */
+export function spawn_build_effect(tile_x, tile_y) {
+    wasm.spawn_build_effect(tile_x, tile_y);
+}
+
+/**
+ * Spawn a red/orange "combat hit" effect at the given tile.
+ * @param {number} tile_x
+ * @param {number} tile_y
+ */
+export function spawn_combat_effect(tile_x, tile_y) {
+    wasm.spawn_combat_effect(tile_x, tile_y);
+}
+
+/**
+ * Spawn a floating leaf particle (forest ambient).
+ * @param {number} tile_x
+ * @param {number} tile_y
+ */
+export function spawn_leaf_effect(tile_x, tile_y) {
+    wasm.spawn_leaf_effect(tile_x, tile_y);
+}
+
+/**
+ * Spawn a single particle.
+ * Parameters: x, y, z, vx, vy, vz, life, r, g, b, size
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ * @param {number} vx
+ * @param {number} vy
+ * @param {number} vz
+ * @param {number} life
+ * @param {number} r
+ * @param {number} g
+ * @param {number} b
+ * @param {number} size
+ * @returns {boolean}
+ */
+export function spawn_particle(x, y, z, vx, vy, vz, life, r, g, b, size) {
+    const ret = wasm.spawn_particle(x, y, z, vx, vy, vz, life, r, g, b, size);
+    return ret !== 0;
+}
+
+/**
+ * Spawn a burst of particles. Returns number spawned.
+ * @param {number} x
+ * @param {number} y
+ * @param {number} count
+ * @param {number} r
+ * @param {number} g
+ * @param {number} b
+ * @param {number} speed
+ * @param {number} life
+ * @param {number} size
+ * @returns {number}
+ */
+export function spawn_particle_burst(x, y, count, r, g, b, speed, life, size) {
+    const ret = wasm.spawn_particle_burst(x, y, count, r, g, b, speed, life, size);
+    return ret >>> 0;
+}
+
+/**
+ * Spawn chimney smoke puffs at a building location.
+ * @param {number} tile_x
+ * @param {number} tile_y
+ */
+export function spawn_smoke_effect(tile_x, tile_y) {
+    wasm.spawn_smoke_effect(tile_x, tile_y);
 }
 
 /**
@@ -878,6 +986,9 @@ function __wbg_get_imports() {
         __wbg_drawArrays_42dbb4b0349c8f34: function(arg0, arg1, arg2, arg3) {
             arg0.drawArrays(arg1 >>> 0, arg2, arg3);
         },
+        __wbg_drawElementsInstanced_fdc96cf6adbebc12: function(arg0, arg1, arg2, arg3, arg4, arg5) {
+            arg0.drawElementsInstanced(arg1 >>> 0, arg2, arg3 >>> 0, arg4, arg5);
+        },
         __wbg_drawElements_16a22ed8fb2810e3: function(arg0, arg1, arg2, arg3, arg4) {
             arg0.drawElements(arg1 >>> 0, arg2, arg3 >>> 0, arg4);
         },
@@ -1040,6 +1151,9 @@ function __wbg_get_imports() {
         },
         __wbg_useProgram_ab2ee2a13a1fd909: function(arg0, arg1) {
             arg0.useProgram(arg1);
+        },
+        __wbg_vertexAttribDivisor_f17a8585267be92f: function(arg0, arg1, arg2) {
+            arg0.vertexAttribDivisor(arg1 >>> 0, arg2 >>> 0);
         },
         __wbg_vertexAttribPointer_4e5d289c5d224210: function(arg0, arg1, arg2, arg3, arg4, arg5, arg6) {
             arg0.vertexAttribPointer(arg1 >>> 0, arg2, arg3 >>> 0, arg4 !== 0, arg5, arg6);

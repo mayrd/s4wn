@@ -397,85 +397,7 @@ window.S4WN_CONFIG = {
       "icon": "🛤️",
       "name_de": "Straßenbauer"
     },
-    {
-      "id": "Clay Pit",
-      "category": "Raw Materials",
-      "cost": {
-        "Wood": 4,
-        "Stone": 2
-      },
-      "inputs": [],
-      "outputs": [
-        "Clay"
-      ],
-      "interval": 25,
-      "build_time": 25,
-      "tool": "Shovel",
-      "workers": 1,
-      "icon": "🧱",
-      "name_de": "Lehmgrube",
-      "status": "planned"
-    },
-    {
-      "id": "Brickworks",
-      "category": "Processing",
-      "cost": {
-        "Stone": 5,
-        "Planks": 5
-      },
-      "inputs": [
-        "Clay"
-      ],
-      "outputs": [
-        "Bricks"
-      ],
-      "interval": 30,
-      "build_time": 35,
-      "tool": "Hammer",
-      "workers": 1,
-      "icon": "🧱",
-      "name_de": "Ziegelei"
-    },
-    {
-      "id": "Hemp Farm",
-      "category": "Raw Materials",
-      "cost": {
-        "Wood": 3,
-        "Stone": 1
-      },
-      "inputs": [],
-      "outputs": [
-        "Hemp"
-      ],
-      "interval": 25,
-      "build_time": 20,
-      "tool": null,
-      "workers": 1,
-      "icon": "🌿",
-      "name_de": "Hanffarm",
-      "status": "planned"
-    },
-    {
-      "id": "Ropemaker",
-      "category": "Processing",
-      "cost": {
-        "Stone": 3,
-        "Planks": 4
-      },
-      "inputs": [
-        "Hemp"
-      ],
-      "outputs": [
-        "Rope"
-      ],
-      "interval": 25,
-      "build_time": 30,
-      "tool": "Hammer",
-      "workers": 1,
-      "icon": "🪢",
-      "name_de": "Seilerei"
-    },
-    {
+                    {
       "id": "Apiary",
       "category": "Food",
       "cost": {
@@ -528,33 +450,7 @@ window.S4WN_CONFIG = {
       "icon": "🏛️",
       "name_de": "Bacchus-Tempel"
     },
-    {
-      "id": "Vineyard",
-      "category": "Nation",
-      "cost": {},
-      "inputs": [],
-      "outputs": [],
-      "interval": 0,
-      "build_time": 0,
-      "tool": null,
-      "workers": 0,
-      "icon": "🏛️",
-      "name_de": "Weinberg"
-    },
-    {
-      "id": "Wine Press",
-      "category": "Nation",
-      "cost": {},
-      "inputs": [],
-      "outputs": [],
-      "interval": 0,
-      "build_time": 0,
-      "tool": null,
-      "workers": 0,
-      "icon": "🏛️",
-      "name_de": "Kelterei"
-    },
-    {
+            {
       "id": "Sanctuary of Minerva",
       "category": "Nation",
       "cost": {},
@@ -767,44 +663,7 @@ window.S4WN_CONFIG = {
       "icon": "🏛️",
       "name_de": "Orakel des Apollo"
     },
-    {
-      "id": "Olive Grove",
-      "category": "Nation",
-      "cost": {
-        "Planks": 5
-      },
-      "inputs": [],
-      "outputs": [
-        "Olives"
-      ],
-      "interval": 25,
-      "build_time": 25,
-      "tool": "Shovel",
-      "workers": 1,
-      "icon": "🏛️",
-      "name_de": "Olivenhain"
-    },
-    {
-      "id": "Oil Press",
-      "category": "Nation",
-      "cost": {
-        "Stone": 3,
-        "Planks": 5
-      },
-      "inputs": [
-        "Olives"
-      ],
-      "outputs": [
-        "OliveOil"
-      ],
-      "interval": 30,
-      "build_time": 30,
-      "tool": "Hammer",
-      "workers": 1,
-      "icon": "🏛️",
-      "name_de": "Ölpresse"
-    },
-    {
+            {
       "id": "Sanctuary of Artemis",
       "category": "Nation",
       "cost": {
@@ -1054,13 +913,7 @@ window.S4WN_CONFIG = {
       "icon": "🟡",
       "name_de": "Schwefel"
     },
-    {
-      "id": "Clay",
-      "category": "raw",
-      "icon": "🧱",
-      "name_de": "Lehm"
-    },
-    {
+        {
       "id": "Water",
       "category": "raw",
       "icon": "💧",
@@ -1078,32 +931,13 @@ window.S4WN_CONFIG = {
       "icon": "🐟",
       "name_de": "Fisch"
     },
-    {
-      "id": "Olives",
-      "category": "raw",
-      "icon": "🫒",
-      "name_de": "Oliven"
-    },
-    {
-      "id": "Grapes",
-      "category": "raw",
-      "icon": "🍇",
-      "name_de": "Trauben",
-      "stack_size": 50
-    },
-    {
+            {
       "id": "Meat",
       "category": "raw",
       "icon": "🍖",
       "name_de": "Fleisch"
     },
-    {
-      "id": "Hemp",
-      "category": "raw",
-      "icon": "🌿",
-      "name_de": "Hanf"
-    },
-    {
+        {
       "id": "Honey",
       "category": "raw",
       "icon": "🍯",
@@ -1146,25 +980,7 @@ window.S4WN_CONFIG = {
       "icon": "🍞",
       "name_de": "Brot"
     },
-    {
-      "id": "Bricks",
-      "category": "processed",
-      "icon": "🧱",
-      "name_de": "Ziegel"
-    },
-    {
-      "id": "Rope",
-      "category": "processed",
-      "icon": "🪢",
-      "name_de": "Seile"
-    },
-    {
-      "id": "OliveOil",
-      "category": "processed",
-      "icon": "🫒",
-      "name_de": "Olivenöl"
-    },
-    {
+                {
       "id": "Wine",
       "category": "processed",
       "icon": "🍷",

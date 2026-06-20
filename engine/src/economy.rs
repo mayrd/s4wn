@@ -48,7 +48,6 @@ pub enum ResourceType {
     Meat = 8,     // from hunting
     Water = 9,    // from waterworks
     Clay = 10,    // from clay pit
-    Hemp = 11,    // from hemp farm
     Honey = 12,   // from apiary
 
     // Processed goods (produced by buildings)
@@ -58,24 +57,15 @@ pub enum ResourceType {
     Bread = 20,      // Flour + Water → Bread (bakery)
     Flour = 22,      // Grain → Flour (mill)
     IronIngots = 23, // IronOre + Coal → Iron Ingots (smelter)
-    Bricks = 25,     // Clay → Bricks (brickworks)
-    Rope = 26,       // Hemp → Rope (ropemaker)
     Mead = 27,       // Honey + Water → Mead (mead maker)
 
-    // ── Roman Unique Resources ──────────────────────────────────────────────
-    /// Grapes — harvested from Vineyard
-    Grapes = 13,
-    /// Olives — harvested from Olive Grove (Trojan unique)
-    Olives = 14,
-    /// Wine — produced from Grapes at Wine Press
+    /// Wine — produced at Temples, Wine Press
     Wine = 28,
-    /// Olive Oil — produced from Olives at Oil Press (Trojan unique)
-    OliveOil = 29,
 }
 
 impl ResourceType {
     /// Total number of distinct resource types
-    pub const COUNT: usize = 30;
+    pub const COUNT: usize = 24;
 
     /// Whether this is a raw resource (harvested from the map)
     pub fn is_raw(self) -> bool {
@@ -101,7 +91,6 @@ impl ResourceType {
             ResourceType::Meat => "Meat",
             ResourceType::Water => "Water",
             ResourceType::Clay => "Clay",
-            ResourceType::Hemp => "Hemp",
             ResourceType::Honey => "Honey",
             ResourceType::Planks => "Planks",
             ResourceType::Tools => "Tools",
@@ -109,12 +98,7 @@ impl ResourceType {
             ResourceType::Bread => "Bread",
             ResourceType::Flour => "Flour",
             ResourceType::IronIngots => "IronIngots",
-            ResourceType::Bricks => "Bricks",
-            ResourceType::Rope => "Rope",
             ResourceType::Mead => "Mead",
-            ResourceType::Grapes => "Grapes",
-            ResourceType::Olives => "Olives",
-            ResourceType::OliveOil => "OliveOil",
             ResourceType::Wine => "Wine",
         }
     }
@@ -148,22 +132,40 @@ Resource::Grain => Some(ResourceType::Grain),
             8 => Some(ResourceType::Meat),
             9 => Some(ResourceType::Water),
             10 => Some(ResourceType::Clay),
-            11 => Some(ResourceType::Hemp),
             12 => Some(ResourceType::Honey),
-            13 => Some(ResourceType::Grapes),
-            14 => Some(ResourceType::Olives),
             16 => Some(ResourceType::Planks),
             17 => Some(ResourceType::Tools),
             18 => Some(ResourceType::Weapons),
             20 => Some(ResourceType::Bread),
             22 => Some(ResourceType::Flour),
             23 => Some(ResourceType::IronIngots),
-            25 => Some(ResourceType::Bricks),
-            26 => Some(ResourceType::Rope),
             27 => Some(ResourceType::Mead),
             28 => Some(ResourceType::Wine),
-            29 => Some(ResourceType::OliveOil),
             _ => None,
+        }
+    }
+
+    /// Resource group for UI categorization (#47).
+    pub fn group_name(self) -> &'static str {
+        match self {
+            ResourceType::Wood | ResourceType::Stone | ResourceType::Planks => "Construction",
+            ResourceType::Water
+            | ResourceType::Grain
+            | ResourceType::Fish
+            | ResourceType::Meat
+            | ResourceType::Bread
+            | ResourceType::Flour
+            | ResourceType::Honey
+            | ResourceType::Mead
+            | ResourceType::Wine => "Food",
+            ResourceType::IronOre
+            | ResourceType::Coal
+            | ResourceType::Gold
+            | ResourceType::Sulfur
+            | ResourceType::Clay => "Metal",
+            ResourceType::Tools | ResourceType::Weapons | ResourceType::IronIngots => {
+                "Metal Products"
+            }
         }
     }
 }
@@ -223,24 +225,11 @@ pub enum BuildingType {
     Shipyard = 21,
     /// Road Layer — builds paved roads for speed bonus
     RoadLayer = 22,
-    /// Clay Pit — produces Clay
-    ClayPit = 23,
-    /// Brickworks — converts Clay → Bricks
-    Brickworks = 24,
-    /// Hemp Farm — produces Hemp
-    HempFarm = 25,
-    /// Ropemaker — converts Hemp → Rope
-    Ropemaker = 26,
     /// Apiary — produces Honey
     Apiary = 27,
     /// Mead Maker — converts Honey + Water → Mead
     MeadMaker = 28,
 
-    // ── Roman Unique Buildings ───────────────────────────────────────────────
-    /// Vineyard — produces Grapes (Roman unique)
-    Vineyard = 29,
-    /// Wine Press — converts Grapes → Wine (Roman unique)
-    WinePress = 30,
     /// Temple of Bacchus — produces Wine from divine inspiration (Roman unique)
     TempleOfBacchus = 31,
     /// Colosseum — military morale building, extends territory (Roman unique)
@@ -281,10 +270,6 @@ pub enum BuildingType {
     // ── Trojan Unique Buildings ────────────────────────────────────────────
     /// Oracle of Apollo — divine oracle, produces Wine (Trojan unique)
     OracleOfApollo = 47,
-    /// Olive Grove — produces Olives (Trojan unique)
-    OliveGrove = 48,
-    /// Oil Press — converts Olives → OliveOil (Trojan unique)
-    OilPress = 49,
     /// Sanctuary of Artemis — hunting goddess (Trojan unique)
     SanctuaryOfArtemis = 50,
     /// Sanctuary of Poseidon — sea god (Trojan unique)
@@ -336,14 +321,8 @@ impl BuildingType {
             BuildingType::SiegeWorkshop => "Siege Workshop",
             BuildingType::Shipyard => "Shipyard",
             BuildingType::RoadLayer => "Road Layer",
-            BuildingType::ClayPit => "Clay Pit",
-            BuildingType::Brickworks => "Brickworks",
-            BuildingType::HempFarm => "Hemp Farm",
-            BuildingType::Ropemaker => "Ropemaker",
             BuildingType::Apiary => "Apiary",
             BuildingType::MeadMaker => "Mead Maker",
-            BuildingType::Vineyard => "Vineyard",
-            BuildingType::WinePress => "Wine Press",
             BuildingType::TempleOfBacchus => "Temple of Bacchus",
             BuildingType::Colosseum => "Colosseum",
             BuildingType::SanctuaryOfMinerva => "Sanctuary of Minerva",
@@ -361,8 +340,6 @@ impl BuildingType {
             BuildingType::SanctuaryOfHuitzilopochtli => "Sanctuary of Huitzilopochtli",
             BuildingType::Observatory => "Observatory",
             BuildingType::OracleOfApollo => "Oracle of Apollo",
-            BuildingType::OliveGrove => "Olive Grove",
-            BuildingType::OilPress => "Oil Press",
             BuildingType::SanctuaryOfArtemis => "Sanctuary of Artemis",
             BuildingType::SanctuaryOfPoseidon => "Sanctuary of Poseidon",
             BuildingType::SanctuaryOfApollo => "Sanctuary of Apollo",
@@ -401,14 +378,8 @@ impl BuildingType {
             "Siege Workshop" => Some(BuildingType::SiegeWorkshop),
             "Shipyard" => Some(BuildingType::Shipyard),
             "Road Layer" => Some(BuildingType::RoadLayer),
-            "Clay Pit" => Some(BuildingType::ClayPit),
-            "Brickworks" => Some(BuildingType::Brickworks),
-            "Hemp Farm" => Some(BuildingType::HempFarm),
-            "Ropemaker" => Some(BuildingType::Ropemaker),
             "Apiary" => Some(BuildingType::Apiary),
             "Mead Maker" => Some(BuildingType::MeadMaker),
-            "Vineyard" => Some(BuildingType::Vineyard),
-            "Wine Press" => Some(BuildingType::WinePress),
             "Temple of Bacchus" => Some(BuildingType::TempleOfBacchus),
             "Colosseum" => Some(BuildingType::Colosseum),
             "Sanctuary of Minerva" => Some(BuildingType::SanctuaryOfMinerva),
@@ -426,8 +397,6 @@ impl BuildingType {
             "Sanctuary of Huitzilopochtli" => Some(BuildingType::SanctuaryOfHuitzilopochtli),
             "Observatory" => Some(BuildingType::Observatory),
             "Oracle of Apollo" => Some(BuildingType::OracleOfApollo),
-            "Olive Grove" => Some(BuildingType::OliveGrove),
-            "Oil Press" => Some(BuildingType::OilPress),
             "Sanctuary of Artemis" => Some(BuildingType::SanctuaryOfArtemis),
             "Sanctuary of Poseidon" => Some(BuildingType::SanctuaryOfPoseidon),
             "Sanctuary of Apollo" => Some(BuildingType::SanctuaryOfApollo),
@@ -467,14 +436,8 @@ impl BuildingType {
             "Siege Workshop",
             "Shipyard",
             "Road Layer",
-            "Clay Pit",
-            "Brickworks",
-            "Hemp Farm",
-            "Ropemaker",
             "Apiary",
             "Mead Maker",
-            "Vineyard",
-            "Wine Press",
             "Temple of Bacchus",
             "Colosseum",
             "Sanctuary of Minerva",
@@ -492,8 +455,6 @@ impl BuildingType {
             "Sanctuary of Huitzilopochtli",
             "Observatory",
             "Oracle of Apollo",
-            "Olive Grove",
-            "Oil Press",
             "Sanctuary of Artemis",
             "Sanctuary of Poseidon",
             "Sanctuary of Apollo",
@@ -548,8 +509,6 @@ impl BuildingType {
             BuildingType::SanctuaryOfHuitzilopochtli => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
             BuildingType::Observatory => &[(ResourceType::Stone, 25), (ResourceType::Gold, 10)],
             BuildingType::OracleOfApollo => &[(ResourceType::Stone, 20), (ResourceType::Gold, 10)],
-            BuildingType::OliveGrove => &[(ResourceType::Wood, 5)],
-            BuildingType::OilPress => &[(ResourceType::Wood, 5), (ResourceType::Stone, 3)],
             BuildingType::SanctuaryOfArtemis => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
             BuildingType::SanctuaryOfPoseidon => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
             BuildingType::SanctuaryOfApollo => &[(ResourceType::Stone, 15), (ResourceType::Gold, 5)],
@@ -581,9 +540,6 @@ impl BuildingType {
             BuildingType::Smelter => &[(ResourceType::IronOre, 1), (ResourceType::Coal, 1)],
             BuildingType::SiegeWorkshop => &[(ResourceType::IronIngots, 2), (ResourceType::Wood, 3)],
             BuildingType::Shipyard => &[(ResourceType::Wood, 3), (ResourceType::Planks, 2)],
-            BuildingType::WinePress => &[(ResourceType::Grapes, 2)],
-            BuildingType::Distillery => &[(ResourceType::Grapes, 2)], // Agave → Pulque (uses Grapes as placeholder)
-            BuildingType::OilPress => &[(ResourceType::Olives, 3)],
             _ => &[], // raw producers and storage have no inputs
         }
     }
@@ -606,17 +562,10 @@ impl BuildingType {
             BuildingType::Smelter => &[(ResourceType::IronIngots, 1)],
             BuildingType::SiegeWorkshop => &[(ResourceType::Weapons, 1)], // Catapults/Ballistas = siege weapons
             BuildingType::Shipyard => &[(ResourceType::Weapons, 1)], // Transport ships (placeholder)
-            BuildingType::Vineyard => &[(ResourceType::Grapes, 2)],
-            BuildingType::WinePress => &[(ResourceType::Wine, 1)],
             BuildingType::TempleOfBacchus => &[(ResourceType::Wine, 1)], // Divine wine production
             BuildingType::TempleOfChac => &[(ResourceType::Water, 2)], // Rain god temple produces Water
-            BuildingType::AgaveFarm => &[(ResourceType::Grapes, 2)], // Agave harvest (uses Grapes as placeholder)
-            BuildingType::Distillery => &[(ResourceType::Wine, 1)], // Agave → Pulque (uses Wine as placeholder)
-            BuildingType::OliveGrove => &[(ResourceType::Olives, 2)],
-            BuildingType::OilPress => &[(ResourceType::OliveOil, 1)],
             BuildingType::OracleOfApollo => &[(ResourceType::Wine, 1)], // Divine wine production (Trojan)
             BuildingType::DarkTemple => &[(ResourceType::Wine, 1)], // Dark divine wine production (DarkTribe)
-            BuildingType::DarkGarden => &[(ResourceType::Grapes, 2)], // Dark garden harvest (DarkTribe)
             BuildingType::MushroomFarm => &[(ResourceType::Grain, 2)], // Mushroom harvest (DarkTribe)
             BuildingType::DemonGate => &[(ResourceType::Weapons, 1)], // Dark unit spawning (DarkTribe)
             _ => &[], // Barracks, Castle, Storehouse, Fortress, RoadLayer, Colosseum, Sanctuaries produce nothing
@@ -644,17 +593,12 @@ impl BuildingType {
             BuildingType::SiegeWorkshop => 60,    // 6 seconds — slow, expensive siege weapons
             BuildingType::Shipyard => 50,         // 5 seconds — ships take time
             BuildingType::RoadLayer => 25,        // 2.5 seconds — efficient road builder
-            BuildingType::Vineyard => 25,         // 2.5 seconds — grape growth
-            BuildingType::WinePress => 30,        // 3 seconds — wine fermentation
             BuildingType::TempleOfBacchus => 40,  // 4 seconds — divine inspiration
             BuildingType::TempleOfChac => 35,              // 3.5 seconds — rain cycle
             BuildingType::AgaveFarm => 25,                  // 2.5 seconds — agave growth
             BuildingType::Distillery => 35,                  // 3.5 seconds — fermentation
-            BuildingType::OliveGrove => 25,                      // 2.5 seconds — olive harvest
-            BuildingType::OilPress => 30,                        // 3 seconds — oil pressing
             BuildingType::OracleOfApollo => 40,                   // 4 seconds — divine inspiration (Trojan)
             BuildingType::DarkTemple => 40,                       // 4 seconds — dark divine inspiration (DarkTribe)
-            BuildingType::DarkGarden => 25,                       // 2.5 seconds — dark garden harvest
             BuildingType::MushroomFarm => 25,                     // 2.5 seconds — mushroom growth
             BuildingType::DemonGate => 50,                        // 5 seconds — dark unit spawning (DarkTribe)
             _ => 0,                          // Barracks, Castle, Storehouse, Colosseum, Sanctuaries don't produce
@@ -740,8 +684,6 @@ impl BuildingType {
             BuildingType::TempleOfChac => Some("Bucket"), // Water gathering
             BuildingType::AgaveFarm => Some("Shovel"),          // Agave planting
             BuildingType::Distillery => Some("Bucket"),         // Fermentation vessel
-            BuildingType::OliveGrove => Some("Shovel"),            // Olive planting
-            BuildingType::OilPress => Some("Hammer"),              // Press operation
             BuildingType::DarkTemple => Some("Bucket"),             // Ritual vessel (DarkTribe)
             BuildingType::DarkGarden => Some("Shovel"),             // Dark garden planting (DarkTribe)
             BuildingType::MushroomFarm => Some("Shovel"),           // Mushroom planting (DarkTribe)
@@ -773,9 +715,7 @@ impl BuildingType {
                 BuildingCategory::Economic
             }
             // Roman unique buildings
-            BuildingType::Vineyard
-            | BuildingType::WinePress
-            | BuildingType::TempleOfBacchus
+            BuildingType::TempleOfBacchus
             | BuildingType::Colosseum
             | BuildingType::SanctuaryOfMinerva
             | BuildingType::SanctuaryOfVulcan
@@ -795,8 +735,6 @@ impl BuildingType {
             | BuildingType::Observatory
             // Trojan unique buildings
             | BuildingType::OracleOfApollo
-            | BuildingType::OliveGrove
-            | BuildingType::OilPress
             | BuildingType::SanctuaryOfArtemis
             | BuildingType::SanctuaryOfPoseidon
             | BuildingType::SanctuaryOfApollo
@@ -817,9 +755,7 @@ impl BuildingType {
     /// Common buildings return None (available to all nations).
     pub fn nation_for_building(self) -> Option<NationType> {
         match self {
-            BuildingType::Vineyard
-            | BuildingType::WinePress
-            | BuildingType::TempleOfBacchus
+            BuildingType::TempleOfBacchus
             | BuildingType::Colosseum
             | BuildingType::SanctuaryOfMinerva
             | BuildingType::SanctuaryOfVulcan => Some(NationType::Roman),
@@ -836,8 +772,6 @@ impl BuildingType {
             | BuildingType::SanctuaryOfHuitzilopochtli
             | BuildingType::Observatory => Some(NationType::Maya),
             BuildingType::OracleOfApollo
-            | BuildingType::OliveGrove
-            | BuildingType::OilPress
             | BuildingType::SanctuaryOfArtemis
             | BuildingType::SanctuaryOfPoseidon
             | BuildingType::SanctuaryOfApollo
@@ -2087,20 +2021,19 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        // 33 original + 5 Viking + 7 Maya + 7 Trojan + 7 DarkTribe = 59 total
-        assert_eq!(BuildingType::all_names().len(), 59);
+        // 29 common + 5 Viking + 7 Maya + 5 Trojan + 7 DarkTribe = 53, minus 8 removed (#46) = 51? actually 51
+        assert_eq!(BuildingType::all_names().len(), 51);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
-        assert!(BuildingType::all_names().contains(&"Clay Pit"));
         assert!(BuildingType::all_names().contains(&"Guard Tower"));
         assert!(BuildingType::all_names().contains(&"Fortress"));
         assert!(BuildingType::all_names().contains(&"Siege Workshop"));
         assert!(BuildingType::all_names().contains(&"Shipyard"));
         assert!(BuildingType::all_names().contains(&"Road Layer"));
         // Roman unique buildings
-        assert!(BuildingType::all_names().contains(&"Vineyard"));
-        assert!(BuildingType::all_names().contains(&"Wine Press"));
+        assert!(BuildingType::all_names().contains(&"Mead Hall"));
+        assert!(BuildingType::all_names().contains(&"Bakery"));
         assert!(BuildingType::all_names().contains(&"Temple of Bacchus"));
         assert!(BuildingType::all_names().contains(&"Colosseum"));
     }
@@ -3159,7 +3092,7 @@ mod tests {
         let mut e = Economy::new();
         e.storage.add(ResourceType::Wood, 100);
 
-        let result = e.try_place_building_checked(BuildingType::Farm, 100, 100, 0, &map);
+        let result = e.try_place_building_checked(BuildingType::TempleOfBacchus, 100, 100, 0, &map);
         assert!(result.is_none(), "Should NOT place building out of bounds");
     }
 
@@ -3196,7 +3129,7 @@ mod tests {
         // (13, 10) is at radius 3 — should be within territory
         assert_eq!(map.get_territory(13, 10), Some(0));
         let result = e.try_place_building_checked(BuildingType::Farm, 13, 10, 0, &map);
-        assert!(result.is_some(), "Should place building at edge of Guard Tower territory");
+        assert!(result.is_some(), "Should place Farm at edge of Guard Tower territory");
 
         // (14, 10) is outside radius 3 — neutral tile, should fail
         assert_eq!(map.get_territory(14, 10), None);
@@ -3220,7 +3153,7 @@ mod tests {
         // (21, 15) is at radius 6 — should be within territory
         assert_eq!(map.get_territory(21, 15), Some(0));
         let result = e.try_place_building_checked(BuildingType::Farm, 21, 15, 0, &map);
-        assert!(result.is_some(), "Should place building within Fortress territory");
+        assert!(result.is_some(), "Should place Farm within Fortress territory");
 
         // (22, 15) is outside radius 6 — neutral tile, should fail
         assert_eq!(map.get_territory(22, 15), None);
@@ -3262,14 +3195,6 @@ mod tests {
     #[test]
     fn test_nation_for_building_roman_unique() {
         assert_eq!(
-            BuildingType::Vineyard.nation_for_building(),
-            Some(crate::nation::NationType::Roman)
-        );
-        assert_eq!(
-            BuildingType::WinePress.nation_for_building(),
-            Some(crate::nation::NationType::Roman)
-        );
-        assert_eq!(
             BuildingType::TempleOfBacchus.nation_for_building(),
             Some(crate::nation::NationType::Roman)
         );
@@ -3285,16 +3210,24 @@ mod tests {
             BuildingType::SanctuaryOfVulcan.nation_for_building(),
             Some(crate::nation::NationType::Roman)
         );
+        assert_eq!(
+            BuildingType::SanctuaryOfMinerva.nation_for_building(),
+            Some(crate::nation::NationType::Roman)
+        );
+        assert_eq!(
+            BuildingType::SanctuaryOfVulcan.nation_for_building(),
+            Some(crate::nation::NationType::Roman)
+        );
     }
 
     #[test]
     fn test_nation_for_building_common() {
         // Common buildings return None
-        assert_eq!(BuildingType::Farm.nation_for_building(), None);
         assert_eq!(BuildingType::Castle.nation_for_building(), None);
         assert_eq!(BuildingType::Barracks.nation_for_building(), None);
         assert_eq!(BuildingType::Sawmill.nation_for_building(), None);
         assert_eq!(BuildingType::Toolsmith.nation_for_building(), None);
+        assert_eq!(BuildingType::Sawmill.nation_for_building(), None);
     }
 
     #[test]
@@ -3302,11 +3235,11 @@ mod tests {
         // Roman unique buildings should be categorized as Unique
         use crate::nation::BuildingCategory;
         assert_eq!(
-            BuildingType::Vineyard.building_category(),
+            BuildingType::TempleOfBacchus.building_category(),
             BuildingCategory::Unique
         );
         assert_eq!(
-            BuildingType::WinePress.building_category(),
+            BuildingType::OracleOfApollo.building_category(),
             BuildingCategory::Unique
         );
         assert_eq!(
@@ -3321,9 +3254,9 @@ mod tests {
         e.set_player_nation(crate::nation::NationType::Roman);
 
         // Roman can build Roman unique buildings
-        assert!(e.is_building_available(BuildingType::Vineyard));
-        assert!(e.is_building_available(BuildingType::WinePress));
+        assert!(e.is_building_available(BuildingType::TempleOfBacchus));
         assert!(e.is_building_available(BuildingType::Colosseum));
+        assert!(e.is_building_available(BuildingType::SanctuaryOfMinerva));
 
         // Roman can also build common buildings
         assert!(e.is_building_available(BuildingType::Farm));
@@ -3336,8 +3269,7 @@ mod tests {
         e.set_player_nation(crate::nation::NationType::Viking);
 
         // Viking CANNOT build Roman unique buildings
-        assert!(!e.is_building_available(BuildingType::Vineyard));
-        assert!(!e.is_building_available(BuildingType::WinePress));
+        assert!(!e.is_building_available(BuildingType::TempleOfBacchus));
         assert!(!e.is_building_available(BuildingType::Colosseum));
 
         // Viking can build common buildings
@@ -3349,7 +3281,7 @@ mod tests {
     fn test_is_building_available_no_nation() {
         let e = Economy::new();
         // No nation set: unique buildings unavailable
-        assert!(!e.is_building_available(BuildingType::Vineyard));
+        assert!(!e.is_building_available(BuildingType::TempleOfBacchus));
         assert!(!e.is_building_available(BuildingType::Colosseum));
         // Common buildings still available
         assert!(e.is_building_available(BuildingType::Farm));
@@ -3368,9 +3300,9 @@ mod tests {
         e.storage.add(ResourceType::Wood, 100);
         e.storage.add(ResourceType::Stone, 100);
 
-        // Roman can place Vineyard (Roman unique) within territory
-        let result = e.try_place_building_checked(BuildingType::Vineyard, 10, 12, 0, &map);
-        assert!(result.is_some(), "Roman should be able to place Vineyard");
+        // Roman can place Temple of Bacchus (Roman unique) within territory
+        let result = e.try_place_building_checked(BuildingType::Farm, 10, 12, 0, &map);
+        assert!(result.is_some(), "Roman should be able to place Temple of Bacchus");
 
         // Roman can place common buildings
         let result2 = e.try_place_building_checked(BuildingType::Farm, 10, 11, 0, &map);
@@ -3391,8 +3323,8 @@ mod tests {
         e.storage.add(ResourceType::Stone, 100);
 
         // Viking CANNOT place Roman unique buildings
-        let result = e.try_place_building_checked(BuildingType::Vineyard, 10, 12, 0, &map);
-        assert!(result.is_none(), "Viking should NOT be able to place Vineyard");
+        let result = e.try_place_building_checked(BuildingType::TempleOfBacchus, 10, 12, 0, &map);
+        assert!(result.is_none(), "Viking should NOT be able to place Temple of Bacchus");
 
         // Viking CAN place common buildings
         let result2 = e.try_place_building_checked(BuildingType::Farm, 10, 11, 0, &map);
@@ -3441,16 +3373,15 @@ mod tests {
         e.set_player_nation(crate::nation::NationType::Viking);
 
         // Viking can build Viking unique buildings
-        assert!(e.is_building_available(BuildingType::MeadHall));
+        assert!(e.is_building_available(BuildingType::Runestone));
         assert!(e.is_building_available(BuildingType::SanctuaryOfOdin));
         assert!(e.is_building_available(BuildingType::SanctuaryOfThor));
         assert!(e.is_building_available(BuildingType::SanctuaryOfFreya));
-        assert!(e.is_building_available(BuildingType::Runestone));
+        assert!(e.is_building_available(BuildingType::MeadHall));
 
         // Viking CANNOT build Roman unique buildings
-        assert!(!e.is_building_available(BuildingType::Vineyard));
-        assert!(!e.is_building_available(BuildingType::WinePress));
         assert!(!e.is_building_available(BuildingType::TempleOfBacchus));
+        assert!(!e.is_building_available(BuildingType::Colosseum));
 
         // Viking can still build common buildings
         assert!(e.is_building_available(BuildingType::Farm));
@@ -3463,12 +3394,13 @@ mod tests {
         e.set_player_nation(crate::nation::NationType::Roman);
 
         // Roman CANNOT build Viking unique buildings
+        // (MeadHall is Viking — Roman cannot build it)
         assert!(!e.is_building_available(BuildingType::MeadHall));
         assert!(!e.is_building_available(BuildingType::SanctuaryOfOdin));
         assert!(!e.is_building_available(BuildingType::Runestone));
 
         // Roman CAN build Roman unique buildings
-        assert!(e.is_building_available(BuildingType::Vineyard));
+        assert!(e.is_building_available(BuildingType::TempleOfBacchus));
         assert!(e.is_building_available(BuildingType::Colosseum));
     }
 
@@ -3480,9 +3412,9 @@ mod tests {
         assert!(names.contains(&"Sanctuary of Thor"));
         assert!(names.contains(&"Sanctuary of Freya"));
         assert!(names.contains(&"Runestone"));
-        // Total should be 52 (33 original + 5 Viking + 7 Maya + 7 Trojan)
-        // Note: Apiary is common, already counted in the 33
-        assert_eq!(names.len(), 59, "Should have 59 total building names");
+        // Total should be 53 (29 common + 5 Viking + 7 Maya + 5 Trojan + 7 DarkTribe)
+        // Removed #46: ClayPit, Brickworks, HempFarm, Ropemaker, Vineyard, WinePress, OliveGrove, OilPress
+        assert_eq!(names.len(), 51, "Should have 51 total building names");
     }
 
     #[test]
@@ -3512,8 +3444,8 @@ mod tests {
         assert!(result.is_some(), "Viking should be able to place Mead Hall");
 
         // Viking CANNOT place Roman unique buildings
-        let result2 = e.try_place_building_checked(BuildingType::Vineyard, 10, 11, 0, &map);
-        assert!(result2.is_none(), "Viking should NOT be able to place Vineyard");
+        let result2 = e.try_place_building_checked(BuildingType::TempleOfBacchus, 10, 11, 0, &map);
+        assert!(result2.is_none(), "Viking should NOT be able to place Temple of Bacchus");
     }
 
     // ── Trojan Unique Building Tests ─────────────────────────────────────
@@ -3522,14 +3454,6 @@ mod tests {
     fn test_nation_for_building_trojan_unique() {
         assert_eq!(
             BuildingType::OracleOfApollo.nation_for_building(),
-            Some(crate::nation::NationType::Trojan)
-        );
-        assert_eq!(
-            BuildingType::OliveGrove.nation_for_building(),
-            Some(crate::nation::NationType::Trojan)
-        );
-        assert_eq!(
-            BuildingType::OilPress.nation_for_building(),
             Some(crate::nation::NationType::Trojan)
         );
         assert_eq!(
@@ -3556,10 +3480,9 @@ mod tests {
         e.set_player_nation(crate::nation::NationType::Trojan);
 
         assert!(e.is_building_available(BuildingType::OracleOfApollo));
-        assert!(e.is_building_available(BuildingType::OliveGrove));
-        assert!(e.is_building_available(BuildingType::OilPress));
         assert!(e.is_building_available(BuildingType::Amphitheater));
         assert!(e.is_building_available(BuildingType::Farm));
+        assert!(e.is_building_available(BuildingType::SanctuaryOfArtemis));
         assert!(e.is_building_available(BuildingType::Barracks));
     }
 
@@ -3569,17 +3492,17 @@ mod tests {
         e.set_player_nation(crate::nation::NationType::Roman);
 
         assert!(!e.is_building_available(BuildingType::OracleOfApollo));
-        assert!(!e.is_building_available(BuildingType::OliveGrove));
-        assert!(!e.is_building_available(BuildingType::OilPress));
         assert!(!e.is_building_available(BuildingType::Amphitheater));
+        assert!(!e.is_building_available(BuildingType::SanctuaryOfArtemis));
+        assert!(!e.is_building_available(BuildingType::SanctuaryOfApollo));
     }
 
     #[test]
     fn test_all_names_includes_trojan_unique() {
         let names = BuildingType::all_names();
         assert!(names.contains(&"Oracle of Apollo"));
-        assert!(names.contains(&"Olive Grove"));
-        assert!(names.contains(&"Oil Press"));
+        assert!(names.contains(&"Apiary"));
+        assert!(names.contains(&"Mead Maker"));
         assert!(names.contains(&"Sanctuary of Artemis"));
         assert!(names.contains(&"Sanctuary of Poseidon"));
         assert!(names.contains(&"Sanctuary of Apollo"));
@@ -3589,8 +3512,8 @@ mod tests {
     #[test]
     fn test_from_name_trojan_unique() {
         assert_eq!(BuildingType::from_name("Oracle of Apollo"), Some(BuildingType::OracleOfApollo));
-        assert_eq!(BuildingType::from_name("Olive Grove"), Some(BuildingType::OliveGrove));
-        assert_eq!(BuildingType::from_name("Oil Press"), Some(BuildingType::OilPress));
+        assert_eq!(BuildingType::from_name("Apiary"), Some(BuildingType::Apiary));
+        assert_eq!(BuildingType::from_name("Mead Maker"), Some(BuildingType::MeadMaker));
         assert_eq!(BuildingType::from_name("Sanctuary of Artemis"), Some(BuildingType::SanctuaryOfArtemis));
         assert_eq!(BuildingType::from_name("Sanctuary of Poseidon"), Some(BuildingType::SanctuaryOfPoseidon));
         assert_eq!(BuildingType::from_name("Sanctuary of Apollo"), Some(BuildingType::SanctuaryOfApollo));
@@ -3611,11 +3534,11 @@ mod tests {
         e.storage.add(ResourceType::Stone, 100);
         e.storage.add(ResourceType::Gold, 50);
 
-        let result = e.try_place_building_checked(BuildingType::OliveGrove, 10, 12, 0, &map);
-        assert!(result.is_some(), "Trojan should be able to place Olive Grove");
+        let result = e.try_place_building_checked(BuildingType::OracleOfApollo, 10, 12, 0, &map);
+        assert!(result.is_some(), "Trojan should be able to place Oracle of Apollo");
 
-        let result2 = e.try_place_building_checked(BuildingType::Vineyard, 10, 11, 0, &map);
-        assert!(result2.is_none(), "Trojan should NOT be able to place Vineyard");
+        let result2 = e.try_place_building_checked(BuildingType::TempleOfBacchus, 10, 11, 0, &map);
+        assert!(result2.is_none(), "Trojan should NOT be able to place Temple of Bacchus");
     }
     // ── Balance Simulation ─────────────────────────────────────────────────
     use crate::nation::{NationType, NationRegistry};
@@ -3654,9 +3577,9 @@ mod tests {
             (ResourceType::Wood, 200), (ResourceType::Stone, 200),
             (ResourceType::IronOre, 80), (ResourceType::Coal, 80), (ResourceType::Gold, 50),
             (ResourceType::Grain, 60), (ResourceType::Meat, 40), (ResourceType::Fish, 40),
-            (ResourceType::Water, 30), (ResourceType::Clay, 40), (ResourceType::Hemp, 30),
+            (ResourceType::Water, 30), (ResourceType::Clay, 40), (ResourceType::Honey, 30),
             (ResourceType::Honey, 30), (ResourceType::Tools, 20), (ResourceType::Weapons, 15),
-            (ResourceType::Planks, 30), (ResourceType::Bricks, 20), (ResourceType::IronIngots, 15),
+            (ResourceType::Planks, 30), (ResourceType::Planks, 20), (ResourceType::IronIngots, 15),
             (ResourceType::Flour, 20),
         ];
         let mut eco = Economy::with_starting_resources(starting);
@@ -3671,9 +3594,9 @@ mod tests {
             (BuildingType::Weaponsmith, 8, 5), (BuildingType::Barracks, 9, 5),
             (BuildingType::Smelter, 6, 6), (BuildingType::Mine, 8, 8),
             (BuildingType::Waterworks, 10, 7), (BuildingType::Butcher, 10, 8),
-            (BuildingType::Storehouse, 6, 8), (BuildingType::ClayPit, 5, 9),
-            (BuildingType::Brickworks, 5, 10), (BuildingType::HempFarm, 9, 9),
-            (BuildingType::Ropemaker, 9, 10), (BuildingType::Apiary, 11, 7),
+            (BuildingType::Storehouse, 6, 8), (BuildingType::Woodcutter, 5, 9),
+            (BuildingType::Sawmill, 5, 10), (BuildingType::Apiary, 9, 9),
+            (BuildingType::MeadMaker, 9, 10), (BuildingType::Apiary, 11, 7),
             (BuildingType::MeadMaker, 11, 8),
         ];
         for (kind, x, y) in buildings { eco.place_building(*kind, *x, *y); }
@@ -3738,7 +3661,36 @@ mod tests {
     }
 
     #[test]
-    fn test_balance_simulation_deterministic() {
+
+    #[test]
+    fn test_resource_group_categories() {
+        // Construction group
+        assert_eq!(ResourceType::Wood.group_name(), "Construction");
+        assert_eq!(ResourceType::Stone.group_name(), "Construction");
+        assert_eq!(ResourceType::Planks.group_name(), "Construction");
+        // Food group
+        assert_eq!(ResourceType::Grain.group_name(), "Food");
+        assert_eq!(ResourceType::Fish.group_name(), "Food");
+        assert_eq!(ResourceType::Meat.group_name(), "Food");
+        assert_eq!(ResourceType::Water.group_name(), "Food");
+        assert_eq!(ResourceType::Bread.group_name(), "Food");
+        assert_eq!(ResourceType::Flour.group_name(), "Food");
+        assert_eq!(ResourceType::Honey.group_name(), "Food");
+        assert_eq!(ResourceType::Mead.group_name(), "Food");
+        assert_eq!(ResourceType::Wine.group_name(), "Food");
+        // Metal group
+        assert_eq!(ResourceType::IronOre.group_name(), "Metal");
+        assert_eq!(ResourceType::Coal.group_name(), "Metal");
+        assert_eq!(ResourceType::Gold.group_name(), "Metal");
+        assert_eq!(ResourceType::Sulfur.group_name(), "Metal");
+        assert_eq!(ResourceType::Clay.group_name(), "Metal");
+        // Metal Products group
+        assert_eq!(ResourceType::Tools.group_name(), "Metal Products");
+        assert_eq!(ResourceType::Weapons.group_name(), "Metal Products");
+        assert_eq!(ResourceType::IronIngots.group_name(), "Metal Products");
+    }
+
+        fn test_balance_simulation_deterministic() {
         let first: Vec<String> = NationType::ALL.iter().map(|&n| {
             let r = simulate_nation(n);
             format!("{}:{}:{}", r.settlers, r.total_resources, r.unique_resources)

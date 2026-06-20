@@ -1912,14 +1912,8 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
         SiegeWorkshop => [0.6, 0.3, 0.1],       // rusty orange
         Shipyard => [0.2, 0.4, 0.6],            // nautical blue
         RoadLayer => [0.5, 0.45, 0.35],          // tan/sand
-        ClayPit => [0.7, 0.5, 0.3],              // clay brown
-        Brickworks => [0.8, 0.4, 0.2],           // brick red
-        HempFarm => [0.3, 0.6, 0.2],             // hemp green
-        Ropemaker => [0.6, 0.5, 0.3],            // rope tan
         Apiary => [0.9, 0.8, 0.2],               // honey gold
         MeadMaker => [0.7, 0.5, 0.2],             // mead amber
-        Vineyard => [0.6, 0.3, 0.6],             // grape purple
-        WinePress => [0.5, 0.2, 0.4],            // wine dark purple
         TempleOfBacchus => [0.8, 0.6, 0.2],      // temple gold
         Colosseum => [0.7, 0.5, 0.3],            // arena sandstone
         SanctuaryOfMinerva => [0.9, 0.8, 0.6],   // marble white
@@ -1937,8 +1931,6 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
         SanctuaryOfHuitzilopochtli => [0.8, 0.2, 0.1], // war red
         Observatory => [0.9, 0.85, 0.7],               // limestone
         OracleOfApollo => [0.9, 0.85, 0.4],               // golden oracle
-        OliveGrove => [0.4, 0.6, 0.25],                   // olive green
-        OilPress => [0.7, 0.6, 0.3],                      // amber oil
         SanctuaryOfArtemis => [0.6, 0.85, 0.5],          // forest green
         SanctuaryOfPoseidon => [0.2, 0.5, 0.8],          // ocean blue
         SanctuaryOfApollo => [0.95, 0.85, 0.3],          // sun gold
@@ -3544,13 +3536,9 @@ impl App {
             "Shipyard" => "shipyard",
             "Road Layer" => "roadlayer",
             "Clay Pit" => "claypit",
-            "Brickworks" => "brickworks",
-            "Hemp Farm" => "hempfarm",
-            "Ropemaker" => "ropemaker",
             "Apiary" => "apiary",
             "Mead Maker" => "meadmaker",
             // Roman unique
-            "Vineyard" => "vineyard",
             "Wine Press" => "winepress",
             "Temple of Bacchus" => "templeofbacchus",
             "Colosseum" => "colosseum",
@@ -3903,14 +3891,8 @@ mod tests {
             SiegeWorkshop,
             Shipyard,
             RoadLayer,
-            ClayPit,
-            Brickworks,
-            HempFarm,
-            Ropemaker,
             Apiary,
             MeadMaker,
-            Vineyard,
-            WinePress,
             TempleOfBacchus,
             Colosseum,
             SanctuaryOfMinerva,
@@ -3928,8 +3910,6 @@ mod tests {
             SanctuaryOfHuitzilopochtli,
             Observatory,
             OracleOfApollo,
-            OliveGrove,
-            OilPress,
             SanctuaryOfArtemis,
             SanctuaryOfPoseidon,
             SanctuaryOfApollo,

@@ -558,8 +558,6 @@ impl NationRegistry {
 pub enum UniqueBuildingType {
     // Romans
     TempleOfBacchus = 0,
-    Vineyard = 1,
-    WinePress = 2,
     SanctuaryOfMinerva = 3,
     SanctuaryOfVulcan = 4,
     Colosseum = 5,
@@ -580,8 +578,6 @@ pub enum UniqueBuildingType {
     Observatory = 26,
     // Trojans
     OracleOfApollo = 30,
-    OliveGrove = 31,
-    OilPress = 32,
     SanctuaryOfArtemis = 33,
     SanctuaryOfPoseidon = 34,
     SanctuaryOfApollo = 35,
@@ -613,8 +609,6 @@ impl UniqueBuildingType {
     pub fn name(self) -> &'static str {
         match self {
             UniqueBuildingType::TempleOfBacchus => "Temple of Bacchus",
-            UniqueBuildingType::Vineyard => "Vineyard",
-            UniqueBuildingType::WinePress => "Wine Press",
             UniqueBuildingType::SanctuaryOfMinerva => "Sanctuary of Minerva",
             UniqueBuildingType::SanctuaryOfVulcan => "Sanctuary of Vulcan",
             UniqueBuildingType::Colosseum => "Colosseum",
@@ -632,8 +626,6 @@ impl UniqueBuildingType {
             UniqueBuildingType::SanctuaryOfHuitzilopochtli => "Sanctuary of Huitzilopochtli",
             UniqueBuildingType::Observatory => "Observatory",
             UniqueBuildingType::OracleOfApollo => "Oracle of Apollo",
-            UniqueBuildingType::OliveGrove => "Olive Grove",
-            UniqueBuildingType::OilPress => "Oil Press",
             UniqueBuildingType::SanctuaryOfArtemis => "Sanctuary of Artemis",
             UniqueBuildingType::SanctuaryOfPoseidon => "Sanctuary of Poseidon",
             UniqueBuildingType::SanctuaryOfApollo => "Sanctuary of Apollo",
@@ -653,8 +645,6 @@ impl UniqueBuildingType {
         match nation {
             NationType::Roman => &[
                 UniqueBuildingType::TempleOfBacchus,
-                UniqueBuildingType::Vineyard,
-                UniqueBuildingType::WinePress,
                 UniqueBuildingType::SanctuaryOfMinerva,
                 UniqueBuildingType::SanctuaryOfVulcan,
                 UniqueBuildingType::Colosseum,
@@ -678,8 +668,6 @@ impl UniqueBuildingType {
             ],
             NationType::Trojan => &[
                 UniqueBuildingType::OracleOfApollo,
-                UniqueBuildingType::OliveGrove,
-                UniqueBuildingType::OilPress,
                 UniqueBuildingType::SanctuaryOfArtemis,
                 UniqueBuildingType::SanctuaryOfPoseidon,
                 UniqueBuildingType::SanctuaryOfApollo,
@@ -936,10 +924,10 @@ mod tests {
 
     #[test]
     fn test_unique_buildings_for_nation() {
-        assert_eq!(UniqueBuildingType::for_nation(NationType::Roman).len(), 6);
+        assert_eq!(UniqueBuildingType::for_nation(NationType::Roman).len(), 4);
         assert_eq!(UniqueBuildingType::for_nation(NationType::Viking).len(), 6);
         assert_eq!(UniqueBuildingType::for_nation(NationType::Maya).len(), 7);
-        assert_eq!(UniqueBuildingType::for_nation(NationType::Trojan).len(), 7);
+        assert_eq!(UniqueBuildingType::for_nation(NationType::Trojan).len(), 5);
         assert_eq!(UniqueBuildingType::for_nation(NationType::DarkTribe).len(), 7);
     }
 
@@ -1017,6 +1005,6 @@ mod tests {
             + UniqueBuildingType::for_nation(NationType::Maya).len()
             + UniqueBuildingType::for_nation(NationType::Trojan).len()
             + UniqueBuildingType::for_nation(NationType::DarkTribe).len();
-        assert_eq!(total, 33); // 6 + 6 + 7 + 7 + 7
+        assert_eq!(total, 29); // 4 + 6 + 7 + 5 + 7
     }
 }
