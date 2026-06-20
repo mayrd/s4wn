@@ -805,6 +805,33 @@
   #construction-panel .con-bldg .con-name { flex: 1; color: #ddd; }
   #construction-panel .con-bldg .con-cost { color: #888; font-size: 10px; }
 
+  /* Map Editor Terrain Palette */
+  #editor-terrain-palette {
+      position: fixed; bottom: 80px; left: 8px; z-index: 97;
+      background: rgba(10,10,26,0.95); border: 1px solid rgba(230,180,34,0.25);
+      border-radius: 6px; padding: 8px; width: 200px;
+      display: none; font-size: 11px;
+  }
+  #editor-terrain-palette.open { display: block; }
+  #editor-terrain-palette h4 { margin: 0 0 6px 0; color: #e6b422; font-size: 13px; text-align: center; }
+  .editor-terrain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+  .editor-terrain-item {
+      display: flex; align-items: center; gap: 6px;
+      padding: 3px 6px; border-radius: 3px; cursor: pointer;
+      background: rgba(255,255,255,0.03);
+      transition: background 0.15s, border-color 0.15s;
+      border: 1px solid transparent;
+  }
+  .editor-terrain-item:hover { background: rgba(255,255,255,0.06); }
+  .editor-terrain-item.selected {
+      background: rgba(230,180,34,0.15);
+      border-color: rgba(230,180,34,0.5);
+      color: #e6b422;
+  }
+  .editor-terrain-item .editor-terrain-icon { font-size: 16px; width: 22px; text-align: center; }
+  .editor-terrain-item .editor-terrain-name { flex: 1; color: #ccc; font-size: 10px; }
+  .editor-terrain-item.selected .editor-terrain-name { color: #e6b422; }
+
   /* ── Resources & Settlers Panels ─────────────────────────────────── */
   #resources-panel, #settlers-panel {
       position: fixed; bottom: 80px; left: 8px; z-index: 98;
@@ -2978,6 +3005,7 @@ canvas.addEventListener('click', (e) => {
         window._editorTerrain = ((window._editorTerrain || 0) + 1) % 8;
         const names = ['Grass','Forest','Mountain','Water','DeepWater','Desert','Swamp','Snow'];
         console.log('Map editor terrain: ' + names[window._editorTerrain]);
+if (typeof populateTerrainPalette === 'function') populateTerrainPalette();
         return;
     }
 
@@ -4767,6 +4795,62 @@ async function main() {
 main();
 
 
+
+// ── Map Editor Mode ────────────────────────────────────────
+var TERRAIN_TYPES = [
+    {id:0, name:"Grass", icon:"Grs"},
+    {id:1, name:"Forest", icon:"Frs"},
+    {id:2, name:"Mountain", icon:"Mtn"},
+    {id:3, name:"Water", icon:"Wtr"},
+    {id:4, name:"Deep Water", icon:"DpW"},
+    {id:5, name:"Desert", icon:"Dsr"},
+    {id:6, name:"Swamp", icon:"Swp"},
+    {id:7, name:"Snow", icon:"Sno"}
+];
+window._editorTerrain = window._editorTerrain || 0;
+
+function populateTerrainPalette() {
+    var grid = document.getElementById("editor-terrain-grid");
+    if (!grid) return;
+    var html = "";
+    for (var i = 0; i < TERRAIN_TYPES.length; i++) {
+        var t = TERRAIN_TYPES[i];
+        var sel = window._editorTerrain === t.id ? " selected" : "";
+                html += "<div class=\"editor-terrain-item" + sel + "\" data-terrain=\"" + t.id + "\" onclick=\"selectEditorTerrain(" + t.id + ")\">";
+        html += "<span class=\"editor-terrain-icon\">" + t.icon + "</span>";
+        html += "<span class=\"editor-terrain-name\">" + t.name + "</span>";
+        html += "</div>";
+    }
+    grid.innerHTML = html;
+}
+
+function selectEditorTerrain(id) {
+    window._editorTerrain = id;
+    populateTerrainPalette();
+}
+
+function toggleEditorMode() {
+    var palette = document.getElementById("editor-terrain-palette");
+    var btn = document.getElementById("btn-editor");
+    var active = false;
+    try {
+        if (typeof toggle_editor_grid === "function") {
+            active = toggle_editor_grid();
+        }
+    } catch(e) {}
+    if (palette) {
+        if (active) {
+            populateTerrainPalette();
+            palette.classList.add("open");
+        } else {
+            palette.classList.remove("open");
+        }
+    }
+    if (btn) {
+        if (active) btn.classList.add("active");
+        else btn.classList.remove("active");
+    }
+}
 // ── Construction Panel (#18) ──────────────────────────────────────────────
 
 // S4 building categories — loaded from config/data.js
@@ -5256,6 +5340,7 @@ window.__s4wn_debug = {
     <button id="btn-speed" onclick="toggleSpeed()" title="Toggle game speed">▶ 1×</button>
     <button id="btn-construction" onclick="toggleConstructionPanel()" data-i18n="construction">🏗️ Bauen</button>
     <button id="btn-resources" onclick="toggleResourcesPanel()" data-i18n="resources_btn">📦 Ressourcen</button>
+    <button id="btn-editor" onclick="toggleEditorMode()" title="Map Editor (Ctrl+Click to paint)">Edit</button>
     <button id="btn-settlers" onclick="toggleSettlersPanel()" data-i18n="settlers_btn">👥 Siedler</button>
 </div>
 
@@ -5265,7 +5350,16 @@ window.__s4wn_debug = {
     <div id="construction-categories"></div>
 </div>
 
+<!-- Map Editor Terrain Palette -->
+<div id="editor-terrain-palette">
+    <h4>Terrain</h4>
+    <div class="editor-terrain-grid" id="editor-terrain-grid"></div>
+</div>
+
 <!-- Resources Panel -->
+</div>
+
+<!-- Resources Panel -->>
 <div id="resources-panel">
     <h4>📦 Ressourcen</h4>
     <div id="resources-body"></div>
