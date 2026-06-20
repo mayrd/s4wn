@@ -74,6 +74,8 @@
     cursor: grab;
     position: fixed;
     top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
     z-index: 1;
   }
   canvas:active { cursor: grabbing; }
@@ -3118,8 +3120,10 @@ document.getElementById('btn-save-game').addEventListener('click', (e) => {
 
 // ── Canvas sizing ──────────────────────────────────────────────────────
 function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const w = window.innerWidth || document.documentElement.clientWidth || 1024;
+    const h = window.innerHeight || document.documentElement.clientHeight || 768;
+    canvas.width = w;
+    canvas.height = h;
     if (engineReady) resize();
 }
 window.addEventListener('resize', resizeCanvas);
@@ -4532,8 +4536,10 @@ async function main() {
             console.warn('load_map_json not available (old WASM cache?) — map loading disabled');
         }
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const w = window.innerWidth || document.documentElement.clientWidth || 1024;
+        const h = window.innerHeight || document.documentElement.clientHeight || 768;
+        canvas.width = w;
+        canvas.height = h;
         console.log('Canvas size:', canvas.width, 'x', canvas.height);
 
         const ok = engineInit('game-canvas');
