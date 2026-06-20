@@ -5385,19 +5385,22 @@ document.getElementById('btn-tutorial')?.addEventListener('click', () => {
 });
 
 // Override startNewGame to start tutorial when appropriate
-const _origStartNewGame = startNewGame;
-startNewGame = async function() {
-  await _origStartNewGame.apply(this, arguments);
-  const mapType = document.getElementById('ng-map').value;
-  if (mapType === 'tutorial') {
-    setTimeout(() => Tutorial.start(), 500);
-    if (!window._tutorialTick) {
-      window._tutorialTick = setInterval(() => Tutorial.tick(), 1000);
+// Deferred: module script hasn't run yet, so wait for DOMContentLoaded
+window.addEventListener('DOMContentLoaded', () => {
+  const _origStartNewGame = window.startNewGame;
+  window.startNewGame = async function() {
+    await _origStartNewGame.apply(this, arguments);
+    const mapType = document.getElementById('ng-map').value;
+    if (mapType === 'tutorial') {
+      setTimeout(() => Tutorial.start(), 500);
+      if (!window._tutorialTick) {
+        window._tutorialTick = setInterval(() => Tutorial.tick(), 1000);
+      }
+    } else {
+      Tutorial.stop();
     }
-  } else {
-    Tutorial.stop();
-  }
-};
+  };
+});
 </script>
 </body>
 </html>
