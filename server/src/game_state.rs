@@ -17,6 +17,7 @@
 //! the source of truth.
 
 use crate::protocol::{BuildingState, GameStateSnapshot, PlayerState, UnitState};
+use log::{debug, info};
 // serde is used in tests via serde_json re-export
 use std::collections::HashMap;
 
@@ -558,6 +559,11 @@ impl ServerGameState {
             production_timer: 0,
         });
 
+        debug!(
+            "Player {} placed building {:?} (#{}) at ({}, {})",
+            player_id, kind, id, x, y
+        );
+
         Ok(id)
     }
 
@@ -612,6 +618,11 @@ impl ServerGameState {
             move_target: None,
         });
 
+        debug!(
+            "Player {} spawned {:?} (#{}) at ({:.1}, {:.1}) — {}/{} units",
+            player_id, kind, id, x, y, self.units.len(), self.units.capacity()
+        );
+
         id
     }
 
@@ -649,6 +660,10 @@ impl ServerGameState {
         target_y: usize,
     ) {
         if let Some(unit) = self.units.iter_mut().find(|u| u.id == unit_id) {
+            debug!(
+                "Unit #{} ({:?}) moving to ({}, {})",
+                unit_id, unit.kind, target_x, target_y
+            );
             unit.move_target = Some((target_x, target_y));
             unit.target_unit = None;
         }
@@ -680,6 +695,10 @@ impl ServerGameState {
     /// Apply a validated attack command.
     pub fn apply_unit_attack(&mut self, attacker_id: u32, target_id: u32) {
         if let Some(unit) = self.units.iter_mut().find(|u| u.id == attacker_id) {
+            debug!(
+                "Unit #{} ({:?}) targeting unit #{}",
+                attacker_id, unit.kind, target_id
+            );
             unit.target_unit = Some(target_id);
             unit.move_target = None;
         }
@@ -704,6 +723,18 @@ impl ServerGameState {
         self.tick_buildings();
         self.tick_units();
         self.tick_combat();
+
+        // Periodic stats every 100 ticks (10 seconds at 10 TPS)
+        if self.tick % 100 == 0 {
+            let players = self.player_resources.len();
+            let buildings = self.buildings.len();
+            let units = self.units.len();
+            let in_construction = self.buildings.iter().filter(|b| b.construction < 1.0).count();
+            info!(
+                "Tick {} — {} players, {} buildings ({} in construction), {} units",
+                self.tick, players, buildings, in_construction, units
+            );
+        }
     }
 
     /// Update building construction and production.
@@ -711,7 +742,14 @@ impl ServerGameState {
         for building in &mut self.buildings {
             // Construction progress
             if building.construction < 1.0 {
+                let prev = building.construction;
                 building.construction = (building.construction + 0.05).min(1.0);
+                if building.construction >= 1.0 && prev < 1.0 {
+                    debug!(
+                        "Player {} — {:?} #{} construction complete at ({}, {})",
+                        building.owner_id, building.kind, building.id, building.x, building.y
+                    );
+                }
                 continue;
             }
 
@@ -798,11 +836,23 @@ impl ServerGameState {
                 // In range — attack
                 if self.units[i].attack_cooldown == 0 {
                     let damage = self.units[i].kind.attack();
+                    let attacker_id = self.units[i].id;
+                    let attacker_kind = self.units[i].kind;
+                    let attacker_owner = self.units[i].owner_id;
                     // Apply damage to target
                     if let Some(target) = self.units.iter_mut().find(|u| u.id == target_id) {
                         target.hp = target.hp.saturating_sub(damage);
                         if target.hp == 0 {
                             // Target died
+                            debug!(
+                                "Unit #{} ({:?}, P{}) killed by unit #{} ({:?}, P{})",
+                                target_id,
+                                target.kind,
+                                target.owner_id,
+                                attacker_id,
+                                attacker_kind,
+                                attacker_owner
+                            );
                             target.target_unit = None;
                             // Clear any references to this dead unit
                             for u in self.units.iter_mut() {

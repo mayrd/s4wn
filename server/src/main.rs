@@ -453,7 +453,14 @@ async fn handle_message(
                 if let Some(room) = state.rooms.get_room_mut(&room_id) {
                     match room.start_game() {
                         Ok(()) => {
-                            info!("Game started in room {} by player {}", room_id, player_id);
+                            let map_size = room.game_state.as_ref()
+                                .map(|gs| (gs.map.width, gs.map.height))
+                                .unwrap_or((0, 0));
+                            let player_count = room.player_count();
+                            info!(
+                                "Game started in room {} by player {} — {} players, {}x{} map",
+                                room_id, player_id, player_count, map_size.0, map_size.1
+                            );
                             // Broadcast initial game state snapshot
                             if let Some(ref gs) = room.game_state {
                                 let sync = NetworkMessage::GameStateSync(gs.to_snapshot());
@@ -540,7 +547,13 @@ async fn handle_message(
 
 /// Run the game server.
 pub async fn run(addr: &str) -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+    // Respect S4WN_LOG_LEVEL (fall back to RUST_LOG, default to "info")
+    let log_level = std::env::var("S4WN_LOG_LEVEL")
+        .or_else(|_| std::env::var("RUST_LOG"))
+        .unwrap_or_else(|_| "info".to_string());
+    env_logger::Builder::from_env(
+        env_logger::Env::default().default_filter_or(&log_level)
+    ).init();
     let listener = TcpListener::bind(addr).await?;
     info!("S4WN game server listening on {}", addr);
 
