@@ -403,6 +403,15 @@ const ELEVATION_SCALE: f32 = 0.5;
 
 static mut APP: Option<App> = None;
 
+/// GPU buffers for a single uploaded 3D model mesh.
+/// Each model gets its own VAO + index buffer so per-model draw calls work correctly.
+#[allow(dead_code)]
+struct GpuModel {
+    vao: WebGlVertexArrayObject,
+    index_buffer: WebGlBuffer,
+    index_count: i32,
+}
+
 struct App {
     gl: WebGl2RenderingContext,
     program: WebGlProgram,
@@ -488,13 +497,12 @@ struct App {
     water_time_loc: Option<web_sys::WebGlUniformLocation>,
     // ── Phase 5 Step 8: Model 3D rendering ──────────────────────────
     model_program: Option<WebGlProgram>,
-    model_vao: Option<WebGlVertexArrayObject>,
+    /// Per-model GPU buffers (VAO + index buffer + index count), keyed by model_id
+    gpu_models: std::collections::HashMap<String, GpuModel>,
+    /// Shared vertex buffer for all models (positions/normals/UVs) — overwritten on each upload
     model_pos_buffer: Option<WebGlBuffer>,
     model_normal_buffer: Option<WebGlBuffer>,
     model_uv_buffer: Option<WebGlBuffer>,
-    model_index_buffer: Option<WebGlBuffer>,
-    model_index_count: i32,
-    model_mvp_loc: Option<web_sys::WebGlUniformLocation>,
     model_model_loc: Option<web_sys::WebGlUniformLocation>,
     model_view_pos_loc: Option<web_sys::WebGlUniformLocation>,
     model_light_dir_loc: Option<web_sys::WebGlUniformLocation>,
@@ -824,26 +832,18 @@ impl App {
         })
         .ok();
 
-        let (model_vao, model_pos_buffer, model_normal_buffer, model_uv_buffer, model_index_buffer,
-             model_mvp_loc, model_model_loc, model_view_pos_loc, model_light_dir_loc,
+        let (model_pos_buffer, model_normal_buffer, model_uv_buffer,
+             model_model_loc, model_view_pos_loc, model_light_dir_loc,
              model_color_loc, model_roughness_loc, model_metallic_loc,
              model_instance_buffer, model_offset_buffer, model_vp_loc, model_use_instanced_loc) = 
             if let Some(ref prog) = model_program {
-                let vao = gl.create_vertex_array();
-                if let Some(ref v) = vao {
-                    gl.bind_vertex_array(Some(v));
-                }
                 let pos_buf = gl.create_buffer();
                 let norm_buf = gl.create_buffer();
                 let uv_buf = gl.create_buffer();
-                let idx_buf = gl.create_buffer();
-                gl.bind_vertex_array(None);
                 let inst_buf = gl.create_buffer();
                 let offs_buf = gl.create_buffer();
                 (
-                    vao,
-                    pos_buf, norm_buf, uv_buf, idx_buf,
-                    gl.get_uniform_location(prog, "u_mvp"),
+                    pos_buf, norm_buf, uv_buf,
                     gl.get_uniform_location(prog, "u_model"),
                     gl.get_uniform_location(prog, "u_view_pos"),
                     gl.get_uniform_location(prog, "u_light_dir"),
@@ -856,7 +856,7 @@ impl App {
                     gl.get_uniform_location(prog, "u_use_instanced"),
                 )
             } else {
-                (None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+                (None, None, None, None, None, None, None, None, None, None, None, None, None)
             };
 
 
@@ -961,13 +961,10 @@ impl App {
             splat_buffer: Some(splat_buffer),
             
             model_program,
-            model_vao,
+            gpu_models: std::collections::HashMap::new(),
             model_pos_buffer,
             model_normal_buffer,
             model_uv_buffer,
-            model_index_buffer,
-            model_index_count: 0,
-            model_mvp_loc,
             model_model_loc,
             model_view_pos_loc,
             model_light_dir_loc,
@@ -1188,21 +1185,24 @@ water_time_loc,
     // ── Phase 5 Step 8: Model 3D Rendering Pass ──────────────────────
 
     /// Upload a model mesh to GPU buffers for rendering.
-    fn upload_model_to_gpu(&mut self, mesh: &model::ModelMesh) {
+    /// Creates a per-model VAO + index buffer so that render_models can do
+    /// correctly separated draw calls per model type.
+    fn upload_model_to_gpu(&mut self, name: &str, mesh: &model::ModelMesh) {
         let gl = &self.gl;
         let prog = match self.model_program.as_ref() {
             Some(p) => p,
             None => return,
         };
-        let vao = match self.model_vao.as_ref() {
+
+        // Create per-model VAO
+        let vao = match gl.create_vertex_array() {
             Some(v) => v,
             None => return,
         };
-
+        gl.bind_vertex_array(Some(&vao));
         gl.use_program(Some(prog));
-        gl.bind_vertex_array(Some(vao));
 
-        // Upload position buffer (location 0)
+        // Upload position buffer (location 0) — bind to VAO via temp buffer, then detach
         if let Some(ref buf) = self.model_pos_buffer {
             gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
             unsafe {
@@ -1247,8 +1247,9 @@ water_time_loc,
             gl.enable_vertex_attrib_array(2);
         }
 
-        // Upload index buffer
-        if let Some(ref buf) = self.model_index_buffer {
+        // Create and upload per-model index buffer (stays bound to VAO)
+        let idx_buf = gl.create_buffer();
+        if let Some(ref buf) = idx_buf {
             gl.bind_buffer(
                 WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
                 Some(buf),
@@ -1263,10 +1264,19 @@ water_time_loc,
             }
         }
 
-        // Store index count for draw calls
-        self.model_index_count = mesh.indices.len() as i32;
-
         gl.bind_vertex_array(None);
+
+        // Store per-model GPU resources
+        if let Some(buf) = idx_buf {
+            self.gpu_models.insert(
+                name.to_string(),
+                GpuModel {
+                    vao,
+                    index_buffer: buf,
+                    index_count: mesh.indices.len() as i32,
+                },
+            );
+        }
     }
 
     fn render_models(&mut self) {
@@ -1278,13 +1288,8 @@ water_time_loc,
             Some(p) => p,
             None => return,
         };
-        let vao = match self.model_vao.as_ref() {
-            Some(v) => v,
-            None => return,
-        };
 
         gl.use_program(Some(prog));
-        gl.bind_vertex_array(Some(vao));
 
         // Compute VP matrix from orbital camera (reuse existing infrastructure)
         let (ex, ey, ez) = self.camera.eye();
@@ -1327,6 +1332,11 @@ water_time_loc,
             gl.uniform1f(Some(loc), 0.0);
         }
 
+        // Enable instanced path
+        if let Some(ref loc) = self.model_use_instanced_loc {
+            gl.uniform1f(Some(loc), 1.0);
+        }
+
         // Build model matrix helper
         let build_model_mat = |inst: &model::ModelInstance| -> [f32; 16] {
             let s = inst.scale;
@@ -1341,84 +1351,88 @@ water_time_loc,
             ]
         };
 
-        // Group instances by model_id for instanced rendering
-        use std::collections::HashMap;
-        let mut groups: HashMap<String, Vec<(f32, f32, f32)>> = HashMap::new();
-        // Store (model_id, scale, rotation_y, x, y) for each instance
-        let mut instance_data: Vec<(&str, [f32; 16], [f32; 3])> = Vec::new();
+        // Group instances by model_id
+        let mut groups: std::collections::HashMap<&str, Vec<&model::ModelInstance>> = std::collections::HashMap::new();
         for inst in &self.model_instances {
-            let model_mat = build_model_mat(inst);
-            let offset = [0.0f32, 0.0, 0.0];
-            instance_data.push((&inst.model_id, model_mat, offset));
-            let entry = groups.entry(inst.model_id.clone()).or_insert(Vec::new());
-            entry.push((inst.x, inst.y, inst.scale));
+            groups.entry(&inst.model_id).or_insert_with(Vec::new).push(inst);
         }
 
-        // Build instance buffers: flat arrays of model matrices + offsets
-        let mut model_mats: Vec<f32> = Vec::new();
-        let mut offsets: Vec<f32> = Vec::new();
-        for (_, mat, off) in &instance_data {
-            model_mats.extend_from_slice(mat);
-            offsets.extend_from_slice(off);
-        }
+        // Per-model instanced draw calls
+        for (model_id, instances) in &groups {
+            // Look up this model's GPU buffers
+            let gpu_model = match self.gpu_models.get(*model_id) {
+                Some(gm) => gm,
+                None => continue, // model not uploaded yet, skip
+            };
 
-        // Upload instance data to GPU buffers
-        let instance_count = instance_data.len() as i32;
-        if let Some(ref buf) = self.model_instance_buffer {
-            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
-            unsafe {
-                let view = js_sys::Float32Array::view(&model_mats);
-                gl.buffer_data_with_array_buffer_view(
-                    WebGl2RenderingContext::ARRAY_BUFFER,
-                    &view,
-                    WebGl2RenderingContext::DYNAMIC_DRAW,
-                );
+            // Bind this model's VAO (which has its own index buffer)
+            gl.bind_vertex_array(Some(&gpu_model.vao));
+
+            // Build instance data arrays for this model group
+            let mut model_mats: Vec<f32> = Vec::new();
+            let mut offsets: Vec<f32> = Vec::new();
+            for inst in instances {
+                let mat = build_model_mat(inst);
+                model_mats.extend_from_slice(&mat);
+                offsets.extend_from_slice(&[0.0f32, 0.0, 0.0]);
             }
-            // Configure instanced attributes (locations 3-6 for mat4)
-            let stride = 64; // 16 floats * 4 bytes
+
+            // Upload per-instance model matrices
+            if let Some(ref buf) = self.model_instance_buffer {
+                gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+                unsafe {
+                    let view = js_sys::Float32Array::view(&model_mats);
+                    gl.buffer_data_with_array_buffer_view(
+                        WebGl2RenderingContext::ARRAY_BUFFER,
+                        &view,
+                        WebGl2RenderingContext::DYNAMIC_DRAW,
+                    );
+                }
+                let stride = 64; // 16 floats * 4 bytes
+                for i in 0..4 {
+                    let loc = 3 + i;
+                    gl.vertex_attrib_pointer_with_i32(
+                        loc, 4, WebGl2RenderingContext::FLOAT, false, stride, (i * 16) as i32,
+                    );
+                    gl.enable_vertex_attrib_array(loc);
+                    gl.vertex_attrib_divisor(loc, 1);
+                }
+            }
+
+            // Upload per-instance offsets
+            if let Some(ref buf) = self.model_offset_buffer {
+                gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+                unsafe {
+                    let view = js_sys::Float32Array::view(&offsets);
+                    gl.buffer_data_with_array_buffer_view(
+                        WebGl2RenderingContext::ARRAY_BUFFER,
+                        &view,
+                        WebGl2RenderingContext::DYNAMIC_DRAW,
+                    );
+                }
+                gl.vertex_attrib_pointer_with_i32(7, 3, WebGl2RenderingContext::FLOAT, false, 0, 0);
+                gl.enable_vertex_attrib_array(7);
+                gl.vertex_attrib_divisor(7, 1);
+            }
+
+            // Instanced draw call for this model group
+            let instance_count = instances.len() as i32;
+            gl.draw_elements_instanced_with_i32(
+                WebGl2RenderingContext::TRIANGLES,
+                gpu_model.index_count,
+                WebGl2RenderingContext::UNSIGNED_SHORT,
+                0,
+                instance_count,
+            );
+
+            // Reset instanced divisor for next group
             for i in 0..4 {
-                let loc = 3 + i;
-                gl.vertex_attrib_pointer_with_i32(
-                    loc, 4, WebGl2RenderingContext::FLOAT, false, stride, (i * 16) as i32,
-                );
-                gl.enable_vertex_attrib_array(loc);
-                gl.vertex_attrib_divisor(loc, 1);
+                gl.vertex_attrib_divisor(3 + i, 0);
             }
-        }
-        if let Some(ref buf) = self.model_offset_buffer {
-            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
-            unsafe {
-                let view = js_sys::Float32Array::view(&offsets);
-                gl.buffer_data_with_array_buffer_view(
-                    WebGl2RenderingContext::ARRAY_BUFFER,
-                    &view,
-                    WebGl2RenderingContext::DYNAMIC_DRAW,
-                );
-            }
-            gl.vertex_attrib_pointer_with_i32(7, 3, WebGl2RenderingContext::FLOAT, false, 0, 0);
-            gl.enable_vertex_attrib_array(7);
-            gl.vertex_attrib_divisor(7, 1);
+            gl.vertex_attrib_divisor(7, 0);
         }
 
-        // Enable instanced path
-        if let Some(ref loc) = self.model_use_instanced_loc {
-            gl.uniform1f(Some(loc), 1.0);
-        }
-
-        // Single instanced draw call for all instances
-        gl.draw_elements_instanced_with_i32(
-            WebGl2RenderingContext::TRIANGLES,
-            self.model_index_count,
-            WebGl2RenderingContext::UNSIGNED_SHORT,
-            0,
-            instance_count,
-        );
-
-        // Reset instanced divisor for next frame
-        for i in 0..4 {
-            gl.vertex_attrib_divisor(3 + i, 0);
-        }
-        gl.vertex_attrib_divisor(7, 0);
+        gl.bind_vertex_array(None);
 
         // Also set u_model for non-instanced fallback compatibility
         if let Some(ref loc) = self.model_model_loc {
@@ -3278,7 +3292,7 @@ pub fn load_model_json(name: &str, json_str: &str) -> String {
     let tri_count = mesh.triangle_count;
     unsafe {
         if let Some(ref mut app) = APP.as_mut() {
-            app.upload_model_to_gpu(&mesh);
+            app.upload_model_to_gpu(name, &mesh);
         }
     }
     format!("ok:{}:{}tri", name, tri_count)
