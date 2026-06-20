@@ -331,12 +331,15 @@ in vec2 a_uv;
 in mat4 a_model;
 // Per-instance world offset (location 7)
 in vec3 a_offset;
+// Per-instance animation phase (location 8) — 0.0 = no wobble (buildings), non-zero = unit idle wobble
+in float a_anim_phase;
 
 uniform mat4 u_vp;
 uniform mat4 u_model;
 uniform vec3 u_view_pos;
 uniform vec3 u_light_dir;
 uniform float u_use_instanced;
+uniform float u_time;
 
 out vec3 v_normal;
 out vec3 v_world_pos;
@@ -346,7 +349,18 @@ out vec3 v_view_dir;
 
 void main() {
     mat4 model = (u_use_instanced > 0.5) ? a_model : u_model;
-    vec4 world_pos = model * vec4(a_position + a_offset, 1.0);
+    vec3 pos = a_position + a_offset;
+
+    // Unit idle wobble: subtle sine-wave displacement when a_anim_phase != 0.0
+    // Y bob: gentle vertical sway, X/Z: slight horizontal drift
+    if (a_anim_phase > 0.0 || a_anim_phase < 0.0) {
+        float t = u_time * 2.0 + a_anim_phase;
+        pos.y += sin(t) * 0.04;
+        pos.x += sin(t * 1.3 + 1.0) * 0.015;
+        pos.z += cos(t * 0.7 + 2.0) * 0.015;
+    }
+
+    vec4 world_pos = model * vec4(pos, 1.0);
     v_world_pos = world_pos.xyz;
     v_normal = normalize(mat3(model) * a_normal);
     v_uv = a_uv;
@@ -517,6 +531,8 @@ struct App {
     model_offset_buffer: Option<WebGlBuffer>,
     model_vp_loc: Option<web_sys::WebGlUniformLocation>,
     model_use_instanced_loc: Option<web_sys::WebGlUniformLocation>,
+    model_time_loc: Option<web_sys::WebGlUniformLocation>,
+    model_anim_phase_buffer: Option<WebGlBuffer>,
 
 }
 
@@ -835,13 +851,16 @@ impl App {
         let (model_pos_buffer, model_normal_buffer, model_uv_buffer,
              model_model_loc, model_view_pos_loc, model_light_dir_loc,
              model_color_loc, model_roughness_loc, model_metallic_loc,
-             model_instance_buffer, model_offset_buffer, model_vp_loc, model_use_instanced_loc) = 
+             model_instance_buffer, model_offset_buffer, model_vp_loc, model_use_instanced_loc,
+             model_time_loc, model_anim_phase_buffer) = 
             if let Some(ref prog) = model_program {
                 let pos_buf = gl.create_buffer();
                 let norm_buf = gl.create_buffer();
                 let uv_buf = gl.create_buffer();
                 let inst_buf = gl.create_buffer();
                 let offs_buf = gl.create_buffer();
+                let time_loc = gl.get_uniform_location(prog, "u_time");
+                let anim_buf = gl.create_buffer();
                 (
                     pos_buf, norm_buf, uv_buf,
                     gl.get_uniform_location(prog, "u_model"),
@@ -854,9 +873,11 @@ impl App {
                     offs_buf,
                     gl.get_uniform_location(prog, "u_vp"),
                     gl.get_uniform_location(prog, "u_use_instanced"),
+                    time_loc,
+                    anim_buf,
                 )
             } else {
-                (None, None, None, None, None, None, None, None, None, None, None, None, None)
+                (None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
             };
 
 
@@ -976,6 +997,8 @@ impl App {
             model_offset_buffer,
             model_vp_loc,
             model_use_instanced_loc,
+            model_time_loc,
+            model_anim_phase_buffer,
 water_time_loc,
         })
     }
@@ -1176,7 +1199,7 @@ water_time_loc,
 
         // ── Model 3D: auto-populate instances from game state, then draw ──
         self.populate_model_instances_from_game_state();
-        self.render_models();
+        self.render_models(elapsed as f32);
 
 // ── Overlay: draw buildings and units as colored dots ─────────────
         self.render_overlay();
@@ -1279,7 +1302,7 @@ water_time_loc,
         }
     }
 
-    fn render_models(&mut self) {
+    fn render_models(&mut self, elapsed: f32) {
         if self.model_instances.is_empty() {
             return;
         }
@@ -1337,6 +1360,11 @@ water_time_loc,
             gl.uniform1f(Some(loc), 1.0);
         }
 
+        // Animation time uniform (for unit wobble)
+        if let Some(ref loc) = self.model_time_loc {
+            gl.uniform1f(Some(loc), elapsed as f32);
+        }
+
         // Build model matrix helper
         let build_model_mat = |inst: &model::ModelInstance| -> [f32; 16] {
             let s = inst.scale;
@@ -1371,10 +1399,12 @@ water_time_loc,
             // Build instance data arrays for this model group
             let mut model_mats: Vec<f32> = Vec::new();
             let mut offsets: Vec<f32> = Vec::new();
+            let mut anim_phases: Vec<f32> = Vec::new();
             for inst in instances {
                 let mat = build_model_mat(inst);
                 model_mats.extend_from_slice(&mat);
                 offsets.extend_from_slice(&[0.0f32, 0.0, 0.0]);
+                anim_phases.push(inst.anim_phase);
             }
 
             // Upload per-instance model matrices
@@ -1415,6 +1445,22 @@ water_time_loc,
                 gl.vertex_attrib_divisor(7, 1);
             }
 
+            // Upload per-instance animation phase (location 8)
+            if let Some(ref buf) = self.model_anim_phase_buffer {
+                gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+                unsafe {
+                    let view = js_sys::Float32Array::view(&anim_phases);
+                    gl.buffer_data_with_array_buffer_view(
+                        WebGl2RenderingContext::ARRAY_BUFFER,
+                        &view,
+                        WebGl2RenderingContext::DYNAMIC_DRAW,
+                    );
+                }
+                gl.vertex_attrib_pointer_with_i32(8, 1, WebGl2RenderingContext::FLOAT, false, 0, 0);
+                gl.enable_vertex_attrib_array(8);
+                gl.vertex_attrib_divisor(8, 1);
+            }
+
             // Instanced draw call for this model group
             let instance_count = instances.len() as i32;
             gl.draw_elements_instanced_with_i32(
@@ -1430,6 +1476,7 @@ water_time_loc,
                 gl.vertex_attrib_divisor(3 + i, 0);
             }
             gl.vertex_attrib_divisor(7, 0);
+            gl.vertex_attrib_divisor(8, 0);
         }
 
         gl.bind_vertex_array(None);
@@ -3502,14 +3549,17 @@ impl App {
             count += 1;
         }
 
-        // Units
+        // Units — add a deterministic anim_phase based on unit position so each
+        // unit wobbles with a different offset, avoiding a synchronized "army march" look.
         for u in self.game_loop.state.economy.units.alive_units() {
             let model_id = Self::model_id_for_unit(u.kind);
+            // Hash the unit coords into a 0..2π phase
+            let phase = ((u.x * 127.0 + u.y * 311.0 + 0.5).rem_euclid(std::f32::consts::TAU)).abs();
             self.model_instances.push(model::ModelInstance::new(
                 model_id,
                 u.x,
                 u.y,
-            ));
+            ).with_anim_phase(phase));
             count += 1;
         }
 
@@ -4236,6 +4286,40 @@ mod tests {
         assert!(MODEL_FRAGMENT_SHADER.contains("u_model_color"), "model fragment shader missing u_model_color");
         assert!(MODEL_FRAGMENT_SHADER.contains("u_roughness"), "model fragment shader missing u_roughness");
         assert!(MODEL_FRAGMENT_SHADER.contains("u_metallic"), "model fragment shader missing u_metallic");
+    }
+
+    // ── Unit wobble animation shader tests ──────────────────────────────────
+
+    #[test]
+    fn test_model_vertex_shader_has_time_uniform() {
+        assert!(MODEL_VERTEX_SHADER.contains("u_time"), "model vertex shader missing u_time uniform for wobble animation");
+    }
+
+    #[test]
+    fn test_model_vertex_shader_has_anim_phase_attribute() {
+        assert!(MODEL_VERTEX_SHADER.contains("a_anim_phase"), "model vertex shader missing a_anim_phase instanced attribute");
+    }
+
+    #[test]
+    fn test_model_vertex_shader_wobble_uses_sin() {
+        assert!(MODEL_VERTEX_SHADER.contains("sin("), "model vertex shader wobble should use sin() for smooth oscillation");
+    }
+
+    #[test]
+    fn test_model_vertex_shader_wobble_displaces_y() {
+        assert!(MODEL_VERTEX_SHADER.contains("pos.y += sin"), "model vertex shader should displace Y with sin for vertical bob");
+    }
+
+    #[test]
+    fn test_model_vertex_shader_wobble_displaces_xz() {
+        assert!(MODEL_VERTEX_SHADER.contains("pos.x += sin") && MODEL_VERTEX_SHADER.contains("pos.z += cos"),
+            "model vertex shader should displace X/Z for horizontal sway");
+    }
+
+    #[test]
+    fn test_model_vertex_shader_wobble_conditional_on_phase() {
+        // Wobble should only apply when a_anim_phase is non-zero (units, not buildings)
+        assert!(MODEL_VERTEX_SHADER.contains("a_anim_phase"), "wobble should check a_anim_phase");
     }
 
     #[test]

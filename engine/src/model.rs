@@ -298,6 +298,9 @@ pub struct ModelInstance {
     pub rotation_y: f32,
     /// Index into the ModelRegistry
     pub model_id: String,
+    /// Animation phase offset (radians). Used for unit idle wobble.
+    /// Buildings use 0.0 (no wobble).
+    pub anim_phase: f32,
 }
 
 impl ModelInstance {
@@ -308,6 +311,7 @@ impl ModelInstance {
             scale: 1.0,
             rotation_y: 0.0,
             model_id: model_id.to_string(),
+            anim_phase: 0.0,
         }
     }
 
@@ -318,6 +322,11 @@ impl ModelInstance {
 
     pub fn with_rotation_y(mut self, degrees: f32) -> Self {
         self.rotation_y = degrees;
+        self
+    }
+
+    pub fn with_anim_phase(mut self, phase: f32) -> Self {
+        self.anim_phase = phase;
         self
     }
 }
@@ -849,5 +858,69 @@ mod tests {
         // The model matrix diagonal should be 2.0 before projection
         // After projection, mvp[0] = proj[0] * 2.0 (approximately)
         assert!(mvp[0].abs() > 1.5, "mvp[0] should reflect scale 2.0, got {}", mvp[0]);
+    }
+
+    // ── Animation tests ─────────────────────────────────────────────────────
+
+    #[test]
+    fn test_model_instance_default_anim_phase_is_zero() {
+        let inst = ModelInstance::new("worker", 1.0, 2.0);
+        assert_eq!(inst.anim_phase, 0.0, "default anim_phase should be 0.0 (no wobble)");
+    }
+
+    #[test]
+    fn test_model_instance_with_anim_phase() {
+        let inst = ModelInstance::new("worker", 1.0, 2.0).with_anim_phase(3.14);
+        assert!((inst.anim_phase - 3.14).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_model_instance_building_anim_phase_zero() {
+        // Buildings should have anim_phase = 0.0 (no wobble)
+        let inst = ModelInstance::new("headquarters", 5.0, 5.0).with_scale(0.7);
+        assert_eq!(inst.anim_phase, 0.0, "building anim_phase should remain 0.0");
+    }
+
+    #[test]
+    fn test_model_instance_unit_has_nonzero_anim_phase() {
+        // Units should have non-zero anim_phase for wobble effect
+        let phase = 2.5_f32;
+        let inst = ModelInstance::new("worker", 3.0, 4.0).with_anim_phase(phase);
+        assert!(inst.anim_phase > 0.0, "unit anim_phase should be non-zero");
+        assert!((inst.anim_phase - phase).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_model_instance_anim_phase_preserved_with_scale() {
+        let inst = ModelInstance::new("soldier", 0.0, 0.0)
+            .with_scale(1.5)
+            .with_anim_phase(1.0);
+        assert!((inst.scale - 1.5).abs() < 0.001);
+        assert!((inst.anim_phase - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_model_instance_anim_phase_preserved_with_rotation() {
+        let inst = ModelInstance::new("archer", 0.0, 0.0)
+            .with_rotation_y(45.0)
+            .with_anim_phase(2.0);
+        assert!((inst.rotation_y - 45.0).abs() < 0.001);
+        assert!((inst.anim_phase - 2.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_model_instance_clone_preserves_anim_phase() {
+        let inst = ModelInstance::new("worker", 1.0, 2.0).with_anim_phase(4.5);
+        let cloned = inst.clone();
+        assert!((cloned.anim_phase - 4.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_model_instance_partial_eq_includes_anim_phase() {
+        let a = ModelInstance::new("worker", 1.0, 2.0).with_anim_phase(1.0);
+        let b = ModelInstance::new("worker", 1.0, 2.0).with_anim_phase(1.0);
+        let c = ModelInstance::new("worker", 1.0, 2.0).with_anim_phase(2.0);
+        assert_eq!(a, b);
+        assert_ne!(a, c, "different anim_phase should make instances unequal");
     }
 }
