@@ -541,6 +541,9 @@ struct App {
     model_anim_phase_buffer: Option<WebGlBuffer>,
     // ── Phase 6: Particle System ──────────────────────────────────────────
     particle_system: particle::ParticleSystem,
+    /// Sound event counters — drained each frame by JS for audio playback
+    recent_death_count: u32,
+    recent_combat_count: u32,
 
 }
 
@@ -1011,6 +1014,8 @@ impl App {
 
             // Phase 6: Particle system
             particle_system: particle::ParticleSystem::new(),
+            recent_death_count: 0,
+            recent_combat_count: 0,
         })
     }
 
@@ -1052,9 +1057,12 @@ impl App {
         self.particle_system.update(0.016);
 
         // Spawn combat particles for recently died units
+        // Drain sound event counters for JS-side audio playback
         let dead_positions = self.game_loop.state.economy.units.drain_recently_died();
-        for (dx, dy) in dead_positions {
-            particle::spawn_combat_effect(&mut self.particle_system, dx, dy);
+        self.recent_death_count = dead_positions.len() as u32;
+        self.recent_combat_count = self.game_loop.state.economy.units.drain_combat_hits();
+        for (dx, dy) in &dead_positions {
+            particle::spawn_combat_effect(&mut self.particle_system, *dx, *dy);
         }
 
         // Ambient particles: chimney smoke from buildings, leaves near forests
@@ -3746,6 +3754,32 @@ pub fn get_particles_json() -> String {
             app.particle_system.to_json()
         } else {
             String::from("[]")
+        }
+    }
+}
+
+/// Get number of unit deaths since last call (drains each frame).
+/// Used by JS to trigger death sound effects.
+#[wasm_bindgen]
+pub fn recent_death_count() -> i32 {
+    unsafe {
+        if let Some(ref app) = APP.as_ref() {
+            app.recent_death_count as i32
+        } else {
+            0
+        }
+    }
+}
+
+/// Get number of combat hits since last call (drains each frame).
+/// Used by JS to trigger combat sound effects.
+#[wasm_bindgen]
+pub fn recent_combat_count() -> i32 {
+    unsafe {
+        if let Some(ref app) = APP.as_ref() {
+            app.recent_combat_count as i32
+        } else {
+            0
         }
     }
 }

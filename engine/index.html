@@ -1163,7 +1163,7 @@ import init, {
     load_model_json,
     populate_model_instances_from_game,
     add_model_instance,
-} from './pkg/s4wn_engine.js?v=37';
+} from './pkg/s4wn_engine.js?v=38';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -4470,7 +4470,7 @@ async function main() {
 
         // Dynamically import load_map_json to avoid cache-mismatch crashes
         try {
-            const mod = await import('./pkg/s4wn_engine.js?v=37');
+            const mod = await import('./pkg/s4wn_engine.js?v=38');
             load_map_json = mod.load_map_json || null;
             console.log('load_map_json loaded:', !!load_map_json);
         } catch (e) {
@@ -4576,6 +4576,15 @@ async function main() {
 
             // Tool bar (throttled to every 3s internally)
             updateToolBar();
+            // ── Sound event polling ──
+            try {
+                const deathCount = recent_death_count();
+                for (let i = 0; i < deathCount; i++) Sfx.playDeath();
+            } catch(e) {}
+            try {
+                const combatCount = recent_combat_count();
+                for (let i = 0; i < combatCount; i++) Sfx.playCombat();
+            } catch(e) {}
 
             // Building/unit population summary
             updatePopulationSummary();

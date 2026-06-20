@@ -224,6 +224,18 @@ export function particle_count(): number;
  */
 export function populate_model_instances_from_game(): number;
 
+/**
+ * Get number of combat hits since last call (drains each frame).
+ * Used by JS to trigger combat sound effects.
+ */
+export function recent_combat_count(): number;
+
+/**
+ * Get number of unit deaths since last call (drains each frame).
+ * Used by JS to trigger death sound effects.
+ */
+export function recent_death_count(): number;
+
 export function render(timestamp: number): void;
 
 /**
@@ -389,6 +401,8 @@ export interface InitOutput {
     readonly parse_obj_info: (a: number, b: number) => [number, number];
     readonly particle_count: () => number;
     readonly populate_model_instances_from_game: () => number;
+    readonly recent_combat_count: () => number;
+    readonly recent_death_count: () => number;
     readonly render: (a: number) => void;
     readonly resize: () => void;
     readonly restore_game_state: (a: number, b: number) => [number, number];

@@ -615,6 +615,26 @@ export function populate_model_instances_from_game() {
 }
 
 /**
+ * Get number of combat hits since last call (drains each frame).
+ * Used by JS to trigger combat sound effects.
+ * @returns {number}
+ */
+export function recent_combat_count() {
+    const ret = wasm.recent_combat_count();
+    return ret;
+}
+
+/**
+ * Get number of unit deaths since last call (drains each frame).
+ * Used by JS to trigger death sound effects.
+ * @returns {number}
+ */
+export function recent_death_count() {
+    const ret = wasm.recent_death_count();
+    return ret;
+}
+
+/**
  * @param {number} timestamp
  */
 export function render(timestamp) {

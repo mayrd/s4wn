@@ -364,6 +364,9 @@ pub struct UnitManager {
     next_id: u32,
     /// Positions of units that died since last drain (for particle effects)
     pub recently_died_positions: Vec<(f32, f32)>,
+    /// Number of combat hits (damage applications) since last drain.
+    /// Used for triggering combat sound effects from JS.
+    pub recent_combat_hits: u32,
 }
 
 impl UnitManager {
@@ -373,6 +376,7 @@ impl UnitManager {
             units: Vec::new(),
             next_id: 1,
             recently_died_positions: Vec::new(),
+            recent_combat_hits: 0,
         }
     }
 
@@ -506,6 +510,14 @@ impl UnitManager {
         let positions = self.recently_died_positions.clone();
         self.recently_died_positions.clear();
         positions
+    }
+
+    /// Drain and reset the combat hit counter. Returns number of damage applications since last call.
+    /// Used by JS to trigger combat sound effects each frame.
+    pub fn drain_combat_hits(&mut self) -> u32 {
+        let hits = self.recent_combat_hits;
+        self.recent_combat_hits = 0;
+        hits
     }
 
     /// Apply damage to a unit. Returns true if the unit entered Dying state.
