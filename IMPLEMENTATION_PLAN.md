@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6 — Debug Mode ✨ (424 tests)
-| **Last updated:** 2026-06-20 (Session 117 — Issues #46-#48: resource cleanup, categorization, debug mode)
+| **Status:** Phase 6 — Sound Effects 🔈 (424 tests)
+| **Last updated:** 2026-06-20 (Session 118 — Sound effects system via Web Audio API)
 
 ---
 
@@ -338,6 +338,8 @@ protocol::tests               5 tests    Message serialization, room management
 - [x] Config ID "Mead Maker" matches Rust `BuildingType::from_name("Mead Maker")`
 - [x] `data.js` regenerated after fix, all 60 buildings resolve correctly
 
+
+|| 118 | 2026-06-20 | Sound effects: procedural Web Audio API Sfx module (6 sounds: UIClick, Build, Combat, Death, Error, MenuToggle), hooked into building placement/UI/menu, 16 JS tests, all 424 engine tests green |
 || **87** | **2026-06-18** | **Dark Tribe unique buildings: 7 BuildingType variants (DarkTemple=54..DemonGate=60), nation-gated placement, production chains (DarkTemple→Wine, DarkGarden→Grapes, MushroomFarm→Grain, DemonGate→Weapons), building colors, costs, tools, config. Added Grapes+Wine to resources.json. 265 tests pass.** |
 |
 || **100** | **2026-06-19** | **Phase 5 Step 5: Terrain splat-map atlas (2048x512, 4 layers), a_splat vertex attribute (location 10), 4-layer splat blending in fragment shader, 8 new tests. 295 total.** |
@@ -439,11 +441,13 @@ All Phase 5 steps are now complete:
 
 **Next Session — Concrete Steps:**
 
-1. Add Web Audio API sound effects module with procedurally generated sounds (UI clicks, building placement, combat)
-2. Fix issue #48: Add debug mode with console commands for UI display debugging
+1. ✅ Add Web Audio API sound effects module (Done Session 118)
+2. ✅ Fix issue #48: Add debug mode with console commands (Done Session 117)
 3. Optimize particle rendering: use instanced rendering for better performance
 4. Add day/night lighting transition smoothing
 5. Add map editor mode (toggle grid overlay, click to paint terrain)
+6. Hook death sounds into unit death animation callback
+7. Hook combat sounds into combat events from Rust engine
 
 ---
 
