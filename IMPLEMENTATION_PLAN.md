@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6 — Death Animation ✨ (424 tests)
-| **Last updated:** 2026-06-20 (Session 117 — remove non-S4 resources, resource categorization)
+| **Status:** Phase 6 — Debug Mode ✨ (424 tests)
+| **Last updated:** 2026-06-20 (Session 117 — Issues #46-#48: resource cleanup, categorization, debug mode)
 
 ---
 
