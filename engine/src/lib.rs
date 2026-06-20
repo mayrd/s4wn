@@ -178,8 +178,13 @@ void main() {
     float elev_shade = 1.0 + v_elevation * 0.1;
     float shade = slope_shade * elev_shade;
 
-    // Day/night cycle: day_phase is 0..1, 0.0=midnight, 0.5=noon
-    float day_light = 0.5 + 0.5 * sin(v_day_phase * 6.2831853);
+    // Day/night cycle: 0.0=midnight (darkest), 0.5=noon (brightest). Uses shifted sine + Hermite smoothstep for natural transition
+    // Day/night cycle: phase 0.0=midnight (dark), 0.5=noon (bright)
+    // Shift by -0.25 so sin peaks at noon and bottoms at midnight
+    // Apply Hermite smoothstep for natural transition feel
+    float day_light_raw = 0.5 + 0.5 * sin((v_day_phase - 0.25) * 6.2831853);
+    // Smooth ease-in-out: gentler transitions, night stays dark, day stays bright
+    float day_light = day_light_raw * day_light_raw * (3.0 - 2.0 * day_light_raw);
     float warmth = 0.5 + day_light * 0.5;
 
     // Diffuse lighting from vertex normal
@@ -230,7 +235,7 @@ void main() {
 
     // Resource glow: tiles with resources get a subtle pulsing overlay
     if (v_has_resource > 0.5) {
-        float pulse = 0.8 + 0.2 * sin(v_day_phase * 6.2831853 * 2.0);
+        float pulse = 0.8 + 0.2 * sin((v_day_phase - 0.25) * 6.2831853 * 2.0);
         vec3 glow = vec3(0.9, 0.85, 0.3) * 0.15 * pulse;
         lit = lit + glow;
     }
@@ -1164,7 +1169,7 @@ impl App {
         }
         // Pass light direction (tied to day/night cycle: sun arc)
         if let Some(ref loc) = self.light_dir_loc {
-            let sun_angle = day_phase as f32 * 6.2831853;
+            let sun_angle = (day_phase as f32 - 0.25) * 6.2831853;
             let sun_elev = sun_angle.sin() * 0.8 + 0.2;
             let lx = sun_angle.cos() * sun_elev.max(0.1);
             let ly = sun_elev.max(0.1);
@@ -1384,7 +1389,7 @@ impl App {
 
         // Light direction (same as terrain — sun arc from day_phase)
         let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
-        let sun_angle = day_phase as f32 * std::f32::consts::TAU;
+        let sun_angle = (day_phase as f32 - 0.25) * std::f32::consts::TAU;
         let sun_elev = sun_angle.sin() * 0.8 + 0.2;
         let lx = sun_angle.cos() * sun_elev.max(0.1);
         let ly = sun_elev.max(0.1);
@@ -4738,3 +4743,101 @@ mod tests {
         assert!(p.z >= 0.0, "z: {}", p.z);
     }
 }
+
+    // ── Day/Night Lighting Tests ───────────────────────────────────────────
+
+    /// Helper: replicate the Rust sun_angle calculation for testing.
+    fn compute_sun_angle(day_phase: f32) -> f32 {
+        (day_phase - 0.25) * std::f32::consts::TAU
+    }
+
+    /// Helper: replicate the shader day_light_raw formula.
+    fn compute_day_light_raw(day_phase: f32) -> f32 {
+        0.5 + 0.5 * (compute_sun_angle(day_phase)).sin()
+    }
+
+    /// Helper: Hermite smoothstep for transition smoothing.
+    fn smooth_day_light(raw: f32) -> f32 {
+        raw * raw * (3.0 - 2.0 * raw)
+    }
+
+    #[test]
+    fn test_sun_angle_midnight_below_horizon() {
+        // At midnight (phase 0.0), sun should be at nadir (below horizon)
+        let angle = compute_sun_angle(0.0);
+        let elev = angle.sin() * 0.8 + 0.2;
+        assert!(elev < 0.0, "sun elevation at midnight should be below horizon, got {}", elev);
+    }
+
+    #[test]
+    fn test_sun_angle_noon_overhead() {
+        // At noon (phase 0.5), sun should be at zenith (overhead)
+        let angle = compute_sun_angle(0.5);
+        let elev = angle.sin() * 0.8 + 0.2;
+        assert!((elev - 1.0).abs() < 0.01, "sun elevation at noon should be ~1.0, got {}", elev);
+    }
+
+    #[test]
+    fn test_sun_angle_dawn_horizon() {
+        // At dawn (phase 0.25), sun should be at horizon
+        let angle = compute_sun_angle(0.25);
+        let elev = angle.sin() * 0.8 + 0.2;
+        assert!((elev - 0.2).abs() < 0.01, "sun at dawn should be at horizon, got {}", elev);
+    }
+
+    #[test]
+    fn test_day_light_raw_darkest_at_midnight() {
+        let raw = compute_day_light_raw(0.0);
+        assert!((raw - 0.0).abs() < 0.001, "day_light at midnight should be 0 (darkest), got {}", raw);
+    }
+
+    #[test]
+    fn test_day_light_raw_brightest_at_noon() {
+        let raw = compute_day_light_raw(0.5);
+        assert!((raw - 1.0).abs() < 0.001, "day_light at noon should be 1.0 (brightest), got {}", raw);
+    }
+
+    #[test]
+    fn test_day_light_smoothed_preserves_extrema() {
+        // Smoothing should preserve 0.0 and 1.0
+        assert!((smooth_day_light(0.0) - 0.0).abs() < 0.001);
+        assert!((smooth_day_light(1.0) - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_day_light_smoothed_eases_midpoint() {
+        // At 0.5 raw, smoothed should be 0.5 (Hermite S-curve symmetric)
+        assert!((smooth_day_light(0.5) - 0.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_day_light_smoothed_night_stays_dark() {
+        // Dawn transition should be gentle: raw 0.25 should map to < 0.25
+        let smoothed = smooth_day_light(0.25);
+        assert!(smoothed < 0.25, "smoothed dawn should be slower than linear, got {}", smoothed);
+    }
+
+    #[test]
+    fn test_day_light_smoothed_day_stays_bright() {
+        // Dusk transition: raw 0.75 should map to > 0.75
+        let smoothed = smooth_day_light(0.75);
+        assert!(smoothed > 0.75, "smoothed dusk should stay bright longer, got {}", smoothed);
+    }
+
+    #[test]
+    fn test_fragment_shader_has_corrected_day_light() {
+        // Verify the fragment shader contains the corrected formula
+        assert!(FRAGMENT_SHADER.contains("sin((v_day_phase - 0.25)"),
+            "fragment shader should use shifted phase for day_light");
+        assert!(FRAGMENT_SHADER.contains("day_light_raw"),
+            "fragment shader should use day_light_raw for smoothstep");
+        assert!(FRAGMENT_SHADER.contains("Hermite smoothstep"),
+            "fragment shader should document Hermite smoothstep");
+    }
+
+    #[test]
+    fn test_fragment_shader_has_corrected_resource_glow() {
+        // Verify resource glow uses corrected phase
+        assert!(FRAGMENT_SHADER.contains("sin((v_day_phase - 0.25) * 6.2831853 * 2.0)"),
+            "resource glow should use shifted phase");
+    }
