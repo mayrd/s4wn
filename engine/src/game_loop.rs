@@ -101,6 +101,9 @@ impl GameState {
         self.combat_ai
             .update(&mut self.economy.units, &self.map, TICK_DURATION as f32);
 
+        // Tick death animations (Dying -> Dead transitions)
+        self.economy.units.tick_dying_units(TICK_DURATION as f32);
+
         // Recompute fog-of-war visibility every 100 ticks (~10 seconds)
         if self.tick_count % 100 == 0 {
             let buildings: Vec<(crate::economy::BuildingType, usize, usize)> = self

@@ -334,9 +334,15 @@ mod tests {
         let ai = CombatAI::new();
         ai.try_attack(&mut mgr, id1);
 
-        // Unit 2 should be dead (15 damage > 10 HP)
+        // Unit 2 should be dying (15 damage > 10 HP)
         let target = mgr.get(id2).unwrap();
         assert!(!target.is_alive(), "Unit 2 should be dead");
+        assert_eq!(target.state, UnitState::Dying);
+        assert_eq!(target.dying_timer, 1.0);
+
+        // Tick death animation to transition to Dead
+        mgr.tick_dying_units(1.0);
+        let target = mgr.get(id2).unwrap();
         assert_eq!(target.state, UnitState::Dead);
 
         // Attacker should have cleared target

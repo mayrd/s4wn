@@ -2532,6 +2532,7 @@ pub fn get_unit_summary() -> String {
                     crate::units::UnitState::Moving => "Moving",
                     crate::units::UnitState::Working => "Working",
                     crate::units::UnitState::Fighting => "Fighting",
+                    crate::units::UnitState::Dying => "Dying",
                     crate::units::UnitState::Dead => "Dead",
                 };
                 let tool_code = u.carried_tool.map(|tc| {
@@ -2636,7 +2637,7 @@ pub fn get_unit_info(id: u32) -> String {
         if let Some(ref app) = APP {
             let units = &app.game_loop.state.economy.units;
             if let Some(u) = units.get(id) {
-                if !u.is_alive() {
+                if u.state == crate::units::UnitState::Dead {
                     return format!(r#"{{"error":"Unit {} is dead"}}"#, id);
                 }
                 let state_name = match u.state {
@@ -2644,6 +2645,7 @@ pub fn get_unit_info(id: u32) -> String {
                     crate::units::UnitState::Moving => "Moving",
                     crate::units::UnitState::Working => "Working",
                     crate::units::UnitState::Fighting => "Fighting",
+                    crate::units::UnitState::Dying => "Dying",
                     crate::units::UnitState::Dead => "Dead",
                 };
                 let ab = match u.assigned_building {
@@ -2657,8 +2659,11 @@ pub fn get_unit_info(id: u32) -> String {
                 let tool_name = u.carried_tool
                     .map(|tc| crate::economy::tool_code_to_name(tc))
                     .unwrap_or("");
+                let dying_progress = u.death_animation_progress()
+                    .map(|p| format!("{:.2}", p))
+                    .unwrap_or_else(|| "null".to_string());
                 return format!(
-                    r#"{{"id":{},"kind":"{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","assigned_building":{},"target":{},"carried_tool":"{}"}}"#,
+                    r#"{{"id":{},"kind":"{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","dying_progress":{},"assigned_building":{},"target":{},"carried_tool":"{}"}}"#,
                     u.id,
                     u.kind.name(),
                     u.x,
@@ -2666,6 +2671,7 @@ pub fn get_unit_info(id: u32) -> String {
                     u.hp,
                     u.max_hp,
                     state_name,
+                    dying_progress,
                     ab,
                     target,
                     tool_name,
@@ -3058,6 +3064,7 @@ pub fn get_game_state() -> String {
                     crate::units::UnitState::Moving => "Moving",
                     crate::units::UnitState::Working => "Working",
                     crate::units::UnitState::Fighting => "Fighting",
+                    crate::units::UnitState::Dying => "Dying",
                     crate::units::UnitState::Dead => "Dead",
                 };
                 let ab = match u.assigned_building {
@@ -3346,6 +3353,7 @@ pub fn restore_game_state(json: &str) -> String {
                         "Moving" => UnitState::Moving,
                         "Working" => UnitState::Working,
                         "Fighting" => UnitState::Fighting,
+                        "Dying" => UnitState::Dying,
                         "Dead" => UnitState::Dead,
                         _ => UnitState::Idle,
                     };

@@ -110,6 +110,8 @@ pub enum UnitState {
     Working,
     /// Fighting an enemy
     Fighting,
+    /// Dying — playing death animation (scale-down + fade), will become Dead
+    Dying,
     /// Dead
     Dead,
 }
@@ -154,6 +156,8 @@ pub struct Unit {
     pub attack_range_mult: f32,
     /// Nation-specific worker speed multiplier (1.0 = normal). Applied to settler movement.
     pub nation_speed_mult: f32,
+    /// Death animation timer (seconds remaining). When 0 and state is Dying, unit becomes Dead.
+    pub dying_timer: f32,
 }
 
 impl Unit {
@@ -179,6 +183,7 @@ impl Unit {
             defense_mult: 1.0,
             attack_range_mult: 1.0,
             nation_speed_mult: 1.0,
+            dying_timer: 0.0,
         }
     }
 
@@ -290,7 +295,10 @@ impl Unit {
     pub fn take_damage(&mut self, amount: u32) -> bool {
         self.hp = self.hp.saturating_sub(amount);
         if self.hp == 0 {
-            self.state = UnitState::Dead;
+            self.state = UnitState::Dying;
+            self.dying_timer = 1.0;
+            self.target = None;
+            self.path = None;
             true
         } else {
             false
@@ -312,6 +320,31 @@ impl Unit {
     /// Whether the unit can attack now
     pub fn can_attack(&self) -> bool {
         self.kind.can_fight() && self.attack_cooldown == 0 && self.is_alive()
+    }
+
+    /// Tick the death animation. Returns true if the unit just transitioned to Dead.
+    pub fn tick_dying(&mut self, dt: f32) -> bool {
+        if self.state != UnitState::Dying {
+            return false;
+        }
+        self.dying_timer -= dt;
+        if self.dying_timer <= 0.0 {
+            self.state = UnitState::Dead;
+            self.dying_timer = 0.0;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Get death animation progress (0.0 = just started, 1.0 = finished).
+    /// Returns None if the unit is not dying.
+    pub fn death_animation_progress(&self) -> Option<f32> {
+        if self.state == UnitState::Dying {
+            Some(1.0 - self.dying_timer)
+        } else {
+            None
+        }
     }
 
     /// Distance to another unit
@@ -475,20 +508,27 @@ impl UnitManager {
         positions
     }
 
-    /// Apply damage to a unit and record death position if it dies.
-    /// Returns true if the unit died from this damage.
+    /// Apply damage to a unit. Returns true if the unit entered Dying state.
+    /// Note: death position is recorded via tick_dying_to_dead(), not here,
+    /// so particles spawn at the end of the animation, not the start.
     pub fn apply_damage_and_record_death(&mut self, unit_id: u32, amount: u32) -> bool {
-        let died = if let Some(unit) = self.get_mut(unit_id) {
+        if let Some(unit) = self.get_mut(unit_id) {
             unit.take_damage(amount)
         } else {
             false
-        };
-        if died {
-            if let Some(unit) = self.get(unit_id) {
+        }
+    }
+
+    /// Tick dying units. Records positions of units that just transitioned to Dead
+    /// into recently_died_positions for particle effects.
+    /// Call once per frame with dt.
+    pub fn tick_dying_units(&mut self, dt: f32) {
+        for unit in self.units.iter_mut() {
+            if unit.tick_dying(dt) {
+                // Unit just transitioned Dying -> Dead
                 self.recently_died_positions.push((unit.x, unit.y));
             }
         }
-        died
     }
 
     pub fn remove_dead(&mut self) {
@@ -578,6 +618,9 @@ mod tests {
         assert!(u.take_damage(70));
         assert_eq!(u.hp, 0);
         assert!(!u.is_alive());
+        assert_eq!(u.state, UnitState::Dying);
+        assert_eq!(u.dying_timer, 1.0);
+        assert!(u.tick_dying(1.0));
         assert_eq!(u.state, UnitState::Dead);
     }
 
@@ -796,5 +839,150 @@ mod tests {
             u1.x,
             u2.x
         );
+    }
+}
+
+#[cfg(test)]
+mod death_animation_tests {
+    use super::*;
+
+    #[test]
+    fn test_unit_dying_state_on_zero_hp() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 5.0, 5.0);
+        assert_eq!(u.state, UnitState::Idle);
+        assert!(u.take_damage(100));
+        assert_eq!(u.state, UnitState::Dying);
+        assert_eq!(u.dying_timer, 1.0);
+        assert!(u.target.is_none());
+        assert!(u.path.is_none());
+    }
+
+    #[test]
+    fn test_unit_dying_timer_counts_down() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        u.take_damage(100);
+        assert_eq!(u.state, UnitState::Dying);
+        assert!(u.dying_timer > 0.0);
+
+        // Tick with small dt - should not transition yet
+        let transitioned = u.tick_dying(0.5);
+        assert!(!transitioned);
+        assert_eq!(u.state, UnitState::Dying);
+        assert!((u.dying_timer - 0.5).abs() < 0.001);
+
+        // Tick with remaining dt - should transition to Dead
+        let transitioned = u.tick_dying(0.5);
+        assert!(transitioned);
+        assert_eq!(u.state, UnitState::Dead);
+        assert_eq!(u.dying_timer, 0.0);
+    }
+
+    #[test]
+    fn test_unit_dying_progress() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        assert!(u.death_animation_progress().is_none());
+
+        u.take_damage(100);
+        let progress = u.death_animation_progress().unwrap();
+        assert!(progress < 0.01, "progress should be ~0 at start");
+
+        u.tick_dying(0.5);
+        let progress = u.death_animation_progress().unwrap();
+        assert!((progress - 0.5).abs() < 0.01, "progress should be ~0.5");
+
+        u.tick_dying(0.5);
+        assert!(u.death_animation_progress().is_none(), "Dead units have no progress");
+    }
+
+    #[test]
+    fn test_tick_dying_non_dying_unit() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        assert!(!u.tick_dying(1.0));
+        assert_eq!(u.state, UnitState::Idle);
+
+        u.state = UnitState::Dead;
+        assert!(!u.tick_dying(1.0));
+        assert_eq!(u.state, UnitState::Dead);
+    }
+
+    #[test]
+    fn test_unit_manager_tick_dying_units() {
+        let mut mgr = UnitManager::new();
+        let id1 = mgr.spawn(UnitKind::Swordsman, 0.0, 0.0);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 1.0, 0.0);
+
+        // Kill both units
+        mgr.get_mut(id1).unwrap().take_damage(100);
+        mgr.get_mut(id2).unwrap().take_damage(100);
+        assert_eq!(mgr.get(id1).unwrap().state, UnitState::Dying);
+        assert_eq!(mgr.get(id2).unwrap().state, UnitState::Dying);
+
+        // Tick dying with small dt - neither transitions
+        mgr.tick_dying_units(0.5);
+        assert_eq!(mgr.get(id1).unwrap().state, UnitState::Dying);
+        assert_eq!(mgr.get(id2).unwrap().state, UnitState::Dying);
+        assert!(mgr.drain_recently_died().is_empty());
+
+        // Tick dying with remaining dt - both transition
+        mgr.tick_dying_units(0.5);
+        assert_eq!(mgr.get(id1).unwrap().state, UnitState::Dead);
+        assert_eq!(mgr.get(id2).unwrap().state, UnitState::Dead);
+
+        // Positions should be recorded for particles
+        let dead = mgr.drain_recently_died();
+        assert_eq!(dead.len(), 2);
+    }
+
+    #[test]
+    fn test_dying_unit_not_targetable() {
+        let mut mgr = UnitManager::new();
+        let id1 = mgr.spawn(UnitKind::Swordsman, 0.0, 0.0);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 1.0, 0.0);
+
+        // Kill unit 2
+        mgr.get_mut(id2).unwrap().take_damage(100);
+        assert_eq!(mgr.get(id2).unwrap().state, UnitState::Dying);
+
+        // Dying unit should not be in alive_units
+        let alive_ids: Vec<u32> = mgr.alive_units().map(|u| u.id).collect();
+        assert!(alive_ids.contains(&id1));
+        assert!(!alive_ids.contains(&id2));
+
+        // Dying unit should not be in combatant list
+        let combatant_ids: Vec<u32> = mgr
+            .alive_units()
+            .filter(|u| u.kind.can_fight())
+            .map(|u| u.id)
+            .collect();
+        assert_eq!(combatant_ids, vec![id1]);
+    }
+
+    #[test]
+    fn test_dying_unit_clears_attack_target() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        u.target = Some(42);
+        u.path = Some(Path::new(vec![(0, 0), (5, 5)]));
+        u.take_damage(100);
+        // take_damage should clear target and path when entering Dying
+        assert!(u.target.is_none());
+        assert!(u.path.is_none());
+    }
+
+    #[test]
+    fn test_death_animation_deterministic() {
+        let mut u1 = Unit::new(1, UnitKind::Bowman, 3.0, 3.0);
+        let mut u2 = Unit::new(2, UnitKind::Bowman, 3.0, 3.0);
+        u1.take_damage(100);
+        u2.take_damage(100);
+
+        // Tick both identically
+        for _ in 0..10 {
+            u1.tick_dying(0.1);
+            u2.tick_dying(0.1);
+        }
+
+        assert_eq!(u1.state, u2.state);
+        assert_eq!(u1.dying_timer, u2.dying_timer);
+        assert_eq!(u1.state, UnitState::Dead);
     }
 }
