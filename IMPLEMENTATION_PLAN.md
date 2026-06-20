@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6 — Bugfixes 🐛 (435 tests)
-| **Last updated:** 2026-06-20 (Session 122 — Investigated #49: L3 map format, improved error msgs)
+| **Status:** Phase 6 — Bugfixes + Map Editor (436 tests)
+| **Last updated:** 2026-06-20 (Session 123 — Map editor mode: Ctrl+Click terrain painting)
 
 ---
 
@@ -20,7 +20,7 @@ For EVERY feature, follow this exact sequence:
 2. TEST CASES    — What tests must pass? Write them FIRST (they WILL fail initially).
 3. IMPLEMENT     — Write the minimum code to make tests pass.
 4. VERIFY        — cargo test must be green. No exceptions.
-7. Add map editor mode (toggle grid overlay, click to paint terrain)
+7. ~~Add map editor mode (toggle grid overlay, click to paint terrain)~~ Done (Session 123)
 5. COMMIT        — Push with tests passing.
 ```
 
@@ -372,7 +372,7 @@ protocol::tests               5 tests    Message serialization, room management
 2. ~~Add long-press context menu for tile info (inspector) on mobile~~ ✅ Done (Session 93)
 3. ~~Add orientation-change handler to recalculate viewport layout~~ ✅ Done (Session 94)
 4. ~~Optimize construction panel category collapse for small screens (accordion)~~ ✅ Done (Session 94)
-7. Add map editor mode (toggle grid overlay, click to paint terrain)
+7. ~~Add map editor mode (toggle grid overlay, click to paint terrain)~~ Done (Session 123)
 5. ~~Add swipe gesture navigation for panel toggling~~ ✅ Done (Session 115)
 6. Test touch interactions on actual mobile viewport via Chrome DevTools responsive mode
 
@@ -416,7 +416,7 @@ Concrete steps:
 2. Add model loader in Rust — parse model JSON, upload to GPU buffers
 3. Add model instance rendering — per-instance model-view-projection, texture binding
 4. Write model loader tests — verify parsing, buffer upload
-7. Add map editor mode (toggle grid overlay, click to paint terrain)
+7. ~~Add map editor mode (toggle grid overlay, click to paint terrain)~~ Done (Session 123)
 5. Generate starter models — Castle, Farm, Sawmill, Worker, Soldier, Bowman
 
 ### Next Session — Concrete Steps
@@ -428,7 +428,7 @@ All Phase 5 steps are now complete:
 2. ✅ u_vp mat4 uniform + WASM camera exports
 3. ✅ Height-displaced terrain mesh + vertex normals
 4. ✅ Fragment shader diffuse lighting
-7. Add map editor mode (toggle grid overlay, click to paint terrain)
+7. ~~Add map editor mode (toggle grid overlay, click to paint terrain)~~ Done (Session 123)
 5. ✅ Terrain splat-map atlas
 6. ✅ Water shader & refraction
 7. ✅ 3D model loading (JSON mesh parser, 30 OBJ→JSON conversions, building/unit instances, instanced rendering)
@@ -443,7 +443,7 @@ All Phase 5 steps are now complete:
 2. ~~Add model animation support (unit wobble)~~ ✅ Done (Session 113)
 3. ~~Add particle effects for building placement/combat~~ ✅ Done (Session 114) — green sparkles on build, orange explosions on unit death, 32 new tests
 4. ~~Improve mobile UI: add swipe gestures for panel navigation~~ ✅ Done (Session 115) — handlePanelSwipe() with 60px/400ms threshold, swipe hint indicators, CSS slide transitions
-7. Add map editor mode (toggle grid overlay, click to paint terrain)
+7. ~~Add map editor mode (toggle grid overlay, click to paint terrain)~~ Done (Session 123)
 5. ~~Add ambient particle effects (foliage, chimney smoke)~~ ✅ Done (Session 115) — spawn_smoke_effect + spawn_leaf_effect with WASM exports, game loop integration
 6. ~~Add unit death animation (scale-down + fade before removal)~~ ✅ Done (Session 116) — Dying state, 1.0s timer, death_animation_progress() WASM export, 8 new tests
 7. Add sound effects system (Web Audio API)
@@ -455,10 +455,12 @@ All Phase 5 steps are now complete:
 3. ✅ Add day/night lighting transition smoothing (Done Session 119)
 4. ✅ Hook death/combat sounds into Rust engine events via WASM (Done Session 120)
 5. ✅ Investigated issue #49 (Session 122) — L3 magic analyzed, error messages improved, findings documented on GitHub
-6. Optimize particle rendering: use instanced rendering for better performance
-5b. Implement L3 map format parser — need to identify which community editor produces L3, get format docs
-7. Add map editor mode (toggle grid overlay, click to paint terrain)
-8. Add unit selection box / marquee drag select for military units
+6. ✅ Add map editor mode (Ctrl+Click terrain painting + grid overlay) — Done Session 123
+7. Optimize particle rendering: use instanced rendering for better performance
+8. Implement L3 map format parser — need to identify which community editor produces L3, get format docs
+9. Add unit selection box / marquee drag select for military units
+10. Add map editor terrain palette UI (replacing Shift+Click cycling with clickable palette)
+11. Add map editor save/export functionality
 
 ---
 
