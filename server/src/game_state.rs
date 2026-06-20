@@ -369,13 +369,13 @@ pub struct ServerUnit {
 /// Per-player resource storage.
 #[derive(Debug, Clone)]
 pub struct PlayerResources {
-    /// Indexed by ResourceType u8 value (0..23)
-    pub amounts: [u32; 23],
+    /// Indexed by ResourceType u8 value (0..28)
+    pub amounts: [u32; 29],
 }
 
 impl PlayerResources {
     pub fn new() -> Self {
-        let mut amounts = [0u32; 23];
+        let mut amounts = [0u32; 29];
         // Starting resources
         amounts[0] = 100; // Wood
         amounts[1] = 50;  // Stone

@@ -64,7 +64,7 @@ pub enum ResourceType {
 
 impl ResourceType {
     /// Total number of distinct resource types
-    pub const COUNT: usize = 23;
+    pub const COUNT: usize = 29; // max discriminant (Wine=28) + 1
 
     /// Whether this is a raw resource (harvested from the map)
     pub fn is_raw(self) -> bool {
