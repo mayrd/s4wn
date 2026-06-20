@@ -466,6 +466,8 @@ struct App {
 
     // Rebuild flag: set true when map/camera changes require mesh rebuild
     mesh_dirty: bool,
+    // Map editor grid overlay toggle
+    editor_grid: bool,
 
     // Game loop (tick-based simulation)
     game_loop: GameLoop,
@@ -959,6 +961,7 @@ impl App {
             last_mouse_x: 0.0,
             last_mouse_y: 0.0,
             mesh_dirty: false,
+            editor_grid: false,
             game_loop: GameLoop::new(GameState::new(map)),
             fps_frame_count: 0,
             fps_last_time: start_time,
@@ -1639,6 +1642,22 @@ impl App {
             positions.extend(p_positions);
             colors.extend(p_colors);
             sizes.extend(p_sizes);
+
+        // Map editor grid overlay: semi-transparent dots at tile corners
+        if self.editor_grid {
+            let map = &self.game_loop.state.map;
+            let dot_spacing = 2; // every Nth tile corner for performance
+            for y in (0..=map.height).step_by(dot_spacing) {
+                for x in (0..=map.width).step_by(dot_spacing) {
+                    positions.push(x as f32);
+                    positions.push(y as f32);
+                    colors.push(0.3);
+                    colors.push(0.3);
+                    colors.push(0.3);
+                    sizes.push(2.5);
+                }
+            }
+        }
         }
 
         if positions.is_empty() {
@@ -3800,6 +3819,57 @@ pub fn recent_combat_count() -> i32 {
         } else {
             0
         }
+    }
+}
+
+
+// ── Map Editor Mode ───────────────────────────────────────────────────────────
+
+/// Set the terrain type at a tile position (map editor).
+/// terrain_id: 0=Grass, 1=Forest, 2=Mountain, 3=Water, 4=DeepWater, 5=Desert, 6=Swamp, 7=Snow
+#[wasm_bindgen]
+pub fn set_tile_terrain(x: usize, y: usize, terrain_id: u8) -> bool {
+    let terrain = match terrain_id {
+        0 => map::Terrain::Grass,
+        1 => map::Terrain::Forest,
+        2 => map::Terrain::Mountain,
+        3 => map::Terrain::Water,
+        4 => map::Terrain::DeepWater,
+        5 => map::Terrain::Desert,
+        6 => map::Terrain::Swamp,
+        7 => map::Terrain::Snow,
+        _ => return false,
+    };
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            if app.game_loop.state.map.set_terrain(x, y, terrain) {
+                app.mesh_dirty = true;
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// Toggle map editor grid overlay on/off. Returns new state.
+#[wasm_bindgen]
+pub fn toggle_editor_grid() -> bool {
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            app.editor_grid = !app.editor_grid;
+            app.mesh_dirty = true;
+            app.editor_grid
+        } else {
+            false
+        }
+    }
+}
+
+/// Check if editor grid overlay is active.
+#[wasm_bindgen]
+pub fn editor_grid_enabled() -> bool {
+    unsafe {
+        APP.as_ref().map_or(false, |app| app.editor_grid)
     }
 }
 

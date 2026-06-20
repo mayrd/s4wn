@@ -148,6 +148,19 @@ impl Map {
         }
     }
 
+    /// Set the terrain type at (x, y). Returns true if successful (in-bounds).
+    /// Clears any resource on the tile and resets visibility to force fog update.
+    pub fn set_terrain(&mut self, x: usize, y: usize, terrain: Terrain) -> bool {
+        if let Some(tile) = self.get_mut(x, y) {
+            tile.terrain = terrain;
+            tile.resource = None; // changing terrain invalidates resources
+            tile.visibility = 0.0; // force fog of war recompute
+            true
+        } else {
+            false
+        }
+    }
+
     /// Generate a demo map using simple noise + rules for Settlers-style biomes.
     ///
     /// Strategy:
@@ -1302,4 +1315,31 @@ mod tests {
             assert!(!borders_p1.contains(&tile), "Tile {:?} in both borders", tile);
         }
     }
+
+    #[test]
+    fn test_set_terrain() {
+        let mut map = Map::new(10, 10);
+        
+        // Set valid terrain
+        assert!(map.set_terrain(3, 4, Terrain::Forest));
+        assert_eq!(map.get(3, 4).unwrap().terrain, Terrain::Forest);
+        assert!(map.get(3, 4).unwrap().resource.is_none());
+        assert_eq!(map.get(3, 4).unwrap().visibility, 0.0);
+        
+        // Out of bounds returns false
+        assert!(!map.set_terrain(100, 100, Terrain::Grass));
+        
+        // Overwrite with different terrain
+        map.set_terrain(3, 4, Terrain::Water);
+        assert_eq!(map.get(3, 4).unwrap().terrain, Terrain::Water);
+        
+        // All 8 terrain types work
+        let terrains = [Terrain::Grass, Terrain::Forest, Terrain::Mountain, Terrain::Water,
+                        Terrain::DeepWater, Terrain::Desert, Terrain::Swamp, Terrain::Snow];
+        for (i, t) in terrains.iter().enumerate() {
+            assert!(map.set_terrain(5, i, *t));
+            assert_eq!(map.get(5, i).unwrap().terrain, *t);
+        }
+    }
+
 }

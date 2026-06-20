@@ -2947,6 +2947,28 @@ canvas.addEventListener('click', (e) => {
         }
     } catch(_) {}
 
+    // Map editor: Ctrl+Click to paint terrain
+    if (e.ctrlKey && typeof set_tile_terrain === 'function') {
+        const info = get_tile_at(e.offsetX, e.offsetY);
+        if (info) {
+            const t = JSON.parse(info);
+            const terrainId = (window._editorTerrain || 0);
+            const ok = set_tile_terrain(t.x, t.y, terrainId);
+            if (ok) {
+                showPlacementPulse(e.clientX, e.clientY, true);
+            }
+        }
+        return;
+    }
+
+    // Shift+Click to cycle terrain type for map editor
+    if (e.shiftKey) {
+        window._editorTerrain = ((window._editorTerrain || 0) + 1) % 8;
+        const names = ['Grass','Forest','Mountain','Water','DeepWater','Desert','Swamp','Snow'];
+        console.log('Map editor terrain: ' + names[window._editorTerrain]);
+        return;
+    }
+
     hideSelection();
 });
 
