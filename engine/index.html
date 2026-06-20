@@ -4829,6 +4829,32 @@ function selectEditorTerrain(id) {
     populateTerrainPalette();
 }
 
+function exportMapJson() {
+    try {
+        if (typeof export_map_json !== "function") {
+            alert("export_map_json not available — WASM may not be loaded");
+            return;
+        }
+        var json = export_map_json();
+        if (json.startsWith("error:")) {
+            alert(json);
+            return;
+        }
+        // Trigger file download
+        var blob = new Blob([json], {type: "application/json"});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "s4wn_map.json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch(e) {
+        alert("Export failed: " + e.message);
+    }
+}
+
 function toggleEditorMode() {
     var palette = document.getElementById("editor-terrain-palette");
     var btn = document.getElementById("btn-editor");
@@ -5354,6 +5380,9 @@ window.__s4wn_debug = {
 <div id="editor-terrain-palette">
     <h4>Terrain</h4>
     <div class="editor-terrain-grid" id="editor-terrain-grid"></div>
+    <div style="margin-top:6px; text-align:center;">
+        <button onclick="exportMapJson()" style="background:#2a2a4a; color:#e6b422; border:1px solid #e6b422; padding:4px 12px; border-radius:4px; cursor:pointer; font-size:11px;">💾 Export JSON</button>
+    </div>
 </div>
 
 <!-- Resources Panel -->

@@ -3873,6 +3873,17 @@ pub fn editor_grid_enabled() -> bool {
     }
 }
 
+/// Export the current map as a JSON string (same format as load_map_json expects).
+/// Returns the JSON string on success, or an error string if no map is loaded.
+#[wasm_bindgen]
+pub fn export_map_json() -> String {
+    unsafe {
+        APP.as_ref()
+            .map(|app| app.game_loop.state.map.to_json())
+            .unwrap_or_else(|| String::from("error: no map loaded"))
+    }
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -4963,4 +4974,33 @@ mod tests {
         // Verify resource glow uses corrected phase
         assert!(FRAGMENT_SHADER.contains("sin((v_day_phase - 0.25) * 6.2831853 * 2.0)"),
             "resource glow should use shifted phase");
+    }
+
+    #[test]
+    fn test_export_map_json() {
+        use crate::map::{Map, Terrain, Resource};
+        // Create a simple map
+        let mut map = Map::new(4, 4);
+        map.set_terrain(0, 0, Terrain::Grass);
+        map.set_terrain(1, 0, Terrain::Forest);
+        map.set_terrain(2, 0, Terrain::Water);
+        map.set_terrain(3, 0, Terrain::Mountain);
+        // Set some resources directly
+        if let Some(tile) = map.get_mut(1, 0) {
+            tile.resource = Some(Resource::Iron);
+        }
+        if let Some(tile) = map.get_mut(3, 0) {
+            tile.resource = Some(Resource::Gold);
+        }
+        let json = map.to_json();
+        // Verify JSON structure
+        assert!(json.starts_with("{\"width\":4,\"height\":4"), "bad header: {}", &json[..40]);
+        assert!(json.contains("\"t\":0"), "missing grass");
+        assert!(json.contains("\"t\":1"), "missing forest");
+        assert!(json.contains("\"t\":3"), "missing water");
+        assert!(json.contains("\"t\":2"), "missing mountain");
+        assert!(json.contains("\"Iron\""), "missing Iron resource");
+        assert!(json.contains("\"Gold\""), "missing Gold resource");
+        assert!(json.contains("\"r\":null"), "missing null resource");
+        assert!(json.ends_with("]}"), "bad footer");
     }
