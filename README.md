@@ -82,7 +82,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Construction accordion — categories collapse on mobile, click to toggle
 - ✅ Mobile test suite — 14 logic tests covering accordion, orientation, touch, pinch-zoom
 
-**Phase 5 — 3D Pipeline** ✅ (360 tests)
+**Phase 5 — 3D Pipeline** ✅ (365 tests)
 - ✅ Orbital camera model — azimuth/elevation/distance spherical coords, eye()/look_at_target()/world_to_clip() (LookAt + Perspective). set_azimuth/set_elevation/set_distance with clamping + smoothing. snap_to_isometric() reset. 10 tests.
 - ✅ u_vp (View+Projection) mat4 uniform — dual-path vertex shader (legacy iso + orbital VP). WASM exports: set_azimuth/set_elevation/set_distance. WASM cache v=33.
 - ✅ Fragment shader diffuse lighting — n·l ambient+diffuse model, sun arc from day_phase. 3 new tests, 287 total.

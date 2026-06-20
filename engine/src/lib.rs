@@ -3477,6 +3477,15 @@ impl App {
         }
     }
 
+    /// Compute a smooth scale factor from construction progress.
+    /// Returns 0.3 at construction=0.0, easing up to 1.0 at construction=1.0.
+    /// Uses ease-out curve (1 - (1-t)^2) for a natural "settling" feel.
+    fn construction_scale(construction: f32) -> f32 {
+        let t = construction.clamp(0.0, 1.0);
+        let ease = 1.0 - (1.0 - t) * (1.0 - t);
+        0.3 + 0.7 * ease
+    }
+
     fn populate_model_instances_from_game_state(&mut self) -> i32 {
         self.model_instances.clear();
         let mut count = 0i32;
@@ -3484,7 +3493,7 @@ impl App {
         // Buildings
         for b in self.game_loop.state.economy.buildings.iter() {
             let model_id = Self::model_id_for_building(b.kind.name());
-            let scale = if b.is_complete() { 1.0 } else { 0.7 };
+            let scale = Self::construction_scale(b.construction);
             self.model_instances.push(model::ModelInstance::new(
                 model_id,
                 b.x as f32 + 0.5,
@@ -4331,6 +4340,56 @@ mod tests {
             assert!(mesh.positions.len() >= 16, "{} has too few vertices", name);
             assert!(mesh.indices.len() >= 12, "{} has too few indices", name);
         }
+    }
+
+
+    // ── Construction Scale Tests ────────────────────────────────────────────
+
+    #[test]
+    fn test_construction_scale_zero() {
+        // At construction=0.0, scale should be 0.3
+        let s = App::construction_scale(0.0);
+        assert!((s - 0.3).abs() < 0.001, "construction=0.0 should give scale ~0.3, got {}", s);
+    }
+
+    #[test]
+    fn test_construction_scale_complete() {
+        // At construction=1.0, scale should be 1.0
+        let s = App::construction_scale(1.0);
+        assert!((s - 1.0).abs() < 0.001, "construction=1.0 should give scale 1.0, got {}", s);
+    }
+
+    #[test]
+    fn test_construction_scale_half() {
+        // At construction=0.5, ease = 1 - 0.5^2 = 0.75, scale = 0.3 + 0.7*0.75 = 0.825
+        let s = App::construction_scale(0.5);
+        let expected = 0.3 + 0.7 * 0.75;
+        assert!((s - expected).abs() < 0.001, "construction=0.5 should give scale ~{}, got {}", expected, s);
+    }
+
+    #[test]
+    fn test_construction_scale_monotonic() {
+        // Scale should increase monotonically
+        let steps = 20;
+        let mut prev = 0.0f32;
+        for i in 0..=steps {
+            let t = i as f32 / steps as f32;
+            let s = App::construction_scale(t);
+            assert!(s >= prev - 0.001, "scale decreased at t={}: {} < {}", t, s, prev);
+            prev = s;
+        }
+    }
+
+    #[test]
+    fn test_construction_scale_clamped() {
+        // Values outside 0..1 should be clamped
+        let s_neg = App::construction_scale(-0.5);
+        let s_zero = App::construction_scale(0.0);
+        assert!((s_neg - s_zero).abs() < 0.001, "negative should clamp to 0.0");
+
+        let s_over = App::construction_scale(1.5);
+        let s_one = App::construction_scale(1.0);
+        assert!((s_over - s_one).abs() < 0.001, ">1.0 should clamp to 1.0");
     }
 
 }

@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 | **Status:** Phase 5 — 3D Pipeline 🔬 (360 tests)
-| **Last updated:** 2026-06-20 (Session 111 — per-model GPU buffers fix for correct instanced rendering, 360 tests)
+| **Last updated:** 2026-06-20 (Session 112 — building construction animation, WASM cache v=37, 365 tests)
 
 ---
 
@@ -150,7 +150,7 @@ Each phase lists objectives with test cases and implementation status.
 
 ## Test Suite Reference
 
-### Engine Tests (344 passing)
+### Engine Tests (365 passing)
 ```
 economy::tests              ~90 tests    Production chains, costs, tools, nation modifiers, territory validation
 nation::tests                21 tests    Nation data, unique buildings, specialists
@@ -297,6 +297,8 @@ protocol::tests               5 tests    Message serialization, room management
 ## Next Objectives (TDD Order)
 
 ||| **108** | **2026-06-19** | **Phase 5 Step 8.5: Unit model instances. Added model_id_for_unit(), alive_units() iteration, 3 procgen JSON unit models (worker/soldier/archer), 5 new tests. WASM cache v=36. 360 tests pass.** |
+
+|| **112** | **2026-06-20** | **Building construction animation: smooth scale 0.3→1.0 with ease-out curve (1-(1-t)²) based on construction progress. 5 new tests for construction_scale(). WASM cache v=36→v=37. 365 tests pass.** |
 |
 ### 1. Trojan Unique Buildings ✅ (Session 86)
 **Objective:** Trojans can build their 7 unique buildings: Oracle of Apollo, Olive Grove, Oil Press, Sanctuary of Artemis, Sanctuary of Poseidon, Sanctuary of Apollo, Amphitheater.
@@ -421,16 +423,17 @@ All Phase 5 steps are now complete:
 7. ✅ 3D model loading (JSON mesh parser, 30 OBJ→JSON conversions, building/unit instances, instanced rendering)
 8. ✅ GPU model rendering + all 59 building models
 9. ✅ Per-model GPU buffers fix (Session 111) — each model now has its own VAO + index buffer for correct instanced rendering
+10. ✅ Building construction animation (Session 112) — smooth scale 0.3→1.0 with ease-out curve
 
 **Remaining work:**
 
 **Phase 6: Polish & Next Features**
 
-1. Add model animation support (simple vertex shader-based wobble for units)
-2. Add building construction animation (scale-up from 0.7→1.0 over construction time)
-3. Improve mobile UI: add swipe gestures for panel navigation
-4. Add particle effects for building placement/combat
-5. WASM cache bump to v=37 (rebuild after per-model buffer fix)
+1. ~~Add building construction animation (scale-up from 0.7→1.0 over construction time)~~ ✅ Done (Session 112) — smooth ease-out curve, 0.3→1.0
+2. ~~WASM cache bump to v=37~~ ✅ Done (Session 112)
+3. Add model animation support (simple vertex shader-based wobble for units)
+4. Improve mobile UI: add swipe gestures for panel navigation
+5. Add particle effects for building placement/combat
 
 ---
 
@@ -439,7 +442,7 @@ All Phase 5 steps are now complete:
 - **Bug:** `upload_model_to_gpu()` overwrote a single set of GPU buffers each time, so only the last uploaded model's geometry was available. All instances rendered with the same mesh.
 - **Fix:** Added `GpuModel` struct (VAO + index buffer + index count), stored in `HashMap<String, GpuModel>`. Each `upload_model_to_gpu()` call now creates a new VAO + index buffer. `render_models()` iterates over model groups, binds each model's VAO, and issues separate instanced draw calls.
 - **Cleanup:** Removed unused `model_index_count` and `model_mvp_loc` fields.
-- All 360 tests pass.
+- All 365 tests pass.
 
 ### Session 108 — Unit model instances ✅
 
