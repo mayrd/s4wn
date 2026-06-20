@@ -5094,6 +5094,50 @@ console.error = function (...args) {
     console.log('%c' + ghUrl, 'color:#58a6ff;text-decoration:underline;word-break:break-all');
   }
 };
+
+// ── Debug Bridge — expose WASM functions for tests and dev tools ─────────
+window.__s4wn_debug = {
+  get_building_summary,
+  get_unit_summary,
+  try_place_building,
+  add_starting_resources,
+  set_game_speed,
+  get_game_speed,
+  get_game_state,
+  restore_game_state,
+  get_resource_counts,
+  get_tool_counts,
+  set_player_nation,
+  get_player_nation,
+  list_nations,
+  get_nation_buildings,
+  list_building_types,
+  get_build_cost,
+  toggle_pause,
+  is_paused,
+  get_stats,
+  get_tile_at,
+
+  // ── Helpers for the Tutorial engine ────────────────────────────
+  // Tutorial.snapshotBuildings() expects {buildings: [...]}
+  get_buildings() {
+    try {
+      const arr = JSON.parse(get_building_summary());
+      return JSON.stringify({ buildings: arr.map(b => ({
+        type: b.type, owner_id: 0
+      }))});
+    } catch(e) { return '{"buildings":[]}'; }
+  },
+  // Tutorial.snapshotUnits() expects {units: [...]}
+  get_units() {
+    try {
+      const arr = JSON.parse(get_unit_summary());
+      return JSON.stringify({ units: arr.map(u => ({
+        type: u.kind, owner: u.owner_id || 0
+      }))});
+    } catch(e) { return '{"units":[]}'; }
+  },
+};
 </script>
 
 
@@ -5300,11 +5344,11 @@ const Tutorial = {
   },
 
   snapshotBuildings() {
-    // Try to get buildings from game state
+    // Get buildings from the debug bridge (which wraps WASM)
     const result = [];
     try {
-      if (typeof get_buildings === 'function') {
-        const json = get_buildings();
+      if (window.__s4wn_debug?.get_buildings) {
+        const json = window.__s4wn_debug.get_buildings();
         if (json) {
           const data = JSON.parse(json);
           for (const b of (data.buildings || [])) {
@@ -5312,15 +5356,15 @@ const Tutorial = {
           }
         }
       }
-    } catch(e) { /* silently ignore — DOM/poll approach */ }
+    } catch(e) { /* silently ignore */ }
     return result;
   },
 
   snapshotUnits() {
     const result = [];
     try {
-      if (typeof get_units === 'function') {
-        const json = get_units();
+      if (window.__s4wn_debug?.get_units) {
+        const json = window.__s4wn_debug.get_units();
         if (json) {
           const data = JSON.parse(json);
           for (const u of (data.units || [])) {
