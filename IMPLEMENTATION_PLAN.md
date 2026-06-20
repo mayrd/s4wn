@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 5 — 3D Pipeline 🔬 (360 tests)
-| **Last updated:** 2026-06-20 (Session 112 — building construction animation, WASM cache v=37, 365 tests)
+| **Status:** Phase 5 — 3D Pipeline 🔬 (379 tests)
+| **Last updated:** 2026-06-20 (Session 113 — unit wobble animation, 379 tests)
 
 ---
 
@@ -299,6 +299,7 @@ protocol::tests               5 tests    Message serialization, room management
 ||| **108** | **2026-06-19** | **Phase 5 Step 8.5: Unit model instances. Added model_id_for_unit(), alive_units() iteration, 3 procgen JSON unit models (worker/soldier/archer), 5 new tests. WASM cache v=36. 360 tests pass.** |
 
 || **112** | **2026-06-20** | **Building construction animation: smooth scale 0.3→1.0 with ease-out curve (1-(1-t)²) based on construction progress. 5 new tests for construction_scale(). WASM cache v=36→v=37. 365 tests pass.** |
+|| **113** | **2026-06-20** | **Unit wobble animation: vertex shader-based idle animation for 3D model instances. Added anim_phase field to ModelInstance, u_time uniform + a_anim_phase instanced attribute (location 8) to model vertex shader. Sin-based Y bob + X/Z sway with 3-frequency mix. Deterministic per-unit phase from position hash. 14 new tests (8 model + 6 shader). 379 tests pass.** |
 |
 ### 1. Trojan Unique Buildings ✅ (Session 86)
 **Objective:** Trojans can build their 7 unique buildings: Oracle of Apollo, Olive Grove, Oil Press, Sanctuary of Artemis, Sanctuary of Poseidon, Sanctuary of Apollo, Amphitheater.
@@ -431,7 +432,7 @@ All Phase 5 steps are now complete:
 
 1. ~~Add building construction animation (scale-up from 0.7→1.0 over construction time)~~ ✅ Done (Session 112) — smooth ease-out curve, 0.3→1.0
 2. ~~WASM cache bump to v=37~~ ✅ Done (Session 112)
-3. Add model animation support (simple vertex shader-based wobble for units)
+3. ~~Add model animation support (simple vertex shader-based wobble for units)~~ ✅ Done (Session 113) — sin-based Y bob + X/Z sway, 14 tests
 4. Improve mobile UI: add swipe gestures for panel navigation
 5. Add particle effects for building placement/combat
 
