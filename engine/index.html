@@ -967,11 +967,11 @@
       <div class="recent-title" data-i18n="recent_files">📁 Recent Files</div>
       <div class="recent-list" id="recent-list"><span class="recent-empty">None yet</span></div>
     </div>
-    <button class="menu-btn" id="btn-tutorial">📖 Tutorial</button>
+    <button class="menu-btn" id="btn-tutorial" data-i18n="tutorial">📖 Tutorial</button>
     <button class="menu-btn" id="btn-continue" style="display:none">💾 Continue Game</button>
     <button class="menu-btn" onclick="openNewGame()" data-i18n="new_game">🆕 New Game</button>
-    <button class="menu-btn" onclick="openSettings()">⚙️ Settings</button>
-    <button class="menu-btn secondary" onclick="window.open('https://github.com/mayrd/s4wn','_blank')">
+    <button class="menu-btn" onclick="openSettings()" data-i18n="settings">⚙️ Settings</button>
+    <button class="menu-btn secondary" onclick="window.open('https://github.com/mayrd/s4wn','_blank')" data-i18n="github">
       🔗 GitHub Repository
     </button>
     <div class="menu-hint" data-i18n="menu_hint">or press <kbd>L</kbd> to load · <kbd>S</kbd> for settings</div>
@@ -1207,7 +1207,6 @@ import init, {
     get_unit_info,
     get_game_speed,
     set_game_speed,
-    get_game_speed,
     toggle_pause,
     is_paused,
     try_place_building,
@@ -3392,7 +3391,7 @@ const LANG = {
         github: '🔗 GitHub Repository',
         recent_files: '📁 Recent Files',
         none_yet: 'None yet',
-        menu_hint: 'or press L to load · D for demo · S for settings',
+        menu_hint: 'or press L to load · S for settings',
         settings_title: '⚙️ Settings',
         controls: '🎮 Controls',
         zoom_speed: 'Zoom Speed',
@@ -3408,7 +3407,11 @@ const LANG = {
         reset_defaults: '↺ Reset Defaults',
         back_to_game: '← Back to Game',
         construction: '🏗️ Build',
-        stats: '📊 Statistics',
+        resources_btn: '📦 Resources',
+        settlers_btn: '👥 Settlers',
+        resources_title: '📦 Resources',
+        settlers_title: '👥 Settlers',
+        tutorial: '📖 Tutorial',
         language_label: '🌐 Language',
         new_game_title: '🆕 New Game',
         player_name: 'Player Name',
@@ -3434,6 +3437,18 @@ const LANG = {
         tools_zero: 'Tools: 0',
         no_resources: 'No resources',
         no_tools: 'No tools',
+        settlers_total: 'Settlers total',
+        settlers_working: 'Working (in bldgs)',
+        settlers_idle: 'Idle (unassigned)',
+        specialists: '🔨 Specialists',
+        pioneers: 'Pioneers',
+        geologists: 'Geologists',
+        priests: 'Priests',
+        recruit: 'Recruit',
+        military: '⚔️ Military',
+        swordsmen: 'Swordsmen',
+        bowmen: 'Bowmen',
+        error_loading: 'Error loading',
         drop_zone: '📂 Drop .map / .sav / .json file here',
         engine_not_ready: 'Engine not ready. Please wait for WASM to load.',
         no_saved_game: 'No saved game found.',
@@ -3470,7 +3485,7 @@ const LANG = {
         github: '🔗 GitHub Repository',
         recent_files: '📁 Zuletzt verwendet',
         none_yet: 'Noch keine',
-        menu_hint: 'L zum Laden · D für Demo · S für Einstellungen',
+        menu_hint: 'L zum Laden · S für Einstellungen',
         settings_title: '⚙️ Einstellungen',
         controls: '🎮 Steuerung',
         zoom_speed: 'Zoom-Geschwindigkeit',
@@ -3486,7 +3501,11 @@ const LANG = {
         reset_defaults: '↺ Zurücksetzen',
         back_to_game: '← Zurück zum Spiel',
         construction: '🏗️ Bauen',
-        stats: '📊 Statistik',
+        resources_btn: '📦 Ressourcen',
+        settlers_btn: '👥 Siedler',
+        resources_title: '📦 Ressourcen',
+        settlers_title: '👥 Siedler',
+        tutorial: '📖 Tutorial',
         language_label: '🌐 Sprache',
         new_game_title: '🆕 Neues Spiel',
         player_name: 'Spielername',
@@ -3512,6 +3531,18 @@ const LANG = {
         tools_zero: 'Werkzeuge: 0',
         no_resources: 'Keine Ressourcen',
         no_tools: 'Keine Werkzeuge',
+        settlers_total: 'Siedler gesamt',
+        settlers_working: 'In Gebäuden (arbeitend)',
+        settlers_idle: 'Frei (unbeschäftigt)',
+        specialists: '🔨 Spezialisten',
+        pioneers: 'Pioniere',
+        geologists: 'Geologen',
+        priests: 'Priester',
+        recruit: 'Ausbilden',
+        military: '⚔️ Militär',
+        swordsmen: 'Schwertkämpfer',
+        bowmen: 'Bogenschützen',
+        error_loading: 'Fehler beim Laden',
         drop_zone: '📂 .map / .sav / .json Datei hier ablegen',
         engine_not_ready: 'Engine nicht bereit. Bitte warten, bis WASM geladen ist.',
         no_saved_game: 'Kein gespeichertes Spiel gefunden.',
@@ -3548,7 +3579,7 @@ const LANG = {
         github: '🔗 Repositorio GitHub',
         recent_files: '📁 Archivos Recientes',
         none_yet: 'Ninguno aún',
-        menu_hint: 'presiona L para cargar · D para demo · S para configuración',
+        menu_hint: 'presiona L para cargar · S para configuración',
         settings_title: '⚙️ Configuración',
         controls: '🎮 Controles',
         zoom_speed: 'Velocidad de Zoom',
@@ -3563,6 +3594,12 @@ const LANG = {
         sound_effects: 'Efectos de Sonido',
         reset_defaults: '↺ Restablecer',
         back_to_game: '← Volver al Juego',
+        construction: '🏗️ Construir',
+        resources_btn: '📦 Recursos',
+        settlers_btn: '👥 Colonos',
+        resources_title: '📦 Recursos',
+        settlers_title: '👥 Colonos',
+        tutorial: '📖 Tutorial',
         language_label: '🌐 Idioma',
         new_game_title: '🆕 Nueva Partida',
         player_name: 'Nombre del Jugador',
@@ -3588,6 +3625,18 @@ const LANG = {
         tools_zero: 'Herramientas: 0',
         no_resources: 'Sin recursos',
         no_tools: 'Sin herramientas',
+        settlers_total: 'Colonos total',
+        settlers_working: 'Trabajando (en edificios)',
+        settlers_idle: 'Libres (sin asignar)',
+        specialists: '🔨 Especialistas',
+        pioneers: 'Pioneros',
+        geologists: 'Geólogos',
+        priests: 'Sacerdotes',
+        recruit: 'Reclutar',
+        military: '⚔️ Militar',
+        swordsmen: 'Espadachines',
+        bowmen: 'Arqueros',
+        error_loading: 'Error al cargar',
         drop_zone: '📂 Suelta archivo .map / .sav / .json aquí',
         engine_not_ready: 'Motor no listo. Espera a que WASM se cargue.',
         no_saved_game: 'No hay partida guardada.',
@@ -3624,7 +3673,7 @@ const LANG = {
         github: '🔗 Dépôt GitHub',
         recent_files: '📁 Fichiers Récents',
         none_yet: 'Aucun',
-        menu_hint: 'L pour charger · D pour démo · S pour paramètres',
+        menu_hint: 'appuyez sur L pour charger · S pour paramètres',
         settings_title: '⚙️ Paramètres',
         controls: '🎮 Contrôles',
         zoom_speed: 'Vitesse de Zoom',
@@ -3639,6 +3688,12 @@ const LANG = {
         sound_effects: 'Effets Sonores',
         reset_defaults: '↺ Réinitialiser',
         back_to_game: '← Retour au Jeu',
+        construction: '🏗️ Construire',
+        resources_btn: '📦 Ressources',
+        settlers_btn: '👥 Colons',
+        resources_title: '📦 Ressources',
+        settlers_title: '👥 Colons',
+        tutorial: '📖 Didacticiel',
         language_label: '🌐 Langue',
         new_game_title: '🆕 Nouvelle Partie',
         player_name: 'Nom du Joueur',
@@ -3664,6 +3719,18 @@ const LANG = {
         tools_zero: 'Outils : 0',
         no_resources: 'Aucune ressource',
         no_tools: 'Aucun outil',
+        settlers_total: 'Total des colons',
+        settlers_working: 'Au travail (bâtiments)',
+        settlers_idle: 'Libres (non assignés)',
+        specialists: '🔨 Spécialistes',
+        pioneers: 'Pionniers',
+        geologists: 'Géologues',
+        priests: 'Prêtres',
+        recruit: 'Recruter',
+        military: '⚔️ Militaire',
+        swordsmen: 'Épéistes',
+        bowmen: 'Archers',
+        error_loading: 'Erreur de chargement',
         drop_zone: '📂 Déposez un fichier .map / .sav / .json ici',
         engine_not_ready: 'Moteur non prêt. Attendez le chargement de WASM.',
         no_saved_game: 'Aucune partie sauvegardée.',
@@ -3748,9 +3815,6 @@ function applyLanguage() {
     const btnLoad = document.getElementById('btn-load');
     if (btnLoad) btnLoad.textContent = t('load_map');
 
-    const btnDemo = document.getElementById('btn-demo');
-    if (btnDemo) btnDemo.textContent = t('demo_map');
-
     const btnContinue = document.getElementById('btn-continue');
     if (btnContinue && btnContinue.style.display !== 'none') {
         const meta = getSavedGameMeta();
@@ -3819,6 +3883,10 @@ function applyLanguage() {
         recentList.querySelector('.recent-empty').textContent = t('none_yet');
     }
 
+    // Re-render open panels with new language
+    if (document.getElementById('resources-panel').classList.contains('open')) renderResources();
+    if (document.getElementById('settlers-panel').classList.contains('open')) renderSettlers();
+}
     document.querySelector('#set-language').value = currentLang;
 
     // HTML lang attribute
@@ -4908,10 +4976,10 @@ function renderResources() {
             const label = tResource(name);
             html += `<div class="res-row"><span class="res-label"><span class="res-icon">${icon}</span> ${label}</span><span class="res-val">${count}</span></div>`;
         }
-        if (!html) html = '<div class="res-row"><span class="res-label">Keine Ressourcen</span></div>';
+        if (!html) html = `<div class="res-row"><span class="res-label">${t('no_resources')}</span></div>`;
         body.innerHTML = html;
     } catch(e) {
-        body.innerHTML = '<div class="res-row"><span class="res-label">Fehler beim Laden</span></div>';
+        body.innerHTML = `<div class="res-row"><span class="res-label">${t('error_loading')}</span></div>`;
     }
 }
 
@@ -4919,7 +4987,6 @@ function renderSettlers() {
     const body = document.getElementById('settlers-body');
     try {
         const units = JSON.parse(get_unit_summary());
-        let total = units.length;
         let working = 0, idle = 0;
         let settlersCount = 0, swordsCount = 0, bowCount = 0;
         for (const u of units) {
@@ -4932,20 +4999,20 @@ function renderSettlers() {
         }
 
         let html = '';
-        html += `<div class="set-row"><span class="set-label">👷 Siedler gesamt</span><span class="set-val">${settlersCount}</span></div>`;
-        html += `<div class="set-row"><span class="set-label">⚒️ In Gebäuden (arbeitend)</span><span class="set-val">${working}</span></div>`;
-        html += `<div class="set-row"><span class="set-label">🫙 Frei (unbeschäftigt)</span><span class="set-val">${idle}</span></div>`;
-        html += `<div class="set-section">🔨 Spezialisten</div>`;
-        html += `<div class="set-row"><span class="set-label">🔨 Pioniere</span><span class="set-val">0</span><button class="set-btn" disabled>ausbilden</button></div>`;
-        html += `<div class="set-row"><span class="set-label">⛏️ Geologen</span><span class="set-val">0</span><button class="set-btn" disabled>ausbilden</button></div>`;
-        html += `<div class="set-row"><span class="set-label">🙏 Priester</span><span class="set-val">0</span><button class="set-btn" disabled>ausbilden</button></div>`;
-        html += `<div class="set-section">⚔️ Militär</div>`;
-        html += `<div class="set-row"><span class="set-label">⚔️ Schwertkämpfer</span><span class="set-val">${swordsCount}</span></div>`;
-        html += `<div class="set-row"><span class="set-label">🏹 Bogenschützen</span><span class="set-val">${bowCount}</span></div>`;
+        html += `<div class="set-row"><span class="set-label">${t('settlers_total')}</span><span class="set-val">${settlersCount}</span></div>`;
+        html += `<div class="set-row"><span class="set-label">${t('settlers_working')}</span><span class="set-val">${working}</span></div>`;
+        html += `<div class="set-row"><span class="set-label">${t('settlers_idle')}</span><span class="set-val">${idle}</span></div>`;
+        html += `<div class="set-section">${t('specialists')}</div>`;
+        html += `<div class="set-row"><span class="set-label">🔨 ${t('pioneers')}</span><span class="set-val">0</span><button class="set-btn" disabled>${t('recruit')}</button></div>`;
+        html += `<div class="set-row"><span class="set-label">⛏️ ${t('geologists')}</span><span class="set-val">0</span><button class="set-btn" disabled>${t('recruit')}</button></div>`;
+        html += `<div class="set-row"><span class="set-label">🙏 ${t('priests')}</span><span class="set-val">0</span><button class="set-btn" disabled>${t('recruit')}</button></div>`;
+        html += `<div class="set-section">${t('military')}</div>`;
+        html += `<div class="set-row"><span class="set-label">⚔️ ${t('swordsmen')}</span><span class="set-val">${swordsCount}</span></div>`;
+        html += `<div class="set-row"><span class="set-label">🏹 ${t('bowmen')}</span><span class="set-val">${bowCount}</span></div>`;
 
         body.innerHTML = html;
     } catch(e) {
-        body.innerHTML = '<div class="set-row"><span class="set-label">Fehler beim Laden</span></div>';
+        body.innerHTML = `<div class="set-row"><span class="set-label">${t('error_loading')}</span></div>`;
     }
 }
 
@@ -5199,8 +5266,8 @@ window.__s4wn_debug = {
     <button id="btn-menu" onclick="toggleMenu()" data-i18n="menu">☰ Menu</button>
     <button id="btn-speed" onclick="toggleSpeed()" title="Toggle game speed">▶ 1×</button>
     <button id="btn-construction" onclick="toggleConstructionPanel()" data-i18n="construction">🏗️ Bauen</button>
-    <button id="btn-resources" onclick="toggleResourcesPanel()">📦 Ressourcen</button>
-    <button id="btn-settlers" onclick="toggleSettlersPanel()">👥 Siedler</button>
+    <button id="btn-resources" onclick="toggleResourcesPanel()" data-i18n="resources_btn">📦 Ressourcen</button>
+    <button id="btn-settlers" onclick="toggleSettlersPanel()" data-i18n="settlers_btn">👥 Siedler</button>
 </div>
 
 <!-- Construction Panel -->
