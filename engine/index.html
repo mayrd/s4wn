@@ -143,7 +143,8 @@
   body.splash-active #selection-info,
   body.splash-active #bottom-left-btns,
   body.splash-active #construction-panel,
-  body.splash-active #stats-panel,
+  body.splash-active #resources-panel,
+  body.splash-active #settlers-panel,
   body.splash-active #controls,
   body.splash-active #drop-zone,
   body.splash-active #toast-container { opacity: 0 !important; pointer-events: none !important; }
@@ -804,28 +805,33 @@
   #construction-panel .con-bldg .con-name { flex: 1; color: #ddd; }
   #construction-panel .con-bldg .con-cost { color: #888; font-size: 10px; }
 
-  /* ── Statistics Panel ────────────────────────────────────────────── */
-  #stats-panel {
+  /* ── Resources & Settlers Panels ─────────────────────────────────── */
+  #resources-panel, #settlers-panel {
       position: fixed; bottom: 80px; left: 8px; z-index: 98;
       background: rgba(10,10,26,0.95); border: 1px solid rgba(255,255,255,0.15);
       border-radius: 6px; padding: 8px; width: 300px; max-height: 55vh;
       overflow-y: auto; display: none; font-size: 11px;
   }
-  #stats-panel.open { display: block; }
-  #stats-panel .stats-tabs { display: flex; gap: 2px; margin-bottom: 8px; }
-  #stats-panel .stats-tab {
-      flex: 1; text-align: center; padding: 4px; background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08); border-radius: 3px;
-      cursor: pointer; font-size: 10px; color: #888;
+  #resources-panel.open, #settlers-panel.open { display: block; }
+  #resources-panel h4, #settlers-panel h4 {
+      margin: 0 0 6px 0; font-size: 13px; color: #e6b422; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;
   }
-  #stats-panel .stats-tab:hover { color: #ccc; background: rgba(255,255,255,0.08); }
-  #stats-panel .stats-tab.active { color: #e6b422; border-color: #e6b422; background: rgba(255,255,255,0.08); }
-  #stats-panel .stats-row {
-      display: flex; justify-content: space-between; padding: 2px 6px;
-      color: #ccc; border-bottom: 1px solid rgba(255,255,255,0.03);
+  #resources-panel .res-row, #settlers-panel .set-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 3px 6px; color: #ccc; border-bottom: 1px solid rgba(255,255,255,0.03);
   }
-  #stats-panel .stats-row .stats-label { color: #aaa; }
-  #stats-panel .stats-row .stats-val { color: #e6b422; font-weight: bold; }
+  #resources-panel .res-label, #settlers-panel .set-label { color: #aaa; }
+  #resources-panel .res-val, #settlers-panel .set-val { color: #e6b422; font-weight: bold; }
+  #settlers-panel .set-btn {
+      font-size: 9px; padding: 1px 6px; background: rgba(230,180,34,0.15);
+      border: 1px solid rgba(230,180,34,0.3); border-radius: 3px; color: #e6b422;
+      cursor: pointer; margin-left: 4px;
+  }
+  #settlers-panel .set-btn:hover { background: rgba(230,180,34,0.25); }
+  #settlers-panel .set-section {
+      margin-top: 6px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.1);
+      color: #aaa; font-size: 10px; font-weight: bold; margin-bottom: 2px;
+  }
 
   /* ── Swipe Hint Indicators (mobile) ──────────────────────────────── */
   .swipe-hint {
@@ -841,14 +847,16 @@
     .swipe-hint.hidden { opacity: 0; }
   }
   /* Panel slide animation */
-  #construction-panel, #stats-panel {
+  #construction-panel, #resources-panel, #settlers-panel {
     transition: transform 0.25s ease-out, opacity 0.25s ease-out;
   }
   @media (max-width: 768px) {
     #construction-panel { transform: translateX(-100%); }
     #construction-panel.open { transform: translateX(0); }
-    #stats-panel { transform: translateX(-100%); }
-    #stats-panel.open { transform: translateX(0); }
+    #resources-panel { transform: translateX(-100%); }
+    #resources-panel.open { transform: translateX(0); }
+    #settlers-panel { transform: translateX(-100%); }
+    #settlers-panel.open { transform: translateX(0); }
   }
 
 
@@ -889,16 +897,15 @@
     #construction-panel .con-bldg .con-icon { font-size: 20px; width: 28px; }
     #construction-panel .con-bldg .con-name { font-size: 13px; }
 
-    /* Statistics panel: full width, scrollable */
-    #stats-panel {
+    /* Resources & Settlers panels: full width, scrollable */
+    #resources-panel, #settlers-panel {
       left: 0; right: 0; bottom: 56px;
       width: 100vw; max-width: 100%; max-height: 40vh;
       border-radius: 8px 8px 0 0;
-      padding: 10px;
+      padding: 12px;
       overflow-y: auto; -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
     }
-    #stats-panel .stats-tab { font-size: 12px; padding: 6px; }
 
     /* Bottom-left buttons: larger touch targets */
     #bottom-left-btns { bottom: 8px; left: 4px; gap: 6px; }
@@ -1198,6 +1205,7 @@ import init, {
     get_unit_summary,
     get_building_info,
     get_unit_info,
+    get_game_speed,
     set_game_speed,
     get_game_speed,
     toggle_pause,
@@ -1935,6 +1943,13 @@ let selectedUnit = null;     // unit id or null
         container.appendChild(p);
     }
 })();
+
+setTimeout(() => {
+    splash.classList.add('hidden');
+    document.body.classList.remove('splash-active');
+    // Open menu so player can start a game
+    setTimeout(() => openMenu(), 500);
+}, 2000);
 
 function openMenu() {
     showMenu = true;
@@ -4700,22 +4715,26 @@ main();
 // S4 building categories — loaded from config/data.js
 
 // ── Swipe Gesture Panel Navigation ─────────────────────────────────────
-// Swipe left on canvas → open stats panel (close construction)
-// Swipe right on canvas → open construction panel (close stats)
+// Swipe left on canvas → open settlers panel (close construction)
+// Swipe right on canvas → open construction panel (close settlers)
 function handlePanelSwipe(direction) {
     if (window.innerWidth >= 768) return; // Only on mobile
     const conPanel = document.getElementById('construction-panel');
-    const statsPanel = document.getElementById('stats-panel');
-    const conOpen = conPanel && conPanel.classList.contains('open');
-    const statsOpen = statsPanel && statsPanel.classList.contains('open');
+    const resPanel = document.getElementById('resources-panel');
+    const setPanel = document.getElementById('settlers-panel');
+    const anyPanelOpen = (conPanel && conPanel.classList.contains('open')) ||
+                         (resPanel && resPanel.classList.contains('open')) ||
+                         (setPanel && setPanel.classList.contains('open'));
     if (direction === 'left') {
-        // Swipe left → show stats (close construction first)
-        if (conOpen) toggleConstructionPanel();
-        if (!statsOpen) toggleStatsPanel();
+        // Swipe left → show settlers (close others first)
+        if (conPanel && conPanel.classList.contains('open')) toggleConstructionPanel();
+        if (resPanel && resPanel.classList.contains('open')) toggleResourcesPanel();
+        if (setPanel && !setPanel.classList.contains('open')) toggleSettlersPanel();
     } else {
-        // Swipe right → show construction (close stats first)
-        if (statsOpen) toggleStatsPanel();
-        if (!conOpen) toggleConstructionPanel();
+        // Swipe right → show construction (close others first)
+        if (resPanel && resPanel.classList.contains('open')) toggleResourcesPanel();
+        if (setPanel && setPanel.classList.contains('open')) toggleSettlersPanel();
+        if (conPanel && !conPanel.classList.contains('open')) toggleConstructionPanel();
     }
 }
 
@@ -4736,11 +4755,16 @@ setTimeout(hideSwipeHints, 8000);
 function toggleConstructionPanel() {
     const panel = document.getElementById('construction-panel');
     const btn = document.getElementById('btn-construction');
-    const statsPanel = document.getElementById('stats-panel');
-    // Close stats if open
-    if (statsPanel.classList.contains('open')) {
-        statsPanel.classList.remove('open');
-        document.getElementById('btn-stats').classList.remove('active');
+    // Close resources/settlers if open
+    const resPanel = document.getElementById('resources-panel');
+    const setPanel = document.getElementById('settlers-panel');
+    if (resPanel && resPanel.classList.contains('open')) {
+        resPanel.classList.remove('open');
+        document.getElementById('btn-resources').classList.remove('active');
+    }
+    if (setPanel && setPanel.classList.contains('open')) {
+        setPanel.classList.remove('open');
+        document.getElementById('btn-settlers').classList.remove('active');
     }
     if (panel.classList.contains('open')) {
         panel.classList.remove('open');
@@ -4826,96 +4850,102 @@ function selectBuilding(name) {
 
 
 
-// ── Statistics Panel (#20) ────────────────────────────────────────────────
+// ── Resources & Settlers Panels ────────────────────────────────────────
 
-let currentStatsTab = 'resources';
-let statsRefreshInterval = null;
-
-function toggleStatsPanel() {
-    const panel = document.getElementById('stats-panel');
-    const btn = document.getElementById('btn-stats');
+function toggleResourcesPanel() {
+    const panel = document.getElementById('resources-panel');
+    const btn = document.getElementById('btn-resources');
+    const settPanel = document.getElementById('settlers-panel');
     const conPanel = document.getElementById('construction-panel');
-    // Close construction if open
     if (conPanel.classList.contains('open')) {
         conPanel.classList.remove('open');
         document.getElementById('btn-construction').classList.remove('active');
     }
+    if (settPanel.classList.contains('open')) {
+        settPanel.classList.remove('open');
+        document.getElementById('btn-settlers').classList.remove('active');
+    }
     if (panel.classList.contains('open')) {
         panel.classList.remove('open');
         btn.classList.remove('active');
-        if (statsRefreshInterval) { clearInterval(statsRefreshInterval); statsRefreshInterval = null; }
     } else {
-        showStatsTab(currentStatsTab);
+        renderResources();
         panel.classList.add('open');
         btn.classList.add('active');
-        // Auto-refresh every 2 seconds while open
-        statsRefreshInterval = setInterval(() => showStatsTab(currentStatsTab), 2000);
     }
 }
 
-function showStatsTab(tab) {
-    currentStatsTab = tab;
-    document.querySelectorAll('#stats-panel .stats-tab').forEach(t => {
-        t.classList.toggle('active', t.textContent.includes(
-            tab === 'resources' ? 'Ressourcen' : tab === 'settlers' ? 'Siedler' : 'Militär'
-        ));
-    });
-    const body = document.getElementById('stats-body');
-    if (tab === 'resources') {
-        renderResourceStats(body);
-    } else if (tab === 'settlers') {
-        renderSettlerStats(body);
-    } else if (tab === 'military') {
-        renderMilitaryStats(body);
+function toggleSettlersPanel() {
+    const panel = document.getElementById('settlers-panel');
+    const btn = document.getElementById('btn-settlers');
+    const resPanel = document.getElementById('resources-panel');
+    const conPanel = document.getElementById('construction-panel');
+    if (conPanel.classList.contains('open')) {
+        conPanel.classList.remove('open');
+        document.getElementById('btn-construction').classList.remove('active');
+    }
+    if (resPanel.classList.contains('open')) {
+        resPanel.classList.remove('open');
+        document.getElementById('btn-resources').classList.remove('active');
+    }
+    if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+        btn.classList.remove('active');
+    } else {
+        renderSettlers();
+        panel.classList.add('open');
+        btn.classList.add('active');
     }
 }
 
-function renderResourceStats(body) {
+function renderResources() {
+    const body = document.getElementById('resources-body');
     try {
         const counts = JSON.parse(get_resource_counts());
         let html = '';
-        const total = Object.values(counts).reduce((a, b) => a + b, 0);
         for (const [name, count] of Object.entries(counts)) {
-            const pct = total > 0 ? (count / total * 100).toFixed(1) : '0.0';
             const icon = RESOURCE_ICONS[name] || '📦';
             const label = tResource(name);
-            html += `<div class="stats-row"><span class="stats-label"><span class="res-icon">${icon}</span> ${label}</span><span class="stats-val">${count} (${pct}%)</span></div>`;
+            html += `<div class="res-row"><span class="res-label"><span class="res-icon">${icon}</span> ${label}</span><span class="res-val">${count}</span></div>`;
         }
-        if (!html) html = '<div class="stats-row"><span class="stats-label">No resources</span></div>';
-        html += `<div class="stats-row" style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px"><span class="stats-label">Total</span><span class="stats-val">${total}</span></div>`;
+        if (!html) html = '<div class="res-row"><span class="res-label">Keine Ressourcen</span></div>';
         body.innerHTML = html;
     } catch(e) {
-        body.innerHTML = '<div class="stats-row"><span class="stats-label">Error loading resources</span></div>';
+        body.innerHTML = '<div class="res-row"><span class="res-label">Fehler beim Laden</span></div>';
     }
 }
 
-function renderSettlerStats(body) {
+function renderSettlers() {
+    const body = document.getElementById('settlers-body');
     try {
-        const summary = JSON.parse(get_unit_summary());
-        let html = '';
-        for (const [kind, data] of Object.entries(summary)) {
-            let emoji = kind === 'Settler' ? '👷' : kind === 'Swordsman' ? '⚔️' : kind === 'Bowman' ? '🏹' : '❓';
-            html += `<div class="stats-row"><span class="stats-label">${emoji} ${kind}</span><span class="stats-val">${data.total || data.count || data}</span></div>`;
+        const units = JSON.parse(get_unit_summary());
+        let total = units.length;
+        let working = 0, idle = 0;
+        let settlersCount = 0, swordsCount = 0, bowCount = 0;
+        for (const u of units) {
+            if (u.kind === 'Settler') {
+                settlersCount++;
+                if (u.state === 'Working') working++;
+                else idle++;
+            } else if (u.kind === 'Swordsman') swordsCount++;
+            else if (u.kind === 'Bowman') bowCount++;
         }
-        if (!html) html = '<div class="stats-row"><span class="stats-label">No settlers</span></div>';
-        body.innerHTML = html;
-    } catch(e) {
-        body.innerHTML = '<div class="stats-row"><span class="stats-label">Error loading settler stats</span></div>';
-    }
-}
 
-function renderMilitaryStats(body) {
-    try {
-        const s = JSON.parse(get_stats());
-        const gm = s.game_mode || {};
         let html = '';
-        html += `<div class="stats-row"><span class="stats-label">⚔️ Swordsmen</span><span class="stats-val">${gm.swordsmen_produced || 0} produced / ${gm.swordsmen_killed || 0} killed</span></div>`;
-        html += `<div class="stats-row"><span class="stats-label">🏹 Bowmen</span><span class="stats-val">${gm.bowmen_produced || 0} produced / ${gm.bowmen_killed || 0} killed</span></div>`;
-        html += `<div class="stats-row"><span class="stats-label">💀 KIA (us)</span><span class="stats-val">${gm.units_lost || 0}</span></div>`;
-        html += `<div class="stats-row" style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px"><span class="stats-label">🎮 Ticks</span><span class="stats-val">${s.ticks || 0}</span></div>`;
+        html += `<div class="set-row"><span class="set-label">👷 Siedler gesamt</span><span class="set-val">${settlersCount}</span></div>`;
+        html += `<div class="set-row"><span class="set-label">⚒️ In Gebäuden (arbeitend)</span><span class="set-val">${working}</span></div>`;
+        html += `<div class="set-row"><span class="set-label">🫙 Frei (unbeschäftigt)</span><span class="set-val">${idle}</span></div>`;
+        html += `<div class="set-section">🔨 Spezialisten</div>`;
+        html += `<div class="set-row"><span class="set-label">🔨 Pioniere</span><span class="set-val">0</span><button class="set-btn" disabled>ausbilden</button></div>`;
+        html += `<div class="set-row"><span class="set-label">⛏️ Geologen</span><span class="set-val">0</span><button class="set-btn" disabled>ausbilden</button></div>`;
+        html += `<div class="set-row"><span class="set-label">🙏 Priester</span><span class="set-val">0</span><button class="set-btn" disabled>ausbilden</button></div>`;
+        html += `<div class="set-section">⚔️ Militär</div>`;
+        html += `<div class="set-row"><span class="set-label">⚔️ Schwertkämpfer</span><span class="set-val">${swordsCount}</span></div>`;
+        html += `<div class="set-row"><span class="set-label">🏹 Bogenschützen</span><span class="set-val">${bowCount}</span></div>`;
+
         body.innerHTML = html;
     } catch(e) {
-        body.innerHTML = '<div class="stats-row"><span class="stats-label">Error loading military stats</span></div>';
+        body.innerHTML = '<div class="set-row"><span class="set-label">Fehler beim Laden</span></div>';
     }
 }
 
@@ -5073,9 +5103,9 @@ window.resetSettings = resetSettings;
 window.confirmMapLoad = confirmMapLoad;
 window.cancelMapPreview = cancelMapPreview;
 window.toggleConstructionPanel = toggleConstructionPanel;
-window.toggleStatsPanel = toggleStatsPanel;
+window.toggleResourcesPanel = toggleResourcesPanel;
+window.toggleSettlersPanel = toggleSettlersPanel;
 window.selectBuilding = selectBuilding;
-window.showStatsTab = showStatsTab;
 window.toggleSpeed = toggleSpeed;
 window.updateSettingVal = updateSettingVal;
 
@@ -5169,7 +5199,8 @@ window.__s4wn_debug = {
     <button id="btn-menu" onclick="toggleMenu()" data-i18n="menu">☰ Menu</button>
     <button id="btn-speed" onclick="toggleSpeed()" title="Toggle game speed">▶ 1×</button>
     <button id="btn-construction" onclick="toggleConstructionPanel()" data-i18n="construction">🏗️ Bauen</button>
-    <button id="btn-stats" onclick="toggleStatsPanel()" data-i18n="stats">📊 Statistik</button>
+    <button id="btn-resources" onclick="toggleResourcesPanel()">📦 Ressourcen</button>
+    <button id="btn-settlers" onclick="toggleSettlersPanel()">👥 Siedler</button>
 </div>
 
 <!-- Construction Panel -->
@@ -5178,14 +5209,16 @@ window.__s4wn_debug = {
     <div id="construction-categories"></div>
 </div>
 
-<!-- Statistics Panel -->
-<div id="stats-panel">
-    <div class="stats-tabs">
-        <button class="stats-tab active" onclick="showStatsTab('resources')">📦 Ressourcen</button>
-        <button class="stats-tab" onclick="showStatsTab('settlers')">👥 Siedler</button>
-        <button class="stats-tab" onclick="showStatsTab('military')">⚔️ Militär</button>
-    </div>
-    <div class="stats-body" id="stats-body"></div>
+<!-- Resources Panel -->
+<div id="resources-panel">
+    <h4>📦 Ressourcen</h4>
+    <div id="resources-body"></div>
+</div>
+
+<!-- Settlers Panel -->
+<div id="settlers-panel">
+    <h4>👥 Siedler</h4>
+    <div id="settlers-body"></div>
 </div>
 <script>console.log('Panels HTML injected');</script>
 <script src="mobile-enhancements.js"></script>
@@ -5216,7 +5249,7 @@ window.__s4wn_debug = {
 
 <!-- Swipe navigation hints (mobile) -->
 <div class="swipe-hint left" id="swipe-hint-left">◀ Swipe for Construction</div>
-<div class="swipe-hint right" id="swipe-hint-right">Swipe for Stats ▶</div>
+<div class="swipe-hint right" id="swipe-hint-right">Swipe for Settlers ▶</div>
 
 <!-- Tutorial config data -->
 <script src="config/tutorial.js"></script>

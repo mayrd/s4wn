@@ -41,9 +41,9 @@ class TestWasmBridge:
             "confirmMapLoad",
             "cancelMapPreview",
             "toggleConstructionPanel",
-            "toggleStatsPanel",
+            "toggleResourcesPanel",
+            "toggleSettlersPanel",
             "selectBuilding",
-            "showStatsTab",
             "toggleSpeed",
         ]
 

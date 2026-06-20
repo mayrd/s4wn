@@ -43,11 +43,19 @@ class TestVisualRegression:
         s4wn_page.screenshot(path=path, full_page=True)
         assert os.path.exists(path)
 
-    def test_stats_panel_screenshot(self, s4wn_page: Page):
-        """Capture screenshot with stats panel open."""
-        s4wn_page.locator("#btn-stats").click()
+    def test_resources_panel_screenshot(self, s4wn_page: Page):
+        """Capture screenshot with resources panel open."""
+        s4wn_page.locator("#btn-resources").click()
         s4wn_page.wait_for_timeout(500)
-        path = os.path.join(SCREENSHOT_DIR, "stats_panel.png")
+        path = os.path.join(SCREENSHOT_DIR, "resources_panel.png")
+        s4wn_page.screenshot(path=path, full_page=True)
+        assert os.path.exists(path)
+
+    def test_settlers_panel_screenshot(self, s4wn_page: Page):
+        """Capture screenshot with settlers panel open."""
+        s4wn_page.locator("#btn-settlers").click()
+        s4wn_page.wait_for_timeout(500)
+        path = os.path.join(SCREENSHOT_DIR, "settlers_panel.png")
         s4wn_page.screenshot(path=path, full_page=True)
         assert os.path.exists(path)
 

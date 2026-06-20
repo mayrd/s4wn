@@ -59,8 +59,12 @@ class TestUIButtons:
         btn = s4wn_page.locator("#btn-construction")
         expect(btn).to_be_visible()
 
-    def test_stats_button_exists(self, s4wn_page: Page):
-        btn = s4wn_page.locator("#btn-stats")
+    def test_resources_button_exists(self, s4wn_page: Page):
+        btn = s4wn_page.locator("#btn-resources")
+        expect(btn).to_be_visible()
+
+    def test_settlers_button_exists(self, s4wn_page: Page):
+        btn = s4wn_page.locator("#btn-settlers")
         expect(btn).to_be_visible()
 
     def test_speed_button_toggles(self, s4wn_page: Page):
