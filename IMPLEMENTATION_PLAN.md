@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 | **Status:** Phase 6 — Bugfixes 🐛 (435 tests)
-| **Last updated:** 2026-06-20 (Session 121 — Fix #50: get_game_speed import)
+| **Last updated:** 2026-06-20 (Session 122 — Investigated #49: L3 map format, improved error msgs)
 
 ---
 
@@ -344,6 +344,7 @@ protocol::tests               5 tests    Message serialization, room management
 || 119 | 2026-06-20 | Day/night lighting fix: corrected sun_angle (shift by -π/2 so noon=overhead, midnight=nadir), fixed day_light + resource glow in fragment shader, Hermite smoothstep for natural transitions, 11 new tests, 435 engine + 30 server = 465 total |
 || 120 | 2026-06-20 | Combat/death sound hooks: UnitManager.recent_combat_hits counter + drain, WASM exports recent_death_count()/recent_combat_count(), JS render loop polls and triggers Sfx.playDeath()/Sfx.playCombat(), WASM cache v=37→38, 465 tests pass |
 ||| **121** | **2026-06-20** | **Bugfix #50: added missing `get_game_speed` import from WASM module to fix ReferenceError on page load. Issue closed.** |
+||| **122** | **2026-06-20** | **Investigated #49: L3 map format — file is 922KB with "L3\x00\x00" magic, not WRLD. ARA+LZH decrypt failed. Improved error message with specific L3 guidance + link to issue. Commented findings on GitHub.** |
 || **87** | **2026-06-18** | **Dark Tribe unique buildings: 7 BuildingType variants (DarkTemple=54..DemonGate=60), nation-gated placement, production chains (DarkTemple→Wine, DarkGarden→Grapes, MushroomFarm→Grain, DemonGate→Weapons), building colors, costs, tools, config. Added Grapes+Wine to resources.json. 265 tests pass.** |
 |
 || **100** | **2026-06-19** | **Phase 5 Step 5: Terrain splat-map atlas (2048x512, 4 layers), a_splat vertex attribute (location 10), 4-layer splat blending in fragment shader, 8 new tests. 295 total.** |
@@ -453,8 +454,9 @@ All Phase 5 steps are now complete:
 2. ✅ Fix issue #48: Add debug mode with console commands (Done Session 117)
 3. ✅ Add day/night lighting transition smoothing (Done Session 119)
 4. ✅ Hook death/combat sounds into Rust engine events via WASM (Done Session 120)
-5. Investigate issue #49: Unknown .map format with "L3" magic bytes — analyze uploaded zip
+5. ✅ Investigated issue #49 (Session 122) — L3 magic analyzed, error messages improved, findings documented on GitHub
 6. Optimize particle rendering: use instanced rendering for better performance
+5b. Implement L3 map format parser — need to identify which community editor produces L3, get format docs
 7. Add map editor mode (toggle grid overlay, click to paint terrain)
 8. Add unit selection box / marquee drag select for military units
 

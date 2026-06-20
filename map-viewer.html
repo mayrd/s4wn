@@ -558,6 +558,14 @@ function parseBinaryMap(buffer) {
   if (buffer.byteLength < 16) throw new Error('File too small for .map format');
   const magic = String.fromCharCode(...new Uint8Array(buffer, 0, 4));
   if (magic !== 'WRLD') {
+    if (magic.startsWith('L3')) {
+      throw new Error(
+        `Unsupported .map format (magic: ${magic}). ` +
+        `This "L3" map was likely created with a community editor (S4ME/Settlers United). ` +
+        `Please re-save it as a standard S4 "WRLD" map in your editor, ` +
+        `or export as JSON. Track support: https://github.com/mayrd/s4wn/issues/49`
+      );
+    }
     throw new Error(`Unknown .map format (magic: ${magic}). Try a .json map file instead.`);
   }
 
