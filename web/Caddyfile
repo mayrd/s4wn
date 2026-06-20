@@ -2,6 +2,12 @@
 # Serves static game files + proxies WebSocket connections to local game server
 
 :80 {
+    # Access logging
+    log {
+        output stdout
+        level DEBUG
+    }
+
     # Root for static files (engine pages, assets, map viewer)
     root * /usr/share/caddy
 
