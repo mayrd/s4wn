@@ -148,7 +148,7 @@ Resource::Grain => Some(ResourceType::Grain),
     /// Resource group for UI categorization (#47).
     pub fn group_name(self) -> &'static str {
         match self {
-            ResourceType::Wood | ResourceType::Stone | ResourceType::Planks => "Construction",
+            ResourceType::Wood | ResourceType::Stone | ResourceType::Planks | ResourceType::Clay => "Construction",
             ResourceType::Water
             | ResourceType::Grain
             | ResourceType::Fish
@@ -161,8 +161,7 @@ Resource::Grain => Some(ResourceType::Grain),
             ResourceType::IronOre
             | ResourceType::Coal
             | ResourceType::Gold
-            | ResourceType::Sulfur
-            | ResourceType::Clay => "Metal",
+            | ResourceType::Sulfur => "Metal",
             ResourceType::Tools | ResourceType::Weapons | ResourceType::IronIngots => {
                 "Metal Products"
             }
@@ -3683,7 +3682,7 @@ mod tests {
         assert_eq!(ResourceType::Coal.group_name(), "Metal");
         assert_eq!(ResourceType::Gold.group_name(), "Metal");
         assert_eq!(ResourceType::Sulfur.group_name(), "Metal");
-        assert_eq!(ResourceType::Clay.group_name(), "Metal");
+        assert_eq!(ResourceType::Clay.group_name(), "Construction");
         // Metal Products group
         assert_eq!(ResourceType::Tools.group_name(), "Metal Products");
         assert_eq!(ResourceType::Weapons.group_name(), "Metal Products");
