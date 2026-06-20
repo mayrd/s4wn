@@ -789,6 +789,30 @@
   #stats-panel .stats-row .stats-label { color: #aaa; }
   #stats-panel .stats-row .stats-val { color: #e6b422; font-weight: bold; }
 
+  /* ── Swipe Hint Indicators (mobile) ──────────────────────────────── */
+  .swipe-hint {
+    display: none;
+    position: fixed; bottom: 60px; z-index: 97;
+    color: rgba(255,255,255,0.25); font-size: 10px; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .swipe-hint.left { left: 8px; }
+  .swipe-hint.right { right: 8px; }
+  @media (max-width: 768px) {
+    .swipe-hint { display: block; }
+    .swipe-hint.hidden { opacity: 0; }
+  }
+  /* Panel slide animation */
+  #construction-panel, #stats-panel {
+    transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+  }
+  @media (max-width: 768px) {
+    #construction-panel { transform: translateX(-100%); }
+    #construction-panel.open { transform: translateX(0); }
+    #stats-panel { transform: translateX(-100%); }
+    #stats-panel.open { transform: translateX(0); }
+  }
+
 
   /* ── Debug Panel (bottom-right) ──────────────────────────────────── */
   #debug-panel {
@@ -2892,6 +2916,7 @@ canvas.addEventListener('wheel', (e) => {
 //   Long press      → tile inspector context menu
 //   didDrag guard  → prevents accidental placement after pan/pinch
 let lastTouchDist = 0, touchActive = false, touchDidDrag = false;
+let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
 let longPressTimer = null, longPressPos = { x: 0, y: 0 };
 
 function closeTileInspector() {
@@ -2944,6 +2969,7 @@ canvas.addEventListener('touchstart', (e) => {
         touchActive = true;
         const cx = e.touches[0].clientX, cy = e.touches[0].clientY;
         longPressPos = { x: cx, y: cy };
+        touchStartX = cx; touchStartY = cy; touchStartTime = Date.now();
         longPressTimer = setTimeout(() => {
             if (!touchDidDrag) showTileInspector(cx, cy);
             longPressTimer = null;
@@ -2986,8 +3012,21 @@ canvas.addEventListener('touchend', (e) => {
     on_mouse_up();
     touchActive = false;
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-    // Prevent click (building placement) after drag
+    // Swipe detection: fast horizontal swipe with < 200ms and > 60px distance
     if (touchDidDrag) {
+        const elapsed = Date.now() - touchStartTime;
+        if (e.changedTouches.length > 0) {
+            const endX = e.changedTouches[0].clientX;
+            const endY = e.changedTouches[0].clientY;
+            const dx = endX - touchStartX;
+            const dy = endY - touchStartY;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+            // Horizontal swipe: dx dominant, fast enough, long enough
+            if (absDx > 60 && absDx > absDy * 1.5 && elapsed < 400) {
+                handlePanelSwipe(dx > 0 ? 'right' : 'left');
+            }
+        }
         const suppress = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
         canvas.addEventListener('click', suppress, { once: true, capture: true });
     }
@@ -4373,6 +4412,40 @@ main();
 
 // S4 building categories — loaded from config/data.js
 
+// ── Swipe Gesture Panel Navigation ─────────────────────────────────────
+// Swipe left on canvas → open stats panel (close construction)
+// Swipe right on canvas → open construction panel (close stats)
+function handlePanelSwipe(direction) {
+    if (window.innerWidth >= 768) return; // Only on mobile
+    const conPanel = document.getElementById('construction-panel');
+    const statsPanel = document.getElementById('stats-panel');
+    const conOpen = conPanel && conPanel.classList.contains('open');
+    const statsOpen = statsPanel && statsPanel.classList.contains('open');
+    if (direction === 'left') {
+        // Swipe left → show stats (close construction first)
+        if (conOpen) toggleConstructionPanel();
+        if (!statsOpen) toggleStatsPanel();
+    } else {
+        // Swipe right → show construction (close stats first)
+        if (statsOpen) toggleStatsPanel();
+        if (!conOpen) toggleConstructionPanel();
+    }
+}
+
+
+// ── Swipe hint management ──────────────────────────────────────────────
+let swipeHintsShown = false;
+function hideSwipeHints() {
+    if (swipeHintsShown) return;
+    swipeHintsShown = true;
+    document.querySelectorAll('.swipe-hint').forEach(el => el.classList.add('hidden'));
+}
+const _origHandlePanelSwipe = handlePanelSwipe;
+handlePanelSwipe = function(direction) {
+    hideSwipeHints();
+    if (_origHandlePanelSwipe) _origHandlePanelSwipe(direction);
+};
+setTimeout(hideSwipeHints, 8000);
 function toggleConstructionPanel() {
     const panel = document.getElementById('construction-panel');
     const btn = document.getElementById('btn-construction');
@@ -4807,5 +4880,9 @@ console.error = function (...args) {
   </div>
 </div>
 
+
+<!-- Swipe navigation hints (mobile) -->
+<div class="swipe-hint left" id="swipe-hint-left">◀ Swipe for Construction</div>
+<div class="swipe-hint right" id="swipe-hint-right">Swipe for Stats ▶</div>
 </body>
 </html>

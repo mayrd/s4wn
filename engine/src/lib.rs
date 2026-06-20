@@ -1052,6 +1052,41 @@ impl App {
             particle::spawn_combat_effect(&mut self.particle_system, dx, dy);
         }
 
+        // Ambient particles: chimney smoke from buildings, leaves near forests
+        // Rate-limited: only spawn when particle count is low
+        if self.particle_system.alive_count() < 64 {
+            let tick = self.game_loop.state.game_time as u32;
+            // Every ~30 ticks, try spawning ambient effects
+            if tick % 30 == 0 {
+                // Collect building positions for smoke
+                let buildings = self.game_loop.state.economy.buildings.clone();
+                for (i, b) in buildings.iter().enumerate() {
+                    // Smoke from every 3rd building to limit count
+                    if i % 3 == 0 {
+                        particle::spawn_smoke_effect(&mut self.particle_system, b.x as f32 + 0.5, b.y as f32 + 0.5);
+                    }
+                }
+            }
+            // Leaf particles near forest tiles (every ~50 ticks)
+            if tick % 50 == 0 {
+                let map = &self.game_loop.state.map;
+                let cx = self.camera.center_x as usize;
+                let cy = self.camera.center_y as usize;
+                // Check a few tiles around camera center for forest
+                for dy in 0..5usize {
+                    for dx in 0..5usize {
+                        let tx = cx + dx;
+                        let ty = cy + dy;
+                        if let Some(tile) = map.get(tx, ty) {
+                            if tile.terrain == crate::map::Terrain::Forest {
+                                particle::spawn_leaf_effect(&mut self.particle_system, tx as f32, ty as f32);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Smooth camera
         self.camera.update(0.016); // ~60fps
 
@@ -3656,6 +3691,26 @@ pub fn spawn_combat_effect(tile_x: f32, tile_y: f32) {
     unsafe {
         if let Some(ref mut app) = APP.as_mut() {
             particle::spawn_combat_effect(&mut app.particle_system, tile_x, tile_y);
+        }
+    }
+}
+
+/// Spawn chimney smoke puffs at a building location.
+#[wasm_bindgen]
+pub fn spawn_smoke_effect(tile_x: f32, tile_y: f32) {
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            particle::spawn_smoke_effect(&mut app.particle_system, tile_x, tile_y);
+        }
+    }
+}
+
+/// Spawn a floating leaf particle (forest ambient).
+#[wasm_bindgen]
+pub fn spawn_leaf_effect(tile_x: f32, tile_y: f32) {
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            particle::spawn_leaf_effect(&mut app.particle_system, tile_x, tile_y);
         }
     }
 }

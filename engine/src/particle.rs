@@ -173,6 +173,28 @@ pub fn spawn_dust_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
     ps.spawn_burst(tile_x, tile_y, 0.0, 4, 0.6, 0.55, 0.45, 1.0, 0.4, 4.0);
 }
 
+/// Spawn chimney smoke: slow-rising grey puffs.
+pub fn spawn_smoke_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
+    let _ = ps.spawn(tile_x, tile_y, 1.5, 0.05, 0.0, 0.15, 1.5, 0.55, 0.55, 0.58, 10.0);
+    let _ = ps.spawn(tile_x + 0.1, tile_y, 1.5, -0.03, 0.0, 0.12, 1.2, 0.50, 0.50, 0.53, 8.0);
+}
+
+/// Spawn floating leaf/forest particle: gentle drift, green tint.
+pub fn spawn_leaf_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
+    let angle = (tile_x * 7.3 + tile_y * 3.7) % 6.28;
+    let vx = angle.cos() * 0.08;
+    let vy = angle.sin() * 0.08;
+    let _ = ps.spawn(
+        tile_x, tile_y, 0.5,
+        vx, vy, 0.05,
+        1.8,
+        0.25 + (((tile_x * 13.1) % 1.0) as f32) * 0.2,
+        0.65 + (((tile_y * 11.3) % 1.0) as f32) * 0.25,
+        0.15,
+        5.0,
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -360,5 +382,42 @@ mod tests {
         let n2 = ps2.spawn_burst(0.0, 0.0, 0.0, 10, 1.0, 0.0, 0.0, 2.0, 1.0, 6.0);
         assert_eq!(n1, n2);
         assert_eq!(n1, 10);
+    }
+
+    #[test]
+    fn test_smoke_effect() {
+        let mut ps = ParticleSystem::new();
+        spawn_smoke_effect(&mut ps, 5.0, 5.0);
+        let count = ps.alive_count();
+        assert!(count >= 1 && count <= 2, "smoke should spawn 1-2 particles, got {}", count);
+    }
+
+    #[test]
+    fn test_leaf_effect() {
+        let mut ps = ParticleSystem::new();
+        spawn_leaf_effect(&mut ps, 3.0, 7.0);
+        assert_eq!(ps.alive_count(), 1);
+    }
+
+    #[test]
+    fn test_smoke_particles_rise() {
+        let mut ps = ParticleSystem::new();
+        spawn_smoke_effect(&mut ps, 0.0, 0.0);
+        // Check that spawned particles have upward velocity
+        let alive: Vec<&Particle> = ps.particles.iter().filter(|p| p.alive).collect();
+        assert!(!alive.is_empty());
+        for p in &alive {
+            assert!(p.vz > 0.0, "smoke particles should rise (vz > 0)");
+        }
+    }
+
+    #[test]
+    fn test_leaf_green_tint() {
+        let mut ps = ParticleSystem::new();
+        spawn_leaf_effect(&mut ps, 1.0, 2.0);
+        let alive: Vec<&Particle> = ps.particles.iter().filter(|p| p.alive).collect();
+        assert!(!alive.is_empty());
+        let p = alive[0];
+        assert!(p.g > p.r, "leaf should be green-dominant (g > r): g={}, r={}", p.g, p.r);
     }
 }
