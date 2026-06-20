@@ -334,6 +334,36 @@
   #tile-inspector .ti-terrain { color: #8c8; }
   #tile-inspector .ti-resource { color: #e8c84a; }
 
+/* ── Marquee selection box ──────────────────────────────────────────── */
+#marquee-box {
+    position: fixed;
+    border: 1px dashed #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+    pointer-events: none;
+    z-index: 200;
+    display: none;
+}
+#marquee-box.active { display: block; }
+
+/* ── Selected unit count badge ──────────────────────────────────────── */
+#selection-count {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 200, 100, 0.9);
+    color: #fff;
+    padding: 4px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: bold;
+    z-index: 300;
+    display: none;
+    pointer-events: none;
+}
+#selection-count.visible { display: block; }
+
+
   /* ── Controls ──────────────────────────────────────────────────────── */
   #controls {
     position: fixed; bottom: 16px; left: 50%;
@@ -1216,6 +1246,9 @@
 
 <div id="placement-status"></div>
 <div id="selection-info"></div>
+<div id="marquee-box"></div>
+<div id="selection-count"></div>
+
 
 <input type="file" id="fileInput" accept=".json,.map,.sav">
 
@@ -1256,7 +1289,8 @@ import init, {
     add_model_instance,
     get_camera_state,
     load_map_json,
-} from './pkg/s4wn_engine.js?v=41';
+    get_units_in_rect,
+} from './pkg/s4wn_engine.js?v=42';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -2911,6 +2945,106 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
+// ── Marquee selection state ─────────────────────────────────────────
+let marqueeActive = false;
+let marqueeStartX = 0, marqueeStartY = 0;
+let marqueeEndX = 0, marqueeEndY = 0;
+let selectedUnitIds = []; // currently selected military unit IDs
+const marqueeBox = document.getElementById('marquee-box');
+const selCount = document.getElementById('selection-count');
+
+function updateMarqueeBox() {
+    const x1 = Math.min(marqueeStartX, marqueeEndX);
+    const y1 = Math.min(marqueeStartY, marqueeEndY);
+    const w = Math.abs(marqueeEndX - marqueeStartX);
+    const h = Math.abs(marqueeEndY - marqueeStartY);
+    marqueeBox.style.left = x1 + 'px';
+    marqueeBox.style.top = y1 + 'px';
+    marqueeBox.style.width = w + 'px';
+    marqueeBox.style.height = h + 'px';
+    marqueeBox.classList.add('active');
+}
+
+function clearMarquee() {
+    marqueeActive = false;
+    marqueeBox.classList.remove('active');
+}
+
+function selectUnitsInMarquee() {
+    if (!engineReady) return;
+    const info1 = get_tile_at(marqueeStartX, marqueeStartY);
+    const info2 = get_tile_at(marqueeEndX, marqueeEndY);
+    if (!info1 || !info2) return;
+    const t1 = JSON.parse(info1);
+    const t2 = JSON.parse(info2);
+    const minX = Math.min(t1.x, t2.x);
+    const maxX = Math.max(t1.x + 1, t2.x + 1);
+    const minY = Math.min(t1.y, t2.y);
+    const maxY = Math.max(t1.y + 1, t2.y + 1);
+
+    let units = [];
+    try {
+        if (typeof get_units_in_rect === 'function') {
+            const raw = get_units_in_rect(minX, minY, maxX, maxY);
+            units = JSON.parse(raw);
+        } else {
+            const summary = JSON.parse(get_unit_summary());
+            const milKinds = ['Swordsman', 'Bowman'];
+            units = summary.filter(u => milKinds.includes(u.kind) &&
+                u.x >= minX && u.x <= maxX && u.y >= minY && u.y <= maxY);
+        }
+    } catch(e) { console.warn('Marquee select failed:', e); return; }
+
+    selectedUnitIds = units.map(u => u.id);
+
+    if (selectedUnitIds.length > 0) {
+        selCount.textContent = selectedUnitIds.length + ' unit' + (selectedUnitIds.length > 1 ? 's' : '') + ' selected';
+        selCount.classList.add('visible');
+    } else {
+        selCount.classList.remove('visible');
+    }
+
+    if (selectedUnitIds.length === 1) {
+        showUnitInfo(selectedUnitIds[0], marqueeEndX, marqueeEndY);
+    } else if (selectedUnitIds.length > 1) {
+        selInfo.classList.add('visible');
+        selInfo.innerHTML = '<div class="sel-title">' + selectedUnitIds.length + ' units selected</div>' +
+            '<div class="sel-stat">Right-click to move all</div>' +
+            '<div class="sel-stat">Click elsewhere to deselect</div>';
+        selInfo.style.left = Math.max(4, marqueeEndX + 16) + 'px';
+        selInfo.style.top = Math.max(4, marqueeEndY - 10) + 'px';
+    }
+    selectedBuilding = null;
+    selectedUnit = null;
+}
+
+function clearSelection() {
+    selectedUnitIds = [];
+    selCount.classList.remove('visible');
+}
+
+// Right-click: move selected units to target tile
+canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (!engineReady || selectedUnitIds.length === 0) return;
+    const info = get_tile_at(e.offsetX, e.offsetY);
+    if (!info) return;
+    const t = JSON.parse(info);
+    console.log('Move ' + selectedUnitIds.length + ' unit(s) to (' + t.x + ', ' + t.y + ')');
+    try { Sfx.playUIClick(); } catch(e) {}
+});
+
+// Deselect on click elsewhere (not on canvas or selection info)
+document.addEventListener('mousedown', (e) => {
+    if (selectedUnitIds.length > 0) {
+        if (!e.target.closest('canvas') && !e.target.closest('#selection-info') && !e.target.closest('#marquee-box')) {
+            clearSelection();
+            hideSelection();
+        }
+    }
+});
+
+
 // Canvas click: placement mode OR selection
 canvas.addEventListener('click', (e) => {
     if (!engineReady) return;
@@ -3155,10 +3289,26 @@ window.addEventListener('resize', resizeCanvas);
 // ── Mouse / touch events ───────────────────────────────────────────────
 canvas.addEventListener('mousedown', (e) => {
     if (showMenu) return;
+    // Shift+drag: start marquee selection (for military units)
+    if (e.shiftKey && !placementMode) {
+        marqueeActive = true;
+        marqueeStartX = e.clientX;
+        marqueeStartY = e.clientY;
+        marqueeEndX = e.clientX;
+        marqueeEndY = e.clientY;
+        updateMarqueeBox();
+        return;
+    }
     on_mouse_down(e.offsetX, e.offsetY);
 });
 canvas.addEventListener('mousemove', (e) => {
     if (showMenu) return;
+    if (marqueeActive) {
+        marqueeEndX = e.clientX;
+        marqueeEndY = e.clientY;
+        updateMarqueeBox();
+        return;
+    }
     on_mouse_move(e.offsetX, e.offsetY);
     if (engineReady) {
         const info = get_tile_at(e.offsetX, e.offsetY);
@@ -3174,8 +3324,23 @@ canvas.addEventListener('mousemove', (e) => {
         }
     }
 });
-canvas.addEventListener('mouseup', () => on_mouse_up());
+canvas.addEventListener('mouseup', () => {
+    if (marqueeActive) {
+        clearMarquee();
+        const dx = Math.abs(marqueeEndX - marqueeStartX);
+        const dy = Math.abs(marqueeEndY - marqueeStartY);
+        if (dx > 5 || dy > 5) {
+            selectUnitsInMarquee();
+        }
+        return;
+    }
+    on_mouse_up();
+});
 canvas.addEventListener('mouseleave', () => {
+    if (marqueeActive) {
+        clearMarquee();
+        return;
+    }
     on_mouse_up();
     tileTip.style.opacity = '0';
 });
@@ -5274,6 +5439,8 @@ window.toggleSettlersPanel = toggleSettlersPanel;
 window.selectBuilding = selectBuilding;
 window.toggleSpeed = toggleSpeed;
 window.updateSettingVal = updateSettingVal;
+window.clearSelection = clearSelection;
+window.selectedUnitIds = selectedUnitIds;
 
 // Global error handlers
 window.ErrorHandler = ErrorHandler;

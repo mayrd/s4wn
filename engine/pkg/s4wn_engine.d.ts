@@ -45,6 +45,12 @@ export function decompress_sav_chunk(data: Uint8Array, expected_length: number):
 export function editor_grid_enabled(): boolean;
 
 /**
+ * Export the current map as a JSON string (same format as load_map_json expects).
+ * Returns the JSON string on success, or an error string if no map is loaded.
+ */
+export function export_map_json(): string;
+
+/**
  * Generate a procedural map and return it as a JSON string.
  * map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
  * width/height: map dimensions (clamped to 16..1024)
@@ -151,6 +157,14 @@ export function get_unit_info(id: number): string;
  * Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"state":"Working"},...]
  */
 export function get_unit_summary(): string;
+
+/**
+ * Get military units within a world-coordinate rectangle.
+ * Returns JSON array of unit IDs for Swordsman and Bowman within [min_x, max_x] x [min_y, max_y].
+ * Used for Shift+drag marquee selection in the UI.
+ * Returns: [{"id":1,"kind":"Swordsman","x":3.5,"y":4.0,"hp":100,"state":"Idle"},...]
+ */
+export function get_units_in_rect(min_x: number, min_y: number, max_x: number, max_y: number): string;
 
 /**
  * Initialize the engine on a canvas element.
@@ -392,6 +406,7 @@ export interface InitOutput {
     readonly compute_mvp_json: (a: number, b: number) => [number, number];
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
     readonly editor_grid_enabled: () => number;
+    readonly export_map_json: () => [number, number];
     readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
     readonly get_build_cost: (a: number, b: number) => [number, number];
     readonly get_building_info: (a: number) => [number, number];
@@ -410,6 +425,7 @@ export interface InitOutput {
     readonly get_tool_counts: () => [number, number];
     readonly get_unit_info: (a: number) => [number, number];
     readonly get_unit_summary: () => [number, number];
+    readonly get_units_in_rect: (a: number, b: number, c: number, d: number) => [number, number];
     readonly init: (a: number, b: number) => [number, number, number];
     readonly is_building_available_for_nation: (a: number, b: number, c: number, d: number) => [number, number];
     readonly is_paused: () => number;

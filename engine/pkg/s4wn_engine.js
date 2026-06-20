@@ -103,6 +103,24 @@ export function editor_grid_enabled() {
 }
 
 /**
+ * Export the current map as a JSON string (same format as load_map_json expects).
+ * Returns the JSON string on success, or an error string if no map is loaded.
+ * @returns {string}
+ */
+export function export_map_json() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.export_map_json();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Generate a procedural map and return it as a JSON string.
  * map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
  * width/height: map dimensions (clamped to 16..1024)
@@ -421,6 +439,30 @@ export function get_unit_summary() {
     let deferred1_1;
     try {
         const ret = wasm.get_unit_summary();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
+ * Get military units within a world-coordinate rectangle.
+ * Returns JSON array of unit IDs for Swordsman and Bowman within [min_x, max_x] x [min_y, max_y].
+ * Used for Shift+drag marquee selection in the UI.
+ * Returns: [{"id":1,"kind":"Swordsman","x":3.5,"y":4.0,"hp":100,"state":"Idle"},...]
+ * @param {number} min_x
+ * @param {number} min_y
+ * @param {number} max_x
+ * @param {number} max_y
+ * @returns {string}
+ */
+export function get_units_in_rect(min_x, min_y, max_x, max_y) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_units_in_rect(min_x, min_y, max_x, max_y);
         deferred1_0 = ret[0];
         deferred1_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);

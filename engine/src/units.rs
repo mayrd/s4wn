@@ -551,6 +551,27 @@ impl UnitManager {
     pub fn total_count(&self) -> usize {
         self.units.len()
     }
+
+    /// Get IDs and positions of military units (Swordsman, Bowman) within a world-coordinate rectangle.
+    /// Returns vector of (id, kind_name, x, y, hp, state_name) tuples.
+    pub fn military_in_rect(&self, min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> Vec<(u32, &str, f32, f32, u32, &str)> {
+        self.units
+            .iter()
+            .filter(|u| u.is_alive() && u.kind.can_fight())
+            .filter(|u| u.x >= min_x && u.x <= max_x && u.y >= min_y && u.y <= max_y)
+            .map(|u| {
+                let state_name = match u.state {
+                    UnitState::Idle => "Idle",
+                    UnitState::Moving => "Moving",
+                    UnitState::Working => "Working",
+                    UnitState::Fighting => "Fighting",
+                    UnitState::Dying => "Dying",
+                    UnitState::Dead => "Dead",
+                };
+                (u.id, u.kind.name(), u.x, u.y, u.hp, state_name)
+            })
+            .collect()
+    }
 }
 
 impl Default for UnitManager {
@@ -853,6 +874,83 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod marquee_selection_tests {
+    use super::*;
+
+    #[test]
+    fn test_military_in_rect_finds_correct_units() {
+        let mut mgr = UnitManager::new();
+        mgr.spawn(UnitKind::Settler, 1.0, 1.0);     // settler - should NOT be selected
+        mgr.spawn(UnitKind::Swordsman, 2.0, 3.0);    // swordsman - IN rect
+        mgr.spawn(UnitKind::Bowman, 4.0, 5.0);       // bowman - IN rect
+        mgr.spawn(UnitKind::Swordsman, 8.0, 8.0);    // swordsman - OUTSIDE rect
+
+        let result = mgr.military_in_rect(0.0, 0.0, 6.0, 6.0);
+        assert_eq!(result.len(), 2, "Should find 2 military units in rect");
+        
+        let ids: Vec<u32> = result.iter().map(|(id, ..)| *id).collect();
+        assert!(ids.contains(&2), "Should contain Swordsman id=2");
+        assert!(ids.contains(&3), "Should contain Bowman id=3");
+        assert!(!ids.contains(&1), "Should NOT contain Settler id=1");
+        assert!(!ids.contains(&4), "Should NOT contain unit id=4 (outside rect)");
+    }
+
+    #[test]
+    fn test_military_in_rect_empty_when_no_military() {
+        let mut mgr = UnitManager::new();
+        mgr.spawn(UnitKind::Settler, 1.0, 1.0);
+        mgr.spawn(UnitKind::Settler, 3.0, 3.0);
+
+        let result = mgr.military_in_rect(0.0, 0.0, 10.0, 10.0);
+        assert_eq!(result.len(), 0, "Should find 0 units since only settlers (can_fight=false)");
+    }
+
+    #[test]
+    fn test_military_in_rect_respects_bounds() {
+        let mut mgr = UnitManager::new();
+        mgr.spawn(UnitKind::Swordsman, 1.0, 1.0);
+        mgr.spawn(UnitKind::Swordsman, 5.0, 5.0);
+        mgr.spawn(UnitKind::Bowman, 9.0, 9.0);
+
+        // Only the middle one
+        let result = mgr.military_in_rect(3.0, 3.0, 6.0, 6.0);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].0, 2);
+        assert_eq!(result[0].2, 5.0);
+        assert_eq!(result[0].3, 5.0);
+    }
+
+    #[test]
+    fn test_military_in_rect_excludes_dead_units() {
+        let mut mgr = UnitManager::new();
+        mgr.spawn(UnitKind::Swordsman, 2.0, 2.0);
+        mgr.spawn(UnitKind::Bowman, 3.0, 3.0);
+        
+        // Kill the bowman
+        if let Some(u) = mgr.get_mut(2) {
+            u.hp = 0;
+        }
+
+        // Bowman is dead, should only find the Swordsman
+        let result = mgr.military_in_rect(0.0, 0.0, 10.0, 10.0);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].0, 1, "Should only find the alive Swordsman");
+    }
+
+    #[test]
+    fn test_military_in_rect_edge_case_exact_bounds() {
+        let mut mgr = UnitManager::new();
+        mgr.spawn(UnitKind::Swordsman, 2.0, 2.0);
+        
+        // Exactly bounding the unit
+        let result = mgr.military_in_rect(2.0, 2.0, 2.0, 2.0);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].0, 1);
+    }
+}
+
 
 #[cfg(test)]
 mod death_animation_tests {
