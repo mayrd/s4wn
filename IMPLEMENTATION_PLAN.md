@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 | **Status:** Phase 5 — 3D Pipeline 🔬 (360 tests)
-| **Last updated:** 2026-06-19 (Session 110 — 49 building JSON models generated + model_id_for_building wired, 360 tests)
+| **Last updated:** 2026-06-20 (Session 111 — per-model GPU buffers fix for correct instanced rendering, 360 tests)
 
 ---
 
@@ -409,7 +409,7 @@ Concrete steps:
 
 ### Next Session — Concrete Steps
 
-**Phase 5 Steps 1-8: ✅ Complete**
+**Phase 5 Steps 1-9: ✅ Complete**
 
 All Phase 5 steps are now complete:
 1. ✅ Orbital camera model
@@ -420,21 +420,26 @@ All Phase 5 steps are now complete:
 6. ✅ Water shader & refraction
 7. ✅ 3D model loading (JSON mesh parser, 30 OBJ→JSON conversions, building/unit instances, instanced rendering)
 8. ✅ GPU model rendering + all 59 building models
+9. ✅ Per-model GPU buffers fix (Session 111) — each model now has its own VAO + index buffer for correct instanced rendering
 
 **Remaining work:**
 
-**Phase 5 Step 9: WASM Rebuild (cache v=37)**
+**Phase 6: Polish & Next Features**
 
-1. ✅ Add model VAO/buffer management — DONE (Session 104)
-2. ✅ Implement model instance rendering pass — DONE (Session 104)
-3. ✅ JS-side model loading — DONE (Session 105)
-4. ✅ Building placement → model instances — DONE (Session 106)
-5. ✅ Unit model instances — DONE (Session 108)
-6. ✅ Instanced rendering — DONE (Session 109)
-7. ✅ Generate missing building JSON models — DONE (Session 110) — 49 new models: all common + unique nation buildings have dedicated JSON models
-8. WASM rebuild with instanced rendering (cache v=37)
+1. Add model animation support (simple vertex shader-based wobble for units)
+2. Add building construction animation (scale-up from 0.7→1.0 over construction time)
+3. Improve mobile UI: add swipe gestures for panel navigation
+4. Add particle effects for building placement/combat
+5. WASM cache bump to v=37 (rebuild after per-model buffer fix)
 
 ---
+
+### Session 111 — Per-Model GPU Buffers Fix ✅
+
+- **Bug:** `upload_model_to_gpu()` overwrote a single set of GPU buffers each time, so only the last uploaded model's geometry was available. All instances rendered with the same mesh.
+- **Fix:** Added `GpuModel` struct (VAO + index buffer + index count), stored in `HashMap<String, GpuModel>`. Each `upload_model_to_gpu()` call now creates a new VAO + index buffer. `render_models()` iterates over model groups, binds each model's VAO, and issues separate instanced draw calls.
+- **Cleanup:** Removed unused `model_index_count` and `model_mvp_loc` fields.
+- All 360 tests pass.
 
 ### Session 108 — Unit model instances ✅
 

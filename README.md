@@ -67,7 +67,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 4 ✅ complete — Phase 5: 3D Pipeline** 🚧 (360 tests)
+**Phase 4 ✅ complete — Phase 5: 3D Pipeline** ✅ (360 tests)
 - ✅ Mobile responsive CSS — @media queries for sub-768px viewports: full-width panels, larger touch targets, flex-wrap controls
 - ✅ Touch camera pan — single-finger drag (touchstart/touchmove/touchend)
 - ✅ Touch pinch-to-zoom — two-finger proportional pinch with distance ratio scaling
@@ -82,7 +82,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Construction accordion — categories collapse on mobile, click to toggle
 - ✅ Mobile test suite — 14 logic tests covering accordion, orientation, touch, pinch-zoom
 
-**Phase 5 — 3D Pipeline** 🔬 (304 tests)
+**Phase 5 — 3D Pipeline** ✅ (360 tests)
 - ✅ Orbital camera model — azimuth/elevation/distance spherical coords, eye()/look_at_target()/world_to_clip() (LookAt + Perspective). set_azimuth/set_elevation/set_distance with clamping + smoothing. snap_to_isometric() reset. 10 tests.
 - ✅ u_vp (View+Projection) mat4 uniform — dual-path vertex shader (legacy iso + orbital VP). WASM exports: set_azimuth/set_elevation/set_distance. WASM cache v=33.
 - ✅ Fragment shader diffuse lighting — n·l ambient+diffuse model, sun arc from day_phase. 3 new tests, 287 total.
@@ -91,6 +91,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Water shader — 3-component sine-wave vertex displacement (u_water_time uniform) for water/DeepWater tiles; DeepWater waves scaled 0.7x. Fragment shader water path: Blinn-Phong specular highlight, Fresnel-based transparency, depth color ramp (turquoise shallow → dark navy deep). 9 new tests, 304 total.
 - ✅ JSON mesh parser — `parse_json_mesh()` validates version, parses vertices/normals/UVs/indices/AABB. Auto-generates default normals (+Y) and UVs (0,0) when missing. `ModelInstance` struct with builder pattern (with_scale, with_rotation_y). MVP matrix computation: `compute_mvp()`, `perspective()`, `look_at()`, `mat4_mul()`. WASM exports: `load_model_json`, `parse_obj_info`, `compute_mvp_json`. 30 OBJ→JSON model conversions. 39 new tests, 344 total.
 - ✅ GPU model rendering — building + unit placement connected to 3D model instances with instanced draw calls (`draw_elements_instanced`), per-instance model matrix (a_model mat4) and offset (a_offset vec3) attributes, shared VP matrix. All 59 building types have dedicated procedurally-generated JSON models — no fallback to construction.json. Complete buildings at 1.0 scale, incomplete at 0.7 scale. 84 total models in assets/models/json/. WASM cache v=36. 360 tests pass.
+- ✅ Per-model GPU buffers fix — each model now has its own VAO + index buffer stored in a `HashMap<String, GpuModel>`. Previously all instances rendered with the last-loaded model's mesh. `render_models()` now iterates over model groups and issues separate instanced draw calls per model type.
 ---
 
 AI Agent Configuration:
