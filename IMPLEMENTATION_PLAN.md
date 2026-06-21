@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 | **Status:** Phase 6.5 — Combat & Campaign Polish (497 tests)
-| **Last updated:** 2026-06-21 (Session 135 — UnitStance engine implementation + tests)
+| **Last updated:** 2026-06-21 (Session 136 — Unit Stance JS/UI complete, #51 closed)
 
 ---
 
@@ -392,6 +392,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **WASM cache:** Current v=46. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
 - **Test count:** 497 engine + 30 server = 527 total (497 `cargo test --lib`). `cargo test --lib` must pass before every push. 497 tests.
+- **WASM cache:** Current v=49.
 
 ## Next Session — Concrete Steps
 
@@ -495,6 +496,14 @@ All Phase 5 steps are now complete:
 - **Design:** Proposed 3-stance system (Aggressive/StandGround/Passive) with F1/F2/F3 hotkeys, overlay indicators, and 4 open questions for discussion.
 - **Tests:** All 487 engine + 30 server = 517 tests pass.
 
+### Session 136 — Unit Stance JS/UI Complete ✅
+
+- **JS/UI Implementation:** Stance toggle panel (Aggressive/Hold/Passive buttons) appears when military units are selected via marquee. F1/F2/F3 keyboard shortcuts for quick stance switching. Stance indicator letters (A/H/P in red/orange/blue) rendered on overlay canvas for all military units.
+- **Rust fixes:** Added `stance` field to `get_unit_summary()`, `get_units_in_rect()`, and `export_game_state()` JSON output (was computed but unused).
+- **WASM imports:** Added `set_unit_stance`, `set_units_stance`, `get_unit_stance` imports. Cache bumped to v=49.
+- **Closed:** [#51](https://github.com/mayrd/s4wn/issues/51) — Unit Stances feature complete.
+- **Tests:** All 497 engine + 30 server = 527 tests pass.
+
 ### Session 135 — Unit Stance Engine Implementation ✅
 
 - **UnitStance enum:** Added 3 variants (Aggressive=0, StandGround=1, Passive=2) to units.rs with from_u8() and as_str().
@@ -513,9 +522,9 @@ All Phase 5 steps are now complete:
 
 1. Implement .sav full campaign state restoration from parsed chunk data
 2. Add building HP system so combat can damage and eventually destroy buildings
-3. ✅ UnitStance engine implementation complete (Session 135) — next: JS stance toggle UI (buttons, F1/F2/F3 hotkeys, overlay indicators)
-4. Add garrison interactions for military buildings (auto-defense when units are stationed)
-5. Investigate adding unit ranks/experience (S4 had 3 tiers: recruit, veteran, elite)
+3. Add garrison interactions for military buildings (auto-defense when units are stationed)
+4. Investigate adding unit ranks/experience (S4 had 3 tiers: recruit, veteran, elite)
+5. Add attack-move formation preservation (units maintain formation when A-moving)
 
 
 ### Session 133 — Unit Formation Movement ✅

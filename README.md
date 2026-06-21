@@ -68,7 +68,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 ## 🚀 Current Status
 
 **Phase 4 ✅ complete — Phase 5: 3D Pipeline** ✅ — **Phase 6: Particles + Mobile** ✅ — **Phase 6.5: Death Animation** ✅ — **Phase 6.6: Sound Effects** ✅ — **Phase 6.7: Day/Night Lighting Fix** ✅ — **Phase 6.8: Map Editor** ✅ — **Phase 6.9: Marquee Selection** ✅ — **Phase 6.10: Unit Commands** ✅ — **Phase 6.11: Health Bars + Minimap Dots** ✅ — **Phase 6.12: Rally Points** ✅ — **Phase 6.13: Building Destruction** ✅ (478 tests)
-**Phase 6.16: Unit Stance Engine ✅ (497 tests)
+**Phase 6.16: Unit Stance — Engine + JS/UI ✅ (497 tests)
 - ✅ Mobile responsive CSS — @media queries for sub-768px viewports: full-width panels, larger touch targets, flex-wrap controls
 - ✅ Touch camera pan — single-finger drag (touchstart/touchmove/touchend)
 - ✅ Touch pinch-to-zoom — two-finger proportional pinch with distance ratio scaling
@@ -94,6 +94,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Health bars above units — green/yellow/red coded bars drawn on overlay canvas above every visible unit
 - ✅ Minimap unit dots — gray for Settlers, red for Swordsmen, orange for Bowmen rendered on minimap
 - ✅ Unit rally point flag — set rally point on buildings (click flag button), trained units auto-move to rally point via pathfinding. WASM exports: `set_building_rally_point`, `clear_building_rally_point`, `get_building_rally_point`
+- ✅ Unit stance system — 3 combat stances (Aggressive/StandGround/Passive) with F1/F2/F3 hotkeys, toggle panel when military units selected, A/H/P overlay indicators. Stance checks in CombatAI (Passive=defend only, StandGround=no chase). WASM exports: `set_unit_stance`, `set_units_stance`, `get_unit_stance`
 
 - ✅ Building destruction animation — `destruction_timer` field on Building, `start_destruction()`/`tick_destruction()`/`destruction_progress()` methods, `Economy::tick_destructions()` removes completed buildings, `spawn_rubble_effect()` (20 brown rubble + 8 dust particles), WASM exports (`start_building_destruction`, `tick_building_destructions`, `get_building_destruction_progress`, `get_building_at_tile`), JS demolition mode (X key, `cursor: not-allowed`), `destruction_progress` in `get_building_info` JSON. 8 new tests, 478 total.
 
