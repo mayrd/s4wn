@@ -120,6 +120,37 @@ pub enum UnitState {
     Dead,
 }
 
+/// Combat stance controls how units react to enemies.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum UnitStance {
+    /// Default: auto-engage and chase any enemy within detection range
+    Aggressive = 0,
+    /// Hold position; attack enemies in range but do NOT chase fleeing enemies
+    StandGround = 1,
+    /// Do not initiate combat; only fight back when directly attacked
+    Passive = 2,
+}
+
+impl UnitStance {
+    pub fn from_u8(v: u8) -> Self {
+        match v {
+            0 => UnitStance::Aggressive,
+            1 => UnitStance::StandGround,
+            2 => UnitStance::Passive,
+            _ => UnitStance::Aggressive,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            UnitStance::Aggressive => "Aggressive",
+            UnitStance::StandGround => "StandGround",
+            UnitStance::Passive => "Passive",
+        }
+    }
+}
+
 /// A game unit (settler or soldier)
 #[derive(Debug, Clone)]
 pub struct Unit {
@@ -164,6 +195,8 @@ pub struct Unit {
     pub dying_timer: f32,
     /// Patrol target position (tile coordinates). Some((x, y)) when unit is patrolling.
     pub patrol_point: Option<(usize, usize)>,
+    /// Combat stance (Aggressive, StandGround, Passive). Default: Aggressive.
+    pub stance: UnitStance,
 }
 
 impl Unit {
@@ -191,6 +224,7 @@ impl Unit {
             nation_speed_mult: 1.0,
             dying_timer: 0.0,
             patrol_point: None,
+            stance: UnitStance::Aggressive,
         }
     }
 
@@ -1623,5 +1657,36 @@ mod formation_move_tests {
         // At least some goals should be different (not all the same tile)
         let unique_goals: std::collections::HashSet<_> = goals.iter().collect();
         assert!(unique_goals.len() > 1, "Units should have different destinations to preserve formation");
+    }
+
+    // ── Unit Stance Tests ──
+
+    #[test]
+    fn test_unit_stance_default_is_aggressive() {
+        let u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        assert_eq!(u.stance, UnitStance::Aggressive);
+    }
+
+    #[test]
+    fn test_unit_stance_from_u8() {
+        assert_eq!(UnitStance::from_u8(0), UnitStance::Aggressive);
+        assert_eq!(UnitStance::from_u8(1), UnitStance::StandGround);
+        assert_eq!(UnitStance::from_u8(2), UnitStance::Passive);
+        // Invalid values default to Aggressive
+        assert_eq!(UnitStance::from_u8(99), UnitStance::Aggressive);
+    }
+
+    #[test]
+    fn test_unit_stance_as_str() {
+        assert_eq!(UnitStance::Aggressive.as_str(), "Aggressive");
+        assert_eq!(UnitStance::StandGround.as_str(), "StandGround");
+        assert_eq!(UnitStance::Passive.as_str(), "Passive");
+    }
+
+    #[test]
+    fn test_settler_has_default_stance() {
+        let u = Unit::new(1, UnitKind::Settler, 0.0, 0.0);
+        // Settlers still have a stance even though they can't fight
+        assert_eq!(u.stance, UnitStance::Aggressive);
     }
 }

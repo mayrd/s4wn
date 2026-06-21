@@ -182,6 +182,12 @@ export function get_tool_counts(): string;
 export function get_unit_info(id: number): string;
 
 /**
+ * Get the current stance of a unit.
+ * Returns: 0=Aggressive, 1=StandGround, 2=Passive. Returns 0 if unit not found.
+ */
+export function get_unit_stance(unit_id: number): number;
+
+/**
  * Get unit summary as a JSON string for the HUD.
  * Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"max_hp":50,"state":"Working"},...]
  */
@@ -371,6 +377,21 @@ export function set_textures_ready(): void;
 export function set_tile_terrain(x: number, y: number, terrain_id: number): boolean;
 
 /**
+ * Set the combat stance for a single unit.
+ * stance: 0=Aggressive, 1=StandGround, 2=Passive
+ * Returns true if the unit was found and stance was set.
+ */
+export function set_unit_stance(unit_id: number, stance: number): boolean;
+
+/**
+ * Set the combat stance for multiple units (batch).
+ * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
+ * stance: 0=Aggressive, 1=StandGround, 2=Passive
+ * Returns the number of units whose stance was successfully set.
+ */
+export function set_units_stance(unit_ids_json: string, stance: number): number;
+
+/**
  * Place a free Castle near map center and spawn starter settlers.
  * Called after load_map_json() + add_starting_resources() to set up the initial base.
  * settler_count: number of idle settlers to spawn (clamped to 1..8).
@@ -496,6 +517,7 @@ export interface InitOutput {
     readonly get_tile_at: (a: number, b: number) => [number, number];
     readonly get_tool_counts: () => [number, number];
     readonly get_unit_info: (a: number) => [number, number];
+    readonly get_unit_stance: (a: number) => number;
     readonly get_unit_summary: () => [number, number];
     readonly get_units_in_rect: (a: number, b: number, c: number, d: number) => [number, number];
     readonly init: (a: number, b: number) => [number, number, number];
@@ -529,6 +551,8 @@ export interface InitOutput {
     readonly set_player_nation: (a: number, b: number) => number;
     readonly set_textures_ready: () => void;
     readonly set_tile_terrain: (a: number, b: number, c: number) => number;
+    readonly set_unit_stance: (a: number, b: number) => number;
+    readonly set_units_stance: (a: number, b: number, c: number) => number;
     readonly setup_starter_base: (a: number) => [number, number];
     readonly spawn_build_effect: (a: number, b: number) => void;
     readonly spawn_combat_effect: (a: number, b: number) => void;

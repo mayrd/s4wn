@@ -505,6 +505,17 @@ export function get_unit_info(id) {
 }
 
 /**
+ * Get the current stance of a unit.
+ * Returns: 0=Aggressive, 1=StandGround, 2=Passive. Returns 0 if unit not found.
+ * @param {number} unit_id
+ * @returns {number}
+ */
+export function get_unit_stance(unit_id) {
+    const ret = wasm.get_unit_stance(unit_id);
+    return ret;
+}
+
+/**
  * Get unit summary as a JSON string for the HUD.
  * Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"max_hp":50,"state":"Working"},...]
  * @returns {string}
@@ -934,6 +945,35 @@ export function set_textures_ready() {
 export function set_tile_terrain(x, y, terrain_id) {
     const ret = wasm.set_tile_terrain(x, y, terrain_id);
     return ret !== 0;
+}
+
+/**
+ * Set the combat stance for a single unit.
+ * stance: 0=Aggressive, 1=StandGround, 2=Passive
+ * Returns true if the unit was found and stance was set.
+ * @param {number} unit_id
+ * @param {number} stance
+ * @returns {boolean}
+ */
+export function set_unit_stance(unit_id, stance) {
+    const ret = wasm.set_unit_stance(unit_id, stance);
+    return ret !== 0;
+}
+
+/**
+ * Set the combat stance for multiple units (batch).
+ * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
+ * stance: 0=Aggressive, 1=StandGround, 2=Passive
+ * Returns the number of units whose stance was successfully set.
+ * @param {string} unit_ids_json
+ * @param {number} stance
+ * @returns {number}
+ */
+export function set_units_stance(unit_ids_json, stance) {
+    const ptr0 = passStringToWasm0(unit_ids_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.set_units_stance(ptr0, len0, stance);
+    return ret >>> 0;
 }
 
 /**

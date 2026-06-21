@@ -2551,6 +2551,7 @@ pub fn get_unit_summary() -> String {
         if let Some(ref app) = APP {
             let mut parts = Vec::new();
             for u in app.game_loop.state.economy.units.alive_units() {
+                let stance_name = u.stance.as_str();
                 let state_name = match u.state {
                     crate::units::UnitState::Idle => "Idle",
                     crate::units::UnitState::Moving => "Moving",
@@ -2598,7 +2599,8 @@ pub fn get_units_in_rect(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> Stri
                     continue;
                 }
                 if u.x >= min_x && u.x <= max_x && u.y >= min_y && u.y <= max_y {
-                    let state_name = match u.state {
+                    let stance_name = u.stance.as_str();
+                let state_name = match u.state {
                         crate::units::UnitState::Idle => "Idle",
                         crate::units::UnitState::Moving => "Moving",
                         crate::units::UnitState::Working => "Working",
@@ -2769,6 +2771,7 @@ pub fn get_unit_info(id: u32) -> String {
                 if u.state == crate::units::UnitState::Dead {
                     return format!(r#"{{"error":"Unit {} is dead"}}"#, id);
                 }
+                let stance_name = u.stance.as_str();
                 let state_name = match u.state {
                     crate::units::UnitState::Idle => "Idle",
                     crate::units::UnitState::Moving => "Moving",
@@ -2794,7 +2797,7 @@ pub fn get_unit_info(id: u32) -> String {
                     .map(|p| format!("{:.2}", p))
                     .unwrap_or_else(|| "null".to_string());
                 return format!(
-                    r#"{{"id":{},"kind":"{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","dying_progress":{},"assigned_building":{},"target":{},"carried_tool":"{}"}}"#,
+                    r#"{{"id":{},"kind":"{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","stance":"{}","dying_progress":{},"assigned_building":{},"target":{},"carried_tool":"{}"}}"#,
                     u.id,
                     u.kind.name(),
                     u.x,
@@ -2802,6 +2805,7 @@ pub fn get_unit_info(id: u32) -> String {
                     u.hp,
                     u.max_hp,
                     state_name,
+                    stance_name,
                     dying_progress,
                     ab,
                     target,
@@ -2811,6 +2815,65 @@ pub fn get_unit_info(id: u32) -> String {
         }
     }
     format!(r#"{{"error":"Unit {} not found"}}"#, id)
+}
+
+/// Set the combat stance for a single unit.
+/// stance: 0=Aggressive, 1=StandGround, 2=Passive
+/// Returns true if the unit was found and stance was set.
+#[wasm_bindgen]
+pub fn set_unit_stance(unit_id: u32, stance: u8) -> bool {
+    use crate::units::UnitStance;
+    unsafe {
+        if let Some(ref mut app) = APP {
+            if let Some(unit) = app.game_loop.state.economy.units.get_mut(unit_id) {
+                if unit.is_alive() && unit.kind.can_fight() {
+                    unit.stance = UnitStance::from_u8(stance);
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
+/// Set the combat stance for multiple units (batch).
+/// unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
+/// stance: 0=Aggressive, 1=StandGround, 2=Passive
+/// Returns the number of units whose stance was successfully set.
+#[wasm_bindgen]
+pub fn set_units_stance(unit_ids_json: &str, stance: u8) -> u32 {
+    use crate::units::UnitStance;
+    unsafe {
+        if let Some(ref mut app) = APP {
+            let unit_ids: Vec<u32> = serde_json::from_str(unit_ids_json).unwrap_or_default();
+            let st = UnitStance::from_u8(stance);
+            let mut count = 0u32;
+            for &id in &unit_ids {
+                if let Some(unit) = app.game_loop.state.economy.units.get_mut(id) {
+                    if unit.is_alive() && unit.kind.can_fight() {
+                        unit.stance = st;
+                        count += 1;
+                    }
+                }
+            }
+            return count;
+        }
+    }
+    0
+}
+
+/// Get the current stance of a unit.
+/// Returns: 0=Aggressive, 1=StandGround, 2=Passive. Returns 0 if unit not found.
+#[wasm_bindgen]
+pub fn get_unit_stance(unit_id: u32) -> u8 {
+    unsafe {
+        if let Some(ref app) = APP {
+            if let Some(unit) = app.game_loop.state.economy.units.get(unit_id) {
+                return unit.stance as u8;
+            }
+        }
+    }
+    0
 }
 
 /// Try to place a building on the map.
@@ -3211,6 +3274,7 @@ pub fn get_game_state() -> String {
             // Units
             let mut unit_parts = Vec::new();
             for u in eco.units.alive_units() {
+                let stance_name = u.stance.as_str();
                 let state_name = match u.state {
                     crate::units::UnitState::Idle => "Idle",
                     crate::units::UnitState::Moving => "Moving",

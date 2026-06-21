@@ -24,7 +24,7 @@
 
 use crate::map::Map;
 use crate::pathfinding::Pathfinder;
-use crate::units::{UnitManager, UnitState};
+use crate::units::{UnitManager, UnitState, UnitStance};
 
 /// Combat controller — manages all military engagements.
 #[derive(Debug, Clone)]
@@ -94,7 +94,20 @@ impl CombatAI {
                             self.try_attack(units, unit_id);
                             return;
                         } else {
-                            // Target moved out of range → chase
+                            // Target moved out of range
+                            // StandGround: do NOT chase; drop target and hold position
+                            if unit.stance == UnitStance::StandGround {
+                                if let Some(u) = units.get_mut(unit_id) {
+                                    u.target = None;
+                                    u.state = if u.patrol_point.is_some() {
+                                        UnitState::Patrolling
+                                    } else {
+                                        UnitState::Idle
+                                    };
+                                }
+                                return;
+                            }
+                            // Aggressive or Passive (defending): chase
                             self.chase_target(units, map, unit_id);
                             return;
                         }
@@ -111,6 +124,14 @@ impl CombatAI {
                         u.state = UnitState::Idle;
                     }
                 }
+            }
+        }
+
+        // Passive stance: skip enemy-seeking entirely (only fight back when attacked)
+        {
+            let u = units.get(unit_id).unwrap();
+            if u.stance == UnitStance::Passive && u.state != UnitState::Fighting {
+                return;
             }
         }
 
@@ -198,12 +219,12 @@ impl CombatAI {
         let enemy_id = self.find_nearest_enemy(units, unit_id);
 
         if let Some(enemy_id) = enemy_id {
-            let (_dist, can_attack) = {
+            let (dist, can_attack, is_stand_ground) = {
                 let unit = units.get(unit_id).unwrap();
                 let enemy = units.get(enemy_id).unwrap();
                 let dist = unit.distance_to(enemy);
                 let range = unit.kind.attack_range() * unit.attack_range_mult;
-                (dist, dist <= range)
+                (dist, dist <= range, unit.stance == UnitStance::StandGround)
             };
 
             if can_attack {
@@ -213,8 +234,16 @@ impl CombatAI {
                     u.state = UnitState::Fighting;
                 }
                 self.try_attack(units, unit_id);
+            } else if is_stand_ground {
+                // StandGround: enemy in detection range but out of attack range → do NOT chase
+                // Just note the enemy exists but hold position
+                return;
             } else {
-                // Out of range → chase
+                // Out of range → chase (Aggressive)
+                // Set target first so chase_target can find the destination
+                if let Some(u) = units.get_mut(unit_id) {
+                    u.target = Some(enemy_id);
+                }
                 self.chase_target(units, map, unit_id);
             }
         }
@@ -612,5 +641,142 @@ mod tests {
         let u1 = mgr.get(id1).unwrap();
         assert_eq!(u1.state, UnitState::Fighting);
         assert_eq!(u1.target, Some(id2));
+    }
+
+    // ── Unit Stance Tests ──
+
+    #[test]
+    fn test_passive_unit_does_not_seek_enemies() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        // Unit 1 (odd = faction 1) set to Passive
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        mgr.get_mut(id1).unwrap().stance = UnitStance::Passive;
+        // Unit 2 (even = faction 2) is nearby but idle
+        let id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 5.5);
+
+        let ai = CombatAI::new();
+        ai.update(&mut mgr, &map, 0.016);
+
+        // Unit 1 should still be idle (passive, did not seek enemy)
+        let u1 = mgr.get(id1).unwrap();
+        assert_eq!(u1.state, UnitState::Idle, "Passive unit should not seek enemies");
+        assert!(u1.target.is_none(), "Passive unit should have no target");
+        // Unit 2 (aggressive) should be idle too since unit 1 is same faction check bypassed here
+        // Actually, unit 2 might attack unit 1 since unit 1 is odd=1 and unit 2 is even=0
+        // Unit 2 would attack... but let's verify passive unit 1 stays idle
+        let u1_after = mgr.get(id1).unwrap();
+        assert!(u1_after.target.is_none() || u1_after.state != UnitState::Fighting,
+            "Passive unit should not initiate fighting");
+    }
+
+    #[test]
+    fn test_passive_unit_defends_when_attacked() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        // Set up unit 1 (passive) already being attacked by unit 2
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        mgr.get_mut(id1).unwrap().stance = UnitStance::Passive;
+        mgr.get_mut(id1).unwrap().target = Some(2);
+        mgr.get_mut(id1).unwrap().state = UnitState::Fighting;
+        // Unit 2 is right next to unit 1 (adjacent)
+        let id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 5.5);
+
+        let ai = CombatAI::new();
+        ai.update(&mut mgr, &map, 0.016);
+
+        // Unit 1 should still be fighting (defending itself)
+        let u1 = mgr.get(id1).unwrap();
+        assert_eq!(u1.state, UnitState::Fighting,
+            "Passive unit should fight back when already engaged");
+    }
+
+    #[test]
+    fn test_stand_ground_does_not_chase() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        // Unit 1 (StandGround) within bowman range of unit 2, but out of melee range
+        let id1 = mgr.spawn(UnitKind::Bowman, 5.5, 5.5);
+        mgr.get_mut(id1).unwrap().stance = UnitStance::StandGround;
+        // Unit 2 (enemy) is 4 tiles away — within bowman detection but out of range (3)
+        // Actually, let's place them 5 tiles apart so both are out of attack range
+        let id2 = mgr.spawn(UnitKind::Swordsman, 10.5, 5.5);
+
+        let ai = CombatAI::new();
+        ai.update(&mut mgr, &map, 0.016);
+
+        // Unit 1 should NOT chase — should remain idle (StandGround, not chasing)
+        let u1 = mgr.get(id1).unwrap();
+        assert_eq!(u1.state, UnitState::Idle,
+            "StandGround bowman should not chase distant enemy");
+        assert!(u1.target.is_none(), "StandGround unit should not acquire out-of-range target");
+    }
+
+    #[test]
+    fn test_stand_ground_drops_target_when_out_of_range() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        // Unit 1 (StandGround) is fighting at close range
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        mgr.get_mut(id1).unwrap().stance = UnitStance::StandGround;
+        mgr.get_mut(id1).unwrap().target = Some(2);
+        mgr.get_mut(id1).unwrap().state = UnitState::Fighting;
+        // Unit 2 is far away (out of range)
+        let id2 = mgr.spawn(UnitKind::Swordsman, 15.5, 5.5);
+
+        let ai = CombatAI::new();
+        ai.update(&mut mgr, &map, 0.016);
+
+        // Unit 1 should drop target since StandGround doesn't chase
+        let u1 = mgr.get(id1).unwrap();
+        assert!(u1.target.is_none(),
+            "StandGround should drop target when out of range");
+        assert_eq!(u1.state, UnitState::Idle,
+            "StandGround should become idle after dropping target");
+    }
+
+    #[test]
+    fn test_aggressive_unit_chases_enemy() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        // Unit 1 (Aggressive, default) is far from unit 2
+        let id1 = mgr.spawn(UnitKind::Swordsman, 2.5, 2.5);
+        // Ensure default stance is Aggressive
+        assert_eq!(mgr.get(id1).unwrap().stance, UnitStance::Aggressive);
+        // Unit 2 (enemy) far away
+        let id2 = mgr.spawn(UnitKind::Swordsman, 15.5, 5.5);
+
+        let ai = CombatAI::new();
+        ai.update(&mut mgr, &map, 0.016);
+
+        // Unit 1 should be chasing (Moving toward or targeting unit 2)
+        let u1 = mgr.get(id1).unwrap();
+        // It should at least have acquired unit 2 as target and be moving
+        assert!(
+            u1.state == UnitState::Moving || u1.target == Some(id2),
+            "Aggressive unit should chase or target enemy, got state={:?} target={:?}",
+            u1.state, u1.target
+        );
+    }
+
+    #[test]
+    fn test_stand_ground_attacks_enemy_in_range() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        // Unit 1 (StandGround) is adjacent to unit 2
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        mgr.get_mut(id1).unwrap().stance = UnitStance::StandGround;
+        // Unit 2 is right next to it (within attack range)
+        let id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 5.5);
+
+        let ai = CombatAI::new();
+        ai.update(&mut mgr, &map, 0.016);
+
+        // Unit 1 should engage because enemy is in attack range
+        let u1 = mgr.get(id1).unwrap();
+        assert!(u1.state == UnitState::Fighting || u1.target == Some(id2),
+            "StandGround unit should attack enemy in range, got state={:?} target={:?}",
+            u1.state, u1.target
+        );
     }
 }
