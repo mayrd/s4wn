@@ -1301,15 +1301,14 @@ import init, {
     add_model_instance,
     get_camera_state,
     load_map_json,
+    get_building_at_tile,
     get_units_in_rect,
     move_units_to_tile,
     order_patrol,
     start_building_destruction,
     tick_building_destructions,
     get_building_destruction_progress,
-    spawn_rubble_effect,
-    get_building_at_tile,
-} from './pkg/s4wn_engine.js?v=46';
+} from './pkg/s4wn_engine.js?v=47';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -5183,7 +5182,12 @@ async function main() {
         requestAnimationFrame(loop);
 
     } catch (err) {
-        ErrorHandler.show(err, 'main() initialization');
+        if (typeof ErrorHandler !== 'undefined') {
+            ErrorHandler.show(err, 'main() initialization');
+        } else {
+            console.error('main() initialization failed:', err);
+            alert('Failed to initialize: ' + err.message);
+        }
     }
 }
 

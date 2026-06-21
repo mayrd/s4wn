@@ -16,6 +16,12 @@ export function add_model_instance(model_id: string, x: number, y: number, scale
 export function add_starting_resources(difficulty: string): string;
 
 /**
+ * Clear the rally point for a building.
+ * Returns true if the building existed.
+ */
+export function clear_building_rally_point(building_index: number): boolean;
+
+/**
  * Clear all model instances (called at start of each frame).
  */
 export function clear_model_instances(): void;
@@ -51,6 +57,14 @@ export function editor_grid_enabled(): boolean;
 export function export_map_json(): string;
 
 /**
+ * Order a set of units to move in formation to a target tile.
+ * Each unit maintains its relative offset from the group center.
+ * unit_ids_json: JSON array of unit IDs, e.g. [1,2,3]
+ * Returns the number of units successfully ordered to move.
+ */
+export function formation_move(unit_ids_json: string, target_x: number, target_y: number): number;
+
+/**
  * Generate a procedural map and return it as a JSON string.
  * map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
  * width/height: map dimensions (clamped to 16..1024)
@@ -64,6 +78,16 @@ export function generate_map(map_type: string, width: number, height: number): s
 export function get_build_cost(kind_name: string): string;
 
 /**
+ * Get building info at a tile position. Returns JSON or "null" if no building.
+ */
+export function get_building_at_tile(tile_x: number, tile_y: number): string;
+
+/**
+ * Get the destruction animation progress for a building (0.0 to 1.0, or -1.0 if not destroying).
+ */
+export function get_building_destruction_progress(building_index: number): number;
+
+/**
  * Get detailed building info by index.
  * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
  *   "active":true,"settlers":[1],"max_settlers":1,
@@ -72,6 +96,11 @@ export function get_build_cost(kind_name: string): string;
  * or {"error":"Building not found"}
  */
 export function get_building_info(idx: number): string;
+
+/**
+ * Get the rally point for a building as JSON: {"x":N,"y":N} or null if none set.
+ */
+export function get_building_rally_point(building_index: number): string;
 
 /**
  * Get building summary as a JSON string for the HUD.
@@ -154,7 +183,7 @@ export function get_unit_info(id: number): string;
 
 /**
  * Get unit summary as a JSON string for the HUD.
- * Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"state":"Working"},...]
+ * Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"max_hp":50,"state":"Working"},...]
  */
 export function get_unit_summary(): string;
 
@@ -214,6 +243,14 @@ export function load_model_json(name: string, json_str: string): string;
 export function model_instance_count(): number;
 
 /**
+ * Order a set of units to move to a target tile.
+ * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
+ * target_x, target_y: destination tile coordinates
+ * Returns: number of units successfully ordered to move
+ */
+export function move_units_to_tile(unit_ids_json: string, target_x: number, target_y: number): number;
+
+/**
  * Handle mouse down for panning
  */
 export function on_mouse_down(x: number, y: number): void;
@@ -232,6 +269,14 @@ export function on_mouse_up(): void;
  * Handle scroll wheel for zooming
  */
 export function on_wheel(delta_y: number): void;
+
+/**
+ * Order a set of units to patrol to a target tile.
+ * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
+ * target_x, target_y: destination tile coordinates for patrol
+ * Returns: number of units successfully ordered to patrol
+ */
+export function order_patrol(unit_ids_json: string, target_x: number, target_y: number): number;
 
 /**
  * Parse an OBJ model string and return vertex count, triangle count, and AABB as JSON.
@@ -278,6 +323,14 @@ export function restore_game_state(json: string): string;
  * Phase 5: Set orbital camera azimuth (horizontal orbit), degrees [0–360).
  */
 export function set_azimuth(degrees: number): void;
+
+/**
+ * Set the rally point for a building.
+ * building_index: index into the economy's buildings list.
+ * x, y: target tile coordinates for the rally point.
+ * Returns true if the building exists and the rally point was set.
+ */
+export function set_building_rally_point(building_index: number, x: number, y: number): boolean;
 
 /**
  * Phase 5: Set orbital camera distance from focus, tile units [2–100].
@@ -357,6 +410,20 @@ export function spawn_particle_burst(x: number, y: number, count: number, r: num
 export function spawn_smoke_effect(tile_x: number, tile_y: number): void;
 
 /**
+ * Start the destruction animation for a building at the given index.
+ * `duration_secs` controls how long the scale-down animation plays (e.g. 1.5).
+ * Returns true if the building exists and destruction was started.
+ */
+export function start_building_destruction(building_index: number, duration_secs: number): boolean;
+
+/**
+ * Tick destruction timers for all buildings by `dt` seconds.
+ * Returns JSON array of completed destructions: [{"index":N,"x":N,"y":N}, ...]
+ * JS should call this each frame and remove buildings from the model list.
+ */
+export function tick_building_destructions(dt: number): string;
+
+/**
  * Toggle map editor grid overlay on/off. Returns new state.
  */
 export function toggle_editor_grid(): boolean;
@@ -401,15 +468,20 @@ export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
+    readonly clear_building_rally_point: (a: number) => number;
     readonly clear_model_instances: () => void;
     readonly clear_particles: () => void;
     readonly compute_mvp_json: (a: number, b: number) => [number, number];
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
     readonly editor_grid_enabled: () => number;
     readonly export_map_json: () => [number, number];
+    readonly formation_move: (a: number, b: number, c: number, d: number) => number;
     readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
     readonly get_build_cost: (a: number, b: number) => [number, number];
+    readonly get_building_at_tile: (a: number, b: number) => [number, number];
+    readonly get_building_destruction_progress: (a: number) => number;
     readonly get_building_info: (a: number) => [number, number];
+    readonly get_building_rally_point: (a: number) => [number, number];
     readonly get_building_summary: () => [number, number];
     readonly get_camera_state: () => [number, number];
     readonly get_game_speed: () => number;
@@ -434,10 +506,12 @@ export interface InitOutput {
     readonly load_map_json: (a: number, b: number) => [number, number];
     readonly load_model_json: (a: number, b: number, c: number, d: number) => [number, number];
     readonly model_instance_count: () => number;
+    readonly move_units_to_tile: (a: number, b: number, c: number, d: number) => number;
     readonly on_mouse_down: (a: number, b: number) => void;
     readonly on_mouse_move: (a: number, b: number) => void;
     readonly on_mouse_up: () => void;
     readonly on_wheel: (a: number) => void;
+    readonly order_patrol: (a: number, b: number, c: number, d: number) => number;
     readonly parse_obj_info: (a: number, b: number) => [number, number];
     readonly particle_count: () => number;
     readonly populate_model_instances_from_game: () => number;
@@ -447,6 +521,7 @@ export interface InitOutput {
     readonly resize: () => void;
     readonly restore_game_state: (a: number, b: number) => [number, number];
     readonly set_azimuth: (a: number) => void;
+    readonly set_building_rally_point: (a: number, b: number, c: number) => number;
     readonly set_distance: (a: number) => void;
     readonly set_elevation: (a: number) => void;
     readonly set_game_speed: (a: number) => void;
@@ -461,6 +536,8 @@ export interface InitOutput {
     readonly spawn_particle: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number) => number;
     readonly spawn_particle_burst: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => number;
     readonly spawn_smoke_effect: (a: number, b: number) => void;
+    readonly start_building_destruction: (a: number, b: number) => number;
+    readonly tick_building_destructions: (a: number) => [number, number];
     readonly toggle_editor_grid: () => number;
     readonly toggle_pause: () => number;
     readonly try_place_building: (a: number, b: number, c: number, d: number) => [number, number];

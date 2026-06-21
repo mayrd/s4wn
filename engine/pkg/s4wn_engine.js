@@ -41,6 +41,17 @@ export function add_starting_resources(difficulty) {
 }
 
 /**
+ * Clear the rally point for a building.
+ * Returns true if the building existed.
+ * @param {number} building_index
+ * @returns {boolean}
+ */
+export function clear_building_rally_point(building_index) {
+    const ret = wasm.clear_building_rally_point(building_index);
+    return ret !== 0;
+}
+
+/**
  * Clear all model instances (called at start of each frame).
  */
 export function clear_model_instances() {
@@ -121,6 +132,23 @@ export function export_map_json() {
 }
 
 /**
+ * Order a set of units to move in formation to a target tile.
+ * Each unit maintains its relative offset from the group center.
+ * unit_ids_json: JSON array of unit IDs, e.g. [1,2,3]
+ * Returns the number of units successfully ordered to move.
+ * @param {string} unit_ids_json
+ * @param {number} target_x
+ * @param {number} target_y
+ * @returns {number}
+ */
+export function formation_move(unit_ids_json, target_x, target_y) {
+    const ptr0 = passStringToWasm0(unit_ids_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.formation_move(ptr0, len0, target_x, target_y);
+    return ret >>> 0;
+}
+
+/**
  * Generate a procedural map and return it as a JSON string.
  * map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
  * width/height: map dimensions (clamped to 16..1024)
@@ -166,6 +194,35 @@ export function get_build_cost(kind_name) {
 }
 
 /**
+ * Get building info at a tile position. Returns JSON or "null" if no building.
+ * @param {number} tile_x
+ * @param {number} tile_y
+ * @returns {string}
+ */
+export function get_building_at_tile(tile_x, tile_y) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_building_at_tile(tile_x, tile_y);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
+ * Get the destruction animation progress for a building (0.0 to 1.0, or -1.0 if not destroying).
+ * @param {number} building_index
+ * @returns {number}
+ */
+export function get_building_destruction_progress(building_index) {
+    const ret = wasm.get_building_destruction_progress(building_index);
+    return ret;
+}
+
+/**
  * Get detailed building info by index.
  * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
  *   "active":true,"settlers":[1],"max_settlers":1,
@@ -180,6 +237,24 @@ export function get_building_info(idx) {
     let deferred1_1;
     try {
         const ret = wasm.get_building_info(idx);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
+ * Get the rally point for a building as JSON: {"x":N,"y":N} or null if none set.
+ * @param {number} building_index
+ * @returns {string}
+ */
+export function get_building_rally_point(building_index) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_building_rally_point(building_index);
         deferred1_0 = ret[0];
         deferred1_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);
@@ -431,7 +506,7 @@ export function get_unit_info(id) {
 
 /**
  * Get unit summary as a JSON string for the HUD.
- * Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"state":"Working"},...]
+ * Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"max_hp":50,"state":"Working"},...]
  * @returns {string}
  */
 export function get_unit_summary() {
@@ -612,6 +687,23 @@ export function model_instance_count() {
 }
 
 /**
+ * Order a set of units to move to a target tile.
+ * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
+ * target_x, target_y: destination tile coordinates
+ * Returns: number of units successfully ordered to move
+ * @param {string} unit_ids_json
+ * @param {number} target_x
+ * @param {number} target_y
+ * @returns {number}
+ */
+export function move_units_to_tile(unit_ids_json, target_x, target_y) {
+    const ptr0 = passStringToWasm0(unit_ids_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.move_units_to_tile(ptr0, len0, target_x, target_y);
+    return ret >>> 0;
+}
+
+/**
  * Handle mouse down for panning
  * @param {number} x
  * @param {number} y
@@ -642,6 +734,23 @@ export function on_mouse_up() {
  */
 export function on_wheel(delta_y) {
     wasm.on_wheel(delta_y);
+}
+
+/**
+ * Order a set of units to patrol to a target tile.
+ * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
+ * target_x, target_y: destination tile coordinates for patrol
+ * Returns: number of units successfully ordered to patrol
+ * @param {string} unit_ids_json
+ * @param {number} target_x
+ * @param {number} target_y
+ * @returns {number}
+ */
+export function order_patrol(unit_ids_json, target_x, target_y) {
+    const ptr0 = passStringToWasm0(unit_ids_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.order_patrol(ptr0, len0, target_x, target_y);
+    return ret >>> 0;
 }
 
 /**
@@ -744,6 +853,21 @@ export function restore_game_state(json) {
  */
 export function set_azimuth(degrees) {
     wasm.set_azimuth(degrees);
+}
+
+/**
+ * Set the rally point for a building.
+ * building_index: index into the economy's buildings list.
+ * x, y: target tile coordinates for the rally point.
+ * Returns true if the building exists and the rally point was set.
+ * @param {number} building_index
+ * @param {number} x
+ * @param {number} y
+ * @returns {boolean}
+ */
+export function set_building_rally_point(building_index, x, y) {
+    const ret = wasm.set_building_rally_point(building_index, x, y);
+    return ret !== 0;
 }
 
 /**
@@ -906,6 +1030,39 @@ export function spawn_particle_burst(x, y, count, r, g, b, speed, life, size) {
  */
 export function spawn_smoke_effect(tile_x, tile_y) {
     wasm.spawn_smoke_effect(tile_x, tile_y);
+}
+
+/**
+ * Start the destruction animation for a building at the given index.
+ * `duration_secs` controls how long the scale-down animation plays (e.g. 1.5).
+ * Returns true if the building exists and destruction was started.
+ * @param {number} building_index
+ * @param {number} duration_secs
+ * @returns {boolean}
+ */
+export function start_building_destruction(building_index, duration_secs) {
+    const ret = wasm.start_building_destruction(building_index, duration_secs);
+    return ret !== 0;
+}
+
+/**
+ * Tick destruction timers for all buildings by `dt` seconds.
+ * Returns JSON array of completed destructions: [{"index":N,"x":N,"y":N}, ...]
+ * JS should call this each frame and remove buildings from the model list.
+ * @param {number} dt
+ * @returns {string}
+ */
+export function tick_building_destructions(dt) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.tick_building_destructions(dt);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
 }
 
 /**
