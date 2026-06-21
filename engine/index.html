@@ -1349,6 +1349,7 @@ import init, {
     get_player_nation,
     list_nations,
     get_nation_buildings,
+    is_building_available_for_nation,
     load_model_json,
     populate_model_instances_from_game,
     add_model_instance,
@@ -5528,12 +5529,53 @@ function populateConstructionPanel() {
     if (!container) return;
     const cats = window.BUILDING_CATEGORIES || BUILDING_CATEGORIES;
     if (!cats) return;
+
+    // Get player's nation for filtering
+    let nationName = null;
+    if (typeof get_player_nation === 'function') {
+        try {
+            const nationJson = get_player_nation();
+            nationName = nationJson ? JSON.parse(nationJson).name : null;
+        } catch(e) {}
+    }
+
+    // Collect nation-unique buildings into a Set for merging
+    let nationBuildings = [];
+    if (nationName && typeof get_nation_buildings === 'function') {
+        try {
+            nationBuildings = JSON.parse(get_nation_buildings(nationName));
+        } catch(e) {}
+    }
+    const nationBuildingSet = new Set(nationBuildings);
+
     let html = '';
     for (const [cat, buildings] of Object.entries(cats)) {
+        // Filter: only show buildings available to this nation
+        const visible = buildings.filter(name => {
+            // Nation-unique buildings always shown for that nation
+            if (nationBuildingSet.has(name)) return true;
+            // Check nation availability
+            if (nationName && typeof is_building_available_for_nation === 'function') {
+                try {
+                    return is_building_available_for_nation(name, nationName);
+                } catch(e) { return true; } // show if check fails
+            }
+            return !nationName; // show all if no nation selected
+        });
+
+        // Also include nation-unique buildings in the appropriate category
+        const extraNationBuildings = nationBuildings.filter(b => {
+            // Only include if we can determine its category
+            return !cats[cat]?.includes(b) && visible.includes(b);
+        });
+        const allVisible = [...new Set([...visible, ...extraNationBuildings])];
+
+        if (allVisible.length === 0) continue; // skip empty categories
+
         html += '<div class="con-category">';
         html += `<div class="con-cat-header">${cat}</div>`;
         html += '<div class="con-cat-body">';
-        for (const name of buildings) {
+        for (const name of allVisible) {
             const icon = BUILDING_ICONS[name] || '🏗️';
             const costStr = showBuildCostTooltip(name);
             const cost = costStr ? costStr.replace('Cost: ', '') : '?';
@@ -5546,35 +5588,8 @@ function populateConstructionPanel() {
         }
         html += '</div></div>';
     }
-    // Nation-specific buildings
-    if (typeof get_nation_buildings === 'function') {
-        try {
-            const nationJson = get_player_nation ? get_player_nation() : '';
-            const nationName = nationJson ? JSON.parse(nationJson).name : null;
-            if (nationName) {
-                const nationBuildings = JSON.parse(get_nation_buildings(nationName));
-                if (nationBuildings.length > 0) {
-                    html += '<div class="con-category">';
-                    html += `<div class="con-cat-header">🏛️ ${nationName} Buildings</div>`;
-                    html += '<div class="con-cat-body">';
-                    for (const name of nationBuildings) {
-                        const icon = BUILDING_ICONS[name] || '🏛️';
-                        const costStr = showBuildCostTooltip(name);
-                        const cost = costStr ? costStr.replace('Cost: ', '') : '?';
-                        html += `<div class="con-bldg" onclick="selectBuilding('${name}')" title="${costStr || name}">`;
-                        html += `<span class="con-icon">${icon}</span>`;
-                        html += `<span class="con-name">${name}</span>`;
-                        html += `<span class="con-cost">${cost}</span>`;
-                        html += '</div>';
-                    }
-                    html += '</div></div>';
-                }
-            }
-        } catch (e) {
-            // Nation not set or data unavailable — skip nation category
-        }
-    }
-    container.innerHTML = html;
+
+    container.innerHTML = html || '<div style="color:#888;text-align:center;padding:10px">No buildings available</div>';
 }
 
 function selectBuilding(name) {
