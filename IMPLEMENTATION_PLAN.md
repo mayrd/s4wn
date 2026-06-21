@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6.19 — Formation-Preserving Movement (513 tests)
-| **Last updated:** 2026-06-21 (Session 141 — Attack-move + right-click now use formation_move() for formation-preserving unit movement)
+| **Status:** Phase 6.20 — Building Auto-Repair (519 tests)
+| **Last updated:** 2026-06-21 (Session 142 — Building auto-repair via idle settlers + fix #52 toggleEditorMode)
 
 ---
 
@@ -393,8 +393,8 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=46. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 513 engine + 30 server = 543 total. `cargo test --lib` must pass before every push.
-- **WASM cache:** Current v=49.
+- **Test count:** 519 engine + 30 server = 549 total. `cargo test --lib` must pass before every push.
+- **WASM cache:** Current v=51.
 
 ## Next Session — Concrete Steps
 
@@ -527,10 +527,18 @@ All Phase 5 steps are now complete:
 3. Add garrison interactions for military buildings (auto-defense when units are stationed)
 4. Investigate adding unit ranks/experience (S4 had 3 tiers: recruit, veteran, elite) — create GitHub issue
 5. ✅ Add attack-move formation preservation — Done (Session 141)
-6. Add building auto-repair via settlers (gradual HP regen for damaged buildings)
+6. ✅ Add building auto-repair via settlers — Done (Session 142)
 7. ✅ Add building rubble particle effect hook on destruction — Done (Session 139)
 8. ✅ Add minimap building dots — Done (Session 140)
 
+
+### Session 142 — Building Auto-Repair + Bugfix #52 ✅
+
+- **Bugfix #52:** Added `window.toggleEditorMode = toggleEditorMode` to window exposure block in index.html. Fixed ReferenceError when clicking Edit button.
+- **Building auto-repair:** New `Economy::repair_buildings()` method. Idle settlers within 3 tiles of damaged buildings restore 1 HP per tick (REPAIR_RATE=1, REPAIR_RANGE=3.0).
+- **Integration:** Called as step 5 in `economy::update()`. Only repairs completed buildings with hp < max_hp. Moving/non-idle settlers don't repair.
+- **Tests:** 6 new tests (restore, nearby settler, cap at max_hp, moving ignored, out of range, incomplete excluded). 513→519 tests.
+- **Closed:** [#52](https://github.com/mayrd/s4wn/issues/52) — toggleEditorMode ReferenceError.
 
 ### Session 133 — Unit Formation Movement ✅
 
