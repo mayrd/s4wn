@@ -3612,6 +3612,33 @@ function renderMinimap() {
             mctx.stroke();
         }
     } catch(e) { /* ignore minimap viewport errors */ }
+
+    // ── Draw unit dots on minimap ──────────────────────────────────
+    try {
+        if (typeof get_unit_summary === 'function') {
+            const unitRaw = get_unit_summary();
+            if (unitRaw) {
+                const units = JSON.parse(unitRaw);
+                for (const unit of units) {
+                    const mx = Math.round(unit.x);
+                    const my = Math.round(unit.y);
+                    if (mx >= 0 && mx < w && my >= 0 && my < h) {
+                        // Settler = gray dot, Swordsman = red dot, Bowman = orange dot
+                        if (unit.kind === 'Settler') {
+                            mctx.fillStyle = '#aaaaaa';
+                        } else if (unit.kind === 'Swordsman') {
+                            mctx.fillStyle = '#ff4444';
+                        } else if (unit.kind === 'Bowman') {
+                            mctx.fillStyle = '#ff8800';
+                        } else {
+                            mctx.fillStyle = '#ffffff';
+                        }
+                        mctx.fillRect(mx - 1, my - 1, 3, 3);
+                    }
+                }
+            }
+        }
+    } catch(e) { /* ignore minimap unit dot errors */ }
 }
 
 // ── Settings ────────────────────────────────────────────────────────────
@@ -4917,10 +4944,28 @@ async function main() {
         const selOverlay = document.getElementById('selection-overlay');
         const selCtx = selOverlay ? selOverlay.getContext('2d') : null;
 
+        function drawHealthBar(sx, sy, hp, maxHp, zoom) {
+            if (!selCtx) return;
+            const barW = Math.max(16, 24 * zoom);
+            const barH = Math.max(3, 4 * zoom);
+            const barY = sy - 10 * zoom;
+            const hpPct = Math.max(0, Math.min(1, hp / maxHp));
+            // Background
+            selCtx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            selCtx.fillRect(sx - barW / 2, barY, barW, barH);
+            // HP fill color: green > 60%, yellow > 30%, red otherwise
+            const fillColor = hpPct > 0.6 ? '#44ff44' : hpPct > 0.3 ? '#ffcc00' : '#ff3333';
+            selCtx.fillStyle = fillColor;
+            selCtx.fillRect(sx - barW / 2, barY, barW * hpPct, barH);
+            // Border
+            selCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            selCtx.lineWidth = 0.5;
+            selCtx.strokeRect(sx - barW / 2, barY, barW, barH);
+        }
+
         function drawSelectionOverlay() {
             if (!selCtx || !selOverlay) return;
             selCtx.clearRect(0, 0, selOverlay.width, selOverlay.height);
-            if (selectedUnitIds.length === 0) return;
 
             // Get current unit positions
             let units = [];
@@ -4928,6 +4973,8 @@ async function main() {
                 const raw = get_unit_summary();
                 if (raw) units = JSON.parse(raw);
             } catch(e) { return; }
+
+            if (units.length === 0) return;
 
             // Camera transform: convert world coords to screen coords
             // match the isometric projection in the vertex shader:
@@ -4940,12 +4987,17 @@ async function main() {
             const cy = selOverlay.height / 2;
 
             for (const unit of units) {
-                if (!selectedUnitIds.includes(unit.id)) continue;
                 // Isometric screen position (matching the shader)
                 const sx = cx + (unit.x - unit.y) * 0.866 * zoom;
                 const sy = cy + (unit.x + unit.y) * 0.5 * zoom - 8 * zoom;
 
-                // Draw selection circle
+                // Draw health bar above every unit (if max_hp available)
+                if (unit.max_hp && unit.max_hp > 0) {
+                    drawHealthBar(sx, sy, unit.hp, unit.max_hp, zoom);
+                }
+
+                // Draw selection circle for selected units only
+                if (!selectedUnitIds.includes(unit.id)) continue;
                 const radius = Math.max(6, 10 * zoom);
                 selCtx.beginPath();
                 selCtx.arc(sx, sy + 4 * zoom, radius, 0, Math.PI * 2);

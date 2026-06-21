@@ -2544,7 +2544,7 @@ pub fn get_building_summary() -> String {
 }
 
 /// Get unit summary as a JSON string for the HUD.
-/// Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"state":"Working"},...]
+/// Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"max_hp":50,"state":"Working"},...]
 #[wasm_bindgen]
 pub fn get_unit_summary() -> String {
     unsafe {
@@ -2564,12 +2564,13 @@ pub fn get_unit_summary() -> String {
                     tool_code_to_name(tc)
                 }).unwrap_or("");
                 parts.push(format!(
-                    "{{\"id\":{},\"kind\":\"{}\",\"x\":{:.1},\"y\":{:.1},\"hp\":{},\"state\":\"{}\",\"carried_tool\":\"{}\"}}",
+                    "{{\"id\":{},\"kind\":\"{}\",\"x\":{:.1},\"y\":{:.1},\"hp\":{},\"max_hp\":{},\"state\":\"{}\",\"carried_tool\":\"{}\"}}",
                     u.id,
                     u.kind.name(),
                     u.x,
                     u.y,
                     u.hp,
+                    u.max_hp,
                     state_name,
                     tool_code
                 ));
@@ -2604,8 +2605,9 @@ pub fn get_units_in_rect(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> Stri
                         crate::units::UnitState::Dead => "Dead",
                     };
                     parts.push(format!(
-                        r#"{{"id":{},"kind":"{}","x":{:.1},"y":{:.1},"hp":{},"state":"{}"}}"#,
-                        u.id, u.kind.name(), u.x, u.y, u.hp, state_name
+                        r#"{{"id":{},"kind":"{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}"}}"#,
+                        u.id, u.kind.name(), u.x, u.y, u.hp,
+                    u.max_hp, state_name
                     ));
                 }
             }
@@ -3177,7 +3179,8 @@ pub fn get_game_state() -> String {
                 };
                 unit_parts.push(format!(
                     r#"{{"id":{},"kind":"{}","x":{},"y":{},"hp":{},"max_hp":{},"state":"{}","assigned_building":{},"target":{}}}"#,
-                    u.id, u.kind.name(), u.x, u.y, u.hp, u.max_hp, state_name, ab, tgt
+                    u.id, u.kind.name(), u.x, u.y, u.hp,
+                    u.max_hp, state_name, ab, tgt
                 ));
             }
 
