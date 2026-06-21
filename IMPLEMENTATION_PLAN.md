@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6 — Bugfixes + Map Editor + Patrol + Rally Points + Formation Move (487 tests)
-| **Last updated:** 2026-06-21 (Session 133 — Formation movement)
+| **Status:** Phase 6.5 — Combat & Campaign Polish (487 tests)
+| **Last updated:** 2026-06-21 (Session 134 — Unit stance investigation + GitHub issue #51)
 
 ---
 
@@ -488,14 +488,20 @@ All Phase 5 steps are now complete:
 - **Tests:** 10 new tests (6 unit + 4 combat). 462 total.
 - **Bugfix:** Removed duplicate `#[test]` attributes in economy.rs and particle.rs.
 
+### Session 134 — Unit Stance Investigation ✅
+
+- **Investigation:** Researched authentic S4 unit behavior and modern RTS stance systems. S4 had no explicit stance system — units auto-engage when outside buildings, hold position when garrisoned.
+- **GitHub Issue:** Created [#51](https://github.com/mayrd/s4wn/issues/51) — Feature: Unit Stances (Aggressive / Stand Ground / Passive). Full design proposal with 10 planned test cases, WASM exports, JS UI mockup, file inventory.
+- **Design:** Proposed 3-stance system (Aggressive/StandGround/Passive) with F1/F2/F3 hotkeys, overlay indicators, and 4 open questions for discussion.
+- **Tests:** All 487 engine + 30 server = 517 tests pass.
+
 ### Next Session — Concrete Steps
 
-1. ✅ Add unit rally point flag (set rally point for buildings, newly trained units auto-move there) — Done Session 131
-2. ✅ Add building destruction animation (scale-down + rubble particles when building is destroyed) — Done Session 132
-3. ✅ Add unit formation movement (units maintain relative positions when moving as group) — Done Session 133
-4. Implement .sav full campaign state restoration from parsed chunk data
-5. Investigate adding unit stances (aggressive/stand ground/passive) — creates GitHub issue for design discussion
-6. Add building HP system so combat can damage and eventually destroy buildings
+1. Implement .sav full campaign state restoration from parsed chunk data
+2. Add building HP system so combat can damage and eventually destroy buildings
+3. Begin implementing unit stances per [#51](https://github.com/mayrd/s4wn/issues/51) — start with UnitStance enum + combat AI checks
+4. Add garrison interactions for military buildings (auto-defense when units are stationed)
+5. Investigate adding unit ranks/experience (S4 had 3 tiers: recruit, veteran, elite)
 
 
 ### Session 133 — Unit Formation Movement ✅

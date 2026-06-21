@@ -68,7 +68,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 ## 🚀 Current Status
 
 **Phase 4 ✅ complete — Phase 5: 3D Pipeline** ✅ — **Phase 6: Particles + Mobile** ✅ — **Phase 6.5: Death Animation** ✅ — **Phase 6.6: Sound Effects** ✅ — **Phase 6.7: Day/Night Lighting Fix** ✅ — **Phase 6.8: Map Editor** ✅ — **Phase 6.9: Marquee Selection** ✅ — **Phase 6.10: Unit Commands** ✅ — **Phase 6.11: Health Bars + Minimap Dots** ✅ — **Phase 6.12: Rally Points** ✅ — **Phase 6.13: Building Destruction** ✅ (478 tests)
-**Phase 6.14: Formation Movement** ✅ (487 tests)
+**Phase 6.15: Unit Stance Investigation ✅ (487 tests)
 - ✅ Mobile responsive CSS — @media queries for sub-768px viewports: full-width panels, larger touch targets, flex-wrap controls
 - ✅ Touch camera pan — single-finger drag (touchstart/touchmove/touchend)
 - ✅ Touch pinch-to-zoom — two-finger proportional pinch with distance ratio scaling
