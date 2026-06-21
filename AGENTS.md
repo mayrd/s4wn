@@ -82,7 +82,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 6.20 — 541 tests passing
+**Status:** Phase 6.20 — 551 tests passing
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 145 | 2026-06-21 | Barracks auto-promotion to SquadLeader (551 tests) |
 | 144 | 2026-06-21 | Unit rank/experience system (541 tests) |
 | 143 | 2026-06-21 | Fix #54: canvas CSS stretching on mobile |
 | 142 | 2026-06-21 | Building Auto-Repair + Bugfix #52 |
@@ -116,7 +117,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 ### Next Session — Concrete Steps
 1. Implement .sav full campaign state restoration
 2. Add garrison interactions for military buildings
-3. ~~Unit ranks/experience~~ ✅ Done (Session 144) — hook into barracks auto-promotion to SquadLeader
+3. ~~Barracks auto-promotion to SquadLeader~~ ✅ Done (Session 145) — add SquadLeader aura/buff mechanic to nearby allies
 4. ~~Fog of war~~ ✅ Already implemented — verify JS/UI darkening pass-through
 5. Polish tutorial campaign progression
 
