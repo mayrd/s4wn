@@ -929,226 +929,271 @@ window.S4WN_CONFIG = {
   "resources": [
     {
       "id": "WoodLog",
+      "category": "Construction",
       "name": "Wood Log",
       "name_de": "Baumstamm"
     },
     {
       "id": "PlankWood",
+      "category": "Construction",
       "name": "Plank (Wood)",
       "name_de": "Holz / Brett"
     },
     {
       "id": "Stone",
+      "category": "Construction",
       "name": "Stone",
       "name_de": "Stein"
     },
     {
       "id": "CoalOre",
+      "category": "Raw Ores",
       "name": "Coal Ore",
       "name_de": "Kohle"
     },
     {
       "id": "IronOre",
+      "category": "Raw Ores",
       "name": "Iron Ore",
       "name_de": "Eisenerz"
     },
     {
       "id": "GoldOre",
+      "category": "Raw Ores",
       "name": "Gold Ore",
       "name_de": "Golderz"
     },
     {
       "id": "SulfurOre",
+      "category": "Raw Ores",
       "name": "Sulfur Ore",
       "name_de": "Schwefel"
     },
     {
       "id": "IronBar",
+      "category": "Smelted Metals",
       "name": "Iron Bar",
       "name_de": "Eisenbarren"
     },
     {
       "id": "GoldBar",
+      "category": "Smelted Metals",
       "name": "Gold Bar",
       "name_de": "Goldbarren"
     },
     {
       "id": "Water",
+      "category": "Food & Crops",
       "name": "Water",
       "name_de": "Wasser"
     },
     {
       "id": "Grain",
+      "category": "Food & Crops",
       "name": "Grain",
       "name_de": "Getreide"
     },
     {
       "id": "Flour",
+      "category": "Food & Crops",
       "name": "Flour",
       "name_de": "Mehl"
     },
     {
       "id": "Fish",
+      "category": "Food & Crops",
       "name": "Fish",
       "name_de": "Fisch"
     },
     {
       "id": "Bread",
+      "category": "Food & Crops",
       "name": "Bread",
       "name_de": "Brot"
     },
     {
       "id": "Meat",
+      "category": "Food & Crops",
       "name": "Meat",
       "name_de": "Fleisch"
     },
     {
       "id": "Pig",
+      "category": "Livestock",
       "name": "Pig",
       "name_de": "Schwein"
     },
     {
       "id": "Sheep",
+      "category": "Livestock",
       "name": "Sheep",
       "name_de": "Schaf"
     },
     {
       "id": "Goat",
+      "category": "Livestock",
       "name": "Goat",
       "name_de": "Ziege"
     },
     {
       "id": "Goose",
+      "category": "Livestock",
       "name": "Goose",
       "name_de": "Gans"
     },
     {
       "id": "Donkey",
+      "category": "Livestock",
       "name": "Donkey",
       "name_de": "Esel"
     },
     {
       "id": "Grapes",
+      "category": "Alcohol & Mana",
       "name": "Grapes",
       "name_de": "Trauben"
     },
     {
       "id": "Wine",
+      "category": "Alcohol & Mana",
       "name": "Wine",
       "name_de": "Wein"
     },
     {
       "id": "Honey",
+      "category": "Alcohol & Mana",
       "name": "Honey",
       "name_de": "Honig"
     },
     {
       "id": "Mead",
+      "category": "Alcohol & Mana",
       "name": "Mead",
       "name_de": "Met"
     },
     {
       "id": "Agave",
+      "category": "Alcohol & Mana",
       "name": "Agave",
       "name_de": "Agave"
     },
     {
       "id": "Tequila",
+      "category": "Alcohol & Mana",
       "name": "Tequila",
       "name_de": "Tequila / Schnaps"
     },
     {
       "id": "Sunflower",
+      "category": "Alcohol & Mana",
       "name": "Sunflower",
       "name_de": "Sonnenblume"
     },
     {
       "id": "SunflowerOil",
+      "category": "Alcohol & Mana",
       "name": "Sunflower Oil",
       "name_de": "Sonnenblumenöl"
     },
     {
       "id": "Hammer",
+      "category": "Tools",
       "name": "Hammer",
       "name_de": "Hammer"
     },
     {
       "id": "Pickaxe",
+      "category": "Tools",
       "name": "Pickaxe",
       "name_de": "Spitzhacke"
     },
     {
       "id": "Axe",
+      "category": "Tools",
       "name": "Axe",
       "name_de": "Axt"
     },
     {
       "id": "Saw",
+      "category": "Tools",
       "name": "Saw",
       "name_de": "Säge"
     },
     {
       "id": "Shovel",
+      "category": "Tools",
       "name": "Shovel",
       "name_de": "Schaufel"
     },
     {
       "id": "Scythe",
+      "category": "Tools",
       "name": "Scythe",
       "name_de": "Sense"
     },
     {
       "id": "FishingRod",
+      "category": "Tools",
       "name": "Fishing Rod",
       "name_de": "Angel"
     },
     {
       "id": "Sword",
+      "category": "Weapons",
       "name": "Sword",
       "name_de": "Schwert"
     },
     {
       "id": "Bow",
+      "category": "Weapons",
       "name": "Bow",
       "name_de": "Bogen"
     },
     {
       "id": "Armor",
+      "category": "Weapons",
       "name": "Armor",
       "name_de": "Rüstung"
     },
     {
       "id": "Spear",
+      "category": "Weapons",
       "name": "Spear",
       "name_de": "Speer"
     },
     {
       "id": "Battleaxe",
+      "category": "Weapons",
       "name": "Battleaxe",
       "name_de": "Streitaxt"
     },
     {
       "id": "Blowgun",
+      "category": "Weapons",
       "name": "Blowgun",
       "name_de": "Blasrohr"
     },
     {
       "id": "BackpackCatapult",
+      "category": "Weapons",
       "name": "Backpack Catapult",
       "name_de": "Rucksack-Katapult"
     },
     {
       "id": "Gunpowder",
+      "category": "Munitions",
       "name": "Gunpowder",
       "name_de": "Schießpulver"
     },
     {
       "id": "ExplosiveArrow",
+      "category": "Munitions",
       "name": "Explosive Arrow",
       "name_de": "Explosivpfeil"
     },
     {
       "id": "CatapultAmmo",
+      "category": "Munitions",
       "name": "Catapult Ammo",
       "name_de": "Munition"
     }
@@ -1156,282 +1201,329 @@ window.S4WN_CONFIG = {
   "units": [
     {
       "id": "Pioneer",
+      "class": "Specialist",
       "name": "Pioneer",
       "name_de": "Pionier",
       "nation": "All"
     },
     {
       "id": "Geologist",
+      "class": "Specialist",
       "name": "Geologist",
       "name_de": "Geologe",
       "nation": "All"
     },
     {
       "id": "Thief",
+      "class": "Specialist",
       "name": "Thief",
       "name_de": "Dieb",
       "nation": "All"
     },
     {
       "id": "Gardener",
+      "class": "Specialist",
       "name": "Gardener",
       "name_de": "Gärtner",
       "nation": "All"
     },
     {
       "id": "Carrier",
+      "class": "Logistics",
       "name": "Carrier",
       "name_de": "Träger",
       "nation": "All"
     },
     {
       "id": "Digger",
+      "class": "Logistics",
       "name": "Digger",
       "name_de": "Planierer",
       "nation": "All"
     },
     {
       "id": "Builder",
+      "class": "Logistics",
       "name": "Builder",
       "name_de": "Bauarbeiter",
       "nation": "All"
     },
     {
       "id": "Forester",
+      "class": "Basic Economy",
       "name": "Forester",
       "name_de": "Förster",
       "nation": "All"
     },
     {
       "id": "Woodcutter",
+      "class": "Basic Economy",
       "name": "Woodcutter",
       "name_de": "Holzfäller",
       "nation": "All"
     },
     {
       "id": "Sawyer",
+      "class": "Basic Economy",
       "name": "Sawyer",
       "name_de": "Säger",
       "nation": "All"
     },
     {
       "id": "Stonecutter",
+      "class": "Basic Economy",
       "name": "Stonecutter",
       "name_de": "Steinmetz",
       "nation": "All"
     },
     {
       "id": "Miner",
+      "class": "Mining",
       "name": "Miner",
       "name_de": "Minenarbeiter",
       "nation": "All"
     },
     {
       "id": "Smelter",
+      "class": "Heavy Industry",
       "name": "Smelter",
       "name_de": "Schmelzer",
       "nation": "All"
     },
     {
       "id": "Toolsmith",
+      "class": "Heavy Industry",
       "name": "Toolsmith",
       "name_de": "Werkzeugschmied",
       "nation": "All"
     },
     {
       "id": "Weaponsmith",
+      "class": "Heavy Industry",
       "name": "Weaponsmith",
       "name_de": "Waffenschmied",
       "nation": "All"
     },
     {
       "id": "WeaponFoundry",
+      "class": "Heavy Industry",
       "name": "Weapon Foundry",
       "name_de": "Waffengießer",
       "nation": "Trojans"
     },
     {
       "id": "Farmer",
+      "class": "Food & Crops",
       "name": "Farmer",
       "name_de": "Bauer",
       "nation": "All"
     },
     {
       "id": "Miller",
+      "class": "Food & Crops",
       "name": "Miller",
       "name_de": "Müller",
       "nation": "All"
     },
     {
       "id": "Baker",
+      "class": "Food & Crops",
       "name": "Baker",
       "name_de": "Bäcker",
       "nation": "All"
     },
     {
       "id": "WaterWorker",
+      "class": "Food & Crops",
       "name": "Water Worker",
       "name_de": "Wasserwerker",
       "nation": "All"
     },
     {
       "id": "AnimalBreeder",
+      "class": "Food & Crops",
       "name": "Animal Breeder",
       "name_de": "Tierzüchter",
       "nation": "All *(Faction-Specific)*"
     },
     {
       "id": "Butcher",
+      "class": "Food & Crops",
       "name": "Butcher",
       "name_de": "Metzger",
       "nation": "All"
     },
     {
       "id": "Fisherman",
+      "class": "Food & Crops",
       "name": "Fisherman",
       "name_de": "Fischer",
       "nation": "All"
     },
     {
       "id": "Trader",
+      "class": "Logistics",
       "name": "Trader",
       "name_de": "Händler",
       "nation": "All"
     },
     {
       "id": "Shipwright",
+      "class": "Logistics",
       "name": "Shipwright",
       "name_de": "Schiffsbauer",
       "nation": "All"
     },
     {
       "id": "Healer",
+      "class": "Medical",
       "name": "Healer",
       "name_de": "Heiler",
       "nation": "All"
     },
     {
       "id": "Vintner",
+      "class": "Sacrificial Wine",
       "name": "Vintner",
       "name_de": "Winzer",
       "nation": "Romans"
     },
     {
       "id": "AgaveFarmer",
+      "class": "Sacrificial Liquor",
       "name": "Agave Farmer",
       "name_de": "Agavenbauer",
       "nation": "Mayans"
     },
     {
       "id": "TequilaDistiller",
+      "class": "Sacrificial Liquor",
       "name": "Tequila Distiller",
       "name_de": "Teumabrenner",
       "nation": "Mayans"
     },
     {
       "id": "Beekeeper",
+      "class": "Sacrificial Mead",
       "name": "Beekeeper",
       "name_de": "Imker",
       "nation": "Vikings"
     },
     {
       "id": "MeadBrewer",
+      "class": "Sacrificial Mead",
       "name": "Mead Brewer",
       "name_de": "Metbrauer",
       "nation": "Vikings"
     },
     {
       "id": "SunflowerFarmer",
+      "class": "Sacrificial Oil",
       "name": "Sunflower Farmer",
       "name_de": "Sonnenblumenbauer",
       "nation": "Trojans"
     },
     {
       "id": "OilMiller",
+      "class": "Sacrificial Oil",
       "name": "Oil Miller",
       "name_de": "Ölmüller",
       "nation": "Trojans"
     },
     {
       "id": "PowderMaker",
+      "class": "Specialist Craft",
       "name": "Powder Maker",
       "name_de": "Pulvermacher",
       "nation": "Mayans"
     },
     {
       "id": "PriestMage",
+      "class": "Military",
       "name": "Priest / Mage",
       "name_de": "Priester",
       "nation": "All"
     },
     {
       "id": "Swordsman",
+      "class": "Military",
       "name": "Swordsman",
       "name_de": "Schwertkämpfer",
       "nation": "All"
     },
     {
       "id": "Bowman",
+      "class": "Military",
       "name": "Bowman",
       "name_de": "Bogenschütze",
       "nation": "All"
     },
     {
       "id": "SquadLeader",
+      "class": "Military",
       "name": "Squad Leader",
       "name_de": "Hauptmann",
       "nation": "All"
     },
     {
       "id": "Medic",
+      "class": "Military (Special)",
       "name": "Medic",
       "name_de": "Sanitäter",
       "nation": "Romans"
     },
     {
       "id": "BlowgunWarrior",
+      "class": "Military (Special)",
       "name": "Blowgun Warrior",
       "name_de": "Blasrohrschütze",
       "nation": "Mayans"
     },
     {
       "id": "AxeWarrior",
+      "class": "Military (Special)",
       "name": "Axe Warrior",
       "name_de": "Streitaxtkämpfer",
       "nation": "Vikings"
     },
     {
       "id": "BackpackCatapultist",
+      "class": "Military (Special)",
       "name": "Backpack Catapultist",
       "name_de": "Rucksack-Katapultierer",
       "nation": "Trojans"
     },
     {
       "id": "DarkDigger",
+      "class": "Dark Tribe (NPC)",
       "name": "Dark Digger",
       "name_de": "Dunkler Planierer",
       "nation": "Dark Tribe"
     },
     {
       "id": "DarkFarmer",
+      "class": "Dark Tribe (NPC)",
       "name": "Dark Farmer",
       "name_de": "Dunkler Gärtner",
       "nation": "Dark Tribe"
     },
     {
       "id": "Cultist",
+      "class": "Dark Tribe (NPC)",
       "name": "Cultist",
       "name_de": "Kultist",
       "nation": "Dark Tribe"
     },
     {
       "id": "Shaman",
+      "class": "Dark Tribe (NPC)",
       "name": "Shaman",
       "name_de": "Schamane",
       "nation": "Dark Tribe"
     },
     {
       "id": "ShadowSoldier",
+      "class": "Dark Tribe (NPC)",
       "name": "Shadow Soldier",
       "name_de": "Schattensoldat",
       "nation": "Dark Tribe"
@@ -1592,6 +1684,10 @@ window.S4WN_CONFIG = {
     ]
   }
 };
+
+
+
+
 
 (function() {
     const C = window.S4WN_CONFIG;

@@ -5623,10 +5623,10 @@ function toggleConstructionPanel() {
 function populateConstructionPanel() {
     const container = document.getElementById('construction-categories');
     if (!container) return;
-    const cats = window.BUILDING_CATEGORIES || BUILDING_CATEGORIES;
-    if (!cats) return;
+    const C = window.S4WN_CONFIG;
+    if (!C || !C.buildings) return;
 
-    // Get player's nation for filtering
+    // Get player's nation
     let nationName = null;
     if (typeof get_player_nation === 'function') {
         try {
@@ -5635,48 +5635,31 @@ function populateConstructionPanel() {
         } catch(e) {}
     }
 
-    // Collect nation-unique buildings into a Set for merging
-    let nationBuildings = [];
-    if (nationName && typeof get_nation_buildings === 'function') {
-        try {
-            nationBuildings = JSON.parse(get_nation_buildings(nationName));
-        } catch(e) {}
+    // Group buildings by category, filtered by nation
+    const cats = {};
+    for (const b of C.buildings) {
+        // Filter by nation if set
+        if (nationName && b.nations && !b.nations.includes(nationName)) continue;
+        const cat = b.category;
+        if (!cats[cat]) cats[cat] = [];
+        cats[cat].push(b);
     }
-    const nationBuildingSet = new Set(nationBuildings);
 
     let html = '';
     for (const [cat, buildings] of Object.entries(cats)) {
-        // Filter: only show buildings available to this nation
-        const visible = buildings.filter(name => {
-            // Nation-unique buildings always shown for that nation
-            if (nationBuildingSet.has(name)) return true;
-            // Check nation availability
-            if (nationName && typeof is_building_available_for_nation === 'function') {
-                try {
-                    return is_building_available_for_nation(name, nationName);
-                } catch(e) { return true; } // show if check fails
-            }
-            return !nationName; // show all if no nation selected
-        });
-
-        // Also include nation-unique buildings in the appropriate category
-        const extraNationBuildings = nationBuildings.filter(b => {
-            // Only include if we can determine its category
-            return !cats[cat]?.includes(b) && visible.includes(b);
-        });
-        const allVisible = [...new Set([...visible, ...extraNationBuildings])];
-
-        if (allVisible.length === 0) continue; // skip empty categories
-
-        html += '<div class="con-category">';
+        if (buildings.length === 0) continue;
+        html += `<div class="con-category">`;
         html += `<div class="con-cat-header">${cat}</div>`;
         html += '<div class="con-cat-body">';
-        for (const name of allVisible) {
-            const icon = BUILDING_ICONS[name] || '🏗️';
-            const costStr = showBuildCostTooltip(name);
-            const cost = costStr ? costStr.replace('Cost: ', '') : '?';
-            const displayName = tBuilding(name);
-            html += `<div class="con-bldg" onclick="selectBuilding('${name}')" title="${costStr || name}">`;
+        for (const b of buildings) {
+            const icon = '🏗️';
+            const costParts = [];
+            if (b.planks) costParts.push(`🪵${b.planks}`);
+            if (b.stone) costParts.push(`🪨${b.stone}`);
+            if (b.gold) costParts.push(`✨${b.gold}`);
+            const cost = costParts.join(' ') || 'Free';
+            const displayName = (typeof currentLang === 'string' && currentLang === 'de') ? b.name_de : b.name;
+            html += `<div class="con-bldg" onclick="selectBuilding('${b.id}')" title="${b.name} — ${cost}">`;
             html += `<span class="con-icon">${icon}</span>`;
             html += `<span class="con-name">${displayName}</span>`;
             html += `<span class="con-cost">${cost}</span>`;
@@ -5684,7 +5667,6 @@ function populateConstructionPanel() {
         }
         html += '</div></div>';
     }
-
     container.innerHTML = html || '<div style="color:#888;text-align:center;padding:10px">No buildings available</div>';
 }
 
@@ -5760,13 +5742,26 @@ function toggleSettlersPanel() {
 
 function renderResources() {
     const body = document.getElementById('resources-body');
+    if (!body) return;
+    const C = window.S4WN_CONFIG;
     try {
         const counts = JSON.parse(get_resource_counts());
         let html = '';
-        for (const [name, count] of Object.entries(counts)) {
-            const icon = RESOURCE_ICONS[name] || '📦';
-            const label = tResource(name);
-            html += `<div class="res-row"><span class="res-label"><span class="res-icon">${icon}</span> ${label}</span><span class="res-val">${count}</span></div>`;
+        // Show resources grouped by category from config
+        const catMap = {};
+        for (const r of (C.resources || [])) {
+            const cat = r.category || 'Other';
+            if (!catMap[cat]) catMap[cat] = [];
+            catMap[cat].push(r);
+        }
+        for (const [cat, resources] of Object.entries(catMap)) {
+            html += `<div class="set-section">${cat}</div>`;
+            for (const r of resources) {
+                const count = counts[r.id] ?? 0;
+                const icon = RESOURCE_ICONS[r.id] || '📦';
+                const label = (typeof currentLang === 'string' && currentLang === 'de') ? r.name_de : r.name;
+                html += `<div class="res-row"><span class="res-label"><span class="res-icon">${icon}</span> ${label}</span><span class="res-val">${count}</span></div>`;
+            }
         }
         if (!html) html = `<div class="res-row"><span class="res-label">${t('no_resources')}</span></div>`;
         body.innerHTML = html;
@@ -5777,30 +5772,44 @@ function renderResources() {
 
 function renderSettlers() {
     const body = document.getElementById('settlers-body');
+    if (!body) return;
+    const C = window.S4WN_CONFIG;
     try {
         const units = JSON.parse(get_unit_summary());
-        let working = 0, idle = 0;
-        let settlersCount = 0, swordsCount = 0, bowCount = 0;
+        
+        // Count units by kind
+        const counts = {};
+        let total = 0, working = 0, idle = 0;
         for (const u of units) {
-            if (u.kind === 'Settler') {
-                settlersCount++;
-                if (u.state === 'Working') working++;
-                else idle++;
-            } else if (u.kind === 'Swordsman') swordsCount++;
-            else if (u.kind === 'Bowman') bowCount++;
+            const kind = u.kind || 'Settler';
+            counts[kind] = (counts[kind] || 0) + 1;
+            total++;
+            if (u.state === 'Working') working++;
+            else if (u.state === 'Idle') idle++;
         }
 
         let html = '';
-        html += `<div class="set-row"><span class="set-label">${t('settlers_total')}</span><span class="set-val">${settlersCount}</span></div>`;
+        html += `<div class="set-row"><span class="set-label">${t('settlers_total')}</span><span class="set-val">${total}</span></div>`;
         html += `<div class="set-row"><span class="set-label">${t('settlers_working')}</span><span class="set-val">${working}</span></div>`;
         html += `<div class="set-row"><span class="set-label">${t('settlers_idle')}</span><span class="set-val">${idle}</span></div>`;
-        html += `<div class="set-section">${t('specialists')}</div>`;
-        html += `<div class="set-row"><span class="set-label">🔨 ${t('pioneers')}</span><span class="set-val">0</span><button class="set-btn" disabled>${t('recruit')}</button></div>`;
-        html += `<div class="set-row"><span class="set-label">⛏️ ${t('geologists')}</span><span class="set-val">0</span><button class="set-btn" disabled>${t('recruit')}</button></div>`;
-        html += `<div class="set-row"><span class="set-label">🙏 ${t('priests')}</span><span class="set-val">0</span><button class="set-btn" disabled>${t('recruit')}</button></div>`;
-        html += `<div class="set-section">${t('military')}</div>`;
-        html += `<div class="set-row"><span class="set-label">⚔️ ${t('swordsmen')}</span><span class="set-val">${swordsCount}</span></div>`;
-        html += `<div class="set-row"><span class="set-label">🏹 ${t('bowmen')}</span><span class="set-val">${bowCount}</span></div>`;
+
+        // Group settlers by class from config
+        if (C.units) {
+            const cats = {};
+            for (const u of C.units) {
+                const cat = u.class || 'Other';
+                if (!cats[cat]) cats[cat] = [];
+                cats[cat].push(u);
+            }
+            for (const [cat, settlers] of Object.entries(cats)) {
+                html += `<div class="set-section">${cat}</div>`;
+                for (const s of settlers) {
+                    const count = counts[s.id] || 0;
+                    const label = (typeof currentLang === 'string' && currentLang === 'de') ? s.name_de : s.name;
+                    html += `<div class="set-row"><span class="set-label">👤 ${label}</span><span class="set-val">${count}</span></div>`;
+                }
+            }
+        }
 
         body.innerHTML = html;
     } catch(e) {
