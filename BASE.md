@@ -1,48 +1,138 @@
-# BASE
-Use this file as base information and treat it with priority over own research.
-AI agents must not edit this file unless explicitly stated.
+# BASE.md — S4WN Foundational Knowledge
 
-## Roman Buildings
+> **This file is the single source of truth for the S4WN project.**
+> All other documentation (AGENTS.md, IMPLEMENTATION_PLAN.md, TECHNOLOGY_CHOICE.md, README.md) MUST derive from and be consistent with this file.
+> When information conflicts, BASE.md wins. Do not override or contradict this file.
 
-| Category | English Name | German Name | Planks | Stone | Gold | Worker | Input | Output / Function |
-| :--- | :--- | :--- | :---: | :---: | :---: | :--- | :--- | :--- |
-| **Basic Economy** | Forester's Hut | Försterhütte | 2 | 1 | 0 | Forester *(Förster)* | None | Planted Trees |
-| **Basic Economy** | Woodcutter's Hut | Holzfällerhütte | 2 | 1 | 0 | Woodcutter *(Holzfäller)* | Trees | Logs |
-| **Basic Economy** | Sawmill | Sägewerk | 4 | 2 | 0 | Sawyer *(Säger)* | 1x Log | 1x Plank |
-| **Basic Economy** | Stonecutter's Hut | Steinmetzhütte | 2 | 1 | 0 | Stonecutter *(Steinmetz)* | Stone Deposits | 1x Stone |
-| **Food Production** | Grain Farm | Getreidefarm | 5 | 2 | 0 | Farmer *(Bauer)* | None | Grain |
-| **Food Production** | Pig Ranch | Schweinezucht | 5 | 2 | 0 | Pig Breeder *(Schweinezüchter)* | Grain + Water | Pigs |
-| **Food Production** | Grain Mill | Getreidemühle | 4 | 2 | 0 | Miller *(Müller)* | Grain | Flour |
-| **Food Production** | Bakery | Bäckerei | 4 | 2 | 0 | Baker *(Bäcker)* | Flour + Water | Bread *(Food for Coal)* |
-| **Food Production** | Slaughterhouse | Metzgerei | 4 | 2 | 0 | Butcher *(Metzger)* | Pigs | Meat *(Food for Iron)* |
-| **Food Production** | Fisherman's Hut | Fischerhütte | 2 | 1 | 0 | Fisherman *(Fischer)* | Fish Stocks | Fish *(Food for Gold/Sulfur)* |
-| **Food Production** | Waterworks | Wasserwerk | 3 | 1 | 0 | Water Worker *(Wasserwerker)* | River / Water source | Water |
-| **Mining & Smelting** | Coal Mine | Kohlemine | 3 | 1 | 0 | Miner *(Minenarbeiter)* | Bread | Coal Ore |
-| **Mining & Smelting** | Iron Ore Mine | Eisenmine | 3 | 1 | 0 | Miner *(Minenarbeiter)* | Meat | Iron Ore |
-| **Mining & Smelting** | Gold Mine | Goldmine | 3 | 1 | 0 | Miner *(Minenarbeiter)* | Fish | Gold Ore |
-| **Mining & Smelting** | Sulfur Mine | Schwefelmine | 3 | 1 | 0 | Miner *(Minenarbeiter)* | Fish | Sulfur Ore |
-| **Mining & Smelting** | Iron Smelter | Eisenschmelze | 4 | 2 | 0 | Smelter *(Schmelzer)* | Iron Ore + Coal | Iron Bars |
-| **Mining & Smelting** | Gold Smelter | Goldschmelze | 4 | 2 | 0 | Smelter *(Schmelzer)* | Gold Ore + Coal | Gold Bars |
-| **Military & Tools** | Toolsmith | Werkzeugschmiede | 4 | 2 | 0 | Toolsmith *(Werkzeugschmied)* | Iron Bars + Coal | Tools |
-| **Military & Tools** | Weaponsmith | Waffenschmiede | 4 | 3 | 0 | Weaponsmith *(Waffenschmied)* | Iron Bars + Coal | Weapons |
-| **Military & Tools** | Barracks | Kaserne | 5 | 4 | 0 | Recruiter *(Rekrutierer)* | Recruit + Weapon | Ranked Soldiers |
-| **Military & Tools** | Small Tower | Kleiner Turm | 3 | 2 | 0 | 1x Stationed Soldier | None | Expands Territory |
-| **Military & Tools** | Big Tower | Großer Turm | 5 | 4 | 0 | 3x Stationed Soldiers | None | Expands Territory |
-| **Military & Tools** | Castle | Burg | 8 | 7 | 0 | 6x Stationed Soldiers | None | Expands Territory |
-| **Military & Tools** | Healer's Hut | Heilerhütte | 4 | 2 | 0 | Healer *(Heiler)* | Mana charges | Heals friendly units |
-| **Divine & Special** | Vineyard | Winzerhütte | 4 | 2 | 0 | Vintner *(Winzer)* | None | Grapes / Wine |
-| **Divine & Special** | Small Temple | Kleiner Tempel | 4 | 5 | 0 | Priestess *(Priesterin)* | Wine | Mana |
-| **Divine & Special** | Large Temple | Großer Tempel | 6 | 8 | 0 | None *(Autotransforms)* | Recruits | Priests *(Roman Mages)* |
-| **Logistics** | Small Residence | Kleines Wohnhaus | 4 | 2 | 0 | None | None | +10 Settlers |
-| **Logistics** | Medium Residence | Mittleres Wohnhaus | 7 | 4 | 0 | None | None | +30 Settlers |
-| **Logistics** | Large Residence | Großes Wohnhaus | 10 | 6 | 0 | None | None | +100 Settlers |
-| **Logistics** | Storage Yard | Lagerplatz | 4 | 1 | 0 | None *(Carriers)* | None | Stores 8 item stacks |
-| **Logistics** | Marketplace | Marktplatz | 4 | 2 | 0 | Trader *(Händler)* | None | Creates Donkeys / Land trade |
-| **Logistics** | Shipyard | Werft | 5 | 2 | 0 | Shipwright *(Schiffsbauer)* | Planks *(Variable)* | Ferries or Warships |
-| **Logistics** | Landing Dock | Anlegestelle | 4 | 2 | 0 | None *(Carriers)* | None | Maritime trade routes |
-| **Zierobjekte** | Bust | Büste | 1 | 1 | 1 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength (*Kampfkraft*) |
-| **Zierobjekte** | Monument | Denkmal | 2 | 3 | 2 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength (*Kampfkraft*) |
-| **Zierobjekte** | Standard / Banner | Standarte | 2 | 0 | 2 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength (*Kampfkraft*) |
-| **Zierobjekte** | Obelisk | Obelisk | 1 | 4 | 2 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength (*Kampfkraft*) |
-| **Zierobjekte** | Bench | Bank | 2 | 2 | 1 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength (*Kampfkraft*) |
-| **Zierobjekte** | Archways | Torbögen | 3 | 5 | 3 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength (*Kampfkraft*) |
+---
+
+## 1. Project Identity
+
+**S4WN** (Siedler 4 Web-Native) preserves the spirit of the classic *The Settlers IV* (2001) as a fully open-source, web-based game. All game logic, assets, and tools are self-contained in this repository — no external dependencies on original game binaries or extracted proprietary files.
+
+**Mission:** Make Siedler 4 playable in any modern browser, on any device, forever.
+
+**Reference for game mechanics:** [siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/) — authoritative source for buildings, units, production chains, and formulas.
+
+---
+
+## 2. Non-Negotiable Constraints
+
+### Asset Policy
+- **NO original Siedler 4 assets** (sprites, textures, sounds, music) are ever extracted or committed.
+- All visuals and audio are **generated from scratch** and placed in `assets/`.
+- Standard web formats only: PNG, WebP, OGG, JSON — never proprietary containers.
+- **Exception:** Original `*.map` and `*.sav` files are parsed for scenario data only, mapped to our own asset IDs. The parser reads layout, resources, objectives — never extracts sprites or textures.
+
+### Legal
+- The project is 100% open-source (MIT license).
+- It is NOT dependent on the user owning a copy of the original game.
+- Reverse-engineering is limited to publicly documented map/save formats; no disassembly of original binaries.
+
+### Language
+- **Rust** for the game engine (compiled to WASM via `wasm-bindgen`).
+- **JavaScript (vanilla, ES modules)** for UI glue — no frameworks (React, Vue, Svelte).
+- **GLSL 300 es** for shaders (WebGL2).
+- **Python** for procedural asset generation and build scripts only.
+
+---
+
+## 3. Architecture
+
+```
+Browser
+  └─ index.html (single-page app, ~6500 lines)
+       ├─ <script type="module"> imports WASM
+       │    ├─ engine/src/lib.rs → pkg/s4wn_engine.js + .wasm
+       │    ├─ engine/src/economy.rs, combat.rs, units.rs, map.rs, ...
+       │    └─ engine/src/camera.rs (orbital: azimuth/elevation/distance)
+       ├─ <canvas id="game-canvas"> — WebGL2 rendering
+       ├─ <canvas id="minimap"> — 2D overview
+       ├─ <canvas id="selection-overlay"> — UI indicators
+       └─ Procedural Web Audio API (Sfx module)
+
+Server (optional, for multiplayer):
+  Caddy 2.x — static files + WebSocket proxy
+  Docker — single container, multi-arch (amd64 + arm64)
+```
+
+### Key Design Decisions
+- **Graphics:** Raw WebGL2 via `web-sys`, NOT three.js/wgpu/bevy. Custom shaders, direct GPU access. Tiny WASM binary (~200KB).
+- **Camera:** Orbital (azimuth/elevation/distance). Default is classic isometric (az=45°, el=35.264°). Full 3D terrain with heightmap displacement.
+- **Models:** Procedurally generated OBJ/JSON, later glTF 2.0. No original S4 sprites.
+- **Audio:** Procedural Web Audio API oscillators + noise buffers — no audio files.
+- **Server:** Caddy (auto-HTTPS, simple Caddyfile, small binary). Docker for deployment.
+- **Build:** `wasm-pack build --target web --release` produces `engine/pkg/`.
+
+### WASM Export Checklist (NEVER SKIP)
+1. Add `#[wasm_bindgen]` function in `engine/src/lib.rs`
+2. `cd engine && wasm-pack build --target web --release`
+3. Verify: `grep "export function $fn" pkg/s4wn_engine.js`
+4. Bump cache buster in `index.html`: `?v=N` → `?v=N+1`
+5. Adding imports without rebuilding `pkg/` causes splash-screen stalls (#1 bug)
+
+---
+
+## 4. Development Principles
+
+### BDD/TDD — Tests First, Always
+- Every feature follows: **Objective → Test Cases → Implementation → Verify → Commit**
+- Tests are written BEFORE code. `cargo test` must be green.
+- Every bugfix adds a regression test.
+- Current: **519 tests** (engine + server), all passing.
+
+### Session Workflow (for AI agents)
+1. **Read BASE.md first.** Then AGENTS.md.
+2. Fetch open GitHub issues — resolve them FIRST (stability > features).
+3. Advance the next incomplete item in IMPLEMENTATION_PLAN.md.
+4. One small atomic task per session (10-20 minutes).
+5. End EVERY session with: `cargo test` green → `git commit` → `git push` → update IMPLEMENTATION_PLAN.md.
+
+### Critical Pitfalls
+- `parent.clientHeight` on `position:fixed` canvas returns ~19px on mobile. Use `window.innerHeight`.
+- `spawn_rubble_effect` is an internal Rust fn — no `#[wasm_bindgen]`. Never import in JS.
+- `map.width` / `map.height` are fields, not methods.
+- Adding enum variants: update ALL match arms. `cargo test --lib` finds missed ones.
+- `engine/pkg/` is gitignored. Force-add: `git add -f engine/pkg/`.
+- L3 maps are S4ME compressed format — do NOT implement decompression. Direct users to re-save as WRLD.
+
+---
+
+## 5. Current Implementation State
+
+**Status:** Phase 6.20 — 519 tests passing
+
+### Completed (highlights)
+- ✅ Full Rust WASM engine with isometric/3D rendering
+- ✅ Economy simulation (buildings, resources, production chains, 5 nations)
+- ✅ Combat AI (Aggressive/StandGround/Passive stances, building attacks)
+- ✅ Orbital camera, terrain heightmap, GPU model rendering
+- ✅ Unit commands (move, attack-move, patrol, formation-move)
+- ✅ Building destruction, auto-repair, rally points
+- ✅ Mobile responsive CSS, touch gestures, swipe navigation
+- ✅ Procedural sound effects, particle system
+- ✅ Map editor, marquee selection, health bars, minimap
+- ✅ Tutorial engine, .sav campaign parser
+
+### In Progress / Next
+- See IMPLEMENTATION_PLAN.md "Next Session" section for 3-5 concrete steps.
+
+---
+
+## 6. Project Files
+
+| File | Purpose |
+|------|---------|
+| `BASE.md` | **This file** — foundational truth, highest priority |
+| `AGENTS.md` | Operational rules for AI coding agents (derived from BASE.md) |
+| `IMPLEMENTATION_PLAN.md` | Roadmap, session log, next steps |
+| `TECHNOLOGY_CHOICE.md` | Tech stack decisions and rationale |
+| `README.md` | Project overview, status, quick start |
+| `engine/src/lib.rs` | Main WASM engine (~5300 lines) |
+| `engine/index.html` | Single-page UI (~6500 lines) |
+| `engine/config/data.js` | Building/resource/unit/nation definitions |
+
+---
+
+*Last updated: 2026-06-21 — 519 tests*
+*This file takes precedence over all other project documentation.*

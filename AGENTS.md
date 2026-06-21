@@ -1,80 +1,66 @@
-# ⚠️ S4WN AI Agent Rules — READ FIRST
+# AGENTS.md — S4WN AI Agent Operational Rules
 
-**This file is AUTHORITATIVE. Do NOT override, ignore, or "improve" these rules unless explicitly asked by the user.**
-
-Changes to this file require explicit user instruction.
+> **⚠️ Read BASE.md first.** BASE.md is the foundational source of truth. This file contains operational rules for AI agents working on this project. All rules here derive from BASE.md. When in doubt, BASE.md wins.
 
 ---
 
-## 1. ASSET POLICY (NON-NEGOTIABLE)
+## Priority Order
 
-- **NO original Siedler 4 game assets** (sprites, textures, sounds, music) are ever extracted or committed.
-- All visuals and audio must be **generated from scratch** and placed in `assets/`.
-- Use standard web formats: PNG, WebP, OGG, JSON — never proprietary containers.
-- **Exception — maps & campaigns:** parse original `*.map` / `*.sav` for scenario data only, map to our own asset IDs.
-
----
-
-## 2. WASM EXPORT CHECKLIST (NEVER SKIP)
-
-Adding a new `#[wasm_bindgen]` export to `engine/src/lib.rs`:
-
-1. Add the function with `#[wasm_bindgen]` attribute
-2. **MANDATORY: Rebuild WASM** — `cd engine && wasm-pack build --target web --release`
-3. **VERIFY each new export exists:** `grep "export function $fn" pkg/s4wn_engine.js`
-4. **If an export is MISSING**, the function is internal-only — remove it from the JS import
-5. **Bump cache buster** in `index.html` — change `?v=N` to `?v=N+1`
-6. Adding imports to `index.html` without rebuilding `pkg/` is the #1 cause of splash-screen stalls
+1. **BASE.md** — foundational knowledge (read first, never override)
+2. **This file (AGENTS.md)** — operational rules
+3. **IMPLEMENTATION_PLAN.md** — roadmap and session log
+4. **TECHNOLOGY_CHOICE.md** — tech stack rationale
 
 ---
 
-## 3. WORKFLOW
+## Session Protocol
 
-### Every session MUST:
-1. Resolve open GitHub issues FIRST — before any new features
-2. Focus on ONE small atomic task per run
-3. Run `cargo test` after every Rust change — all tests must pass
-4. `git pull --rebase` before every push — cron jobs push concurrently
+### Start of every session:
+1. Read `BASE.md`
+2. Fetch open GitHub issues via API (token in `/opt/data/.env`)
+3. Read `IMPLEMENTATION_PLAN.md` "Next Session" section
 
-### Every session MUST end with:
-1. `git add -A && git commit` with meaningful message
-2. `git push` — if fails, `git pull --rebase` then retry
-3. Update `IMPLEMENTATION_PLAN.md` — mark completed items, log session, write 3-5 next steps
-4. Update `README.md` if status changed
+### During session:
+- Resolve open issues FIRST (stability > features)
+- One small atomic task per run
+- `cargo test` after every Rust change — all 519 tests must pass
+- Raise GitHub issues for genuinely ambiguous design decisions
 
----
-
-## 4. CRITICAL PITFALLS
-
-- **`parent.clientHeight` for canvas:** The DOM parent of `position:fixed` canvas has zero/meaningless height. Use `window.innerHeight` instead.
-- **`spawn_rubble_effect`:** This is an INTERNAL Rust fn called from `tick_building_destructions`. It has NO `#[wasm_bindgen]` wrapper. Never import it in JS.
-- **Map dimensions:** `map.width` and `map.height` are public fields, not methods. Use `map.width`, not `map.width()`.
-- **Adding enum variants:** Must update ALL match arms across `lib.rs`, `units.rs`, etc. Run `cargo test --lib` to find all match sites.
-- **`pkg/` is gitignored:** Force-add with `git add -f engine/pkg/` when rebuilding WASM.
+### End of every session (MANDATORY):
+1. `cargo test` green
+2. `git add -A && git commit` with meaningful message
+3. `git push` — if fails, `git pull --rebase` then retry
+4. Update `IMPLEMENTATION_PLAN.md` — mark completed, log session, write 3-5 next steps
+5. Update `README.md` if status changed
 
 ---
 
-## 5. GITHUB ISSUES
+## Critical Pitfalls (from BASE.md §4)
 
-- **Raise proactively** for genuinely ambiguous design decisions
-- **Close via commit message:** `Fixes #N` in the commit body
-- **API access in cron:** Use `python3` heredoc with `urllib.request`, token from `/opt/data/.env`
-- **GH CLI not available:** Use API directly
-
----
-
-## 6. L3 MAP FORMAT
-
-L3 maps are S4ME/Settlers United compressed format — NOT raw tile data. Do NOT attempt to implement L3 decompression. Direct users to re-save as WRLD in S4ME Editor.
+- `parent.clientHeight` on `position:fixed` canvas returns ~19px on mobile → use `window.innerHeight`
+- `spawn_rubble_effect` is internal-only → no `#[wasm_bindgen]` → never import in JS
+- `map.width`/`map.height` are fields, not methods
+- Adding enum variants → update ALL match arms → `cargo test --lib` finds missed ones
+- `engine/pkg/` is gitignored → force-add with `git add -f`
+- L3 maps are compressed → do NOT implement decompression
 
 ---
 
-## 7. COMMUNICATION
+## WASM Export Checklist (from BASE.md §3)
 
-- Keep responses **concise** — short direct answers on Telegram
+1. `#[wasm_bindgen]` in `lib.rs`
+2. `wasm-pack build --target web --release`
+3. Verify exports: `grep "export function $fn" pkg/s4wn_engine.js`
+4. Bump cache: `?v=N` → `?v=N+1` in `index.html`
+5. Never add JS imports without rebuilding pkg/
+
+---
+
+## Communication
+
+- Keep responses concise — short direct answers on Telegram
 - Daniel prefers fewer, longer messages over many short ones
 
 ---
 
-*Last updated: 2026-06-21*
-*Do not modify without explicit user request.*
+*Derived from BASE.md. Do not modify without explicit user request.*
