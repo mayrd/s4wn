@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 147 | 2026-06-21 | Fix #54: water fallback on map load failure + JSON parse robustness (561 tests) |
 | 146 | 2026-06-21 | SquadLeader combat aura (+15% damage to allies in 5-tile range) (561 tests) |
 | 145 | 2026-06-21 | Barracks auto-promotion to SquadLeader (551 tests) |
 | 144 | 2026-06-21 | Unit rank/experience system (541 tests) |
