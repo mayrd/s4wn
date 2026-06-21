@@ -203,6 +203,15 @@ pub fn spawn_leaf_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
     );
 }
 
+/// Spawn building destruction rubble: brown/grey chunks burst + dust cloud.
+/// Used when a building is destroyed (combat damage or demolition).
+pub fn spawn_rubble_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
+    // Rubble chunks: brown/grey, medium speed, 20 particles
+    ps.spawn_burst(tile_x, tile_y, 0.0, 20, 0.45, 0.35, 0.25, 3.5, 1.2, 7.0);
+    // Dust overlay: lighter, slower, 8 particles
+    ps.spawn_burst(tile_x, tile_y, 0.0, 8, 0.7, 0.65, 0.55, 1.5, 0.8, 10.0);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -441,4 +450,24 @@ mod tests {
         let p = alive[0];
         assert!(p.g > p.r, "leaf should be green-dominant (g > r): g={}, r={}", p.g, p.r);
     }
+
+    #[test]
+    fn test_rubble_effect() {
+        let mut ps = ParticleSystem::new();
+        spawn_rubble_effect(&mut ps, 10.0, 20.0);
+        // 20 rubble + 8 dust = 28 particles
+        assert!(ps.alive_count() > 0 && ps.alive_count() <= 28);
+    }
+
+    #[test]
+    fn test_rubble_brown_tint() {
+        let mut ps = ParticleSystem::new();
+        spawn_rubble_effect(&mut ps, 5.0, 5.0);
+        let alive: Vec<&Particle> = ps.particles.iter().filter(|p| p.alive).collect();
+        assert!(!alive.is_empty());
+        // Rubble particles should be brown-dominant (r > b)
+        let rubble_count = alive.iter().filter(|p| p.r > p.b).count();
+        assert!(rubble_count > 0, "at least some rubble particles should be brown-dominant");
+    }
 }
+

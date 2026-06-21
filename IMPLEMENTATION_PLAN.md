@@ -391,7 +391,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=45. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 470 engine + 30 server = 500 total (462 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 478 engine + 30 server = 508 total (478 `cargo test --lib`). `cargo test --lib` must pass before every push. 478 tests.
 
 ## Next Session — Concrete Steps
 
@@ -491,10 +491,11 @@ All Phase 5 steps are now complete:
 ### Next Session — Concrete Steps
 
 1. ✅ Add unit rally point flag (set rally point for buildings, newly trained units auto-move there) — Done Session 131
-2. Add building destruction animation (scale-down + rubble particles when building is destroyed)
+2. ✅ Add building destruction animation (scale-down + rubble particles when building is destroyed) — Done Session 132
 3. Add unit formation movement (units maintain relative positions when moving as group)
 4. Implement .sav full campaign state restoration from parsed chunk data
 5. Investigate adding unit stances (aggressive/stand ground/passive) — creates GitHub issue for design discussion
+6. Add building HP system so combat can damage and eventually destroy buildings
 
 ---
 

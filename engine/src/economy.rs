@@ -857,6 +857,9 @@ pub struct Building {
     pub owner_id: u8,
     /// Rally point — units trained at this building auto-move here. None = no rally point set.
     pub rally_point: Option<(usize, usize)>,
+    /// Destruction animation timer (seconds remaining). When Some(t), building is being destroyed.
+    /// None = building is not being destroyed.
+    pub destruction_timer: Option<f32>,
 }
 
 impl Building {
@@ -882,6 +885,7 @@ impl Building {
             training_kind: UnitKind::Swordsman,
             owner_id: 0,
             rally_point: None,
+            destruction_timer: None,
         }
     }
 
@@ -905,6 +909,38 @@ impl Building {
         })
     }
 
+
+    /// Start the destruction animation for this building.
+    /// Sets the destruction timer to the given duration in seconds.
+    pub fn start_destruction(&mut self, duration_secs: f32) {
+        self.destruction_timer = Some(duration_secs);
+        self.active = false;
+    }
+
+    /// Tick the destruction timer by `dt` seconds.
+    /// Returns true if the destruction animation just completed this tick.
+    /// Returns false if the building is not being destroyed or the animation is still playing.
+    pub fn tick_destruction(&mut self, dt: f32) -> bool {
+        if let Some(remaining) = self.destruction_timer {
+            let new_val = remaining - dt;
+            if new_val <= 0.0 {
+                self.destruction_timer = None;
+                return true; /* destruction complete */
+            } else {
+                self.destruction_timer = Some(new_val);
+            }
+        }
+        false
+    }
+
+    /// Returns the destruction animation progress (0.0 = just started, 1.0 = about to finish).
+    /// Returns None if the building is not being destroyed.
+    pub fn destruction_progress(&self) -> Option<f32> {
+        self.destruction_timer.map(|remaining| {
+            let total = remaining.max(0.0) + 0.001; /* avoid div by zero */
+            1.0 - (remaining / total)
+        })
+    }
     /// Assign a settler to this building
     pub fn assign_settler(&mut self, settler_id: u32) -> bool {
         if self.assigned_settlers.len() < self.max_settlers as usize {
@@ -1206,6 +1242,38 @@ impl Economy {
     /// Returns Some((x, y)) if the building exists and has a rally point, None otherwise.
     pub fn get_building_rally_point(&self, building_index: usize) -> Option<(usize, usize)> {
         self.buildings.get(building_index).and_then(|b| b.rally_point)
+    }
+
+    /// Tick destruction timers for all buildings.
+    /// Returns a Vec of (building_index, x, y) for buildings whose destruction animation completed this tick.
+    pub fn tick_destructions(&mut self, dt: f32) -> Vec<(usize, usize, usize)> {
+        let mut destroyed = Vec::new();
+        for (i, b) in self.buildings.iter_mut().enumerate() {
+            if b.tick_destruction(dt) {
+                destroyed.push((i, b.x, b.y));
+            }
+        }
+        // Remove destroyed buildings in reverse index order to preserve indices
+        let mut indices: Vec<usize> = destroyed.iter().map(|(i, _, _)| *i).collect();
+        indices.sort_unstable();
+        indices.dedup();
+        for &i in indices.iter().rev() {
+            if i < self.buildings.len() {
+                self.buildings.remove(i);
+            }
+        }
+        destroyed
+    }
+
+    /// Start the destruction animation for a building at the given index.
+    /// Returns true if the building exists and destruction was started.
+    pub fn start_building_destruction(&mut self, building_index: usize, duration_secs: f32) -> bool {
+        if let Some(b) = self.buildings.get_mut(building_index) {
+            b.start_destruction(duration_secs);
+            true
+        } else {
+            false
+        }
     }
 
     /// Spawn a settler and assign it to a building.
@@ -3863,5 +3931,93 @@ mod rally_point_tests {
             let idle = military_units.iter().any(|u| u.state == crate::units::UnitState::Idle);
             assert!(idle, "Without rally point, trained unit should be idle");
         }
+    }
+
+    // ── Building destruction tests ──
+
+    #[test]
+    fn test_building_destruction_timer() {
+        let mut b = Building::new(BuildingType::Sawmill, 3, 4);
+        assert!(b.destruction_timer.is_none());
+        assert!(!b.active); // not yet constructed
+
+        // Construct the building first
+        b.construction = 1.0;
+        b.active = true;
+
+        b.start_destruction(1.5);
+        assert_eq!(b.destruction_timer, Some(1.5));
+        assert!(!b.active);
+    }
+
+    #[test]
+    fn test_building_tick_destruction_completes() {
+        let mut b = Building::new(BuildingType::Sawmill, 3, 4);
+        b.construction = 1.0;
+        b.start_destruction(1.0);
+
+        // Tick halfway - not complete
+        let done = b.tick_destruction(0.5);
+        assert!(!done);
+        assert!(b.destruction_timer.is_some());
+
+        // Tick remaining - complete
+        let done = b.tick_destruction(0.6);
+        assert!(done);
+        assert!(b.destruction_timer.is_none());
+    }
+
+    #[test]
+    fn test_building_tick_destruction_no_op_when_not_destroying() {
+        let mut b = Building::new(BuildingType::Sawmill, 3, 4);
+        let done = b.tick_destruction(0.5);
+        assert!(!done);
+    }
+
+    #[test]
+    fn test_economy_tick_destructions() {
+        let mut eco = Economy::new();
+        eco.place_building(BuildingType::Sawmill, 3, 4);
+        eco.place_building(BuildingType::Farm, 6, 7);
+        eco.buildings[0].construction = 1.0;
+        eco.buildings[1].construction = 1.0;
+
+        // Start destruction on building 0 only
+        eco.start_building_destruction(0, 1.0);
+
+        // Tick - building 0 should complete
+        let destroyed = eco.tick_destructions(1.5);
+        assert_eq!(destroyed.len(), 1);
+        assert_eq!(destroyed[0].0, 0); // index 0
+        assert_eq!(destroyed[0].1, 3); // x
+        assert_eq!(destroyed[0].2, 4); // y
+
+        // Building 1 should not be affected (now at index 0 after removal)
+        assert_eq!(eco.buildings.len(), 1);
+        assert!(eco.buildings[0].destruction_timer.is_none());
+        assert_eq!(eco.buildings[0].kind, BuildingType::Farm);
+    }
+
+    #[test]
+    fn test_economy_start_building_destruction_invalid_index() {
+        let mut eco = Economy::new();
+        let result = eco.start_building_destruction(99, 1.0);
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_building_destruction_progress() {
+        let mut b = Building::new(BuildingType::Sawmill, 3, 4);
+        b.construction = 1.0;
+        b.start_destruction(2.0);
+
+        // Progress should be near 0 at start
+        let p = b.destruction_progress().unwrap();
+        assert!(p >= 0.0 && p < 0.5, "progress should be low at start: {}", p);
+
+        // Tick halfway
+        b.tick_destruction(1.0);
+        let p2 = b.destruction_progress().unwrap();
+        assert!(p2 > p, "progress should increase over time");
     }
 }

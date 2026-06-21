@@ -2709,7 +2709,7 @@ pub fn get_building_info(idx: usize) -> String {
                 };
 
                 return format!(
-                    r#"{{"kind":"{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"settlers":[{}],"max_settlers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}}}}{}"#,
+                    r#"{{"kind":"{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"settlers":[{}],"max_settlers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}},"destruction_progress":{}{}"#,
                     kind.name(),
                     b.x,
                     b.y,
@@ -2724,7 +2724,8 @@ pub fn get_building_info(idx: usize) -> String {
                     inputs.join(","),
                     outputs.join(","),
                     obuf_parts.join(","),
-                producing_tool.unwrap_or_default(),
+                    b.destruction_progress().unwrap_or(-1.0),
+                    producing_tool.unwrap_or_default(),
                 );
             }
         }
@@ -4006,6 +4007,83 @@ pub fn get_building_rally_point(building_index: usize) -> String {
                 Some((x, y)) => format!(r#"{{"x":{},"y":{}}}"#, x, y),
                 None => String::from("null"),
             }
+        } else {
+            String::from("null")
+        }
+    }
+}
+
+/// Start the destruction animation for a building at the given index.
+/// `duration_secs` controls how long the scale-down animation plays (e.g. 1.5).
+/// Returns true if the building exists and destruction was started.
+#[wasm_bindgen]
+pub fn start_building_destruction(building_index: usize, duration_secs: f32) -> bool {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.game_loop.state.economy.start_building_destruction(building_index, duration_secs)
+        } else {
+            false
+        }
+    }
+}
+
+/// Tick destruction timers for all buildings by `dt` seconds.
+/// Returns JSON array of completed destructions: [{"index":N,"x":N,"y":N}, ...]
+/// JS should call this each frame and remove buildings from the model list.
+#[wasm_bindgen]
+pub fn tick_building_destructions(dt: f32) -> String {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            let completed = app.game_loop.state.economy.tick_destructions(dt);
+            // Spawn rubble particles for each completed destruction
+            for &(_idx, bx, by) in &completed {
+                crate::particle::spawn_rubble_effect(
+                    &mut app.particle_system,
+                    bx as f32 + 0.5,
+                    by as f32 + 0.5,
+                );
+            }
+            let parts: Vec<String> = completed.iter()
+                .map(|(idx, x, y)| format!(r#"{{"index":{},"x":{},"y":{}}}"#, idx, x, y))
+                .collect();
+            format!("[{}]", parts.join(","))
+        } else {
+            String::from("[]")
+        }
+    }
+}
+
+/// Get the destruction animation progress for a building (0.0 to 1.0, or -1.0 if not destroying).
+#[wasm_bindgen]
+pub fn get_building_destruction_progress(building_index: usize) -> f32 {
+    unsafe {
+        if let Some(ref app) = APP {
+            if let Some(b) = app.game_loop.state.economy.buildings.get(building_index) {
+                b.destruction_progress().unwrap_or(-1.0)
+            } else {
+                -1.0
+            }
+        } else {
+            -1.0
+        }
+    }
+}
+
+/// Get building info at a tile position. Returns JSON or "null" if no building.
+#[wasm_bindgen]
+pub fn get_building_at_tile(tile_x: usize, tile_y: usize) -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            for (i, b) in app.game_loop.state.economy.buildings.iter().enumerate() {
+                if b.x == tile_x && b.y == tile_y {
+                    let progress = b.destruction_progress().unwrap_or(-1.0);
+                    return format!(
+                        r#"{{"index":{},"kind":"{}","x":{},"y":{},"construction":{},"active":{},"destruction_progress":{}}}"#,
+                        i, b.kind.name(), b.x, b.y, b.construction, b.active, progress
+                    );
+                }
+            }
+            String::from("null")
         } else {
             String::from("null")
         }

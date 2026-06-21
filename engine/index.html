@@ -683,6 +683,7 @@
   canvas.placing { cursor: crosshair !important; }
   canvas.attack-move { cursor: crosshair !important; }
   canvas.patrol { cursor: alias !important; }
+  canvas.demolition { cursor: not-allowed !important; }
   #placement-status {
     position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
     z-index: 25; font-size: 12px; color: #e8d5a0;
@@ -1303,7 +1304,12 @@ import init, {
     get_units_in_rect,
     move_units_to_tile,
     order_patrol,
-} from './pkg/s4wn_engine.js?v=44';
+    start_building_destruction,
+    tick_building_destructions,
+    get_building_destruction_progress,
+    spawn_rubble_effect,
+    get_building_at_tile,
+} from './pkg/s4wn_engine.js?v=46';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -2971,6 +2977,20 @@ window.addEventListener('keydown', (e) => {
     } else if (e.key === 'Escape' && patrolMoveMode) {
         patrolMoveMode = false;
         canvas.classList.remove('patrol');
+    } else if (e.key.toLowerCase() === 'x' && !placementMode && !attackMoveMode && !patrolMoveMode) {
+        // Demolition mode: click a building to destroy it
+        if (demolitionMode) {
+            demolitionMode = false;
+            canvas.classList.remove('demolition');
+        } else {
+            demolitionMode = true;
+            canvas.classList.add('demolition');
+            console.log('Demolition mode: click a building to destroy it');
+            try { Sfx.playUIClick(); } catch(e) {}
+        }
+    } else if (e.key === 'Escape' && demolitionMode) {
+        demolitionMode = false;
+        canvas.classList.remove('demolition');
     }
 });
 
@@ -2981,6 +3001,7 @@ let marqueeEndX = 0, marqueeEndY = 0;
 let selectedUnitIds = []; // currently selected military unit IDs
 let attackMoveMode = false; // when true, clicking orders attack-move
 let patrolMoveMode = false; // when true, clicking orders patrol
+let demolitionMode = false; // when true, clicking destroys buildings
 const marqueeBox = document.getElementById('marquee-box');
 const selCount = document.getElementById('selection-count');
 
@@ -3131,6 +3152,26 @@ canvas.addEventListener('click', (e) => {
             attackMoveMode = false;
             canvas.classList.remove('attack-move');
         }
+        return;
+    }
+
+    // ── Demolition mode ──
+    if (demolitionMode) {
+        if (typeof get_building_at_tile === 'function') {
+            const bInfo = get_building_at_tile(e.offsetX, e.offsetY);
+            if (bInfo) {
+                const b = JSON.parse(bInfo);
+                if (b.index !== undefined && typeof start_building_destruction === 'function') {
+                    const started = start_building_destruction(b.index, 1.5);
+                    if (started) {
+                        console.log(`Demolition started for building ${b.index} (${b.kind}) at (${b.x},${b.y})`);
+                        try { Sfx.playError(); } catch(e) {}
+                    }
+                }
+            }
+        }
+        demolitionMode = false;
+        canvas.classList.remove('demolition');
         return;
     }
 
@@ -5118,6 +5159,16 @@ async function main() {
 
             // Tool pickup notifications
             trackToolPickups();
+
+            // Building destruction animation tick
+            if (typeof tick_building_destructions === 'function') {
+                try {
+                    const destroyed = JSON.parse(tick_building_destructions(0.016));
+                    for (const d of destroyed) {
+                        console.log(`Building ${d.index} destroyed at (${d.x},${d.y})`);
+                    }
+                } catch(e) {}
+            }
 
             // Building affordability in toolbar
             refreshBuildingAffordability();
