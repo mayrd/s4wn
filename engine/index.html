@@ -1357,6 +1357,7 @@ import init, {
     get_building_at_tile,
     get_units_in_rect,
     move_units_to_tile,
+    formation_move,
     order_patrol,
     set_unit_stance,
     set_units_stance,
@@ -1368,7 +1369,7 @@ import init, {
     get_building_hp,
     get_building_max_hp,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=50';
+} from './pkg/s4wn_engine.js?v=51';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3190,7 +3191,7 @@ canvas.addEventListener('contextmenu', (e) => {
     if (!info) return;
     const t = JSON.parse(info);
     const idsJson = JSON.stringify(selectedUnitIds);
-    const moved = move_units_to_tile(idsJson, t.x, t.y);
+    const moved = formation_move(idsJson, t.x, t.y);
     if (moved > 0) {
         console.log('Ordered ' + moved + ' unit(s) to (' + t.x + ', ' + t.y + ')');
         try { Sfx.playUIClick(); } catch(e) {}
@@ -3251,7 +3252,7 @@ canvas.addEventListener('click', (e) => {
         if (aInfo) {
             const at = JSON.parse(aInfo);
             const idsJson = JSON.stringify(selectedUnitIds);
-            const moved = move_units_to_tile(idsJson, at.x, at.y);
+            const moved = formation_move(idsJson, at.x, at.y);
             if (moved > 0) {
                 console.log('Attack-moving ' + moved + ' unit(s) to (' + at.x + ', ' + at.y + ')');
                 try { Sfx.playUIClick(); } catch(e) {}
