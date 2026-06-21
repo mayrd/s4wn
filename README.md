@@ -1,6 +1,6 @@
 # S4WN — Siedler 4 Web-Native
 
-> **⚠️ Priority: [BASE.md](BASE.md)** contains game knowledge (building data, production chains). All implementation must respect BASE.md. Never modify BASE.md.
+> **⚠️ Priority: [BASE.md](BASE.md)** contains game knowledge (building data, production chains). Never modify BASE.md.
 
 Web-native reimplementation of *The Settlers IV* (2001). Open-source, runs in any browser, no original game files required.
 
@@ -45,8 +45,6 @@ Browser → index.html
 - ✅ Unit commands, stances, building destruction
 - ✅ Mobile responsive, touch gestures, particles, sound
 
-See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for roadmap.
-
 ---
 
 ## Development
@@ -58,8 +56,7 @@ python3 -m http.server 8000                           # Serve locally
 ```
 
 ### For AI Agents
-
-Read in order: **BASE.md → AGENTS.md → IMPLEMENTATION_PLAN.md**
+Read in order: **BASE.md → AGENTS.md**
 
 ---
 
@@ -67,4 +64,4 @@ Read in order: **BASE.md → AGENTS.md → IMPLEMENTATION_PLAN.md**
 
 - **[siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/)** — building/unit/production chain mechanics
 - **[BASE.md](BASE.md)** — building reference data (do not modify)
-- **[TECHNOLOGY_CHOICE.md](TECHNOLOGY_CHOICE.md)** — tech stack rationale
+- **[AGENTS.md](AGENTS.md)** — agent rules, tech choices, implementation plan
