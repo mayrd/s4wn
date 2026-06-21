@@ -1398,6 +1398,20 @@ window.S4WN_CONFIG = {
     C.units.forEach(u => { window.UNIT_STATS[u.id] = u; });
     window.NATION_CONFIG = {};
     C.nations.forEach(n => { window.NATION_CONFIG[n.id] = n; });
-    window.RESOURCE_NAMES = [null, "IronOre", "Coal", "Gold", "Stone", "Sulfur", "Fish", "Meat", "Grain"];
+    window.RESOURCE_NAMES = {};
+    C.resources.forEach(r => { window.RESOURCE_NAMES[r.id] = r.name; });
+    // Ensure English names for resources that lack a "name" field
+    const RESOURCE_EN_NAMES = {
+        Wood:'Wood', Stone:'Stone', IronOre:'Iron Ore', Coal:'Coal', Gold:'Gold',
+        Sulfur:'Sulfur', Water:'Water', Grain:'Grain', Iron:'Iron', Planks:'Planks',
+        Tools:'Tools', Weapons:'Weapons', Bread:'Bread', Meat:'Meat', Fish:'Fish',
+        Flour:'Flour', Beer:'Beer', Wine:'Wine', Coins:'Coins', Bows:'Bows',
+        Cloth:'Cloth', Leather:'Leather', Armor:'Armor', Gunpowder:'Gunpowder',
+        Cannons:'Cannons', Horses:'Horses', Pottery:'Pottery', Glass:'Glass',
+        Marble:'Marble'
+    };
+    for (const [k, v] of Object.entries(RESOURCE_EN_NAMES)) {
+        if (!window.RESOURCE_NAMES[k]) window.RESOURCE_NAMES[k] = v;
+    }
     console.log("S4WN config loaded:", C.buildings.length, "buildings,", C.resources.length, "resources,", C.terrain.length, "terrain,", C.units.length, "units,", C.nations.length, "nations");
 })();

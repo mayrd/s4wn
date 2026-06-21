@@ -3013,7 +3013,7 @@ function tResource(name) {
     if (typeof currentLang !== 'undefined' && currentLang === 'de' && RESOURCE_NAMES_DE[name]) {
         return RESOURCE_NAMES_DE[name];
     }
-    return name;
+    return RESOURCE_NAMES[name] || name;
 }
 
 // Translate a terrain name
@@ -3035,11 +3035,20 @@ function tUnit(name) {
 let placementMode = null; // building type string or null
 let placementButtons = [];
 
+// Translate resource keys in a cost string like "Wood:5, Stone:2"
+function translateCost(costStr) {
+    if (!costStr) return '?';
+    return costStr.split(', ').map(pair => {
+        const [key, val] = pair.split(':');
+        return `${tResource(key)}:${val}`;
+    }).join(', ');
+}
+
 function showBuildCostTooltip(kindName) {
     const cost = get_build_cost(kindName);
     if (cost && !cost.includes('error')) {
         const c = JSON.parse(cost);
-        const parts = Object.entries(c).map(([k,v]) => `${k}:${v}`).join(', ');
+        const parts = Object.entries(c).map(([k,v]) => `${tResource(k)}:${v}`).join(', ');
         return `Cost: ${parts}`;
     }
     return '';
