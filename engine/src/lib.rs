@@ -4159,6 +4159,46 @@ pub fn get_building_destruction_progress(building_index: usize) -> f32 {
     }
 }
 
+/// Apply damage to a building at the given index. If HP reaches 0, destruction starts.
+/// Returns the remaining HP, or 0 if the building doesn't exist.
+#[wasm_bindgen]
+pub fn damage_building(building_index: usize, amount: u32) -> u32 {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            if let Some(b) = app.game_loop.state.economy.buildings.get_mut(building_index) {
+                return b.take_damage(amount);
+            }
+        }
+        0
+    }
+}
+
+/// Get the current HP of a building at the given index. Returns 0 if not found.
+#[wasm_bindgen]
+pub fn get_building_hp(building_index: usize) -> u32 {
+    unsafe {
+        if let Some(ref app) = APP {
+            app.game_loop.state.economy.buildings.get(building_index)
+                .map_or(0, |b| b.hp)
+        } else {
+            0
+        }
+    }
+}
+
+/// Get the max HP of a building at the given index. Returns 0 if not found.
+#[wasm_bindgen]
+pub fn get_building_max_hp(building_index: usize) -> u32 {
+    unsafe {
+        if let Some(ref app) = APP {
+            app.game_loop.state.economy.buildings.get(building_index)
+                .map_or(0, |b| b.max_hp)
+        } else {
+            0
+        }
+    }
+}
+
 /// Get building info at a tile position. Returns JSON or "null" if no building.
 #[wasm_bindgen]
 pub fn get_building_at_tile(tile_x: usize, tile_y: usize) -> String {

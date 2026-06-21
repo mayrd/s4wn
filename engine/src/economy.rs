@@ -782,6 +782,45 @@ impl BuildingType {
             _ => None,
         }
     }
+
+    /// Maximum hit points for this building type.
+    /// Castle, Fortress, and DarkFortress are the toughest; light economic buildings are fragile.
+    pub fn max_hp(self) -> u32 {
+        match self {
+            BuildingType::Castle => 500,
+            BuildingType::Fortress | BuildingType::DarkFortress => 500,
+            BuildingType::GuardTower => 300,
+            BuildingType::Barracks => 250,
+            BuildingType::SiegeWorkshop => 250,
+            BuildingType::DemonGate => 350,
+            BuildingType::Storehouse => 200,
+            BuildingType::Colosseum | BuildingType::Amphitheater => 300,
+            BuildingType::TempleOfBacchus | BuildingType::SanctuaryOfMinerva
+            | BuildingType::SanctuaryOfVulcan => 200,
+            BuildingType::MeadHall | BuildingType::SanctuaryOfOdin
+            | BuildingType::SanctuaryOfThor | BuildingType::SanctuaryOfFreya
+            | BuildingType::Runestone => 200,
+            BuildingType::TempleOfChac | BuildingType::SanctuaryOfKukulkan
+            | BuildingType::SanctuaryOfQuetzalcoatl | BuildingType::SanctuaryOfHuitzilopochtli
+            | BuildingType::Observatory => 200,
+            BuildingType::OracleOfApollo | BuildingType::SanctuaryOfArtemis
+            | BuildingType::SanctuaryOfPoseidon | BuildingType::SanctuaryOfApollo => 200,
+            BuildingType::DarkTemple | BuildingType::SanctuaryOfMorbus
+            | BuildingType::SanctuaryOfPestilence => 200,
+            BuildingType::Mine | BuildingType::Toolsmith | BuildingType::Weaponsmith
+            | BuildingType::Waterworks | BuildingType::Smelter => 150,
+            BuildingType::Stonecutter | BuildingType::Sawmill | BuildingType::Mill
+            | BuildingType::Bakery | BuildingType::Butcher => 120,
+            BuildingType::Farm | BuildingType::Fisherman | BuildingType::Woodcutter => 100,
+            BuildingType::Apiary | BuildingType::MeadMaker => 100,
+            BuildingType::DarkGarden | BuildingType::MushroomFarm => 100,
+            BuildingType::Shipyard => 200,
+            BuildingType::RoadLayer => 80,
+            BuildingType::AgaveFarm => 100,
+            BuildingType::Distillery => 120,
+            _ => 150,
+        }
+    }
 }
 
 /// Convert a tool name string to its ToolType discriminant (u8).
@@ -860,6 +899,10 @@ pub struct Building {
     /// Destruction animation timer (seconds remaining). When Some(t), building is being destroyed.
     /// None = building is not being destroyed.
     pub destruction_timer: Option<f32>,
+    /// Current hit points. When 0, the building starts destruction.
+    pub hp: u32,
+    /// Maximum hit points (set from BuildingType::max_hp()).
+    pub max_hp: u32,
 }
 
 impl Building {
@@ -869,6 +912,7 @@ impl Building {
         let required_tool = kind.required_tool().and_then(tool_code_from_name);
         // Buildings with 0 build time start immediately complete (Castle, Storehouse)
         let start_construction = if kind.build_time() == 0 { 1.0 } else { 0.0 };
+        let max_hp = kind.max_hp();
         Building {
             kind,
             x,
@@ -886,6 +930,8 @@ impl Building {
             owner_id: 0,
             rally_point: None,
             destruction_timer: None,
+            hp: max_hp,
+            max_hp,
         }
     }
 
@@ -909,6 +955,16 @@ impl Building {
         })
     }
 
+
+    /// Apply damage to this building. If HP reaches 0, starts the destruction animation.
+    /// Returns the remaining HP after damage.
+    pub fn take_damage(&mut self, amount: u32) -> u32 {
+        self.hp = self.hp.saturating_sub(amount);
+        if self.hp == 0 {
+            self.start_destruction(1.5);
+        }
+        self.hp
+    }
 
     /// Start the destruction animation for this building.
     /// Sets the destruction timer to the given duration in seconds.
@@ -4019,5 +4075,99 @@ mod rally_point_tests {
         b.tick_destruction(1.0);
         let p2 = b.destruction_progress().unwrap();
         assert!(p2 > p, "progress should increase over time");
+    }
+
+    // ── Building HP Tests ──────────────────────────────────────────────────
+
+    #[test]
+    fn test_building_max_hp_categories() {
+        // Verify HP values for key building types
+        assert_eq!(BuildingType::Castle.max_hp(), 500);
+        assert_eq!(BuildingType::Fortress.max_hp(), 500);
+        assert_eq!(BuildingType::DarkFortress.max_hp(), 500);
+        assert_eq!(BuildingType::GuardTower.max_hp(), 300);
+        assert_eq!(BuildingType::Barracks.max_hp(), 250);
+        assert_eq!(BuildingType::Farm.max_hp(), 100);
+        assert_eq!(BuildingType::Woodcutter.max_hp(), 100);
+        assert_eq!(BuildingType::RoadLayer.max_hp(), 80);
+        assert_eq!(BuildingType::Storehouse.max_hp(), 200);
+        assert_eq!(BuildingType::Mine.max_hp(), 150);
+        assert_eq!(BuildingType::Sawmill.max_hp(), 120);
+    }
+
+    #[test]
+    fn test_building_new_has_full_hp() {
+        let b = Building::new(BuildingType::Castle, 0, 0);
+        assert_eq!(b.hp, 500);
+        assert_eq!(b.max_hp, 500);
+        assert_eq!(b.hp, b.max_hp);
+
+        let b2 = Building::new(BuildingType::Farm, 0, 0);
+        assert_eq!(b2.hp, 100);
+        assert_eq!(b2.max_hp, 100);
+    }
+
+    #[test]
+    fn test_building_take_damage_reduces_hp() {
+        let mut b = Building::new(BuildingType::Barracks, 0, 0);
+        b.construction = 1.0;
+        assert_eq!(b.hp, 250);
+
+        let remaining = b.take_damage(50);
+        assert_eq!(remaining, 200);
+        assert_eq!(b.hp, 200);
+    }
+
+    #[test]
+    fn test_building_take_damage_overkill() {
+        let mut b = Building::new(BuildingType::Farm, 0, 0);
+        b.construction = 1.0;
+        assert_eq!(b.hp, 100);
+
+        let remaining = b.take_damage(200);
+        assert_eq!(remaining, 0);
+        assert_eq!(b.hp, 0);
+    }
+
+    #[test]
+    fn test_building_take_damage_triggers_destruction_at_zero() {
+        let mut b = Building::new(BuildingType::Sawmill, 0, 0);
+        b.construction = 1.0;
+        b.active = true;
+        assert_eq!(b.hp, 120);
+
+        b.take_damage(120);
+        assert_eq!(b.hp, 0);
+        // Destruction should have started
+        assert!(b.destruction_timer.is_some(), "destruction timer should be set when HP reaches 0");
+        assert!(!b.active, "building should be inactive when destruction starts");
+    }
+
+    #[test]
+    fn test_building_take_damage_partial_no_destruction() {
+        let mut b = Building::new(BuildingType::Mine, 0, 0);
+        b.construction = 1.0;
+        b.active = true;
+        assert_eq!(b.hp, 150);
+
+        b.take_damage(100);
+        assert_eq!(b.hp, 50);
+        // Destruction should NOT have started
+        assert!(b.destruction_timer.is_none(), "destruction should not start when HP > 0");
+        assert!(b.active, "building should still be active");
+    }
+
+    #[test]
+    fn test_building_hp_persistence_after_damage() {
+        let mut b = Building::new(BuildingType::Fortress, 0, 0);
+        assert_eq!(b.hp, 500);
+
+        b.take_damage(100);
+        assert_eq!(b.hp, 400);
+        b.take_damage(50);
+        assert_eq!(b.hp, 350);
+        b.take_damage(350); // exactly to 0
+        assert_eq!(b.hp, 0);
+        assert!(b.destruction_timer.is_some());
     }
 }
