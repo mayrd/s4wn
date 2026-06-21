@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 | **Status:** Phase 6.17 — Building Combat (513 tests)
-| **Last updated:** 2026-06-21 (Session 138 — Building combat: units attack buildings, 513 tests)
+| **Last updated:** 2026-06-21 (Session 139 — Particle rendering: wiring overlay canvas drawing for all effects)
 
 ---
 
@@ -391,7 +391,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=46. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 504 engine + 30 server = 534 total (513 `cargo test --lib`). `cargo test --lib` must pass before every push. 513 tests.
+- **Test count:** 513 engine + 30 server = 543 total. `cargo test --lib` must pass before every push.
 - **WASM cache:** Current v=49.
 
 ## Next Session — Concrete Steps
@@ -523,11 +523,11 @@ All Phase 5 steps are now complete:
 1. Implement .sav full campaign state restoration from parsed chunk data
 2. ✅ Wire combat attacks to damage buildings — Done (Session 138)
 3. Add garrison interactions for military buildings (auto-defense when units are stationed)
-4. Investigate adding unit ranks/experience (S4 had 3 tiers: recruit, veteran, elite)
-5. Add attack-move formation preservation
-6. Wire combat attacks to damage buildings — ✅ Done (Session 138)
-7. Add building rubble particle effect hook on destruction
-8. Add building auto-repair via settlers (gradual HP regen for damaged buildings) (units maintain formation when A-moving)
+4. Investigate adding unit ranks/experience (S4 had 3 tiers: recruit, veteran, elite) — create GitHub issue
+5. Add attack-move formation preservation (units maintain formation when A-moving)
+6. Add building auto-repair via settlers (gradual HP regen for damaged buildings)
+7. ✅ Add building rubble particle effect hook on destruction — Done (Session 139)
+8. Add minimap building dots (color-coded by nation/type on minimap canvas)
 
 
 ### Session 133 — Unit Formation Movement ✅

@@ -67,7 +67,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 4 ✅ complete — Phase 5: 3D Pipeline** ✅ — **Phase 6: Particles + Mobile** ✅ — **Phase 6.5: Death Animation** ✅ — **Phase 6.6: Sound Effects** ✅ — **Phase 6.7: Day/Night Lighting Fix** ✅ — **Phase 6.8: Map Editor** ✅ — **Phase 6.9: Marquee Selection** ✅ — **Phase 6.10: Unit Commands** ✅ — **Phase 6.11: Health Bars + Minimap Dots** ✅ — **Phase 6.12: Rally Points** ✅ — **Phase 6.13: Building Destruction** ✅ -- **Phase 6.17: Building Combat** ✅ (513 tests)
+**Phase 4 ✅ complete — Phase 5: 3D Pipeline** ✅ — **Phase 6: Particles + Mobile** ✅ — **Phase 6.5: Death Animation** ✅ — **Phase 6.6: Sound Effects** ✅ — **Phase 6.7: Day/Night Lighting Fix** ✅ — **Phase 6.8: Map Editor** ✅ — **Phase 6.9: Marquee Selection** ✅ — **Phase 6.10: Unit Commands** ✅ — **Phase 6.11: Health Bars + Minimap Dots** ✅ — **Phase 6.12: Rally Points** ✅ — **Phase 6.13: Building Destruction** ✅ — **Phase 6.17: Building Combat** ✅ — **Phase 6.18: Particle Rendering** ✅ (543 tests)
 **Phase 6.16: Unit Stance — Engine + JS/UI ✅ (497 tests)
 - ✅ Mobile responsive CSS — @media queries for sub-768px viewports: full-width panels, larger touch targets, flex-wrap controls
 - ✅ Touch camera pan — single-finger drag (touchstart/touchmove/touchend)
@@ -84,6 +84,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Mobile test suite — 14 logic tests covering accordion, orientation, touch, pinch-zoom
 - ✅ Swipe gesture navigation — swipe left/right on canvas to toggle construction/stats panels (60px/400ms threshold), swipe hint indicators with auto-hide, CSS slide transitions
 - ✅ Particle effects system — Particle struct + ParticleSystem (MAX_PARTICLES=256), CPU-simulated with gravity/bounce/alpha fade, GPU point-sprite rendering via overlay shader, WASM exports (spawn_particle, spawn_build_effect, spawn_combat_effect, spawn_smoke_effect, spawn_leaf_effect, particle_count, clear_particles, get_particles_json), green sparkles on building placement, orange/red explosions on combat death, chimney smoke from buildings, floating leaves near forests, 36 new tests
+- ✅ Particle rendering wired to JS overlay canvas — `drawParticles()` renders particles as colored circles using isometric projection with alpha fade on selection-overlay. All 5 effect types now visible (build, combat, smoke, leaves, rubble).
 - ✅ Unit death animation — Dying state with 1.0s timer, tick_dying() countdown, death_animation_progress() for JS scale-down + fade rendering, tick_dying_units() in game loop, dying_progress in get_unit_info JSON. 8 new tests, 423 total.
 - ✅ Sound effects — procedural Web Audio API (UIClick, Build, Combat, Death, Error, MenuToggle). Respects sfxOn + masterVolume settings. 16 JS tests.
 - ✅ Map editor mode — Ctrl+Click terrain painting, clickable terrain palette (8 types), grid overlay dots, Shift+Click cycling
