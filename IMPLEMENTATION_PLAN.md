@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6.5 — Combat & Campaign Polish (487 tests)
-| **Last updated:** 2026-06-21 (Session 134 — Unit stance investigation + GitHub issue #51)
+| **Status:** Phase 6.5 — Combat & Campaign Polish (497 tests)
+| **Last updated:** 2026-06-21 (Session 135 — UnitStance engine implementation + tests)
 
 ---
 
@@ -391,7 +391,7 @@ protocol::tests               5 tests    Message serialization, room management
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
 - **WASM cache:** Current v=46. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 487 engine + 30 server = 517 total (487 `cargo test --lib`). `cargo test --lib` must pass before every push. 487 tests.
+- **Test count:** 497 engine + 30 server = 527 total (497 `cargo test --lib`). `cargo test --lib` must pass before every push. 497 tests.
 
 ## Next Session — Concrete Steps
 
@@ -495,11 +495,25 @@ All Phase 5 steps are now complete:
 - **Design:** Proposed 3-stance system (Aggressive/StandGround/Passive) with F1/F2/F3 hotkeys, overlay indicators, and 4 open questions for discussion.
 - **Tests:** All 487 engine + 30 server = 517 tests pass.
 
+### Session 135 — Unit Stance Engine Implementation ✅
+
+- **UnitStance enum:** Added 3 variants (Aggressive=0, StandGround=1, Passive=2) to units.rs with from_u8() and as_str().
+- **Unit struct:** Added `stance: UnitStance` field (default Aggressive). All existing tests updated.
+- **Combat AI stance checks:** `update_combatant()` now checks stance:
+  - Passive: skips enemy-seeking; only fights back when already engaged (defend only)
+  - StandGround: attacks enemies in range but drops target and holds position when out of range (no chase)
+  - Aggressive: existing behavior unchanged (seek, chase, engage)
+- **Bugfix:** chase_target() call in idle-seeking path now sets target before calling (pre-existing bug exposed by new tests).
+- **WASM exports:** `set_unit_stance()`, `set_units_stance()` (batch), `get_unit_stance()`. Stance included in `get_unit_info()` JSON.
+- **JS/UI:** Cache bumped to v=48. Stance toggle UI + keyboard shortcuts + overlay indicators still pending.
+- **Tests:** 10 new tests (4 units + 6 combat). 497 engine + 30 server = 527 total. All passing.
+- **Addresses:** [#51](https://github.com/mayrd/s4wn/issues/51) — engine side complete; JS/UI side remains.
+
 ### Next Session — Concrete Steps
 
 1. Implement .sav full campaign state restoration from parsed chunk data
 2. Add building HP system so combat can damage and eventually destroy buildings
-3. Begin implementing unit stances per [#51](https://github.com/mayrd/s4wn/issues/51) — start with UnitStance enum + combat AI checks
+3. ✅ UnitStance engine implementation complete (Session 135) — next: JS stance toggle UI (buttons, F1/F2/F3 hotkeys, overlay indicators)
 4. Add garrison interactions for military buildings (auto-defense when units are stationed)
 5. Investigate adding unit ranks/experience (S4 had 3 tiers: recruit, veteran, elite)
 
