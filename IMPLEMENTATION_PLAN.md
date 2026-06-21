@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6 — Bugfixes + Map Editor + Patrol (462 tests)
-| **Last updated:** 2026-06-21 (Session 130 — Patrol command P+click)
+| **Status:** Phase 6 — Bugfixes + Map Editor + Patrol + Rally Points (470 tests)
+| **Last updated:** 2026-06-21 (Session 131 — Unit rally point)
 
 ---
 
@@ -389,9 +389,9 @@ protocol::tests               5 tests    Message serialization, room management
 - **🌐 Best source of Siedler 4 info:** [siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/) — buildings, units, production chains, game mechanics, maps, guides. Always consult this first when researching authentic S4 behavior.
 - **S4Forge.RE:** Authoritative C++ decompilation for building IDs (0-82), settler IDs (0-66), terrain (8 types), resources (8 types), nations (5)
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
-- **WASM cache:** Current v=44. Always bump when adding new `#[wasm_bindgen]` exports.
+- **WASM cache:** Current v=45. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 462 engine + 30 server = 492 total (462 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 470 engine + 30 server = 500 total (462 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
 ## Next Session — Concrete Steps
 
@@ -490,7 +490,7 @@ All Phase 5 steps are now complete:
 
 ### Next Session — Concrete Steps
 
-1. Add unit rally point flag (set rally point for buildings, newly trained units auto-move there)
+1. ✅ Add unit rally point flag (set rally point for buildings, newly trained units auto-move there) — Done Session 131
 2. Add building destruction animation (scale-down + rubble particles when building is destroyed)
 3. Add unit formation movement (units maintain relative positions when moving as group)
 4. Implement .sav full campaign state restoration from parsed chunk data

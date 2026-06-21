@@ -3033,7 +3033,8 @@ pub fn add_starting_resources(difficulty: &str) -> String {
                 (ResourceType::Fish, (20.0 * multiplier) as u32),
                 (ResourceType::Meat, (10.0 * multiplier) as u32),
             ];
-            let economy = crate::economy::Economy::with_starting_resources(&resources);
+            let mut economy = crate::economy::Economy::with_starting_resources(&resources);
+            economy.set_map(app.map.clone());
             app.game_loop.state.economy = economy;
             String::from("ok")
         } else {
@@ -3965,6 +3966,49 @@ pub fn export_map_json() -> String {
         APP.as_ref()
             .map(|app| app.game_loop.state.map.to_json())
             .unwrap_or_else(|| String::from("error: no map loaded"))
+    }
+}
+
+/// Set the rally point for a building.
+/// building_index: index into the economy's buildings list.
+/// x, y: target tile coordinates for the rally point.
+/// Returns true if the building exists and the rally point was set.
+#[wasm_bindgen]
+pub fn set_building_rally_point(building_index: usize, x: usize, y: usize) -> bool {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.game_loop.state.economy.set_building_rally_point(building_index, x, y)
+        } else {
+            false
+        }
+    }
+}
+
+/// Clear the rally point for a building.
+/// Returns true if the building existed.
+#[wasm_bindgen]
+pub fn clear_building_rally_point(building_index: usize) -> bool {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.game_loop.state.economy.clear_building_rally_point(building_index)
+        } else {
+            false
+        }
+    }
+}
+
+/// Get the rally point for a building as JSON: {"x":N,"y":N} or null if none set.
+#[wasm_bindgen]
+pub fn get_building_rally_point(building_index: usize) -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            match app.game_loop.state.economy.get_building_rally_point(building_index) {
+                Some((x, y)) => format!(r#"{{"x":{},"y":{}}}"#, x, y),
+                None => String::from("null"),
+            }
+        } else {
+            String::from("null")
+        }
     }
 }
 

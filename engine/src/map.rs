@@ -98,7 +98,7 @@ pub enum Resource {
 }
 
 /// The game world map — a 2D grid of tiles
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Map {
     pub width: usize,
     pub height: usize,

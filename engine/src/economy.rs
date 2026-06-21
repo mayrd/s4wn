@@ -855,6 +855,8 @@ pub struct Building {
     pub training_kind: UnitKind,
     /// Owner player ID (0 = player 1, 1 = player 2, etc.)
     pub owner_id: u8,
+    /// Rally point — units trained at this building auto-move here. None = no rally point set.
+    pub rally_point: Option<(usize, usize)>,
 }
 
 impl Building {
@@ -879,6 +881,7 @@ impl Building {
             required_tool,
             training_kind: UnitKind::Swordsman,
             owner_id: 0,
+            rally_point: None,
         }
     }
 
@@ -1143,6 +1146,8 @@ pub struct Economy {
     pub nation_modifiers: Option<NationModifiers>,
     /// The nation this economy belongs to (None = unset / spectator)
     pub player_nation: Option<NationType>,
+    /// Reference to the map for pathfinding (set after economy creation)
+    pub map: Option<crate::map::Map>,
 }
 
 impl Economy {
@@ -1157,6 +1162,7 @@ impl Economy {
             tool_storage: [0u32; 12],
             nation_modifiers: None,
             player_nation: None,
+            map: None,
         }
     }
 
@@ -1167,6 +1173,39 @@ impl Economy {
             economy.storage.set(rt, amount);
         }
         economy
+    }
+
+    /// Set the map reference for pathfinding (must be called before using rally points).
+    pub fn set_map(&mut self, map: crate::map::Map) {
+        self.map = Some(map);
+    }
+
+    /// Set the rally point for a building at the given index.
+    /// Returns true if the building exists and the rally point was set.
+    pub fn set_building_rally_point(&mut self, building_index: usize, x: usize, y: usize) -> bool {
+        if let Some(building) = self.buildings.get_mut(building_index) {
+            building.rally_point = Some((x, y));
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Clear the rally point for a building at the given index.
+    /// Returns true if the building existed.
+    pub fn clear_building_rally_point(&mut self, building_index: usize) -> bool {
+        if let Some(building) = self.buildings.get_mut(building_index) {
+            building.rally_point = None;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Get the rally point for a building at the given index.
+    /// Returns Some((x, y)) if the building exists and has a rally point, None otherwise.
+    pub fn get_building_rally_point(&self, building_index: usize) -> Option<(usize, usize)> {
+        self.buildings.get(building_index).and_then(|b| b.rally_point)
     }
 
     /// Spawn a settler and assign it to a building.
@@ -1468,6 +1507,25 @@ impl Economy {
                             unit.attack_range_mult = mods.units.archer_range;
                         }
                         _ => {}
+                    }
+                }
+            }
+            // Rally point: auto-move trained unit to the building's rally point
+            // Find the building that spawned this unit by position
+            if let Some(bidx) = self.buildings.iter().position(|b| {
+                b.kind == BuildingType::Barracks
+                    && (b.x as f32 + 0.5 - bx).abs() < 0.1
+                    && (b.y as f32 + 0.5 - by).abs() < 0.1
+            }) {
+                if let Some((rpx, rpy)) = self.buildings[bidx].rally_point {
+                    use crate::pathfinding::Pathfinder;
+                    if let Some(ref map) = self.map {
+                        let from = (bx as usize, by as usize);
+                        if let Some(path) = Pathfinder::find_path(map, from, (rpx, rpy)) {
+                            if let Some(unit) = self.units.get_mut(sid) {
+                                unit.move_along(path);
+                            }
+                        }
                     }
                 }
             }
@@ -3694,5 +3752,116 @@ mod tests {
             format!("{}:{}:{}", r.settlers, r.total_resources, r.unique_resources)
         }).collect();
         assert_eq!(first, second, "Balance simulation must be deterministic");
+    }
+}
+
+// ── Rally Point Tests ──────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod rally_point_tests {
+    use super::*;
+    use crate::map::Map;
+
+    #[test]
+    fn test_building_default_no_rally_point() {
+        let b = Building::new(BuildingType::Barracks, 5, 5);
+        assert!(b.rally_point.is_none());
+    }
+
+    #[test]
+    fn test_set_building_rally_point() {
+        let mut eco = Economy::new();
+        eco.place_building(BuildingType::Barracks, 5, 5);
+        assert!(eco.set_building_rally_point(0, 10, 10));
+        assert_eq!(eco.get_building_rally_point(0), Some((10, 10)));
+    }
+
+    #[test]
+    fn test_set_building_rally_point_invalid_index() {
+        let mut eco = Economy::new();
+        assert!(!eco.set_building_rally_point(0, 10, 10));
+    }
+
+    #[test]
+    fn test_clear_building_rally_point() {
+        let mut eco = Economy::new();
+        eco.place_building(BuildingType::Barracks, 5, 5);
+        eco.set_building_rally_point(0, 10, 10);
+        assert_eq!(eco.get_building_rally_point(0), Some((10, 10)));
+        assert!(eco.clear_building_rally_point(0));
+        assert_eq!(eco.get_building_rally_point(0), None);
+    }
+
+    #[test]
+    fn test_clear_building_rally_point_invalid_index() {
+        let mut eco = Economy::new();
+        assert!(!eco.clear_building_rally_point(0));
+    }
+
+    #[test]
+    fn test_get_building_rally_point_no_building() {
+        let eco = Economy::new();
+        assert_eq!(eco.get_building_rally_point(0), None);
+    }
+
+    #[test]
+    fn test_rally_point_auto_moves_barracks_unit() {
+        let mut map = Map::new(30, 30);
+        for x in 0..30 {
+            for y in 0..30 {
+                map.set_terrain(x, y, crate::map::Terrain::Grass);
+            }
+        }
+        let mut eco = Economy::new();
+        eco.set_map(map);
+
+        eco.place_building(BuildingType::Barracks, 5, 5);
+        eco.set_building_rally_point(0, 15, 15);
+        eco.storage.set(ResourceType::Weapons, 10);
+        eco.buildings[0].construction = 1.0;
+        eco.buildings[0].active = true;
+        eco.buildings[0].recruitment_timer = 59;
+
+        eco.update();
+
+        let units: Vec<_> = eco.units.alive_units().collect();
+        assert!(!units.is_empty(), "Should have spawned at least one unit");
+
+        let military_units: Vec<_> = units.iter().filter(|u| u.kind.can_fight()).collect();
+        assert!(!military_units.is_empty(), "Should have a military unit");
+
+        let moving = military_units.iter().any(|u| u.state == crate::units::UnitState::Moving);
+        assert!(moving, "At least one military unit should be moving toward rally point");
+    }
+
+    #[test]
+    fn test_rally_point_no_rally_leaves_unit_idle() {
+        // Without rally point, trained units should stay idle
+        let mut map = Map::new(30, 30);
+        for x in 0..30 {
+            for y in 0..30 {
+                map.set_terrain(x, y, crate::map::Terrain::Grass);
+            }
+        }
+        let mut eco = Economy::new();
+        eco.set_map(map);
+
+        eco.place_building(BuildingType::Barracks, 5, 5);
+        // No rally point set
+        eco.storage.set(ResourceType::Weapons, 10);
+        eco.buildings[0].construction = 1.0;
+        eco.buildings[0].active = true;
+
+        // Set recruitment timer to trigger immediately
+        eco.buildings[0].recruitment_timer = 1000;
+
+        eco.update();
+
+        let military_units: Vec<_> = eco.units.alive_units().filter(|u| u.kind.can_fight()).collect();
+        if !military_units.is_empty() {
+            // Without rally point, unit should be idle (not moving)
+            let idle = military_units.iter().any(|u| u.state == crate::units::UnitState::Idle);
+            assert!(idle, "Without rally point, trained unit should be idle");
+        }
     }
 }
