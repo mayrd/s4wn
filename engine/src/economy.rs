@@ -1705,6 +1705,9 @@ impl Economy {
 
         // 5. Building auto-repair: idle settlers near damaged buildings restore HP
         self.repair_buildings();
+
+        // 6. Barracks auto-promotion: ranked soldiers -> SquadLeader
+        self.promote_ranked_soldiers();
     }
     pub fn buildings_of_type(&self, kind: BuildingType) -> impl Iterator<Item = &Building> {
         self.buildings.iter().filter(move |b| b.kind == kind)
@@ -1799,6 +1802,52 @@ impl Economy {
     /// Auto-repair damaged buildings using nearby idle settlers.
     /// Each building with hp < max_hp that has at least one idle settler within
     /// REPAIR_RANGE tile units gets REPAIR_RATE HP restored per tick.
+    pub const PROMOTION_RANGE: f32 = 4.0;
+
+    pub fn promote_ranked_soldiers(&mut self) -> u32 {
+        let mut promoted = 0u32;
+        let candidates: Vec<(u32, f32, f32)> = self
+            .units
+            .alive_units()
+            .filter(|u| {
+                u.is_idle() && u.rank >= 1
+                    && (u.kind == crate::units::UnitKind::Swordsman
+                        || u.kind == crate::units::UnitKind::Bowman)
+            })
+            .map(|u| (u.id, u.x, u.y))
+            .collect();
+        if candidates.is_empty() { return 0; }
+        let gold_cost: u32 = 2;
+        let range_sq = Self::PROMOTION_RANGE * Self::PROMOTION_RANGE;
+        let barrack_positions: Vec<(f32, f32)> = self
+            .buildings
+            .iter()
+            .filter(|b| b.kind == BuildingType::Barracks && b.is_complete())
+            .map(|b| (b.x as f32 + 0.5, b.y as f32 + 0.5))
+            .collect();
+        if barrack_positions.is_empty() { return 0; }
+        for (uid, ux, uy) in &candidates {
+            let near = barrack_positions.iter().any(|(bx, by)| {
+                let dx = ux - bx; let dy = uy - by;
+                dx * dx + dy * dy <= range_sq
+            });
+            if !near { continue; }
+            if self.storage.amounts()[ResourceType::Gold as usize] < gold_cost { break; }
+            self.storage.try_spend(&[(ResourceType::Gold, gold_cost)]);
+            if let Some(unit) = self.units.get_mut(*uid) {
+                unit.kind = crate::units::UnitKind::SquadLeader;
+                unit.max_hp = unit.effective_max_hp();
+                unit.hp = unit.max_hp;
+                unit.path = None;
+                unit.target = None;
+                unit.path_index = 0;
+                unit.attack_cooldown = 0;
+            }
+            promoted += 1;
+        }
+        promoted
+    }
+
     pub fn repair_buildings(&mut self) -> u32 {
         let mut repaired = 0u32;
         // Collect idle settler positions
@@ -4039,6 +4088,138 @@ mod tests {
         assert_eq!(repaired, 0, "Incomplete buildings should not be repaired");
     }
 
+
+    // ── Barracks auto-promotion tests ─────────────────────────────────
+
+    #[test]
+    fn test_promotion_no_ranked_soldiers_returns_zero() {
+        let mut eco = Economy::with_starting_resources(&[(ResourceType::Gold, 10)]);
+        let bi = eco.place_building(BuildingType::Barracks, 3, 3);
+        eco.buildings[bi].construction = 1.0;
+        eco.buildings[bi].active = true;
+        assert_eq!(eco.promote_ranked_soldiers(), 0);
+    }
+
+    #[test]
+    fn test_promotion_no_barracks_returns_zero() {
+        let mut eco = Economy::with_starting_resources(&[(ResourceType::Gold, 10)]);
+        let sid = eco.units.spawn(crate::units::UnitKind::Swordsman, 3.5, 3.5);
+        eco.units.get_mut(sid).unwrap().rank = 1;
+        eco.units.get_mut(sid).unwrap().state = crate::units::UnitState::Idle;
+        assert_eq!(eco.promote_ranked_soldiers(), 0);
+    }
+
+    #[test]
+    fn test_promotion_no_gold_returns_zero() {
+        let mut eco = Economy::new();
+        let bi = eco.place_building(BuildingType::Barracks, 3, 3);
+        eco.buildings[bi].construction = 1.0;
+        eco.buildings[bi].active = true;
+        let sid = eco.units.spawn(crate::units::UnitKind::Swordsman, 3.5, 3.5);
+        eco.units.get_mut(sid).unwrap().rank = 1;
+        eco.units.get_mut(sid).unwrap().state = crate::units::UnitState::Idle;
+        assert_eq!(eco.promote_ranked_soldiers(), 0);
+    }
+
+    #[test]
+    fn test_promotion_rank_zero_skipped() {
+        let mut eco = Economy::with_starting_resources(&[(ResourceType::Gold, 10)]);
+        let bi = eco.place_building(BuildingType::Barracks, 3, 3);
+        eco.buildings[bi].construction = 1.0;
+        eco.buildings[bi].active = true;
+        let sid = eco.units.spawn(crate::units::UnitKind::Swordsman, 3.5, 3.5);
+        eco.units.get_mut(sid).unwrap().rank = 0;
+        eco.units.get_mut(sid).unwrap().state = crate::units::UnitState::Idle;
+        assert_eq!(eco.promote_ranked_soldiers(), 0);
+    }
+
+    #[test]
+    fn test_promotion_swordsman_to_squad_leader() {
+        let mut eco = Economy::with_starting_resources(&[(ResourceType::Gold, 10)]);
+        let bi = eco.place_building(BuildingType::Barracks, 3, 3);
+        eco.buildings[bi].construction = 1.0;
+        eco.buildings[bi].active = true;
+        let sid = eco.units.spawn(crate::units::UnitKind::Swordsman, 3.5, 3.5);
+        eco.units.get_mut(sid).unwrap().rank = 1;
+        eco.units.get_mut(sid).unwrap().state = crate::units::UnitState::Idle;
+        assert_eq!(eco.promote_ranked_soldiers(), 1);
+        let u = eco.units.get(sid).unwrap();
+        assert_eq!(u.kind, crate::units::UnitKind::SquadLeader);
+        assert_eq!(u.max_hp, 92);
+        assert_eq!(eco.storage.amounts()[ResourceType::Gold as usize], 8);
+    }
+
+    #[test]
+    fn test_promotion_bowman_to_squad_leader() {
+        let mut eco = Economy::with_starting_resources(&[(ResourceType::Gold, 10)]);
+        let bi = eco.place_building(BuildingType::Barracks, 3, 3);
+        eco.buildings[bi].construction = 1.0;
+        eco.buildings[bi].active = true;
+        let bid = eco.units.spawn(crate::units::UnitKind::Bowman, 3.5, 3.5);
+        eco.units.get_mut(bid).unwrap().rank = 1;
+        eco.units.get_mut(bid).unwrap().state = crate::units::UnitState::Idle;
+        assert_eq!(eco.promote_ranked_soldiers(), 1);
+        assert_eq!(eco.units.get(bid).unwrap().kind, crate::units::UnitKind::SquadLeader);
+    }
+
+    #[test]
+    fn test_promotion_too_far_from_barracks() {
+        let mut eco = Economy::with_starting_resources(&[(ResourceType::Gold, 10)]);
+        let bi = eco.place_building(BuildingType::Barracks, 3, 3);
+        eco.buildings[bi].construction = 1.0;
+        eco.buildings[bi].active = true;
+        let sid = eco.units.spawn(crate::units::UnitKind::Swordsman, 15.5, 15.5);
+        eco.units.get_mut(sid).unwrap().rank = 1;
+        eco.units.get_mut(sid).unwrap().state = crate::units::UnitState::Idle;
+        assert_eq!(eco.promote_ranked_soldiers(), 0);
+    }
+
+    #[test]
+    fn test_promotion_fighting_soldiers_skipped() {
+        let mut eco = Economy::with_starting_resources(&[(ResourceType::Gold, 10)]);
+        let bi = eco.place_building(BuildingType::Barracks, 3, 3);
+        eco.buildings[bi].construction = 1.0;
+        eco.buildings[bi].active = true;
+        let sid = eco.units.spawn(crate::units::UnitKind::Swordsman, 3.5, 3.5);
+        eco.units.get_mut(sid).unwrap().rank = 2;
+        eco.units.get_mut(sid).unwrap().state = crate::units::UnitState::Fighting;
+        assert_eq!(eco.promote_ranked_soldiers(), 0);
+    }
+
+    #[test]
+    fn test_promotion_preserves_rank_and_experience() {
+        let mut eco = Economy::with_starting_resources(&[(ResourceType::Gold, 10)]);
+        let bi = eco.place_building(BuildingType::Barracks, 3, 3);
+        eco.buildings[bi].construction = 1.0;
+        eco.buildings[bi].active = true;
+        let sid = eco.units.spawn(crate::units::UnitKind::Bowman, 3.5, 3.5);
+        eco.units.get_mut(sid).unwrap().rank = 2;
+        eco.units.get_mut(sid).unwrap().experience = 85;
+        eco.units.get_mut(sid).unwrap().state = crate::units::UnitState::Idle;
+        eco.promote_ranked_soldiers();
+        let u = eco.units.get(sid).unwrap();
+        assert_eq!(u.kind, crate::units::UnitKind::SquadLeader);
+        assert_eq!(u.rank, 2);
+        assert_eq!(u.experience, 85);
+        assert_eq!(u.max_hp, 104);
+    }
+
+    #[test]
+    fn test_promotion_gold_cost() {
+        let mut eco = Economy::with_starting_resources(&[(ResourceType::Gold, 5)]);
+        let bi = eco.place_building(BuildingType::Barracks, 3, 3);
+        eco.buildings[bi].construction = 1.0;
+        eco.buildings[bi].active = true;
+        let s1 = eco.units.spawn(crate::units::UnitKind::Swordsman, 3.5, 3.5);
+        eco.units.get_mut(s1).unwrap().rank = 1;
+        eco.units.get_mut(s1).unwrap().state = crate::units::UnitState::Idle;
+        let s2 = eco.units.spawn(crate::units::UnitKind::Bowman, 3.5, 4.5);
+        eco.units.get_mut(s2).unwrap().rank = 1;
+        eco.units.get_mut(s2).unwrap().state = crate::units::UnitState::Idle;
+        let promoted = eco.promote_ranked_soldiers();
+        assert!(promoted >= 2, "Expected 2 promotions, got {}", promoted);
+        assert_eq!(eco.storage.amounts()[ResourceType::Gold as usize], 5 - promoted * 2);
+    }
 }
 
 // ── Rally Point Tests ──────────────────────────────────────────────────────────

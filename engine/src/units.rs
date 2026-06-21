@@ -85,6 +85,7 @@ impl UnitKind {
             UnitKind::Settler => "Settler",
             UnitKind::Swordsman => "Swordsman",
             UnitKind::Bowman => "Bowman",
+            UnitKind::SquadLeader => "Squad Leader",
             _ => unreachable!(),
         }
     }
@@ -95,6 +96,7 @@ impl UnitKind {
             UnitKind::Settler => 50,
             UnitKind::Swordsman => 100,
             UnitKind::Bowman => 60,
+            UnitKind::SquadLeader => 80,
             _ => unreachable!(),
         }
     }
@@ -105,6 +107,7 @@ impl UnitKind {
             UnitKind::Settler => 2.0,
             UnitKind::Swordsman => 2.5,
             UnitKind::Bowman => 2.0,
+            UnitKind::SquadLeader => 3.0,
             _ => unreachable!(),
         }
     }
@@ -115,6 +118,7 @@ impl UnitKind {
             UnitKind::Settler => 0, // settlers can't fight
             UnitKind::Swordsman => 15,
             UnitKind::Bowman => 10,
+            UnitKind::SquadLeader => 12,
             _ => unreachable!(),
         }
     }
@@ -125,6 +129,7 @@ impl UnitKind {
             UnitKind::Settler => 0.0,
             UnitKind::Swordsman => 1.0,
             UnitKind::Bowman => 3.0,
+            UnitKind::SquadLeader => 1.5,
             _ => unreachable!(),
         }
     }
@@ -135,6 +140,7 @@ impl UnitKind {
             UnitKind::Settler => 0,
             UnitKind::Swordsman => 15, // 1.5s
             UnitKind::Bowman => 20,    // 2.0s
+            UnitKind::SquadLeader => 18, // 1.8s
             _ => unreachable!(),
         }
     }
