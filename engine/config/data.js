@@ -1768,5 +1768,41 @@ window.S4WN_CONFIG = {
     RES_EN["ExplosiveArrow"] = "Explosive Arrow";
     RES_EN["CatapultAmmo"] = "Catapult Ammo";
     for (const [k,v] of Object.entries(RES_EN)) { if (!window.RESOURCE_NAMES[k]) window.RESOURCE_NAMES[k] = v; }
+    // Category translations (DE)
+    window.CATEGORY_NAMES_DE = {
+        // Buildings
+        'Basic Economy': 'Basiswirtschaft',
+        'Food Production': 'Nahrungsproduktion',
+        'Mining & Smelting': 'Bergbau & Verhüttung',
+        'Military & Tools': 'Militär & Werkzeuge',
+        'Divine & Special': 'Göttlich & Spezial',
+        'Logistics': 'Logistik',
+        'Zierobjekte': 'Zierobjekte',
+        // Resources
+        'Construction': 'Baumaterial',
+        'Raw Ores': 'Roherze',
+        'Smelted Metals': 'Verhüttete Metalle',
+        'Food & Crops': 'Nahrung & Feldfrüchte',
+        'Livestock': 'Vieh',
+        'Alcohol & Mana': 'Alkohol & Mana',
+        'Tools': 'Werkzeuge',
+        'Weapons': 'Waffen',
+        'Munitions': 'Munition',
+        // Settlers
+        'Specialist': 'Spezialist',
+        'Basic Economy': 'Basiswirtschaft',
+        'Food & Crops': 'Nahrung & Feldfrüchte',
+        'Heavy Industry': 'Schwerindustrie',
+        'Mining': 'Bergbau',
+        'Medical': 'Medizin',
+        'Military': 'Militär',
+        'Military (Special)': 'Militär (Spezial)',
+        'Dark Tribe (NPC)': 'Dunkler Stamm (NPC)',
+        'Sacrificial Wine': 'Opferwein',
+        'Sacrificial Liquor': 'Opferschnaps',
+        'Sacrificial Mead': 'Opfermet',
+        'Sacrificial Oil': 'Opferöl',
+        'Specialist Craft': 'Spezialhandwerk',
+    };
     console.log("S4WN config loaded:", C.buildings.length, "buildings,", C.resources.length, "resources,", C.terrain.length, "terrain,", C.units.length, "units,", C.nations.length, "nations");
 })();

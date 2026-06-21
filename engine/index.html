@@ -3017,6 +3017,14 @@ function tResource(name) {
     return RESOURCE_NAMES[name] || name;
 }
 
+// Translate a category name
+function tCategory(name) {
+    if (typeof currentLang !== 'undefined' && currentLang === 'de' && window.CATEGORY_NAMES_DE && window.CATEGORY_NAMES_DE[name]) {
+        return window.CATEGORY_NAMES_DE[name];
+    }
+    return name;
+}
+
 // Translate a terrain name
 function tTerrain(name) {
     if (typeof currentLang !== 'undefined' && currentLang === 'de' && TERRAIN_NAMES_DE[name]) {
@@ -5649,7 +5657,7 @@ function populateConstructionPanel() {
     for (const [cat, buildings] of Object.entries(cats)) {
         if (buildings.length === 0) continue;
         html += `<div class="con-category">`;
-        html += `<div class="con-cat-header">${cat}</div>`;
+        html += `<div class="con-cat-header">${tCategory(cat)}</div>`;
         html += '<div class="con-cat-body">';
         for (const b of buildings) {
             const icon = '🏗️';
@@ -5755,7 +5763,7 @@ function renderResources() {
             catMap[cat].push(r);
         }
         for (const [cat, resources] of Object.entries(catMap)) {
-            html += `<div class="set-section">${cat}</div>`;
+            html += `<div class="set-section">${tCategory(cat)}</div>`;
             for (const r of resources) {
                 const count = counts[r.id] ?? 0;
                 const icon = RESOURCE_ICONS[r.id] || '📦';
@@ -5802,7 +5810,7 @@ function renderSettlers() {
                 cats[cat].push(u);
             }
             for (const [cat, settlers] of Object.entries(cats)) {
-                html += `<div class="set-section">${cat}</div>`;
+                html += `<div class="set-section">${tCategory(cat)}</div>`;
                 for (const s of settlers) {
                     const count = counts[s.id] || 0;
                     const label = (typeof currentLang === 'string' && currentLang === 'de') ? s.name_de : s.name;
