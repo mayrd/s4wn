@@ -96,6 +96,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Unit rally point flag — set rally point on buildings (click flag button), trained units auto-move to rally point via pathfinding. WASM exports: `set_building_rally_point`, `clear_building_rally_point`, `get_building_rally_point`
 - ✅ Unit stance system — 3 combat stances (Aggressive/StandGround/Passive) with F1/F2/F3 hotkeys, toggle panel when military units selected, A/H/P overlay indicators. Stance checks in CombatAI (Passive=defend only, StandGround=no chase). WASM exports: `set_unit_stance`, `set_units_stance`, `get_unit_stance`
 
+- ✅ Building HP system — max_hp() per BuildingType (80-500), hp/max_hp fields, take_damage() triggers start_destruction() at 0 HP, 3 WASM exports, 7 tests (504 total)
 - ✅ Building destruction animation — `destruction_timer` field on Building, `start_destruction()`/`tick_destruction()`/`destruction_progress()` methods, `Economy::tick_destructions()` removes completed buildings, `spawn_rubble_effect()` (20 brown rubble + 8 dust particles), WASM exports (`start_building_destruction`, `tick_building_destructions`, `get_building_destruction_progress`, `get_building_at_tile`), JS demolition mode (X key, `cursor: not-allowed`), `destruction_progress` in `get_building_info` JSON. 8 new tests, 478 total.
 
 **Phase 5 — 3D Pipeline** ✅ (365 tests)
