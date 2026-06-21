@@ -47,6 +47,53 @@ AI agents must not edit this file unless explicitly stated.
 | **Zierobjekte** | Bench | Bank | 2 | 2 | 1 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength (*Kampfkraft*) |
 | **Zierobjekte** | Archways | Torbögen | 3 | 5 | 3 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength (*Kampfkraft*) |
 
+## Mayan Buildings
+
+| Category | English Name | German Name | Planks | Stone | Gold | Worker | Input | Output / Function |
+| :--- | :--- | :--- | :---: | :---: | :---: | :--- | :--- | :--- |
+| **Basic Economy** | Forester's Hut | Försterhütte | 2 | 1 | 0 | Forester *(Förster)* | None | Planted Trees |
+| **Basic Economy** | Woodcutter's Hut | Holzfällerhütte | 2 | 1 | 0 | Woodcutter *(Holzfäller)* | Trees | Logs |
+| **Basic Economy** | Sawmill | Sägewerk | 4 | 2 | 0 | Sawyer *(Säger)* | 1x Log | 1x Plank |
+| **Basic Economy** | Stonecutter's Hut | Steinmetzhütte | 1 | 3 | 0 | Stonecutter *(Steinmetz)* | Stone Deposits | 1x Stone |
+| **Food Production** | Grain Farm | Getreidefarm | 4 | 3 | 0 | Farmer *(Bauer)* | None | Grain |
+| **Food Production** | Goat Ranch | Ziegenzucht | 4 | 3 | 0 | Goat Breeder *(Ziegenzüchter)* | Grain + Water | Goats |
+| **Food Production** | Grain Mill | Getreidemühle | 3 | 3 | 0 | Miller *(Müller)* | Grain | Flour |
+| **Food Production** | Bakery | Bäckerei | 3 | 3 | 0 | Baker *(Bäcker)* | Flour + Water | Bread *(Food for Coal)* |
+| **Food Production** | Slaughterhouse | Metzgerei | 3 | 3 | 0 | Butcher *(Metzger)* | Goats | Meat *(Food for Iron)* |
+| **Food Production** | Fisherman's Hut | Fischerhütte | 1 | 2 | 0 | Fisherman *(Fischer)* | Fish Stocks | Fish *(Food for Gold/Sulfur)* |
+| **Food Production** | Waterworks | Wasserwerk | 2 | 2 | 0 | Water Worker *(Wasserwerker)* | River / Water source | Water |
+| **Mining & Smelting** | Coal Mine | Kohlemine | 2 | 2 | 0 | Miner *(Minenarbeiter)* | Bread | Coal Ore |
+| **Mining & Smelting** | Iron Ore Mine | Eisenmine | 2 | 2 | 0 | Miner *(Minenarbeiter)* | Meat | Iron Ore |
+| **Mining & Smelting** | Gold Mine | Goldmine | 2 | 2 | 0 | Miner *(Minenarbeiter)* | Fish | Gold Ore |
+| **Mining & Smelting** | Sulfur Mine | Schwefelmine | 2 | 2 | 0 | Miner *(Minenarbeiter)* | Fish | Sulfur Ore |
+| **Mining & Smelting** | Iron Smelter | Eisenschmelze | 3 | 3 | 0 | Smelter *(Schmelzer)* | Iron Ore + Coal | Iron Bars |
+| **Mining & Smelting** | Gold Smelter | Goldschmelze | 3 | 3 | 0 | Smelter *(Schmelzer)* | Gold Ore + Coal | Gold Bars |
+| **Military & Tools** | Toolsmith | Werkzeugschmiede | 3 | 3 | 0 | Toolsmith *(Werkzeugschmied)* | Iron Bars + Coal | Tools |
+| **Military & Tools** | Weaponsmith | Waffenschmiede | 3 | 4 | 0 | Weaponsmith *(Waffenschmied)* | Iron Bars + Coal | Weapons |
+| **Military & Tools** | Barracks | Kaserne | 4 | 5 | 0 | Recruiter *(Rekrutierer)* | Recruit + Weapon | Ranked Soldiers |
+| **Military & Tools** | Small Tower | Kleiner Turm | 2 | 3 | 0 | 1x Stationed Soldier | None | Expands Territory |
+| **Military & Tools** | Big Tower | Großer Turm | 4 | 5 | 0 | 3x Stationed Soldiers | None | Expands Territory |
+| **Military & Tools** | Castle | Burg | 6 | 9 | 0 | 6x Stationed Soldiers | None | Expands Territory |
+| **Military & Tools** | Healer's Hut | Heilerhütte | 3 | 3 | 0 | Healer *(Heiler)* | Mana charges | Heals friendly units |
+| **Divine & Special** | Agave Farm | Agavenfarm | 4 | 3 | 0 | Agave Farmer *(Agavenbauer)*| None | Agaves |
+| **Divine & Special** | Tequila Distillery | Schnapsbrennerei | 3 | 3 | 0 | Distiller *(Brenner)* | Agaves | Tequila / Schnaps |
+| **Divine & Special** | Powder Mill | Pulvermühle | 3 | 3 | 0 | Powder Maker *(Pulvermacher)*| Sulfur Ore + Coal Ore | Gunpowder |
+| **Divine & Special** | Small Temple | Kleiner Tempel | 3 | 6 | 0 | Priestess *(Priesterin)* | Tequila | Mana |
+| **Divine & Special** | Large Temple | Großer Tempel | 5 | 9 | 0 | None *(Autotransforms)* | Recruits | Priests *(Mayan Mages)* |
+| **Logistics** | Small Residence | Kleines Wohnhaus | 3 | 3 | 0 | None | None | +10 Settlers |
+| **Logistics** | Medium Residence | Mittleres Wohnhaus | 5 | 6 | 0 | None | None | +30 Settlers |
+| **Logistics** | Large Residence | Großes Wohnhaus | 8 | 8 | 0 | None | None | +100 Settlers |
+| **Logistics** | Storage Yard | Lagerplatz | 3 | 2 | 0 | None *(Carriers)* | None | Stores 8 item stacks |
+| **Logistics** | Marketplace | Marktplatz | 3 | 3 | 0 | Trader *(Händler)* | None | Creates Donkeys / Land trade |
+| **Logistics** | Shipyard | Werft | 4 | 3 | 0 | Shipwright *(Schiffsbauer)* | Planks *(Variable)* | Ferries or Warships |
+| **Logistics** | Landing Dock | Anlegestelle | 3 | 3 | 0 | None *(Carriers)* | None | Maritime trade routes |
+| **Zierobjekte** | Feather Ornament | Federschmuck | 1 | 1 | 1 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength |
+| **Zierobjekte** | Jaguar Statue | Jaguarstatue | 2 | 3 | 2 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength |
+| **Zierobjekte** | Stela | Stele | 2 | 0 | 2 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength |
+| **Zierobjekte** | Stone Pillar | Steinsäule | 1 | 4 | 2 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength |
+| **Zierobjekte** | Flower Bed | Blumenbeet | 2 | 2 | 1 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength |
+| **Zierobjekte** | Sun Wheel | Sonnenrad | 3 | 5 | 3 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength |
+
 ## Resources
 
 | Category | Resource Name (EN) | German Name (DE) | Nation Availability | Produced Out Of | Used For |
