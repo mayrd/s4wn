@@ -5,7 +5,7 @@
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
 | **Status:** Phase 6.20 — Building Auto-Repair (519 tests)
-| **Last updated:** 2026-06-21 (Session 142 — Building auto-repair via idle settlers + fix #52 toggleEditorMode)
+| **Last updated:** 2026-06-21 (Session 143 — Fix #54: canvas CSS stretching on mobile)
 
 ---
 
