@@ -2235,7 +2235,24 @@ pub fn load_map_json(json: &str) -> String {
                     app.map.compute_visibility_from_entities(&buildings, &units);
                     String::from("ok")
                 }
-                Err(e) => format!("error: {}", e),
+                Err(e) => {
+                    // On parse failure, show a water-filled map (not stale grass)
+                    // to make the error visually obvious
+                    let (w, h) = (app.map.width, app.map.height);
+                    let mut water_map = Map::new(w, h);
+                    for y in 0..h {
+                        for x in 0..w {
+                            if let Some(tile) = water_map.get_mut(x, y) {
+                                tile.terrain = Terrain::Water;
+                                tile.elevation = 0.0;
+                                tile.resource = None;
+                            }
+                        }
+                    }
+                    app.map = water_map;
+                    app.mesh_dirty = true;
+                    format!("error: {}", e)
+                }
             }
         } else {
             String::from("error: engine not initialized")
@@ -2245,7 +2262,11 @@ pub fn load_map_json(json: &str) -> String {
 
 fn parse_map_json(json: &str) -> Result<Map, String> {
     use serde_json::Value;
-    let v: Value = serde_json::from_str(json).map_err(|e| format!("JSON parse error: {}", e))?;
+    // Trim whitespace and strip BOM; use Deserializer for trailing-data tolerance
+    let trimmed = json.trim().trim_start_matches('\u{feff}');
+    let mut de = serde_json::Deserializer::from_str(trimmed);
+    let v: Value = serde::Deserialize::deserialize(&mut de)
+        .map_err(|e| format!("JSON parse error: {}", e))?;
 
     let width = v["width"].as_u64().ok_or("missing width")? as usize;
     let height = v["height"].as_u64().ok_or("missing height")? as usize;
