@@ -1367,6 +1367,7 @@ import init, {
     damage_building,
     get_building_hp,
     get_building_max_hp,
+    get_particles_json,
 } from './pkg/s4wn_engine.js?v=50';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
@@ -5207,6 +5208,38 @@ async function main() {
             }
         }
 
+        // ── Particle rendering ─────────────────────────────────────────
+        function drawParticles() {
+            if (!selCtx || !selOverlay) return;
+            if (typeof get_particles_json !== 'function') return;
+            let particles = [];
+            try {
+                const raw = get_particles_json();
+                if (raw && raw.length > 2) particles = JSON.parse(raw);
+            } catch(e) { return; }
+            if (particles.length === 0) return;
+
+            const cam = get_camera_state();
+            const camData = cam ? JSON.parse(cam) : null;
+            const zoom = camData ? (camData.zoom || 1.0) : 1.0;
+            const cx = selOverlay.width / 2;
+            const cy = selOverlay.height / 2;
+
+            for (const p of particles) {
+                // Isometric screen position
+                const sx = cx + (p.x - p.y) * 0.866 * zoom;
+                const sy = cy + (p.x + p.y) * 0.5 * zoom - p.z * 0.5 * zoom;
+                const alpha = Math.max(0, Math.min(1, p.life / p.max_life));
+                const radius = Math.max(1, p.size * 0.5 * zoom);
+                selCtx.globalAlpha = alpha;
+                selCtx.fillStyle = `rgb(${Math.round(p.r*255)},${Math.round(p.g*255)},${Math.round(p.b*255)})`;
+                selCtx.beginPath();
+                selCtx.arc(sx, sy, radius, 0, Math.PI * 2);
+                selCtx.fill();
+            }
+            selCtx.globalAlpha = 1.0;
+        }
+
         // Animation loop
         let fpsFrames = 0, fpsTime = performance.now(), currentFps = 0;
         let frameCount = 0;
@@ -5222,6 +5255,7 @@ async function main() {
                 console.error('Render error:', e);
             }
             drawSelectionOverlay();
+            drawParticles();
 
             frameCount++;
             if (frameCount === 1) {
