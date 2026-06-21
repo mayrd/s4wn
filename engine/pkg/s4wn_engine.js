@@ -1255,6 +1255,12 @@ function __wbg_get_imports() {
             const ret = arg0 === undefined;
             return ret;
         },
+        __wbg___wbindgen_number_get_1cc01dd708740256: function(arg0, arg1) {
+            const obj = arg1;
+            const ret = typeof(obj) === 'number' ? obj : undefined;
+            getDataViewMemory0().setFloat64(arg0 + 8 * 1, isLikeNone(ret) ? 0 : ret, true);
+            getDataViewMemory0().setInt32(arg0 + 4 * 0, !isLikeNone(ret), true);
+        },
         __wbg___wbindgen_throw_ea4887a5f8f9a9db: function(arg0, arg1) {
             throw new Error(getStringFromWasm0(arg0, arg1));
         },
@@ -1282,14 +1288,6 @@ function __wbg_get_imports() {
         },
         __wbg_clear_dadcb3e2929388b0: function(arg0, arg1) {
             arg0.clear(arg1 >>> 0);
-        },
-        __wbg_clientHeight_af66ce6b5259204b: function(arg0) {
-            const ret = arg0.clientHeight;
-            return ret;
-        },
-        __wbg_clientWidth_128226e900ef22eb: function(arg0) {
-            const ret = arg0.clientWidth;
-            return ret;
         },
         __wbg_compileShader_f5625b583b2c9fd6: function(arg0, arg1) {
             arg0.compileShader(arg1);
@@ -1387,6 +1385,14 @@ function __wbg_get_imports() {
             const ret = arg0.height;
             return ret;
         },
+        __wbg_innerHeight_742725147e79c377: function() { return handleError(function (arg0) {
+            const ret = arg0.innerHeight;
+            return ret;
+        }, arguments); },
+        __wbg_innerWidth_6d134a0538e862f4: function() { return handleError(function (arg0) {
+            const ret = arg0.innerWidth;
+            return ret;
+        }, arguments); },
         __wbg_instanceof_HtmlCanvasElement_8ce29a370a2b10a4: function(arg0) {
             let result;
             try {
@@ -1430,10 +1436,6 @@ function __wbg_get_imports() {
         __wbg_now_0f628e0e435c541b: function(arg0) {
             const ret = arg0.now();
             return ret;
-        },
-        __wbg_parentElement_1fc80201e783ef83: function(arg0) {
-            const ret = arg0.parentElement;
-            return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
         },
         __wbg_performance_4c23a97261596fec: function(arg0) {
             const ret = arg0.performance;

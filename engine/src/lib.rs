@@ -2002,10 +2002,10 @@ pub fn init(canvas_id: &str) -> Result<bool, JsValue> {
         .ok_or("Canvas not found")?
         .dyn_into::<HtmlCanvasElement>()?;
 
-    // Set canvas size to fill the container
-    let parent = canvas.parent_element().unwrap();
-    let w = parent.client_width() as u32;
-    let h = parent.client_height() as u32;
+    // Use window dimensions, not parent.clientHeight (empty body → 19px on mobile)
+    let win = web_sys::window().ok_or("No window")?;
+    let w = win.inner_width().ok().and_then(|w| w.as_f64()).unwrap_or(1024.0) as u32;
+    let h = win.inner_height().ok().and_then(|h| h.as_f64()).unwrap_or(768.0) as u32;
     canvas.set_width(w.max(1));
     canvas.set_height(h.max(1));
 
@@ -2048,9 +2048,9 @@ pub fn resize() {
                 .unwrap()
                 .dyn_into::<HtmlCanvasElement>()
                 .unwrap();
-            let parent = canvas.parent_element().unwrap();
-            let w = parent.client_width() as u32;
-            let h = parent.client_height() as u32;
+            let win = window().unwrap();
+            let w = win.inner_width().ok().and_then(|w| w.as_f64()).unwrap_or(1024.0) as u32;
+            let h = win.inner_height().ok().and_then(|h| h.as_f64()).unwrap_or(768.0) as u32;
             canvas.set_width(w.max(1));
             canvas.set_height(h.max(1));
             app.resize(w.max(1), h.max(1));
