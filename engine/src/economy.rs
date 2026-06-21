@@ -1702,6 +1702,9 @@ impl Economy {
             .count() as u32;
         // Base 200 + 100 per warehouse (recalculate from scratch)
         self.storage.capacity = 200 + warehouse_count * 100;
+
+        // 5. Building auto-repair: idle settlers near damaged buildings restore HP
+        self.repair_buildings();
     }
     pub fn buildings_of_type(&self, kind: BuildingType) -> impl Iterator<Item = &Building> {
         self.buildings.iter().filter(move |b| b.kind == kind)
@@ -1786,6 +1789,48 @@ impl Economy {
                 // Stable tiebreaker: when counts tie, pick higher tool code.
         // HashMap iteration non-deterministic, but (count,code) tuple is deterministic.
         demand.into_iter().max_by_key(|&(code, count)| (count, code)).map(|(code, _)| code)
+    }
+
+    /// How much HP is restored per tick per building from nearby idle settlers
+    const REPAIR_RATE: u32 = 1;
+    /// Maximum range (in tile units) for idle settlers to repair a building
+    const REPAIR_RANGE: f32 = 3.0;
+
+    /// Auto-repair damaged buildings using nearby idle settlers.
+    /// Each building with hp < max_hp that has at least one idle settler within
+    /// REPAIR_RANGE tile units gets REPAIR_RATE HP restored per tick.
+    pub fn repair_buildings(&mut self) -> u32 {
+        let mut repaired = 0u32;
+        // Collect idle settler positions
+        let idle_positions: Vec<(f32, f32)> = self
+            .units
+            .alive_units()
+            .filter(|u| u.is_idle() && u.kind == crate::units::UnitKind::Settler)
+            .map(|u| (u.x, u.y))
+            .collect();
+
+        if idle_positions.is_empty() {
+            return 0;
+        }
+
+        for building in self.buildings.iter_mut() {
+            if building.hp >= building.max_hp || !building.is_complete() {
+                continue;
+            }
+            let bx = building.x as f32 + 0.5;
+            let by = building.y as f32 + 0.5;
+            let range_sq = Self::REPAIR_RANGE * Self::REPAIR_RANGE;
+            let has_nearby = idle_positions.iter().any(|(ux, uy)| {
+                let dx = ux - bx;
+                let dy = uy - by;
+                dx * dx + dy * dy <= range_sq
+            });
+            if has_nearby {
+                building.hp = (building.hp + Self::REPAIR_RATE).min(building.max_hp);
+                repaired += 1;
+            }
+        }
+        repaired
     }
 }
 
@@ -3877,6 +3922,123 @@ mod tests {
         }).collect();
         assert_eq!(first, second, "Balance simulation must be deterministic");
     }
+    #[test]
+    fn test_building_auto_repair_restores_hp() {
+        let mut eco = Economy::new();
+        let idx = eco.place_building(BuildingType::Farm, 2, 2);
+        eco.buildings[idx].construction = 1.0;
+        eco.buildings[idx].active = true;
+        let max_hp = eco.buildings[idx].max_hp;
+        eco.buildings[idx].hp = 50; // damage it
+        assert!(eco.buildings[idx].hp < max_hp);
+
+        // No idle settler nearby => no repair
+        let repaired = eco.repair_buildings();
+        assert_eq!(repaired, 0);
+        assert_eq!(eco.buildings[idx].hp, 50);
+    }
+
+    #[test]
+    fn test_building_auto_repair_with_nearby_settler() {
+        let mut eco = Economy::new();
+        let idx = eco.place_building(BuildingType::Farm, 2, 2);
+        eco.buildings[idx].construction = 1.0;
+        eco.buildings[idx].active = true;
+        let bx = eco.buildings[idx].x as f32 + 0.5;
+        let by = eco.buildings[idx].y as f32 + 0.5;
+        eco.buildings[idx].hp = 50;
+
+        // Spawn idle settler right on top of building
+        eco.units.spawn(crate::units::UnitKind::Settler, bx, by);
+        // Set state to Idle
+        let last_id = eco.units.alive_units().last().unwrap().id;
+        eco.units.get_mut(last_id).unwrap().state = crate::units::UnitState::Idle;
+
+        let repaired = eco.repair_buildings();
+        assert_eq!(repaired, 1);
+        let hp = eco.buildings[idx].hp;
+        assert!(hp > 50, "HP should increase, got {}", hp);
+        assert_eq!(hp, 51); // REPAIR_RATE = 1
+    }
+
+    #[test]
+    fn test_building_auto_repair_caps_at_max_hp() {
+        let mut eco = Economy::new();
+        let idx = eco.place_building(BuildingType::Farm, 2, 2);
+        eco.buildings[idx].construction = 1.0;
+        eco.buildings[idx].active = true;
+        let bx = eco.buildings[idx].x as f32 + 0.5;
+        let by = eco.buildings[idx].y as f32 + 0.5;
+        let max_hp = eco.buildings[idx].max_hp;
+        eco.buildings[idx].hp = max_hp - 1; // 1 HP from full
+
+        eco.units.spawn(crate::units::UnitKind::Settler, bx, by);
+        let last_id = eco.units.alive_units().last().unwrap().id;
+        eco.units.get_mut(last_id).unwrap().state = crate::units::UnitState::Idle;
+
+        eco.repair_buildings();
+        assert_eq!(eco.buildings[idx].hp, max_hp, "HP should cap at max_hp");
+
+        // Second repair should not exceed max_hp
+        eco.repair_buildings();
+        assert_eq!(eco.buildings[idx].hp, max_hp);
+    }
+
+    #[test]
+    fn test_building_auto_repair_only_idle_settlers() {
+        let mut eco = Economy::new();
+        let idx = eco.place_building(BuildingType::Farm, 2, 2);
+        eco.buildings[idx].construction = 1.0;
+        eco.buildings[idx].active = true;
+        let bx = eco.buildings[idx].x as f32 + 0.5;
+        let by = eco.buildings[idx].y as f32 + 0.5;
+        eco.buildings[idx].hp = 50;
+
+        // Spawn a moving settler (not idle)
+        eco.units.spawn(crate::units::UnitKind::Settler, bx, by);
+        let last_id = eco.units.alive_units().last().unwrap().id;
+        eco.units.get_mut(last_id).unwrap().state = crate::units::UnitState::Moving; // not idle
+
+        let repaired = eco.repair_buildings();
+        assert_eq!(repaired, 0, "Moving settler should not repair");
+        assert_eq!(eco.buildings[idx].hp, 50);
+    }
+
+    #[test]
+    fn test_building_auto_repair_out_of_range() {
+        let mut eco = Economy::new();
+        let idx = eco.place_building(BuildingType::Farm, 5, 5);
+        eco.buildings[idx].construction = 1.0;
+        eco.buildings[idx].active = true;
+        eco.buildings[idx].hp = 50;
+
+        // Spawn idle settler 5 tiles away (beyond REPAIR_RANGE=3.0)
+        eco.units.spawn(crate::units::UnitKind::Settler, 10.5, 5.5);
+        let last_id = eco.units.alive_units().last().unwrap().id;
+        eco.units.get_mut(last_id).unwrap().state = crate::units::UnitState::Idle;
+
+        let repaired = eco.repair_buildings();
+        assert_eq!(repaired, 0, "Settler out of range should not repair");
+    }
+
+    #[test]
+    fn test_building_auto_repair_not_for_incomplete_buildings() {
+        let mut eco = Economy::new();
+        let idx = eco.place_building(BuildingType::Farm, 2, 2);
+        let bx = eco.buildings[idx].x as f32 + 0.5;
+        let by = eco.buildings[idx].y as f32 + 0.5;
+        eco.buildings[idx].construction = 0.5;
+        eco.buildings[idx].active = false;
+        eco.buildings[idx].hp = 50;
+
+        eco.units.spawn(crate::units::UnitKind::Settler, bx, by);
+        let last_id = eco.units.alive_units().last().unwrap().id;
+        eco.units.get_mut(last_id).unwrap().state = crate::units::UnitState::Idle;
+
+        let repaired = eco.repair_buildings();
+        assert_eq!(repaired, 0, "Incomplete buildings should not be repaired");
+    }
+
 }
 
 // ── Rally Point Tests ──────────────────────────────────────────────────────────
@@ -4170,4 +4332,5 @@ mod rally_point_tests {
         assert_eq!(b.hp, 0);
         assert!(b.destruction_timer.is_some());
     }
+
 }
