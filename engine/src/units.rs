@@ -148,6 +148,23 @@ impl UnitKind {
     pub fn can_fight(self) -> bool {
         !matches!(self, UnitKind::Settler)
     }
+
+    /// Experience granted to the killer when this kind of unit is slain.
+    pub fn experience_on_kill(self) -> u32 {
+        match self {
+            UnitKind::Settler => 5,
+            UnitKind::Swordsman => 25,
+            UnitKind::Bowman => 20,
+            UnitKind::SquadLeader => 40,
+            UnitKind::Medic => 20,
+            UnitKind::BlowgunWarrior => 25,
+            UnitKind::AxeWarrior => 30,
+            UnitKind::BackpackCatapultist => 30,
+            UnitKind::ShadowSoldier => 20,
+            UnitKind::Shaman => 35,
+            _ => 10,
+        }
+    }
 }
 
 /// Current state of a unit
@@ -248,7 +265,18 @@ pub struct Unit {
     pub patrol_point: Option<(usize, usize)>,
     /// Combat stance (Aggressive, StandGround, Passive). Default: Aggressive.
     pub stance: UnitStance,
+    /// Rank level: 0 = recruit, 1-3 = experienced (per BASE.md Ranks 1-3).
+    /// Higher rank increases combat effectiveness: +10% damage, +15% HP per rank.
+    pub rank: u8,
+    /// Combat experience points, earned from killing enemies.
+    /// Promotions at thresholds: XP_RANK_1(30), XP_RANK_2(80), XP_RANK_3(150).
+    pub experience: u32,
 }
+
+/// XP thresholds for rank promotion (cumulative XP required).
+pub const XP_RANK_1: u32 = 30;
+pub const XP_RANK_2: u32 = 80;
+pub const XP_RANK_3: u32 = 150;
 
 impl Unit {
     /// Create a new unit at the given position
@@ -276,6 +304,8 @@ impl Unit {
             dying_timer: 0.0,
             patrol_point: None,
             stance: UnitStance::Aggressive,
+            rank: 0,
+            experience: 0,
         }
     }
 
@@ -450,6 +480,43 @@ impl Unit {
         let dx = self.x - other.x;
         let dy = self.y - other.y;
         (dx * dx + dy * dy).sqrt()
+    }
+
+    /// Effective attack damage, including rank bonus (+10% per rank).
+    pub fn effective_attack_damage(&self) -> u32 {
+        let base = self.kind.attack_damage() as f32;
+        let rank_bonus = 1.0 + (self.rank as f32 * 0.10);
+        (base * rank_bonus).max(1.0) as u32
+    }
+
+    /// Effective max HP, including rank bonus (+15% per rank).
+    pub fn effective_max_hp(&self) -> u32 {
+        let base = self.kind.max_hp() as f32;
+        let rank_bonus = 1.0 + (self.rank as f32 * 0.15);
+        (base * rank_bonus).max(1.0) as u32
+    }
+
+    /// Grant combat experience. Returns the new rank if promoted, None otherwise.
+    /// Only military units (can_fight) can gain experience.
+    pub fn add_experience(&mut self, xp: u32) -> Option<u8> {
+        if !self.kind.can_fight() {
+            return None;
+        }
+        let old_rank = self.rank;
+        self.experience = self.experience.saturating_add(xp);
+        self.rank = match self.experience {
+            x if x >= XP_RANK_3 => 3,
+            x if x >= XP_RANK_2 => 2,
+            x if x >= XP_RANK_1 => 1,
+            _ => 0,
+        };
+        if self.rank > old_rank {
+            self.max_hp = self.effective_max_hp();
+            self.hp = self.max_hp;
+            Some(self.rank)
+        } else {
+            None
+        }
     }
 }
 
@@ -1739,5 +1806,119 @@ mod formation_move_tests {
         let u = Unit::new(1, UnitKind::Settler, 0.0, 0.0);
         // Settlers still have a stance even though they can't fight
         assert_eq!(u.stance, UnitStance::Aggressive);
+    }
+}
+
+#[cfg(test)]
+mod rank_experience_tests {
+    use super::*;
+
+    #[test]
+    fn test_unit_spawns_at_rank_zero() {
+        let u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        assert_eq!(u.rank, 0);
+        assert_eq!(u.experience, 0);
+    }
+
+    #[test]
+    fn test_settlers_cannot_gain_experience() {
+        let mut u = Unit::new(1, UnitKind::Settler, 0.0, 0.0);
+        let promoted = u.add_experience(100);
+        assert!(promoted.is_none());
+        assert_eq!(u.rank, 0);
+        assert_eq!(u.experience, 0);
+    }
+
+    #[test]
+    fn test_soldier_gains_xp_no_promotion() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        let promoted = u.add_experience(20);
+        assert!(promoted.is_none());
+        assert_eq!(u.rank, 0);
+        assert_eq!(u.experience, 20);
+    }
+
+    #[test]
+    fn test_soldier_promotion_to_rank_1() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        let promoted = u.add_experience(30);
+        assert_eq!(promoted, Some(1));
+        assert_eq!(u.rank, 1);
+        assert_eq!(u.experience, 30);
+    }
+
+    #[test]
+    fn test_soldier_promotion_to_rank_2() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        let promoted = u.add_experience(80);
+        assert_eq!(promoted, Some(2));
+        assert_eq!(u.rank, 2);
+        assert_eq!(u.experience, 80);
+    }
+
+    #[test]
+    fn test_soldier_promotion_to_rank_3() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        let promoted = u.add_experience(150);
+        assert_eq!(promoted, Some(3));
+        assert_eq!(u.rank, 3);
+        assert_eq!(u.experience, 150);
+    }
+
+    #[test]
+    fn test_cumulative_xp_multiple_kills() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        let p1 = u.add_experience(20);
+        assert!(p1.is_none(), "20 XP should not promote");
+        let p2 = u.add_experience(20);
+        assert_eq!(p2, Some(1), "40 cumulative XP -> rank 1");
+        assert_eq!(u.rank, 1);
+        u.add_experience(20);
+        let p3 = u.add_experience(20);
+        assert_eq!(p3, Some(2), "80 cumulative XP -> rank 2");
+        assert_eq!(u.rank, 2);
+    }
+
+    #[test]
+    fn test_promotion_restores_hp() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        u.take_damage(50);
+        assert_eq!(u.hp, 50);
+        let promoted = u.add_experience(30);
+        assert_eq!(promoted, Some(1));
+        assert_eq!(u.max_hp, 115);
+        assert_eq!(u.hp, 115);
+    }
+
+    #[test]
+    fn test_rank_damage_bonus() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        assert_eq!(u.effective_attack_damage(), 15);
+        u.add_experience(30); // rank 1: +10% = 16
+        assert_eq!(u.effective_attack_damage(), 16);
+        u.add_experience(50); // rank 2: +20% = 18
+        assert_eq!(u.effective_attack_damage(), 18);
+        u.add_experience(70); // rank 3: +30% = 19
+        assert_eq!(u.effective_attack_damage(), 19);
+    }
+
+    #[test]
+    fn test_rank_hp_bonus() {
+        let mut u = Unit::new(1, UnitKind::Swordsman, 0.0, 0.0);
+        assert_eq!(u.effective_max_hp(), 100);
+        u.add_experience(80); // rank 2: +30% = 130
+        assert_eq!(u.effective_max_hp(), 130);
+        u.add_experience(70); // rank 3: +45% = 145
+        assert_eq!(u.effective_max_hp(), 145);
+    }
+
+    #[test]
+    fn test_experience_on_kill_values() {
+        assert_eq!(UnitKind::Swordsman.experience_on_kill(), 25);
+        assert_eq!(UnitKind::Bowman.experience_on_kill(), 20);
+        assert_eq!(UnitKind::Settler.experience_on_kill(), 5);
+        assert_eq!(UnitKind::SquadLeader.experience_on_kill(), 40);
+        assert_eq!(UnitKind::AxeWarrior.experience_on_kill(), 30);
+        assert_eq!(UnitKind::Shaman.experience_on_kill(), 35);
     }
 }

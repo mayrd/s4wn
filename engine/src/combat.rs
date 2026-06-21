@@ -284,7 +284,7 @@ impl CombatAI {
 
     /// Try to attack the current target.
     fn try_attack(&self, units: &mut UnitManager, attacker_id: u32) {
-        let (target_id, damage, cooldown) = {
+        let (target_id, target_kind, damage, cooldown) = {
             let attacker = match units.get(attacker_id) {
                 Some(u) => u,
                 None => return,
@@ -296,9 +296,11 @@ impl CombatAI {
                 Some(id) => id,
                 None => return,
             };
+            let target_kind = units.get(target_id).map(|t| t.kind);
             (
                 target_id,
-                (attacker.kind.attack_damage() as f32 * attacker.attack_mult).max(1.0) as u32,
+                target_kind,
+                (attacker.effective_attack_damage() as f32 * attacker.attack_mult).max(1.0) as u32,
                 attacker.kind.attack_interval(),
             )
         };
@@ -313,12 +315,22 @@ impl CombatAI {
         };
         let died = units.apply_damage_and_record_death(target_id, effective_damage);
 
+        // Increment combat hits counter
+        units.recent_combat_hits += 1;
+
         // Set cooldown on attacker
         if let Some(attacker) = units.get_mut(attacker_id) {
             attacker.attack_cooldown = cooldown;
         }
 
         if died {
+            // Grant experience to the attacker for the kill
+            if let Some(tk) = target_kind {
+                let xp = tk.experience_on_kill();
+                if let Some(attacker) = units.get_mut(attacker_id) {
+                    attacker.add_experience(xp);
+                }
+            }
             // Remove attacker's target
             if let Some(attacker) = units.get_mut(attacker_id) {
                 attacker.target = None;
@@ -449,7 +461,7 @@ impl CombatAI {
             if !attacker.can_attack() { return; }
             let target_id = match attacker.target { Some(id) if is_building_target(id) => id, _ => return };
             (decode_building_index(target_id),
-             (attacker.kind.attack_damage() as f32 * attacker.attack_mult).max(1.0) as u32,
+             (attacker.effective_attack_damage() as f32 * attacker.attack_mult).max(1.0) as u32,
              attacker.kind.attack_interval())
         };
         let building_destroyed = if building_idx < economy.buildings.len() {
