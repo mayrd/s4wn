@@ -5,6 +5,7 @@
 //! smooth camera pan (mouse drag) and zoom (scroll wheel).
 
 pub mod ara_crypt;
+pub mod base_validation_tests;
 pub mod camera;
 pub mod combat;
 pub mod decompress;
