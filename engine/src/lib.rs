@@ -2557,6 +2557,7 @@ pub fn get_unit_summary() -> String {
                     crate::units::UnitState::Working => "Working",
                     crate::units::UnitState::Fighting => "Fighting",
                     crate::units::UnitState::Patrolling => "Patrolling",
+                    crate::units::UnitState::FormationMove => "FormationMove",
                     crate::units::UnitState::Dying => "Dying",
                     crate::units::UnitState::Dead => "Dead",
                 };
@@ -2603,6 +2604,7 @@ pub fn get_units_in_rect(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> Stri
                         crate::units::UnitState::Working => "Working",
                         crate::units::UnitState::Fighting => "Fighting",
                         crate::units::UnitState::Patrolling => "Patrolling",
+                    crate::units::UnitState::FormationMove => "FormationMove",
                         crate::units::UnitState::Dying => "Dying",
                         crate::units::UnitState::Dead => "Dead",
                     };
@@ -2650,6 +2652,27 @@ pub fn order_patrol(unit_ids_json: &str, target_x: usize, target_y: usize) -> u3
         if let Some(ref mut app) = APP {
             let unit_ids: Vec<u32> = serde_json::from_str(unit_ids_json).unwrap_or_default();
             app.game_loop.state.economy.units.order_patrol(
+                &unit_ids,
+                target_x,
+                target_y,
+                &app.game_loop.state.map,
+            )
+        } else {
+            0
+        }
+    }
+}
+
+/// Order a set of units to move in formation to a target tile.
+/// Each unit maintains its relative offset from the group center.
+/// unit_ids_json: JSON array of unit IDs, e.g. [1,2,3]
+/// Returns the number of units successfully ordered to move.
+#[wasm_bindgen]
+pub fn formation_move(unit_ids_json: &str, target_x: usize, target_y: usize) -> u32 {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            let unit_ids: Vec<u32> = serde_json::from_str(unit_ids_json).unwrap_or_default();
+            app.game_loop.state.economy.units.formation_move(
                 &unit_ids,
                 target_x,
                 target_y,
@@ -2752,6 +2775,7 @@ pub fn get_unit_info(id: u32) -> String {
                     crate::units::UnitState::Working => "Working",
                     crate::units::UnitState::Fighting => "Fighting",
                     crate::units::UnitState::Patrolling => "Patrolling",
+                    crate::units::UnitState::FormationMove => "FormationMove",
                     crate::units::UnitState::Dying => "Dying",
                     crate::units::UnitState::Dead => "Dead",
                 };
@@ -3193,6 +3217,7 @@ pub fn get_game_state() -> String {
                     crate::units::UnitState::Working => "Working",
                     crate::units::UnitState::Fighting => "Fighting",
                         crate::units::UnitState::Patrolling => "Patrolling",
+                    crate::units::UnitState::FormationMove => "FormationMove",
                     crate::units::UnitState::Dying => "Dying",
                     crate::units::UnitState::Dead => "Dead",
                 };
