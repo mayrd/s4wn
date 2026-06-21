@@ -3035,15 +3035,6 @@ function tUnit(name) {
 let placementMode = null; // building type string or null
 let placementButtons = [];
 
-// Translate resource keys in a cost string like "Wood:5, Stone:2"
-function translateCost(costStr) {
-    if (!costStr) return '?';
-    return costStr.split(', ').map(pair => {
-        const [key, val] = pair.split(':');
-        return `${tResource(key)}:${val}`;
-    }).join(', ');
-}
-
 function showBuildCostTooltip(kindName) {
     const cost = get_build_cost(kindName);
     if (cost && !cost.includes('error')) {

@@ -226,7 +226,7 @@ impl CombatAI {
         let enemy_id = self.find_nearest_enemy(units, unit_id);
 
         if let Some(enemy_id) = enemy_id {
-            let (dist, can_attack, is_stand_ground) = {
+            let (_dist, can_attack, is_stand_ground) = {
                 let unit = units.get(unit_id).unwrap();
                 let enemy = units.get(enemy_id).unwrap();
                 let dist = unit.distance_to(enemy);

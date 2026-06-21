@@ -5218,16 +5218,19 @@ mod tests {
     // ── Day/Night Lighting Tests ───────────────────────────────────────────
 
     /// Helper: replicate the Rust sun_angle calculation for testing.
+    #[allow(dead_code)]
     fn compute_sun_angle(day_phase: f32) -> f32 {
         (day_phase - 0.25) * std::f32::consts::TAU
     }
 
     /// Helper: replicate the shader day_light_raw formula.
+    #[allow(dead_code)]
     fn compute_day_light_raw(day_phase: f32) -> f32 {
         0.5 + 0.5 * (compute_sun_angle(day_phase)).sin()
     }
 
     /// Helper: Hermite smoothstep for transition smoothing.
+    #[allow(dead_code)]
     fn smooth_day_light(raw: f32) -> f32 {
         raw * raw * (3.0 - 2.0 * raw)
     }
