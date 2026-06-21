@@ -249,3 +249,55 @@ AI agents must not edit this file unless explicitly stated.
 | **Munitions** | Gunpowder | Schießpulver | **Mayans only** | Sulfur Ore + Coal Ore *(via Powder Mill)*| Ammunition for Mayan Fire Spitter heavy war machines |
 | **Munitions** | Explosive Arrow | Explosivpfeil | **Trojans only** | Sulfur Ore + Iron Bar *(via Weapon Foundry)*| Ammunition for Trojan Ballista heavy war machines |
 | **Munitions** | Catapult Ammo | Munition | **Romans & Vikings**| Stone chunks from local storage | Ammunition for Roman Catapults and Viking Thundatrucks |
+
+## Settlers
+
+| Class / Type | English Name | German Name | Nation | Produced With | Used For |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Specialist** | Pioneer | Pionier | All | Idle Settler | Digs border stakes to dynamically expand your territory without military towers. |
+| **Specialist** | Geologist | Geologe | All | Idle Settler | Explores mountainside terrain for mineral deposits and flags resource locations. |
+| **Specialist** | Thief | Dieb | All | Idle Settler | Infiltrates enemy land invisibly to scout enemy placement and steal resources. |
+| **Specialist** | Gardener | Gärtner | All | Idle Settler | Restores the Dark Tribe's blighted wasteland back into green, vibrant grass. |
+| **Logistics** | Carrier | Träger | All | Idle Settler | Automatically transports all raw and processed goods across the settlement network. |
+| **Logistics** | Digger | Planierer | All | Idle Settler + Shovel | Flattens rugged terrain to create a level construction foundation for blueprints. |
+| **Logistics** | Builder | Bauarbeiter | All | Idle Settler + Hammer | Assembles buildings once all required construction materials have been delivered. |
+| **Basic Economy** | Forester | Förster | All | Idle Settler | Plants saplings to sustain a dense, renewable woodland area (Forester's Hut). |
+| **Basic Economy** | Woodcutter | Holzfäller | All | Idle Settler + Axe | Fells mature trees into raw logs for construction processing (Woodcutter's Hut). |
+| **Basic Economy** | Sawyer | Säger | All | Idle Settler + Saw | Sharpens raw logs into standard building planks (Sawmill). |
+| **Basic Economy** | Stonecutter | Steinmetz | All | Idle Settler + Pickaxe | Details raw stone chunks directly from local field crags (Stonecutter's Hut). |
+| **Mining** | Miner | Minenarbeiter | All | Idle Settler + Pickaxe | Extracts resource ores from underground deposits; requires targeted food types. |
+| **Heavy Industry** | Smelter | Schmelzer | All | Idle Settler | Blasts raw iron or gold ores into pure metal bars (Iron / Gold Smelter). |
+| **Heavy Industry** | Toolsmith | Werkzeugschmied | All | Idle Settler | Forges necessary functional equipment out of iron bars and coal (Toolsmith). |
+| **Heavy Industry** | Weaponsmith | Waffenschmied | All | Idle Settler + Hammer | Forges battle-ready swords, bows, shields, and armor (Weaponsmith). |
+| **Heavy Industry** | Weapon Foundry | Waffengießer | Trojans | Idle Settler | Processes iron bars and sulfur into heavy explosive projectiles (Weapon Foundry). |
+| **Food & Crops** | Farmer | Bauer | All | Idle Settler + Scythe | Sows, tends, and cuts seasonal stalks of raw grain crops (Grain Farm). |
+| **Food & Crops** | Miller | Müller | All | Idle Settler | Crushes raw grain inventory down into baking-ready white flour (Grain Mill). |
+| **Food & Crops** | Baker | Bäcker | All | Idle Settler | Combines flour and water to bake bread rations for coal mines (Bakery). |
+| **Food & Crops** | Water Worker | Wasserwerker | All | Idle Settler | Extracts fresh water buckets from adjacent rivers or lakes (Waterworks). |
+| **Food & Crops** | Animal Breeder | Tierzüchter | All *(Faction-Specific)* | Idle Settler | Breeds livestock (Romans: Sheep, Mayans: Goats, Vikings: Pigs, Trojans: Geese). |
+| **Food & Crops** | Butcher | Metzger | All | Idle Settler + Axe | Prepares livestock assets into fresh meat rations for iron mines (Slaughterhouse). |
+| **Food & Crops** | Fisherman | Fischer | All | Idle Settler + Fishing Rod | Angles coastal or lake fishing nodes to feed gold/sulfur miners (Fisherman's Hut). |
+| **Logistics** | Trader | Händler | All | Idle Settler | Conducts trade operations using land-based pack donkeys or naval merchant fleets. |
+| **Logistics** | Shipwright | Schiffsbauer | All | Idle Settler + Hammer | Constructs wooden naval transport vessels, ferries, and heavy warships (Shipyard). |
+| **Medical** | Healer | Heiler | All | Idle Settler | Tends to nearby wounded friendly military units over time (Healer's Hut). |
+| **Sacrificial Wine** | Vintner | Winzer | Romans | Idle Settler | Grows grapes and presses them into divine sacrificial wine (Vineyard). |
+| **Sacrificial Liquor**| Agave Farmer | Agavenbauer | Mayans | Idle Settler | Plants and harvests desert agave flora for liquor distilling (Agave Farm). |
+| **Sacrificial Liquor**| Tequila Distiller | Teumabrenner | Mayans | Idle Settler | Distills harvested agave stocks into potent sacrificial tequila (Tequila Distillery). |
+| **Sacrificial Mead** | Beekeeper | Imker | Vikings | Idle Settler | Cultivates wild honeybee hives for raw liquid honey yields (Apiary). |
+| **Sacrificial Mead** | Mead Brewer | Metbrauer | Vikings | Idle Settler | Ferments honey and pure water into sacrificial mead (Mead Brewery). |
+| **Sacrificial Oil** | Sunflower Farmer | Sonnenblumenbauer | Trojans | Idle Settler | Manages vibrant agricultural tracts of blooming sunflowers (Trojan Farm). |
+| **Sacrificial Oil** | Oil Miller | Ölmüller | Trojans | Idle Settler | Presses harvested sunflower seed crops into sacrificial vegetable oil (Oil Press). |
+| **Specialist Craft** | Powder Maker | Pulvermacher | Mayans | Idle Settler | Grinds sulfur and coal into heavy tactical munitions (Powder Mill). |
+| **Military** | Priest / Mage | Priester | All | Idle Settler | Channels collected mana reserves to cast powerful faction-wide divine spells. |
+| **Military** | Swordsman | Schwertkämpfer | All | Idle Settler + Sword + Shield | Standard shock infantry unit featuring defensive shields (Ranks 1–3). |
+| **Military** | Bowman | Bogenschütze | All | Idle Settler + Bow | Core ranged archer unit providing high-damage cover fire (Ranks 1–3). |
+| **Military** | Squad Leader | Hauptmann | All | Idle Settler + Gold Bars | High-ranking tactical officer providing a 10% combat efficiency buff to allies. |
+| **Military (Special)**| Medic | Sanitäter | Romans | Idle Settler + First Aid Kit | Mobile battlefield corpsman capable of directly healing infantry units in combat. |
+| **Military (Special)**| Blowgun Warrior | Blasrohrschütze | Mayans | Idle Settler + Blowgun | Fires paralytic neurotoxin darts that temporarily freeze enemy movement. |
+| **Military (Special)**| Axe Warrior | Streitaxtkämpfer | Vikings | Idle Settler + Battleaxe | High-damage shock troops that act as the elite melee option for the faction. |
+| **Military (Special)**| Backpack Catapultist| Rucksack-Katapultierer | Trojans | Idle Settler + Mini-Catapult | High-range light artillery units that deal immense damage from a safe distance. |
+| **Dark Tribe (NPC)** | Dark Digger | Dunkler Planierer | Dark Tribe | Shaman Spell | Corrupts natural fertile land into withered, dark toxic wasteland tiles. |
+| **Dark Tribe (NPC)** | Dark Farmer | Dunkler Gärtner | Dark Tribe | Shaman Spell | Plants and propagates dark spore mushrooms across the corrupted landscape. |
+| **Dark Tribe (NPC)** | Cultist | Kultist | Dark Tribe | Breeding Hall | Automatically harvests grown dark mushrooms and carries them to the temple. |
+| **Dark Tribe (NPC)** | Shaman | Schamane | Dark Tribe | Dark Temple | Casts powerful blights and continually summons Dark Diggers and Farmers. |
+| **Dark Tribe (NPC)** | Shadow Soldier | Schattensoldat | Dark Tribe | Breeding Hall + Mana | The core melee combat units tasked with wiping out mortal settlements. |
