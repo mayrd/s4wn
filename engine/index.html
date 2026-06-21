@@ -1223,6 +1223,7 @@
   <div id="fps" title="Click to toggle debug panel">--</div>
   <div id="debug-extra" style="display:none">
     <span id="debug-time"></span> | <span id="debug-ticks"></span> | <span id="debug-tiles"></span> | <span id="debug-buildings"></span>
+    <br><button id="debug-snapshot-btn" style="margin-top:4px;padding:3px 8px;font-size:11px;background:rgba(200,170,100,0.15);border:1px solid rgba(200,170,100,0.3);border-radius:4px;color:#c8b878;cursor:pointer;" title="Collect render diagnostics + screenshot → GitHub issue">📸 Render Snapshot</button>
   </div>
 </div>
 
@@ -5758,6 +5759,197 @@ window.__s4wn_debug = {
     } catch(e) { return '{"units":[]}'; }
   },
 };
+
+// ── Debug Snapshot — collect render diagnostics → GitHub issue ─────────
+const DebugSnapshot = {
+  /** Collect all rendering/render diagnostics and open a GitHub issue */
+  async capture() {
+    const canvas = document.getElementById('game-canvas');
+    if (!canvas) { alert('No game canvas found'); return; }
+
+    const info = {};
+    // ── Window / Screen ──
+    info.window_inner = `${window.innerWidth}×${window.innerHeight}`;
+    info.window_outer = `${window.outerWidth}×${window.outerHeight}`;
+    info.screen = `${screen.width}×${screen.height} (avail ${screen.availWidth}×${screen.availHeight})`;
+    info.devicePixelRatio = window.devicePixelRatio;
+    info.colorDepth = screen.colorDepth;
+    info.orientation = screen.orientation?.type || 'unknown';
+
+    // ── Canvas dimensions ──
+    info.canvas_css = `${canvas.style.width || 'auto'} × ${canvas.style.height || 'auto'}`;
+    info.canvas_html = `${canvas.getAttribute('width') || '?'} × ${canvas.getAttribute('height') || '?'}`;
+    info.canvas_actual = `${canvas.width}×${canvas.height}`;
+    info.canvas_client = `${canvas.clientWidth}×${canvas.clientHeight}`;
+    const csCanvas = getComputedStyle(canvas);
+    info.canvas_computed = `${csCanvas.width}×${csCanvas.height} (display:${csCanvas.display}, position:${csCanvas.position})`;
+
+    // ── Viewport ──
+    info.viewport_visual = `${visualViewport?.width || '?'}×${visualViewport?.height || '?'}`;
+
+    // ── WebGL ──
+    try {
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      if (gl) {
+        info.webgl_version = gl.getParameter(gl.VERSION);
+        info.webgl_shading = gl.getParameter(gl.SHADING_LANGUAGE_VERSION);
+        info.webgl_vendor = gl.getParameter(gl.VENDOR);
+        info.webgl_renderer = gl.getParameter(gl.RENDERER);
+        info.webgl_max_texture = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+        info.webgl_max_viewport = gl.getParameter(gl.MAX_VIEWPORT_DIMS)?.join('×') || '?';
+        info.webgl_max_renderbuffer = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE);
+        info.webgl_extensions = gl.getSupportedExtensions()?.join(', ') || 'none';
+        const dbgInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        if (dbgInfo) {
+          info.webgl_unmasked_vendor = gl.getParameter(dbgInfo.UNMASKED_VENDOR_WEBGL);
+          info.webgl_unmasked_renderer = gl.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL);
+        }
+      } else {
+        info.webgl_error = 'NO WEBGL CONTEXT';
+      }
+    } catch(e) { info.webgl_error = e.message; }
+
+    // ── WASM engine state ──
+    try {
+      const s = JSON.parse(get_stats());
+      info.engine_ticks = s.ticks;
+      info.engine_game_time = s.game_time;
+      info.engine_zoom = s.zoom;
+    } catch(e) { info.engine_error = e.message; }
+
+    try {
+      const md = JSON.parse(get_map_data());
+      info.map_size = `${md.width}×${md.height}`;
+      info.map_tiles = md.tiles?.length || '?';
+    } catch(e) { info.map_error = e.message; }
+
+    try { const bs = JSON.parse(get_building_summary()); info.buildings = bs.length; } catch(e) {}
+    try { const us = JSON.parse(get_unit_summary()); info.units = us.length; } catch(e) {}
+    try {
+      const cam = JSON.parse(get_camera_state());
+      info.camera_offset = `(${cam.offset_x?.toFixed(1)}, ${cam.offset_y?.toFixed(1)})`;
+      info.camera_viewport = `${cam.viewport_w?.toFixed(0)}×${cam.viewport_h?.toFixed(0)}`;
+      info.camera_zoom = cam.zoom;
+    } catch(e) {}
+
+    // ── CSS key elements ──
+    for (const id of ['splash', 'menu', 'debug-panel', 'hud-top-left', 'hud-top-right',
+                       'resource-bar', 'tool-bar', 'minimap', 'selection-info',
+                       'construction-panel', 'resources-panel', 'settlers-panel']) {
+      const el = document.getElementById(id);
+      if (el) {
+        const cs = getComputedStyle(el);
+        info[`css_${id}`] = `${cs.width}×${cs.height} display:${cs.display} visible:${cs.visibility} opacity:${cs.opacity}`;
+      }
+    }
+    info.css_body = getComputedStyle(document.body).overflow;
+
+    // ── User agent / platform ──
+    info.userAgent = navigator.userAgent;
+    info.platform = navigator.platform;
+    info.language = navigator.language;
+    info.hardwareConcurrency = navigator.hardwareConcurrency || '?';
+    info.maxTouchPoints = navigator.maxTouchPoints;
+    info.time = new Date().toISOString();
+
+    // ── Build markdown report ──
+    let body = '## 🔍 Render Diagnostic Snapshot\n\n';
+    body += `**Time:** ${info.time}  \n`;
+    body += `**User Agent:** ${info.userAgent}  \n`;
+    body += `**Platform:** ${info.platform} (${info.hardwareConcurrency} cores, ${info.maxTouchPoints} touch, DPR ${info.devicePixelRatio})\n\n`;
+
+    body += '### 📐 Dimensions\n';
+    body += '| Metric | Value |\n|--------|-------|\n';
+    body += `| Window inner | ${info.window_inner} |\n`;
+    body += `| Window outer | ${info.window_outer} |\n`;
+    body += `| Screen | ${info.screen} |\n`;
+    body += `| DPR | ${info.devicePixelRatio} |\n`;
+    body += `| Visual viewport | ${info.viewport_visual} |\n`;
+    body += `| Canvas actual | ${info.canvas_actual} |\n`;
+    body += `| Canvas client | ${info.canvas_client} |\n`;
+    body += `| Canvas CSS | ${info.canvas_css} |\n`;
+    body += `| Canvas computed | ${info.canvas_computed} |\n\n`;
+
+    body += '### 🎮 WebGL\n';
+    body += '| Metric | Value |\n|--------|-------|\n';
+    body += `| Version | ${info.webgl_version || info.webgl_error} |\n`;
+    body += `| Shading | ${info.webgl_shading || '?'} |\n`;
+    body += `| Vendor | ${info.webgl_vendor || '?'} |\n`;
+    body += `| Renderer | ${info.webgl_renderer || '?'} |\n`;
+    body += `| Unmasked Vendor | ${info.webgl_unmasked_vendor || '?'} |\n`;
+    body += `| Unmasked Renderer | ${info.webgl_unmasked_renderer || '?'} |\n`;
+    body += `| Max texture | ${info.webgl_max_texture || '?'} |\n`;
+    body += `| Max viewport | ${info.webgl_max_viewport || '?'} |\n`;
+    body += `| Max renderbuffer | ${info.webgl_max_renderbuffer || '?'} |\n\n`;
+
+    body += '### 🗺️ Engine State\n';
+    body += '| Metric | Value |\n|--------|-------|\n';
+    body += `| Ticks | ${info.engine_ticks || '?'} |\n`;
+    body += `| Game time | ${info.engine_game_time || '?'} |\n`;
+    body += `| Zoom | ${info.engine_zoom || '?'} |\n`;
+    body += `| Map | ${info.map_size || '?'} (${info.map_tiles || '?'} tiles) |\n`;
+    body += `| Buildings | ${info.buildings ?? '?'} |\n`;
+    body += `| Units | ${info.units ?? '?'} |\n`;
+    body += `| Camera offset | ${info.camera_offset || '?'} |\n`;
+    body += `| Camera viewport | ${info.camera_viewport || '?'} |\n\n`;
+
+    body += '### 🎨 CSS Elements\n';
+    body += '| Element | State |\n|---------|-------|\n';
+    for (const [k, v] of Object.entries(info)) {
+      if (k.startsWith('css_')) body += `| ${k.replace('css_', '#')} | ${v} |\n`;
+    }
+    body += `| body overflow | ${info.css_body} |\n\n`;
+
+    body += '### 📸 Screenshot\n';
+    body += '*(please drag & drop a screenshot here — an image file was auto-downloaded)*\n\n';
+
+    body += '<details><summary>🔧 Raw JSON</summary>\n\n```json\n';
+    body += JSON.stringify(info, null, 2);
+    body += '\n```\n</details>\n\n';
+
+    body += '## Tasks\n- [ ] Verify canvas dimensions match viewport\n- [ ] Check WebGL context is valid\n- [ ] Verify camera viewport bounds\n- [ ] Check CSS layout conflicts\n\n';
+    body += `---\n*Generated by DebugSnapshot at ${info.time}*`;
+
+    // ── Auto-download screenshot ──
+    try {
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `s4wn-snapshot-${Date.now()}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    } catch(e) { console.warn('Screenshot download failed:', e); }
+
+    // ── Copy body to clipboard ──
+    try {
+      await navigator.clipboard.writeText(body);
+      console.log('Snapshot report copied to clipboard');
+    } catch(e) {}
+
+    // ── Open GitHub issue ──
+    const title = `[Render Snapshot] ${info.window_inner} — ${info.webgl_renderer || 'no-WebGL'} — ${info.map_size || 'no-map'}`;
+    const ghUrl = 'https://github.com/mayrd/s4wn/issues/new?' + new URLSearchParams({
+      title: title.substring(0, 200),
+      body: body.substring(0, 60000),
+      labels: 'bug,render-snapshot'
+    }).toString();
+    window.open(ghUrl, '_blank');
+
+    console.log('DebugSnapshot captured:', info);
+  }
+};
+
+// Wire up button
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const btn = document.getElementById('debug-snapshot-btn');
+    if (btn) btn.addEventListener('click', () => DebugSnapshot.capture());
+  }, 500);
+});
+
+window.DebugSnapshot = DebugSnapshot;
 </script>
 
 
