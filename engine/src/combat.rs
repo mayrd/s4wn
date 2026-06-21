@@ -101,11 +101,97 @@ impl CombatAI {
                     }
                 }
             }
-            // Target dead or gone → clear target
+            // Target dead or gone → clear target, return to patrol or idle
             if let Some(u) = units.get_mut(unit_id) {
                 u.target = None;
-                u.state = UnitState::Idle;
+                if u.state == UnitState::Fighting {
+                    if u.patrol_point.is_some() {
+                        u.state = UnitState::Patrolling;
+                    } else {
+                        u.state = UnitState::Idle;
+                    }
+                }
             }
+        }
+
+        // If patrolling and has a patrol point, check if reached destination
+        let (is_patrolling, patrol_target) = {
+            let u = units.get(unit_id).unwrap();
+            (
+                u.state == UnitState::Patrolling,
+                u.patrol_point,
+            )
+        };
+
+        if is_patrolling {
+            let at_patrol_point = {
+                let u = units.get(unit_id).unwrap();
+                if u.state != UnitState::Moving {
+                    // Check if at patrol point
+                    if let Some((px, py)) = patrol_target {
+                        let dx = (u.x - (px as f32 + 0.5)).abs();
+                        let dy = (u.y - (py as f32 + 0.5)).abs();
+                        dx < 0.5 && dy < 0.5
+                    } else {
+                        true // no patrol point → idle
+                    }
+                } else {
+                    false
+                }
+            };
+
+            if at_patrol_point {
+                // At patrol point: scan for nearby enemies (larger radius)
+                let enemy_id = self.find_nearest_enemy(units, unit_id);
+                if let Some(enemy_id) = enemy_id {
+                    let in_range = {
+                        let u = units.get(unit_id).unwrap();
+                        let e = units.get(enemy_id).unwrap();
+                        let dist = u.distance_to(e);
+                        let range = u.kind.attack_range() * u.attack_range_mult;
+                        dist <= range
+                    };
+                    if in_range {
+                        if let Some(u) = units.get_mut(unit_id) {
+                            u.target = Some(enemy_id);
+                            u.state = UnitState::Fighting;
+                        }
+                        self.try_attack(units, unit_id);
+                        return;
+                    } else {
+                        // Enemy found but out of range → chase
+                        self.chase_target(units, map, unit_id);
+                        return;
+                    }
+                }
+                // No enemy found at patrol point → stay idle
+                return;
+            }
+        }
+
+        // If idle but has a patrol point, return to it
+        let needs_return = {
+            let u = units.get(unit_id).unwrap();
+            u.state == UnitState::Idle && u.patrol_point.is_some()
+        };
+        if needs_return {
+            let (px, py) = {
+                let u = units.get(unit_id).unwrap();
+                u.patrol_point.unwrap()
+            };
+            let (ux, uy) = {
+                let u = units.get(unit_id).unwrap();
+                (u.x as usize, u.y as usize)
+            };
+            if let Some(u) = units.get_mut(unit_id) {
+                u.state = UnitState::Patrolling;
+            }
+            if let Some(path) = Pathfinder::find_path(map, (ux, uy), (px, py)) {
+                if let Some(u) = units.get_mut(unit_id) {
+                    u.move_along(path);
+                }
+            }
+            return;
         }
 
         // Unit is idle → find nearest enemy
@@ -460,5 +546,71 @@ mod tests {
         // Unit 1 should be idle (no enemies)
         let u1 = mgr.get(id1).unwrap();
         assert_eq!(u1.state, UnitState::Idle);
+    }
+
+    #[test]
+    fn test_patrol_unit_moves_to_patrol_point() {
+        let mut mgr = UnitManager::new();
+        let map = Map::new(20, 20);
+        let id1 = mgr.spawn(UnitKind::Swordsman, 2.5, 2.5);
+
+        // Order patrol to (10, 10)
+        mgr.order_patrol(&[id1], 10, 10, &map);
+
+        let u = mgr.get(id1).unwrap();
+        assert_eq!(u.state, UnitState::Patrolling);
+        assert_eq!(u.patrol_point, Some((10, 10)));
+    }
+
+    #[test]
+    fn test_patrol_unit_returns_after_killing_enemy() {
+        let mut mgr = UnitManager::new();
+        let map = Map::new(20, 20);
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 5.5); // adjacent enemy (even id = faction 2)
+
+        // Set up patrol
+        mgr.get_mut(id1).unwrap().patrol_point = Some((10, 10));
+        mgr.get_mut(id1).unwrap().state = UnitState::Patrolling;
+
+        // Set unit 1 fighting unit 2
+        mgr.get_mut(id1).unwrap().target = Some(id2);
+        mgr.get_mut(id1).unwrap().state = UnitState::Fighting;
+
+        // Kill unit 2
+        mgr.get_mut(id2).unwrap().hp = 0;
+        mgr.get_mut(id2).unwrap().state = UnitState::Dead;
+
+        // Run combat AI
+        let ai = CombatAI::new();
+        ai.update(&mut mgr, &map, 0.016);
+
+        // Unit 1 should return to patrol state (not idle)
+        let u1 = mgr.get(id1).unwrap();
+        assert_eq!(u1.state, UnitState::Patrolling, "Should return to Patrolling after killing enemy");
+        assert!(u1.target.is_none());
+    }
+
+    #[test]
+    fn test_patrol_unit_at_patrol_point_scans_for_enemies() {
+        let mut mgr = UnitManager::new();
+        let map = Map::new(20, 20);
+        // Unit 1 at patrol point (5, 5)
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        // Unit 2 (enemy) within attack range (1 tile away)
+        let id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 5.5);
+
+        // Set unit 1 as patrolling at its current position
+        mgr.get_mut(id1).unwrap().patrol_point = Some((5, 5));
+        mgr.get_mut(id1).unwrap().state = UnitState::Patrolling;
+
+        // Run combat AI
+        let ai = CombatAI::new();
+        ai.update(&mut mgr, &map, 0.016);
+
+        // Unit 1 should be fighting the enemy
+        let u1 = mgr.get(id1).unwrap();
+        assert_eq!(u1.state, UnitState::Fighting);
+        assert_eq!(u1.target, Some(id2));
     }
 }

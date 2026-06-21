@@ -110,6 +110,8 @@ pub enum UnitState {
     Working,
     /// Fighting an enemy
     Fighting,
+    /// Patrolling — moving to/from a patrol point, attacking enemies encountered
+    Patrolling,
     /// Dying — playing death animation (scale-down + fade), will become Dead
     Dying,
     /// Dead
@@ -158,6 +160,8 @@ pub struct Unit {
     pub nation_speed_mult: f32,
     /// Death animation timer (seconds remaining). When 0 and state is Dying, unit becomes Dead.
     pub dying_timer: f32,
+    /// Patrol target position (tile coordinates). Some((x, y)) when unit is patrolling.
+    pub patrol_point: Option<(usize, usize)>,
 }
 
 impl Unit {
@@ -184,6 +188,7 @@ impl Unit {
             attack_range_mult: 1.0,
             nation_speed_mult: 1.0,
             dying_timer: 0.0,
+            patrol_point: None,
         }
     }
 
@@ -246,7 +251,10 @@ impl Unit {
         let path = match &self.path {
             Some(p) if self.path_index < p.tiles().len() => p,
             _ => {
-                self.state = UnitState::Idle;
+                // Preserve Patrolling state when path completes naturally
+                if self.state != UnitState::Patrolling {
+                    self.state = UnitState::Idle;
+                }
                 self.path = None;
                 return true;
             }
@@ -278,7 +286,10 @@ impl Unit {
             self.path_index += 1;
             if self.path_index >= path.tiles().len() {
                 // Reached destination
-                self.state = UnitState::Idle;
+                // Preserve Patrolling state when path completes
+                if self.state != UnitState::Patrolling {
+                    self.state = UnitState::Idle;
+                }
                 self.path = None;
                 return true;
             }
@@ -565,6 +576,7 @@ impl UnitManager {
                     UnitState::Moving => "Moving",
                     UnitState::Working => "Working",
                     UnitState::Fighting => "Fighting",
+                    UnitState::Patrolling => "Patrolling",
                     UnitState::Dying => "Dying",
                     UnitState::Dead => "Dead",
                 };
@@ -600,8 +612,36 @@ impl UnitManager {
         }
         count
     }
-}
 
+    /// Order a set of units to patrol to a target tile.
+    /// Units will move to the target, and engage any enemies encountered.
+    /// Returns the number of units successfully ordered to patrol.
+    pub fn order_patrol(&mut self, unit_ids: &[u32], target_x: usize, target_y: usize, map: &Map) -> u32 {
+        use crate::pathfinding::Pathfinder;
+        let mut count = 0u32;
+        for unit in self.units.iter_mut() {
+            if !unit.is_alive() {
+                continue;
+            }
+            if !unit_ids.contains(&unit.id) {
+                continue;
+            }
+            unit.target = None;
+            unit.patrol_point = Some((target_x, target_y));
+            let sx = unit.x as usize;
+            let sy = unit.y as usize;
+            if let Some(path) = Pathfinder::find_path(map, (sx, sy), (target_x, target_y)) {
+                unit.move_along(path);
+                unit.state = UnitState::Patrolling;
+                count += 1;
+            } else {
+                // No path found — unit stays in place but is still patrolling
+                unit.state = UnitState::Patrolling;
+            }
+        }
+        count
+    }
+}
 impl Default for UnitManager {
     fn default() -> Self {
         Self::new()
@@ -1240,5 +1280,105 @@ mod death_animation_tests {
         } else {
             assert_eq!(u.state, UnitState::Idle);
         }
+    }
+
+    #[test]
+    fn test_order_patrol_basic() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+
+        let count = mgr.order_patrol(&[id1], 10, 10, &map);
+        assert_eq!(count, 1);
+
+        let u = mgr.get(id1).unwrap();
+        assert_eq!(u.state, UnitState::Patrolling);
+        assert_eq!(u.patrol_point, Some((10, 10)));
+        assert!(u.target.is_none(), "Combat target should be cleared");
+        assert!(u.path.is_none() == false, "Unit should have a path");
+    }
+
+    #[test]
+    fn test_order_patrol_ignores_dead() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 6.5);
+
+        // Kill unit 2
+        mgr.get_mut(id2).unwrap().hp = 0;
+        mgr.get_mut(id2).unwrap().state = UnitState::Dead;
+
+        let count = mgr.order_patrol(&[id1, id2], 10, 10, &map);
+        assert_eq!(count, 1, "Should only patrol-order the alive unit");
+
+        let u1 = mgr.get(id1).unwrap();
+        assert_eq!(u1.state, UnitState::Patrolling);
+
+        let u2 = mgr.get(id2).unwrap();
+        assert_eq!(u2.state, UnitState::Dead);
+        assert!(u2.patrol_point.is_none());
+    }
+
+    #[test]
+    fn test_order_patrol_empty_list() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+
+        let count = mgr.order_patrol(&[], 10, 10, &map);
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn test_order_patrol_nonexistent_id() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+
+        let count = mgr.order_patrol(&[999], 10, 10, &map);
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn test_order_patrol_multiple_units() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        let id1 = mgr.spawn(UnitKind::Swordsman, 3.5, 3.5);
+        let id2 = mgr.spawn(UnitKind::Bowman, 4.5, 4.5);
+        let id3 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+
+        let count = mgr.order_patrol(&[id1, id2, id3], 15, 15, &map);
+        assert_eq!(count, 3);
+
+        for id in &[id1, id2, id3] {
+            let u = mgr.get(*id).unwrap();
+            assert_eq!(u.state, UnitState::Patrolling);
+            assert_eq!(u.patrol_point, Some((15, 15)));
+        }
+    }
+
+    #[test]
+    fn test_unit_new_has_no_patrol_point() {
+        let u = Unit::new(1, UnitKind::Swordsman, 5.0, 10.0);
+        assert!(u.patrol_point.is_none());
+    }
+
+    #[test]
+    fn test_order_patrol_clears_fighting_state() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+
+        // Set unit as fighting
+        mgr.get_mut(id1).unwrap().state = UnitState::Fighting;
+        mgr.get_mut(id1).unwrap().target = Some(99);
+
+        let count = mgr.order_patrol(&[id1], 10, 10, &map);
+        assert_eq!(count, 1);
+
+        let u = mgr.get(id1).unwrap();
+        assert_eq!(u.state, UnitState::Patrolling);
+        assert!(u.target.is_none(), "Combat target should be cleared");
     }
 }

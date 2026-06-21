@@ -682,6 +682,7 @@
   /* placement mode cursor */
   canvas.placing { cursor: crosshair !important; }
   canvas.attack-move { cursor: crosshair !important; }
+  canvas.patrol { cursor: alias !important; }
   #placement-status {
     position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
     z-index: 25; font-size: 12px; color: #e8d5a0;
@@ -1301,7 +1302,8 @@ import init, {
     load_map_json,
     get_units_in_rect,
     move_units_to_tile,
-} from './pkg/s4wn_engine.js?v=43';
+    order_patrol,
+} from './pkg/s4wn_engine.js?v=44';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -2961,6 +2963,14 @@ window.addEventListener('keydown', (e) => {
     } else if (e.key === 'Escape' && attackMoveMode) {
         attackMoveMode = false;
         canvas.classList.remove('attack-move');
+    } else if (e.key.toLowerCase() === 'p' && selectedUnitIds.length > 0 && !placementMode) {
+        patrolMoveMode = true;
+        canvas.classList.add('patrol');
+        console.log('Patrol mode: click destination for ' + selectedUnitIds.length + ' unit(s)');
+        try { Sfx.playUIClick(); } catch(e) {}
+    } else if (e.key === 'Escape' && patrolMoveMode) {
+        patrolMoveMode = false;
+        canvas.classList.remove('patrol');
     }
 });
 
@@ -2970,6 +2980,7 @@ let marqueeStartX = 0, marqueeStartY = 0;
 let marqueeEndX = 0, marqueeEndY = 0;
 let selectedUnitIds = []; // currently selected military unit IDs
 let attackMoveMode = false; // when true, clicking orders attack-move
+let patrolMoveMode = false; // when true, clicking orders patrol
 const marqueeBox = document.getElementById('marquee-box');
 const selCount = document.getElementById('selection-count');
 
@@ -3119,6 +3130,25 @@ canvas.addEventListener('click', (e) => {
             }
             attackMoveMode = false;
             canvas.classList.remove('attack-move');
+        }
+        return;
+    }
+
+    // ── Patrol-move mode ──
+    if (patrolMoveMode && selectedUnitIds.length > 0) {
+        const pInfo = get_tile_at(e.offsetX, e.offsetY);
+        if (pInfo) {
+            const pt = JSON.parse(pInfo);
+            const idsJson = JSON.stringify(selectedUnitIds);
+            if (typeof order_patrol === 'function') {
+                const ordered = order_patrol(idsJson, pt.x, pt.y);
+                if (ordered > 0) {
+                    console.log('Patrol-ordering ' + ordered + ' unit(s) to (' + pt.x + ', ' + pt.y + ')');
+                    try { Sfx.playUIClick(); } catch(e) {}
+                }
+            }
+            patrolMoveMode = false;
+            canvas.classList.remove('patrol');
         }
         return;
     }

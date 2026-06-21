@@ -420,7 +420,6 @@ mod tests {
     }
 
     #[test]
-    #[test]
     fn test_burst_alive_count_after_clear_then_burst() {
         // Regression: burst should work after clearing and re-spawning
         let mut ps = ParticleSystem::new();

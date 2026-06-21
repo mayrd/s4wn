@@ -3657,7 +3657,6 @@ mod tests {
     }
 
     #[test]
-
     #[test]
     fn test_resource_group_categories() {
         // Construction group
