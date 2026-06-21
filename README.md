@@ -1,8 +1,8 @@
 # S4WN — Siedler 4 Web-Native
 
-> **Read [BASE.md](BASE.md) first** — it contains the foundational knowledge this project is built on.
+> **⚠️ Priority: [BASE.md](BASE.md)** contains game knowledge (building data, production chains). All implementation must respect BASE.md. Never modify BASE.md.
 
-Web-native reimplementation of the classic *The Settlers IV* (2001). Fully open-source, runs in any modern browser, no original game files required.
+Web-native reimplementation of *The Settlers IV* (2001). Open-source, runs in any browser, no original game files required.
 
 ---
 
@@ -16,17 +16,15 @@ Web-native reimplementation of the classic *The Settlers IV* (2001). Fully open-
 | **Audio** | Procedural Web Audio API |
 | **Server** | Caddy (static files + WebSocket) |
 | **Deploy** | Docker, multi-arch (amd64 + arm64) |
-| **Tests** | 519 passing (BDD/TDD) |
+| **Tests** | 519 passing |
 | **License** | MIT |
 
 ---
 
 ## Architecture
 
-See [BASE.md §3](BASE.md#3-architecture) and [TECHNOLOGY_CHOICE.md](TECHNOLOGY_CHOICE.md) for full details.
-
 ```
-Browser → index.html (single-page app)
+Browser → index.html
   ├─ WASM engine (Rust, ~200KB)
   │   ├─ Economy, Combat, Units, Map, Pathfinding
   │   ├─ Orbital camera (azimuth/elevation/distance)
@@ -46,24 +44,17 @@ Browser → index.html (single-page app)
 - ✅ Orbital camera, terrain heightmap, GPU models
 - ✅ Unit commands, stances, building destruction
 - ✅ Mobile responsive, touch gestures, particles, sound
-- ✅ Map editor, marquee selection, minimap, tutorial
 
-See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for roadmap and next steps.
+See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for roadmap.
 
 ---
 
 ## Development
 
 ```bash
-# Build WASM
-cd engine && wasm-pack build --target web --release
-
-# Run tests
-cargo test --lib
-
-# Serve locally
-cd engine && python3 -m http.server 8000
-# Open http://localhost:8000/index.html
+cd engine && wasm-pack build --target web --release   # Build WASM
+cargo test --lib                                      # Run tests (519 pass)
+python3 -m http.server 8000                           # Serve locally
 ```
 
 ### For AI Agents
@@ -72,17 +63,8 @@ Read in order: **BASE.md → AGENTS.md → IMPLEMENTATION_PLAN.md**
 
 ---
 
-## Project Files
+## Key Reference
 
-| File | Purpose |
-|------|---------|
-| [BASE.md](BASE.md) | **Foundational truth — read first** |
-| [AGENTS.md](AGENTS.md) | AI agent operational rules |
-| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Roadmap + session log |
-| [TECHNOLOGY_CHOICE.md](TECHNOLOGY_CHOICE.md) | Tech stack decisions |
-| `engine/src/lib.rs` | WASM engine (~5300 lines) |
-| `engine/index.html` | Single-page UI (~6500 lines) |
-
----
-
-*Part of the S4WN project. See BASE.md for foundational knowledge.*
+- **[siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/)** — building/unit/production chain mechanics
+- **[BASE.md](BASE.md)** — building reference data (do not modify)
+- **[TECHNOLOGY_CHOICE.md](TECHNOLOGY_CHOICE.md)** — tech stack rationale
