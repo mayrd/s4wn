@@ -1600,7 +1600,13 @@ window.S4WN_CONFIG = {
     window.BUILDING_NAMES_DE = {};
     C.buildings.forEach(b => { window.BUILDING_NAMES_DE[b.id] = b.name_de; });
     window.RESOURCE_ICONS = {};
-    C.resources.forEach(r => { window.RESOURCE_ICONS[r.id] = "📦"; });
+    C.resources.forEach(r => { window.RESOURCE_ICONS[r.id] = r.icon; });
+    // Use SVG icons from resource-icons.js if available
+    if (window.RESOURCE_SVG_ICONS) {
+        for (const [k, v] of Object.entries(window.RESOURCE_SVG_ICONS)) {
+            window.RESOURCE_ICONS[k] = v;
+        }
+    }
     window.RESOURCE_NAMES_DE = {};
     C.resources.forEach(r => { window.RESOURCE_NAMES_DE[r.id] = r.name_de; });
     window.RESOURCE_NAMES = {};
