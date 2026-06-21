@@ -2,7 +2,7 @@
 
 **This file is AUTHORITATIVE. Do NOT override, ignore, or "improve" these rules unless explicitly asked by the user.**
 
-Changes to this file require explicit user instruction. Any PR or commit that modifies `.hermes/` without user consent must be reverted.
+Changes to this file require explicit user instruction.
 
 ---
 
