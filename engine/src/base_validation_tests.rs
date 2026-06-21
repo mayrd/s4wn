@@ -246,3 +246,79 @@ fn test_base_all_nations_have_core_buildings() {
         assert!(BASE_TROJAN.iter().any(|b| b.0 == name), "Trojan missing {}", name);
     }
 }
+
+/// ─── BASE.md Settlers / Units Catalog ────────────────────────────────
+const BASE_SETTLERS: &[(&str, &str, &str, &str)] = &[
+    ("Pioneer","All","None","Specialist"),
+    ("Geologist","All","None","Specialist"),
+    ("Thief","All","None","Specialist"),
+    ("Gardener","All","None","Specialist"),
+    ("Carrier","All","None","Logistics"),
+    ("Digger","All","Shovel","Logistics"),
+    ("Builder","All","Hammer","Logistics"),
+    ("Trader","All","None","Logistics"),
+    ("Shipwright","All","Hammer","Logistics"),
+    ("Forester","All","None","Basic Economy"),
+    ("Woodcutter","All","Axe","Basic Economy"),
+    ("Sawyer","All","Saw","Basic Economy"),
+    ("Stonecutter","All","Pickaxe","Basic Economy"),
+    ("Miner","All","Pickaxe","Mining"),
+    ("Smelter","All","None","Heavy Industry"),
+    ("Toolsmith","All","None","Heavy Industry"),
+    ("Weaponsmith","All","Hammer","Heavy Industry"),
+    ("Farmer","All","Scythe","Food & Crops"),
+    ("Miller","All","None","Food & Crops"),
+    ("Baker","All","None","Food & Crops"),
+    ("Water Worker","All","None","Food & Crops"),
+    ("Animal Breeder","All","None","Food & Crops"),
+    ("Butcher","All","Axe","Food & Crops"),
+    ("Fisherman","All","Fishing Rod","Food & Crops"),
+    ("Healer","All","None","Medical"),
+    ("Priest / Mage","All","None","Military"),
+    ("Swordsman","All","Sword","Military"),
+    ("Bowman","All","Bow","Military"),
+    ("Squad Leader","All","Gold Bars","Military"),
+    ("Vintner","Roman","None","Sacrificial Wine"),
+    ("Medic","Roman","First Aid Kit","Military"),
+    ("Agave Farmer","Maya","None","Sacrificial Liquor"),
+    ("Tequila Distiller","Maya","None","Sacrificial Liquor"),
+    ("Powder Maker","Maya","None","Specialist Craft"),
+    ("Blowgun Warrior","Maya","Blowgun","Military"),
+    ("Beekeeper","Viking","None","Sacrificial Mead"),
+    ("Mead Brewer","Viking","None","Sacrificial Mead"),
+    ("Axe Warrior","Viking","Battleaxe","Military"),
+    ("Sunflower Farmer","Trojan","None","Sacrificial Oil"),
+    ("Oil Miller","Trojan","None","Sacrificial Oil"),
+    ("Weapon Foundry","Trojan","None","Heavy Industry"),
+    ("Backpack Catapultist","Trojan","Backpack Catapult","Military"),
+    ("Dark Digger","Dark Tribe","Shaman Spell","Dark Tribe"),
+    ("Dark Farmer","Dark Tribe","Shaman Spell","Dark Tribe"),
+    ("Cultist","Dark Tribe","Breeding Hall","Dark Tribe"),
+    ("Shaman","Dark Tribe","Dark Temple","Dark Tribe"),
+    ("Shadow Soldier","Dark Tribe","Breeding Hall + Mana","Dark Tribe"),
+];
+
+#[test]
+fn test_base_settler_count() { assert_eq!(BASE_SETTLERS.len(), 47); }
+
+#[test]
+fn test_base_settler_no_duplicates() {
+    let mut seen = std::collections::HashSet::new();
+    for &(name, _, _, _) in BASE_SETTLERS {
+        assert!(seen.insert(name), "Duplicate: {}", name);
+    }
+}
+
+#[test]
+fn test_base_settler_nation_counts() {
+    let roman = BASE_SETTLERS.iter().filter(|s| s.1 == "Roman").count();
+    let mayan = BASE_SETTLERS.iter().filter(|s| s.1 == "Maya").count();
+    let viking = BASE_SETTLERS.iter().filter(|s| s.1 == "Viking").count();
+    let trojan = BASE_SETTLERS.iter().filter(|s| s.1 == "Trojan").count();
+    let dark = BASE_SETTLERS.iter().filter(|s| s.1 == "Dark Tribe").count();
+    assert_eq!(roman, 2);
+    assert_eq!(mayan, 4);
+    assert_eq!(viking, 3);
+    assert_eq!(trojan, 4);
+    assert_eq!(dark, 5);
+}

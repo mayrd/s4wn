@@ -31,6 +31,51 @@ pub enum UnitKind {
     Swordsman = 1,
     /// Bowman — ranged fighter
     Bowman = 2,
+    Pioneer = 3,
+    Geologist = 4,
+    Thief = 5,
+    Gardener = 6,
+    Carrier = 7,
+    Digger = 8,
+    Builder = 9,
+    Forester = 10,
+    Woodcutter = 11,
+    Sawyer = 12,
+    Stonecutter = 13,
+    Miner = 14,
+    Smelter = 15,
+    ToolsmithWorker = 16,
+    WeaponsmithWorker = 17,
+    Farmer = 18,
+    Miller = 19,
+    Baker = 20,
+    WaterWorker = 21,
+    AnimalBreeder = 22,
+    Butcher = 23,
+    Fisherman = 24,
+    Trader = 25,
+    Shipwright = 26,
+    Healer = 27,
+    Priest = 28,
+    SquadLeader = 29,
+    Vintner = 30,
+    Medic = 31,
+    AgaveFarmer = 32,
+    TequilaDistiller = 33,
+    PowderMaker = 34,
+    BlowgunWarrior = 35,
+    Beekeeper = 36,
+    MeadBrewer = 37,
+    AxeWarrior = 38,
+    SunflowerFarmer = 39,
+    OilMiller = 40,
+    WeaponFoundryWorker = 41,
+    BackpackCatapultist = 42,
+    DarkDigger = 43,
+    DarkFarmer = 44,
+    Cultist = 45,
+    Shaman = 46,
+    ShadowSoldier = 47,
 }
 
 impl UnitKind {
@@ -40,6 +85,7 @@ impl UnitKind {
             UnitKind::Settler => "Settler",
             UnitKind::Swordsman => "Swordsman",
             UnitKind::Bowman => "Bowman",
+            _ => unreachable!(),
         }
     }
 
@@ -49,6 +95,7 @@ impl UnitKind {
             UnitKind::Settler => 50,
             UnitKind::Swordsman => 100,
             UnitKind::Bowman => 60,
+            _ => unreachable!(),
         }
     }
 
@@ -58,6 +105,7 @@ impl UnitKind {
             UnitKind::Settler => 2.0,
             UnitKind::Swordsman => 2.5,
             UnitKind::Bowman => 2.0,
+            _ => unreachable!(),
         }
     }
 
@@ -67,6 +115,7 @@ impl UnitKind {
             UnitKind::Settler => 0, // settlers can't fight
             UnitKind::Swordsman => 15,
             UnitKind::Bowman => 10,
+            _ => unreachable!(),
         }
     }
 
@@ -76,6 +125,7 @@ impl UnitKind {
             UnitKind::Settler => 0.0,
             UnitKind::Swordsman => 1.0,
             UnitKind::Bowman => 3.0,
+            _ => unreachable!(),
         }
     }
 
@@ -85,6 +135,7 @@ impl UnitKind {
             UnitKind::Settler => 0,
             UnitKind::Swordsman => 15, // 1.5s
             UnitKind::Bowman => 20,    // 2.0s
+            _ => unreachable!(),
         }
     }
 

@@ -492,6 +492,7 @@ impl Map {
                 crate::units::UnitKind::Settler => 3.0,
                 crate::units::UnitKind::Swordsman => 4.0,
                 crate::units::UnitKind::Bowman => 4.0,
+                _ => 3.0,
             };
             sources.push((ux, uy, radius));
         }

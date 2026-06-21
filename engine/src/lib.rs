@@ -1982,9 +1982,10 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
 fn unit_color(kind: &crate::units::UnitKind) -> [f32; 3] {
     use crate::units::UnitKind::*;
     match kind {
-        Settler => [0.2, 0.4, 1.0],   // blue
-        Swordsman => [1.0, 0.2, 0.2], // red
-        Bowman => [0.2, 0.8, 0.2],    // green
+        Settler => [0.2, 0.4, 1.0],
+        Swordsman => [1.0, 0.2, 0.2],
+        Bowman => [0.2, 0.8, 0.2],
+        _ => [0.5, 0.5, 0.5],
     }
 }
 
@@ -3736,6 +3737,7 @@ impl App {
             units::UnitKind::Settler => "worker",
             units::UnitKind::Swordsman => "soldier",
             units::UnitKind::Bowman => "archer",
+            _ => "worker",
         }
     }
 
