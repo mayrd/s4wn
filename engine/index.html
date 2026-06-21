@@ -853,18 +853,69 @@
   .error-dialog .btn-copy:hover { background: rgba(255,255,255,0.12); }
   .error-dialog .btn-copy.copied { color: #4caf50; border-color: rgba(76,175,80,0.4); }
 
-  /* ── Bottom-left buttons (Construction + Statistics) ───────────────── */
+  /* ── Bottom-left buttons — Parchment theme ───────────────────────── */
   #bottom-left-btns {
-      position: fixed; bottom: 52px; left: 8px; z-index: 100;
-      display: flex; gap: 4px;
+      position: fixed; bottom: 16px; left: 12px; z-index: 100;
+      display: flex; gap: 6px;
   }
   #bottom-left-btns button {
-      background: rgba(0,0,0,0.75); color: #ccc; border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 4px; padding: 4px 10px; font-size: 11px; cursor: pointer;
-      font-family: inherit; white-space: nowrap;
+      width: 42px; height: 42px; padding: 0;
+      background: rgba(20,15,10,0.85);
+      color: #c8b878;
+      border: 1px solid rgba(200,184,120,0.25);
+      border-radius: 8px;
+      font-size: 20px; cursor: pointer;
+      font-family: inherit;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s ease;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
-  #bottom-left-btns button:hover { background: rgba(255,255,255,0.1); color: #fff; }
-  #bottom-left-btns button.active { background: rgba(255,255,255,0.15); border-color: #e6b422; }
+  #bottom-left-btns button::after {
+      content: '';
+      position: absolute; inset: -2px; border-radius: 10px;
+      background: radial-gradient(ellipse at center, rgba(232,200,96,0.12) 0%, transparent 70%);
+      opacity: 0; transition: opacity 0.25s;
+      pointer-events: none;
+  }
+  #bottom-left-btns button:hover {
+      background: rgba(30,22,12,0.9);
+      color: #e8c860;
+      border-color: rgba(232,200,96,0.4);
+      box-shadow: 0 0 16px rgba(232,200,96,0.12), 0 2px 12px rgba(0,0,0,0.5);
+  }
+  #bottom-left-btns button:hover::after { opacity: 1; }
+  #bottom-left-btns button:active {
+      transform: scale(0.93);
+      transition: transform 0.08s ease;
+  }
+  #bottom-left-btns button.active {
+      background: rgba(40,30,14,0.9);
+      color: #e8c860;
+      border-color: #e8c860;
+      box-shadow: 0 0 20px rgba(232,200,96,0.25), 0 2px 12px rgba(0,0,0,0.5);
+  }
+  #bottom-left-btns button .btn-label {
+      display: none;
+      position: absolute; bottom: calc(100% + 6px); left: 50%;
+      transform: translateX(-50%); white-space: nowrap;
+      background: rgba(10,8,5,0.9); color: #c8b878;
+      border: 1px solid rgba(200,184,120,0.25);
+      border-radius: 4px; padding: 2px 8px; font-size: 10px;
+      letter-spacing: 0.05em;
+  }
+  #bottom-left-btns button:hover .btn-label { display: block; }
+
+  /* ── Panel fly-in animation ──────────────────────────────────────── */
+  @keyframes panelFlyIn {
+      0%   { transform: scale(0.15); opacity: 0; }
+      60%  { transform: scale(1.04); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+  }
+  .panel-fly-in {
+      transform-origin: bottom left;
+      animation: panelFlyIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
 
   /* ── Construction Panel ──────────────────────────────────────────── */
   #construction-panel {
@@ -1022,8 +1073,8 @@
     }
 
     /* Bottom-left buttons: larger touch targets */
-    #bottom-left-btns { bottom: 8px; left: 4px; gap: 6px; }
-    #bottom-left-btns button { padding: 8px 14px; font-size: 13px; border-radius: 6px; }
+    #bottom-left-btns { bottom: 8px; left: 4px; gap: 8px; }
+    #bottom-left-btns button { width: 46px; height: 46px; border-radius: 10px; }
 
     /* Controls bar: wrap, larger buttons */
     #controls {
@@ -1546,6 +1597,44 @@ const Sfx = (() => {
         noise.start(now); noise.stop(now + 0.15);
     }
 
+    /** Panel open — paper scroll unfurling */
+    function playPanelOpen() {
+        const c = getCtx(); if (!c) return;
+        const v = vol(); if (v <= 0) return;
+        const now = c.currentTime;
+        // Layer 1: rustling noise (paper texture)
+        const bufSize = Math.floor(c.sampleRate * 0.28);
+        const buf = c.createBuffer(1, bufSize, c.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) {
+            const t = i / c.sampleRate;
+            // Amplitude envelope: quick rise, slow decay
+            const env = Math.min(t * 10, 1) * Math.exp(-t * 4);
+            // Mix of noise frequencies for paper rustle
+            data[i] = (Math.random() * 2 - 1) * env * 0.6;
+        }
+        const rustle = c.createBufferSource();
+        rustle.buffer = buf;
+        const bp1 = c.createBiquadFilter();
+        bp1.type = 'bandpass';
+        bp1.frequency.setValueAtTime(800, now);
+        bp1.frequency.linearRampToValueAtTime(2500, now + 0.15);
+        bp1.Q.setValueAtTime(0.7, now);
+        const gn1 = gainNow(c, v * 0.12, 0.28);
+        rustle.connect(bp1).connect(gn1).connect(c.destination);
+        rustle.start(now);
+
+        // Layer 2: low thud (scroll hitting surface)
+        const osc = c.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(120, now + 0.05);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+        const gn2 = gainNow(c, v * 0.1, 0.2);
+        osc.connect(gn2).connect(c.destination);
+        osc.start(now + 0.05);
+        osc.stop(now + 0.25);
+    }
+
     // ── Test interface ──────────────────────────────────────────────
     function test() {
         const c = getCtx();
@@ -1556,7 +1645,7 @@ const Sfx = (() => {
         });
     }
 
-    return { playUIClick, playBuild, playCombat, playDeath, playError, playMenuToggle, test };
+    return { playUIClick, playBuild, playCombat, playDeath, playError, playMenuToggle, playPanelOpen, test };
 })();
 
 window.Sfx = Sfx;
@@ -2092,7 +2181,7 @@ setTimeout(() => {
 function openMenu() {
     showMenu = true;
     try { Sfx.playMenuToggle(); } catch(e) {}
-    menu.classList.add('active');
+    menu.classList.add('active', 'panel-fly-in');
     updateContinueButton();
     renderRecentFiles();
 }
@@ -5507,20 +5596,21 @@ function toggleConstructionPanel() {
     const resPanel = document.getElementById('resources-panel');
     const setPanel = document.getElementById('settlers-panel');
     if (resPanel && resPanel.classList.contains('open')) {
-        resPanel.classList.remove('open');
+        resPanel.classList.remove('open', 'panel-fly-in');
         document.getElementById('btn-resources').classList.remove('active');
     }
     if (setPanel && setPanel.classList.contains('open')) {
-        setPanel.classList.remove('open');
+        setPanel.classList.remove('open', 'panel-fly-in');
         document.getElementById('btn-settlers').classList.remove('active');
     }
     if (panel.classList.contains('open')) {
-        panel.classList.remove('open');
+        panel.classList.remove('open', 'panel-fly-in');
         btn.classList.remove('active');
     } else {
         populateConstructionPanel();
-        panel.classList.add('open');
+        panel.classList.add('open', 'panel-fly-in');
         btn.classList.add('active');
+        try { Sfx.playPanelOpen(); } catch(e) {}
     }
 }
 
@@ -5620,20 +5710,21 @@ function toggleResourcesPanel() {
     const settPanel = document.getElementById('settlers-panel');
     const conPanel = document.getElementById('construction-panel');
     if (conPanel.classList.contains('open')) {
-        conPanel.classList.remove('open');
+        conPanel.classList.remove('open', 'panel-fly-in');
         document.getElementById('btn-construction').classList.remove('active');
     }
     if (settPanel.classList.contains('open')) {
-        settPanel.classList.remove('open');
+        settPanel.classList.remove('open', 'panel-fly-in');
         document.getElementById('btn-settlers').classList.remove('active');
     }
     if (panel.classList.contains('open')) {
-        panel.classList.remove('open');
+        panel.classList.remove('open', 'panel-fly-in');
         btn.classList.remove('active');
     } else {
         renderResources();
-        panel.classList.add('open');
+        panel.classList.add('open', 'panel-fly-in');
         btn.classList.add('active');
+        try { Sfx.playPanelOpen(); } catch(e) {}
     }
 }
 
@@ -5643,20 +5734,21 @@ function toggleSettlersPanel() {
     const resPanel = document.getElementById('resources-panel');
     const conPanel = document.getElementById('construction-panel');
     if (conPanel.classList.contains('open')) {
-        conPanel.classList.remove('open');
+        conPanel.classList.remove('open', 'panel-fly-in');
         document.getElementById('btn-construction').classList.remove('active');
     }
     if (resPanel.classList.contains('open')) {
-        resPanel.classList.remove('open');
+        resPanel.classList.remove('open', 'panel-fly-in');
         document.getElementById('btn-resources').classList.remove('active');
     }
     if (panel.classList.contains('open')) {
-        panel.classList.remove('open');
+        panel.classList.remove('open', 'panel-fly-in');
         btn.classList.remove('active');
     } else {
         renderSettlers();
-        panel.classList.add('open');
+        panel.classList.add('open', 'panel-fly-in');
         btn.classList.add('active');
+        try { Sfx.playPanelOpen(); } catch(e) {}
     }
 }
 
@@ -6149,14 +6241,32 @@ window.DebugSnapshot = DebugSnapshot;
 </script>
 
 
-<!-- Bottom-left action buttons -->
+<!-- Bottom-left action buttons — Parchment icon bar -->
 <div id="bottom-left-btns">
-    <button id="btn-menu" onclick="toggleMenu()" data-i18n="menu">☰ Menu</button>
-    <button id="btn-speed" onclick="toggleSpeed()" title="Toggle game speed">▶ 1×</button>
-    <button id="btn-construction" onclick="toggleConstructionPanel()" data-i18n="construction">🏗️ Bauen</button>
-    <button id="btn-resources" onclick="toggleResourcesPanel()" data-i18n="resources_btn">📦 Ressourcen</button>
-    <button id="btn-editor" onclick="toggleEditorMode()" title="Map Editor (Ctrl+Click to paint)">Edit</button>
-    <button id="btn-settlers" onclick="toggleSettlersPanel()" data-i18n="settlers_btn">👥 Siedler</button>
+    <button id="btn-menu" onclick="toggleMenu()" title="Menu">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="2" rx="1" fill="currentColor"/><rect x="2" y="9" width="16" height="2" rx="1" fill="currentColor"/><rect x="2" y="14" width="16" height="2" rx="1" fill="currentColor"/></svg>
+        <span class="btn-label">Menu</span>
+    </button>
+    <button id="btn-speed" onclick="toggleSpeed()" title="Game Speed">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><polygon points="9,6 9,10 13,10" fill="currentColor"/><line x1="10" y1="10" x2="10" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="btn-label">Speed</span>
+    </button>
+    <button id="btn-construction" onclick="toggleConstructionPanel()" title="Construction">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="7" width="14" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M3 7 L10 2 L17 7" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><rect x="8" y="12" width="4" height="5" rx="0.5" fill="currentColor" opacity="0.4"/></svg>
+        <span class="btn-label">Build</span>
+    </button>
+    <button id="btn-resources" onclick="toggleResourcesPanel()" title="Resources">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="6" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="3" x2="10" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="1.5" fill="currentColor" opacity="0.5"/><circle cx="13" cy="13" r="1" fill="currentColor" opacity="0.5"/><circle cx="7" cy="14" r="0.8" fill="currentColor" opacity="0.4"/></svg>
+        <span class="btn-label">Resources</span>
+    </button>
+    <button id="btn-settlers" onclick="toggleSettlersPanel()" title="Settlers">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="6" r="2.5" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="6" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 18 Q7 12 10 12 Q13 12 18 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="btn-label">Settlers</span>
+    </button>
+    <button id="btn-editor" onclick="toggleEditorMode()" title="Map Editor">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 17 L6 11 L9 14 L13 7 L17 13" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="13" cy="7" r="1.5" fill="currentColor" opacity="0.6"/></svg>
+        <span class="btn-label">Editor</span>
+    </button>
 </div>
 
 <!-- Construction Panel -->
