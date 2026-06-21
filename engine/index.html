@@ -371,6 +371,52 @@
 }
 #selection-count.visible { display: block; }
 
+#stance-panel {
+    position: fixed;
+    bottom: 110px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.88);
+    padding: 6px 14px;
+    border-radius: 8px;
+    z-index: 300;
+    gap: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    white-space: nowrap;
+    display: none;
+    pointer-events: auto;
+  }
+  #stance-panel.active { display: flex; align-items: center; }
+  #stance-panel .stance-label {
+    color: #888;
+    font-size: 11px;
+    margin-right: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .stance-btn {
+    padding: 3px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #ccc;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    transition: all 0.15s;
+  }
+  .stance-btn:hover { background: rgba(255, 255, 255, 0.18); }
+  .stance-btn.aggressive:hover,
+  .stance-btn.aggressive:active { background: #cc3333; color: #fff; border-color: #cc3333; }
+  .stance-btn.standground:hover,
+  .stance-btn.standground:active { background: #cc8800; color: #000; border-color: #cc8800; }
+  .stance-btn.passive:hover,
+  .stance-btn.passive:active { background: #3366cc; color: #fff; border-color: #3366cc; }
+  #stance-panel .stance-hotkey-hint {
+    color: #555;
+    font-size: 9px;
+    margin-left: 6px;
+  }
 
   /* ── Controls ──────────────────────────────────────────────────────── */
   #controls {
@@ -1261,7 +1307,13 @@
 <div id="selection-info"></div>
 <div id="marquee-box"></div>
 <div id="selection-count"></div>
-
+<div id="stance-panel" style="display:none">
+  <span class="stance-label">Stance:</span>
+  <button class="stance-btn aggressive" onclick="applyStanceToSelected(0)" title="Aggressive (F1) - Seek and chase enemies">&#9876; Aggressive</button>
+  <button class="stance-btn standground" onclick="applyStanceToSelected(1)" title="Stand Ground (F2) - Hold position">&#9968; Hold</button>
+  <button class="stance-btn passive" onclick="applyStanceToSelected(2)" title="Passive (F3) - Defend only">&#9873; Passive</button>
+  <span class="stance-hotkey-hint">F1/F2/F3</span>
+</div>
 
 <input type="file" id="fileInput" accept=".json,.map,.sav">
 
@@ -1306,10 +1358,13 @@ import init, {
     get_units_in_rect,
     move_units_to_tile,
     order_patrol,
+    set_unit_stance,
+    set_units_stance,
+    get_unit_stance,
     start_building_destruction,
     tick_building_destructions,
     get_building_destruction_progress,
-} from './pkg/s4wn_engine.js?v=48';
+} from './pkg/s4wn_engine.js?v=49';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -2992,6 +3047,20 @@ window.addEventListener('keydown', (e) => {
         demolitionMode = false;
         canvas.classList.remove('demolition');
     }
+
+    // Stance hotkeys: F1=Aggressive, F2=StandGround, F3=Passive
+    if (engineReady && selectedUnitIds.length > 0) {
+        if (e.key === 'F1') {
+            e.preventDefault();
+            applyStanceToSelected(0);
+        } else if (e.key === 'F2') {
+            e.preventDefault();
+            applyStanceToSelected(1);
+        } else if (e.key === 'F3') {
+            e.preventDefault();
+            applyStanceToSelected(2);
+        }
+    }
 });
 
 // ── Marquee selection state ─────────────────────────────────────────
@@ -3002,8 +3071,36 @@ let selectedUnitIds = []; // currently selected military unit IDs
 let attackMoveMode = false; // when true, clicking orders attack-move
 let patrolMoveMode = false; // when true, clicking orders patrol
 let demolitionMode = false; // when true, clicking destroys buildings
+let stanceMode = null; // null=no stance panel, 0=Aggressive, 1=StandGround, 2=Passive
 const marqueeBox = document.getElementById('marquee-box');
 const selCount = document.getElementById('selection-count');
+
+// ── Unit Stance System ─────────────────────────────────────────────
+// Stance values: 0=Aggressive, 1=StandGround, 2=Passive
+// Stance display names and colors
+const STANCE_NAMES = ['Aggressive', 'Stand Ground', 'Passive'];
+const STANCE_COLORS = ['#ff4444', '#ffaa00', '#4488ff'];
+const STANCE_ICONS = ['⚔', '⛰', '⚑']; // swords, mountain, flag
+
+function applyStanceToSelected(stance) {
+    if (!engineReady || selectedUnitIds.length === 0) return;
+    try {
+        const idsJson = JSON.stringify(selectedUnitIds);
+        const count = set_units_stance(idsJson, stance);
+        if (count > 0) {
+            console.log('Stance set to ' + STANCE_NAMES[stance] + ' for ' + count + ' unit(s)');
+        }
+    } catch(e) {
+        console.error('applyStanceToSelected error:', e);
+    }
+}
+
+function getStanceForUnit(unitId) {
+    if (!engineReady) return 0;
+    try {
+        return get_unit_stance(unitId);
+    } catch(e) { return 0; }
+}
 
 function updateMarqueeBox() {
     const x1 = Math.min(marqueeStartX, marqueeEndX);
@@ -3052,8 +3149,12 @@ function selectUnitsInMarquee() {
     if (selectedUnitIds.length > 0) {
         selCount.textContent = selectedUnitIds.length + ' unit' + (selectedUnitIds.length > 1 ? 's' : '') + ' selected';
         selCount.classList.add('visible');
+        const stancePanel = document.getElementById('stance-panel');
+        if (stancePanel) stancePanel.classList.add('active');
     } else {
         selCount.classList.remove('visible');
+        const stancePanel = document.getElementById('stance-panel');
+        if (stancePanel) stancePanel.classList.remove('active');
     }
 
     if (selectedUnitIds.length === 1) {
@@ -3073,6 +3174,8 @@ function selectUnitsInMarquee() {
 function clearSelection() {
     selectedUnitIds = [];
     selCount.classList.remove('visible');
+    const stancePanel = document.getElementById('stance-panel');
+    if (stancePanel) stancePanel.classList.remove('active');
 }
 
 // Right-click: move selected units to target tile
@@ -5065,6 +5168,21 @@ async function main() {
                 // Draw health bar above every unit (if max_hp available)
                 if (unit.max_hp && unit.max_hp > 0) {
                     drawHealthBar(sx, sy, unit.hp, unit.max_hp, zoom);
+                }
+
+                // Draw stance indicator for all military units
+                if (unit.stance !== undefined) {
+                    const stance = unit.stance;
+                    const stanceColors = ['#ff4444', '#ffaa00', '#4488ff'];
+                    const stanceSymbols = ['A', 'H', 'P']; // Aggressive, Hold, Passive
+                    const color = stanceColors[stance] || '#888';
+                    const sym = stanceSymbols[stance] || '?';
+                    const ix = sx - 6 * zoom;
+                    const iy = sy - 18 * zoom;
+                    selCtx.fillStyle = color;
+                    selCtx.font = (10 * zoom) + 'px monospace';
+                    selCtx.textAlign = 'left';
+                    selCtx.fillText(sym, ix, iy);
                 }
 
                 // Draw selection circle for selected units only
