@@ -67,7 +67,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 4 ✅ complete — Phase 5: 3D Pipeline** ✅ — **Phase 6: Particles + Mobile** ✅ — **Phase 6.5: Death Animation** ✅ — **Phase 6.6: Sound Effects** ✅ — **Phase 6.7: Day/Night Lighting Fix** ✅ — **Phase 6.8: Map Editor** ✅ — **Phase 6.9: Marquee Selection** ✅ — **Phase 6.10: Unit Commands** ✅ — **Phase 6.11: Health Bars + Minimap Dots** ✅ — **Phase 6.12: Rally Points** ✅ — **Phase 6.13: Building Destruction** ✅ — **Phase 6.17: Building Combat** ✅ — **Phase 6.18: Particle Rendering** ✅ — **Phase 6.19: Formation-Preserving Movement** ✅ (543 tests)
+**Phase 4 ✅ complete — Phase 5: 3D Pipeline** ✅ — **Phase 6: Particles + Mobile** ✅ — **Phase 6.5: Death Animation** ✅ — **Phase 6.6: Sound Effects** ✅ — **Phase 6.7: Day/Night Lighting Fix** ✅ — **Phase 6.8: Map Editor** ✅ — **Phase 6.9: Marquee Selection** ✅ — **Phase 6.10: Unit Commands** ✅ — **Phase 6.11: Health Bars + Minimap Dots** ✅ — **Phase 6.12: Rally Points** ✅ — **Phase 6.13: Building Destruction** ✅ — **Phase 6.17: Building Combat** ✅ — **Phase 6.18: Particle Rendering** ✅ — **Phase 6.19: Formation-Preserving Movement** ✅ — **Phase 6.20: Building Auto-Repair** ✅ (549 tests)
 **Phase 6.16: Unit Stance — Engine + JS/UI ✅ (497 tests)
 - ✅ Mobile responsive CSS — @media queries for sub-768px viewports: full-width panels, larger touch targets, flex-wrap controls
 - ✅ Touch camera pan — single-finger drag (touchstart/touchmove/touchend)
