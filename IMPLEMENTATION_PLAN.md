@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6 — Bugfixes + Map Editor (453 tests)
-| **Last updated:** 2026-06-21 (Session 129 — Health bars + minimap unit dots)
+| **Status:** Phase 6 — Bugfixes + Map Editor + Patrol (462 tests)
+| **Last updated:** 2026-06-21 (Session 130 — Patrol command P+click)
 
 ---
 
@@ -389,9 +389,9 @@ protocol::tests               5 tests    Message serialization, room management
 - **🌐 Best source of Siedler 4 info:** [siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/) — buildings, units, production chains, game mechanics, maps, guides. Always consult this first when researching authentic S4 behavior.
 - **S4Forge.RE:** Authoritative C++ decompilation for building IDs (0-82), settler IDs (0-66), terrain (8 types), resources (8 types), nations (5)
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
-- **WASM cache:** Current v=43. Always bump when adding new `#[wasm_bindgen]` exports.
+- **WASM cache:** Current v=44. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 453 engine + 30 server = 483 total (453 `cargo test --lib`). `cargo test --lib` must pass before every push.
+- **Test count:** 462 engine + 30 server = 492 total (462 `cargo test --lib`). `cargo test --lib` must pass before every push.
 
 ## Next Session — Concrete Steps
 
@@ -474,9 +474,27 @@ All Phase 5 steps are now complete:
 16. ✅ Add minimap unit dots — Done Session 129
 17. Implement .sav full campaign state restoration from parsed chunk data
 18. Add unit formation movement (units maintain relative positions when moving as group)
-19. Add patrol command (P+click) for selected military units
+19. ✅ Add patrol command (P+click) for selected military units — Done Session 130
 20. Add unit rally point flag (set rally point for buildings, newly trained units auto-move there)
 21. Add building destruction animation (scale-down + rubble particles when building is destroyed)
+
+### Session 130 — Patrol Command (P+click) ✅
+
+- **Patrol State:** New `UnitState::Patrolling` variant. Units move to a patrol point, engage enemies they encounter, then return.
+- **CombatAI Integration:** Patrolling units at their patrol point scan for nearby enemies. If found → fight. After kill → return to patrol.
+- **WASM Export:** `order_patrol(unit_ids_json, target_x, target_y) → u32`
+- **JS:** P-key toggles patrol mode, Escape cancels, `cursor: alias` CSS. Canvas click sends patrol order.
+- **State Preservation:** `tick_movement()` preserves Patrolling state on arrival (doesn't switch to Idle).
+- **Tests:** 10 new tests (6 unit + 4 combat). 462 total.
+- **Bugfix:** Removed duplicate `#[test]` attributes in economy.rs and particle.rs.
+
+### Next Session — Concrete Steps
+
+1. Add unit rally point flag (set rally point for buildings, newly trained units auto-move there)
+2. Add building destruction animation (scale-down + rubble particles when building is destroyed)
+3. Add unit formation movement (units maintain relative positions when moving as group)
+4. Implement .sav full campaign state restoration from parsed chunk data
+5. Investigate adding unit stances (aggressive/stand ground/passive) — creates GitHub issue for design discussion
 
 ---
 
