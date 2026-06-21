@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6 — Bugfixes + Map Editor + Patrol + Rally Points (470 tests)
-| **Last updated:** 2026-06-21 (Session 131 — Unit rally point)
+| **Status:** Phase 6 — Bugfixes + Map Editor + Patrol + Rally Points + Formation Move (487 tests)
+| **Last updated:** 2026-06-21 (Session 133 — Formation movement)
 
 ---
 
@@ -389,9 +389,9 @@ protocol::tests               5 tests    Message serialization, room management
 - **🌐 Best source of Siedler 4 info:** [siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/) — buildings, units, production chains, game mechanics, maps, guides. Always consult this first when researching authentic S4 behavior.
 - **S4Forge.RE:** Authoritative C++ decompilation for building IDs (0-82), settler IDs (0-66), terrain (8 types), resources (8 types), nations (5)
 - **S4 file formats:** ARA stream cipher, LZ+Huffman compression, `.map` (WRLD magic), `.sav` (PE stub + chunked container)
-- **WASM cache:** Current v=45. Always bump when adding new `#[wasm_bindgen]` exports.
+- **WASM cache:** Current v=46. Always bump when adding new `#[wasm_bindgen]` exports.
 - **`<script type="module">`:** All declarations are module-scoped. Inline `onclick` handlers need `window.X = X` exposure.
-- **Test count:** 478 engine + 30 server = 508 total (478 `cargo test --lib`). `cargo test --lib` must pass before every push. 478 tests.
+- **Test count:** 487 engine + 30 server = 517 total (487 `cargo test --lib`). `cargo test --lib` must pass before every push. 487 tests.
 
 ## Next Session — Concrete Steps
 
@@ -492,11 +492,20 @@ All Phase 5 steps are now complete:
 
 1. ✅ Add unit rally point flag (set rally point for buildings, newly trained units auto-move there) — Done Session 131
 2. ✅ Add building destruction animation (scale-down + rubble particles when building is destroyed) — Done Session 132
-3. Add unit formation movement (units maintain relative positions when moving as group)
+3. ✅ Add unit formation movement (units maintain relative positions when moving as group) — Done Session 133
 4. Implement .sav full campaign state restoration from parsed chunk data
 5. Investigate adding unit stances (aggressive/stand ground/passive) — creates GitHub issue for design discussion
 6. Add building HP system so combat can damage and eventually destroy buildings
 
+
+### Session 133 — Unit Formation Movement ✅
+
+- **FormationMove State:** New `UnitState::FormationMove` variant. Units move to offset destinations preserving their relative positions to the group center.
+- **Offset Computation:** `formation_move()` computes each unit's offset from the group centroid, then paths each unit to `(target_x + offset_x, target_y + offset_y)` clamped to map bounds.
+- **State Preservation:** `tick_movement()` preserves FormationMove state on arrival (like Patrolling), so units stay in formation after reaching destination.
+- **WASM Export:** `formation_move(unit_ids_json, target_x, target_y) → u32`
+- **Tests:** 9 new tests (basic, preserves offsets, ignores dead, empty list, nonexistent ID, clears fighting, single unit, map bounds clamping, 2x2 square).
+- **Total:** 487 engine + 30 server = 517 tests pass.
 ---
 
 ### Session 111 — Per-Model GPU Buffers Fix ✅

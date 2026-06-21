@@ -68,6 +68,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 ## 🚀 Current Status
 
 **Phase 4 ✅ complete — Phase 5: 3D Pipeline** ✅ — **Phase 6: Particles + Mobile** ✅ — **Phase 6.5: Death Animation** ✅ — **Phase 6.6: Sound Effects** ✅ — **Phase 6.7: Day/Night Lighting Fix** ✅ — **Phase 6.8: Map Editor** ✅ — **Phase 6.9: Marquee Selection** ✅ — **Phase 6.10: Unit Commands** ✅ — **Phase 6.11: Health Bars + Minimap Dots** ✅ — **Phase 6.12: Rally Points** ✅ — **Phase 6.13: Building Destruction** ✅ (478 tests)
+**Phase 6.14: Formation Movement** ✅ (487 tests)
 - ✅ Mobile responsive CSS — @media queries for sub-768px viewports: full-width panels, larger touch targets, flex-wrap controls
 - ✅ Touch camera pan — single-finger drag (touchstart/touchmove/touchend)
 - ✅ Touch pinch-to-zoom — two-finger proportional pinch with distance ratio scaling
@@ -97,6 +98,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Building destruction animation — `destruction_timer` field on Building, `start_destruction()`/`tick_destruction()`/`destruction_progress()` methods, `Economy::tick_destructions()` removes completed buildings, `spawn_rubble_effect()` (20 brown rubble + 8 dust particles), WASM exports (`start_building_destruction`, `tick_building_destructions`, `get_building_destruction_progress`, `get_building_at_tile`), JS demolition mode (X key, `cursor: not-allowed`), `destruction_progress` in `get_building_info` JSON. 8 new tests, 478 total.
 
 **Phase 5 — 3D Pipeline** ✅ (365 tests)
+- ✅ Unit formation movement — .formation_move() preserves relative offsets from group center, FormationMove state, WASM export, 9 new tests
 - ✅ Orbital camera model — azimuth/elevation/distance spherical coords, eye()/look_at_target()/world_to_clip() (LookAt + Perspective). set_azimuth/set_elevation/set_distance with clamping + smoothing. snap_to_isometric() reset. 10 tests.
 - ✅ u_vp (View+Projection) mat4 uniform — dual-path vertex shader (legacy iso + orbital VP). WASM exports: set_azimuth/set_elevation/set_distance. WASM cache v=33.
 - ✅ Fragment shader diffuse lighting — n·l ambient+diffuse model, sun arc from day_phase. 3 new tests, 287 total.
