@@ -2197,9 +2197,10 @@ function parseBinaryMap(buffer) {
         if (magic.startsWith('L3')) {
             throw new Error(
                 `Unsupported .map format (magic: ${magic}). ` +
-                `This "L3" map was likely created with a community editor (S4ME/Settlers United). ` +
-                `Please re-save it as a standard S4 "WRLD" map in your editor, ` +
-                `or export as JSON. Track support: https://github.com/mayrd/s4wn/issues/49`
+                `This "L3" map is in S4ME/Settlers United compressed format. ` +
+                `To convert: open it in S4ME Editor, File → "Save as WRLD" or export as JSON. ` +
+                `Alternatively, use the original S4 ".map" file (WRLD format). ` +
+                `L3 decompression is not yet supported — see S4ME wiki for format details.`
             );
         }
         throw new Error(`Unknown .map format (magic: ${magic}). Try a .json map file instead.`);
