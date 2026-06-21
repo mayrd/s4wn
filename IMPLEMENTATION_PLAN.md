@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6 — Bugfixes + Map Editor (446 tests)
-| **Last updated:** 2026-06-21 (Session 128 — Right-click move, selection highlights, attack-move)
+| **Status:** Phase 6 — Bugfixes + Map Editor (453 tests)
+| **Last updated:** 2026-06-21 (Session 129 — Health bars + minimap unit dots)
 
 ---
 
@@ -470,11 +470,13 @@ All Phase 5 steps are now complete:
 12. ✅ Wire right-click move command for selected units — Done Session 128
 13. ✅ Add selection highlight indicators on canvas — Done Session 128
 14. ✅ Add attack-move command (A+click) for selected military units — Done Session 128
-15. Implement .sav full campaign state restoration from parsed chunk data
-16. Add unit formation movement (units maintain relative positions when moving as group)
-17. Add patrol command (P+click) for selected military units
-18. Implement minimap unit dots (render unit positions on minimap with nation colors)
-19. Add health bars above units on the overlay canvas
+15. ✅ Add health bars above units on overlay canvas — Done Session 129
+16. ✅ Add minimap unit dots — Done Session 129
+17. Implement .sav full campaign state restoration from parsed chunk data
+18. Add unit formation movement (units maintain relative positions when moving as group)
+19. Add patrol command (P+click) for selected military units
+20. Add unit rally point flag (set rally point for buildings, newly trained units auto-move there)
+21. Add building destruction animation (scale-down + rubble particles when building is destroyed)
 
 ---
 

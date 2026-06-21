@@ -67,7 +67,7 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 
 ## 🚀 Current Status
 
-**Phase 4 ✅ complete — Phase 5: 3D Pipeline** ✅ — **Phase 6: Particles + Mobile** ✅ — **Phase 6.5: Death Animation** ✅ — **Phase 6.6: Sound Effects** ✅ — **Phase 6.7: Day/Night Lighting Fix** ✅ — **Phase 6.8: Map Editor** ✅ — **Phase 6.9: Marquee Selection** ✅ — **Phase 6.10: Unit Commands** ✅ (453 tests)
+**Phase 4 ✅ complete — Phase 5: 3D Pipeline** ✅ — **Phase 6: Particles + Mobile** ✅ — **Phase 6.5: Death Animation** ✅ — **Phase 6.6: Sound Effects** ✅ — **Phase 6.7: Day/Night Lighting Fix** ✅ — **Phase 6.8: Map Editor** ✅ — **Phase 6.9: Marquee Selection** ✅ — **Phase 6.10: Unit Commands** ✅ — **Phase 6.11: Health Bars + Minimap Dots** ✅ (453 tests)
 - ✅ Mobile responsive CSS — @media queries for sub-768px viewports: full-width panels, larger touch targets, flex-wrap controls
 - ✅ Touch camera pan — single-finger drag (touchstart/touchmove/touchend)
 - ✅ Touch pinch-to-zoom — two-finger proportional pinch with distance ratio scaling
@@ -90,6 +90,8 @@ The only original S4 files the engine MUST support are **maps and campaigns** (`
 - ✅ Right-click move command — select military units via marquee, right-click to order movement to target tile with pathfinding
 - ✅ Selection highlight overlay — pulsing green circles drawn on overlay canvas under selected units
 - ✅ Attack-move command — press A with units selected, then click destination to order attack-move
+- ✅ Health bars above units — green/yellow/red coded bars drawn on overlay canvas above every visible unit
+- ✅ Minimap unit dots — gray for Settlers, red for Swordsmen, orange for Bowmen rendered on minimap
 
 **Phase 5 — 3D Pipeline** ✅ (365 tests)
 - ✅ Orbital camera model — azimuth/elevation/distance spherical coords, eye()/look_at_target()/world_to_clip() (LookAt + Perspective). set_azimuth/set_elevation/set_distance with clamping + smoothing. snap_to_isometric() reset. 10 tests.
