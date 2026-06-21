@@ -2529,12 +2529,13 @@ pub fn get_building_summary() -> String {
             let mut parts = Vec::new();
             for b in app.game_loop.state.economy.buildings.iter() {
                 parts.push(format!(
-                    "{{\"type\":\"{}\",\"x\":{},\"y\":{},\"complete\":{},\"settlers\":{}}}",
+                    "{{\"type\":\"{}\",\"x\":{},\"y\":{},\"complete\":{},\"settlers\":{},\"owner_id\":{}}}",
                     b.kind.name(),
                     b.x,
                     b.y,
                     b.is_complete(),
-                    b.assigned_settlers.len()
+                    b.assigned_settlers.len(),
+                    b.owner_id
                 ));
             }
             return format!("[{}]", parts.join(","));

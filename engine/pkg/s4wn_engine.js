@@ -88,6 +88,18 @@ export function compute_mvp_json(input_json) {
 }
 
 /**
+ * Apply damage to a building at the given index. If HP reaches 0, destruction starts.
+ * Returns the remaining HP, or 0 if the building doesn't exist.
+ * @param {number} building_index
+ * @param {number} amount
+ * @returns {number}
+ */
+export function damage_building(building_index, amount) {
+    const ret = wasm.damage_building(building_index, amount);
+    return ret >>> 0;
+}
+
+/**
  * Decompress a .sav savegame chunk: ARA-decrypt then LZ+Huffman decompress.
  * Used by the JS .sav loader to extract game data from savegame chunks.
  * Returns the decompressed data, or an empty Vec on failure.
@@ -223,6 +235,16 @@ export function get_building_destruction_progress(building_index) {
 }
 
 /**
+ * Get the current HP of a building at the given index. Returns 0 if not found.
+ * @param {number} building_index
+ * @returns {number}
+ */
+export function get_building_hp(building_index) {
+    const ret = wasm.get_building_hp(building_index);
+    return ret >>> 0;
+}
+
+/**
  * Get detailed building info by index.
  * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
  *   "active":true,"settlers":[1],"max_settlers":1,
@@ -243,6 +265,16 @@ export function get_building_info(idx) {
     } finally {
         wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
     }
+}
+
+/**
+ * Get the max HP of a building at the given index. Returns 0 if not found.
+ * @param {number} building_index
+ * @returns {number}
+ */
+export function get_building_max_hp(building_index) {
+    const ret = wasm.get_building_max_hp(building_index);
+    return ret >>> 0;
 }
 
 /**

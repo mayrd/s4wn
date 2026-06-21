@@ -39,6 +39,12 @@ export function clear_particles(): void;
 export function compute_mvp_json(input_json: string): string;
 
 /**
+ * Apply damage to a building at the given index. If HP reaches 0, destruction starts.
+ * Returns the remaining HP, or 0 if the building doesn't exist.
+ */
+export function damage_building(building_index: number, amount: number): number;
+
+/**
  * Decompress a .sav savegame chunk: ARA-decrypt then LZ+Huffman decompress.
  * Used by the JS .sav loader to extract game data from savegame chunks.
  * Returns the decompressed data, or an empty Vec on failure.
@@ -88,6 +94,11 @@ export function get_building_at_tile(tile_x: number, tile_y: number): string;
 export function get_building_destruction_progress(building_index: number): number;
 
 /**
+ * Get the current HP of a building at the given index. Returns 0 if not found.
+ */
+export function get_building_hp(building_index: number): number;
+
+/**
  * Get detailed building info by index.
  * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
  *   "active":true,"settlers":[1],"max_settlers":1,
@@ -96,6 +107,11 @@ export function get_building_destruction_progress(building_index: number): numbe
  * or {"error":"Building not found"}
  */
 export function get_building_info(idx: number): string;
+
+/**
+ * Get the max HP of a building at the given index. Returns 0 if not found.
+ */
+export function get_building_max_hp(building_index: number): number;
 
 /**
  * Get the rally point for a building as JSON: {"x":N,"y":N} or null if none set.
@@ -493,6 +509,7 @@ export interface InitOutput {
     readonly clear_model_instances: () => void;
     readonly clear_particles: () => void;
     readonly compute_mvp_json: (a: number, b: number) => [number, number];
+    readonly damage_building: (a: number, b: number) => number;
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
     readonly editor_grid_enabled: () => number;
     readonly export_map_json: () => [number, number];
@@ -501,7 +518,9 @@ export interface InitOutput {
     readonly get_build_cost: (a: number, b: number) => [number, number];
     readonly get_building_at_tile: (a: number, b: number) => [number, number];
     readonly get_building_destruction_progress: (a: number) => number;
+    readonly get_building_hp: (a: number) => number;
     readonly get_building_info: (a: number) => [number, number];
+    readonly get_building_max_hp: (a: number) => number;
     readonly get_building_rally_point: (a: number) => [number, number];
     readonly get_building_summary: () => [number, number];
     readonly get_camera_state: () => [number, number];

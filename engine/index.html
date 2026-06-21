@@ -3817,6 +3817,29 @@ function renderMinimap() {
             }
         }
     } catch(e) { /* ignore minimap unit dot errors */ }
+
+    // Draw building dots on minimap
+    try {
+        if (typeof get_building_summary === 'function') {
+            const bldgRaw = get_building_summary();
+            if (bldgRaw) {
+                const buildings = JSON.parse(bldgRaw);
+                for (const b of buildings) {
+                    const bx = Math.round(b.x);
+                    const by = Math.round(b.y);
+                    if (bx >= 0 && bx < w && by >= 0 && by < h) {
+                        // Complete buildings: golden dot; incomplete: darker
+                        if (b.complete) {
+                            mctx.fillStyle = '#ddbb44';
+                        } else {
+                            mctx.fillStyle = '#887722';
+                        }
+                        mctx.fillRect(bx - 2, by - 2, 4, 4);
+                    }
+                }
+            }
+        }
+    } catch(e) { /* ignore minimap building dot errors */ }
 }
 
 // ── Settings ────────────────────────────────────────────────────────────
