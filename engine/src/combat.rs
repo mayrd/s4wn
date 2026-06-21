@@ -22,9 +22,16 @@
 //! 3. If not in range → move toward enemy (pathfinding).
 //! 4. Remove dead units periodically.
 
+use crate::economy::Economy;
 use crate::map::Map;
 use crate::pathfinding::Pathfinder;
 use crate::units::{UnitManager, UnitState, UnitStance};
+
+const BUILDING_TARGET_SENTINEL: u32 = 0x8000_0000;
+
+fn is_building_target(target_id: u32) -> bool { target_id >= BUILDING_TARGET_SENTINEL }
+fn decode_building_index(target_id: u32) -> usize { (target_id & !BUILDING_TARGET_SENTINEL) as usize }
+fn encode_building_target(building_index: usize) -> u32 { BUILDING_TARGET_SENTINEL | (building_index as u32) }
 
 /// Combat controller — manages all military engagements.
 #[derive(Debug, Clone)]
@@ -360,6 +367,108 @@ impl CombatAI {
             }
         }
     }
+
+    /// Run building combat: idle military units seek and attack enemy buildings.
+    /// Call this AFTER update() for full unit-vs-unit + unit-vs-building behavior.
+    pub fn attack_buildings(&self, economy: &mut Economy, map: &Map, dt: f32) {
+        // Collect idle combat unit IDs first (drop units borrow before accessing buildings)
+        let idle_ids: Vec<u32> = {
+            let units = &economy.units;
+            units.alive_units()
+                .filter(|u| u.kind.can_fight() && u.state == UnitState::Idle
+                    && u.target.is_none() && u.stance != UnitStance::Passive)
+                .map(|u| u.id)
+                .collect()
+        };
+
+        for &unit_id in &idle_ids {
+            // Tick movement if needed
+            {
+                let units = &mut economy.units;
+                if let Some(u) = units.get_mut(unit_id) {
+                    if u.state == UnitState::Moving {
+                        let _ = u.tick_movement(dt, map);
+                    }
+                }
+            }
+
+            let b_idx = self.find_nearest_enemy_building(economy, unit_id);
+            if let Some(idx) = b_idx {
+                self.engage_building(economy, map, unit_id, idx);
+            }
+        }
+    }
+
+    fn find_nearest_enemy_building(&self, economy: &Economy, unit_id: u32) -> Option<usize> {
+        let unit = economy.units.get(unit_id)?;
+        let my_faction = unit.id % 2;
+        let mut nearest: Option<usize> = None;
+        let mut nearest_dist = f32::INFINITY;
+        for (idx, building) in economy.buildings.iter().enumerate() {
+            if !building.active || building.hp == 0 { continue; }
+            if building.owner_id as u32 % 2 == my_faction { continue; }
+            let bx = building.x as f32 + 0.5;
+            let by = building.y as f32 + 0.5;
+            let dist = ((unit.x - bx).powi(2) + (unit.y - by).powi(2)).sqrt();
+            if dist < nearest_dist { nearest_dist = dist; nearest = Some(idx); }
+        }
+        nearest
+    }
+
+    fn engage_building(&self, economy: &mut Economy, map: &Map, unit_id: u32, building_idx: usize) {
+        let units = &mut economy.units;
+        let (ux, uy, stance, range) = {
+            let u = match units.get(unit_id) { Some(u) => u, None => return };
+            (u.x, u.y, u.stance, u.kind.attack_range() * u.attack_range_mult)
+        };
+        let (bx, by) = match economy.buildings.get(building_idx) {
+            Some(b) if b.active && b.hp > 0 => (b.x as f32 + 0.5, b.y as f32 + 0.5),
+            _ => return,
+        };
+        let dist = ((ux - bx).powi(2) + (uy - by).powi(2)).sqrt();
+        if dist <= range {
+            if let Some(u) = units.get_mut(unit_id) {
+                u.target = Some(encode_building_target(building_idx));
+                u.state = UnitState::Fighting;
+            }
+            self.try_attack_building(economy, unit_id);
+        } else if stance != UnitStance::StandGround {
+            if let Some(path) = Pathfinder::find_path(map, (ux as usize, uy as usize), (bx as usize, by as usize)) {
+                if let Some(u) = units.get_mut(unit_id) {
+                    u.target = Some(encode_building_target(building_idx));
+                    u.move_along(path);
+                }
+            }
+        }
+    }
+
+    fn try_attack_building(&self, economy: &mut Economy, attacker_id: u32) {
+        let (building_idx, damage, cooldown) = {
+            let units = &economy.units;
+            let attacker = match units.get(attacker_id) { Some(u) => u, None => return };
+            if !attacker.can_attack() { return; }
+            let target_id = match attacker.target { Some(id) if is_building_target(id) => id, _ => return };
+            (decode_building_index(target_id),
+             (attacker.kind.attack_damage() as f32 * attacker.attack_mult).max(1.0) as u32,
+             attacker.kind.attack_interval())
+        };
+        let building_destroyed = if building_idx < economy.buildings.len() {
+            let building = &mut economy.buildings[building_idx];
+            if building.hp > 0 && building.active {
+                building.take_damage(damage) == 0
+            } else {
+                if let Some(attacker) = economy.units.get_mut(attacker_id) { attacker.target = None; attacker.state = UnitState::Idle; }
+                return;
+            }
+        } else {
+            if let Some(attacker) = economy.units.get_mut(attacker_id) { attacker.target = None; attacker.state = UnitState::Idle; }
+            return;
+        };
+        if let Some(attacker) = economy.units.get_mut(attacker_id) { attacker.attack_cooldown = cooldown; }
+        if building_destroyed {
+            if let Some(attacker) = economy.units.get_mut(attacker_id) { attacker.target = None; attacker.state = UnitState::Idle; }
+        }
+    }
 }
 
 impl Default for CombatAI {
@@ -373,6 +482,7 @@ impl Default for CombatAI {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::economy::BuildingType;
     use crate::units::UnitKind;
 
     #[test]
@@ -778,5 +888,98 @@ mod tests {
             "StandGround unit should attack enemy in range, got state={:?} target={:?}",
             u1.state, u1.target
         );
+    }
+
+    // --- Building Combat Tests ---
+
+    #[test]
+    fn test_find_nearest_enemy_building() {
+        let mut eco = Economy::new();
+        eco.units.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        let mut b = crate::economy::Building::new(BuildingType::Farm, 6, 5);
+        b.owner_id = 0; b.hp = 100; b.active = true; eco.buildings.push(b);
+        let mut b2 = crate::economy::Building::new(BuildingType::Storehouse, 8, 5);
+        b2.owner_id = 1; b2.hp = 200; b2.active = true; eco.buildings.push(b2);
+        assert_eq!(CombatAI::new().find_nearest_enemy_building(&eco, 1), Some(0));
+    }
+
+    #[test]
+    fn test_find_nearest_enemy_building_ignores_same_faction() {
+        let mut eco = Economy::new();
+        eco.units.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        let mut b = crate::economy::Building::new(BuildingType::Farm, 6, 5);
+        b.owner_id = 1; b.hp = 100; b.active = true; eco.buildings.push(b);
+        assert_eq!(CombatAI::new().find_nearest_enemy_building(&eco, 1), None);
+    }
+
+    #[test]
+    fn test_find_nearest_enemy_building_ignores_inactive() {
+        let mut eco = Economy::new();
+        eco.units.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        let mut b = crate::economy::Building::new(BuildingType::Farm, 6, 5);
+        b.owner_id = 0; b.active = false; b.hp = 100; eco.buildings.push(b);
+        assert_eq!(CombatAI::new().find_nearest_enemy_building(&eco, 1), None);
+    }
+
+    #[test]
+    fn test_attack_building_deals_damage() {
+        let mut eco = Economy::new();
+        let id1 = eco.units.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        let mut b = crate::economy::Building::new(BuildingType::Farm, 6, 5);
+        b.owner_id = 0; b.hp = 100; b.active = true; eco.buildings.push(b);
+        eco.units.get_mut(id1).unwrap().target = Some(encode_building_target(0));
+        eco.units.get_mut(id1).unwrap().state = UnitState::Fighting;
+        CombatAI::new().try_attack_building(&mut eco, id1);
+        assert_eq!(eco.buildings[0].hp, 85);
+    }
+
+    #[test]
+    fn test_attack_building_destroys_when_hp_zero() {
+        let mut eco = Economy::new();
+        let id1 = eco.units.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        let mut b = crate::economy::Building::new(BuildingType::Farm, 6, 5);
+        b.owner_id = 0; b.hp = 15; b.active = true; eco.buildings.push(b);
+        eco.units.get_mut(id1).unwrap().target = Some(encode_building_target(0));
+        eco.units.get_mut(id1).unwrap().state = UnitState::Fighting;
+        CombatAI::new().try_attack_building(&mut eco, id1);
+        assert_eq!(eco.buildings[0].hp, 0);
+        assert!(!eco.buildings[0].active);
+    }
+
+    #[test]
+    fn test_combat_attack_buildings_seeks_target() {
+        let map = Map::new(20, 20);
+        let mut eco = Economy::new();
+        let id1 = eco.units.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        let mut b = crate::economy::Building::new(BuildingType::Farm, 6, 5);
+        b.owner_id = 0; b.hp = 100; b.active = true; eco.buildings.push(b);
+        CombatAI::new().attack_buildings(&mut eco, &map, 0.016);
+        let u1 = eco.units.get(id1).unwrap();
+        assert_eq!(u1.state, UnitState::Fighting);
+        assert!(u1.target.is_some() && is_building_target(u1.target.unwrap()));
+    }
+
+    #[test]
+    fn test_combat_attack_buildings_ignores_passive() {
+        let map = Map::new(20, 20);
+        let mut eco = Economy::new();
+        let id1 = eco.units.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        eco.units.get_mut(id1).unwrap().stance = UnitStance::Passive;
+        let mut b = crate::economy::Building::new(BuildingType::Farm, 6, 5);
+        b.owner_id = 0; b.hp = 100; b.active = true; eco.buildings.push(b);
+        CombatAI::new().attack_buildings(&mut eco, &map, 0.016);
+        assert_eq!(eco.units.get(id1).unwrap().state, UnitState::Idle);
+    }
+
+    #[test]
+    fn test_encode_decode_building_target() {
+        let e = encode_building_target(42);
+        assert!(is_building_target(e));
+        assert_eq!(decode_building_index(e), 42);
+    }
+
+    #[test]
+    fn test_sentinel_does_not_collide() {
+        assert!(encode_building_target(0) > 100_000);
     }
 }

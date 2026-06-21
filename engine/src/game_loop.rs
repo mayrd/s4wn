@@ -101,6 +101,10 @@ impl GameState {
         self.combat_ai
             .update(&mut self.economy.units, &self.map, TICK_DURATION as f32);
 
+        // Building combat: idle units attack enemy buildings
+        self.combat_ai
+            .attack_buildings(&mut self.economy, &self.map, TICK_DURATION as f32);
+
         // Tick death animations (Dying -> Dead transitions)
         self.economy.units.tick_dying_units(TICK_DURATION as f32);
 
