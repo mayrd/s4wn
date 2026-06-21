@@ -74,8 +74,7 @@
     cursor: grab;
     position: fixed;
     top: 0; left: 0;
-    width: 100vw;
-    height: 100vh;
+    /* width/height set via JS to match pixel resolution — avoids CSS stretching on mobile */
   }
   #selection-overlay {
     position: fixed;
@@ -3593,10 +3592,14 @@ function resizeCanvas() {
     const h = window.innerHeight || document.documentElement.clientHeight || 768;
     canvas.width = w;
     canvas.height = h;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
     const overlay = document.getElementById('selection-overlay');
     if (overlay) {
         overlay.width = w;
         overlay.height = h;
+        overlay.style.width = w + 'px';
+        overlay.style.height = h + 'px';
     }
     if (engineReady) resize();
 }
@@ -5188,6 +5191,8 @@ async function main() {
         const h = window.innerHeight || document.documentElement.clientHeight || 768;
         canvas.width = w;
         canvas.height = h;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
         console.log('Canvas size:', canvas.width, 'x', canvas.height);
 
         const ok = engineInit('game-canvas');
