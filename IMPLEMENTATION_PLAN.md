@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6.17 — Building Combat (513 tests)
-| **Last updated:** 2026-06-21 (Session 139 — Particle rendering: wiring overlay canvas drawing for all effects)
+| **Status:** Phase 6.18 — Building Combat + Minimap Dots (513 tests)
+| **Last updated:** 2026-06-21 (Session 140 — Minimap building dots: golden 4x4 dots for buildings on minimap)
 
 ---
 
@@ -255,6 +255,7 @@ protocol::tests               5 tests    Message serialization, room management
 | 51 | 2026-06-16 | Nano Banana 2 terrain textures, WebGL pipeline |
 | 52 | 2026-06-16 | Bugfix #10 (openMenu), tool storage, 184 tests |
 | 53 | 2026-06-16 | Physical tool pickup routing — 187 tests |
+||| **140** | **2026-06-21** | **Minimap building dots: buildings rendered as 4x4 golden dots (complete) or dark (incomplete) on minimap. Added owner_id to get_building_summary() JSON output.** |
 || 54 | 2026-06-17 | ~~Mint building + Coins~~ **(REMOVED Session 73 — fabricated, no coin minting in S4)** |
 | 55 | 2026-06-17 | Barracks unit training — 192 tests |
 | 56 | 2026-06-17 | Tool counts WASM export, tool bar HUD — 199 tests |
@@ -527,7 +528,7 @@ All Phase 5 steps are now complete:
 5. Add attack-move formation preservation (units maintain formation when A-moving)
 6. Add building auto-repair via settlers (gradual HP regen for damaged buildings)
 7. ✅ Add building rubble particle effect hook on destruction — Done (Session 139)
-8. Add minimap building dots (color-coded by nation/type on minimap canvas)
+8. ✅ Add minimap building dots — Done (Session 140)
 
 
 ### Session 133 — Unit Formation Movement ✅
