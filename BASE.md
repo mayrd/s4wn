@@ -46,3 +46,53 @@ AI agents must not edit this file unless explicitly stated.
 | **Zierobjekte** | Obelisk | Obelisk | 1 | 4 | 2 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength (*Kampfkraft*) |
 | **Zierobjekte** | Bench | Bank | 2 | 2 | 1 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength (*Kampfkraft*) |
 | **Zierobjekte** | Archways | Torbögen | 3 | 5 | 3 | Builders *(Bauarbeiter)* | None | Boosts Combat Strength (*Kampfkraft*) |
+
+## Resources
+
+| Category | Resource Name (EN) | German Name (DE) | Nation Availability | Produced Out Of | Used For |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Construction** | Wood Log | Baumstamm | All Nations | Trees *(via Woodcutter)* | Processing into Planks |
+| **Construction** | Plank (Wood) | Holz / Brett | All Nations | 1x Wood Log *(via Sawmill)* | Building construction, Tool/Weaponsmithing, Shipyards |
+| **Construction** | Stone | Stein | All Nations | Stone Deposits / Stone Mines | Building construction, Catapult/Warship ammunition |
+| **Raw Ores** | Coal Ore | Kohle | All Nations | Coal Mine *(requires Bread)* | Fuel for Iron Smelters, Gold Smelters, and Tool/Weaponsmiths |
+| **Raw Ores** | Iron Ore | Eisenerz | All Nations | Iron Ore Mine *(requires Meat)* | Processing into Iron Bars |
+| **Raw Ores** | Gold Ore | Golderz | All Nations | Gold Mine *(requires Fish)* | Processing into Gold Bars |
+| **Raw Ores** | Sulfur Ore | Schwefel | All Nations | Sulfur Mine *(requires Fish)* | Gunpowder (Mayans), Explosive Arrows (Trojans), war munitions |
+| **Smelted Metals**| Iron Bar | Eisenbarren | All Nations | Iron Ore + Coal Ore *(via Iron Smelter)* | Forging Tools and Weapons |
+| **Smelted Metals**| Gold Bar | Goldbarren | All Nations | Gold Ore + Coal Ore *(via Gold Smelter)* | Global Combat Strength (*Kampfkraft*) boost, Zierobjekte |
+| **Food & Crops** | Water | Wasser | All Nations | River / Water source *(via Waterworks)* | Baking Bread, breeding Faction-Specific Livestock |
+| **Food & Crops** | Grain | Getreide | All Nations | Farm fields *(via Grain Farm)* | Grinding into Flour, breeding Faction-Specific Livestock |
+| **Food & Crops** | Flour | Mehl | All Nations | Grain *(via Grain Mill)* | Baking Bread |
+| **Food & Crops** | Fish | Fisch | All Nations | Fish Stocks *(via Fisherman's Hut)* | Feeding Gold Mines and Sulfur Mines |
+| **Food & Crops** | Bread | Brot | All Nations | Flour + Water *(via Bakery)* | Feeding Coal Mines and Stone Mines |
+| **Food & Crops** | Meat | Fleisch | All Nations | Faction Livestock *(via Slaughterhouse)* | Feeding Iron Ore Mines |
+| **Livestock** | Pig | Schwein | **Vikings only** | Grain + Water *(via Pig Ranch)* | Processing into Meat |
+| **Livestock** | Sheep | Schaf | **Romans only** | Grain + Water *(via Sheep Ranch)* | Processing into Meat |
+| **Livestock** | Goat | Ziege | **Mayans only** | Grain + Water *(via Goat Ranch)* | Processing into Meat |
+| **Livestock** | Goose | Gans | **Trojans only** | Grain + Water *(via Goose Ranch)* | Processing into Meat |
+| **Livestock** | Donkey | Esel | All Nations | Grain + Water *(via Donkey Ranch)* | Supplying the Marketplace for land trade routes |
+| **Alcohol & Mana**| Grapes | Trauben | **Romans only** | Vineyards on sunny hillsides | Fermenting into Wine |
+| **Alcohol & Mana**| Wine | Wein | **Romans only** | Grapes *(via Vintner)* | Sacrificial offering at Small Temple for Roman Mana |
+| **Alcohol & Mana**| Honey | Honig | **Vikings only** | Beehives *(via Apiary / Imker)* | Brewing into Mead |
+| **Alcohol & Mana**| Mead | Met | **Vikings only** | Honey *(via Mead Brewery)* | Sacrificial offering at Small Temple for Viking Mana |
+| **Alcohol & Mana**| Agave | Agave | **Mayans only** | Agave fields *(via Agave Farm)* | Distilling into Tequila |
+| **Alcohol & Mana**| Tequila | Tequila / Schnaps | **Mayans only** | Agave *(via Tequila Distillery)* | Sacrificial offering at Small Temple for Mayan Mana |
+| **Alcohol & Mana**| Sunflower | Sonnenblume | **Trojans only** | Sunflower fields *(via Trojan Farm)* | Pressing into Sunflower Oil |
+| **Alcohol & Mana**| Sunflower Oil | Sonnenblumenöl | **Trojans only** | Sunflowers *(via Oil Press)* | Sacrificial offering at Small Temple for Trojan Mana |
+| **Tools** | Hammer | Hammer | All Nations | Iron Bar + Coal Ore *(via Toolsmith)* | Spawning Builders, Smiths, and Vehicle Makers |
+| **Tools** | Pickaxe | Spitzhacke | All Nations | Iron Bar + Coal Ore *(via Toolsmith)* | Spawning Miners and Stonecutters |
+| **Tools** | Axe | Axt | All Nations | Iron Bar + Coal Ore *(via Toolsmith)* | Spawning Woodcutters and Butchers |
+| **Tools** | Saw | Säge | All Nations | Iron Bar + Coal Ore *(via Toolsmith)* | Spawning Sawmill Workers |
+| **Tools** | Shovel | Schaufel | All Nations | Iron Bar + Coal Ore *(via Toolsmith)* | Spawning Diggers (*Planierer*), Pioneers, and Gardeners |
+| **Tools** | Scythe | Sense | All Nations | Iron Bar + Coal Ore *(via Toolsmith)* | Spawning Grain Farmers |
+| **Tools** | Fishing Rod | Angel | All Nations | Iron Bar + Coal Ore *(via Toolsmith)* | Spawning Fishermen |
+| **Weapons** | Sword | Schwert | All Nations | Iron Bar + Coal Ore *(via Weaponsmith)*| Recruiting basic Swordsman infantry units |
+| **Weapons** | Bow | Bogen | All Nations | Iron Bar + Coal Ore *(via Weaponsmith)*| Recruiting basic Bowman ranged units |
+| **Weapons** | Armor | Rüstung | All Nations | Iron Bar + Coal Ore *(via Weaponsmith)*| Promoting basic soldiers into Squad Leaders / Captains |
+| **Weapons** | Spear | Speer | **Romans only** | Iron Bar + Coal Ore *(via Weaponsmith)*| Recruiting Roman Special Unit *(Medic / Sanitäter)* |
+| **Weapons** | Battleaxe | Streitaxt | **Vikings only** | Iron Bar + Coal Ore *(via Weaponsmith)*| Recruiting Viking Special Unit *(Axeman / Streitaxtkämpfer)*|
+| **Weapons** | Blowgun | Blasrohr | **Mayans only** | Iron Bar + Coal Ore *(via Weaponsmith)*| Recruiting Mayan Special Unit *(Blowgunner)* |
+| **Weapons** | Backpack Catapult| Rucksack-Katapult | **Trojans only** | Iron Bar + Coal Ore *(via Weaponsmith)*| Recruiting Trojan Special Unit *(Backpack Catapult Soldier)*|
+| **Munitions** | Gunpowder | Schießpulver | **Mayans only** | Sulfur Ore + Coal Ore *(via Powder Mill)*| Ammunition for Mayan Fire Spitter heavy war machines |
+| **Munitions** | Explosive Arrow | Explosivpfeil | **Trojans only** | Sulfur Ore + Iron Bar *(via Weapon Foundry)*| Ammunition for Trojan Ballista heavy war machines |
+| **Munitions** | Catapult Ammo | Munition | **Romans & Vikings**| Stone chunks from local storage | Ammunition for Roman Catapults and Viking Thundatrucks |
