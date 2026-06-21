@@ -277,7 +277,14 @@ pub struct Unit {
     /// Combat experience points, earned from killing enemies.
     /// Promotions at thresholds: XP_RANK_1(30), XP_RANK_2(80), XP_RANK_3(150).
     pub experience: u32,
+    /// Whether this unit currently benefits from a SquadLeader's combat aura (+15% damage).
+    pub aura_buff: bool,
 }
+
+/// SquadLeader aura range (tiles). Allied combat units within this range get +15% damage.
+pub const SQUAD_LEADER_AURA_RANGE: f32 = 5.0;
+/// SquadLeader aura attack damage bonus multiplier (additive: 0.15 = +15%).
+pub const SQUAD_LEADER_AURA_DAMAGE_BONUS: f32 = 0.15;
 
 /// XP thresholds for rank promotion (cumulative XP required).
 pub const XP_RANK_1: u32 = 30;
@@ -312,6 +319,7 @@ impl Unit {
             stance: UnitStance::Aggressive,
             rank: 0,
             experience: 0,
+            aura_buff: false,
         }
     }
 
@@ -488,11 +496,12 @@ impl Unit {
         (dx * dx + dy * dy).sqrt()
     }
 
-    /// Effective attack damage, including rank bonus (+10% per rank).
+    /// Effective attack damage, including rank bonus (+10% per rank) and SquadLeader aura (+15%).
     pub fn effective_attack_damage(&self) -> u32 {
         let base = self.kind.attack_damage() as f32;
         let rank_bonus = 1.0 + (self.rank as f32 * 0.10);
-        (base * rank_bonus).max(1.0) as u32
+        let aura_bonus = if self.aura_buff { 1.0 + SQUAD_LEADER_AURA_DAMAGE_BONUS } else { 1.0 };
+        (base * rank_bonus * aura_bonus).max(1.0) as u32
     }
 
     /// Effective max HP, including rank bonus (+15% per rank).
