@@ -2615,6 +2615,27 @@ pub fn get_units_in_rect(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> Stri
     "[]".to_string()
 }
 
+/// Order a set of units to move to a target tile.
+/// unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
+/// target_x, target_y: destination tile coordinates
+/// Returns: number of units successfully ordered to move
+#[wasm_bindgen]
+pub fn move_units_to_tile(unit_ids_json: &str, target_x: usize, target_y: usize) -> u32 {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            let unit_ids: Vec<u32> = serde_json::from_str(unit_ids_json).unwrap_or_default();
+            app.game_loop.state.economy.units.move_units_to(
+                &unit_ids,
+                target_x,
+                target_y,
+                &app.game_loop.state.map,
+            )
+        } else {
+            0
+        }
+    }
+}
+
 /// Get detailed building info by index.
 /// Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
 ///   "active":true,"settlers":[1],"max_settlers":1,

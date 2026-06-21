@@ -76,6 +76,14 @@
     top: 0; left: 0;
     width: 100vw;
     height: 100vh;
+  }
+  #selection-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 5;
     z-index: 1;
   }
   canvas:active { cursor: grabbing; }
@@ -673,6 +681,7 @@
   }
   /* placement mode cursor */
   canvas.placing { cursor: crosshair !important; }
+  canvas.attack-move { cursor: crosshair !important; }
   #placement-status {
     position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
     z-index: 25; font-size: 12px; color: #e8d5a0;
@@ -1228,6 +1237,7 @@
 
 <canvas id="minimap" width="150" height="150"></canvas>
 <canvas id="game-canvas"></canvas>
+<canvas id="selection-overlay"></canvas>
 
 <!-- Loading Screen -->
 <div id="loading-screen">
@@ -1290,7 +1300,8 @@ import init, {
     get_camera_state,
     load_map_json,
     get_units_in_rect,
-} from './pkg/s4wn_engine.js?v=42';
+    move_units_to_tile,
+} from './pkg/s4wn_engine.js?v=43';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -2936,12 +2947,20 @@ function refreshBuildingAffordability() {
     });
 }
 
-// Keyboard shortcut: B to enter build mode, Escape to cancel
+// Keyboard shortcut: B to enter build mode, Escape to cancel, A for attack-move
 window.addEventListener('keydown', (e) => {
     if (showMenu) return;
     if (e.key.toLowerCase() === 'b' && !placementMode) {
     } else if (e.key === 'Escape' && placementMode) {
         cancelPlacement();
+    } else if (e.key.toLowerCase() === 'a' && selectedUnitIds.length > 0 && !placementMode) {
+        attackMoveMode = true;
+        canvas.classList.add('attack-move');
+        console.log('Attack-move mode: click destination for ' + selectedUnitIds.length + ' unit(s)');
+        try { Sfx.playUIClick(); } catch(e) {}
+    } else if (e.key === 'Escape' && attackMoveMode) {
+        attackMoveMode = false;
+        canvas.classList.remove('attack-move');
     }
 });
 
@@ -2950,6 +2969,7 @@ let marqueeActive = false;
 let marqueeStartX = 0, marqueeStartY = 0;
 let marqueeEndX = 0, marqueeEndY = 0;
 let selectedUnitIds = []; // currently selected military unit IDs
+let attackMoveMode = false; // when true, clicking orders attack-move
 const marqueeBox = document.getElementById('marquee-box');
 const selCount = document.getElementById('selection-count');
 
@@ -3030,8 +3050,12 @@ canvas.addEventListener('contextmenu', (e) => {
     const info = get_tile_at(e.offsetX, e.offsetY);
     if (!info) return;
     const t = JSON.parse(info);
-    console.log('Move ' + selectedUnitIds.length + ' unit(s) to (' + t.x + ', ' + t.y + ')');
-    try { Sfx.playUIClick(); } catch(e) {}
+    const idsJson = JSON.stringify(selectedUnitIds);
+    const moved = move_units_to_tile(idsJson, t.x, t.y);
+    if (moved > 0) {
+        console.log('Ordered ' + moved + ' unit(s) to (' + t.x + ', ' + t.y + ')');
+        try { Sfx.playUIClick(); } catch(e) {}
+    }
 });
 
 // Deselect on click elsewhere (not on canvas or selection info)
@@ -3079,6 +3103,23 @@ canvas.addEventListener('click', (e) => {
             }, 2000);
         }
         lastPopUpdate = 0;
+        return;
+    }
+
+    // ── Attack-move mode ──
+    if (attackMoveMode && selectedUnitIds.length > 0) {
+        const aInfo = get_tile_at(e.offsetX, e.offsetY);
+        if (aInfo) {
+            const at = JSON.parse(aInfo);
+            const idsJson = JSON.stringify(selectedUnitIds);
+            const moved = move_units_to_tile(idsJson, at.x, at.y);
+            if (moved > 0) {
+                console.log('Attack-moving ' + moved + ' unit(s) to (' + at.x + ', ' + at.y + ')');
+                try { Sfx.playUIClick(); } catch(e) {}
+            }
+            attackMoveMode = false;
+            canvas.classList.remove('attack-move');
+        }
         return;
     }
 
@@ -3282,6 +3323,11 @@ function resizeCanvas() {
     const h = window.innerHeight || document.documentElement.clientHeight || 768;
     canvas.width = w;
     canvas.height = h;
+    const overlay = document.getElementById('selection-overlay');
+    if (overlay) {
+        overlay.width = w;
+        overlay.height = h;
+    }
     if (engineReady) resize();
 }
 window.addEventListener('resize', resizeCanvas);
@@ -4867,6 +4913,56 @@ async function main() {
         }
         console.log('Engine ready, starting render loop');
 
+        // ── Selection overlay drawing ───────────────────────────────────
+        const selOverlay = document.getElementById('selection-overlay');
+        const selCtx = selOverlay ? selOverlay.getContext('2d') : null;
+
+        function drawSelectionOverlay() {
+            if (!selCtx || !selOverlay) return;
+            selCtx.clearRect(0, 0, selOverlay.width, selOverlay.height);
+            if (selectedUnitIds.length === 0) return;
+
+            // Get current unit positions
+            let units = [];
+            try {
+                const raw = get_unit_summary();
+                if (raw) units = JSON.parse(raw);
+            } catch(e) { return; }
+
+            // Camera transform: convert world coords to screen coords
+            // match the isometric projection in the vertex shader:
+            // iso_x = (x - y) * 0.866 + screen_center_x
+            // iso_y = (x + y) * 0.5 - elevation * 0.5 + screen_center_y
+            const cam = get_camera_state();
+            const camData = cam ? JSON.parse(cam) : null;
+            const zoom = camData ? (camData.zoom || 1.0) : 1.0;
+            const cx = selOverlay.width / 2;
+            const cy = selOverlay.height / 2;
+
+            for (const unit of units) {
+                if (!selectedUnitIds.includes(unit.id)) continue;
+                // Isometric screen position (matching the shader)
+                const sx = cx + (unit.x - unit.y) * 0.866 * zoom;
+                const sy = cy + (unit.x + unit.y) * 0.5 * zoom - 8 * zoom;
+
+                // Draw selection circle
+                const radius = Math.max(6, 10 * zoom);
+                selCtx.beginPath();
+                selCtx.arc(sx, sy + 4 * zoom, radius, 0, Math.PI * 2);
+                selCtx.strokeStyle = '#00ff88';
+                selCtx.lineWidth = 2;
+                selCtx.stroke();
+
+                // Pulsing inner ring
+                const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.004);
+                selCtx.beginPath();
+                selCtx.arc(sx, sy + 4 * zoom, radius * 0.6 * pulse, 0, Math.PI * 2);
+                selCtx.strokeStyle = 'rgba(0, 255, 136, 0.4)';
+                selCtx.lineWidth = 1.5;
+                selCtx.stroke();
+            }
+        }
+
         // Animation loop
         let fpsFrames = 0, fpsTime = performance.now(), currentFps = 0;
         let frameCount = 0;
@@ -4881,6 +4977,7 @@ async function main() {
             } catch (e) {
                 console.error('Render error:', e);
             }
+            drawSelectionOverlay();
 
             frameCount++;
             if (frameCount === 1) {

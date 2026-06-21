@@ -572,6 +572,34 @@ impl UnitManager {
             })
             .collect()
     }
+
+    /// Order a set of units to move to a target tile.
+    /// Takes a list of unit IDs and a target (x, y) tile position.
+    /// Units that are alive and have the specified ID will be given a path.
+    /// Returns the number of units successfully ordered to move.
+    pub fn move_units_to(&mut self, unit_ids: &[u32], target_x: usize, target_y: usize, map: &Map) -> u32 {
+        use crate::pathfinding::Pathfinder;
+        let mut count = 0u32;
+        for unit in self.units.iter_mut() {
+            if !unit.is_alive() {
+                continue;
+            }
+            if !unit_ids.contains(&unit.id) {
+                continue;
+            }
+            unit.target = None;
+            if unit.state == UnitState::Fighting {
+                unit.state = UnitState::Idle;
+            }
+            let sx = unit.x as usize;
+            let sy = unit.y as usize;
+            if let Some(path) = Pathfinder::find_path(map, (sx, sy), (target_x, target_y)) {
+                unit.move_along(path);
+                count += 1;
+            }
+        }
+        count
+    }
 }
 
 impl Default for UnitManager {
@@ -1094,5 +1122,123 @@ mod death_animation_tests {
         assert_eq!(u1.state, u2.state);
         assert_eq!(u1.dying_timer, u2.dying_timer);
         assert_eq!(u1.state, UnitState::Dead);
+    }
+
+    #[test]
+    fn test_move_units_to_single_unit() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+
+        let moved = mgr.move_units_to(&[id1], 10, 10, &map);
+        assert_eq!(moved, 1, "Should move 1 unit");
+
+        let u = mgr.get(id1).unwrap();
+        assert_eq!(u.state, UnitState::Moving);
+        assert!(u.path.is_some(), "Unit should have a path");
+        assert!(u.target.is_none(), "Combat target should be cleared");
+    }
+
+    #[test]
+    fn test_move_units_to_multiple_units() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        let id1 = mgr.spawn(UnitKind::Swordsman, 3.5, 3.5);
+        let id2 = mgr.spawn(UnitKind::Bowman, 4.5, 4.5);
+        let id3 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+
+        let moved = mgr.move_units_to(&[id1, id2, id3], 15, 15, &map);
+        assert_eq!(moved, 3, "Should move all 3 units");
+
+        for id in [id1, id2, id3] {
+            let u = mgr.get(id).unwrap();
+            assert_eq!(u.state, UnitState::Moving);
+            assert!(u.path.is_some());
+        }
+    }
+
+    #[test]
+    fn test_move_units_to_ignores_dead() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+        let id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 6.5);
+
+        // Kill unit 2
+        mgr.get_mut(id2).unwrap().hp = 0;
+        mgr.get_mut(id2).unwrap().state = UnitState::Dead;
+
+        let moved = mgr.move_units_to(&[id1, id2], 10, 10, &map);
+        assert_eq!(moved, 1, "Should only move the alive unit");
+
+        let u1 = mgr.get(id1).unwrap();
+        assert_eq!(u1.state, UnitState::Moving);
+
+        let u2 = mgr.get(id2).unwrap();
+        assert_eq!(u2.state, UnitState::Dead);
+    }
+
+    #[test]
+    fn test_move_units_to_clears_fighting_state() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+
+        // Set unit as fighting
+        mgr.get_mut(id1).unwrap().state = UnitState::Fighting;
+        mgr.get_mut(id1).unwrap().target = Some(99);
+
+        let moved = mgr.move_units_to(&[id1], 10, 10, &map);
+        assert_eq!(moved, 1);
+
+        let u = mgr.get(id1).unwrap();
+        assert_eq!(u.state, UnitState::Moving);
+        assert!(u.target.is_none(), "Combat target should be cleared");
+    }
+
+    #[test]
+    fn test_move_units_to_empty_list() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+
+        let moved = mgr.move_units_to(&[], 10, 10, &map);
+        assert_eq!(moved, 0, "No units to move");
+    }
+
+    #[test]
+    fn test_move_units_to_nonexistent_id() {
+        let map = Map::new(20, 20);
+        let mut mgr = UnitManager::new();
+        mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+
+        let moved = mgr.move_units_to(&[999], 10, 10, &map);
+        assert_eq!(moved, 0, "Nonexistent unit ID should not be found");
+    }
+
+    #[test]
+    fn test_move_units_to_unreachable_target() {
+        let mut map = Map::new(20, 20);
+        // Surround target with mountains (impassable)
+        for dx in 0..3 {
+            for dy in 0..3 {
+                if dx != 1 || dy != 1 {
+                    map.set_terrain(10 + dx, 10 + dy, crate::map::Terrain::Mountain);
+                }
+            }
+        }
+        let mut mgr = UnitManager::new();
+        let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
+
+        // Target is at (11, 11) which is surrounded by mountains
+        let moved = mgr.move_units_to(&[id1], 11, 11, &map);
+        // Pathfinder may or may not find a path depending on blocking
+        // The important thing is it doesn't panic
+        let u = mgr.get(id1).unwrap();
+        if moved > 0 {
+            assert_eq!(u.state, UnitState::Moving);
+        } else {
+            assert_eq!(u.state, UnitState::Idle);
+        }
     }
 }
