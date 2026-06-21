@@ -4,8 +4,8 @@
 > Every feature follows this pattern: **Objective → Test Cases → Implementation**.
 > Tests are written BEFORE code. A feature is done when its tests pass — not before.
 
-| **Status:** Phase 6.18 — Building Combat + Minimap Dots (513 tests)
-| **Last updated:** 2026-06-21 (Session 140 — Minimap building dots: golden 4x4 dots for buildings on minimap)
+| **Status:** Phase 6.19 — Formation-Preserving Movement (513 tests)
+| **Last updated:** 2026-06-21 (Session 141 — Attack-move + right-click now use formation_move() for formation-preserving unit movement)
 
 ---
 
@@ -256,6 +256,7 @@ protocol::tests               5 tests    Message serialization, room management
 | 52 | 2026-06-16 | Bugfix #10 (openMenu), tool storage, 184 tests |
 | 53 | 2026-06-16 | Physical tool pickup routing — 187 tests |
 ||| **140** | **2026-06-21** | **Minimap building dots: buildings rendered as 4x4 golden dots (complete) or dark (incomplete) on minimap. Added owner_id to get_building_summary() JSON output.** |
+| **141** | **2026-06-21** | **Formation-preserving movement: attack-move (A+click) and right-click move now use formation_move() instead of move_units_to_tile(). Multiple selected units maintain relative positions during group movement. WASM cache v=50→v=51.** |
 || 54 | 2026-06-17 | ~~Mint building + Coins~~ **(REMOVED Session 73 — fabricated, no coin minting in S4)** |
 | 55 | 2026-06-17 | Barracks unit training — 192 tests |
 | 56 | 2026-06-17 | Tool counts WASM export, tool bar HUD — 199 tests |
@@ -525,7 +526,7 @@ All Phase 5 steps are now complete:
 2. ✅ Wire combat attacks to damage buildings — Done (Session 138)
 3. Add garrison interactions for military buildings (auto-defense when units are stationed)
 4. Investigate adding unit ranks/experience (S4 had 3 tiers: recruit, veteran, elite) — create GitHub issue
-5. Add attack-move formation preservation (units maintain formation when A-moving)
+5. ✅ Add attack-move formation preservation — Done (Session 141)
 6. Add building auto-repair via settlers (gradual HP regen for damaged buildings)
 7. ✅ Add building rubble particle effect hook on destruction — Done (Session 139)
 8. ✅ Add minimap building dots — Done (Session 140)
