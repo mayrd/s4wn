@@ -53,6 +53,7 @@ Full control, modern toolchain, clean legal foundation.
 ### Graphics: Raw WebGL2 via web-sys
 **Chosen over:** three.js (600KB overhead), wgpu (narrower support), Bevy (experimental WASM).
 Direct GPU access, ~200KB WASM binary. WebGPU planned when browser share >90%.
+**Phase 7:** Redo rendering pipeline to match original S4 visual fidelity — lighting, shading, terrain rendering, building materials, water, shadows.
 
 ### Camera: Orbital (Azimuth/Elevation/Distance)
 Default: classic isometric (az=45°, el=35.264°). Smooth interpolation `dt * 8.0`.
@@ -60,8 +61,8 @@ Default: classic isometric (az=45°, el=35.264°). Smooth interpolation `dt * 8.
 ### Models: Procedural OBJ/JSON → glTF 2.0
 84 procedurally-generated JSON models currently. Future: glTF 2.0 (.glb) with PBR.
 
-### Textures: Procedural → WebP Atlases
-Terrain 2048×2048. All procedurally generated (noise + color ramps).
+### Textures: Procedural → WebP Atlases (Phase 7: Original-Faithful)
+Terrain 2048×2048. All procedurally generated. **Phase 7 goal:** regenerate all textures to closely match the original Siedler 4 art style — same color palette, terrain texel density, biome transitions, building material appearance — while keeping everything procedurally generated from scratch (no original assets).
 
 ### Server: Caddy 2.x
 Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
@@ -82,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 6.25 — 588 tests passing
+**Status:** Phase 7.0 — Rendering Overhaul (redo rendering + textures to match original S4) — 519 tests passing
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -96,21 +97,12 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | 4 — UI Overhaul | ✅ | Viewport, HUD, splash, panels |
 | 5 — 3D Pipeline | ✅ | Orbital camera, terrain, GPU models |
 | 6 — Polish | ✅ | Particles, sound, mobile, stances, tutorial |
+| 7 — Rendering Overhaul | 🔄 | Redo rendering to match original S4 as closely as possible; regenerate all textures to closely match original art style |
 
 ### Session Log (recent)
 
 | Session | Date | Summary |
 |---------|------|---------|
-| 153 | 2026-06-22 | G-key garrison shortcut: press G with units selected to enter garrison mode, click military building to garrison all selected units; ESC cancels; canvas.garrison cursor; garrison capacity indicator in construction panel (BigTower/SmallTower=1, Castle=6); garrison_capacity added to building config data.js; cache v54 (588 tests) |
-| 152 | 2026-06-22 | Garrison UI panel: show stationed soldiers with eject buttons on military building click; morale indicator on unit selection (green/red bonus %); handleUngarrison/handleGarrisonSelectedUnit JS handlers; WASM rebuild with new exports; cache v53 (588 tests) |
-| 151 | 2026-06-22 | Garrison & morale WASM exports: get_building_garrison_json, get_unit_morale_json, wasm_garrison_unit, wasm_ungarrison_unit; extended get_building_summary with garrison fields (588 tests) |
-| 150 | 2026-06-22 | Morale system: +5% attack/defense per nearby garrisoned military building (6-tile range, 25% cap), applied in combat and economy update (588 tests) |
-| 149 | 2026-06-22 | Garrison system: Building::garrison_unit/ungarrison_unit, garrison_capacity per BuildingType, conditional territory for GuardTower/Fortress (579 tests) |
-| 148 | 2026-06-22 | SquadLeader defensive aura (+10% defense to allies within 5 tiles) (567 tests) |
-| 147 | 2026-06-21 | Fix #54: water fallback on map load failure + JSON parse robustness (561 tests) |
-| 146 | 2026-06-21 | SquadLeader combat aura (+15% damage to allies in 5-tile range) (561 tests) |
-| 145 | 2026-06-21 | Barracks auto-promotion to SquadLeader (551 tests) |
-| 144 | 2026-06-21 | Unit rank/experience system (541 tests) |
 | 143 | 2026-06-21 | Fix #54: canvas CSS stretching on mobile |
 | 142 | 2026-06-21 | Building Auto-Repair + Bugfix #52 |
 | 141 | 2026-06-21 | Attack-move formation preservation |
@@ -123,14 +115,11 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | 133 | 2026-06-18 | Unit formation movement |
 
 ### Next Session — Concrete Steps
-1. ~~Build garrison UI panel in JS~~ ✅ (session 152)
-2. Implement .sav full campaign state restoration
-3. Verify fog-of-war JS/UI darkening pass-through
-4. Polish tutorial campaign progression
-5. ~~Add morale indicator to unit HUD~~ ✅ (session 152)
-6. ~~Add keyboard shortcut for garrison (G key)~~ ✅ (session 153)
-7. ~~Add garrison capacity indicator to building construction panel~~ ✅ (session 153)
-8. Implement .sav full campaign state restoration
+1. **Phase 7 kickoff:** Audit current rendering pipeline — catalog all shaders, draw calls, and texture generation code; identify gaps vs original S4 visual fidelity
+2. Study original S4 screenshots/captures for art style reference (color palette, lighting, terrain texel density, building proportions)
+3. Redo terrain texture generation — match original S4 terrain colors, biome transitions, and tile patterns as closely as possible
+4. Redo building/structure textures — regenerate to closely match original S4 art style (no original assets, but match the look)
+5. Improve model geometry to better match original S4 building shapes and proportions
 
 ---
 
