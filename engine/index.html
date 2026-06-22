@@ -6097,6 +6097,7 @@ function openObjectExplorer() {
     var body = document.getElementById("obj-explorer-body");
     if (!panel || !body) {
         console.error('ObjectExplorer: DOM elements missing — panel=' + !!panel + ' body=' + !!body);
+        showToast('Object Explorer unavailable. Please refresh the page.');
         return;
     }
     var C = window.S4WN_CONFIG;
