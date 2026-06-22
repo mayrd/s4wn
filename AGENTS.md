@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with per-building material colors + texture UVs — 594 tests passing
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires — 594 tests passing
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -104,6 +104,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | Session | Date | Summary |
 |---------|------|---------|
 | 158 | 2026-06-22 | Per-building material colors + texture UVs for all 84 models |
+| 159 | 2026-06-22 | Improve building model geometry: hipped roofs, temple spires, better proportions for 38 models |
 | 157 | 2026-06-22 | Compute proper per-vertex normals for all 84 building 3D models |
 | 156 | 2026-06-22 | Fix #58 #59 #60: Move Editor to Main Menu, add Object Explorer |
 | 155 | 2026-06-22 | Regenerate terrain_atlas.png with S4-authentic procedural textures |
@@ -125,7 +126,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 3. ~~Add smooth biome transition splat-map blending~~ ✅ (session 154)
 4. ~~Regenerate terrain_atlas.png (2048×512) with higher-quality procedural textures~~ ✅ (session 155)
 5. ~~Building normals — proper per-vertex normals~~ ✅ (session 157) — ~~per-building material colors + texture UVs~~ ✅ (session 158)
-6. Improve model geometry to better match original S4 building shapes and proportions
+6. ~~Improve model geometry to better match original S4 building shapes and proportions~~ ✅ (session 159)
 7. Add soft shadow rendering for buildings/units
 8. Add water surface animation (waves, reflections) matching S4 water style
 9. Wire terrain atlas texture into model fragment shader (use UVs + u_model_color)
