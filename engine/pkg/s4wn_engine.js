@@ -235,6 +235,26 @@ export function get_building_destruction_progress(building_index) {
 }
 
 /**
+ * Get garrison info for a building at the given index.
+ * Returns JSON: {"count":2,"capacity":6,"unit_ids":[1,2],"garrisoned":true}
+ * or {"count":0,"capacity":0,"unit_ids":[],"garrisoned":false} if building not found.
+ * @param {number} building_index
+ * @returns {string}
+ */
+export function get_building_garrison_json(building_index) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_building_garrison_json(building_index);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Get the current HP of a building at the given index. Returns 0 if not found.
  * @param {number} building_index
  * @returns {number}
@@ -297,7 +317,7 @@ export function get_building_rally_point(building_index) {
 
 /**
  * Get building summary as a JSON string for the HUD.
- * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1},...]
+ * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1,"owner_id":0,"garrison":0,"max_garrison":0},...]
  * @returns {string}
  */
 export function get_building_summary() {
@@ -528,6 +548,26 @@ export function get_unit_info(id) {
     let deferred1_1;
     try {
         const ret = wasm.get_unit_info(id);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
+ * Get morale bonus for a unit by ID.
+ * Returns JSON: {"morale_bonus":0.15,"morale_percent":"15%"}
+ * or {"morale_bonus":0.0,"morale_percent":"0%"} if unit not found.
+ * @param {number} unit_id
+ * @returns {string}
+ */
+export function get_unit_morale_json(unit_id) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_unit_morale_json(unit_id);
         deferred1_0 = ret[0];
         deferred1_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);
@@ -1177,6 +1217,29 @@ export function try_place_building(kind_name, x, y) {
     } finally {
         wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
     }
+}
+
+/**
+ * Garrison a unit into a building. Returns true if successful.
+ * The unit must be a combat unit and adjacent to the building.
+ * @param {number} building_index
+ * @param {number} unit_id
+ * @returns {boolean}
+ */
+export function wasm_garrison_unit(building_index, unit_id) {
+    const ret = wasm.wasm_garrison_unit(building_index, unit_id);
+    return ret !== 0;
+}
+
+/**
+ * Ungarrison a unit from a building. Returns true if the unit was found and removed.
+ * @param {number} building_index
+ * @param {number} unit_id
+ * @returns {boolean}
+ */
+export function wasm_ungarrison_unit(building_index, unit_id) {
+    const ret = wasm.wasm_ungarrison_unit(building_index, unit_id);
+    return ret !== 0;
 }
 
 /**

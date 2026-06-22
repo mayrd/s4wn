@@ -94,6 +94,13 @@ export function get_building_at_tile(tile_x: number, tile_y: number): string;
 export function get_building_destruction_progress(building_index: number): number;
 
 /**
+ * Get garrison info for a building at the given index.
+ * Returns JSON: {"count":2,"capacity":6,"unit_ids":[1,2],"garrisoned":true}
+ * or {"count":0,"capacity":0,"unit_ids":[],"garrisoned":false} if building not found.
+ */
+export function get_building_garrison_json(building_index: number): string;
+
+/**
  * Get the current HP of a building at the given index. Returns 0 if not found.
  */
 export function get_building_hp(building_index: number): number;
@@ -120,7 +127,7 @@ export function get_building_rally_point(building_index: number): string;
 
 /**
  * Get building summary as a JSON string for the HUD.
- * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1},...]
+ * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1,"owner_id":0,"garrison":0,"max_garrison":0},...]
  */
 export function get_building_summary(): string;
 
@@ -196,6 +203,13 @@ export function get_tool_counts(): string;
  * or {"error":"Unit not found"}
  */
 export function get_unit_info(id: number): string;
+
+/**
+ * Get morale bonus for a unit by ID.
+ * Returns JSON: {"morale_bonus":0.15,"morale_percent":"15%"}
+ * or {"morale_bonus":0.0,"morale_percent":"0%"} if unit not found.
+ */
+export function get_unit_morale_json(unit_id: number): string;
 
 /**
  * Get the current stance of a unit.
@@ -478,6 +492,17 @@ export function toggle_pause(): boolean;
 export function try_place_building(kind_name: string, x: number, y: number): string;
 
 /**
+ * Garrison a unit into a building. Returns true if successful.
+ * The unit must be a combat unit and adjacent to the building.
+ */
+export function wasm_garrison_unit(building_index: number, unit_id: number): boolean;
+
+/**
+ * Ungarrison a unit from a building. Returns true if the unit was found and removed.
+ */
+export function wasm_ungarrison_unit(building_index: number, unit_id: number): boolean;
+
+/**
  * Connect to a game server via WebSocket.
  * Returns true if connection was initiated.
  */
@@ -518,6 +543,7 @@ export interface InitOutput {
     readonly get_build_cost: (a: number, b: number) => [number, number];
     readonly get_building_at_tile: (a: number, b: number) => [number, number];
     readonly get_building_destruction_progress: (a: number) => number;
+    readonly get_building_garrison_json: (a: number) => [number, number];
     readonly get_building_hp: (a: number) => number;
     readonly get_building_info: (a: number) => [number, number];
     readonly get_building_max_hp: (a: number) => number;
@@ -536,6 +562,7 @@ export interface InitOutput {
     readonly get_tile_at: (a: number, b: number) => [number, number];
     readonly get_tool_counts: () => [number, number];
     readonly get_unit_info: (a: number) => [number, number];
+    readonly get_unit_morale_json: (a: number) => [number, number];
     readonly get_unit_stance: (a: number) => number;
     readonly get_unit_summary: () => [number, number];
     readonly get_units_in_rect: (a: number, b: number, c: number, d: number) => [number, number];
@@ -584,6 +611,8 @@ export interface InitOutput {
     readonly toggle_editor_grid: () => number;
     readonly toggle_pause: () => number;
     readonly try_place_building: (a: number, b: number, c: number, d: number) => [number, number];
+    readonly wasm_garrison_unit: (a: number, b: number) => number;
+    readonly wasm_ungarrison_unit: (a: number, b: number) => number;
     readonly ws_connect: (a: number, b: number) => number;
     readonly ws_receive: () => [number, number];
     readonly ws_send: (a: number, b: number) => void;

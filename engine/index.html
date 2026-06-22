@@ -763,14 +763,27 @@
     z-index: 26; padding: 10px 14px; border-radius: 6px;
     background: rgba(0,0,0,0.85); color: #e0d5b0;
     font-size: 11px; font-family: 'SF Mono','Cascadia Code',monospace;
-    line-height: 1.5; display: none; pointer-events: none;
+    line-height: 1.5; display: none; pointer-events: auto;
     border: 1px solid rgba(200,170,100,0.3);
-    max-width: 260px; white-space: nowrap;
+    max-width: 280px; white-space: nowrap;
   }
   #selection-info.visible { display: block; }
   #selection-info .sel-title { font-size: 13px; font-weight: bold; color: #f0d070; margin-bottom: 4px; }
   #selection-info .sel-stat { color: #aaa; }
   #selection-info .sel-stat span { color: #e0d5b0; }
+  #selection-info .sel-garrison { margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(200,170,100,0.2); }
+  #selection-info .sel-garrison-title { font-size: 11px; color: #c8a848; font-weight: bold; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  #selection-info .sel-garrison-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0; }
+  #selection-info .sel-garrison-unit { color: #aab8d0; font-size: 11px; }
+  #selection-info .sel-garrison-eject {
+    background: rgba(200,60,60,0.2); border: 1px solid rgba(200,60,60,0.4);
+    color: #cc6666; border-radius: 3px; padding: 1px 6px; font-size: 10px;
+    cursor: pointer; transition: all 0.15s; pointer-events: auto;
+  }
+  #selection-info .sel-garrison-eject:hover { background: rgba(200,60,60,0.5); color: #ff8888; }
+  #selection-info .sel-garrison-empty { color: #666; font-size: 10px; font-style: italic; }
+  #selection-info .sel-morale { color: #88cc88; }
+  #selection-info .sel-morale.negative { color: #cc8888; }
 
   /* ── Error Dialog ────────────────────────────────────────────────────── */
   #error-overlay {
@@ -1420,8 +1433,12 @@ import init, {
     damage_building,
     get_building_hp,
     get_building_max_hp,
+    get_building_garrison_json,
+    get_unit_morale_json,
+    wasm_garrison_unit,
+    wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=52';
+} from './pkg/s4wn_engine.js?v=53';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3491,14 +3508,47 @@ function showBuildingInfo(idx, cx, cy) {
             }
         } catch(_) {}
 
+        // Build garrison section for military buildings
+        let garrisonHtml = '';
+        const maxGarrison = b.max_garrison || 0;
+        if (maxGarrison > 0) {
+            const garrisonCount = b.garrison || 0;
+            let garrisonRows = '';
+            if (typeof get_building_garrison_json === 'function') {
+                try {
+                    const gRaw = get_building_garrison_json(idx);
+                    if (gRaw) {
+                        const gInfo = JSON.parse(gRaw);
+                        if (gInfo.unit_ids && gInfo.unit_ids.length > 0) {
+                            for (const uid of gInfo.unit_ids) {
+                                garrisonRows += `<div class="sel-garrison-row">
+                                    <span class="sel-garrison-unit">&#x2694; Unit #${uid}</span>
+                                    <button class="sel-garrison-eject" onclick="handleUngarrison(${idx}, ${uid})" title="Remove unit from building">Eject</button>
+                                </div>`;
+                            }
+                        } else {
+                            garrisonRows = '<div class="sel-garrison-empty">No units stationed</div>';
+                        }
+                    }
+                } catch(_) {
+                    garrisonRows = '<div class="sel-garrison-empty">No units stationed</div>';
+                }
+            }
+            garrisonHtml = `<div class="sel-garrison">
+                <div class="sel-garrison-title">&#x1F3F0; Garrison (${garrisonCount}/${maxGarrison})</div>
+                ${garrisonRows}
+            </div>`;
+        }
+
         selInfo.innerHTML = `
             <div class="sel-title">${tBuilding(b.kind)}</div>
             <div class="sel-stat">Status: <span>${statusIcon}</span></div>
             <div class="sel-stat">Pos: <span>(${b.x}, ${b.y})</span></div>
             <div class="sel-stat">Workers: <span>${workers}</span></div>
-            ${b.producing_tool ? `<div class="sel-stat">Producing: <span>🔧 ${b.producing_tool}</span></div>` : ''}
+            ${b.producing_tool ? `<div class="sel-stat">Producing: <span>&#x1F527; ${b.producing_tool}</span></div>` : ''}
             ${prod ? `<div class="sel-stat">Production: <span>${prod}</span></div>` : ''}
             ${obuf ? `<div class="sel-stat">${obuf}</div>` : ''}
+            ${garrisonHtml}
         `;
         positionSelInfo(cx, cy);
     } catch(_) { hideSelection(); }
@@ -3520,6 +3570,23 @@ function showUnitInfo(id, cx, cy) {
         const tgt = u.target !== null ? `🎯 Target #${u.target}` : '';
         const tool = u.carried_tool ? `🔧 ${u.carried_tool}` : '';
 
+        // Morale indicator
+        let moraleLine = '';
+        if (typeof get_unit_morale_json === 'function') {
+            try {
+                const mRaw = get_unit_morale_json(u.id);
+                if (mRaw) {
+                    const mInfo = JSON.parse(mRaw);
+                    const bonus = mInfo.morale_bonus || 0;
+                    if (bonus > 0) {
+                        moraleLine = `<div class="sel-stat sel-morale">Morale: <span>+${mInfo.morale_percent} &#x1F4AA;</span></div>`;
+                    } else if (bonus < 0) {
+                        moraleLine = `<div class="sel-stat sel-morale negative">Morale: <span>${mInfo.morale_percent} &#x1F4A9;</span></div>`;
+                    }
+                }
+            } catch(_) {}
+        }
+
         selInfo.innerHTML = `
             <div class="sel-title">${tUnit(u.kind)} #${u.id}</div>
             <div class="sel-stat">HP: <span>${hpBar} ${u.hp}/${u.max_hp} (${hpPct}%)</span></div>
@@ -3527,6 +3594,7 @@ function showUnitInfo(id, cx, cy) {
             ${tool ? `<div class="sel-stat">${tool}</div>` : ''}
             ${bldg ? `<div class="sel-stat">${bldg}</div>` : ''}
             ${tgt ? `<div class="sel-stat">${tgt}</div>` : ''}
+            ${moraleLine}
         `;
         positionSelInfo(cx, cy);
     } catch(_) { hideSelection(); }
@@ -3541,6 +3609,59 @@ function positionSelInfo(cx, cy) {
     if (top + 150 > window.innerHeight) top = cy - 160;
     selInfo.style.left = Math.max(4, left) + 'px';
     selInfo.style.top = Math.max(4, top) + 'px';
+}
+
+
+// ── Garrison UI Handlers ──────────────────────────────────────────────
+function handleUngarrison(buildingIndex, unitId) {
+    if (typeof wasm_ungarrison_unit !== 'function') return;
+    try {
+        const ok = wasm_ungarrison_unit(buildingIndex, unitId);
+        if (ok) {
+            showToast('Unit #' + unitId + ' left the building');
+            // Refresh the building info panel
+            if (typeof selectedBuilding === 'number' && selectedBuilding === buildingIndex) {
+                const raw = get_building_info ? get_building_info(buildingIndex) : null;
+                if (raw) {
+                    const b = JSON.parse(raw);
+                    if (!b.error) {
+                        // Re-show with updated garrison
+                        showBuildingInfo(buildingIndex, parseInt(selInfo.style.left), parseInt(selInfo.style.top));
+                    }
+                }
+            }
+        } else {
+            showToast('Could not remove unit');
+        }
+    } catch(e) {
+        showToast('Error: ' + e.message);
+    }
+}
+
+function handleGarrisonSelectedUnit(buildingIndex) {
+    if (typeof wasm_garrison_unit !== 'function') return;
+    if (selectedUnit === null || selectedUnit === undefined) {
+        showToast('No unit selected');
+        return;
+    }
+    try {
+        const ok = wasm_garrison_unit(buildingIndex, selectedUnit);
+        if (ok) {
+            showToast('Unit #' + selectedUnit + ' garrisoned');
+            // Refresh building info
+            const raw = get_building_info ? get_building_info(buildingIndex) : null;
+            if (raw) {
+                const b = JSON.parse(raw);
+                if (!b.error) {
+                    showBuildingInfo(buildingIndex, parseInt(selInfo.style.left), parseInt(selInfo.style.top));
+                }
+            }
+        } else {
+            showToast('Could not garrison unit (must be a combat unit near the building)');
+        }
+    } catch(e) {
+        showToast('Error: ' + e.message);
+    }
 }
 
 function hideSelection() {
