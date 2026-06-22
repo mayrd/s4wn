@@ -683,7 +683,7 @@
   #minimap {
     position: fixed; bottom: 60px; right: 12px;
     z-index: 10;
-    width: 150px; height: 150px;
+    width: 110px; height: 110px;
     border: 1px solid rgba(255,255,255,0.15);
     border-radius: 4px; background: rgba(0,0,0,0.5);
     cursor: pointer;
@@ -872,7 +872,7 @@
       display: flex; gap: 6px;
   }
   #bottom-left-btns button {
-      width: 42px; height: 42px; padding: 0;
+      width: 54px; height: 50px; padding: 0;
       background: rgba(20,15,10,0.85);
       color: #c8b878;
       border: 1px solid rgba(200,184,120,0.25);
@@ -908,9 +908,8 @@
       border-color: #e8c860;
       box-shadow: 0 0 20px rgba(232,200,96,0.25), 0 2px 12px rgba(0,0,0,0.5);
   }
-  /* Speed button — wider, flex-column for icon + text */
+  /* Speed button — flex-column for icon + text */
   #bottom-left-btns button#btn-speed {
-      width: 54px; height: 50px;
       flex-direction: column;
       gap: 1px;
       padding: 2px 0;
@@ -931,9 +930,6 @@
   }
   /* Mobile: larger speed button */
   @media (max-width: 768px) {
-      #bottom-left-btns button#btn-speed {
-          width: 58px; height: 54px;
-      }
       #bottom-left-btns button#btn-speed svg {
           width: 19px; height: 19px;
       }
@@ -1166,7 +1162,7 @@
 
     /* Bottom-left buttons: larger touch targets */
     #bottom-left-btns { bottom: 8px; left: 4px; gap: 8px; }
-    #bottom-left-btns button { width: 46px; height: 46px; border-radius: 10px; }
+    #bottom-left-btns button { width: 58px; height: 54px; border-radius: 10px; }
 
     /* Controls bar: wrap, larger buttons */
     #controls {
@@ -4202,8 +4198,8 @@ function renderMinimap() {
     mctx.putImageData(imgData, 0, 0);
 
     // Scale up display
-    minimapEl.style.width = '150px';
-    minimapEl.style.height = '150px';
+    minimapEl.style.width = '110px';
+    minimapEl.style.height = '110px';
 
     // ── Draw viewport rectangle (red box) ──────────────────────────
     try {
@@ -5241,8 +5237,10 @@ async function startNewGame() {
         updateLoadingProgress(100, t('ready'));
 
         // Update HUD
+        window._s4wn_player_name = name;
+        window._s4wn_difficulty = difficulty;
         const mapName = mapType.charAt(0).toUpperCase() + mapType.slice(1);
-        hudMap.textContent = `${t('map_label')}: ${mapName} | ${t('player_name')}: ${name} | ${difficulty}`;
+        hudMap.textContent = `${t('map_label')}: ${mapName}`;
         lastResourceUpdate = 0;
         lastPopUpdate = 0;
 
@@ -5836,7 +5834,15 @@ async function main() {
                 if (dbgTicks) dbgTicks.textContent = `T${d.ticks}`;
                 if (dbgTiles) { try { const md = get_map_data(); if (md && md.length >= 4) { const mw = md[0] | (md[1] << 8); const mh = md[2] | (md[3] << 8); dbgTiles.textContent = mw + '×' + mh; } } catch(e) {} }
                 if (dbgBldgs) { try { const bs = get_building_summary(); if (dbgBldgs) dbgBldgs.textContent = JSON.parse(bs).length + ' bldgs'; } catch(e) {} }
-                hudStats.textContent = `ticks: ${d.ticks} | ⏱ ${formatGameTime(d.game_time)} | 🔍 ${d.zoom}×`;
+                // Camera center for HUD display
+                let cx = '?', cy = '?';
+                try {
+                    const camJson = get_camera_state ? get_camera_state() : null;
+                    if (camJson) { const cam = JSON.parse(camJson); cx = cam.center_x?.toFixed(0); cy = cam.center_y?.toFixed(0); }
+                } catch(e) {}
+                const pname = window._s4wn_player_name || '?';
+                const level = window._s4wn_difficulty || '?';
+                hudStats.textContent = `ticks: ${d.ticks} | ⏱ ${formatGameTime(d.game_time)} | 🔍 ${d.zoom}× | 📍 (${cx}, ${cy}) | 👤 ${pname} | 🎯 ${level}`;
 
                 // Nation HUD update (every frame, cheap)
                 updateNationHUD();
