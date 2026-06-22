@@ -1054,6 +1054,51 @@
       min-width: 0; width: calc(100vw - 32px);
       padding: 28px 20px; border-radius: 12px;
     }
+
+  /* Object Explorer */
+  #obj-explorer {
+    position: fixed; inset: 0; z-index: 91;
+    display: none;
+    align-items: center; justify-content: center;
+    background: rgba(6,10,20,0.85);
+    backdrop-filter: blur(8px);
+  }
+  #obj-explorer.active { display: flex; }
+  .obj-explorer-card {
+    background: linear-gradient(135deg, rgba(20,28,48,0.95), rgba(12,16,30,0.95));
+    border: 1px solid rgba(200,170,100,0.15);
+    border-radius: 16px; padding: 28px 24px;
+    width: 640px; max-width: 90vw; max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .obj-explorer-card h2 {
+    font-weight: 300; font-size: 22px;
+    color: #c8b878; margin-bottom: 16px;
+  }
+  .obj-explorer-card h3 {
+    font-size: 13px; color: #8899aa; margin: 12px 0 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 4px;
+  }
+  .obj-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 8px; font-size: 12px;
+    color: #bbb; border-radius: 4px;
+  }
+  .obj-row:hover { background: rgba(200,170,100,0.08); }
+  .obj-row .obj-icon { font-size: 16px; width: 24px; text-align: center; }
+  .obj-row .obj-id { color: #778; font-family: monospace; font-size: 11px; width: 120px; }
+  .obj-row .obj-name { flex: 1; }
+  .obj-row .obj-name-de { color: #887; font-size: 11px; width: 140px; }
+  .obj-row .obj-desc { color: #666; font-size: 10px; flex: 2; }
+  .obj-close {
+    position: absolute; top: 12px; right: 16px;
+    background: none; border: 1px solid rgba(255,255,255,0.1);
+    color: #888; font-size: 18px; width: 32px; height: 32px;
+    border-radius: 6px; cursor: pointer;
+  }
+  .obj-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
     .menu-card h2 { font-size: 20px; margin-bottom: 18px; }
     .menu-btn { padding: 14px 16px; font-size: 15px; margin: 6px 0; }
     .recent-files { max-height: 100px; }
@@ -1146,6 +1191,8 @@
       <div class="recent-list" id="recent-list"><span class="recent-empty">None yet</span></div>
     </div>
     <button class="menu-btn" id="btn-tutorial" data-i18n="tutorial">📖 Tutorial</button>
+    <button class="menu-btn" onclick="openEditor()">Map Editor</button>
+    <button class="menu-btn" onclick="openObjectExplorer()">Object Explorer</button>
     <button class="menu-btn" id="btn-continue" style="display:none">💾 Continue Game</button>
     <button class="menu-btn" onclick="openNewGame()" data-i18n="new_game">🆕 New Game</button>
     <button class="menu-btn" onclick="openSettings()" data-i18n="settings">⚙️ Settings</button>
@@ -1154,6 +1201,15 @@
     </button>
     <div class="menu-hint" data-i18n="menu_hint">or press <kbd>L</kbd> to load · <kbd>S</kbd> for settings</div>
     <div class="menu-version">2026.06.16-20.53</div>
+  </div>
+</div>
+
+<!-- Object Explorer -->
+<div id="obj-explorer">
+  <div class="obj-explorer-card" style="position:relative">
+    <button class="obj-close" onclick="closeObjectExplorer()" style="position:absolute;top:12px;right:16px;">x</button>
+    <h2>Object Explorer</h2>
+    <div id="obj-explorer-body"></div>
   </div>
 </div>
 
@@ -5700,10 +5756,66 @@ function exportMapJson() {
         alert("Export failed: " + e.message);
     }
 }
+function openObjectExplorer() {
+    closeMenu();
+    var panel = document.getElementById("obj-explorer");
+    var body = document.getElementById("obj-explorer-body");
+    if (!panel || !body) return;
+    var C = window.S4WN_CONFIG;
+    if (!C) return;
+    var html = "";
+    var sections = [
+        ["Buildings", "buildings"],
+        ["Resources", "resources"],
+        ["Units", "units"],
+        ["Settlers", "settlers"],
+        ["Terrain", "terrain"],
+        ["Nations", "nations"]
+    ];
+    sections.forEach(function(s) {
+        var items = C[s[1]];
+        if (!items || !items.length) return;
+        html += "<h3>" + s[0] + " (" + items.length + ")</h3>";
+        items.forEach(function(item) {
+            var icon = item.icon || "";
+            var id = item.id || "";
+            var name = item.name || "";
+            var nameDe = item.name_de || "";
+            var desc = item.description || "";
+            html += "<div class=\"obj-row\">";
+            html += "<span class=\"obj-icon\">" + icon + "</span>";
+            html += "<span class=\"obj-id\">" + id + "</span>";
+            html += "<span class=\"obj-name\">" + name + "</span>";
+            html += "<span class=\"obj-name-de\">" + nameDe + "</span>";
+            html += "<span class=\"obj-desc\">" + desc + "</span>";
+            html += "</div>";
+        });
+    });
+    body.innerHTML = html;
+    panel.classList.add("active");
+}
+
+function closeObjectExplorer() {
+    var panel = document.getElementById("obj-explorer");
+    if (panel) panel.classList.remove("active");
+}
+
+function openEditor() {
+    closeMenu();
+    var palette = document.getElementById("editor-terrain-palette");
+    if (palette) {
+        populateTerrainPalette();
+        palette.classList.add("open");
+    }
+    try {
+        if (typeof toggle_editor_grid === "function") {
+            toggle_editor_grid();
+        }
+    } catch(e) {}
+}
 
 function toggleEditorMode() {
     var palette = document.getElementById("editor-terrain-palette");
-    var btn = document.getElementById("btn-editor");
     var active = false;
     try {
         if (typeof toggle_editor_grid === "function") {
@@ -5717,10 +5829,6 @@ function toggleEditorMode() {
         } else {
             palette.classList.remove("open");
         }
-    }
-    if (btn) {
-        if (active) btn.classList.add("active");
-        else btn.classList.remove("active");
     }
 }
 // ── Construction Panel (#18) ──────────────────────────────────────────────
@@ -6173,6 +6281,9 @@ window.toggleConstructionPanel = toggleConstructionPanel;
 window.toggleResourcesPanel = toggleResourcesPanel;
 window.toggleSettlersPanel = toggleSettlersPanel;
 window.selectBuilding = selectBuilding;
+window.openEditor = openEditor;
+window.openObjectExplorer = openObjectExplorer;
+window.closeObjectExplorer = closeObjectExplorer;
 window.toggleEditorMode = toggleEditorMode;
 window.toggleSpeed = toggleSpeed;
 window.updateSettingVal = updateSettingVal;
@@ -6476,10 +6587,6 @@ window.DebugSnapshot = DebugSnapshot;
     <button id="btn-settlers" onclick="toggleSettlersPanel()" title="Settlers">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="6" r="2.5" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="6" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 18 Q7 12 10 12 Q13 12 18 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         <span class="btn-label">Settlers</span>
-    </button>
-    <button id="btn-editor" onclick="toggleEditorMode()" title="Map Editor">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 17 L6 11 L9 14 L13 7 L17 13" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="13" cy="7" r="1.5" fill="currentColor" opacity="0.6"/></svg>
-        <span class="btn-label">Editor</span>
     </button>
 </div>
 
