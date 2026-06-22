@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires — 601 tests passing
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires — 605 tests passing
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 168 | 2026-06-22 | Fix #68: Object Explorer silent-return path now shows toast notification — 605 tests |
 | 167 | 2026-06-22 | Phase 7: Ambient occlusion at cliff/elevation boundaries — 605 tests |
 | 166 | 2026-06-22 | Fix #63 #64 #65: DebugSnapshot field name mismatches (camera + map data) — 601 tests |
 | 165 | 2026-06-22 | UI: Speed button with pause (1×→2×→4×→⏸), translated bottom bar tooltips — 601 tests |
