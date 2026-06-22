@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 165 | 2026-06-22 | UI: Speed button with pause (1×→2×→4×→⏸), translated bottom bar tooltips — 601 tests |
 | 164 | 2026-06-22 | Phase 7: Construction particles with per-nation color blending — 601 tests |
 | 163 | 2026-06-22 | Phase 7: Procedural detail normals for building walls — 598 tests |
 | 162 | 2026-06-22 | Phase 7.1: Wire terrain atlas into model fragment shader — 597 tests |
