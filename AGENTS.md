@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 164 | 2026-06-22 | Phase 7: Construction particles with per-nation color blending — 601 tests |
 | 163 | 2026-06-22 | Phase 7: Procedural detail normals for building walls — 598 tests |
 | 162 | 2026-06-22 | Phase 7.1: Wire terrain atlas into model fragment shader — 597 tests |
 | 161 | 2026-06-22 | Phase 7.1: Water normal map for animated surface ripples — 597 tests |
@@ -132,13 +133,14 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 5. ~~Building normals — proper per-vertex normals~~ ✅ (session 157) — ~~per-building material colors + texture UVs~~ ✅ (session 158)
 6. ~~Improve model geometry to better match original S4 building shapes and proportions~~ ✅ (session 159)
 7. ~~Add soft shadow rendering for buildings/units~~ ✅ (session 160)
-8. ~~Add water surface animation (waves, reflections) matching S4 water style~~ ✅ (session 161)
+8. ~~Add water surface animation (waves, reflections) with normals + specular~~ ✅ (session 161)
 9. ~~Wire terrain atlas texture into model fragment shader (use UVs + u_model_color)~~ ✅ (session 162)
-10. Add normal-mapped detail textures to building walls ✅ (session 163)
-11. Add water surface animation with wave normals and reflections
-12. Add building construction animation particles with per-nation colors
-13. Add ambient occlusion to terrain tiles at cliff/height boundaries
-14. Add specular highlights to water surfaces based on light direction
+10. ~~Add normal-mapped detail textures to building walls~~ ✅ (session 163)
+11. ~~Add building construction animation particles with per-nation colors~~ ✅ (session 164)
+12. Add ambient occlusion to terrain tiles at cliff/height boundaries — darken lower tiles at elevation transitions for depth/readability
+13. Add dynamic sky color ramp that changes with day phase (warm dawn → blue noon → orange dusk → dark night)
+14. Add smooth shadow penumbra (soft edges) using percentage-closer filtering or blur pass
+15. Add unit idle animations (subtle breathing/bob cycle) visible on model instances
 
 ---
 
