@@ -2544,7 +2544,7 @@ pub fn is_building_available_for_nation(building_name: &str, nation_name: &str) 
 }
 
 /// Get building summary as a JSON string for the HUD.
-/// Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1},...]
+/// Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1,"owner_id":0,"garrison":0,"max_garrison":0},...]
 #[wasm_bindgen]
 pub fn get_building_summary() -> String {
     unsafe {
@@ -2552,13 +2552,15 @@ pub fn get_building_summary() -> String {
             let mut parts = Vec::new();
             for b in app.game_loop.state.economy.buildings.iter() {
                 parts.push(format!(
-                    "{{\"type\":\"{}\",\"x\":{},\"y\":{},\"complete\":{},\"settlers\":{},\"owner_id\":{}}}",
+                    "{{\"type\":\"{}\",\"x\":{},\"y\":{},\"complete\":{},\"settlers\":{},\"owner_id\":{},\"garrison\":{},\"max_garrison\":{}}}",
                     b.kind.name(),
                     b.x,
                     b.y,
                     b.is_complete(),
                     b.assigned_settlers.len(),
-                    b.owner_id
+                    b.owner_id,
+                    b.garrison.len(),
+                    b.max_garrison
                 ));
             }
             return format!("[{}]", parts.join(","));
@@ -4242,6 +4244,87 @@ pub fn get_building_at_tile(tile_x: usize, tile_y: usize) -> String {
         } else {
             String::from("null")
         }
+    }
+}
+
+// ── Garrison & Morale API ─────────────────────────────────────────────────────
+
+/// Get garrison info for a building at the given index.
+/// Returns JSON: {"count":2,"capacity":6,"unit_ids":[1,2],"garrisoned":true}
+/// or {"count":0,"capacity":0,"unit_ids":[],"garrisoned":false} if building not found.
+#[wasm_bindgen]
+pub fn get_building_garrison_json(building_index: usize) -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            if let Some(b) = app.game_loop.state.economy.buildings.get(building_index) {
+                let ids: Vec<String> = b.garrison.iter().map(|id| id.to_string()).collect();
+                return format!(
+                    r#"{{"count":{},"capacity":{},"unit_ids":[{}],"garrisoned":{}}}"#,
+                    b.garrison.len(),
+                    b.max_garrison,
+                    ids.join(","),
+                    b.is_garrisoned()
+                );
+            }
+        }
+    }
+    String::from(r#"{{"count":0,"capacity":0,"unit_ids":[],"garrisoned":false}}"#)
+}
+
+/// Get morale bonus for a unit by ID.
+/// Returns JSON: {"morale_bonus":0.15,"morale_percent":"15%"}
+/// or {"morale_bonus":0.0,"morale_percent":"0%"} if unit not found.
+#[wasm_bindgen]
+pub fn get_unit_morale_json(unit_id: u32) -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            if let Some(u) = app.game_loop.state.economy.units.get(unit_id) {
+                let pct = (u.morale_bonus * 100.0).round() as i32;
+                return format!(
+                    r#"{{"morale_bonus":{:.2},"morale_percent":"{}%"}}"#,
+                    u.morale_bonus, pct
+                );
+            }
+        }
+    }
+    String::from(r#"{{"morale_bonus":0.0,"morale_percent":"0%"}}"#)
+}
+
+/// Garrison a unit into a building. Returns true if successful.
+/// The unit must be a combat unit and adjacent to the building.
+#[wasm_bindgen]
+pub fn wasm_garrison_unit(building_index: usize, unit_id: u32) -> bool {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            // Verify the unit exists and is a combat unit
+            let can_garrison = app
+                .game_loop
+                .state
+                .economy
+                .units
+                .get(unit_id)
+                .map_or(false, |u| u.kind.can_fight() && u.hp > 0);
+            if !can_garrison {
+                return false;
+            }
+            if let Some(b) = app.game_loop.state.economy.buildings.get_mut(building_index) {
+                return b.garrison_unit(unit_id);
+            }
+        }
+        false
+    }
+}
+
+/// Ungarrison a unit from a building. Returns true if the unit was found and removed.
+#[wasm_bindgen]
+pub fn wasm_ungarrison_unit(building_index: usize, unit_id: u32) -> bool {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            if let Some(b) = app.game_loop.state.economy.buildings.get_mut(building_index) {
+                return b.ungarrison_unit(unit_id);
+            }
+        }
+        false
     }
 }
 
