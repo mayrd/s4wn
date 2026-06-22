@@ -105,6 +105,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 |---------|------|---------|
 | 158 | 2026-06-22 | Per-building material colors + texture UVs for all 84 models |
 | 159 | 2026-06-22 | Improve building model geometry: hipped roofs, temple spires, better proportions for 38 models |
+|| 160 | 2026-06-22 | Phase 7: Soft ground-plane shadows for buildings/units — 596 tests |
 | 157 | 2026-06-22 | Compute proper per-vertex normals for all 84 building 3D models |
 | 156 | 2026-06-22 | Fix #58 #59 #60: Move Editor to Main Menu, add Object Explorer |
 | 155 | 2026-06-22 | Regenerate terrain_atlas.png with S4-authentic procedural textures |
