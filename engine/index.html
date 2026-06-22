@@ -908,6 +908,39 @@
       border-color: #e8c860;
       box-shadow: 0 0 20px rgba(232,200,96,0.25), 0 2px 12px rgba(0,0,0,0.5);
   }
+  /* Speed button — wider, flex-column for icon + text */
+  #bottom-left-btns button#btn-speed {
+      width: 54px; height: 50px;
+      flex-direction: column;
+      gap: 1px;
+      padding: 2px 0;
+  }
+  #bottom-left-btns button#btn-speed svg {
+      width: 17px; height: 17px;
+      flex-shrink: 0;
+  }
+  #bottom-left-btns button#btn-speed .speed-text {
+      font-size: 9px; line-height: 1;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      margin-top: -1px;
+  }
+  #bottom-left-btns button#btn-speed.paused {
+      border-color: rgba(232,200,96,0.35);
+      box-shadow: 0 0 14px rgba(232,200,96,0.18), 0 2px 8px rgba(0,0,0,0.4);
+  }
+  /* Mobile: larger speed button */
+  @media (max-width: 768px) {
+      #bottom-left-btns button#btn-speed {
+          width: 58px; height: 54px;
+      }
+      #bottom-left-btns button#btn-speed svg {
+          width: 19px; height: 19px;
+      }
+      #bottom-left-btns button#btn-speed .speed-text {
+          font-size: 10px;
+      }
+  }
   #bottom-left-btns button .btn-label {
       display: none;
       position: absolute; bottom: calc(100% + 6px); left: 50%;
@@ -1496,7 +1529,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=54';
+} from './pkg/s4wn_engine.js?v=55';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -2289,22 +2322,69 @@ function setSpeed(speed) {
 
 const SPEEDS = [1, 2, 4];
 let currentSpeedIdx = 0;
+let speed_is_paused = false;
 
 function toggleSpeed() {
-    currentSpeedIdx = (currentSpeedIdx + 1) % SPEEDS.length;
-    setSpeed(SPEEDS[currentSpeedIdx]);
+    if (speed_is_paused) {
+        // Unpause and go to 1x
+        speed_is_paused = false;
+        currentSpeedIdx = 0;
+        if (is_paused()) toggle_pause();
+        set_game_speed(SPEEDS[currentSpeedIdx]);
+    } else {
+        currentSpeedIdx++;
+        if (currentSpeedIdx >= SPEEDS.length) {
+            // Transition to pause — keep current speed
+            currentSpeedIdx = SPEEDS.length - 1;
+            speed_is_paused = true;
+            if (!is_paused()) toggle_pause();
+        } else {
+            // Normal speed change
+            if (is_paused()) toggle_pause();
+            set_game_speed(SPEEDS[currentSpeedIdx]);
+        }
+    }
+    updateSpeedButton();
+}
+
+// Detect when pause was triggered externally (keyboard P, overlay click)
+let _lastPauseExternalCheck = 0;
+function syncPauseState() {
+    const now = performance.now();
+    if (now - _lastPauseExternalCheck < 500) return;
+    _lastPauseExternalCheck = now;
+    const paused = is_paused();
+    if (paused !== speed_is_paused) {
+        speed_is_paused = paused;
+        updateSpeedButton();
+    }
 }
 
 function updateSpeedButton() {
     const btn = document.getElementById('btn-speed');
     if (!btn) return;
-    const speed = SPEEDS[currentSpeedIdx];
-    btn.textContent = speed === 1 ? '▶ 1×' : speed === 2 ? '▶▶ 2×' : '▶▶▶ 4×';
+    const speedText = btn.querySelector('.speed-text');
+    if (!speedText) return;
+    btn.classList.toggle('paused', speed_is_paused);
+    if (speed_is_paused) {
+        speedText.textContent = '⏸';
+    } else {
+        const speed = SPEEDS[currentSpeedIdx];
+        speedText.textContent = speed + '×';
+    }
+    // Also update tooltip
+    const label = btn.querySelector('.btn-label');
+    const titleKey = speed_is_paused ? 'speed_pause' : ('speed_' + SPEEDS[currentSpeedIdx] + 'x');
+    if (label) label.textContent = t(titleKey);
+    btn.setAttribute('data-i18n-title', titleKey);
+    btn.setAttribute('title', t(titleKey));
 }
 
 function togglePause() {
     const paused = toggle_pause();
     document.getElementById('pause-overlay').classList.toggle('active', paused);
+    speed_is_paused = paused;
+    updateSpeedButton();
     // Show/hide save button in pause overlay during gameplay
     const saveBtn = document.getElementById('btn-save-game');
     saveBtn.style.display = (paused && engineReady && !showMenu) ? 'block' : 'none';
@@ -2321,6 +2401,7 @@ window.addEventListener('keydown', (e) => {
     switch (e.key.toLowerCase()) {
         case 'p':
             togglePause();
+            syncPauseState();
             break;
         case '1':
             setSpeed(1);
@@ -4310,6 +4391,11 @@ const LANG = {
         kb_drag: 'Pan Camera',
         kb_scroll: 'Zoom In/Out',
         load_custom_map: '📂 Load Custom .map…',
+        speed_tooltip: 'Game Speed',
+        speed_1x: '1× Speed',
+        speed_2x: '2× Speed',
+        speed_4x: '4× Speed',
+        speed_pause: '⏸ Pause',
     },
     de: {
         menu_title: '⚔️ Spielmenü',
@@ -4404,6 +4490,11 @@ const LANG = {
         kb_drag: 'Kamera schwenken',
         kb_scroll: 'Rein-/Rauszoomen',
         load_custom_map: '📂 Eigene .map laden…',
+        speed_tooltip: 'Spielgeschwindigkeit',
+        speed_1x: '1× Geschwindigkeit',
+        speed_2x: '2× Geschwindigkeit',
+        speed_4x: '4× Geschwindigkeit',
+        speed_pause: '⏸ Pause',
     },
     es: {
         menu_title: '⚔️ Menú del Juego',
@@ -4498,6 +4589,11 @@ const LANG = {
         kb_drag: 'Mover Cámara',
         kb_scroll: 'Acercar/Alejar',
         load_custom_map: '📂 Cargar .map personalizado…',
+        speed_tooltip: 'Velocidad de Juego',
+        speed_1x: '1× Velocidad',
+        speed_2x: '2× Velocidad',
+        speed_4x: '4× Velocidad',
+        speed_pause: '⏸ Pausa',
     },
     fr: {
         menu_title: '⚔️ Menu du Jeu',
@@ -4592,6 +4688,11 @@ const LANG = {
         kb_drag: 'Déplacer la Caméra',
         kb_scroll: 'Zoom Avant/Arrière',
         load_custom_map: '📂 Charger .map personnalisée…',
+        speed_tooltip: 'Vitesse du Jeu',
+        speed_1x: '1× Vitesse',
+        speed_2x: '2× Vitesse',
+        speed_4x: '4× Vitesse',
+        speed_pause: '⏸ Pause',
     }
 };
 
@@ -4676,6 +4777,23 @@ function applyLanguage() {
     // Pause overlay
     const pauseText = document.querySelector('.pause-text');
     if (pauseText) pauseText.textContent = t('pause');
+
+    // Bottom bar button tooltips (data-i18n-title)
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        const text = t(key);
+        if (text) el.setAttribute('title', text);
+    });
+
+    // Bottom bar button labels
+    document.querySelectorAll('#bottom-left-btns .btn-label[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const text = t(key);
+        if (text) el.textContent = text;
+    });
+
+    // Speed button update
+    updateSpeedButton();
 
     // Build toolbar label
     const btLabel = document.querySelector('.bt-label');
@@ -6664,25 +6782,26 @@ window.DebugSnapshot = DebugSnapshot;
 
 <!-- Bottom-left action buttons — Parchment icon bar -->
 <div id="bottom-left-btns">
-    <button id="btn-menu" onclick="toggleMenu()" title="Menu">
+    <button id="btn-menu" onclick="toggleMenu()" data-i18n-title="menu_btn">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="2" rx="1" fill="currentColor"/><rect x="2" y="9" width="16" height="2" rx="1" fill="currentColor"/><rect x="2" y="14" width="16" height="2" rx="1" fill="currentColor"/></svg>
-        <span class="btn-label">Menu</span>
+        <span class="btn-label" data-i18n="menu_btn">Menu</span>
     </button>
-    <button id="btn-speed" onclick="toggleSpeed()" title="Game Speed">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><polygon points="9,6 9,10 13,10" fill="currentColor"/><line x1="10" y1="10" x2="10" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <span class="btn-label">Speed</span>
+    <button id="btn-speed" onclick="toggleSpeed()" data-i18n-title="speed_tooltip">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><polygon points="9,6 9,10 13,10" fill="currentColor"/><line x1="10" y1="10" x2="10" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="speed-text">1×</span>
+        <span class="btn-label" data-i18n="speed_tooltip">Game Speed</span>
     </button>
-    <button id="btn-construction" onclick="toggleConstructionPanel()" title="Construction">
+    <button id="btn-construction" onclick="toggleConstructionPanel()" data-i18n-title="construction">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="7" width="14" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M3 7 L10 2 L17 7" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><rect x="8" y="12" width="4" height="5" rx="0.5" fill="currentColor" opacity="0.4"/></svg>
-        <span class="btn-label">Build</span>
+        <span class="btn-label" data-i18n="construction">Build</span>
     </button>
-    <button id="btn-resources" onclick="toggleResourcesPanel()" title="Resources">
+    <button id="btn-resources" onclick="toggleResourcesPanel()" data-i18n-title="resources_btn">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="6" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="3" x2="10" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="1.5" fill="currentColor" opacity="0.5"/><circle cx="13" cy="13" r="1" fill="currentColor" opacity="0.5"/><circle cx="7" cy="14" r="0.8" fill="currentColor" opacity="0.4"/></svg>
-        <span class="btn-label">Resources</span>
+        <span class="btn-label" data-i18n="resources_btn">Resources</span>
     </button>
-    <button id="btn-settlers" onclick="toggleSettlersPanel()" title="Settlers">
+    <button id="btn-settlers" onclick="toggleSettlersPanel()" data-i18n-title="settlers_btn">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="6" r="2.5" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="6" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 18 Q7 12 10 12 Q13 12 18 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <span class="btn-label">Settlers</span>
+        <span class="btn-label" data-i18n="settlers_btn">Settlers</span>
     </button>
 </div>
 

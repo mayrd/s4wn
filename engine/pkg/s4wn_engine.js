@@ -1049,6 +1049,13 @@ export function set_units_stance(unit_ids_json, stance) {
 }
 
 /**
+ * Called from JS after water normal map is loaded into TEXTURE1.
+ */
+export function set_water_normal_ready() {
+    wasm.set_water_normal_ready();
+}
+
+/**
  * Place a free Castle near map center and spawn starter settlers.
  * Called after load_map_json() + add_starting_resources() to set up the initial base.
  * settler_count: number of idle settlers to spawn (clamped to 1..8).
@@ -1085,6 +1092,19 @@ export function spawn_build_effect(tile_x, tile_y) {
  */
 export function spawn_combat_effect(tile_x, tile_y) {
     wasm.spawn_combat_effect(tile_x, tile_y);
+}
+
+/**
+ * Spawn construction activity particles with per-nation color tint.
+ * nation_r/g/b should be in 0.0-1.0 range (from NationType::color() / 255.0).
+ * @param {number} tile_x
+ * @param {number} tile_y
+ * @param {number} nation_r
+ * @param {number} nation_g
+ * @param {number} nation_b
+ */
+export function spawn_construction_effect(tile_x, tile_y, nation_r, nation_g, nation_b) {
+    wasm.spawn_construction_effect(tile_x, tile_y, nation_r, nation_g, nation_b);
 }
 
 /**

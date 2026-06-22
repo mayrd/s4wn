@@ -422,6 +422,11 @@ export function set_unit_stance(unit_id: number, stance: number): boolean;
 export function set_units_stance(unit_ids_json: string, stance: number): number;
 
 /**
+ * Called from JS after water normal map is loaded into TEXTURE1.
+ */
+export function set_water_normal_ready(): void;
+
+/**
  * Place a free Castle near map center and spawn starter settlers.
  * Called after load_map_json() + add_starting_resources() to set up the initial base.
  * settler_count: number of idle settlers to spawn (clamped to 1..8).
@@ -438,6 +443,12 @@ export function spawn_build_effect(tile_x: number, tile_y: number): void;
  * Spawn a red/orange "combat hit" effect at the given tile.
  */
 export function spawn_combat_effect(tile_x: number, tile_y: number): void;
+
+/**
+ * Spawn construction activity particles with per-nation color tint.
+ * nation_r/g/b should be in 0.0-1.0 range (from NationType::color() / 255.0).
+ */
+export function spawn_construction_effect(tile_x: number, tile_y: number, nation_r: number, nation_g: number, nation_b: number): void;
 
 /**
  * Spawn a floating leaf particle (forest ambient).
@@ -599,9 +610,11 @@ export interface InitOutput {
     readonly set_tile_terrain: (a: number, b: number, c: number) => number;
     readonly set_unit_stance: (a: number, b: number) => number;
     readonly set_units_stance: (a: number, b: number, c: number) => number;
+    readonly set_water_normal_ready: () => void;
     readonly setup_starter_base: (a: number) => [number, number];
     readonly spawn_build_effect: (a: number, b: number) => void;
     readonly spawn_combat_effect: (a: number, b: number) => void;
+    readonly spawn_construction_effect: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly spawn_leaf_effect: (a: number, b: number) => void;
     readonly spawn_particle: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number) => number;
     readonly spawn_particle_burst: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => number;
