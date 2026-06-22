@@ -82,7 +82,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 6.23 — 579 tests passing
+**Status:** Phase 6.24 — 588 tests passing
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 150 | 2026-06-22 | Morale system: +5% attack/defense per nearby garrisoned military building (6-tile range, 25% cap), applied in combat and economy update (588 tests) |
 | 149 | 2026-06-22 | Garrison system: Building::garrison_unit/ungarrison_unit, garrison_capacity per BuildingType, conditional territory for GuardTower/Fortress (579 tests) |
 | 148 | 2026-06-22 | SquadLeader defensive aura (+10% defense to allies within 5 tiles) (567 tests) |
 | 147 | 2026-06-21 | Fix #54: water fallback on map load failure + JSON parse robustness (561 tests) |
@@ -119,14 +120,11 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | 133 | 2026-06-18 | Unit formation movement |
 
 ### Next Session — Concrete Steps
-1. Implement .sav full campaign state restoration
-2. ~~Garrison interactions for military buildings~~ ✅ Done (Session 149)
-3. ~~SquadLeader aura/buff mechanic~~ ✅ Done (Session 146)
-4. ~~SquadLeader defensive aura~~ ✅ Done (Session 148)
-5. Morale system for units (boosted when near garrisoned military buildings)
-6. ~~Fog of war~~ ✅ Already implemented — verify JS/UI darkening pass-through
-7. Polish tutorial campaign progression
-8. Add garrison UI: click military building to see stationed soldiers, eject button
+1. Add garrison UI: click military building to see stationed soldiers, eject button (wasm_bindgen exports needed)
+2. Implement .sav full campaign state restoration
+3. Verify fog-of-war JS/UI darkening pass-through
+4. Polish tutorial campaign progression
+5. Add wasm_bindgen exports for morale_bonus (read-only) and garrison UI functions
 
 ---
 
