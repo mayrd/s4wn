@@ -212,6 +212,29 @@ pub fn spawn_rubble_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
     ps.spawn_burst(tile_x, tile_y, 0.0, 8, 0.7, 0.65, 0.55, 1.5, 0.8, 10.0);
 }
 
+/// Spawn construction activity particles at a building site.
+/// Nation color is blended with construction dust for faction-specific effects.
+/// Called periodically during building construction (when construction < 1.0).
+pub fn spawn_construction_effect(
+    ps: &mut ParticleSystem,
+    tile_x: f32,
+    tile_y: f32,
+    nation_r: f32,
+    nation_g: f32,
+    nation_b: f32,
+) {
+    // Small upward dust burst -- base brown/grey, tinted with nation color
+    let r = 0.35 + nation_r * 0.25;
+    let g = 0.30 + nation_g * 0.25;
+    let b = 0.20 + nation_b * 0.20;
+    ps.spawn_burst(tile_x, tile_y, 0.1, 6, r, g, b, 1.2, 0.6, 3.5);
+    // Sparkle highlights -- brighter, faster, nation-dominant color
+    let sr = 0.5 + nation_r * 0.4;
+    let sg = 0.45 + nation_g * 0.4;
+    let sb = 0.4 + nation_b * 0.35;
+    ps.spawn_burst(tile_x, tile_y, 0.3, 4, sr, sg, sb, 2.0, 0.4, 2.5);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -468,6 +491,40 @@ mod tests {
         // Rubble particles should be brown-dominant (r > b)
         let rubble_count = alive.iter().filter(|p| p.r > p.b).count();
         assert!(rubble_count > 0, "at least some rubble particles should be brown-dominant");
+    }
+
+    #[test]
+    fn test_construction_effect_spawns() {
+        let mut ps = ParticleSystem::new();
+        spawn_construction_effect(&mut ps, 5.0, 5.0, 0.8, 0.3, 0.3);
+        // 6 dust + 4 sparkle = 10 particles
+        assert!(ps.alive_count() > 0 && ps.alive_count() <= 10);
+    }
+
+    #[test]
+    fn test_construction_effect_nation_color_blend() {
+        // Roman red should produce reddish particles
+        let mut ps = ParticleSystem::new();
+        spawn_construction_effect(&mut ps, 5.0, 5.0, 0.78, 0.2, 0.2);
+        let alive: Vec<&Particle> = ps.particles.iter().filter(|p| p.alive).collect();
+        assert!(!alive.is_empty());
+        // At least some particles should be red-dominant
+        let red_count = alive.iter().filter(|p| p.r > p.g && p.r > p.b).count();
+        assert!(red_count > 0, "Roman construction particles should be red-dominant, got r-dominant: {}/{}", red_count, alive.len());
+    }
+
+    #[test]
+    fn test_construction_effect_maya_green() {
+        // Maya green should produce green-ish particles
+        let mut ps = ParticleSystem::new();
+        spawn_construction_effect(&mut ps, 5.0, 5.0, 0.2, 0.71, 0.2);
+        let alive: Vec<&Particle> = ps.particles.iter().filter(|p| p.alive).collect();
+        assert!(!alive.is_empty());
+        // Sparkle particles should be nation-dominant
+        // First 6 are dust (brown tinted), last 4 are sparkle (nation-dominant)
+        // Overall should have some greenish particles
+        let green_count = alive.iter().filter(|p| p.g > p.r && p.g > p.b).count();
+        assert!(green_count > 0, "Maya construction particles should have some green-dominant, got: {}/{}", green_count, alive.len());
     }
 }
 

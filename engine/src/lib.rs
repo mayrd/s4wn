@@ -1317,6 +1317,25 @@ impl App {
                     }
                 }
             }
+            // Construction particles for buildings being built (every ~20 ticks)
+            if tick % 20 == 0 {
+                if let Some(nation) = self.game_loop.state.player_nation {
+                    let (nr, ng, nb, _) = nation.color();
+                    let nr_f = nr as f32 / 255.0;
+                    let ng_f = ng as f32 / 255.0;
+                    let nb_f = nb as f32 / 255.0;
+                    for b in self.game_loop.state.economy.buildings.iter() {
+                        if b.construction > 0.0 && b.construction < 1.0 {
+                            particle::spawn_construction_effect(
+                                &mut self.particle_system,
+                                b.x as f32 + 0.5,
+                                b.y as f32 + 0.5,
+                                nr_f, ng_f, nb_f,
+                            );
+                        }
+                    }
+                }
+            }
             // Leaf particles near forest tiles (every ~50 ticks)
             if tick % 50 == 0 {
                 let map = &self.game_loop.state.map;
@@ -4265,6 +4284,22 @@ pub fn spawn_build_effect(tile_x: f32, tile_y: f32) {
     unsafe {
         if let Some(ref mut app) = APP.as_mut() {
             particle::spawn_build_effect(&mut app.particle_system, tile_x, tile_y);
+        }
+    }
+}
+
+/// Spawn construction activity particles with per-nation color tint.
+/// nation_r/g/b should be in 0.0-1.0 range (from NationType::color() / 255.0).
+#[wasm_bindgen]
+pub fn spawn_construction_effect(
+    tile_x: f32, tile_y: f32,
+    nation_r: f32, nation_g: f32, nation_b: f32,
+) {
+    unsafe {
+        if let Some(ref mut app) = APP.as_mut() {
+            particle::spawn_construction_effect(
+                &mut app.particle_system, tile_x, tile_y, nation_r, nation_g, nation_b,
+            );
         }
     }
 }
