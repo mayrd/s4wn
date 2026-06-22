@@ -103,10 +103,11 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
-| 158 | 2026-06-22 | Per-building material colors + texture UVs for all 84 models |
-| 159 | 2026-06-22 | Improve building model geometry: hipped roofs, temple spires, better proportions for 38 models |
+| 162 | 2026-06-22 | Phase 7.1: Wire terrain atlas into model fragment shader — 597 tests |
 | 161 | 2026-06-22 | Phase 7.1: Water normal map for animated surface ripples — 597 tests |
-|| 160 | 2026-06-22 | Phase 7: Soft ground-plane shadows for buildings/units — 596 tests |
+| 160 | 2026-06-22 | Phase 7: Soft ground-plane shadows for buildings/units — 596 tests |
+| 159 | 2026-06-22 | Improve building model geometry: hipped roofs, temple spires, better proportions for 38 models |
+| 158 | 2026-06-22 | Per-building material colors + texture UVs for all 84 models |
 | 157 | 2026-06-22 | Compute proper per-vertex normals for all 84 building 3D models |
 | 156 | 2026-06-22 | Fix #58 #59 #60: Move Editor to Main Menu, add Object Explorer |
 | 155 | 2026-06-22 | Regenerate terrain_atlas.png with S4-authentic procedural textures |
@@ -131,7 +132,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 6. ~~Improve model geometry to better match original S4 building shapes and proportions~~ ✅ (session 159)
 7. ~~Add soft shadow rendering for buildings/units~~ ✅ (session 160)
 8. ~~Add water surface animation (waves, reflections) matching S4 water style~~ ✅ (session 161)
-9. Wire terrain atlas texture into model fragment shader (use UVs + u_model_color)
+9. ~~Wire terrain atlas texture into model fragment shader (use UVs + u_model_color)~~ ✅ (session 162)
 10. Add normal-mapped detail textures to building walls
 
 ---
