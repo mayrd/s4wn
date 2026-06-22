@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain colors + splat blending — 592 tests passing
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated — 592 tests passing
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 155 | 2026-06-22 | Regenerate terrain_atlas.png with S4-authentic procedural textures |
 | 143 | 2026-06-21 | Fix #54: canvas CSS stretching on mobile |
 | 142 | 2026-06-21 | Building Auto-Repair + Bugfix #52 |
 | 141 | 2026-06-21 | Attack-move formation preservation |
@@ -118,10 +119,11 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 1. ~~Phase 7 kickoff: Audit rendering pipeline~~ ✅ (session 154)
 2. ~~Update terrain color palette to match S4~~ ✅ (session 154)
 3. ~~Add smooth biome transition splat-map blending~~ ✅ (session 154)
-4. Regenerate terrain_atlas.png (2048×512) with higher-quality procedural textures matching S4 art style
+4. ~~Regenerate terrain_atlas.png (2048×512) with higher-quality procedural textures~~ ✅ (session 155)
 5. Improve building/structure textures — regenerate to closely match original S4 art style
 6. Improve model geometry to better match original S4 building shapes and proportions
 7. Add soft shadow rendering for buildings/units
+8. Add water surface animation (waves, reflections) matching S4 water style
 
 ---
 
