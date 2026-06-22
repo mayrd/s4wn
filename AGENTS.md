@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.0 — Rendering Overhaul (redo rendering + textures to match original S4) — 519 tests passing
+**Status:** Phase 7.1 — Rendering Overhaul — terrain colors + splat blending — 592 tests passing
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -115,11 +115,13 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | 133 | 2026-06-18 | Unit formation movement |
 
 ### Next Session — Concrete Steps
-1. **Phase 7 kickoff:** Audit current rendering pipeline — catalog all shaders, draw calls, and texture generation code; identify gaps vs original S4 visual fidelity
-2. Study original S4 screenshots/captures for art style reference (color palette, lighting, terrain texel density, building proportions)
-3. Redo terrain texture generation — match original S4 terrain colors, biome transitions, and tile patterns as closely as possible
-4. Redo building/structure textures — regenerate to closely match original S4 art style (no original assets, but match the look)
-5. Improve model geometry to better match original S4 building shapes and proportions
+1. ~~Phase 7 kickoff: Audit rendering pipeline~~ ✅ (session 154)
+2. ~~Update terrain color palette to match S4~~ ✅ (session 154)
+3. ~~Add smooth biome transition splat-map blending~~ ✅ (session 154)
+4. Regenerate terrain_atlas.png (2048×512) with higher-quality procedural textures matching S4 art style
+5. Improve building/structure textures — regenerate to closely match original S4 art style
+6. Improve model geometry to better match original S4 building shapes and proportions
+7. Add soft shadow rendering for buildings/units
 
 ---
 
