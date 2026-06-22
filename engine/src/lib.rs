@@ -700,47 +700,106 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
 
             // Compute splat-map weights based on terrain type + slope
             // R=grass, G=rock, B=sand, A=snow
+            // Phase 7: smooth biome transition blending — check 4 neighbors
+            // and blend splat weights at biome boundaries (2-tile transition zone)
             let terrain = tile.terrain;
             let slope_val = max_diff;
-            let mut splat_r = 0.0f32;
-            let mut splat_g = 0.0f32;
-            let mut splat_b = 0.0f32;
-            let mut splat_a = 0.0f32;
-            match terrain {
-                Terrain::Grass | Terrain::Forest => {
-                    // Grass-dominant, with rock on steep slopes
-                    let rock = ((slope_val - 0.15) / 0.3).clamp(0.0, 1.0);
-                    splat_r = 1.0 - rock;
-                    splat_g = rock;
+
+            // Helper: compute base splat for a terrain type
+            fn base_splat(t: Terrain, slope: f32) -> (f32, f32, f32, f32) {
+                let mut r = 0.0f32;
+                let mut g = 0.0f32;
+                let mut b = 0.0f32;
+                let mut a = 0.0f32;
+                match t {
+                    Terrain::Grass | Terrain::Forest => {
+                        let rock = ((slope - 0.15) / 0.3).clamp(0.0, 1.0);
+                        r = 1.0 - rock;
+                        g = rock;
+                    }
+                    Terrain::Mountain => {
+                        let rock = if slope > 0.3 { 1.0 } else { 0.8 };
+                        g = rock;
+                        r = 1.0 - rock;
+                    }
+                    Terrain::Desert | Terrain::Swamp => {
+                        b = 0.8;
+                        r = 0.2;
+                    }
+                    Terrain::Snow => {
+                        a = 1.0;
+                    }
+                    Terrain::Water | Terrain::DeepWater => {
+                        b = 0.5;
+                        g = 0.3;
+                        r = 0.2;
+                    }
                 }
-                Terrain::Mountain => {
-                    // Rock-dominant, more rock on steeper slopes
-                    let rock = if slope_val > 0.3 { 1.0 } else { 0.8 };
-                    splat_g = rock;
-                    splat_r = 1.0 - rock;
-                }
-                Terrain::Desert | Terrain::Swamp => {
-                    splat_b = 0.8;
-                    splat_r = 0.2;
-                }
-                Terrain::Snow => {
-                    splat_a = 1.0;
-                }
-                Terrain::Water | Terrain::DeepWater => {
-                    // Underwater: mix sand / rock / grass
-                    splat_b = 0.5;
-                    splat_g = 0.3;
-                    splat_r = 0.2;
+                // Normalize
+                let sum = r + g + b + a;
+                if sum > 0.0 {
+                    (r / sum, g / sum, b / sum, a / sum)
+                } else {
+                    (r, g, b, a)
                 }
             }
-            // Normalize splats so they sum to ~1.0
-            let splat_sum = splat_r + splat_g + splat_b + splat_a;
-            if splat_sum > 0.0 {
-                splat_r /= splat_sum;
-                splat_g /= splat_sum;
-                splat_b /= splat_sum;
-                splat_a /= splat_sum;
+
+            // Accumulate splat weights from this tile + 4 neighbors
+            let mut total_r = 0.0f32;
+            let mut total_g = 0.0f32;
+            let mut total_b = 0.0f32;
+            let mut total_a = 0.0f32;
+            let mut weight_sum = 0.0f32;
+
+            // Center tile has weight 1.0
+            let (cr, cg, cb, ca) = base_splat(terrain, slope_val);
+            total_r += cr * 1.0;
+            total_g += cg * 1.0;
+            total_b += cb * 1.0;
+            total_a += ca * 1.0;
+            weight_sum += 1.0;
+
+            // 4 neighbors with weight 0.5 each (only if different terrain)
+            for &(ndx, ndy) in &[(0isize, -1isize), (1, 0), (0, 1), (-1, 0)] {
+                let nx = mx as isize + ndx;
+                let ny = my as isize + ndy;
+                if nx >= 0 && ny >= 0 && (nx as usize) < map.width && (ny as usize) < map.height
+                {
+                    let neighbor = map.get(nx as usize, ny as usize).unwrap();
+                    if neighbor.terrain != terrain {
+                        // Compute neighbor slope
+                        let mut n_max_diff = 0.0f32;
+                        for ndy2 in [-1isize, 0, 1] {
+                            for ndx2 in [-1isize, 0, 1] {
+                                if ndx2 == 0 && ndy2 == 0 { continue; }
+                                let nnx = nx + ndx2;
+                                let nny = ny + ndy2;
+                                if nnx >= 0 && nny >= 0
+                                    && (nnx as usize) < map.width
+                                    && (nny as usize) < map.height
+                                {
+                                    let nn_elev = map.get(nnx as usize, nny as usize).unwrap().elevation;
+                                    let diff = (neighbor.elevation - nn_elev).abs();
+                                    if diff > n_max_diff { n_max_diff = diff; }
+                                }
+                            }
+                        }
+                        let w = 0.5f32;
+                        let (nr, ng, nb, na) = base_splat(neighbor.terrain, n_max_diff);
+                        total_r += nr * w;
+                        total_g += ng * w;
+                        total_b += nb * w;
+                        total_a += na * w;
+                        weight_sum += w;
+                    }
+                }
             }
+
+            // Final normalized splat
+            let splat_r = if weight_sum > 0.0 { total_r / weight_sum } else { 0.0 };
+            let splat_g = if weight_sum > 0.0 { total_g / weight_sum } else { 0.0 };
+            let splat_b = if weight_sum > 0.0 { total_b / weight_sum } else { 0.0 };
+            let splat_a = if weight_sum > 0.0 { total_a / weight_sum } else { 0.0 };
             mesh.splats.push(splat_r);
             mesh.splats.push(splat_g);
             mesh.splats.push(splat_b);
@@ -4686,6 +4745,104 @@ mod tests {
             let nz = mesh.normals[idx + 2];
             let len = (nx * nx + ny * ny + nz * nz).sqrt();
             assert!((len - 1.0).abs() < 0.01, "normal at vertex {} not unit: {}", v, len);
+        }
+    }
+
+    #[test]
+    fn test_splat_map_blending_at_biome_boundary() {
+        // Phase 7: Splat weights should blend smoothly at biome boundaries.
+        // Create a map with a Grass→Desert boundary (same elevation, different terrain)
+        // and verify that boundary tiles have mixed splat weights.
+        let mut map = Map::new(10, 10);
+        for y in 0..10 {
+            for x in 0..10 {
+                let t = map.get_mut(x, y).unwrap();
+                t.elevation = 0.1; // uniform elevation → low slope
+                if x < 5 {
+                    t.terrain = Terrain::Grass;
+                } else {
+                    t.terrain = Terrain::Desert;
+                }
+            }
+        }
+        let camera = Camera::new(5.0, 5.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+
+        let vertex_count = mesh.positions.len() / 3;
+        assert!(vertex_count > 0);
+
+        // Splats: 4 floats per vertex (R, G, B, A)
+        assert_eq!(mesh.splats.len(), vertex_count * 4);
+
+        // A pure Grass tile far from boundary should have splat_r > 0.9
+        // A pure Desert tile far from boundary should have splat_b > 0.7
+        // A boundary tile should have both splat_r > 0.1 AND splat_b > 0.1 (blended)
+        let mut found_blended = false;
+        for v in 0..vertex_count {
+            let x = mesh.positions[v * 3];
+            let idx = v * 4;
+            let splat_r = mesh.splats[idx];
+            let splat_g = mesh.splats[idx + 1];
+            let splat_b = mesh.splats[idx + 2];
+            let splat_a = mesh.splats[idx + 3];
+
+            // All splats must be non-negative
+            assert!(splat_r >= 0.0, "splat_r negative at v={} x={}", v, x);
+            assert!(splat_g >= 0.0, "splat_g negative at v={} x={}", v, x);
+            assert!(splat_b >= 0.0, "splat_b negative at v={} x={}", v, x);
+            assert!(splat_a >= 0.0, "splat_a negative at v={} x={}", v, x);
+
+            // Splats should sum to ~1.0
+            let sum = splat_r + splat_g + splat_b + splat_a;
+            assert!(
+                (sum - 1.0).abs() < 0.01,
+                "splat sum {} at v={} x={}", sum, v, x
+            );
+
+            // Check for blended boundary tiles (x=4 is Grass, x=5 is Desert)
+            if (x - 4.0).abs() < 0.5 || (x - 5.0).abs() < 0.5 {
+                // Blended: should have both grass (R) and sand (B) > 0.1
+                if splat_r > 0.1 && splat_b > 0.1 {
+                    found_blended = true;
+                }
+            }
+        }
+        assert!(
+            found_blended,
+            "No blended splats found at Grass→Desert boundary"
+        );
+    }
+
+    #[test]
+    fn test_splat_map_pure_biome_no_blend() {
+        // A uniform Grass field should have pure grass splats (R≈1, G≈0)
+        let mut map = Map::new(8, 8);
+        for y in 0..8 {
+            for x in 0..8 {
+                let t = map.get_mut(x, y).unwrap();
+                t.terrain = Terrain::Grass;
+                t.elevation = 0.1; // flat, low slope
+            }
+        }
+        let camera = Camera::new(4.0, 4.0, 400, 300);
+        let mesh = build_map_mesh(&map, &camera);
+
+        let vertex_count = mesh.positions.len() / 3;
+        for v in 0..vertex_count {
+            let idx = v * 4;
+            let splat_r = mesh.splats[idx];
+            let splat_g = mesh.splats[idx + 1];
+            // Flat grass should be almost pure grass (R close to 1, G close to 0)
+            assert!(
+                splat_r > 0.8,
+                "Flat grass vertex {}: splat_r = {} (expected > 0.8)",
+                v, splat_r
+            );
+            assert!(
+                splat_g < 0.2,
+                "Flat grass vertex {}: splat_g = {} (expected < 0.2)",
+                v, splat_g
+            );
         }
     }
 

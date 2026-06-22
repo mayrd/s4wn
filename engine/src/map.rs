@@ -54,17 +54,28 @@ impl Terrain {
         }
     }
 
-    /// Base color (RGB) for the terrain tile
+    /// Base color (RGB) for the terrain tile.
+    /// Phase 7: Updated to match original Siedler 4 color palette.
+    /// Colors derived from S4's distinctive art style — saturated greens,
+    /// blue-grey mountains, warm gold desert, cool white-blue snow.
     pub fn color(self) -> [f32; 3] {
         match self {
-            Terrain::Grass => [0.25, 0.60, 0.25],
-            Terrain::Forest => [0.15, 0.45, 0.15],
-            Terrain::Mountain => [0.55, 0.50, 0.45],
-            Terrain::Water => [0.15, 0.35, 0.70],
-            Terrain::DeepWater => [0.08, 0.20, 0.50],
-            Terrain::Desert => [0.85, 0.75, 0.40],
-            Terrain::Swamp => [0.30, 0.40, 0.25],
-            Terrain::Snow => [0.90, 0.92, 0.95],
+            // S4 Grass: vibrant, saturated green (hex #3d7a35)
+            Terrain::Grass => [0.239, 0.478, 0.208],
+            // S4 Forest: deep, dark green (hex #1e4a18)
+            Terrain::Forest => [0.118, 0.290, 0.094],
+            // S4 Mountain: blue-grey with slight warm tint (hex #7a8090)
+            Terrain::Mountain => [0.478, 0.502, 0.565],
+            // S4 Water: deep ocean blue (hex #1a4578)
+            Terrain::Water => [0.102, 0.271, 0.471],
+            // S4 DeepWater: very dark navy (hex #0a1e38)
+            Terrain::DeepWater => [0.039, 0.118, 0.220],
+            // S4 Desert: warm golden sand (hex #c8a850)
+            Terrain::Desert => [0.784, 0.659, 0.314],
+            // S4 Swamp: dark olive-green (hex #3a4828)
+            Terrain::Swamp => [0.227, 0.282, 0.157],
+            // S4 Snow: cool white-blue (hex #d0d8e8)
+            Terrain::Snow => [0.816, 0.847, 0.910],
         }
     }
 }
@@ -780,6 +791,58 @@ mod tests {
             assert!(c[1] >= 0.0 && c[1] <= 1.0);
             assert!(c[2] >= 0.0 && c[2] <= 1.0);
         }
+    }
+
+    #[test]
+    fn test_terrain_colors_s4_palette() {
+        // Phase 7: Verify terrain colors match S4-authentic palette
+        // Each color channel must be within ±0.01 of the target value
+        let check = |t: Terrain, target: [f32; 3]| {
+            let c = t.color();
+            for i in 0..3 {
+                assert!(
+                    (c[i] - target[i]).abs() < 0.01,
+                    "Terrain {:?} channel {}: got {}, expected {}",
+                    t, i, c[i], target[i]
+                );
+            }
+        };
+        check(Terrain::Grass,     [0.239, 0.478, 0.208]);
+        check(Terrain::Forest,    [0.118, 0.290, 0.094]);
+        check(Terrain::Mountain,  [0.478, 0.502, 0.565]);
+        check(Terrain::Water,     [0.102, 0.271, 0.471]);
+        check(Terrain::DeepWater, [0.039, 0.118, 0.220]);
+        check(Terrain::Desert,    [0.784, 0.659, 0.314]);
+        check(Terrain::Swamp,     [0.227, 0.282, 0.157]);
+        check(Terrain::Snow,      [0.816, 0.847, 0.910]);
+    }
+
+    #[test]
+    fn test_terrain_color_channel_order() {
+        // Grass should be green-dominant (G > R > B)
+        let grass = Terrain::Grass.color();
+        assert!(grass[1] > grass[0], "Grass: G should be > R");
+        assert!(grass[0] > grass[2], "Grass: R should be > B");
+
+        // Mountain should be blue-grey (B ≈ G > R)
+        let mt = Terrain::Mountain.color();
+        assert!(mt[2] > mt[0], "Mountain: B should be > R");
+
+        // Desert should be warm gold (R > G > B)
+        let desert = Terrain::Desert.color();
+        assert!(desert[0] > desert[1], "Desert: R should be > G");
+        assert!(desert[1] > desert[2], "Desert: G should be > B");
+
+        // Water should be blue-dominant (B > G > R)
+        let water = Terrain::Water.color();
+        assert!(water[2] > water[1], "Water: B should be > G");
+        assert!(water[1] > water[0], "Water: G should be > R");
+
+        // Snow should be bright with blue tint (B ≈ G ≈ R, all high)
+        let snow = Terrain::Snow.color();
+        assert!(snow[0] > 0.7, "Snow: R should be > 0.7");
+        assert!(snow[1] > 0.7, "Snow: G should be > 0.7");
+        assert!(snow[2] > 0.7, "Snow: B should be > 0.7");
     }
 
     #[test]
