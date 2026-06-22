@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 163 | 2026-06-22 | Phase 7: Procedural detail normals for building walls — 598 tests |
 | 162 | 2026-06-22 | Phase 7.1: Wire terrain atlas into model fragment shader — 597 tests |
 | 161 | 2026-06-22 | Phase 7.1: Water normal map for animated surface ripples — 597 tests |
 | 160 | 2026-06-22 | Phase 7: Soft ground-plane shadows for buildings/units — 596 tests |
@@ -133,7 +134,11 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 7. ~~Add soft shadow rendering for buildings/units~~ ✅ (session 160)
 8. ~~Add water surface animation (waves, reflections) matching S4 water style~~ ✅ (session 161)
 9. ~~Wire terrain atlas texture into model fragment shader (use UVs + u_model_color)~~ ✅ (session 162)
-10. Add normal-mapped detail textures to building walls
+10. Add normal-mapped detail textures to building walls ✅ (session 163)
+11. Add water surface animation with wave normals and reflections
+12. Add building construction animation particles with per-nation colors
+13. Add ambient occlusion to terrain tiles at cliff/height boundaries
+14. Add specular highlights to water surfaces based on light direction
 
 ---
 
