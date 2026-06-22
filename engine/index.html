@@ -5815,24 +5815,49 @@ function populateConstructionPanel() {
         cats[cat].push(b);
     }
 
+
+    // Category display order (logical production chain sequence)
+    const CAT_ORDER = ['Basic Economy', 'Food Production', 'Mining & Smelting', 'Military & Tools', 'Logistics', 'Divine & Special', 'Zierobjekte'];
+    const sorted = Object.entries(cats).sort(([a], [b]) => {
+        const ai = CAT_ORDER.indexOf(a), bi = CAT_ORDER.indexOf(b);
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
+    // Get player building counts from engine
+    let bldgCounts = {};
+    try {
+        if (typeof get_building_summary === 'function') {
+            const raw = get_building_summary();
+            if (raw) {
+                JSON.parse(raw).forEach(b => {
+                    bldgCounts[b.type] = (bldgCounts[b.type] || 0) + 1;
+                });
+            }
+        }
+    } catch(e) {}
     let html = '';
-    for (const [cat, buildings] of Object.entries(cats)) {
+    for (const [cat, buildings] of sorted) {
         if (buildings.length === 0) continue;
-        html += `<div class="con-category">`;
-        html += `<div class="con-cat-header">${tCategory(cat)}</div>`;
+        html += '<div class="con-category">';
+        html += '<div class="con-cat-header">' + tCategory(cat) + '</div>';
         html += '<div class="con-cat-body">';
         for (const b of buildings) {
             const icon = '🏗️';
             const costParts = [];
-            if (b.planks) costParts.push(`🪵${b.planks}`);
-            if (b.stone) costParts.push(`🪨${b.stone}`);
-            if (b.gold) costParts.push(`✨${b.gold}`);
+            if (b.planks) costParts.push('🪵' + b.planks);
+            if (b.stone) costParts.push('🪨' + b.stone);
+            if (b.gold) costParts.push('✨' + b.gold);
             const cost = costParts.join(' ') || 'Free';
             const displayName = (typeof currentLang === 'string' && currentLang === 'de') ? b.name_de : b.name;
-            const garrisonCap = b.garrison_capacity || 0; const garrisonInfo = garrisonCap > 0 ? ` G:${garrisonCap}` : "";             html += `<div class="con-bldg" onclick="selectBuilding('${b.id}')" title="${b.name} — ${cost}${garrisonInfo}">`;
-            html += `<span class="con-icon">${icon}</span>`;
-            html += `<span class="con-name">${displayName}</span>`;
-            html += `<span class="con-cost">${cost}${garrisonInfo}</span>`;
+            const garrisonCap = b.garrison_capacity || 0;
+            const garrisonInfo = garrisonCap > 0 ? ' G:' + garrisonCap : '';
+            const built = bldgCounts[b.id] || 0;
+            const countStr = built > 0 ? ' (' + built + ')' : '';
+            const desc = (typeof currentLang === 'string' && currentLang === 'de' && b.description_de) ? b.description_de : (b.description || '');
+            const tooltip = [displayName, cost ? cost + garrisonInfo : '', built ? built + ' built' : '', desc].filter(Boolean).join(' — ');
+            html += '<div class="con-bldg" onclick="selectBuilding(\'' + b.id + '\')" title="' + tooltip.replace(/"/g, '&quot;') + '">';
+            html += '<span class="con-icon">' + icon + '</span>';
+            html += '<span class="con-name">' + displayName + countStr + '</span>';
+            html += '<span class="con-cost">' + cost + garrisonInfo + '</span>';
             html += '</div>';
         }
         html += '</div></div>';
@@ -5930,7 +5955,9 @@ function renderResources() {
                 const count = counts[r.id] ?? 0;
                 const icon = RESOURCE_ICONS[r.id] || '📦';
                 const label = (typeof currentLang === 'string' && currentLang === 'de') ? r.name_de : r.name;
-                html += `<div class="res-row"><span class="res-label"><span class="res-icon">${icon}</span> ${label}</span><span class="res-val">${count}</span></div>`;
+                const desc = (typeof currentLang === 'string' && currentLang === 'de' && r.description_de) ? r.description_de : (r.description || '');
+                const tooltip = desc ? `${label}: ${desc}` : label;
+                html += `<div class="res-row" title="${tooltip}"><span class="res-label"><span class="res-icon">${icon}</span> ${label}</span><span class="res-val">${count}</span></div>`;
             }
         }
         if (!html) html = `<div class="res-row"><span class="res-label">${t('no_resources')}</span></div>`;
@@ -5976,7 +6003,9 @@ function renderSettlers() {
                 for (const s of settlers) {
                     const count = counts[s.id] || 0;
                     const label = (typeof currentLang === 'string' && currentLang === 'de') ? s.name_de : s.name;
-                    html += `<div class="set-row"><span class="set-label">👤 ${label}</span><span class="set-val">${count}</span></div>`;
+                    const desc = (typeof currentLang === 'string' && currentLang === 'de' && s.description_de) ? s.description_de : (s.description || '');
+                    const tooltip = desc ? `${label}: ${desc}` : label;
+                    html += `<div class="set-row" title="${tooltip}"><span class="set-label">👤 ${label}</span><span class="set-val">${count}</span></div>`;
                 }
             }
         }

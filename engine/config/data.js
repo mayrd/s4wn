@@ -10,7 +10,9 @@ window.S4WN_CONFIG = {
       "gold": 0,
       "nations": [
         "Maya"
-      ]
+      ],
+      "description": "Grows agave plants for tequila production",
+      "description_de": "Baut Agaven für die Schnapsproduktion an"
     },
     {
       "id": "ApiaryImker",
@@ -22,7 +24,9 @@ window.S4WN_CONFIG = {
       "gold": 0,
       "nations": [
         "Viking"
-      ]
+      ],
+      "description": "Produces honey from beehives",
+      "description_de": "Produziert Honig aus Bienenstöcken"
     },
     {
       "id": "Archways",
@@ -34,7 +38,9 @@ window.S4WN_CONFIG = {
       "gold": 3,
       "nations": [
         "Roman"
-      ]
+      ],
+      "description": "Decorative arches that boost combat strength",
+      "description_de": "Dekorative Bögen, die die Kampfkraft steigern"
     },
     {
       "id": "Bakery",
@@ -49,7 +55,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Bakes bread from flour and water",
+      "description_de": "Backt Brot aus Mehl und Wasser"
     },
     {
       "id": "Barracks",
@@ -64,7 +72,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Trains recruits into soldiers with weapons",
+      "description_de": "Bildet Rekruten mit Waffen zu Soldaten aus"
     },
     {
       "id": "Bench",
@@ -76,7 +86,9 @@ window.S4WN_CONFIG = {
       "gold": 1,
       "nations": [
         "Roman"
-      ]
+      ],
+      "description": "Decorative bench that boosts combat strength",
+      "description_de": "Dekorative Bank, die die Kampfkraft steigert"
     },
     {
       "id": "BigTower",
@@ -91,8 +103,10 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
       "garrison_capacity": 1,
+      "description": "Large defensive tower, garrisons 3 soldiers",
+      "description_de": "Großer Wehrturm, bietet Platz für 3 Soldaten"
     },
     {
       "id": "Bust",
@@ -104,7 +118,9 @@ window.S4WN_CONFIG = {
       "gold": 1,
       "nations": [
         "Roman"
-      ]
+      ],
+      "description": "Decorative bust that boosts combat strength",
+      "description_de": "Dekorative Büste, die die Kampfkraft steigert"
     },
     {
       "id": "Castle",
@@ -119,8 +135,10 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
       "garrison_capacity": 6,
+      "description": "Main stronghold, garrisons 6 soldiers",
+      "description_de": "Hauptfestung, bietet Platz für 6 Soldaten"
     },
     {
       "id": "CoalMine",
@@ -135,7 +153,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Mines coal ore, requires bread for miners",
+      "description_de": "Fördert Kohle, benötigt Brot für die Minenarbeiter"
     },
     {
       "id": "DonkeyRanch",
@@ -147,7 +167,9 @@ window.S4WN_CONFIG = {
       "gold": 0,
       "nations": [
         "Trojan"
-      ]
+      ],
+      "description": "Breeds donkeys for land trade routes",
+      "description_de": "Züchtet Esel für Handelsrouten zu Land"
     },
     {
       "id": "FeatherOrnament",
@@ -159,7 +181,9 @@ window.S4WN_CONFIG = {
       "gold": 1,
       "nations": [
         "Maya"
-      ]
+      ],
+      "description": "Decorative feather ornament that boosts combat strength",
+      "description_de": "Dekorativer Federschmuck"
     },
     {
       "id": "FishermansHut",
@@ -174,7 +198,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Building for your settlement",
+      "description_de": "Gebäude für deine Siedlung"
     },
     {
       "id": "FlowerBed",
@@ -186,7 +212,9 @@ window.S4WN_CONFIG = {
       "gold": 1,
       "nations": [
         "Maya"
-      ]
+      ],
+      "description": "Decorative flower bed that boosts combat strength",
+      "description_de": "Dekoratives Blumenbeet"
     },
     {
       "id": "ForestersHut",
@@ -201,7 +229,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Building for your settlement",
+      "description_de": "Gebäude für deine Siedlung"
     },
     {
       "id": "GoatRanch",
@@ -213,7 +243,9 @@ window.S4WN_CONFIG = {
       "gold": 0,
       "nations": [
         "Maya"
-      ]
+      ],
+      "description": "Breeds goats for meat production",
+      "description_de": "Züchtet Ziegen für die Fleischproduktion"
     },
     {
       "id": "GoldMine",
@@ -228,7 +260,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Mines gold ore, requires fish for miners",
+      "description_de": "Fördert Golderz, benötigt Fisch"
     },
     {
       "id": "GoldSmelter",
@@ -243,7 +277,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Smelts gold ore and coal into gold bars",
+      "description_de": "Schmilzt Golderz und Kohle zu Goldbarren"
     },
     {
       "id": "GooseRanch",
@@ -255,7 +291,9 @@ window.S4WN_CONFIG = {
       "gold": 0,
       "nations": [
         "Trojan"
-      ]
+      ],
+      "description": "Breeds geese for meat production",
+      "description_de": "Züchtet Gänse für die Fleischproduktion"
     },
     {
       "id": "GrainFarm",
@@ -270,7 +308,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Grows grain crops for food production",
+      "description_de": "Baut Getreide für die Nahrungsproduktion an"
     },
     {
       "id": "GrainMill",
@@ -285,7 +325,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Grinds grain into flour",
+      "description_de": "Mahlt Getreide zu Mehl"
     },
     {
       "id": "HealersHut",
@@ -300,7 +342,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Heals nearby friendly units using mana",
+      "description_de": "Heilt umstehende freundliche Einheiten mit Mana"
     },
     {
       "id": "IronOreMine",
@@ -315,7 +359,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Mines iron ore, requires meat for miners",
+      "description_de": "Fördert Eisenerz, benötigt Fleisch"
     },
     {
       "id": "IronSmelter",
@@ -330,7 +376,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Smelts iron ore and coal into iron bars",
+      "description_de": "Schmilzt Eisenerz und Kohle zu Eisenbarren"
     },
     {
       "id": "JaguarStatue",
@@ -342,7 +390,9 @@ window.S4WN_CONFIG = {
       "gold": 2,
       "nations": [
         "Maya"
-      ]
+      ],
+      "description": "Decorative jaguar statue that boosts combat strength",
+      "description_de": "Dekorative Jaguarstatue"
     },
     {
       "id": "LandingDock",
@@ -357,7 +407,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Enables maritime trade routes",
+      "description_de": "Ermöglicht Seehandelsrouten"
     },
     {
       "id": "LargeAxeStatue",
@@ -369,7 +421,9 @@ window.S4WN_CONFIG = {
       "gold": 2,
       "nations": [
         "Viking"
-      ]
+      ],
+      "description": "Large decorative axe statue that boosts combat strength",
+      "description_de": "Große dekorative Axtstatue"
     },
     {
       "id": "LargeEagleStatue",
@@ -381,7 +435,9 @@ window.S4WN_CONFIG = {
       "gold": 2,
       "nations": [
         "Trojan"
-      ]
+      ],
+      "description": "Large decorative eagle statue that boosts combat strength",
+      "description_de": "Große dekorative Adlerstatue"
     },
     {
       "id": "LargeResidence",
@@ -396,7 +452,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Houses up to 100 settlers",
+      "description_de": "Bietet Platz für bis zu 100 Siedler"
     },
     {
       "id": "LargeTemple",
@@ -411,7 +469,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Transforms recruits into priests/mages",
+      "description_de": "Verwandelt Rekruten in Priester/Magier"
     },
     {
       "id": "Marketplace",
@@ -426,7 +486,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Enables land trade routes with donkeys",
+      "description_de": "Ermöglicht Landhandelsrouten mit Eseln"
     },
     {
       "id": "MeadBrewery",
@@ -438,7 +500,9 @@ window.S4WN_CONFIG = {
       "gold": 0,
       "nations": [
         "Viking"
-      ]
+      ],
+      "description": "Brews mead from honey",
+      "description_de": "Braut Met aus Honig"
     },
     {
       "id": "MediumResidence",
@@ -453,7 +517,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Houses up to 30 settlers",
+      "description_de": "Bietet Platz für bis zu 30 Siedler"
     },
     {
       "id": "Monument",
@@ -465,7 +531,9 @@ window.S4WN_CONFIG = {
       "gold": 2,
       "nations": [
         "Roman"
-      ]
+      ],
+      "description": "Decorative monument that boosts combat strength",
+      "description_de": "Dekoratives Denkmal"
     },
     {
       "id": "Obelisk",
@@ -477,7 +545,9 @@ window.S4WN_CONFIG = {
       "gold": 2,
       "nations": [
         "Roman"
-      ]
+      ],
+      "description": "Decorative obelisk that boosts combat strength",
+      "description_de": "Dekorativer Obelisk"
     },
     {
       "id": "OilPress",
@@ -489,7 +559,9 @@ window.S4WN_CONFIG = {
       "gold": 0,
       "nations": [
         "Trojan"
-      ]
+      ],
+      "description": "Presses sunflowers into sunflower oil",
+      "description_de": "Presst Sonnenblumen zu Sonnenblumenöl"
     },
     {
       "id": "PigRanch",
@@ -502,7 +574,9 @@ window.S4WN_CONFIG = {
       "nations": [
         "Roman",
         "Viking"
-      ]
+      ],
+      "description": "Breeds pigs for meat production",
+      "description_de": "Züchtet Schweine für die Fleischproduktion"
     },
     {
       "id": "Pillar",
@@ -514,7 +588,9 @@ window.S4WN_CONFIG = {
       "gold": 2,
       "nations": [
         "Trojan"
-      ]
+      ],
+      "description": "Decorative pillar that boosts combat strength",
+      "description_de": "Dekorative Säule"
     },
     {
       "id": "PowderMill",
@@ -526,7 +602,9 @@ window.S4WN_CONFIG = {
       "gold": 0,
       "nations": [
         "Maya"
-      ]
+      ],
+      "description": "Grinds sulfur and coal into gunpowder",
+      "description_de": "Mahlt Schwefel und Kohle zu Schießpulver"
     },
     {
       "id": "RoundWell",
@@ -538,7 +616,9 @@ window.S4WN_CONFIG = {
       "gold": 1,
       "nations": [
         "Trojan"
-      ]
+      ],
+      "description": "Decorative well that boosts combat strength",
+      "description_de": "Dekorativer Rundbrunnen"
     },
     {
       "id": "Sawmill",
@@ -553,7 +633,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Saws logs into planks",
+      "description_de": "Sägt Baumstämme zu Brettern"
     },
     {
       "id": "ShipProw",
@@ -565,7 +647,9 @@ window.S4WN_CONFIG = {
       "gold": 3,
       "nations": [
         "Viking"
-      ]
+      ],
+      "description": "Decorative ship prow that boosts combat strength",
+      "description_de": "Dekorativer Schiffsschnabel"
     },
     {
       "id": "Shipyard",
@@ -580,7 +664,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Builds ships and ferries",
+      "description_de": "Baut Schiffe und Fähren"
     },
     {
       "id": "Slaughterhouse",
@@ -595,7 +681,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Processes livestock into meat",
+      "description_de": "Verarbeitet Vieh zu Fleisch"
     },
     {
       "id": "SmallAxeStatue",
@@ -607,7 +695,9 @@ window.S4WN_CONFIG = {
       "gold": 1,
       "nations": [
         "Viking"
-      ]
+      ],
+      "description": "Small decorative axe statue that boosts combat strength",
+      "description_de": "Kleine dekorative Axtstatue"
     },
     {
       "id": "SmallEagleStatue",
@@ -619,7 +709,9 @@ window.S4WN_CONFIG = {
       "gold": 1,
       "nations": [
         "Trojan"
-      ]
+      ],
+      "description": "Small decorative eagle statue that boosts combat strength",
+      "description_de": "Kleine dekorative Adlerstatue"
     },
     {
       "id": "SmallResidence",
@@ -634,7 +726,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Houses up to 10 settlers",
+      "description_de": "Bietet Platz für bis zu 10 Siedler"
     },
     {
       "id": "SmallTemple",
@@ -649,7 +743,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Produces mana from sacrificial offerings",
+      "description_de": "Produziert Mana aus Opfergaben"
     },
     {
       "id": "SmallTower",
@@ -664,8 +760,10 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
       "garrison_capacity": 1,
+      "description": "Small defensive tower, garrisons 1 soldier",
+      "description_de": "Kleiner Wehrturm, bietet Platz für 1 Soldaten"
     },
     {
       "id": "StandardBanner",
@@ -677,7 +775,9 @@ window.S4WN_CONFIG = {
       "gold": 2,
       "nations": [
         "Roman"
-      ]
+      ],
+      "description": "Decorative banner that boosts combat strength",
+      "description_de": "Dekorative Standarte, die die Kampfkraft steigert"
     },
     {
       "id": "StandingStone",
@@ -689,7 +789,9 @@ window.S4WN_CONFIG = {
       "gold": 2,
       "nations": [
         "Viking"
-      ]
+      ],
+      "description": "Decorative runestone that boosts combat strength",
+      "description_de": "Dekorativer Runenstein"
     },
     {
       "id": "Stela",
@@ -701,7 +803,9 @@ window.S4WN_CONFIG = {
       "gold": 2,
       "nations": [
         "Maya"
-      ]
+      ],
+      "description": "Decorative stela that boosts combat strength",
+      "description_de": "Dekorative Stele"
     },
     {
       "id": "StonePillar",
@@ -713,7 +817,9 @@ window.S4WN_CONFIG = {
       "gold": 2,
       "nations": [
         "Maya"
-      ]
+      ],
+      "description": "Decorative stone pillar that boosts combat strength",
+      "description_de": "Dekorative Steinsäule"
     },
     {
       "id": "StonecuttersHut",
@@ -728,7 +834,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Building for your settlement",
+      "description_de": "Gebäude für deine Siedlung"
     },
     {
       "id": "StorageYard",
@@ -743,7 +851,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Stores up to 8 item stacks",
+      "description_de": "Lagert bis zu 8 Warenstapel"
     },
     {
       "id": "SulfurMine",
@@ -758,7 +868,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Mines sulfur ore, requires fish for miners",
+      "description_de": "Fördert Schwefel, benötigt Fisch"
     },
     {
       "id": "SunWheel",
@@ -770,7 +882,9 @@ window.S4WN_CONFIG = {
       "gold": 3,
       "nations": [
         "Maya"
-      ]
+      ],
+      "description": "Decorative sun wheel that boosts combat strength",
+      "description_de": "Dekoratives Sonnenrad"
     },
     {
       "id": "TequilaDistillery",
@@ -782,7 +896,9 @@ window.S4WN_CONFIG = {
       "gold": 0,
       "nations": [
         "Maya"
-      ]
+      ],
+      "description": "Distills agave into tequila",
+      "description_de": "Brennt Agaven zu Tequila"
     },
     {
       "id": "Throne",
@@ -794,7 +910,9 @@ window.S4WN_CONFIG = {
       "gold": 2,
       "nations": [
         "Viking"
-      ]
+      ],
+      "description": "Decorative throne that boosts combat strength",
+      "description_de": "Dekorativer Thron"
     },
     {
       "id": "Toolsmith",
@@ -809,7 +927,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Forges tools from iron bars and coal",
+      "description_de": "Schmiedet Werkzeuge aus Eisenbarren und Kohle"
     },
     {
       "id": "TriumphalArch",
@@ -821,7 +941,9 @@ window.S4WN_CONFIG = {
       "gold": 3,
       "nations": [
         "Trojan"
-      ]
+      ],
+      "description": "Decorative triumphal arch that boosts combat strength",
+      "description_de": "Dekorativer Triumphbogen"
     },
     {
       "id": "TrojanFarm",
@@ -833,7 +955,9 @@ window.S4WN_CONFIG = {
       "gold": 0,
       "nations": [
         "Trojan"
-      ]
+      ],
+      "description": "Grows sunflowers for oil production",
+      "description_de": "Baut Sonnenblumen für die Ölproduktion an"
     },
     {
       "id": "TrojanHorse",
@@ -845,7 +969,9 @@ window.S4WN_CONFIG = {
       "gold": 2,
       "nations": [
         "Trojan"
-      ]
+      ],
+      "description": "Decorative Trojan horse that boosts combat strength",
+      "description_de": "Dekoratives Trojanisches Pferd"
     },
     {
       "id": "Vineyard",
@@ -857,7 +983,9 @@ window.S4WN_CONFIG = {
       "gold": 0,
       "nations": [
         "Roman"
-      ]
+      ],
+      "description": "Grows grapes for wine production",
+      "description_de": "Baut Trauben für die Weinproduktion an"
     },
     {
       "id": "Waterworks",
@@ -872,7 +1000,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Extracts water from rivers and lakes",
+      "description_de": "Fördert Wasser aus Flüssen und Seen"
     },
     {
       "id": "WeaponFoundry",
@@ -884,7 +1014,9 @@ window.S4WN_CONFIG = {
       "gold": 0,
       "nations": [
         "Trojan"
-      ]
+      ],
+      "description": "Crafts explosive arrows from iron and sulfur",
+      "description_de": "Stellt Explosivpfeile aus Eisen und Schwefel her"
     },
     {
       "id": "Weaponsmith",
@@ -899,7 +1031,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Forges weapons from iron bars and coal",
+      "description_de": "Schmiedet Waffen aus Eisenbarren und Kohle"
     },
     {
       "id": "WoodCarving",
@@ -911,7 +1045,9 @@ window.S4WN_CONFIG = {
       "gold": 1,
       "nations": [
         "Viking"
-      ]
+      ],
+      "description": "Decorative wood carving that boosts combat strength",
+      "description_de": "Dekoratives Holzgeschnitztes"
     },
     {
       "id": "WoodcuttersHut",
@@ -926,7 +1062,9 @@ window.S4WN_CONFIG = {
         "Roman",
         "Trojan",
         "Viking"
-      ]
+      ],
+      "description": "Building for your settlement",
+      "description_de": "Gebäude für deine Siedlung"
     }
   ],
   "resources": [
@@ -934,271 +1072,406 @@ window.S4WN_CONFIG = {
       "id": "WoodLog",
       "category": "Construction",
       "name": "Wood Log",
-      "name_de": "Baumstamm"
+      "name_de": "Baumstamm",
+      "icon": "🪵",
+      "description": "Raw wood from trees, processed into planks",
+      "description_de": "Rohholz von Bäumen, wird zu Brettern verarbeitet"
     },
     {
       "id": "PlankWood",
       "category": "Construction",
       "name": "Plank (Wood)",
-      "name_de": "Holz / Brett"
+      "name_de": "Holz / Brett",
+      "icon": "🪵",
+      "description": "Processed wood used in building construction",
+      "description_de": "Verarbeitetes Holz für den Gebäudebau"
     },
     {
       "id": "Stone",
       "category": "Construction",
       "name": "Stone",
-      "name_de": "Stein"
+      "name_de": "Stein",
+      "icon": "🪨",
+      "description": "Quarried stone for construction and ammunition",
+      "description_de": "Gebrochener Stein für Bau und Munition"
     },
     {
       "id": "CoalOre",
       "category": "Raw Ores",
       "name": "Coal Ore",
-      "name_de": "Kohle"
+      "name_de": "Kohle",
+      "icon": "⚫",
+      "description": "Fuel for smelters and smiths, mined with bread",
+      "description_de": "Brennstoff für Schmelzen und Schmieden"
     },
     {
       "id": "IronOre",
       "category": "Raw Ores",
       "name": "Iron Ore",
-      "name_de": "Eisenerz"
+      "name_de": "Eisenerz",
+      "icon": "⛓️",
+      "description": "Raw iron, smelted into bars, mined with meat",
+      "description_de": "Roheisen, zu Barren geschmolzen, Abbau mit Fleisch"
     },
     {
       "id": "GoldOre",
       "category": "Raw Ores",
       "name": "Gold Ore",
-      "name_de": "Golderz"
+      "name_de": "Golderz",
+      "icon": "🪙",
+      "description": "Raw gold, smelted into bars, mined with fish",
+      "description_de": "Rohgold, zu Barren geschmolzen, Abbau mit Fisch"
     },
     {
       "id": "SulfurOre",
       "category": "Raw Ores",
       "name": "Sulfur Ore",
-      "name_de": "Schwefel"
+      "name_de": "Schwefel",
+      "icon": "🟡",
+      "description": "Raw sulfur for gunpowder and explosives, mined with fish",
+      "description_de": "Rohschwefel für Schießpulver und Sprengstoff"
     },
     {
       "id": "IronBar",
       "category": "Smelted Metals",
       "name": "Iron Bar",
-      "name_de": "Eisenbarren"
+      "name_de": "Eisenbarren",
+      "icon": "🔩",
+      "description": "Smelted iron, used to forge tools and weapons",
+      "description_de": "Geschmolzenes Eisen für Werkzeuge und Waffen"
     },
     {
       "id": "GoldBar",
       "category": "Smelted Metals",
       "name": "Gold Bar",
-      "name_de": "Goldbarren"
+      "name_de": "Goldbarren",
+      "icon": "🥇",
+      "description": "Smelted gold, boosts global combat strength",
+      "description_de": "Geschmolzenes Gold, steigert die globale Kampfkraft"
     },
     {
       "id": "Water",
       "category": "Food & Crops",
       "name": "Water",
-      "name_de": "Wasser"
+      "name_de": "Wasser",
+      "icon": "💧",
+      "description": "Fresh water for baking, brewing, and breeding",
+      "description_de": "Frischwasser zum Backen, Brauen und Züchten"
     },
     {
       "id": "Grain",
       "category": "Food & Crops",
       "name": "Grain",
-      "name_de": "Getreide"
+      "name_de": "Getreide",
+      "icon": "🌾",
+      "description": "Crop harvested from farms, ground into flour",
+      "description_de": "Von Farmen geerntetes Getreide, zu Mehl gemahlen"
     },
     {
       "id": "Flour",
       "category": "Food & Crops",
       "name": "Flour",
-      "name_de": "Mehl"
+      "name_de": "Mehl",
+      "icon": "🌾",
+      "description": "Milled grain used for baking bread",
+      "description_de": "Gemahlenes Getreide zum Brotbacken"
     },
     {
       "id": "Fish",
       "category": "Food & Crops",
       "name": "Fish",
-      "name_de": "Fisch"
+      "name_de": "Fisch",
+      "icon": "🐟",
+      "description": "Caught from water, feeds gold and sulfur miners",
+      "description_de": "Aus Gewässern gefangen, ernährt Gold- und Schwefelminen"
     },
     {
       "id": "Bread",
       "category": "Food & Crops",
       "name": "Bread",
-      "name_de": "Brot"
+      "name_de": "Brot",
+      "icon": "🍞",
+      "description": "Baked food, feeds coal miners",
+      "description_de": "Gebackene Nahrung, ernährt Kohleminen"
     },
     {
       "id": "Meat",
       "category": "Food & Crops",
       "name": "Meat",
-      "name_de": "Fleisch"
+      "name_de": "Fleisch",
+      "icon": "🥩",
+      "description": "Butchered livestock, feeds iron ore miners",
+      "description_de": "Geschlachtetes Vieh, ernährt Eisenerzminen"
     },
     {
       "id": "Pig",
       "category": "Livestock",
       "name": "Pig",
-      "name_de": "Schwein"
+      "name_de": "Schwein",
+      "icon": "🐷",
+      "description": "Viking livestock, processed into meat",
+      "description_de": "Vieh der Wikinger, zu Fleisch verarbeitet"
     },
     {
       "id": "Sheep",
       "category": "Livestock",
       "name": "Sheep",
-      "name_de": "Schaf"
+      "name_de": "Schaf",
+      "icon": "🐑",
+      "description": "Roman livestock, processed into meat",
+      "description_de": "Vieh der Römer, zu Fleisch verarbeitet"
     },
     {
       "id": "Goat",
       "category": "Livestock",
       "name": "Goat",
-      "name_de": "Ziege"
+      "name_de": "Ziege",
+      "icon": "🐐",
+      "description": "Mayan livestock, processed into meat",
+      "description_de": "Vieh der Maya, zu Fleisch verarbeitet"
     },
     {
       "id": "Goose",
       "category": "Livestock",
       "name": "Goose",
-      "name_de": "Gans"
+      "name_de": "Gans",
+      "icon": "🦢",
+      "description": "Trojan livestock, processed into meat",
+      "description_de": "Vieh der Trojaner, zu Fleisch verarbeitet"
     },
     {
       "id": "Donkey",
       "category": "Livestock",
       "name": "Donkey",
-      "name_de": "Esel"
+      "name_de": "Esel",
+      "icon": "🫏",
+      "description": "Pack animal for land trade routes",
+      "description_de": "Lasttier für Landhandelsrouten"
     },
     {
       "id": "Grapes",
       "category": "Alcohol & Mana",
       "name": "Grapes",
-      "name_de": "Trauben"
+      "name_de": "Trauben",
+      "icon": "🍇",
+      "description": "Roman crop, fermented into wine",
+      "description_de": "Römische Feldfrucht, zu Wein vergoren"
     },
     {
       "id": "Wine",
       "category": "Alcohol & Mana",
       "name": "Wine",
-      "name_de": "Wein"
+      "name_de": "Wein",
+      "icon": "🍷",
+      "description": "Roman sacrificial drink for mana production",
+      "description_de": "Römisches Opfergetränk zur Manaproduktion"
     },
     {
       "id": "Honey",
       "category": "Alcohol & Mana",
       "name": "Honey",
-      "name_de": "Honig"
+      "name_de": "Honig",
+      "icon": "🍯",
+      "description": "Viking resource from beehives, brewed into mead",
+      "description_de": "Wikinger-Rohstoff aus Bienenstöcken, zu Met gebraut"
     },
     {
       "id": "Mead",
       "category": "Alcohol & Mana",
       "name": "Mead",
-      "name_de": "Met"
+      "name_de": "Met",
+      "icon": "🍺",
+      "description": "Viking sacrificial drink for mana production",
+      "description_de": "Wikinger-Opfergetränk zur Manaproduktion"
     },
     {
       "id": "Agave",
       "category": "Alcohol & Mana",
       "name": "Agave",
-      "name_de": "Agave"
+      "name_de": "Agave",
+      "icon": "🌵",
+      "description": "Mayan plant, distilled into tequila",
+      "description_de": "Maya-Pflanze, zu Tequila gebrannt"
     },
     {
       "id": "Tequila",
       "category": "Alcohol & Mana",
       "name": "Tequila",
-      "name_de": "Tequila / Schnaps"
+      "name_de": "Tequila / Schnaps",
+      "icon": "🥃",
+      "description": "Mayan sacrificial drink for mana production",
+      "description_de": "Maya-Opfergetränk zur Manaproduktion"
     },
     {
       "id": "Sunflower",
       "category": "Alcohol & Mana",
       "name": "Sunflower",
-      "name_de": "Sonnenblume"
+      "name_de": "Sonnenblume",
+      "icon": "🌻",
+      "description": "Trojan crop, pressed into oil",
+      "description_de": "Trojanische Feldfrucht, zu Öl gepresst"
     },
     {
       "id": "SunflowerOil",
       "category": "Alcohol & Mana",
       "name": "Sunflower Oil",
-      "name_de": "Sonnenblumenöl"
+      "name_de": "Sonnenblumenöl",
+      "icon": "🫒",
+      "description": "Trojan sacrificial oil for mana production",
+      "description_de": "Trojanisches Opferöl zur Manaproduktion"
     },
     {
       "id": "Hammer",
       "category": "Tools",
       "name": "Hammer",
-      "name_de": "Hammer"
+      "name_de": "Hammer",
+      "icon": "🔨",
+      "description": "Tool for spawning builders and smiths",
+      "description_de": "Werkzeug zum Anwerben von Bauarbeitern und Schmieden"
     },
     {
       "id": "Pickaxe",
       "category": "Tools",
       "name": "Pickaxe",
-      "name_de": "Spitzhacke"
+      "name_de": "Spitzhacke",
+      "icon": "⛏️",
+      "description": "Tool for spawning miners and stonecutters",
+      "description_de": "Werkzeug zum Anwerben von Minenarbeitern und Steinmetzen"
     },
     {
       "id": "Axe",
       "category": "Tools",
       "name": "Axe",
-      "name_de": "Axt"
+      "name_de": "Axt",
+      "icon": "🪓",
+      "description": "Tool for spawning woodcutters and butchers",
+      "description_de": "Werkzeug zum Anwerben von Holzfällern und Metzgern"
     },
     {
       "id": "Saw",
       "category": "Tools",
       "name": "Saw",
-      "name_de": "Säge"
+      "name_de": "Säge",
+      "icon": "🪚",
+      "description": "Tool for spawning sawmill workers",
+      "description_de": "Werkzeug zum Anwerben von Sägewerksarbeitern"
     },
     {
       "id": "Shovel",
       "category": "Tools",
       "name": "Shovel",
-      "name_de": "Schaufel"
+      "name_de": "Schaufel",
+      "icon": "🪣",
+      "description": "Tool for spawning diggers and pioneers",
+      "description_de": "Werkzeug zum Anwerben von Planierern und Pionieren"
     },
     {
       "id": "Scythe",
       "category": "Tools",
       "name": "Scythe",
-      "name_de": "Sense"
+      "name_de": "Sense",
+      "icon": "🌾",
+      "description": "Tool for spawning grain farmers",
+      "description_de": "Werkzeug zum Anwerben von Getreidebauern"
     },
     {
       "id": "FishingRod",
       "category": "Tools",
       "name": "Fishing Rod",
-      "name_de": "Angel"
+      "name_de": "Angel",
+      "icon": "🎣",
+      "description": "Tool for spawning fishermen",
+      "description_de": "Werkzeug zum Anwerben von Fischern"
     },
     {
       "id": "Sword",
       "category": "Weapons",
       "name": "Sword",
-      "name_de": "Schwert"
+      "name_de": "Schwert",
+      "icon": "⚔️",
+      "description": "Basic weapon for recruiting swordsmen",
+      "description_de": "Basiswaffe zur Anwerbung von Schwertkämpfern"
     },
     {
       "id": "Bow",
       "category": "Weapons",
       "name": "Bow",
-      "name_de": "Bogen"
+      "name_de": "Bogen",
+      "icon": "🏹",
+      "description": "Ranged weapon for recruiting bowmen",
+      "description_de": "Fernkampfwaffe zur Anwerbung von Bogenschützen"
     },
     {
       "id": "Armor",
       "category": "Weapons",
       "name": "Armor",
-      "name_de": "Rüstung"
+      "name_de": "Rüstung",
+      "icon": "🛡️",
+      "description": "Promotes soldiers to squad leaders",
+      "description_de": "Befördert Soldaten zu Hauptmännern"
     },
     {
       "id": "Spear",
       "category": "Weapons",
       "name": "Spear",
-      "name_de": "Speer"
+      "name_de": "Speer",
+      "icon": "🔱",
+      "description": "Roman special weapon for medics",
+      "description_de": "Römische Spezialwaffe für Sanitäter"
     },
     {
       "id": "Battleaxe",
       "category": "Weapons",
       "name": "Battleaxe",
-      "name_de": "Streitaxt"
+      "name_de": "Streitaxt",
+      "icon": "🪓",
+      "description": "Viking special weapon for axe warriors",
+      "description_de": "Wikinger-Spezialwaffe für Streitaxtkämpfer"
     },
     {
       "id": "Blowgun",
       "category": "Weapons",
       "name": "Blowgun",
-      "name_de": "Blasrohr"
+      "name_de": "Blasrohr",
+      "icon": "💨",
+      "description": "Mayan special weapon for blowgun warriors",
+      "description_de": "Maya-Spezialwaffe für Blasrohrschützen"
     },
     {
       "id": "BackpackCatapult",
       "category": "Weapons",
       "name": "Backpack Catapult",
-      "name_de": "Rucksack-Katapult"
+      "name_de": "Rucksack-Katapult",
+      "icon": "💣",
+      "description": "Trojan special weapon for catapult soldiers",
+      "description_de": "Trojanische Spezialwaffe für Katapultsoldaten"
     },
     {
       "id": "Gunpowder",
       "category": "Munitions",
       "name": "Gunpowder",
-      "name_de": "Schießpulver"
+      "name_de": "Schießpulver",
+      "icon": "💥",
+      "description": "Mayan ammunition for fire spitter war machines",
+      "description_de": "Maya-Munition für Feuerspucker"
     },
     {
       "id": "ExplosiveArrow",
       "category": "Munitions",
       "name": "Explosive Arrow",
-      "name_de": "Explosivpfeil"
+      "name_de": "Explosivpfeil",
+      "icon": "🏹",
+      "description": "Trojan ammunition for ballista war machines",
+      "description_de": "Trojanische Munition für Ballisten"
     },
     {
       "id": "CatapultAmmo",
       "category": "Munitions",
       "name": "Catapult Ammo",
-      "name_de": "Munition"
+      "name_de": "Munition",
+      "icon": "🪨",
+      "description": "Stone ammunition for catapults",
+      "description_de": "Steinmunition für Katapulte"
     }
   ],
   "units": [
@@ -1687,11 +1960,6 @@ window.S4WN_CONFIG = {
     ]
   }
 };
-
-
-
-
-
 (function() {
     const C = window.S4WN_CONFIG;
     window.BUILDING_ICONS = {};
