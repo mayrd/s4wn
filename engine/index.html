@@ -1095,8 +1095,9 @@
     align-items: center; justify-content: center;
     background: rgba(6,10,20,0.85);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
-  #obj-explorer.active { display: flex; }
+  #obj-explorer.active { display: flex !important; }
   .obj-explorer-card {
     background: linear-gradient(135deg, rgba(20,28,48,0.95), rgba(12,16,30,0.95));
     border: 1px solid rgba(200,170,100,0.15);
@@ -5958,13 +5959,20 @@ function exportMapJson() {
 }
 function openObjectExplorer() {
     console.log('ObjectExplorer: opening...');
-    closeMenu();
+    try { closeMenu(); } catch(e) { console.warn('ObjectExplorer: closeMenu failed', e); }
     var panel = document.getElementById("obj-explorer");
     var body = document.getElementById("obj-explorer-body");
-    if (!panel) { console.error('ObjectExplorer: #obj-explorer element not found'); return; }
-    if (!body) { console.error('ObjectExplorer: #obj-explorer-body element not found'); return; }
+    if (!panel || !body) {
+        console.error('ObjectExplorer: DOM elements missing — panel=' + !!panel + ' body=' + !!body);
+        return;
+    }
     var C = window.S4WN_CONFIG;
-    if (!C) { console.error('ObjectExplorer: S4WN_CONFIG not loaded'); return; }
+    if (!C) {
+        console.error('ObjectExplorer: S4WN_CONFIG not loaded');
+        body.innerHTML = '<p style="color:#c8b878;padding:20px;">Configuration data not loaded. Please refresh the page.</p>';
+        panel.classList.add("active");
+        return;
+    }
 
     console.log('ObjectExplorer: config loaded, buildings=' + (C.buildings ? C.buildings.length : 0) +
         ', resources=' + (C.resources ? C.resources.length : 0) +
@@ -6000,7 +6008,10 @@ function openObjectExplorer() {
             html += "</div>";
         });
     });
-    if (!html) { console.error('ObjectExplorer: no content generated — all sections empty'); return; }
+    if (!html) {
+        console.error('ObjectExplorer: no content generated — all sections empty');
+        html = '<p style="color:#8899aa;padding:20px;">No content available.</p>';
+    }
     body.innerHTML = html;
     panel.classList.add("active");
     console.log('ObjectExplorer: displayed with ' + sections.filter(function(s) { return C[s[1]] && C[s[1]].length; }).length + ' sections');
