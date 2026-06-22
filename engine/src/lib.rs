@@ -418,6 +418,50 @@ void main() {
 
 /// Scale factor for converting tile elevation (0.0–1.0) to world-space Y units.
 /// Default 0.5 means a full-height tile displaces upward by 0.5 world units.
+
+// ── Shadow Shaders (Phase 7: Soft ground-plane shadows) ───────────────────────
+
+const SHADOW_VERTEX_SHADER: &str = r#"#version 300 es
+precision highp float;
+
+in vec2 a_shadow_vert;
+
+uniform mat4 u_vp;
+uniform vec3 u_instance_pos;
+uniform vec3 u_light_dir;
+uniform float u_shadow_size;
+
+out float v_fade;
+
+void main() {
+    // Ground-plane shadow: project to Y ≈ 0, offset slightly in light direction
+    vec3 center = vec3(u_instance_pos.x, 0.02, u_instance_pos.z);
+    center.xz -= u_light_dir.xz * u_instance_pos.y * 0.35;
+
+    vec3 corner = center;
+    corner.x += a_shadow_vert.x * u_shadow_size;
+    corner.z += a_shadow_vert.y * u_shadow_size;
+
+    float d = length(a_shadow_vert);
+    v_fade = smoothstep(1.0, 0.0, d);
+
+    gl_Position = u_vp * vec4(corner, 1.0);
+}
+"#;
+
+const SHADOW_FRAGMENT_SHADER: &str = r#"#version 300 es
+precision highp float;
+
+in float v_fade;
+
+out vec4 out_color;
+
+void main() {
+    float alpha = v_fade * 0.35;
+    out_color = vec4(0.0, 0.0, 0.0, alpha);
+}
+"#;
+
 const ELEVATION_SCALE: f32 = 0.5;
 
 // ── Application State ─────────────────────────────────────────────────────────
@@ -543,6 +587,14 @@ struct App {
     model_use_instanced_loc: Option<web_sys::WebGlUniformLocation>,
     model_time_loc: Option<web_sys::WebGlUniformLocation>,
     model_anim_phase_buffer: Option<WebGlBuffer>,
+    // ── Phase 7: Shadow rendering ─────────────────────────────────────────
+    shadow_program: Option<WebGlProgram>,
+    shadow_vao: Option<WebGlVertexArrayObject>,
+    shadow_quad_buffer: Option<WebGlBuffer>,
+    shadow_vp_loc: Option<web_sys::WebGlUniformLocation>,
+    shadow_light_dir_loc: Option<web_sys::WebGlUniformLocation>,
+    shadow_instance_pos_loc: Option<web_sys::WebGlUniformLocation>,
+    shadow_size_loc: Option<web_sys::WebGlUniformLocation>,
     // ── Phase 6: Particle System ──────────────────────────────────────────
     particle_system: particle::ParticleSystem,
     /// Sound event counters — drained each frame by JS for audio playback
@@ -954,6 +1006,50 @@ impl App {
                 (None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
             };
 
+        // ── Phase 7: Shadow program ──────────────────────────
+        let shadow_shader_verts: [f32; 12] = [
+            -1.0, -1.0,  1.0, -1.0,  1.0,  1.0,  // tri 1
+            -1.0, -1.0,  1.0,  1.0, -1.0,  1.0,  // tri 2
+        ];
+        let (shadow_program, shadow_vao, shadow_quad_buffer,
+             shadow_vp_loc, shadow_light_dir_loc, shadow_instance_pos_loc, shadow_size_loc) =
+            compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, SHADOW_VERTEX_SHADER)
+            .and_then(|vert| {
+                compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, SHADOW_FRAGMENT_SHADER)
+                .and_then(|frag| link_program(&gl, &vert, &frag))
+            })
+            .map(|prog| {
+                let vao = gl.create_vertex_array();
+                gl.bind_vertex_array(vao.as_ref());
+                gl.use_program(Some(&prog));
+                let quad_buf = gl.create_buffer();
+                gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, quad_buf.as_ref());
+                unsafe {
+                    let view = js_sys::Float32Array::view(&shadow_shader_verts);
+                    gl.buffer_data_with_array_buffer_view(
+                        WebGl2RenderingContext::ARRAY_BUFFER, &view,
+                        WebGl2RenderingContext::STATIC_DRAW,
+                    );
+                }
+                gl.vertex_attrib_pointer_with_i32(0, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
+                gl.enable_vertex_attrib_array(0);
+                let vp_loc = gl.get_uniform_location(&prog, "u_vp");
+                let ld_loc = gl.get_uniform_location(&prog, "u_light_dir");
+                let ip_loc = gl.get_uniform_location(&prog, "u_instance_pos");
+                let sz_loc = gl.get_uniform_location(&prog, "u_shadow_size");
+                gl.bind_vertex_array(None);
+                (
+                    Some(prog),
+                    vao,
+                    quad_buf,
+                    vp_loc,
+                    ld_loc,
+                    ip_loc,
+                    sz_loc,
+                )
+            })
+            .unwrap_or((None, None, None, None, None, None, None));
+
 
         // Compile overlay shaders
         let overlay_vert = compile_shader(
@@ -1074,6 +1170,14 @@ impl App {
             model_use_instanced_loc,
             model_time_loc,
             model_anim_phase_buffer,
+            // ── Phase 7: Shadow rendering
+            shadow_program,
+            shadow_vao,
+            shadow_quad_buffer,
+            shadow_vp_loc,
+            shadow_light_dir_loc,
+            shadow_instance_pos_loc,
+            shadow_size_loc,
             water_time_loc,
 
             // Phase 6: Particle system
@@ -1326,6 +1430,7 @@ impl App {
 
         // ── Model 3D: auto-populate instances from game state, then draw ──
         self.populate_model_instances_from_game_state();
+        self.render_shadows();
         self.render_models(elapsed as f32);
 
 // ── Overlay: draw buildings and units as colored dots ─────────────
@@ -1428,6 +1533,79 @@ impl App {
                 },
             );
         }
+    }
+
+    // ── Phase 7: Soft ground-plane shadow pass ──────────────────────────
+    fn render_shadows(&mut self) {
+        if self.model_instances.is_empty() {
+            return;
+        }
+        let gl = &self.gl;
+        let prog = match self.shadow_program.as_ref() {
+            Some(p) => p,
+            None => return,
+        };
+        let vao = match self.shadow_vao.as_ref() {
+            Some(v) => v,
+            None => return,
+        };
+        let vp_loc = match self.shadow_vp_loc.as_ref() {
+            Some(l) => l,
+            None => return,
+        };
+        let light_dir_loc = match self.shadow_light_dir_loc.as_ref() {
+            Some(l) => l,
+            None => return,
+        };
+        let pos_loc = match self.shadow_instance_pos_loc.as_ref() {
+            Some(l) => l,
+            None => return,
+        };
+        let size_loc = match self.shadow_size_loc.as_ref() {
+            Some(l) => l,
+            None => return,
+        };
+
+        gl.use_program(Some(prog));
+        gl.bind_vertex_array(Some(vao));
+
+        // Enable blending for soft shadow transparency
+        gl.enable(WebGl2RenderingContext::BLEND);
+        gl.blend_func(WebGl2RenderingContext::SRC_ALPHA, WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
+
+        // Compute VP matrix (same as model rendering)
+        let (ex, _ey, ez) = self.camera.eye();
+        let (tx, ty, tz) = self.camera.look_at_target();
+        let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
+        let proj = model::perspective(45.0, aspect, 0.1, 500.0);
+        let view = model::look_at(&[ex, _ey, ez], &[tx, ty, tz], &[0.0, 1.0, 0.0]);
+        let vp = model::mat4_mul(&proj, &view);
+        gl.uniform_matrix4fv_with_f32_array(Some(vp_loc), false, &vp);
+
+        // Light direction (same sun arc as model shader)
+        let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
+        let sun_angle = (day_phase as f32 - 0.25) * std::f32::consts::TAU;
+        let sun_elev = sun_angle.sin() * 0.8 + 0.2;
+        let lx = sun_angle.cos() * sun_elev.max(0.1);
+        let ly = sun_elev.max(0.1);
+        let lz = sun_angle.sin() * sun_elev.max(0.1);
+        let len = (lx*lx + ly*ly + lz*lz).sqrt();
+        gl.uniform3f(Some(light_dir_loc), lx/len, ly/len, lz/len);
+
+        // Draw one shadow quad per model instance
+        for inst in &self.model_instances {
+            // Skip instances at ground level (no visible shadow)
+            let _height = inst.y; // Y is the tile's world-space Z — use scale as height proxy
+            // Use a minimum shadow size, scale with building/unit size
+            let shadow_size = inst.scale * 0.6;
+
+            gl.uniform3f(Some(pos_loc), inst.x, 0.0, inst.y);
+            gl.uniform1f(Some(size_loc), shadow_size);
+            gl.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, 6);
+        }
+
+        gl.bind_vertex_array(None);
+        gl.disable(WebGl2RenderingContext::BLEND);
     }
 
     fn render_models(&mut self, elapsed: f32) {
@@ -5189,6 +5367,23 @@ mod tests {
         assert!(MODEL_FRAGMENT_SHADER.contains("u_model_color"), "model fragment shader missing u_model_color");
         assert!(MODEL_FRAGMENT_SHADER.contains("u_roughness"), "model fragment shader missing u_roughness");
         assert!(MODEL_FRAGMENT_SHADER.contains("u_metallic"), "model fragment shader missing u_metallic");
+    }
+
+    // ── Shadow shader tests (Phase 7) ─────────────────────────────────────
+
+    #[test]
+    fn test_shadow_vertex_shader_has_required_uniforms() {
+        assert!(SHADOW_VERTEX_SHADER.contains("u_vp"), "shadow vertex shader missing u_vp");
+        assert!(SHADOW_VERTEX_SHADER.contains("u_instance_pos"), "shadow vertex shader missing u_instance_pos");
+        assert!(SHADOW_VERTEX_SHADER.contains("u_light_dir"), "shadow vertex shader missing u_light_dir");
+        assert!(SHADOW_VERTEX_SHADER.contains("u_shadow_size"), "shadow vertex shader missing u_shadow_size");
+        assert!(SHADOW_VERTEX_SHADER.contains("a_shadow_vert"), "shadow vertex shader missing a_shadow_vert attribute");
+    }
+
+    #[test]
+    fn test_shadow_fragment_shader_has_alpha_output() {
+        assert!(SHADOW_FRAGMENT_SHADER.contains("out_color"), "shadow fragment shader missing out_color");
+        assert!(SHADOW_FRAGMENT_SHADER.contains("alpha"), "shadow fragment shader should use alpha blending");
     }
 
     // ── Unit wobble animation shader tests ──────────────────────────────────
