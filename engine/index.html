@@ -5842,7 +5842,7 @@ async function main() {
                 } catch(e) {}
                 const pname = window._s4wn_player_name || '?';
                 const level = window._s4wn_difficulty || '?';
-                hudStats.textContent = `ticks: ${d.ticks} | ⏱ ${formatGameTime(d.game_time)} | 🔍 ${d.zoom}× | 📍 (${cx}, ${cy}) | 👤 ${pname} | 🎯 ${level}`;
+                hudStats.textContent = `⏱ ${formatGameTime(d.game_time)} | 🔍 ${d.zoom}× | 📍 (${cx}, ${cy}) | 👤 ${pname} | 🎯 ${level}`;
 
                 // Nation HUD update (every frame, cheap)
                 updateNationHUD();
