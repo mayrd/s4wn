@@ -416,6 +416,32 @@ void main() {
     vec3 V = normalize(v_view_dir);
     vec3 H = normalize(L + V);
 
+    // ── Procedural detail normals (Phase 7) ──────────────────────────
+    // Adds micro-surface detail to building walls via hash-based noise gradient.
+    // Uses world-space position + UVs for stable, camera-independent detail.
+    if (u_use_textures) {
+        float detail_scale = 12.0;
+        float detail_strength = 0.18;
+
+        // Hash function for pseudo-random noise
+        vec3 p = v_world_pos * detail_scale + vec3(v_uv.x, v_uv.y, 0.0) * 3.0;
+        float eps = 0.008;
+        float h0 = fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+        float hx = fract(sin(dot(p + vec3(eps, 0.0, 0.0), vec3(127.1, 311.7, 74.7))) * 43758.5453);
+        float hy = fract(sin(dot(p + vec3(0.0, eps, 0.0), vec3(127.1, 311.7, 74.7))) * 43758.5453);
+        float nx = (hx - h0) / eps;
+        float ny = (hy - h0) / eps;
+
+        // Compute tangent and bitangent from the normal
+        vec3 up = vec3(0.0, 1.0, 0.0);
+        if (abs(dot(N, up)) > 0.999) { up = vec3(1.0, 0.0, 0.0); }
+        vec3 T = normalize(cross(up, N));
+        vec3 B = normalize(cross(N, T));
+
+        // Perturb normal in tangent space
+        N = normalize(N + detail_strength * (nx * T + ny * B));
+    }
+
     // Sample terrain atlas for base texture detail
     vec3 base_albedo;
     if (u_use_textures) {
@@ -5451,6 +5477,13 @@ mod tests {
         assert!(MODEL_FRAGMENT_SHADER.contains("u_metallic"), "model fragment shader missing u_metallic");
         assert!(MODEL_FRAGMENT_SHADER.contains("u_terrain_textures"), "model fragment shader missing u_terrain_textures");
         assert!(MODEL_FRAGMENT_SHADER.contains("u_use_textures"), "model fragment shader missing u_use_textures");
+    }
+
+    #[test]
+    fn test_model_fragment_shader_has_detail_normals() {
+        assert!(MODEL_FRAGMENT_SHADER.contains("detail_strength"), "model fragment shader missing detail_strength for normal perturbation");
+        assert!(MODEL_FRAGMENT_SHADER.contains("detail normals"), "model fragment shader missing detail normals comment");
+        assert!(MODEL_FRAGMENT_SHADER.contains("fract(sin(dot("), "model fragment shader missing hash function for detail normals");
     }
 
     // ── Shadow shader tests (Phase 7) ─────────────────────────────────────
