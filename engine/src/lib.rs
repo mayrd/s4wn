@@ -528,6 +528,61 @@ void main() {
 
 const ELEVATION_SCALE: f32 = 0.5;
 
+/// Compute sky background color from day_phase (0.0–1.0 over a 300s day cycle).
+/// Returns (r, g, b) in 0.0–1.0 range.
+/// Phase 7: Dynamic sky color ramp — warm dawn → blue noon → orange dusk → dark night.
+fn sky_color(day_phase: f64) -> (f32, f32, f32) {
+    let p = day_phase as f32;
+    // Sun rises at p≈0.20, peaks at p≈0.50, sets at p≈0.80
+    // Use smoothstep transitions for natural color blending
+
+    // Night segments: p < 0.10 and p > 0.90 → deep dark
+    // Dawn: p 0.10→0.25 → warm orange/pink
+    // Day: p 0.25→0.65 → blue sky
+    // Dusk: p 0.65→0.80 → warm orange/pink
+    // Evening: p 0.80→0.90 → dark blue fading to night
+
+    // Key color points (r, g, b) at specific day phases
+    let night = (0.03, 0.05, 0.12);       // deep midnight blue
+    let dawn_start = (0.08, 0.06, 0.22);  // pre-dawn purple
+    let dawn_peak = (0.65, 0.32, 0.18);   // warm orange sunrise
+    let day_morning = (0.28, 0.52, 0.85); // morning blue
+    let day_noon = (0.35, 0.62, 0.95);    // noon bright blue
+    let day_afternoon = (0.28, 0.52, 0.85); // afternoon blue
+    let dusk_peak = (0.68, 0.30, 0.15);   // sunset orange
+    let dusk_end = (0.08, 0.05, 0.25);    // post-dusk purple
+
+    fn lerp3(a: (f32, f32, f32), b: (f32, f32, f32), t: f32) -> (f32, f32, f32) {
+        (
+            a.0 + (b.0 - a.0) * t,
+            a.1 + (b.1 - a.1) * t,
+            a.2 + (b.2 - a.2) * t,
+        )
+    }
+
+    if p < 0.08 {
+        night
+    } else if p < 0.12 {
+        lerp3(night, dawn_start, (p - 0.08) / 0.04)
+    } else if p < 0.20 {
+        lerp3(dawn_start, dawn_peak, (p - 0.12) / 0.08)
+    } else if p < 0.40 {
+        lerp3(dawn_peak, day_morning, (p - 0.20) / 0.20)
+    } else if p < 0.55 {
+        lerp3(day_morning, day_noon, (p - 0.40) / 0.15)
+    } else if p < 0.68 {
+        lerp3(day_noon, day_afternoon, (p - 0.55) / 0.13)
+    } else if p < 0.76 {
+        lerp3(day_afternoon, dusk_peak, (p - 0.68) / 0.08)
+    } else if p < 0.84 {
+        lerp3(dusk_peak, dusk_end, (p - 0.76) / 0.08)
+    } else if p < 0.92 {
+        lerp3(dusk_end, night, (p - 0.84) / 0.08)
+    } else {
+        night
+    }
+}
+
 // ── Application State ─────────────────────────────────────────────────────────
 
 static mut APP: Option<App> = None;
@@ -1328,6 +1383,7 @@ impl App {
         // Compute day_phase from game time: cycle ~ 5 minutes of real-time per day
         // Day cycle = 300 seconds / 10 TPS = 3000 ticks per day
         let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
+        let (sky_r, sky_g, sky_b) = sky_color(day_phase);
 
         // Update particles (always runs, even when paused, for visual effects)
         self.particle_system.update(0.016);
@@ -1416,7 +1472,7 @@ impl App {
         // Now borrow gl for drawing (after mutable operations are done)
         let gl = &self.gl;
 
-        gl.clear_color(0.05, 0.08, 0.18, 1.0); // Dark navy
+        gl.clear_color(sky_r, sky_g, sky_b, 1.0); // Dynamic sky from day_phase
         gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
 
         // ── Render diagnostics (first frame only) ──────────────────────
@@ -1468,7 +1524,7 @@ impl App {
         gl.uniform1f(Some(&self.day_phase_loc), day_phase as f32);
         gl.uniform1f(Some(&self.time_loc), elapsed as f32);
         if let Some(ref loc) = self.fog_color_loc {
-            gl.uniform3f(Some(loc), 0.05, 0.08, 0.18);
+            gl.uniform3f(Some(loc), sky_r, sky_g, sky_b);
         }
         // Pass light direction (tied to day/night cycle: sun arc)
         if let Some(ref loc) = self.light_dir_loc {
