@@ -405,6 +405,8 @@ in vec3 v_view_dir;
 uniform vec4 u_model_color;
 uniform float u_roughness;
 uniform float u_metallic;
+uniform highp sampler2DArray u_terrain_textures;
+uniform bool u_use_textures;
 
 out vec4 out_color;
 
@@ -414,17 +416,26 @@ void main() {
     vec3 V = normalize(v_view_dir);
     vec3 H = normalize(L + V);
 
+    // Sample terrain atlas for base texture detail
+    vec3 base_albedo;
+    if (u_use_textures) {
+        vec3 tex_sample = texture(u_terrain_textures, vec3(v_uv, 0.0)).rgb;
+        base_albedo = tex_sample * u_model_color.rgb;
+    } else {
+        base_albedo = u_model_color.rgb;
+    }
+
     // Diffuse (Lambert)
     float NdotL = max(dot(N, L), 0.0);
-    vec3 diffuse = u_model_color.rgb * NdotL;
+    vec3 diffuse = base_albedo * NdotL;
 
     // Ambient
-    vec3 ambient = u_model_color.rgb * 0.15;
+    vec3 ambient = base_albedo * 0.15;
 
     // Specular (Blinn-Phong with roughness)
     float NdotH = max(dot(N, H), 0.0);
     float spec = pow(NdotH, 2.0 / (u_roughness * u_roughness + 0.001));
-    vec3 specular = mix(vec3(0.04), u_model_color.rgb, u_metallic) * spec * 0.5;
+    vec3 specular = mix(vec3(0.04), base_albedo, u_metallic) * spec * 0.5;
 
     vec3 final_color = ambient + diffuse + specular;
     out_color = vec4(final_color, u_model_color.a);
@@ -607,6 +618,8 @@ struct App {
     model_use_instanced_loc: Option<web_sys::WebGlUniformLocation>,
     model_time_loc: Option<web_sys::WebGlUniformLocation>,
     model_anim_phase_buffer: Option<WebGlBuffer>,
+    model_terrain_tex_loc: Option<web_sys::WebGlUniformLocation>,
+    model_use_textures_loc: Option<web_sys::WebGlUniformLocation>,
     // ── Phase 7: Shadow rendering ─────────────────────────────────────────
     shadow_program: Option<WebGlProgram>,
     shadow_vao: Option<WebGlVertexArrayObject>,
@@ -1000,7 +1013,8 @@ impl App {
              model_model_loc, model_view_pos_loc, model_light_dir_loc,
              model_color_loc, model_roughness_loc, model_metallic_loc,
              model_instance_buffer, model_offset_buffer, model_vp_loc, model_use_instanced_loc,
-             model_time_loc, model_anim_phase_buffer) = 
+             model_time_loc, model_anim_phase_buffer,
+             model_terrain_tex_loc, model_use_textures_loc) = 
             if let Some(ref prog) = model_program {
                 let pos_buf = gl.create_buffer();
                 let norm_buf = gl.create_buffer();
@@ -1023,9 +1037,11 @@ impl App {
                     gl.get_uniform_location(prog, "u_use_instanced"),
                     time_loc,
                     anim_buf,
+                    gl.get_uniform_location(prog, "u_terrain_textures"),
+                    gl.get_uniform_location(prog, "u_use_textures"),
                 )
             } else {
-                (None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+                (None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
             };
 
         // ── Phase 7: Shadow program ──────────────────────────
@@ -1192,6 +1208,8 @@ impl App {
             model_use_instanced_loc,
             model_time_loc,
             model_anim_phase_buffer,
+            model_terrain_tex_loc,
+            model_use_textures_loc,
             // ── Phase 7: Shadow rendering
             shadow_program,
             shadow_vao,
@@ -1692,6 +1710,14 @@ impl App {
         // Animation time uniform (for unit wobble)
         if let Some(ref loc) = self.model_time_loc {
             gl.uniform1f(Some(loc), elapsed as f32);
+        }
+
+        // Terrain texture atlas for model texturing (reuse terrain texture on TEXTURE0)
+        if let Some(ref loc) = self.model_terrain_tex_loc {
+            gl.uniform1i(Some(loc), 0); // TEXTURE0
+        }
+        if let Some(ref loc) = self.model_use_textures_loc {
+            gl.uniform1i(Some(loc), if self.textures_loaded { 1 } else { 0 });
         }
 
         // Build model matrix helper
@@ -5423,6 +5449,8 @@ mod tests {
         assert!(MODEL_FRAGMENT_SHADER.contains("u_model_color"), "model fragment shader missing u_model_color");
         assert!(MODEL_FRAGMENT_SHADER.contains("u_roughness"), "model fragment shader missing u_roughness");
         assert!(MODEL_FRAGMENT_SHADER.contains("u_metallic"), "model fragment shader missing u_metallic");
+        assert!(MODEL_FRAGMENT_SHADER.contains("u_terrain_textures"), "model fragment shader missing u_terrain_textures");
+        assert!(MODEL_FRAGMENT_SHADER.contains("u_use_textures"), "model fragment shader missing u_use_textures");
     }
 
     // ── Shadow shader tests (Phase 7) ─────────────────────────────────────
