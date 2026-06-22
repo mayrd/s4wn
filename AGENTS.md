@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 169 | 2026-06-22 | Phase 7: Dynamic sky color ramp (dawn→noon→dusk→night) — Fixed #66 #67 — 605 tests |
 | 168 | 2026-06-22 | Fix #68: Object Explorer silent-return path now shows toast notification — 605 tests |
 | 167 | 2026-06-22 | Phase 7: Ambient occlusion at cliff/elevation boundaries — 605 tests |
 | 166 | 2026-06-22 | Fix #63 #64 #65: DebugSnapshot field name mismatches (camera + map data) — 601 tests |
@@ -142,9 +143,12 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 10. ~~Add normal-mapped detail textures to building walls~~ ✅ (session 163)
 11. ~~Add building construction animation particles with per-nation colors~~ ✅ (session 164)
 12. ~~Add ambient occlusion to terrain tiles at cliff/height boundaries~~ ✅ (session 167)
-13. Add dynamic sky color ramp that changes with day phase (warm dawn → blue noon → orange dusk → dark night)
+13. ~~Add dynamic sky color ramp~~ ✅ (session 169)
 14. Add smooth shadow penumbra (soft edges) using percentage-closer filtering or blur pass
 15. Add unit idle animations (subtle breathing/bob cycle) visible on model instances
+16. Add day-phase-aware ambient light multiplier that scales hemisphere+directional lighting
+17. Add cloud layer rendering (semi-transparent quads at high elevation with parallax)
+18. Validate WASM <300KB (currently tracking size regression from new shaders)
 
 ---
 
