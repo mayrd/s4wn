@@ -279,12 +279,16 @@ pub struct Unit {
     pub experience: u32,
     /// Whether this unit currently benefits from a SquadLeader's combat aura (+15% damage).
     pub aura_buff: bool,
+    /// Whether this unit currently benefits from a SquadLeader's defensive aura (+10% defense).
+    pub defense_aura_buff: bool,
 }
 
 /// SquadLeader aura range (tiles). Allied combat units within this range get +15% damage.
 pub const SQUAD_LEADER_AURA_RANGE: f32 = 5.0;
 /// SquadLeader aura attack damage bonus multiplier (additive: 0.15 = +15%).
 pub const SQUAD_LEADER_AURA_DAMAGE_BONUS: f32 = 0.15;
+/// SquadLeader aura defense bonus multiplier (additive: 0.10 = +10% damage reduction).
+pub const SQUAD_LEADER_AURA_DEFENSE_BONUS: f32 = 0.10;
 
 /// XP thresholds for rank promotion (cumulative XP required).
 pub const XP_RANK_1: u32 = 30;
@@ -320,6 +324,7 @@ impl Unit {
             rank: 0,
             experience: 0,
             aura_buff: false,
+            defense_aura_buff: false,
         }
     }
 

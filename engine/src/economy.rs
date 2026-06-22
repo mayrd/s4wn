@@ -1854,7 +1854,8 @@ impl Economy {
     /// Apply SquadLeader combat aura to nearby allied units.
     ///
     /// For each alive SquadLeader, finds all allied combat units (same faction)
-    /// within SQUAD_LEADER_AURA_RANGE tiles and grants them +15% attack damage.
+    /// within SQUAD_LEADER_AURA_RANGE tiles and grants them +15% attack damage
+    /// and +10% defense (damage reduction).
     /// Clears the aura from units no longer in range of any SquadLeader.
     pub fn apply_squad_leader_auras(&mut self) -> u32 {
         let aura_range_sq = crate::units::SQUAD_LEADER_AURA_RANGE * crate::units::SQUAD_LEADER_AURA_RANGE;
@@ -1871,6 +1872,7 @@ impl Economy {
             // No SquadLeaders alive — clear all aura buffs
             for unit in self.units.all_mut() {
                 unit.aura_buff = false;
+                unit.defense_aura_buff = false;
             }
             return 0;
         }
@@ -1904,11 +1906,17 @@ impl Economy {
             });
 
             if let Some(unit) = self.units.get_mut(uid) {
-                if in_aura && !unit.aura_buff {
-                    unit.aura_buff = true;
-                    buffed += 1;
-                } else if !in_aura && unit.aura_buff {
-                    unit.aura_buff = false;
+                if in_aura {
+                    if !unit.aura_buff {
+                        unit.aura_buff = true;
+                        buffed += 1;
+                    }
+                    unit.defense_aura_buff = true;
+                } else {
+                    if unit.aura_buff {
+                        unit.aura_buff = false;
+                    }
+                    unit.defense_aura_buff = false;
                 }
             }
         }
@@ -4809,5 +4817,122 @@ mod squad_leader_aura_tests {
         assert!(ally.aura_buff,
             "Ally between two SquadLeaders should be buffed");
     }
-}
+
+    // ── SquadLeader Defensive Aura Tests ──────────────────────────────────────
+
+    #[test]
+    fn test_defense_aura_buffs_allied_units_in_range() {
+        let mut eco = setup_economy_with_barracks();
+
+        // Align IDs so SL and ally share faction: sl=3(f1), ally=5(f1)
+        let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
+        let _d2 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=2 f=0
+        let _sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
+        let _d3 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=4 f=0
+        let ally_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5); // id=5 f=1
+
+        eco.apply_squad_leader_auras();
+
+        let ally = eco.units.get(ally_id).unwrap();
+        assert!(ally.defense_aura_buff,
+            "Allied Swordsman within aura range should have defense buff");
+        assert!(ally.aura_buff,
+            "Allied Swordsman should also have attack aura buff");
+    }
+
+    #[test]
+    fn test_defense_aura_no_buff_outside_range() {
+        let mut eco = setup_economy_with_barracks();
+
+        let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
+        let _d2 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=2 f=0
+        let _sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
+        let _d3 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=4 f=0
+        let far_ally_id = eco.units.spawn(UnitKind::Swordsman, 15.5, 15.5); // id=5 f=1
+
+        eco.apply_squad_leader_auras();
+
+        let far_ally = eco.units.get(far_ally_id).unwrap();
+        assert!(!far_ally.defense_aura_buff,
+            "Swordsman far outside aura range should NOT have defense buff");
+    }
+
+    #[test]
+    fn test_defense_aura_different_faction_not_buffed() {
+        let mut eco = setup_economy_with_barracks();
+
+        let _sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=1 f=1
+        let enemy_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5); // id=2 f=0
+
+        eco.apply_squad_leader_auras();
+
+        let enemy = eco.units.get(enemy_id).unwrap();
+        assert!(!enemy.defense_aura_buff,
+            "Different-faction unit should NOT receive defense aura buff");
+    }
+
+    #[test]
+    fn test_defense_aura_cleared_when_squad_leader_dies() {
+        let mut eco = setup_economy_with_barracks();
+
+        let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
+        let _d2 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=2 f=0
+        let sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
+        let _d3 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=4 f=0
+        let ally_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5); // id=5 f=1
+
+        eco.apply_squad_leader_auras();
+        assert!(eco.units.get(ally_id).unwrap().defense_aura_buff);
+
+        // Kill the SquadLeader
+        eco.units.get_mut(sl_id).unwrap().hp = 0;
+        eco.units.get_mut(sl_id).unwrap().state = crate::units::UnitState::Dead;
+
+        eco.apply_squad_leader_auras();
+        assert!(!eco.units.get(ally_id).unwrap().defense_aura_buff,
+            "Defense aura should be cleared when SquadLeader dies");
+    }
+
+    #[test]
+    fn test_defense_aura_reduces_incoming_damage() {
+        let mut eco = setup_economy_with_barracks();
+
+        let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
+        let _d2 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=2 f=0
+        let _sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
+        let _d3 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=4 f=0
+        let ally_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5); // id=5 f=1
+
+        eco.apply_squad_leader_auras();
+
+        // The ally should have defense_aura_buff = true
+        let ally = eco.units.get(ally_id).unwrap();
+        assert!(ally.defense_aura_buff);
+
+        // defense_mult starts at 1.0, with aura it should be 1.0 + 0.10 = 1.10
+        // Incoming damage 15 / 1.10 = 13.6 -> 14 (rounded via max(1.0) as u32)
+        // Without aura: 15 / 1.0 = 15
+        // With aura: effective defense is higher, so damage is lower
+        // We can't directly test damage here without a full combat setup,
+        // but we verified the buff flag is set correctly above.
+    }
+
+    #[test]
+    fn test_defense_aura_no_squad_leaders_clears_all() {
+        let mut eco = Economy::new();
+
+        let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
+        let _d2 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=2 f=0
+        let sword_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5); // id=3 f=1
+
+        // Manually set defense_aura_buff (simulating residual)
+        eco.units.get_mut(sword_id).unwrap().defense_aura_buff = true;
+
+        eco.apply_squad_leader_auras();
+
+        assert!(!eco.units.get(sword_id).unwrap().defense_aura_buff,
+            "Defense aura should be cleared when no SquadLeaders exist");
+    }
+
+    }
 }

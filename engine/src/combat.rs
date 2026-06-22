@@ -311,7 +311,12 @@ impl CombatAI {
                 Some(t) => t,
                 None => return,
             };
-            (damage as f32 / target.defense_mult.max(0.1)).max(1.0) as u32
+            let defense = if target.defense_aura_buff {
+                target.defense_mult + crate::units::SQUAD_LEADER_AURA_DEFENSE_BONUS
+            } else {
+                target.defense_mult
+            };
+            (damage as f32 / defense.max(0.1)).max(1.0) as u32
         };
         let died = units.apply_damage_and_record_death(target_id, effective_damage);
 
