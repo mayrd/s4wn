@@ -147,6 +147,8 @@ uniform bool u_use_textures;
 uniform vec3 u_fog_color;
 uniform vec3 u_light_direction;
 uniform float u_water_time;
+uniform sampler2D u_water_normal;
+uniform float u_water_normal_ready;
 
 out vec4 out_color;
 
@@ -202,10 +204,24 @@ void main() {
     bool is_water = (v_terrain_id > 2.5 && v_terrain_id < 4.5);
     bool is_deep_water = (v_terrain_id > 3.5);
     if (is_water) {
-        // Animated specular highlight (sun reflection on waves)
-        vec3 view_dir = vec3(0.0, 1.0, 0.0); // simplified top-down-ish view
+        // Normal perturbation from water normal map (animated scrolling)
         vec3 n_w = normalize(v_normal);
         vec3 l_w = normalize(u_light_direction);
+        vec3 view_dir = vec3(0.0, 1.0, 0.0); // simplified top-down-ish view
+
+        if (u_water_normal_ready > 0.5) {
+            vec2 nm_uv1 = v_uv * 4.0 + vec2(u_water_time * 0.15, u_water_time * 0.1);
+            vec2 nm_uv2 = v_uv * 4.0 - vec2(u_water_time * 0.12, u_water_time * 0.08) + vec2(0.33, 0.5);
+            vec3 nm1 = texture(u_water_normal, nm_uv1).rgb * 2.0 - 1.0;
+            vec3 nm2 = texture(u_water_normal, nm_uv2).rgb * 2.0 - 1.0;
+            vec3 nm = normalize(nm1 + nm2);
+            vec3 t = normalize(cross(n_w, vec3(1.0, 0.0, 0.0)));
+            vec3 b = normalize(cross(n_w, t));
+            n_w = normalize(n_w + nm.x * t * 0.6 + nm.y * b * 0.6);
+            view_dir = normalize(vec3(0.0, 1.0, 0.0) - nm.z * n_w * 0.3);
+        }
+
+        // Animated specular highlight (sun reflection on waves)
         vec3 h = normalize(l_w + view_dir);
         float spec = pow(max(dot(n_w, h), 0.0), 64.0);
         float specular_strength = spec * (0.4 + day_light * 0.6);
@@ -561,6 +577,10 @@ struct App {
     light_dir_loc: Option<web_sys::WebGlUniformLocation>,
     // Splat-map buffer
     splat_buffer: Option<WebGlBuffer>,
+    // Water normal map texture uniforms
+    water_normal_loc: Option<web_sys::WebGlUniformLocation>,
+    water_normal_ready_loc: Option<web_sys::WebGlUniformLocation>,
+    water_normal_ready: bool,
     // Water animation time uniform
     water_time_loc: Option<web_sys::WebGlUniformLocation>,
     // ── Phase 5 Step 8: Model 3D rendering ──────────────────────────
@@ -955,6 +975,8 @@ impl App {
         let use_vp_loc = gl.get_uniform_location(&program, "u_use_vp");
         let light_dir_loc = gl.get_uniform_location(&program, "u_light_direction");
         let water_time_loc = gl.get_uniform_location(&program, "u_water_time");
+        let water_normal_loc = gl.get_uniform_location(&program, "u_water_normal");
+        let water_normal_ready_loc = gl.get_uniform_location(&program, "u_water_normal_ready");
         let day_phase_loc = gl
             .get_uniform_location(&program, "u_day_phase")
             .ok_or("Cannot find u_day_phase")?;
@@ -1178,6 +1200,9 @@ impl App {
             shadow_light_dir_loc,
             shadow_instance_pos_loc,
             shadow_size_loc,
+            water_normal_loc,
+            water_normal_ready_loc,
+            water_normal_ready: false,
             water_time_loc,
 
             // Phase 6: Particle system
@@ -1356,6 +1381,13 @@ impl App {
         // Pass water animation time (independent of game time for visual smoothness)
         if let Some(ref loc) = self.water_time_loc {
             gl.uniform1f(Some(loc), elapsed as f32);
+        }
+        // Pass water normal texture unit and ready flag
+        if let Some(ref loc) = self.water_normal_loc {
+            gl.uniform1i(Some(loc), 1); // TEXTURE1
+        }
+        if let Some(ref loc) = self.water_normal_ready_loc {
+            gl.uniform1f(Some(loc), if self.water_normal_ready { 1.0 } else { 0.0 });
         }
         // Phase 5: Pass orbital camera View-Projection matrix to shader
         // When enabled (u_use_vp=true), shader uses VP matrix instead of legacy iso params
@@ -2270,6 +2302,14 @@ pub fn set_textures_ready() {
     let app = unsafe { APP.as_mut().expect("App not initialized") };
     app.textures_loaded = true;
     web_sys::console::log_1(&"Terrain textures ready (8 layers, 1024x1024)".into());
+}
+
+/// Called from JS after water normal map is loaded into TEXTURE1.
+#[wasm_bindgen]
+pub fn set_water_normal_ready() {
+    let app = unsafe { APP.as_mut().expect("App not initialized") };
+    app.water_normal_ready = true;
+    web_sys::console::log_1(&"Water normal map ready (TEXTURE1)".into());
 }
 
 #[wasm_bindgen]
@@ -5338,6 +5378,22 @@ mod tests {
     }
 
     #[test]
+    #[test]
+    fn test_fragment_shader_water_normal_uniforms() {
+        assert!(
+            FRAGMENT_SHADER.contains("uniform sampler2D u_water_normal"),
+            "fragment shader missing u_water_normal sampler"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("uniform float u_water_normal_ready"),
+            "fragment shader missing u_water_normal_ready uniform"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("texture(u_water_normal"),
+            "fragment shader missing texture(u_water_normal) call"
+        );
+    }
+
     fn test_fragment_shader_water_depth_animation() {
         assert!(
             FRAGMENT_SHADER.contains("u_water_time * 1.5"),
