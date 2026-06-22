@@ -290,6 +290,14 @@ pub enum BuildingType {
     DarkFortress = 59,
     /// Demon Gate — spawns dark units (DarkTribe unique)
     DemonGate = 60,
+    GoldMine = 61, CoalMine = 62, IronOreMine = 63, SulfurMine = 64,
+    GoldSmelter = 65, IronSmelter = 66, Slaughterhouse = 67,
+    OilPress = 68, PowderMill = 69, WeaponFoundry = 70,
+    Forester = 71, Healer = 72, GoatRanch = 73, PigRanch = 74,
+    GooseRanch = 75, DonkeyRanch = 76, TrojanFarm = 77,
+    Marketplace = 78, LandingDock = 79, Vineyard = 80,
+    StorageYard = 81, SmallResidence = 82, MediumResidence = 83,
+    LargeResidence = 84, SmallTemple = 85, LargeTemple = 86,
 }
 
 impl BuildingType {
@@ -347,6 +355,32 @@ impl BuildingType {
             BuildingType::SanctuaryOfPestilence => "Sanctuary of Pestilence",
             BuildingType::DarkFortress => "Dark Fortress",
             BuildingType::DemonGate => "Demon Gate",
+            BuildingType::GoldMine => "Gold Mine",
+            BuildingType::CoalMine => "Coal Mine",
+            BuildingType::IronOreMine => "Iron Ore Mine",
+            BuildingType::SulfurMine => "Sulfur Mine",
+            BuildingType::GoldSmelter => "Gold Smelter",
+            BuildingType::IronSmelter => "Iron Smelter",
+            BuildingType::Slaughterhouse => "Slaughterhouse",
+            BuildingType::OilPress => "Oil Press",
+            BuildingType::PowderMill => "Powder Mill",
+            BuildingType::WeaponFoundry => "Weapon Foundry",
+            BuildingType::Forester => "Forester",
+            BuildingType::Healer => "Healer",
+            BuildingType::GoatRanch => "Goat Ranch",
+            BuildingType::PigRanch => "Pig Ranch",
+            BuildingType::GooseRanch => "Goose Ranch",
+            BuildingType::DonkeyRanch => "Donkey Ranch",
+            BuildingType::TrojanFarm => "Trojan Farm",
+            BuildingType::Marketplace => "Marketplace",
+            BuildingType::LandingDock => "Landing Dock",
+            BuildingType::Vineyard => "Vineyard",
+            BuildingType::StorageYard => "Storage Yard",
+            BuildingType::SmallResidence => "Small Residence",
+            BuildingType::MediumResidence => "Medium Residence",
+            BuildingType::LargeResidence => "Large Residence",
+            BuildingType::SmallTemple => "Small Temple",
+            BuildingType::LargeTemple => "Large Temple",
         }
     }
 
@@ -404,6 +438,32 @@ impl BuildingType {
             "Sanctuary of Pestilence" => Some(BuildingType::SanctuaryOfPestilence),
             "Dark Fortress" => Some(BuildingType::DarkFortress),
             "Demon Gate" => Some(BuildingType::DemonGate),
+            "Gold Mine" => Some(BuildingType::GoldMine),
+            "Coal Mine" => Some(BuildingType::CoalMine),
+            "Iron Ore Mine" => Some(BuildingType::IronOreMine),
+            "Sulfur Mine" => Some(BuildingType::SulfurMine),
+            "Gold Smelter" => Some(BuildingType::GoldSmelter),
+            "Iron Smelter" => Some(BuildingType::IronSmelter),
+            "Slaughterhouse" => Some(BuildingType::Slaughterhouse),
+            "Oil Press" => Some(BuildingType::OilPress),
+            "Powder Mill" => Some(BuildingType::PowderMill),
+            "Weapon Foundry" => Some(BuildingType::WeaponFoundry),
+            "Forester" => Some(BuildingType::Forester),
+            "Healer" => Some(BuildingType::Healer),
+            "Goat Ranch" => Some(BuildingType::GoatRanch),
+            "Pig Ranch" => Some(BuildingType::PigRanch),
+            "Goose Ranch" => Some(BuildingType::GooseRanch),
+            "Donkey Ranch" => Some(BuildingType::DonkeyRanch),
+            "Trojan Farm" => Some(BuildingType::TrojanFarm),
+            "Marketplace" => Some(BuildingType::Marketplace),
+            "Landing Dock" => Some(BuildingType::LandingDock),
+            "Vineyard" => Some(BuildingType::Vineyard),
+            "Storage Yard" => Some(BuildingType::StorageYard),
+            "Small Residence" => Some(BuildingType::SmallResidence),
+            "Medium Residence" => Some(BuildingType::MediumResidence),
+            "Large Residence" => Some(BuildingType::LargeResidence),
+            "Small Temple" => Some(BuildingType::SmallTemple),
+            "Large Temple" => Some(BuildingType::LargeTemple),
             _ => None,
         }
     }
@@ -461,7 +521,33 @@ impl BuildingType {
             "Sanctuary of Morbus",
             "Sanctuary of Pestilence",
             "Dark Fortress",
-            "Demon Gate",
+                        "Demon Gate",
+            "Gold Mine",
+            "Coal Mine",
+            "Iron Ore Mine",
+            "Sulfur Mine",
+            "Gold Smelter",
+            "Iron Smelter",
+            "Slaughterhouse",
+            "Oil Press",
+            "Powder Mill",
+            "Weapon Foundry",
+            "Forester",
+            "Healer",
+            "Goat Ranch",
+            "Pig Ranch",
+            "Goose Ranch",
+            "Donkey Ranch",
+            "Trojan Farm",
+            "Marketplace",
+            "Landing Dock",
+            "Vineyard",
+            "Storage Yard",
+            "Small Residence",
+            "Medium Residence",
+            "Large Residence",
+            "Small Temple",
+            "Large Temple",
         ]
     }
 
@@ -563,7 +649,33 @@ impl BuildingType {
             BuildingType::OracleOfApollo => &[(ResourceType::Wine, 1)], // Divine wine production (Trojan)
             BuildingType::DarkTemple => &[(ResourceType::Wine, 1)], // Dark divine wine production (DarkTribe)
             BuildingType::MushroomFarm => &[(ResourceType::Grain, 2)], // Mushroom harvest (DarkTribe)
-            BuildingType::DemonGate => &[(ResourceType::Weapons, 1)], // Dark unit spawning (DarkTribe)
+            BuildingType::DemonGate => &[(ResourceType::Weapons, 1)],
+            BuildingType::GoldMine => &[(ResourceType::Gold, 2)],
+            BuildingType::CoalMine => &[(ResourceType::Coal, 2)],
+            BuildingType::IronOreMine => &[(ResourceType::IronOre, 2)],
+            BuildingType::SulfurMine => &[(ResourceType::Sulfur, 2)],
+            BuildingType::GoldSmelter => &[(ResourceType::Gold, 1)],
+            BuildingType::IronSmelter => &[(ResourceType::IronIngots, 1)],
+            BuildingType::Slaughterhouse => &[(ResourceType::Meat, 1)],
+            BuildingType::OilPress => &[(ResourceType::Water, 1)],
+            BuildingType::PowderMill => &[(ResourceType::Sulfur, 1)],
+            BuildingType::WeaponFoundry => &[(ResourceType::Weapons, 1)],
+            BuildingType::Forester => &[(ResourceType::Wood, 1)],
+            BuildingType::Healer => &[],
+            BuildingType::GoatRanch => &[(ResourceType::Meat, 2)],
+            BuildingType::PigRanch => &[(ResourceType::Meat, 2)],
+            BuildingType::GooseRanch => &[(ResourceType::Meat, 1)],
+            BuildingType::DonkeyRanch => &[(ResourceType::Meat, 1)],
+            BuildingType::TrojanFarm => &[(ResourceType::Grain, 2)],
+            BuildingType::Marketplace => &[],
+            BuildingType::LandingDock => &[],
+            BuildingType::Vineyard => &[(ResourceType::Grain, 2)],
+            BuildingType::StorageYard => &[],
+            BuildingType::SmallResidence => &[],
+            BuildingType::MediumResidence => &[],
+            BuildingType::LargeResidence => &[],
+            BuildingType::SmallTemple => &[],
+            BuildingType::LargeTemple => &[],
             _ => &[], // Barracks, Castle, Storehouse, Fortress, RoadLayer, Colosseum, Sanctuaries produce nothing
         }
     }
@@ -596,7 +708,33 @@ impl BuildingType {
             BuildingType::OracleOfApollo => 40,                   // 4 seconds — divine inspiration (Trojan)
             BuildingType::DarkTemple => 40,                       // 4 seconds — dark divine inspiration (DarkTribe)
             BuildingType::MushroomFarm => 25,                     // 2.5 seconds — mushroom growth
-            BuildingType::DemonGate => 50,                        // 5 seconds — dark unit spawning (DarkTribe)
+            BuildingType::DemonGate => 50,
+            BuildingType::GoldMine => 22,
+            BuildingType::CoalMine => 20,
+            BuildingType::IronOreMine => 22,
+            BuildingType::SulfurMine => 20,
+            BuildingType::GoldSmelter => 18,
+            BuildingType::IronSmelter => 18,
+            BuildingType::Slaughterhouse => 15,
+            BuildingType::OilPress => 15,
+            BuildingType::PowderMill => 18,
+            BuildingType::WeaponFoundry => 20,
+            BuildingType::Forester => 12,
+            BuildingType::Healer => 18,
+            BuildingType::GoatRanch => 15,
+            BuildingType::PigRanch => 15,
+            BuildingType::GooseRanch => 15,
+            BuildingType::DonkeyRanch => 15,
+            BuildingType::TrojanFarm => 15,
+            BuildingType::Marketplace => 20,
+            BuildingType::LandingDock => 20,
+            BuildingType::Vineyard => 15,
+            BuildingType::StorageYard => 12,
+            BuildingType::SmallResidence => 12,
+            BuildingType::MediumResidence => 15,
+            BuildingType::LargeResidence => 20,
+            BuildingType::SmallTemple => 20,
+            BuildingType::LargeTemple => 30,
             _ => 0,                          // Barracks, Castle, Storehouse, Colosseum, Sanctuaries don't produce
         }
     }
@@ -2505,8 +2643,8 @@ mod tests {
 
     #[test]
     fn test_new_building_types_count() {
-        // 29 common + 5 Viking + 7 Maya + 5 Trojan + 7 DarkTribe = 53, minus 8 removed (#46) = 51? actually 51
-        assert_eq!(BuildingType::all_names().len(), 51);
+        // 51 existing + 26 new generic buildings = 77
+        assert_eq!(BuildingType::all_names().len(), 77);
         assert!(BuildingType::all_names().contains(&"Waterworks"));
         assert!(BuildingType::all_names().contains(&"Smelter"));
         assert!(BuildingType::all_names().contains(&"Barracks"));
@@ -3896,9 +4034,8 @@ mod tests {
         assert!(names.contains(&"Sanctuary of Thor"));
         assert!(names.contains(&"Sanctuary of Freya"));
         assert!(names.contains(&"Runestone"));
-        // Total should be 53 (29 common + 5 Viking + 7 Maya + 5 Trojan + 7 DarkTribe)
-        // Removed #46: ClayPit, Brickworks, HempFarm, Ropemaker, Vineyard, WinePress, OliveGrove, OilPress
-        assert_eq!(names.len(), 51, "Should have 51 total building names");
+        // 51 existing + 26 new generic buildings = 77
+        assert_eq!(names.len(), 77, "Should have 77 total building names");
     }
 
     #[test]

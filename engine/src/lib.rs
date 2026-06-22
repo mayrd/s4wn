@@ -2363,6 +2363,33 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
         SanctuaryOfPestilence => [0.25, 0.3, 0.15],    // pestilence green (DarkTribe)
         DarkFortress => [0.2, 0.18, 0.2],              // dark obsidian (DarkTribe)
         DemonGate => [0.5, 0.1, 0.05],                // demonic red-orange (DarkTribe)
+            GoldMine => [0.8, 0.7, 0.1],
+            CoalMine => [0.15, 0.15, 0.15],
+            IronOreMine => [0.5, 0.3, 0.2],
+            SulfurMine => [0.9, 0.9, 0.1],
+            GoldSmelter => [0.9, 0.75, 0.2],
+            IronSmelter => [0.4, 0.35, 0.3],
+            Slaughterhouse => [0.6, 0.2, 0.2],
+            OilPress => [0.6, 0.5, 0.2],
+            PowderMill => [0.3, 0.3, 0.35],
+            WeaponFoundry => [0.4, 0.3, 0.35],
+            Forester => [0.15, 0.55, 0.15],
+            Healer => [0.9, 0.9, 0.9],
+            GoatRanch => [0.6, 0.5, 0.4],
+            PigRanch => [0.7, 0.5, 0.6],
+            GooseRanch => [0.8, 0.8, 0.6],
+            DonkeyRanch => [0.5, 0.4, 0.35],
+            TrojanFarm => [0.7, 0.6, 0.3],
+            Marketplace => [0.9, 0.8, 0.4],
+            LandingDock => [0.5, 0.4, 0.3],
+            Vineyard => [0.4, 0.6, 0.2],
+            StorageYard => [0.5, 0.45, 0.4],
+            SmallResidence => [0.7, 0.65, 0.5],
+            MediumResidence => [0.7, 0.6, 0.45],
+            LargeResidence => [0.75, 0.55, 0.35],
+            SmallTemple => [0.9, 0.85, 0.7],
+            LargeTemple => [0.95, 0.9, 0.75],
+
     }
 }
 

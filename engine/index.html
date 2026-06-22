@@ -1584,7 +1584,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=57';
+} from './pkg/s4wn_engine.js?v=58';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3272,7 +3272,19 @@ const BUILDING_RUST_NAME = {
     'GrainFarm':'Farm','GrainMill':'Mill',
     'MeadBrewery':'Mead Maker','SmallTower':'Guard Tower',
     'BigTower':'Fortress','ApiaryImker':'Apiary',
-    'RoundWell':'Waterworks',
+    'RoundWell':'Waterworks','ForestersHut':'Forester',
+    'HealersHut':'Healer','GoatRanch':'Goat Ranch','PigRanch':'Pig Ranch',
+    'GooseRanch':'Goose Ranch','DonkeyRanch':'Donkey Ranch',
+    'CoalMine':'Coal Mine','GoldMine':'Gold Mine',
+    'IronOreMine':'Iron Ore Mine','SulfurMine':'Sulfur Mine',
+    'GoldSmelter':'Gold Smelter','IronSmelter':'Iron Smelter',
+    'Slaughterhouse':'Slaughterhouse','OilPress':'Oil Press',
+    'PowderMill':'Powder Mill','WeaponFoundry':'Weapon Foundry',
+    'TrojanFarm':'Trojan Farm','Marketplace':'Marketplace',
+    'LandingDock':'Landing Dock','Vineyard':'Vineyard',
+    'StorageYard':'Storage Yard','SmallResidence':'Small Residence',
+    'MediumResidence':'Medium Residence','LargeResidence':'Large Residence',
+    'SmallTemple':'Small Temple','LargeTemple':'Large Temple',
 };
 
 function toRustName(configId) {
