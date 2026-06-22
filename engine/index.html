@@ -1244,7 +1244,6 @@
 <div id="menu">
   <div class="menu-card">
     <h2>⚔️ Game Menu</h2>
-    <button class="menu-btn" id="btn-load">📂 Load Map</button>
     <div class="recent-files" id="recent-files">
       <div class="recent-title" data-i18n="recent_files">📁 Recent Files</div>
       <div class="recent-list" id="recent-list"><span class="recent-empty">None yet</span></div>
@@ -1258,7 +1257,7 @@
     <button class="menu-btn secondary" onclick="window.open('https://github.com/mayrd/s4wn','_blank')" data-i18n="github">
       🔗 GitHub Repository
     </button>
-    <div class="menu-hint" data-i18n="menu_hint">or press <kbd>L</kbd> to load · <kbd>S</kbd> for settings</div>
+    <div class="menu-hint" data-i18n="menu_hint">press <kbd>L</kbd> for editor · <kbd>S</kbd> for settings</div>
     <div class="menu-version">2026.06.16-20.53</div>
   </div>
 </div>
@@ -3936,7 +3935,7 @@ document.addEventListener('keydown', (e) => {
     switch (e.key.toLowerCase()) {
         case 'l':
             openMenu();
-            triggerLoad();
+            openEditor();
             break;
         case 's':
             openSettings();
@@ -3955,7 +3954,6 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ── Buttons ────────────────────────────────────────────────────────────
-document.getElementById('btn-load').addEventListener('click', triggerLoad);
 document.getElementById('btn-continue').addEventListener('click', loadSavedGame);
 
 // Save Game button in pause overlay
@@ -4475,7 +4473,7 @@ const LANG = {
         github: '🔗 GitHub Repository',
         recent_files: '📁 Zuletzt verwendet',
         none_yet: 'Noch keine',
-        menu_hint: 'L zum Laden · S für Einstellungen',
+        menu_hint: 'L für Editor · S für Einstellungen',
         settings_title: '⚙️ Einstellungen',
         controls: '🎮 Steuerung',
         zoom_speed: 'Zoom-Geschwindigkeit',
@@ -5213,6 +5211,12 @@ function formatGameTime(seconds) {
 
 // ── New Game ───────────────────────────────────────────────────────────────
 function openNewGame() {
+    if (window._s4wn_game_active) {
+        if (!confirm('A game is currently running. Starting a new game will discard all unsaved progress.\n\nContinue?')) {
+            return;
+        }
+        window._s4wn_game_active = false;
+    }
     closeMenu();
     document.getElementById('new-game-panel').classList.add('open');
 }
@@ -5238,6 +5242,24 @@ function hideLoading() {
     document.getElementById('loading-screen').classList.remove('active');
 }
 
+// Close all overlays/panels before starting fresh
+function closeAllPanels() {
+    var ids = ['tutorial-panel','editor-launch-dialog','editor-terrain-palette',
+        'obj-explorer','construction-panel','resources-panel','settlers-panel',
+        'map-preview-panel','new-game-panel','settings-panel'];
+    ids.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) { el.classList.remove('open','active'); }
+    });
+    var de = document.getElementById('debug-extra');
+    if (de) de.style.display = 'none';
+    debugPanelOpen = false;
+    var po = document.getElementById('pause-overlay');
+    if (po) po.classList.remove('active');
+    hideLoading();
+}
+window.closeAllPanels = closeAllPanels;
+
 async function startNewGame() {
     const name = document.getElementById('ng-name').value || 'Player 1';
     const mapType = document.getElementById('ng-map').value;
@@ -5251,6 +5273,7 @@ async function startNewGame() {
         return;
     }
     console.log(`New Game: ${name}, map=${mapType}, difficulty=${difficulty}, nation=${nation}`);
+    closeAllPanels();
     closeNewGame();
     closeMenu();
 
@@ -5310,6 +5333,7 @@ async function startNewGame() {
         // Update HUD
         window._s4wn_player_name = name;
         window._s4wn_difficulty = difficulty;
+        window._s4wn_game_active = true;
         const mapName = mapType.charAt(0).toUpperCase() + mapType.slice(1);
         hudMap.textContent = `${t('map_label')}: ${mapName}`;
         lastResourceUpdate = 0;
