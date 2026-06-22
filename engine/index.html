@@ -223,11 +223,11 @@
 
   /* ── Tutorial Panel ──────────────────────────────────────────────────── */
   #tutorial-panel {
-    position: fixed; left: 0; top: 60px;
+    position: fixed; right: 0; top: 60px;
     width: 340px; max-height: calc(100vh - 80px);
     background: rgba(10, 12, 18, 0.95);
-    border-right: 1px solid rgba(180, 150, 80, 0.3);
-    z-index: 100; transform: translateX(-360px);
+    border-left: 1px solid rgba(180, 150, 80, 0.3);
+    z-index: 100; transform: translateX(360px);
     transition: transform 0.35s ease; overflow-y: auto;
     font-family: 'Segoe UI', sans-serif;
   }
@@ -5843,7 +5843,13 @@ async function main() {
                 } catch(e) {}
                 const pname = window._s4wn_player_name || '?';
                 const level = window._s4wn_difficulty || '?';
-                hudStats.textContent = `⏱ ${formatGameTime(d.game_time)} | 🔍 ${d.zoom}× | 📍 (${cx}, ${cy}) | 👤 ${pname} | 🎯 ${level}`;
+                // Nation flag + name for HUD
+                let nationStr = '';
+                try {
+                    const nj = get_player_nation ? get_player_nation() : null;
+                    if (nj) { const n = JSON.parse(nj); const flags = { Roman: '🏛️', Viking: '🪓', Maya: '🗿' }; nationStr = `${flags[n.name] || '🏳️'} ${n.name}`; }
+                } catch(e) {}
+                hudStats.textContent = `⏱ ${formatGameTime(d.game_time)} | 🔍 ${d.zoom}× | 📍 (${cx}, ${cy}) | 👤 ${pname} | 🎯 ${level}` + (nationStr ? ` | ${nationStr}` : '');
 
                 // Nation HUD update (every frame, cheap)
                 updateNationHUD();
