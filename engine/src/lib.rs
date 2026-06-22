@@ -494,8 +494,10 @@ uniform mat4 u_vp;
 uniform vec3 u_instance_pos;
 uniform vec3 u_light_dir;
 uniform float u_shadow_size;
+uniform float u_shadow_penumbra;
 
-out float v_fade;
+out float v_dist;
+out float v_penumbra;
 
 void main() {
     // Ground-plane shadow: project to Y ≈ 0, offset slightly in light direction
@@ -506,8 +508,8 @@ void main() {
     corner.x += a_shadow_vert.x * u_shadow_size;
     corner.z += a_shadow_vert.y * u_shadow_size;
 
-    float d = length(a_shadow_vert);
-    v_fade = smoothstep(1.0, 0.0, d);
+    v_dist = length(a_shadow_vert);       // 0.0 at center, ~1.414 at quad corner
+    v_penumbra = u_shadow_penumbra;
 
     gl_Position = u_vp * vec4(corner, 1.0);
 }
@@ -516,12 +518,35 @@ void main() {
 const SHADOW_FRAGMENT_SHADER: &str = r#"#version 300 es
 precision highp float;
 
-in float v_fade;
+in float v_dist;
+in float v_penumbra;
 
 out vec4 out_color;
 
+// Pseudo-random hash for dither noise
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
 void main() {
-    float alpha = v_fade * 0.35;
+    float d = v_dist;  // distance from shadow center (0.0–~1.414)
+    float p = v_penumbra;
+
+    // Multi-layer penumbra: inner umbra (dark core) + mid tones + soft outer edge
+    // Each layer uses smoothstep to create concentric soft rings
+    float core = smoothstep(0.40, 0.15, d);       // inner umbra: fully opaque
+    float mid  = smoothstep(0.70, 0.30, d);       // mid penumbra
+    float outer = smoothstep(1.00, 0.55, d);      // outer soft falloff
+
+    // Blend layers: core is always present, mid+outer scaled by penumbra strength
+    float alpha = core * 0.35;
+    alpha = mix(alpha, mid * 0.20, p * 0.8);
+    alpha = mix(alpha, outer * 0.06, p * 0.5);
+
+    // Spatial dither: subtle noise to break up the perfect radial gradient
+    float dither = (hash(gl_FragCoord.xy) - 0.5) * 0.04 * p;
+    alpha = clamp(alpha + dither, 0.0, 0.42);
+
     out_color = vec4(0.0, 0.0, 0.0, alpha);
 }
 "#;
@@ -722,6 +747,7 @@ struct App {
     shadow_light_dir_loc: Option<web_sys::WebGlUniformLocation>,
     shadow_instance_pos_loc: Option<web_sys::WebGlUniformLocation>,
     shadow_size_loc: Option<web_sys::WebGlUniformLocation>,
+    shadow_penumbra_loc: Option<web_sys::WebGlUniformLocation>,
     // ── Phase 6: Particle System ──────────────────────────────────────────
     particle_system: particle::ParticleSystem,
     /// Sound event counters — drained each frame by JS for audio playback
@@ -1169,7 +1195,7 @@ impl App {
             -1.0, -1.0,  1.0,  1.0, -1.0,  1.0,  // tri 2
         ];
         let (shadow_program, shadow_vao, shadow_quad_buffer,
-             shadow_vp_loc, shadow_light_dir_loc, shadow_instance_pos_loc, shadow_size_loc) =
+             shadow_vp_loc, shadow_light_dir_loc, shadow_instance_pos_loc, shadow_size_loc, _shadow_penumbra_loc) =
             compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, SHADOW_VERTEX_SHADER)
             .and_then(|vert| {
                 compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, SHADOW_FRAGMENT_SHADER)
@@ -1194,6 +1220,7 @@ impl App {
                 let ld_loc = gl.get_uniform_location(&prog, "u_light_dir");
                 let ip_loc = gl.get_uniform_location(&prog, "u_instance_pos");
                 let sz_loc = gl.get_uniform_location(&prog, "u_shadow_size");
+                let pn_loc = gl.get_uniform_location(&prog, "u_shadow_penumbra");
                 gl.bind_vertex_array(None);
                 (
                     Some(prog),
@@ -1203,9 +1230,10 @@ impl App {
                     ld_loc,
                     ip_loc,
                     sz_loc,
+                    pn_loc,
                 )
             })
-            .unwrap_or((None, None, None, None, None, None, None));
+            .unwrap_or((None, None, None, None, None, None, None, None));
 
 
         // Compile overlay shaders
@@ -1338,6 +1366,7 @@ impl App {
             shadow_light_dir_loc,
             shadow_instance_pos_loc,
             shadow_size_loc,
+            shadow_penumbra_loc: _shadow_penumbra_loc,
             water_normal_loc,
             water_normal_ready_loc,
             water_normal_ready: false,
@@ -1755,6 +1784,10 @@ impl App {
             Some(l) => l,
             None => return,
         };
+        let penumbra_loc = match self.shadow_penumbra_loc.as_ref() {
+            Some(l) => l,
+            None => return,
+        };
 
         gl.use_program(Some(prog));
         gl.bind_vertex_array(Some(vao));
@@ -1781,6 +1814,7 @@ impl App {
         let lz = sun_angle.sin() * sun_elev.max(0.1);
         let len = (lx*lx + ly*ly + lz*lz).sqrt();
         gl.uniform3f(Some(light_dir_loc), lx/len, ly/len, lz/len);
+        gl.uniform1f(Some(penumbra_loc), 0.7);  // default penumbra softness
 
         // Draw one shadow quad per model instance
         for inst in &self.model_instances {
@@ -5704,6 +5738,7 @@ mod tests {
         assert!(SHADOW_VERTEX_SHADER.contains("u_instance_pos"), "shadow vertex shader missing u_instance_pos");
         assert!(SHADOW_VERTEX_SHADER.contains("u_light_dir"), "shadow vertex shader missing u_light_dir");
         assert!(SHADOW_VERTEX_SHADER.contains("u_shadow_size"), "shadow vertex shader missing u_shadow_size");
+        assert!(SHADOW_VERTEX_SHADER.contains("u_shadow_penumbra"), "shadow vertex shader missing u_shadow_penumbra");
         assert!(SHADOW_VERTEX_SHADER.contains("a_shadow_vert"), "shadow vertex shader missing a_shadow_vert attribute");
     }
 
@@ -5711,6 +5746,9 @@ mod tests {
     fn test_shadow_fragment_shader_has_alpha_output() {
         assert!(SHADOW_FRAGMENT_SHADER.contains("out_color"), "shadow fragment shader missing out_color");
         assert!(SHADOW_FRAGMENT_SHADER.contains("alpha"), "shadow fragment shader should use alpha blending");
+        assert!(SHADOW_FRAGMENT_SHADER.contains("hash"), "shadow fragment shader should have noise dither function");
+        assert!(SHADOW_FRAGMENT_SHADER.contains("v_dist"), "shadow fragment shader missing v_dist input");
+        assert!(SHADOW_FRAGMENT_SHADER.contains("v_penumbra"), "shadow fragment shader missing v_penumbra input");
     }
 
     // ── Unit wobble animation shader tests ──────────────────────────────────
