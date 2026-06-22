@@ -514,18 +514,23 @@ impl Map {
     /// Player 0's territory can only be overwritten by Player 0's buildings (friendly).
     pub fn compute_territory(
         &mut self,
-        buildings: &[(crate::economy::BuildingType, usize, usize, u8)],
+        buildings: &[(crate::economy::BuildingType, usize, usize, u8, u32)],
     ) {
         // Reset all territory to neutral
         for tile in self.tiles.iter_mut() {
             tile.territory_owner = None;
         }
         // For each building, claim tiles within its radius
-        for &(ref kind, bx, by, player_id) in buildings {
+        for &(ref kind, bx, by, player_id, garrison_count) in buildings {
+            // GuardTower and Fortress only extend territory when garrisoned
             let radius = match *kind {
                 crate::economy::BuildingType::Castle => 5.0,
-                crate::economy::BuildingType::GuardTower => 3.0,
-                crate::economy::BuildingType::Fortress => 6.0,
+                crate::economy::BuildingType::GuardTower => {
+                    if garrison_count > 0 { 3.0 } else { 1.0 }
+                }
+                crate::economy::BuildingType::Fortress | crate::economy::BuildingType::DarkFortress => {
+                    if garrison_count > 0 { 6.0 } else { 1.0 }
+                }
                 crate::economy::BuildingType::Storehouse => 2.0,
                 _ => 1.0,
             };
@@ -999,7 +1004,7 @@ mod tests {
         let mut map = Map::new(20, 20);
         use crate::economy::BuildingType;
 
-        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         // Center should be owned by player 0
@@ -1020,7 +1025,7 @@ mod tests {
         let mut map = Map::new(20, 20);
         use crate::economy::BuildingType;
 
-        let buildings = vec![(BuildingType::GuardTower, 10, 10, 0)];
+        let buildings = vec![(BuildingType::GuardTower, 10, 10, 0, 1)];
         map.compute_territory(&buildings);
 
         // Center owned
@@ -1040,7 +1045,7 @@ mod tests {
         let mut map = Map::new(30, 30);
         use crate::economy::BuildingType;
 
-        let buildings = vec![(BuildingType::Fortress, 15, 15, 0)];
+        let buildings = vec![(BuildingType::Fortress, 15, 15, 0, 3)];
         map.compute_territory(&buildings);
 
         // Center owned
@@ -1060,7 +1065,7 @@ mod tests {
         let mut map = Map::new(20, 20);
         use crate::economy::BuildingType;
 
-        let buildings = vec![(BuildingType::Storehouse, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Storehouse, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         // Center owned
@@ -1078,7 +1083,7 @@ mod tests {
         let mut map = Map::new(20, 20);
         use crate::economy::BuildingType;
 
-        let buildings = vec![(BuildingType::Farm, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Farm, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         // Center owned
@@ -1099,8 +1104,8 @@ mod tests {
 
         // Two buildings for player 0
         let buildings = vec![
-            (BuildingType::Castle, 10, 10, 0),
-            (BuildingType::GuardTower, 20, 20, 0),
+            (BuildingType::Castle, 10, 10, 0, 0),
+            (BuildingType::GuardTower, 20, 20, 0, 1),
         ];
         map.compute_territory(&buildings);
 
@@ -1120,8 +1125,8 @@ mod tests {
 
         // Player 0 has a Castle at (10, 10), Player 1 has a Castle at (30, 30)
         let buildings = vec![
-            (BuildingType::Castle, 10, 10, 0),
-            (BuildingType::Castle, 30, 30, 1),
+            (BuildingType::Castle, 10, 10, 0, 0),
+            (BuildingType::Castle, 30, 30, 1, 0),
         ];
         map.compute_territory(&buildings);
 
@@ -1143,13 +1148,13 @@ mod tests {
         use crate::economy::BuildingType;
 
         // First computation: player 0 claims territory
-        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
         assert_eq!(map.get_territory(10, 10), Some(0));
         assert_eq!(map.get_territory(14, 10), Some(0));
 
         // Second computation: no buildings — all should reset to neutral
-        let empty: Vec<(crate::economy::BuildingType, usize, usize, u8)> = vec![];
+        let empty: Vec<(crate::economy::BuildingType, usize, usize, u8, u32)> = vec![];
         map.compute_territory(&empty);
         assert_eq!(map.get_territory(10, 10), None);
         assert_eq!(map.get_territory(14, 10), None);
@@ -1160,7 +1165,7 @@ mod tests {
         let mut map = Map::new(20, 20);
         use crate::economy::BuildingType;
 
-        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         // Player 0's own territory
@@ -1190,8 +1195,8 @@ mod tests {
 
         // Castle at (15, 15) with radius 5, Guard Tower at (15, 22) with radius 3
         let buildings = vec![
-            (BuildingType::Castle, 15, 15, 0),
-            (BuildingType::GuardTower, 15, 22, 0),
+            (BuildingType::Castle, 15, 15, 0, 0),
+            (BuildingType::GuardTower, 15, 22, 0, 1),
         ];
         map.compute_territory(&buildings);
 
@@ -1223,7 +1228,7 @@ mod tests {
 
         // A Farm at (5, 5) claims radius 1 — all its owned tiles are borders
         // because every owned tile touches neutral territory or map edge
-        let buildings = vec![(BuildingType::Farm, 5, 5, 0)];
+        let buildings = vec![(BuildingType::Farm, 5, 5, 0, 0)];
         map.compute_territory(&buildings);
 
         let borders = map.get_territory_border_tiles(0);
@@ -1242,7 +1247,7 @@ mod tests {
         use crate::economy::BuildingType;
 
         // Castle at (10, 10) with radius 5
-        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         let borders = map.get_territory_border_tiles(0);
@@ -1263,8 +1268,8 @@ mod tests {
 
         // Player 0 has a Castle at (5, 5), Player 1 has a Castle at (15, 15)
         let buildings = vec![
-            (BuildingType::Castle, 5, 5, 0),
-            (BuildingType::Castle, 15, 15, 1),
+            (BuildingType::Castle, 5, 5, 0, 0),
+            (BuildingType::Castle, 15, 15, 1, 0),
         ];
         map.compute_territory(&buildings);
 
@@ -1287,7 +1292,7 @@ mod tests {
         use crate::economy::BuildingType;
 
         // Castle at (0, 0) — territory extends to map edge
-        let buildings = vec![(BuildingType::Castle, 0, 0, 0)];
+        let buildings = vec![(BuildingType::Castle, 0, 0, 0, 0)];
         map.compute_territory(&buildings);
 
         let borders = map.get_territory_border_tiles(0);
@@ -1303,8 +1308,8 @@ mod tests {
         use crate::economy::BuildingType;
 
         let buildings = vec![
-            (BuildingType::Castle, 8, 8, 0),
-            (BuildingType::Castle, 22, 22, 1),
+            (BuildingType::Castle, 8, 8, 0, 0),
+            (BuildingType::Castle, 22, 22, 1, 0),
         ];
         map.compute_territory(&buildings);
 
@@ -1343,4 +1348,76 @@ mod tests {
         }
     }
 
+    // ── Garrison-Dependent Territory Tests ──────────────────────────────────
+
+    #[test]
+    fn test_guard_tower_no_garrison_small_territory() {
+        use crate::economy::BuildingType;
+        let mut map = Map::new(20, 20);
+        let buildings = vec![(BuildingType::GuardTower, 10, 10, 0, 0)];
+        map.compute_territory(&buildings);
+
+        assert_eq!(map.get_territory(10, 10), Some(0));
+        assert_eq!(map.get_territory(11, 10), Some(0));
+        // Radius 3 tiles should NOT be owned (no garrison)
+        assert_eq!(map.get_territory(13, 10), None);
+        assert_eq!(map.get_territory(10, 13), None);
+    }
+
+    #[test]
+    fn test_guard_tower_garrisoned_full_territory() {
+        use crate::economy::BuildingType;
+        let mut map = Map::new(20, 20);
+        let buildings = vec![(BuildingType::GuardTower, 10, 10, 0, 1)];
+        map.compute_territory(&buildings);
+
+        assert_eq!(map.get_territory(10, 10), Some(0));
+        assert_eq!(map.get_territory(13, 10), Some(0));
+        assert_eq!(map.get_territory(10, 13), Some(0));
+        // Outside radius 3
+        assert_eq!(map.get_territory(10, 6), None);
+    }
+
+    #[test]
+    fn test_fortress_no_garrison_small_territory() {
+        use crate::economy::BuildingType;
+        let mut map = Map::new(30, 30);
+        let buildings = vec![(BuildingType::Fortress, 15, 15, 0, 0)];
+        map.compute_territory(&buildings);
+
+        assert_eq!(map.get_territory(15, 15), Some(0));
+        assert_eq!(map.get_territory(16, 15), Some(0));
+        // Radius 6 tiles should NOT be owned
+        assert_eq!(map.get_territory(21, 15), None);
+        assert_eq!(map.get_territory(15, 21), None);
+    }
+
+    #[test]
+    fn test_fortress_garrisoned_full_territory() {
+        use crate::economy::BuildingType;
+        let mut map = Map::new(30, 30);
+        let buildings = vec![(BuildingType::Fortress, 15, 15, 0, 3)];
+        map.compute_territory(&buildings);
+
+        assert_eq!(map.get_territory(15, 15), Some(0));
+        assert_eq!(map.get_territory(21, 15), Some(0));
+        assert_eq!(map.get_territory(15, 21), Some(0));
+        // Outside radius 6
+        assert_eq!(map.get_territory(15, 8), None);
+    }
+
+    #[test]
+    fn test_castle_territory_independent_of_garrison() {
+        use crate::economy::BuildingType;
+        let mut map = Map::new(30, 30);
+        let buildings = vec![(BuildingType::Castle, 15, 15, 0, 0)];
+        map.compute_territory(&buildings);
+        assert_eq!(map.get_territory(20, 15), Some(0));
+        assert_eq!(map.get_territory(15, 9), None);
+
+        let mut map2 = Map::new(30, 30);
+        let buildings2 = vec![(BuildingType::Castle, 15, 15, 0, 6)];
+        map2.compute_territory(&buildings2);
+        assert_eq!(map2.get_territory(20, 15), Some(0));
+    }
 }

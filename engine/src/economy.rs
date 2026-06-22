@@ -783,6 +783,20 @@ impl BuildingType {
         }
     }
 
+    /// Maximum number of soldiers this building can garrison.
+    /// GuardTower=1, Fortress=3, Castle=6, Barracks=0 (trains but doesn't garrison).
+    pub fn garrison_capacity(self) -> u32 {
+        match self {
+            BuildingType::GuardTower => 1,
+            BuildingType::Fortress | BuildingType::DarkFortress => 3,
+            BuildingType::Castle => 6,
+            BuildingType::Colosseum | BuildingType::Amphitheater => 2,
+            BuildingType::Runestone => 1,
+            BuildingType::Observatory => 1,
+            _ => 0,
+        }
+    }
+
     /// Maximum hit points for this building type.
     /// Castle, Fortress, and DarkFortress are the toughest; light economic buildings are fragile.
     pub fn max_hp(self) -> u32 {
@@ -903,6 +917,10 @@ pub struct Building {
     pub hp: u32,
     /// Maximum hit points (set from BuildingType::max_hp()).
     pub max_hp: u32,
+    /// Garrisoned unit IDs (soldiers stationed inside for defense).
+    pub garrison: Vec<u32>,
+    /// Maximum number of soldiers this building can garrison.
+    pub max_garrison: u32,
 }
 
 impl Building {
@@ -913,6 +931,7 @@ impl Building {
         // Buildings with 0 build time start immediately complete (Castle, Storehouse)
         let start_construction = if kind.build_time() == 0 { 1.0 } else { 0.0 };
         let max_hp = kind.max_hp();
+        let max_garrison = kind.garrison_capacity();
         Building {
             kind,
             x,
@@ -932,12 +951,49 @@ impl Building {
             destruction_timer: None,
             hp: max_hp,
             max_hp,
+            garrison: Vec::new(),
+            max_garrison,
         }
     }
 
     /// Whether the building has at least one settler assigned
     pub fn has_settler(&self) -> bool {
         !self.assigned_settlers.is_empty() || !self.kind.requires_settler()
+    }
+
+    /// Whether the building has at least one garrisoned soldier.
+    pub fn is_garrisoned(&self) -> bool {
+        !self.garrison.is_empty()
+    }
+
+    /// Number of garrisoned soldiers.
+    pub fn garrison_count(&self) -> usize {
+        self.garrison.len()
+    }
+
+    /// Whether the building can accept more garrisoned soldiers.
+    pub fn can_garrison(&self) -> bool {
+        (self.garrison.len() as u32) < self.max_garrison
+    }
+
+    /// Add a unit to the garrison. Returns true if successful.
+    pub fn garrison_unit(&mut self, unit_id: u32) -> bool {
+        if self.can_garrison() {
+            self.garrison.push(unit_id);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Remove a unit from the garrison. Returns true if the unit was found and removed.
+    pub fn ungarrison_unit(&mut self, unit_id: u32) -> bool {
+        if let Some(pos) = self.garrison.iter().position(|&id| id == unit_id) {
+            self.garrison.remove(pos);
+            true
+        } else {
+            false
+        }
     }
 
     /// Whether at least one assigned settler carries the required tool.
@@ -3332,7 +3388,7 @@ mod tests {
 
         let mut map = Map::new(30, 30);
         // Claim territory for player 0
-        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         let mut e = Economy::new();
@@ -3352,7 +3408,7 @@ mod tests {
         use crate::map::Map;
 
         let mut map = Map::new(30, 30);
-        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         let mut e = Economy::new();
@@ -3374,8 +3430,8 @@ mod tests {
 
         let mut map = Map::new(40, 40);
         let buildings = vec![
-            (BuildingType::Castle, 10, 10, 0),
-            (BuildingType::Castle, 20, 20, 1),
+            (BuildingType::Castle, 10, 10, 0, 0),
+            (BuildingType::Castle, 20, 20, 1, 0),
         ];
         map.compute_territory(&buildings);
 
@@ -3396,7 +3452,7 @@ mod tests {
         use crate::map::Map;
 
         let mut map = Map::new(30, 30);
-        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         let mut e = Economy::new();
@@ -3417,7 +3473,7 @@ mod tests {
         map.get_mut(5, 5).unwrap().terrain = Terrain::Water;
 
         // Castle at (10, 10) claims radius 5 — (5, 5) is within radius
-        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         let mut e = Economy::new();
@@ -3467,7 +3523,7 @@ mod tests {
         use crate::map::Map;
 
         let mut map = Map::new(20, 20);
-        let buildings = vec![(BuildingType::GuardTower, 10, 10, 0)];
+        let buildings = vec![(BuildingType::GuardTower, 10, 10, 0, 1)];
         map.compute_territory(&buildings);
 
         let mut e = Economy::new();
@@ -3491,7 +3547,7 @@ mod tests {
         use crate::map::Map;
 
         let mut map = Map::new(30, 30);
-        let buildings = vec![(BuildingType::Fortress, 15, 15, 0)];
+        let buildings = vec![(BuildingType::Fortress, 15, 15, 0, 3)];
         map.compute_territory(&buildings);
 
         let mut e = Economy::new();
@@ -3517,7 +3573,7 @@ mod tests {
 
         let mut map = Map::new(20, 20);
         let buildings = vec![
-            (BuildingType::Castle, 10, 10, 0),
+            (BuildingType::Castle, 10, 10, 0, 0),
         ];
         map.compute_territory(&buildings);
 
@@ -3640,7 +3696,7 @@ mod tests {
         use crate::map::Map;
 
         let mut map = Map::new(30, 30);
-        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         let mut e = Economy::new();
@@ -3662,7 +3718,7 @@ mod tests {
         use crate::map::Map;
 
         let mut map = Map::new(30, 30);
-        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         let mut e = Economy::new();
@@ -3779,7 +3835,7 @@ mod tests {
         use crate::map::Map;
 
         let mut map = Map::new(30, 30);
-        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         let mut e = Economy::new();
@@ -3873,7 +3929,7 @@ mod tests {
         use crate::map::Map;
 
         let mut map = Map::new(30, 30);
-        let buildings = vec![(BuildingType::Castle, 10, 10, 0)];
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
         map.compute_territory(&buildings);
 
         let mut e = Economy::new();
@@ -4934,5 +4990,85 @@ mod squad_leader_aura_tests {
             "Defense aura should be cleared when no SquadLeaders exist");
     }
 
+    // ── Garrison Tests ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_garrison_capacity_guard_tower() {
+        assert_eq!(BuildingType::GuardTower.garrison_capacity(), 1);
+    }
+
+    #[test]
+    fn test_garrison_capacity_fortress() {
+        assert_eq!(BuildingType::Fortress.garrison_capacity(), 3);
+        assert_eq!(BuildingType::DarkFortress.garrison_capacity(), 3);
+    }
+
+    #[test]
+    fn test_garrison_capacity_castle() {
+        assert_eq!(BuildingType::Castle.garrison_capacity(), 6);
+    }
+
+    #[test]
+    fn test_garrison_capacity_economic_buildings() {
+        // Economic buildings cannot garrison soldiers
+        assert_eq!(BuildingType::Farm.garrison_capacity(), 0);
+        assert_eq!(BuildingType::Sawmill.garrison_capacity(), 0);
+        assert_eq!(BuildingType::Barracks.garrison_capacity(), 0);
+        assert_eq!(BuildingType::Storehouse.garrison_capacity(), 0);
+    }
+
+    #[test]
+    fn test_building_garrison_unit() {
+        let mut tower = Building::new(BuildingType::GuardTower, 10, 10);
+        assert!(!tower.is_garrisoned());
+        assert_eq!(tower.garrison_count(), 0);
+        assert!(tower.can_garrison());
+
+        // Garrison a soldier
+        assert!(tower.garrison_unit(42));
+        assert!(tower.is_garrisoned());
+        assert_eq!(tower.garrison_count(), 1);
+        assert!(!tower.can_garrison()); // GuardTower max = 1
+
+        // Try to garrison another — should fail
+        assert!(!tower.garrison_unit(43));
+        assert_eq!(tower.garrison_count(), 1);
+    }
+
+    #[test]
+    fn test_building_ungarrison_unit() {
+        let mut fortress = Building::new(BuildingType::Fortress, 15, 15);
+        assert_eq!(fortress.max_garrison, 3);
+
+        // Garrison 3 soldiers
+        assert!(fortress.garrison_unit(100));
+        assert!(fortress.garrison_unit(200));
+        assert!(fortress.garrison_unit(300));
+        assert_eq!(fortress.garrison_count(), 3);
+        assert!(!fortress.can_garrison());
+
+        // Ungarrison one
+        assert!(fortress.ungarrison_unit(200));
+        assert_eq!(fortress.garrison_count(), 2);
+        assert!(fortress.can_garrison());
+
+        // Ungarrison same ID again — not found
+        assert!(!fortress.ungarrison_unit(200));
+        assert_eq!(fortress.garrison_count(), 2);
+
+        // Ungarrison remaining
+        assert!(fortress.ungarrison_unit(100));
+        assert!(fortress.ungarrison_unit(300));
+        assert_eq!(fortress.garrison_count(), 0);
+        assert!(!fortress.is_garrisoned());
+    }
+
+    #[test]
+    fn test_garrison_new_building_empty() {
+        let castle = Building::new(BuildingType::Castle, 5, 5);
+        assert!(castle.garrison.is_empty());
+        assert_eq!(castle.max_garrison, 6);
+        assert!(castle.can_garrison());
+    }
     }
 }
