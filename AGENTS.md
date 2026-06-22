@@ -104,6 +104,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | Session | Date | Summary |
 |---------|------|---------|
 | 155 | 2026-06-22 | Regenerate terrain_atlas.png with S4-authentic procedural textures |
+| 144 | 2026-06-22 | Fix #55 #56 #57: Resource icons, construction category order + building counts, hover tooltips |
 | 143 | 2026-06-21 | Fix #54: canvas CSS stretching on mobile |
 | 142 | 2026-06-21 | Building Auto-Repair + Bugfix #52 |
 | 141 | 2026-06-21 | Attack-move formation preservation |
