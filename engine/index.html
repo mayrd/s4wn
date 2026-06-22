@@ -3376,7 +3376,7 @@ canvas.addEventListener('contextmenu', (e) => {
     if (!info) return;
     if (selectedUnitIds.length === 0) {
         // No units selected → show tile inspector (desktop equivalent of touch long-press)
-        showTileInspector(e.clientX, e.clientY);
+        showTileInspector(e.clientX, e.clientY, 'right-click');
         return;
     }
     const t = JSON.parse(info);
@@ -3919,11 +3919,42 @@ function closeTileInspector() {
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
 }
 
-function showTileInspector(cx, cy) {
-    if (!engineReady) return;
+function showTileInspector(cx, cy, source) {
+    source = source || 'unknown';
+    if (!engineReady) { console.warn('TileInspector: engine not ready, aborting'); return; }
     let info;
-    try { info = JSON.parse(get_tile_at(cx, cy)); } catch (e) { return; }
-    if (!info || !info.terrain) return;
+    try {
+        const raw = get_tile_at(cx, cy);
+        if (!raw) { console.warn('TileInspector: get_tile_at returned empty for screen (' + cx + ',' + cy + ')'); return; }
+        info = JSON.parse(raw);
+    } catch (e) {
+        console.error('TileInspector: get_tile_at parse error', e, 'screen coords:', cx, cy);
+        return;
+    }
+    if (!info || !info.terrain) { console.warn('TileInspector: no terrain data for screen (' + cx + ',' + cy + ')', info); return; }
+
+    // Log full tile data to console for debugging
+    console.log('TileInspector [' + source + '] tile(' + info.x + ',' + info.y + '):', {
+        terrain: info.terrain,
+        elevation: info.elevation,
+        resource: info.resource !== 'null' ? info.resource : null,
+        screenX: cx, screenY: cy
+    });
+
+    // Look up building at this tile
+    let buildingInfo = null;
+    try {
+        if (typeof get_building_at_tile === 'function') {
+            const bRaw = get_building_at_tile(info.x, info.y);
+            if (bRaw && bRaw !== 'null') {
+                buildingInfo = JSON.parse(bRaw);
+                console.log('TileInspector [' + source + '] building at (' + info.x + ',' + info.y + '):',
+                    buildingInfo.kind, buildingInfo);
+            }
+        }
+    } catch (e) {
+        console.warn('TileInspector: building lookup failed', e);
+    }
 
     let ti = document.getElementById('tile-inspector');
     if (!ti) {
@@ -3931,15 +3962,27 @@ function showTileInspector(cx, cy) {
         ti.id = 'tile-inspector';
         document.body.appendChild(ti);
     }
-    const rn = info.resource ? '<span class="ti-resource">' + info.resource + '</span>' : '—';
-    ti.innerHTML =
+    const rn = info.resource !== 'null' ? '<span class="ti-resource">' + info.resource + '</span>' : '—';
+    const translateName = (typeof currentLang === 'string' && currentLang === 'de');
+    let html =
         '<div class="ti-row"><span class="ti-label">Position</span><span class="ti-value">(' + info.x + ', ' + info.y + ')</span></div>' +
         '<div class="ti-row"><span class="ti-label">Terrain</span><span class="ti-terrain">' + info.terrain + '</span></div>' +
         '<div class="ti-row"><span class="ti-label">Elevation</span><span class="ti-value">' + info.elevation.toFixed(2) + '</span></div>' +
         '<div class="ti-row"><span class="ti-label">Resource</span>' + rn + '</div>';
+    if (buildingInfo) {
+        const bldgName = translateName && window.BUILDING_NAMES_DE && window.BUILDING_NAMES_DE[buildingInfo.kind]
+            ? window.BUILDING_NAMES_DE[buildingInfo.kind] : buildingInfo.kind;
+        html += '<div class="ti-row"><span class="ti-label">Building</span><span class="ti-value">' + bldgName + '</span></div>';
+        if (!buildingInfo.construction) {
+            html += '<div class="ti-row"><span class="ti-label">Active</span><span class="ti-value">' + (buildingInfo.active ? '✅' : '⏸️') + '</span></div>';
+        } else {
+            html += '<div class="ti-row"><span class="ti-label">Constructing</span><span class="ti-value">🔨</span></div>';
+        }
+    }
+    ti.innerHTML = html;
 
-    // Position near touch point but stay on screen
-    const pw = 180, ph = 120;
+    // Position near touch/click point but stay on screen
+    const pw = 220, ph = buildingInfo ? 170 : 120;
     let left = cx + 12, top = cy - 10;
     if (left + pw > window.innerWidth) left = cx - pw - 12;
     if (top + ph > window.innerHeight) top = cy - ph - 10;
@@ -3949,8 +3992,8 @@ function showTileInspector(cx, cy) {
     ti.style.top = top + 'px';
     ti.classList.add('show');
 
-    // Auto-close after 4s
-    setTimeout(() => ti.classList.remove('show'), 4000);
+    // Auto-close after 5s
+    setTimeout(() => ti.classList.remove('show'), 5000);
 }
 
 canvas.addEventListener('touchstart', (e) => {
@@ -3965,7 +4008,7 @@ canvas.addEventListener('touchstart', (e) => {
         longPressPos = { x: cx, y: cy };
         touchStartX = cx; touchStartY = cy; touchStartTime = Date.now();
         longPressTimer = setTimeout(() => {
-            if (!touchDidDrag) showTileInspector(cx, cy);
+            if (!touchDidDrag) showTileInspector(cx, cy, 'long-press');
             longPressTimer = null;
         }, 500);
         on_mouse_down(cx - rect.left, cy - rect.top);
