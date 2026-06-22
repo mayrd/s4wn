@@ -82,7 +82,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 6.24 — 588 tests passing
+**Status:** Phase 6.25 — 588 tests passing
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 153 | 2026-06-22 | G-key garrison shortcut: press G with units selected to enter garrison mode, click military building to garrison all selected units; ESC cancels; canvas.garrison cursor; garrison capacity indicator in construction panel (BigTower/SmallTower=1, Castle=6); garrison_capacity added to building config data.js; cache v54 (588 tests) |
 | 152 | 2026-06-22 | Garrison UI panel: show stationed soldiers with eject buttons on military building click; morale indicator on unit selection (green/red bonus %); handleUngarrison/handleGarrisonSelectedUnit JS handlers; WASM rebuild with new exports; cache v53 (588 tests) |
 | 151 | 2026-06-22 | Garrison & morale WASM exports: get_building_garrison_json, get_unit_morale_json, wasm_garrison_unit, wasm_ungarrison_unit; extended get_building_summary with garrison fields (588 tests) |
 | 150 | 2026-06-22 | Morale system: +5% attack/defense per nearby garrisoned military building (6-tile range, 25% cap), applied in combat and economy update (588 tests) |
@@ -127,8 +128,8 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 3. Verify fog-of-war JS/UI darkening pass-through
 4. Polish tutorial campaign progression
 5. ~~Add morale indicator to unit HUD~~ ✅ (session 152)
-6. Add keyboard shortcut for garrison (G key: garrison selected unit into clicked military building)
-7. Add garrison capacity indicator to building construction panel
+6. ~~Add keyboard shortcut for garrison (G key)~~ ✅ (session 153)
+7. ~~Add garrison capacity indicator to building construction panel~~ ✅ (session 153)
 8. Implement .sav full campaign state restoration
 
 ---
