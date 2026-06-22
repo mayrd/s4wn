@@ -82,7 +82,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 6.22 — 567 tests passing
+**Status:** Phase 6.23 — 579 tests passing
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 149 | 2026-06-22 | Garrison system: Building::garrison_unit/ungarrison_unit, garrison_capacity per BuildingType, conditional territory for GuardTower/Fortress (579 tests) |
 | 148 | 2026-06-22 | SquadLeader defensive aura (+10% defense to allies within 5 tiles) (567 tests) |
 | 147 | 2026-06-21 | Fix #54: water fallback on map load failure + JSON parse robustness (561 tests) |
 | 146 | 2026-06-21 | SquadLeader combat aura (+15% damage to allies in 5-tile range) (561 tests) |
@@ -119,11 +120,13 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Next Session — Concrete Steps
 1. Implement .sav full campaign state restoration
-2. Add garrison interactions for military buildings
+2. ~~Garrison interactions for military buildings~~ ✅ Done (Session 149)
 3. ~~SquadLeader aura/buff mechanic~~ ✅ Done (Session 146)
-4. ~~SquadLeader defensive aura~~ ✅ Done (Session 148) — next: morale system or garrison interactions
-5. ~~Fog of war~~ ✅ Already implemented — verify JS/UI darkening pass-through
-6. Polish tutorial campaign progression
+4. ~~SquadLeader defensive aura~~ ✅ Done (Session 148)
+5. Morale system for units (boosted when near garrisoned military buildings)
+6. ~~Fog of war~~ ✅ Already implemented — verify JS/UI darkening pass-through
+7. Polish tutorial campaign progression
+8. Add garrison UI: click military building to see stationed soldiers, eject button
 
 ---
 
