@@ -3371,9 +3371,14 @@ function clearSelection() {
 // Right-click: move selected units to target tile
 canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    if (!engineReady || selectedUnitIds.length === 0) return;
+    if (!engineReady) return;
     const info = get_tile_at(e.offsetX, e.offsetY);
     if (!info) return;
+    if (selectedUnitIds.length === 0) {
+        // No units selected → show tile inspector (desktop equivalent of touch long-press)
+        showTileInspector(e.clientX, e.clientY);
+        return;
+    }
     const t = JSON.parse(info);
     const idsJson = JSON.stringify(selectedUnitIds);
     const moved = formation_move(idsJson, t.x, t.y);
