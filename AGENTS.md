@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 167 | 2026-06-22 | Phase 7: Ambient occlusion at cliff/elevation boundaries — 605 tests |
 | 166 | 2026-06-22 | Fix #63 #64 #65: DebugSnapshot field name mismatches (camera + map data) — 601 tests |
 | 165 | 2026-06-22 | UI: Speed button with pause (1×→2×→4×→⏸), translated bottom bar tooltips — 601 tests |
 | 164 | 2026-06-22 | Phase 7: Construction particles with per-nation color blending — 601 tests |
@@ -139,7 +140,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 9. ~~Wire terrain atlas texture into model fragment shader (use UVs + u_model_color)~~ ✅ (session 162)
 10. ~~Add normal-mapped detail textures to building walls~~ ✅ (session 163)
 11. ~~Add building construction animation particles with per-nation colors~~ ✅ (session 164)
-12. Add ambient occlusion to terrain tiles at cliff/height boundaries — darken lower tiles at elevation transitions for depth/readability
+12. ~~Add ambient occlusion to terrain tiles at cliff/height boundaries~~ ✅ (session 167)
 13. Add dynamic sky color ramp that changes with day phase (warm dawn → blue noon → orange dusk → dark night)
 14. Add smooth shadow penumbra (soft edges) using percentage-closer filtering or blur pass
 15. Add unit idle animations (subtle breathing/bob cycle) visible on model instances

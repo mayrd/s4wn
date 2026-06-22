@@ -46,6 +46,7 @@ in vec2 a_uv;
 in float a_terrain_id;
 in vec3 a_normal;
 in vec4 a_splat;
+in float a_ao;
 
 uniform vec2 u_resolution;
 uniform float u_time;
@@ -68,6 +69,7 @@ out vec2 v_uv;
 out float v_terrain_id;
 out vec3 v_normal;
 out vec4 v_splat;
+out float v_ao;
 
 void main() {
     float x = a_position.x;
@@ -124,6 +126,7 @@ void main() {
     v_visibility = a_visibility;
     v_normal = a_normal;
     v_splat = a_splat;
+    v_ao = a_ao;
 }
 "#;
 
@@ -141,6 +144,7 @@ in vec2 v_uv;
 in float v_terrain_id;
 in vec3 v_normal;
 in vec4 v_splat;
+in float v_ao;
 
 uniform highp sampler2DArray u_terrain_textures;
 uniform bool u_use_textures;
@@ -271,6 +275,13 @@ void main() {
 
     // Add warmth tint
     lit = mix(lit * 0.7, lit, warmth);
+
+    // Ambient occlusion at cliff bases: darken lower tiles at elevation transitions
+    // v_ao is 1.0 on flat ground, down to 0.55 at base of steep cliffs (computed CPU-side)
+    // Only apply to non-water tiles (water has its own depth-based shading)
+    if (!is_water) {
+        lit *= v_ao;
+    }
 
     out_color = vec4(lit, 1.0);
 }
@@ -614,6 +625,8 @@ struct App {
     light_dir_loc: Option<web_sys::WebGlUniformLocation>,
     // Splat-map buffer
     splat_buffer: Option<WebGlBuffer>,
+    // Ambient occlusion buffer
+    ao_buffer: Option<WebGlBuffer>,
     // Water normal map texture uniforms
     water_normal_loc: Option<web_sys::WebGlUniformLocation>,
     water_normal_ready_loc: Option<web_sys::WebGlUniformLocation>,
@@ -677,6 +690,8 @@ struct MeshData {
     terrain_ids: Vec<f32>,
     /// Splat-map weights: 4 floats per vertex (R=grass, G=rock, B=sand, A=snow)
     splats: Vec<f32>,
+    /// Ambient occlusion: 1.0 = fully lit, lower = darker at cliff bases
+    ao_factors: Vec<f32>,
     indices: Vec<u16>,
 }
 
@@ -694,6 +709,7 @@ impl MeshData {
             uvs: Vec::new(),
             terrain_ids: Vec::new(),
             splats: Vec::new(),
+            ao_factors: Vec::new(),
             indices: Vec::new(),
         }
     }
@@ -772,6 +788,27 @@ fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
                 }
             }
             mesh.slopes.push(max_diff);
+
+            // Ambient occlusion: darken tiles at base of cliffs/elevation transitions.
+            // For each neighbor that is higher, accumulate occlusion proportional to the
+            // height difference. Tiles with significantly higher neighbors get darker.
+            let mut ao = 1.0f32;
+            for dy in [-1isize, 0, 1] {
+                for dx in [-1isize, 0, 1] {
+                    if dx == 0 && dy == 0 { continue; }
+                    let nx = mx as isize + dx;
+                    let ny = my as isize + dy;
+                    if nx >= 0 && ny >= 0 && (nx as usize) < map.width && (ny as usize) < map.height {
+                        let neighbor_elev = map.get(nx as usize, ny as usize).unwrap().elevation;
+                        let elev_diff = neighbor_elev - tile.elevation;
+                        if elev_diff > 0.0 {
+                            // Each unit of elevation difference above this tile darkens it
+                            ao -= elev_diff * 0.08;
+                        }
+                    }
+                }
+            }
+            mesh.ao_factors.push(ao.max(0.55)); // floor at 55% brightness
 
             // Compute edge distance for fog (CPU-side to avoid GPU uniform optimizer issues)
             let edge_x = (mx as f32).min(map.width as f32 - 1.0 - mx as f32);
@@ -979,6 +1016,7 @@ impl App {
         let visibility_buffer = upload_f32_buffer(&gl, &mesh.visibilities, 8, 1);
         let normal_buffer = upload_f32_buffer(&gl, &mesh.normals, 9, 3);
         let splat_buffer = upload_f32_buffer(&gl, &mesh.splats, 10, 4);
+        let ao_buffer = upload_f32_buffer(&gl, &mesh.ao_factors, 11, 1);
         let index_buffer = gl.create_buffer().ok_or("Cannot create index buffer")?;
         gl.bind_buffer(
             WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER,
@@ -1215,6 +1253,7 @@ impl App {
             use_vp_loc,
             light_dir_loc,
             splat_buffer: Some(splat_buffer),
+            ao_buffer: Some(ao_buffer),
             
             model_program,
             gpu_models: std::collections::HashMap::new(),
@@ -2154,6 +2193,10 @@ impl App {
         if let Some(ref buf) = self.splat_buffer {
             gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
             update_f32_buffer(gl, &mesh.splats);
+        }
+        if let Some(ref buf) = self.ao_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            update_f32_buffer(gl, &mesh.ao_factors);
         }
 
         gl.bind_buffer(
@@ -5227,6 +5270,55 @@ mod tests {
     }
 
     // ── Phase 5: Splat-Map Tests ──────────────────────────────────────────
+
+    #[test]
+    fn test_vertex_shader_has_ao_attribute() {
+        assert!(
+            VERTEX_SHADER.contains("in float a_ao"),
+            "vertex shader missing in float a_ao"
+        );
+        assert!(
+            VERTEX_SHADER.contains("out float v_ao"),
+            "vertex shader missing out float v_ao"
+        );
+        assert!(
+            VERTEX_SHADER.contains("v_ao = a_ao"),
+            "vertex shader missing v_ao = a_ao pass-through"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_has_ao_varying() {
+        assert!(
+            FRAGMENT_SHADER.contains("in float v_ao"),
+            "fragment shader missing in float v_ao"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("lit *= v_ao"),
+            "fragment shader missing lit *= v_ao (cliff AO application)"
+        );
+    }
+
+    #[test]
+    fn test_mesh_contains_ao_data() {
+        let map = Map::generate_demo(16, 16);
+        let camera = Camera::new(8.0, 8.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+        let vertex_count = mesh.positions.len() / 3;
+        assert!(vertex_count > 0, "mesh should have vertices");
+        assert_eq!(mesh.ao_factors.len(), vertex_count, "ao_factors count mismatch");
+    }
+
+    #[test]
+    fn test_ao_values_in_range() {
+        // AO values should be in [0.55, 1.0]
+        let map = Map::generate_demo(16, 16);
+        let camera = Camera::new(8.0, 8.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+        for &ao in &mesh.ao_factors {
+            assert!(ao >= 0.54 && ao <= 1.01, "ao value {ao} out of [0.55, 1.0]");
+        }
+    }
 
     #[test]
     fn test_vertex_shader_has_splat_attribute() {
