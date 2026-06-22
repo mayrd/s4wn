@@ -102,6 +102,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | Session | Date | Summary |
 |---------|------|---------|
 | 150 | 2026-06-22 | Morale system: +5% attack/defense per nearby garrisoned military building (6-tile range, 25% cap), applied in combat and economy update (588 tests) |
+| 151 | 2026-06-22 | Garrison & morale WASM exports: get_building_garrison_json, get_unit_morale_json, wasm_garrison_unit, wasm_ungarrison_unit; extended get_building_summary with garrison fields (588 tests) |
 | 149 | 2026-06-22 | Garrison system: Building::garrison_unit/ungarrison_unit, garrison_capacity per BuildingType, conditional territory for GuardTower/Fortress (579 tests) |
 | 148 | 2026-06-22 | SquadLeader defensive aura (+10% defense to allies within 5 tiles) (567 tests) |
 | 147 | 2026-06-21 | Fix #54: water fallback on map load failure + JSON parse robustness (561 tests) |
@@ -120,11 +121,11 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | 133 | 2026-06-18 | Unit formation movement |
 
 ### Next Session — Concrete Steps
-1. Add garrison UI: click military building to see stationed soldiers, eject button (wasm_bindgen exports needed)
+1. Build garrison UI panel in JS: click military building → show stationed soldiers with eject button (use new wasm_bindgen exports)
 2. Implement .sav full campaign state restoration
 3. Verify fog-of-war JS/UI darkening pass-through
 4. Polish tutorial campaign progression
-5. Add wasm_bindgen exports for morale_bonus (read-only) and garrison UI functions
+5. Add morale indicator to unit HUD (use get_unit_morale_json export)
 
 ---
 
