@@ -5839,24 +5839,33 @@ function exportMapJson() {
     }
 }
 function openObjectExplorer() {
+    console.log('ObjectExplorer: opening...');
     closeMenu();
     var panel = document.getElementById("obj-explorer");
     var body = document.getElementById("obj-explorer-body");
-    if (!panel || !body) return;
+    if (!panel) { console.error('ObjectExplorer: #obj-explorer element not found'); return; }
+    if (!body) { console.error('ObjectExplorer: #obj-explorer-body element not found'); return; }
     var C = window.S4WN_CONFIG;
-    if (!C) return;
+    if (!C) { console.error('ObjectExplorer: S4WN_CONFIG not loaded'); return; }
+
+    console.log('ObjectExplorer: config loaded, buildings=' + (C.buildings ? C.buildings.length : 0) +
+        ', resources=' + (C.resources ? C.resources.length : 0) +
+        ', units=' + (C.units ? C.units.length : 0) +
+        ', terrain=' + (C.terrain ? C.terrain.length : 0));
     var html = "";
     var sections = [
         ["Buildings", "buildings"],
         ["Resources", "resources"],
-        ["Units", "units"],
-        ["Settlers", "settlers"],
+        ["Units & Settlers", "units"],
         ["Terrain", "terrain"],
         ["Nations", "nations"]
     ];
     sections.forEach(function(s) {
         var items = C[s[1]];
-        if (!items || !items.length) return;
+        if (!items || !items.length) {
+            console.warn('ObjectExplorer: section "' + s[0] + '" has no items');
+            return;
+        }
         html += "<h3>" + s[0] + " (" + items.length + ")</h3>";
         items.forEach(function(item) {
             var icon = item.icon || "";
@@ -5873,11 +5882,14 @@ function openObjectExplorer() {
             html += "</div>";
         });
     });
+    if (!html) { console.error('ObjectExplorer: no content generated — all sections empty'); return; }
     body.innerHTML = html;
     panel.classList.add("active");
+    console.log('ObjectExplorer: displayed with ' + sections.filter(function(s) { return C[s[1]] && C[s[1]].length; }).length + ' sections');
 }
 
 function closeObjectExplorer() {
+    console.log('ObjectExplorer: closing');
     var panel = document.getElementById("obj-explorer");
     if (panel) panel.classList.remove("active");
 }
