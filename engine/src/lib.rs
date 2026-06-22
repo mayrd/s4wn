@@ -431,6 +431,7 @@ struct GpuModel {
     vao: WebGlVertexArrayObject,
     index_buffer: WebGlBuffer,
     index_count: i32,
+    material: model::Material,
 }
 
 struct App {
@@ -1423,6 +1424,7 @@ impl App {
                     vao,
                     index_buffer: buf,
                     index_count: mesh.indices.len() as i32,
+                    material: mesh.material.clone(),
                 },
             );
         }
@@ -1470,16 +1472,7 @@ impl App {
             gl.uniform3f(Some(loc), lx/len, ly/len, lz/len);
         }
 
-        // Color/material uniforms (same for all instances)
-        if let Some(ref loc) = self.model_color_loc {
-            gl.uniform4f(Some(loc), 0.7, 0.65, 0.55, 1.0);
-        }
-        if let Some(ref loc) = self.model_roughness_loc {
-            gl.uniform1f(Some(loc), 0.6);
-        }
-        if let Some(ref loc) = self.model_metallic_loc {
-            gl.uniform1f(Some(loc), 0.0);
-        }
+        // Per-model material uniforms are now set inside the draw loop below
 
         // Enable instanced path
         if let Some(ref loc) = self.model_use_instanced_loc {
@@ -1518,6 +1511,18 @@ impl App {
                 Some(gm) => gm,
                 None => continue, // model not uploaded yet, skip
             };
+
+            // Set per-model material uniforms
+            let mat = &gpu_model.material;
+            if let Some(ref loc) = self.model_color_loc {
+                gl.uniform4f(Some(loc), mat.diffuse[0], mat.diffuse[1], mat.diffuse[2], 1.0);
+            }
+            if let Some(ref loc) = self.model_roughness_loc {
+                gl.uniform1f(Some(loc), mat.roughness);
+            }
+            if let Some(ref loc) = self.model_metallic_loc {
+                gl.uniform1f(Some(loc), mat.metallic);
+            }
 
             // Bind this model's VAO (which has its own index buffer)
             gl.bind_vertex_array(Some(&gpu_model.vao));

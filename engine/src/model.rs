@@ -1,9 +1,37 @@
 //! 3D Model Loading & Mesh Data
 //!
 //! Phase 5 Step 7: OBJ parser + JSON model format + model instance rendering.
+//! Phase 7.1: per-building material colors + texture UVs.
 
 use serde::Deserialize;
 use std::collections::HashMap;
+
+
+/// Material parameters for PBR-like rendering.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct Material {
+    /// Diffuse/albedo color (RGB, 0.0–1.0)
+    pub diffuse: [f32; 3],
+    /// Surface roughness (0.0 = mirror, 1.0 = matte)
+    #[serde(default = "default_roughness")]
+    pub roughness: f32,
+    /// Metallic factor (0.0 = dielectric, 1.0 = metal)
+    #[serde(default = "default_metallic")]
+    pub metallic: f32,
+}
+
+fn default_roughness() -> f32 { 0.7 }
+fn default_metallic() -> f32 { 0.05 }
+
+impl Default for Material {
+    fn default() -> Self {
+        Material {
+            diffuse: [0.55, 0.50, 0.45],
+            roughness: 0.7,
+            metallic: 0.05,
+        }
+    }
+}
 
 /// A single 3D model loaded from OBJ or JSON.
 #[derive(Debug, Clone, PartialEq)]
@@ -15,6 +43,7 @@ pub struct ModelMesh {
     pub vertex_count: usize,
     pub triangle_count: usize,
     pub aabb: (f32, f32, f32, f32, f32, f32),
+    pub material: Material,
 }
 
 impl ModelMesh {
@@ -27,6 +56,7 @@ impl ModelMesh {
             vertex_count: 0,
             triangle_count: 0,
             aabb: (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            material: Material::default(),
         }
     }
 
@@ -143,6 +173,7 @@ pub fn parse_obj(src: &str) -> ModelMesh {
             aabb_min[0], aabb_min[1], aabb_min[2],
             aabb_max[0], aabb_max[1], aabb_max[2],
         ),
+        material: Material::default(),
     }
 }
 
@@ -196,7 +227,8 @@ impl ModelRegistry {
 ///   "normals": [[nx,ny,nz], ...],
 ///   "uvs": [[u,v], ...],
 ///   "indices": [i0, i1, i2, ...],
-///   "aabb": [min_x, min_y, min_z, max_x, max_y, max_z]
+///   "aabb": [min_x, min_y, min_z, max_x, max_y, max_z],
+///   "material": {"diffuse": [r,g,b], "roughness": 0.7, "metallic": 0.05}
 /// }
 /// ```
 #[derive(Debug, Deserialize, PartialEq)]
@@ -207,6 +239,8 @@ pub struct JsonMesh {
     pub uvs: Vec<[f32; 2]>,
     pub indices: Vec<u16>,
     pub aabb: [f32; 6],
+    #[serde(default)]
+    pub material: Option<Material>,
 }
 
 /// Parse a JSON mesh string into a ModelMesh.
@@ -268,6 +302,8 @@ pub fn parse_json_mesh(src: &str) -> Result<ModelMesh, String> {
 
     let triangle_count = json.indices.len() / 3;
 
+    let material = json.material.unwrap_or_default();
+
     Ok(ModelMesh {
         positions,
         normals,
@@ -279,6 +315,7 @@ pub fn parse_json_mesh(src: &str) -> Result<ModelMesh, String> {
             json.aabb[0], json.aabb[1], json.aabb[2],
             json.aabb[3], json.aabb[4], json.aabb[5],
         ),
+        material,
     })
 }
 
@@ -713,6 +750,38 @@ mod tests {
         let mesh = parse_json_mesh(src).unwrap();
         assert_eq!(mesh.uvs.len(), 6);
         assert_eq!(mesh.uvs, vec![0.0; 6]);
+    }
+
+    #[test]
+    fn test_parse_json_mesh_with_material() {
+        let src = r#"{
+            "version": 1,
+            "vertices": [[0.0,0.0,0.0],[1.0,0.0,0.0],[0.5,1.0,0.0]],
+            "normals": [[0,1,0],[0,1,0],[0,1,0]],
+            "uvs": [[0,0],[1,0],[0.5,1]],
+            "indices": [0,1,2],
+            "aabb": [0,0,0,1,1,0],
+            "material": {"diffuse": [0.8, 0.6, 0.2], "roughness": 0.3, "metallic": 0.5}
+        }"#;
+        let mesh = parse_json_mesh(src).unwrap();
+        assert_eq!(mesh.material.diffuse, [0.8, 0.6, 0.2]);
+        assert!((mesh.material.roughness - 0.3).abs() < 0.001);
+        assert!((mesh.material.metallic - 0.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_parse_json_mesh_default_material() {
+        let src = r#"{
+            "version": 1,
+            "vertices": [[0.0,0.0,0.0],[1.0,0.0,0.0],[0.5,1.0,0.0]],
+            "normals": [[0,1,0],[0,1,0],[0,1,0]],
+            "uvs": [[0,0],[1,0],[0.5,1]],
+            "indices": [0,1,2],
+            "aabb": [0,0,0,1,1,0]
+        }"#;
+        let mesh = parse_json_mesh(src).unwrap();
+        assert_eq!(mesh.material.diffuse, [0.55, 0.50, 0.45]);
+        assert!((mesh.material.roughness - 0.7).abs() < 0.001);
     }
 
     // ── Model Instance Tests ─────────────────────────────────────────────
