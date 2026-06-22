@@ -82,7 +82,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 6.21 — 561 tests passing
+**Status:** Phase 6.22 — 567 tests passing
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 148 | 2026-06-22 | SquadLeader defensive aura (+10% defense to allies within 5 tiles) (567 tests) |
 | 147 | 2026-06-21 | Fix #54: water fallback on map load failure + JSON parse robustness (561 tests) |
 | 146 | 2026-06-21 | SquadLeader combat aura (+15% damage to allies in 5-tile range) (561 tests) |
 | 145 | 2026-06-21 | Barracks auto-promotion to SquadLeader (551 tests) |
@@ -119,9 +120,10 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 ### Next Session — Concrete Steps
 1. Implement .sav full campaign state restoration
 2. Add garrison interactions for military buildings
-3. ~~SquadLeader aura/buff mechanic~~ ✅ Done (Session 146) — next: add SquadLeader defensive aura (HP/defense) or morale system
-4. ~~Fog of war~~ ✅ Already implemented — verify JS/UI darkening pass-through
-5. Polish tutorial campaign progression
+3. ~~SquadLeader aura/buff mechanic~~ ✅ Done (Session 146)
+4. ~~SquadLeader defensive aura~~ ✅ Done (Session 148) — next: morale system or garrison interactions
+5. ~~Fog of war~~ ✅ Already implemented — verify JS/UI darkening pass-through
+6. Polish tutorial campaign progression
 
 ---
 
