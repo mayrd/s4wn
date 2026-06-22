@@ -92,6 +92,7 @@ window.S4WN_CONFIG = {
         "Trojan",
         "Viking"
       ]
+      "garrison_capacity": 1,
     },
     {
       "id": "Bust",
@@ -119,6 +120,7 @@ window.S4WN_CONFIG = {
         "Trojan",
         "Viking"
       ]
+      "garrison_capacity": 6,
     },
     {
       "id": "CoalMine",
@@ -663,6 +665,7 @@ window.S4WN_CONFIG = {
         "Trojan",
         "Viking"
       ]
+      "garrison_capacity": 1,
     },
     {
       "id": "StandardBanner",

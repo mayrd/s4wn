@@ -729,6 +729,7 @@
   canvas.attack-move { cursor: crosshair !important; }
   canvas.patrol { cursor: alias !important; }
   canvas.demolition { cursor: not-allowed !important; }
+  canvas.garrison { cursor: cell !important; }
   #placement-status {
     position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
     z-index: 25; font-size: 12px; color: #e8d5a0;
@@ -1438,7 +1439,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=53';
+} from './pkg/s4wn_engine.js?v=54';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3169,6 +3170,17 @@ window.addEventListener('keydown', (e) => {
         canvas.classList.remove('demolition');
     }
 
+    // Garrison hotkey: G = garrison selected units into clicked military building
+    if (e.key.toLowerCase() === 'g' && selectedUnitIds.length > 0 && !placementMode && !attackMoveMode && !patrolMoveMode && !demolitionMode) {
+        garrisonMoveMode = true;
+        canvas.classList.add('garrison');
+        console.log('Garrison mode: click a military building to garrison');
+        try { Sfx.playUIClick(); } catch(e) {}
+    } else if (e.key === 'Escape' && garrisonMoveMode) {
+        garrisonMoveMode = false;
+        canvas.classList.remove('garrison');
+    }
+
     // Stance hotkeys: F1=Aggressive, F2=StandGround, F3=Passive
     if (engineReady && selectedUnitIds.length > 0) {
         if (e.key === 'F1') {
@@ -3192,6 +3204,7 @@ let selectedUnitIds = []; // currently selected military unit IDs
 let attackMoveMode = false; // when true, clicking orders attack-move
 let patrolMoveMode = false; // when true, clicking orders patrol
 let demolitionMode = false; // when true, clicking destroys buildings
+let garrisonMoveMode = false; // when true, clicking a military building garrisons selected units
 let stanceMode = null; // null=no stance panel, 0=Aggressive, 1=StandGround, 2=Passive
 const marqueeBox = document.getElementById('marquee-box');
 const selCount = document.getElementById('selection-count');
@@ -3396,6 +3409,34 @@ canvas.addEventListener('click', (e) => {
         }
         demolitionMode = false;
         canvas.classList.remove('demolition');
+        return;
+    }
+
+    // ── Garrison mode ──
+    if (garrisonMoveMode && selectedUnitIds.length > 0) {
+        const gInfo = get_tile_at(e.offsetX, e.offsetY);
+        if (gInfo) {
+            const gt = JSON.parse(gInfo);
+            const bRaw = get_building_summary();
+            if (bRaw) {
+                const buildings = JSON.parse(bRaw);
+                const bldg = buildings.find(b => b.x === gt.x && b.y === gt.y);
+                if (bldg && bldg.max_garrison > 0 && typeof wasm_garrison_unit === 'function') {
+                    let garrisoned = 0;
+                    for (const uid of selectedUnitIds) {
+                        if (wasm_garrison_unit(bldg.index, uid)) {
+                            garrisoned++;
+                        }
+                    }
+                    if (garrisoned > 0) {
+                        console.log('Garrisoned ' + garrisoned + ' unit(s) into ' + bldg.kind + ' at (' + gt.x + ',' + gt.y + ')');
+                        try { Sfx.playUIClick(); } catch(e) {}
+                    }
+                }
+            }
+        }
+        garrisonMoveMode = false;
+        canvas.classList.remove('garrison');
         return;
     }
 
@@ -5788,10 +5829,10 @@ function populateConstructionPanel() {
             if (b.gold) costParts.push(`✨${b.gold}`);
             const cost = costParts.join(' ') || 'Free';
             const displayName = (typeof currentLang === 'string' && currentLang === 'de') ? b.name_de : b.name;
-            html += `<div class="con-bldg" onclick="selectBuilding('${b.id}')" title="${b.name} — ${cost}">`;
+            const garrisonCap = b.garrison_capacity || 0; const garrisonInfo = garrisonCap > 0 ? ` G:${garrisonCap}` : "";             html += `<div class="con-bldg" onclick="selectBuilding('${b.id}')" title="${b.name} — ${cost}${garrisonInfo}">`;
             html += `<span class="con-icon">${icon}</span>`;
             html += `<span class="con-name">${displayName}</span>`;
-            html += `<span class="con-cost">${cost}</span>`;
+            html += `<span class="con-cost">${cost}${garrisonInfo}</span>`;
             html += '</div>';
         }
         html += '</div></div>';
