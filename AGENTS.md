@@ -127,7 +127,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 4. ~~Regenerate terrain_atlas.png (2048×512) with higher-quality procedural textures~~ ✅ (session 155)
 5. ~~Building normals — proper per-vertex normals~~ ✅ (session 157) — ~~per-building material colors + texture UVs~~ ✅ (session 158)
 6. ~~Improve model geometry to better match original S4 building shapes and proportions~~ ✅ (session 159)
-7. Add soft shadow rendering for buildings/units
+7. ~~Add soft shadow rendering for buildings/units~~ ✅ (session 160)
 8. Add water surface animation (waves, reflections) matching S4 water style
 9. Wire terrain atlas texture into model fragment shader (use UVs + u_model_color)
 10. Add normal-mapped detail textures to building walls
