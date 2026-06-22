@@ -1767,6 +1767,9 @@ impl Economy {
 
         // 7. SquadLeader combat aura: nearby allies get +15% attack damage
         self.apply_squad_leader_auras();
+
+        // 8. Garrison morale: combat units near garrisoned military buildings get +5% per building
+        self.apply_garrison_morale();
     }
     pub fn buildings_of_type(&self, kind: BuildingType) -> impl Iterator<Item = &Building> {
         self.buildings.iter().filter(move |b| b.kind == kind)
@@ -1973,6 +1976,83 @@ impl Economy {
                         unit.aura_buff = false;
                     }
                     unit.defense_aura_buff = false;
+                }
+            }
+        }
+
+        buffed
+    }
+
+    /// Apply morale bonus to combat units near garrisoned military buildings.
+    ///
+    /// For each garrisoned military building (GuardTower, Fortress, Castle with garrison),
+    /// finds all allied combat units within MORALE_RANGE tiles and grants them a stacking
+    /// +5% attack and +5% defense bonus per building (capped at MORALE_MAX_BONUS).
+    /// Clears morale from units no longer in range of any garrisoned building.
+    pub fn apply_garrison_morale(&mut self) -> u32 {
+        let morale_range_sq = crate::units::MORALE_RANGE * crate::units::MORALE_RANGE;
+
+        // Collect garrisoned military building positions and owner
+        let garrison_info: Vec<(usize, usize, u8)> = self
+            .buildings
+            .iter()
+            .filter(|b| b.is_garrisoned() && b.is_complete())
+            .map(|b| (b.x, b.y, b.owner_id))
+            .collect();
+
+        if garrison_info.is_empty() {
+            // No garrisoned buildings — clear all morale bonuses
+            for unit in self.units.all_mut() {
+                unit.morale_bonus = 0.0;
+            }
+            return 0;
+        }
+
+        let mut buffed = 0u32;
+
+        // For each alive combat unit, count how many garrisoned buildings are in range
+        let candidate_ids: Vec<u32> = self
+            .units
+            .alive_units()
+            .filter(|u| u.kind.can_fight())
+            .map(|u| u.id)
+            .collect();
+
+        for uid in candidate_ids {
+            let (ux, uy, owner_id) = {
+                if let Some(u) = self.units.get(uid) {
+                    (u.x, u.y, u.id % 2)
+                } else {
+                    continue;
+                }
+            };
+
+            // Count garrisoned buildings in range owned by same faction
+            let mut building_count = 0u32;
+            for &(bx, by, b_owner) in &garrison_info {
+                if b_owner as u32 != owner_id as u32 {
+                    continue; // different faction — no morale
+                }
+                let dx = ux - bx as f32;
+                let dy = uy - by as f32;
+                if dx * dx + dy * dy <= morale_range_sq {
+                    building_count += 1;
+                }
+            }
+
+            let new_bonus = if building_count > 0 {
+                let raw = building_count as f32 * crate::units::MORALE_BONUS_PER_BUILDING;
+                raw.min(crate::units::MORALE_MAX_BONUS)
+            } else {
+                0.0
+            };
+
+            if let Some(unit) = self.units.get_mut(uid) {
+                if new_bonus != unit.morale_bonus {
+                    if new_bonus > 0.0 && unit.morale_bonus == 0.0 {
+                        buffed += 1;
+                    }
+                    unit.morale_bonus = new_bonus;
                 }
             }
         }
@@ -4988,6 +5068,198 @@ mod squad_leader_aura_tests {
 
         assert!(!eco.units.get(sword_id).unwrap().defense_aura_buff,
             "Defense aura should be cleared when no SquadLeaders exist");
+    }
+
+    // ── Morale Tests ────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_morale_bonus_from_garrisoned_guard_tower() {
+        let mut eco = Economy::new();
+        // Place a GuardTower and garrison it
+        eco.place_building(BuildingType::GuardTower, 10, 10);
+        eco.buildings[0].construction = 1.0;
+        eco.buildings[0].active = true;
+        eco.buildings[0].owner_id = 0;
+        eco.buildings[0].garrison_unit(99); // garrison a soldier
+
+        // Spawn dummy settler to control faction parity
+        let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
+        // Spawn a Swordsman within morale range (6 tiles) — id=2, faction=0 matches building owner=0
+        let sword_id = eco.units.spawn(UnitKind::Swordsman, 11.5, 10.5);
+
+        eco.apply_garrison_morale();
+
+        let sword = eco.units.get(sword_id).unwrap();
+        assert!(sword.morale_bonus > 0.0,
+            "Swordsman near garrisoned GuardTower should get morale bonus, got {}", sword.morale_bonus);
+        assert_eq!(sword.morale_bonus, crate::units::MORALE_BONUS_PER_BUILDING,
+            "Should get exactly one building's worth of morale bonus");
+    }
+
+    #[test]
+    fn test_morale_no_garrisoned_buildings_clears_bonus() {
+        let mut eco = Economy::new();
+
+        let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
+        let _d2 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=2 f=0
+        let sword_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5); // id=3 f=1
+
+        // Manually set morale_bonus (simulating residual)
+        eco.units.get_mut(sword_id).unwrap().morale_bonus = 0.10;
+
+        eco.apply_garrison_morale();
+
+        assert_eq!(eco.units.get(sword_id).unwrap().morale_bonus, 0.0,
+            "Morale should be cleared when no garrisoned buildings exist");
+    }
+
+    #[test]
+    fn test_morale_out_of_range_no_bonus() {
+        let mut eco = Economy::new();
+        eco.place_building(BuildingType::GuardTower, 10, 10);
+        eco.buildings[0].construction = 1.0;
+        eco.buildings[0].active = true;
+        eco.buildings[0].owner_id = 0;
+        eco.buildings[0].garrison_unit(99);
+
+        // Spawn Swordsman far away (>6 tiles) — id=2, faction=0
+        let sword_id = eco.units.spawn(UnitKind::Swordsman, 20.5, 20.5);
+
+        eco.apply_garrison_morale();
+
+        assert_eq!(eco.units.get(sword_id).unwrap().morale_bonus, 0.0,
+            "Swordsman out of range should not get morale bonus");
+    }
+
+    #[test]
+    fn test_morale_stacks_from_multiple_buildings() {
+        let mut eco = Economy::new();
+        // Place two garrisoned GuardTowers within range
+        eco.place_building(BuildingType::GuardTower, 10, 10);
+        eco.buildings[0].construction = 1.0;
+        eco.buildings[0].active = true;
+        eco.buildings[0].owner_id = 0;
+        eco.buildings[0].garrison_unit(98);
+
+        eco.place_building(BuildingType::GuardTower, 14, 10);
+        eco.buildings[1].construction = 1.0;
+        eco.buildings[1].active = true;
+        eco.buildings[1].owner_id = 0;
+        eco.buildings[1].garrison_unit(99);
+
+        // Spawn dummy settler to control faction parity
+        let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
+        // Swordsman at (12, 10) — within 6 tiles of both — id=2, faction=0
+        let sword_id = eco.units.spawn(UnitKind::Swordsman, 12.5, 10.5);
+
+        eco.apply_garrison_morale();
+
+        let sword = eco.units.get(sword_id).unwrap();
+        assert_eq!(sword.morale_bonus, crate::units::MORALE_BONUS_PER_BUILDING * 2.0,
+            "Should get morale bonus from both garrisoned buildings");
+    }
+
+    #[test]
+    fn test_morale_capped_at_max() {
+        let mut eco = Economy::new();
+        // Place 6 garrisoned buildings (would give 6*0.05=0.30, but cap is 0.25)
+        for i in 0..6 {
+            eco.place_building(BuildingType::GuardTower, 10 + i as usize * 2, 10);
+            let idx = eco.buildings.len() - 1;
+            eco.buildings[idx].construction = 1.0;
+            eco.buildings[idx].active = true;
+            eco.buildings[idx].owner_id = 0;
+            eco.buildings[idx].garrison_unit(90 + i as u32);
+        }
+
+        // Spawn dummy settler to control faction parity
+        let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
+        // Swordsman near all of them — id=2, faction=0
+        let sword_id = eco.units.spawn(UnitKind::Swordsman, 15.5, 10.5);
+
+        eco.apply_garrison_morale();
+
+        let sword = eco.units.get(sword_id).unwrap();
+        assert!(sword.morale_bonus <= crate::units::MORALE_MAX_BONUS,
+            "Morale bonus should be capped at MORALE_MAX_BONUS (0.25), got {}", sword.morale_bonus);
+        assert_eq!(sword.morale_bonus, crate::units::MORALE_MAX_BONUS);
+    }
+
+    #[test]
+    fn test_morale_does_not_buff_settlers() {
+        let mut eco = Economy::new();
+        eco.place_building(BuildingType::GuardTower, 10, 10);
+        eco.buildings[0].construction = 1.0;
+        eco.buildings[0].active = true;
+        eco.buildings[0].owner_id = 0;
+        eco.buildings[0].garrison_unit(99);
+
+        // Settlers are not combat units — should not get morale
+        let settler_id = eco.units.spawn(UnitKind::Settler, 10.5, 10.5);
+
+        eco.apply_garrison_morale();
+
+        let settler = eco.units.get(settler_id).unwrap();
+        assert_eq!(settler.morale_bonus, 0.0,
+            "Settlers (non-combat) should NOT receive morale bonus");
+    }
+
+    #[test]
+    fn test_morale_different_faction_no_bonus() {
+        let mut eco = Economy::new();
+        eco.place_building(BuildingType::GuardTower, 10, 10);
+        eco.buildings[0].construction = 1.0;
+        eco.buildings[0].active = true;
+        eco.buildings[0].owner_id = 0; // faction 0
+        eco.buildings[0].garrison_unit(99);
+
+        // Swordsman id=3 → 3%2=1 → faction 1 (different from building owner 0)
+        let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1
+        let _d2 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=2
+        let sword_id = eco.units.spawn(UnitKind::Swordsman, 10.5, 10.5); // id=3 f=1
+
+        eco.apply_garrison_morale();
+
+        assert_eq!(eco.units.get(sword_id).unwrap().morale_bonus, 0.0,
+            "Unit of different faction should not get morale bonus");
+    }
+
+    #[test]
+    fn test_morale_ungarrisoned_building_no_bonus() {
+        let mut eco = Economy::new();
+        eco.place_building(BuildingType::GuardTower, 10, 10);
+        eco.buildings[0].construction = 1.0;
+        eco.buildings[0].active = true;
+        eco.buildings[0].owner_id = 0;
+        // NOT garrisoned — no garrison_unit call
+
+        let sword_id = eco.units.spawn(UnitKind::Swordsman, 10.5, 10.5); // id=2 f=0
+
+        eco.apply_garrison_morale();
+
+        assert_eq!(eco.units.get(sword_id).unwrap().morale_bonus, 0.0,
+            "Unit near ungarrisoned building should not get morale bonus");
+    }
+
+    #[test]
+    fn test_morale_update_called_in_tick() {
+        let mut eco = Economy::new();
+        eco.place_building(BuildingType::GuardTower, 10, 10);
+        eco.buildings[0].construction = 1.0;
+        eco.buildings[0].active = true;
+        eco.buildings[0].owner_id = 0;
+        eco.buildings[0].garrison_unit(99);
+
+        // Spawn dummy settler to control faction parity
+        let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
+        let sword_id = eco.units.spawn(UnitKind::Swordsman, 11.5, 10.5); // id=2 f=0
+
+        // Run economy update — morale should be applied automatically
+        eco.update();
+
+        let sword = eco.units.get(sword_id).unwrap();
+        assert!(sword.morale_bonus > 0.0,
+            "Morale should be applied during economy update()");
     }
 
     // ── Garrison Tests ──────────────────────────────────────────────────────

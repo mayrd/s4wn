@@ -311,10 +311,16 @@ impl CombatAI {
                 Some(t) => t,
                 None => return,
             };
-            let defense = if target.defense_aura_buff {
-                target.defense_mult + crate::units::SQUAD_LEADER_AURA_DEFENSE_BONUS
-            } else {
-                target.defense_mult
+            let defense = {
+                let base_def = target.defense_mult;
+                let aura_def = if target.defense_aura_buff {
+                    crate::units::SQUAD_LEADER_AURA_DEFENSE_BONUS
+                } else {
+                    0.0
+                };
+                // Morale bonus also adds to defense (same multiplier as attack)
+                let morale_def = target.morale_bonus;
+                base_def + aura_def + morale_def
             };
             (damage as f32 / defense.max(0.1)).max(1.0) as u32
         };

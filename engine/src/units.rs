@@ -281,6 +281,9 @@ pub struct Unit {
     pub aura_buff: bool,
     /// Whether this unit currently benefits from a SquadLeader's defensive aura (+10% defense).
     pub defense_aura_buff: bool,
+    /// Morale bonus multiplier from nearby garrisoned military buildings (0.0 = no bonus).
+    /// Each garrisoned building within range adds +5% attack and +5% defense (stacking).
+    pub morale_bonus: f32,
 }
 
 /// SquadLeader aura range (tiles). Allied combat units within this range get +15% damage.
@@ -289,6 +292,13 @@ pub const SQUAD_LEADER_AURA_RANGE: f32 = 5.0;
 pub const SQUAD_LEADER_AURA_DAMAGE_BONUS: f32 = 0.15;
 /// SquadLeader aura defense bonus multiplier (additive: 0.10 = +10% damage reduction).
 pub const SQUAD_LEADER_AURA_DEFENSE_BONUS: f32 = 0.10;
+
+/// Morale range: allied combat units within this range of a garrisoned military building get a morale boost.
+pub const MORALE_RANGE: f32 = 6.0;
+/// Morale bonus per garrisoned building in range (+5% attack and +5% defense, stacking).
+pub const MORALE_BONUS_PER_BUILDING: f32 = 0.05;
+/// Maximum morale bonus cap (prevents excessive stacking).
+pub const MORALE_MAX_BONUS: f32 = 0.25;
 
 /// XP thresholds for rank promotion (cumulative XP required).
 pub const XP_RANK_1: u32 = 30;
@@ -325,6 +335,7 @@ impl Unit {
             experience: 0,
             aura_buff: false,
             defense_aura_buff: false,
+            morale_bonus: 0.0,
         }
     }
 
@@ -501,12 +512,14 @@ impl Unit {
         (dx * dx + dy * dy).sqrt()
     }
 
-    /// Effective attack damage, including rank bonus (+10% per rank) and SquadLeader aura (+15%).
+    /// Effective attack damage, including rank bonus (+10% per rank), SquadLeader aura (+15%),
+    /// and morale bonus from nearby garrisoned buildings (+5% per building, max +25%).
     pub fn effective_attack_damage(&self) -> u32 {
         let base = self.kind.attack_damage() as f32;
         let rank_bonus = 1.0 + (self.rank as f32 * 0.10);
         let aura_bonus = if self.aura_buff { 1.0 + SQUAD_LEADER_AURA_DAMAGE_BONUS } else { 1.0 };
-        (base * rank_bonus * aura_bonus).max(1.0) as u32
+        let morale_mult = 1.0 + self.morale_bonus;
+        (base * rank_bonus * aura_bonus * morale_mult).max(1.0) as u32
     }
 
     /// Effective max HP, including rank bonus (+15% per rank).
