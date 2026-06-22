@@ -3264,11 +3264,33 @@ function tUnit(name) {
     return name;
 }
 
-let placementMode = null; // building type string or null
+let placementMode = null; // building type string or null (Rust name, not config ID)
 let placementButtons = [];
 
+// Mapping from data.js building IDs to Rust BuildingType::from_name strings
+const BUILDING_RUST_NAME = {
+    'FishermansHut':'Fisherman','ForestersHut':'Forester','WoodcuttersHut':'Woodcutter',
+    'StonecuttersHut':'Stonecutter','HealersHut':'Healer','AgaveFarm':'Agave Farm',
+    'GrainFarm':'Farm','GoatRanch':'Goat Ranch','PigRanch':'Pig Ranch',
+    'GooseRanch':'Goose Ranch','DonkeyRanch':'Donkey Ranch','GrainMill':'Mill',
+    'CoalMine':'Coal Mine','GoldMine':'Gold Mine','IronOreMine':'Iron Ore Mine',
+    'SulfurMine':'Sulfur Mine','GoldSmelter':'Gold Smelter','IronSmelter':'Iron Smelter',
+    'Slaughterhouse':'Slaughterhouse','MeadBrewery':'Mead Maker','OilPress':'Oil Press',
+    'PowderMill':'Powder Mill','WeaponFoundry':'Weapon Foundry','TrojanFarm':'Trojan Farm',
+    'Marketplace':'Marketplace','LandingDock':'Landing Dock','Vineyard':'Vineyard',
+    'StorageYard':'Storage Yard','SmallTower':'Guard Tower','BigTower':'Fortress',
+    'SmallResidence':'Small Residence','MediumResidence':'Medium Residence',
+    'LargeResidence':'Large Residence','SmallTemple':'Small Temple',
+    'LargeTemple':'Large Temple','ApiaryImker':'Apiary','RoundWell':'Waterworks',
+};
+
+function toRustName(configId) {
+    return BUILDING_RUST_NAME[configId] || configId;
+}
+
 function showBuildCostTooltip(kindName) {
-    const cost = get_build_cost(kindName);
+    const rustName = toRustName(kindName);
+    const cost = get_build_cost(rustName);
     if (cost && !cost.includes('error')) {
         const c = JSON.parse(cost);
         const parts = Object.entries(c).map(([k,v]) => `${tResource(k)}:${v}`).join(', ');
@@ -3320,7 +3342,8 @@ function refreshBuildingAffordability() {
     placementButtons.forEach(btn => {
         const name = btn._buildingName;
         if (!name) return;
-        const costJson = get_build_cost(name);
+        const rustName = toRustName(name);
+        const costJson = get_build_cost(rustName);
         let cost;
         try { cost = JSON.parse(costJson); } catch(e) { cost = null; }
         const affordable = cost && !cost.error && canAffordAll(cost);
@@ -3330,7 +3353,7 @@ function refreshBuildingAffordability() {
         } else {
             btn.classList.remove('affordable');
             // Cancel placement if current building becomes unaffordable
-            if (placementMode === name) {
+            if (placementMode === rustName) {
                 cancelPlacement();
             }
         }
@@ -6355,9 +6378,11 @@ function populateConstructionPanel() {
 
 function selectBuilding(name) {
     try { Sfx.playUIClick(); } catch(e) {}
+    // Convert config ID to Rust building name
+    const rustName = toRustName(name);
     // Use the existing placement system
     placementButtons.forEach(b => b.classList.remove('active'));
-    placementMode = name;
+    placementMode = rustName;
     canvas.classList.add('placing');
     const icon = BUILDING_ICONS[name] || '🏗️';
     placementStatus.textContent = `Place ${tBuilding(name)} — click tile · Right-click/B to cancel`;
