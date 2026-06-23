@@ -32,6 +32,16 @@ use web_sys::{
 
 // ── Shaders ───────────────────────────────────────────────────────────────────
 
+
+/// Shared day_light GLSL — `u_day_phase` uniform variant (model, sun_moon)
+macro_rules! day_light_glsl_u {
+    () => { "    float day_light_raw = 0.5 + 0.5 * sin((u_day_phase - 0.25) * 6.2831853);\n    float day_light = day_light_raw * day_light_raw * (3.0 - 2.0 * day_light_raw);\n" }
+}
+/// Shared day_light GLSL — `v_day_phase` varying variant (terrain, clouds)
+macro_rules! day_light_glsl_v {
+    () => { "    float day_light_raw = 0.5 + 0.5 * sin((v_day_phase - 0.25) * 6.2831853);\n    float day_light = day_light_raw * day_light_raw * (3.0 - 2.0 * day_light_raw);\n" }
+}
+
 const VERTEX_SHADER: &str = r#"#version 300 es
 precision highp float;
 
@@ -130,7 +140,8 @@ void main() {
 }
 "#;
 
-const FRAGMENT_SHADER: &str = r#"#version 300 es
+const FRAGMENT_SHADER: &str = concat!(
+r#"#version 300 es
 precision highp float;
 
 in vec3 v_color;
@@ -185,14 +196,11 @@ void main() {
     float elev_shade = 1.0 + v_elevation * 0.1;
     float shade = slope_shade * elev_shade;
 
-    // Day/night cycle: 0.0=midnight (darkest), 0.5=noon (brightest). Uses shifted sine + Hermite smoothstep for natural transition
-    // Day/night cycle: phase 0.0=midnight (dark), 0.5=noon (bright)
-    // Shift by -0.25 so sin peaks at noon and bottoms at midnight
-    // Apply Hermite smoothstep for natural transition feel
-    float day_light_raw = 0.5 + 0.5 * sin((v_day_phase - 0.25) * 6.2831853);
-    // Smooth ease-in-out: gentler transitions, night stays dark, day stays bright
-    float day_light = day_light_raw * day_light_raw * (3.0 - 2.0 * day_light_raw);
-    float warmth = 0.5 + day_light * 0.5;
+    // Day/night cycle: 0.0=midnight (darkest), 0.5=noon (brightest)
+    // Computed by shared day_light_glsl_v!() macro
+"#,
+day_light_glsl_v!(),
+r#"    float warmth = 0.5 + day_light * 0.5;
 
     // Diffuse lighting from vertex normal
     vec3 n = normalize(v_normal);
@@ -285,7 +293,8 @@ void main() {
 
     out_color = vec4(lit, 1.0);
 }
-"#;
+"#,
+);
 
 // ── Overlay Shaders (buildings + units) ───────────────────────────────────────
 
@@ -404,7 +413,8 @@ void main() {
 }
 "#;
 
-const MODEL_FRAGMENT_SHADER: &str = r#"#version 300 es
+const MODEL_FRAGMENT_SHADER: &str = concat!(
+r#"#version 300 es
 precision highp float;
 
 in vec3 v_normal;
@@ -470,9 +480,10 @@ void main() {
 
     // ── Phase 7: Day-phase-aware hemisphere ambient lighting ─────────
     // Matches terrain shader: 0.0=midnight (darkest), 0.5=noon (brightest)
-    float day_light_raw = 0.5 + 0.5 * sin((u_day_phase - 0.25) * 6.2831853);
-    float day_light = day_light_raw * day_light_raw * (3.0 - 2.0 * day_light_raw);
-    // Hemisphere ambient: sky-colored from above, ground-colored from below
+    // Day-phase illumination computed by shared day_light_glsl_u!() macro
+"#,
+day_light_glsl_u!(),
+r#"    // Hemisphere ambient: sky-colored from above, ground-colored from below
     // day_light=0 → ambient_scale 0.10 (night), day_light=1 → 0.50 (noon)
     float ambient_scale = 0.10 + day_light * 0.40;
     float hemi_factor = 0.5 + 0.5 * N.y;
@@ -488,7 +499,8 @@ void main() {
     vec3 final_color = ambient + diffuse + specular;
     out_color = vec4(final_color, u_model_color.a);
 }
-"#;
+"#,
+);
 
 
 /// Scale factor for converting tile elevation (0.0–1.0) to world-space Y units.
@@ -596,7 +608,8 @@ void main() {
 }
 "#;
 
-const CLOUD_FRAGMENT_SHADER: &str = r#"#version 300 es
+const CLOUD_FRAGMENT_SHADER: &str = concat!(
+r#"#version 300 es
 precision highp float;
 
 in float v_alpha;
@@ -611,16 +624,18 @@ void main() {
     float shape = smoothstep(1.0, 0.2, d);
 
     // Day-phase-aware cloud brightness: white at noon, grey-blue at night
-    float day_light = 0.5 + 0.5 * sin((v_day_phase - 0.25) * 6.2831853);
-    day_light = day_light * day_light * (3.0 - 2.0 * day_light);
-    vec3 day_color = vec3(0.95, 0.95, 0.97);   // bright white
+    // Day-phase illumination computed by shared day_light_glsl_v!() macro
+"#,
+day_light_glsl_v!(),
+r#"    vec3 day_color = vec3(0.95, 0.95, 0.97);   // bright white
     vec3 night_color = vec3(0.18, 0.20, 0.28); // dark blue-grey
     vec3 cloud_color = mix(night_color, day_color, day_light);
 
     float alpha = shape * v_alpha * 0.45; // semi-transparent
     out_color = vec4(cloud_color, alpha);
 }
-"#;
+"#,
+);
 
 
 // ── Sun/Moon Disc Shaders (Phase 7: Celestial body rendering) ────────────────
@@ -653,7 +668,8 @@ void main() {
 }
 "#;
 
-const SUN_MOON_FRAGMENT_SHADER: &str = r#"#version 300 es
+const SUN_MOON_FRAGMENT_SHADER: &str = concat!(
+r#"#version 300 es
 precision highp float;
 
 in vec2 v_quad_coord;
@@ -670,9 +686,10 @@ void main() {
     float disc = smoothstep(1.0, 0.85, d);
 
     // Day light factor: 1.0 at noon, 0.0 at midnight
-    float day_light = 0.5 + 0.5 * sin((u_day_phase - 0.25) * 6.2831853);
-    day_light = day_light * day_light * (3.0 - 2.0 * day_light);
-
+    // Day-phase illumination computed by shared day_light_glsl_u!() macro
+"#,
+day_light_glsl_u!(),
+r#"
     vec3 color;
     float alpha;
 
@@ -702,7 +719,8 @@ void main() {
     alpha = clamp(alpha, 0.0, 1.0);
     out_color = vec4(color, alpha);
 }
-"#;
+"#,
+);
 
 
 const ELEVATION_SCALE: f32 = 0.5;
@@ -6805,8 +6823,9 @@ mod tests {
             "fragment shader should use shifted phase for day_light");
         assert!(FRAGMENT_SHADER.contains("day_light_raw"),
             "fragment shader should use day_light_raw for smoothstep");
-        assert!(FRAGMENT_SHADER.contains("Hermite smoothstep"),
-            "fragment shader should document Hermite smoothstep");
+        // Hermite smoothstep lives in day_light_glsl_v!() macro — verify it's present
+        assert!(FRAGMENT_SHADER.contains("day_light_raw * day_light_raw * (3.0 - 2.0 * day_light_raw)"),
+            "fragment shader should use Hermite smoothstep via shared macro");
     }
 
     #[test]
