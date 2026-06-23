@@ -567,9 +567,10 @@ void main() {
 const CLOUD_VERTEX_SHADER: &str = r#"#version 300 es
 precision highp float;
 
-in vec3 a_cloud_pos;    // world-space position (x, y_high, z)
-in vec2 a_cloud_size;   // width, height of quad
-in float a_cloud_alpha; // per-cloud opacity
+in vec3 a_cloud_pos;    // world-space position (x, y_high, z) — instance-rate
+in vec2 a_cloud_size;   // width, height of quad — instance-rate
+in float a_cloud_alpha; // per-cloud opacity — instance-rate
+in vec2 a_corner;       // unit-quad corner (-1..1) — per-vertex
 
 uniform mat4 u_vp;
 uniform vec2 u_cam_parallax; // camera-based parallax offset (xz only)
@@ -584,15 +585,8 @@ void main() {
     vec3 pos = a_cloud_pos;
     pos.xz += u_cam_parallax * 0.15; // subtle parallax drift
 
-    // Expand quad from center point using vertex ID
-    int vid = gl_VertexID % 6;
-    vec2 corner;
-    if (vid == 0) corner = vec2(-1.0, -1.0);
-    else if (vid == 1) corner = vec2( 1.0, -1.0);
-    else if (vid == 2) corner = vec2( 1.0,  1.0);
-    else if (vid == 3) corner = vec2(-1.0, -1.0);
-    else if (vid == 4) corner = vec2( 1.0,  1.0);
-    else corner = vec2(-1.0,  1.0);
+    // Expand quad from center point using per-vertex corner attribute
+    vec2 corner = a_corner;
 
     pos.xy += corner * a_cloud_size * 0.5;
     v_quad_coord = corner;
@@ -925,7 +919,8 @@ struct App {
     cloud_vp_loc: Option<web_sys::WebGlUniformLocation>,
     cloud_parallax_loc: Option<web_sys::WebGlUniformLocation>,
     cloud_day_phase_loc: Option<web_sys::WebGlUniformLocation>,
-    cloud_vertex_count: i32,
+    cloud_corner_buffer: Option<WebGlBuffer>,
+    cloud_instance_count: i32,
     // — Phase 7: Sun/Moon disc rendering ———————————————————————
     sun_moon_program: Option<WebGlProgram>,
     sun_moon_vao: Option<WebGlVertexArrayObject>,
@@ -1423,6 +1418,7 @@ impl App {
 
         // ── Phase 7: Cloud program ──────────────────────────────────────
         let (cloud_program, cloud_vao, cloud_pos_buffer, cloud_size_buffer, cloud_alpha_buffer,
+             cloud_corner_buffer,
              cloud_vp_loc, cloud_parallax_loc, cloud_day_phase_loc) =
             compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, CLOUD_VERTEX_SHADER)
             .and_then(|vert| {
@@ -1445,13 +1441,34 @@ impl App {
                 gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, alpha_buf.as_ref());
                 gl.vertex_attrib_pointer_with_i32(2, 1, WebGl2RenderingContext::FLOAT, false, 0, 0);
                 gl.enable_vertex_attrib_array(2);
+                // Set instance-rate divisors for cloud position/size/alpha
+                gl.vertex_attrib_divisor(0, 1);
+                gl.vertex_attrib_divisor(1, 1);
+                gl.vertex_attrib_divisor(2, 1);
+                // Static unit-quad corner buffer (per-vertex, divisor=0 default)
+                let corner_buf = gl.create_buffer();
+                gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, corner_buf.as_ref());
+                let quad_corners: [f32; 12] = [
+                    -1.0, -1.0,  1.0, -1.0,  1.0,  1.0,
+                    -1.0, -1.0,  1.0,  1.0, -1.0,  1.0,
+                ];
+                unsafe {
+                    let view = js_sys::Float32Array::view(&quad_corners);
+                    gl.buffer_data_with_array_buffer_view(
+                        WebGl2RenderingContext::ARRAY_BUFFER,
+                        &view,
+                        WebGl2RenderingContext::STATIC_DRAW,
+                    );
+                }
+                gl.vertex_attrib_pointer_with_i32(3, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
+                gl.enable_vertex_attrib_array(3);
                 let vp_loc = gl.get_uniform_location(&prog, "u_vp");
                 let parallax_loc = gl.get_uniform_location(&prog, "u_cam_parallax");
                 let day_loc = gl.get_uniform_location(&prog, "u_day_phase");
                 gl.bind_vertex_array(None);
-                (Some(prog), vao, pos_buf, size_buf, alpha_buf, vp_loc, parallax_loc, day_loc)
+                (Some(prog), vao, pos_buf, size_buf, alpha_buf, corner_buf, vp_loc, parallax_loc, day_loc)
             })
-            .unwrap_or((None, None, None, None, None, None, None, None));
+            .unwrap_or((None, None, None, None, None, None, None, None, None));
 
         // — Phase 7: Sun/Moon disc program ————————————————————————
         let (sun_moon_program, sun_moon_vao, sun_moon_vp_loc, sun_moon_day_phase_loc,
@@ -1620,10 +1637,11 @@ impl App {
             cloud_pos_buffer,
             cloud_size_buffer,
             cloud_alpha_buffer,
+            cloud_corner_buffer,
             cloud_vp_loc,
             cloud_parallax_loc,
             cloud_day_phase_loc,
-            cloud_vertex_count: 0,
+            cloud_instance_count: 0,
             // — Phase 7: Sun/Moon disc rendering
             sun_moon_program,
             sun_moon_vao,
@@ -2121,7 +2139,7 @@ impl App {
         let grid_step = 6.0_f32; // one cloud every N tiles
 
         // Seed-based pseudo-random using position (deterministic)
-        let mut cloud_idx = 0u32;
+        let mut _cloud_idx = 0u32;
         let mut z = -grid_step * 0.5;
         while z < map_h + grid_step {
             let mut x = -grid_step * 0.5;
@@ -2138,16 +2156,14 @@ impl App {
                     let size_base = 2.0 + h * 3.0; // 2.0–5.0 tile width
                     let alpha = 0.3 + h2 * 0.5; // 0.3–0.8 opacity
 
-                    // Each cloud = 6 vertices (2 triangles), all at same position
-                    for _ in 0..6 {
-                        positions.push(cx);
-                        positions.push(cloud_y);
-                        positions.push(cz);
-                        sizes.push(size_base);
-                        sizes.push(size_base * 0.6); // slightly elliptical
-                        alphas.push(alpha);
-                    }
-                    cloud_idx += 1;
+                    // One entry per cloud (instanced rendering)
+                    positions.push(cx);
+                    positions.push(cloud_y);
+                    positions.push(cz);
+                    sizes.push(size_base);
+                    sizes.push(size_base * 0.6); // slightly elliptical
+                    alphas.push(alpha);
+                    _cloud_idx += 1;
                 }
                 x += grid_step;
             }
@@ -2219,9 +2235,9 @@ impl App {
         gl.enable(WebGl2RenderingContext::BLEND);
         gl.blend_func(WebGl2RenderingContext::SRC_ALPHA, WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
 
-        // Draw all cloud quads
-        let vertex_count = (positions.len() / 3) as i32;
-        gl.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, vertex_count);
+        // Draw all cloud quads using instanced rendering
+        let instance_count = (positions.len() / 3) as i32;
+        gl.draw_arrays_instanced(WebGl2RenderingContext::TRIANGLES, 0, 6, instance_count);
 
         gl.disable(WebGl2RenderingContext::BLEND);
         gl.bind_vertex_array(None);
