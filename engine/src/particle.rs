@@ -212,6 +212,46 @@ pub fn spawn_rubble_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
     ps.spawn_burst(tile_x, tile_y, 0.0, 8, 0.7, 0.65, 0.55, 1.5, 0.8, 10.0);
 }
 
+/// Spawn a single rain droplet: fast-falling blue-white streak from the sky.
+/// Drops start at a pseudo-random height (z=2..5), fall with gravity,
+/// and drift slightly horizontally. Short-lived for a streaking effect.
+pub fn spawn_rain_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 17.3 + y * 11.7;
+    let z = 3.0 + (seed * 1.3).sin() * 2.0;
+    let drift = (seed * 3.7).cos() * 0.3;
+    let life = 0.3 + (seed * 7.1).sin().abs() * 0.25;
+    let _ = ps.spawn(x + drift, y + drift * 0.7, z,
+        (seed * 2.3).cos() * 0.25, (seed * 2.9).sin() * 0.25,
+        -8.0 - (seed * 5.0).sin().abs() * 3.0,
+        life, 0.7, 0.78, 0.95, 2.5);
+}
+
+/// Spawn a burst of rain droplets across a rectangular area.
+/// Used every few frames for continuous rainfall — drops appear at
+/// random positions within the given bounds.
+pub fn spawn_rain_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 13.7 + 3.1).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 17.3 + 7.9).sin() * 0.5 + 0.5) * sy;
+        let seed = x * 17.3 + y * 11.7;
+        let z = 3.0 + (seed * 1.3).sin() * 2.0;
+        if ps.spawn(x, y, z,
+            (seed * 2.3).cos() * 0.25, (seed * 2.9).sin() * 0.25,
+            -8.0 - (seed * 5.0).sin().abs() * 3.0,
+            0.3 + (seed * 7.1).sin().abs() * 0.25,
+            0.7, 0.78, 0.95, 2.5) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
+
 /// Spawn construction activity particles at a building site.
 /// Nation color is blended with construction dust for faction-specific effects.
 /// Called periodically during building construction (when construction < 1.0).
@@ -525,6 +565,67 @@ mod tests {
         // Overall should have some greenish particles
         let green_count = alive.iter().filter(|p| p.g > p.r && p.g > p.b).count();
         assert!(green_count > 0, "Maya construction particles should have some green-dominant, got: {}/{}", green_count, alive.len());
+    }
+
+    #[test]
+    fn test_rain_particle_spawns() {
+        let mut ps = ParticleSystem::new();
+        spawn_rain_particle(&mut ps, 5.0, 5.0);
+        assert_eq!(ps.alive_count(), 1, "rain particle should spawn one droplet");
+    }
+
+    #[test]
+    fn test_rain_burst_spawns() {
+        let mut ps = ParticleSystem::new();
+        let n = spawn_rain_burst(&mut ps, 0.0, 0.0, 20.0, 20.0, 10);
+        assert!(n > 0 && n <= 10, "rain burst should spawn 1-10 particles, got {}", n);
+        assert_eq!(ps.alive_count(), n as usize);
+    }
+
+    #[test]
+    fn test_rain_particles_fall() {
+        let mut ps = ParticleSystem::new();
+        spawn_rain_particle(&mut ps, 3.0, 4.0);
+        let alive: Vec<&Particle> = ps.particles.iter().filter(|p| p.alive).collect();
+        assert!(!alive.is_empty());
+        for p in &alive {
+            assert!(p.vz < 0.0, "rain particles should fall (vz < 0), got vz={}", p.vz);
+        }
+    }
+
+    #[test]
+    fn test_rain_particles_blue_tint() {
+        let mut ps = ParticleSystem::new();
+        spawn_rain_particle(&mut ps, 2.0, 3.0);
+        let alive: Vec<&Particle> = ps.particles.iter().filter(|p| p.alive).collect();
+        assert!(!alive.is_empty());
+        let p = alive[0];
+        assert!(p.b > p.r, "rain should be blue-dominant (b > r): b={}, r={}", p.b, p.r);
+    }
+
+    #[test]
+    fn test_rain_burst_bounds() {
+        let mut ps = ParticleSystem::new();
+        let n = spawn_rain_burst(&mut ps, 10.0, 10.0, 30.0, 30.0, 5);
+        assert!(n > 0);
+        let alive: Vec<&Particle> = ps.particles.iter().filter(|p| p.alive).collect();
+        for p in &alive {
+            assert!(p.x >= 10.0 && p.x <= 30.0, "rain x={} out of [10,30]", p.x);
+            assert!(p.y >= 10.0 && p.y <= 30.0, "rain y={} out of [10,30]", p.y);
+        }
+    }
+
+    #[test]
+    fn test_rain_burst_limited_by_max() {
+        // Fill system then try to spawn rain — should stop at capacity
+        let mut ps = ParticleSystem::new();
+        // Fill all slots
+        for i in 0..MAX_PARTICLES {
+            ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+        }
+        assert_eq!(ps.alive_count(), MAX_PARTICLES);
+        let n = spawn_rain_burst(&mut ps, 0.0, 0.0, 10.0, 10.0, 20);
+        assert_eq!(n, 0, "rain burst should spawn 0 when system full");
     }
 }
 

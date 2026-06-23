@@ -1772,6 +1772,21 @@ impl App {
                     }
                 }
             }
+            // Rain particles: every ~4 ticks, spawn 3 droplets across the visible area
+            // Rate-limited by the <64 alive_count guard above
+            if tick % 4 == 0 {
+                let map_w = self.game_loop.state.map.width as f32;
+                let map_h = self.game_loop.state.map.height as f32;
+                let vis_w = 24.0f32;
+                let vis_h = 18.0f32;
+                let cx = self.camera.center_x;
+                let cy = self.camera.center_y;
+                let min_x = (cx - vis_w).max(0.0).min(map_w);
+                let min_y = (cy - vis_h).max(0.0).min(map_h);
+                let max_x = (cx + vis_w).max(0.0).min(map_w);
+                let max_y = (cy + vis_h).max(0.0).min(map_h);
+                particle::spawn_rain_burst(&mut self.particle_system, min_x, min_y, max_x, max_y, 3);
+            }
         }
 
         // Smooth camera
