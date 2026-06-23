@@ -660,8 +660,6 @@ in vec2 v_quad_coord;
 
 uniform float u_day_phase;
 uniform int u_is_moon;       // 0 = sun, 1 = moon
-uniform vec3 u_sun_color;    // warm sun tint
-uniform vec3 u_moon_color;   // cool moon tint
 
 out vec4 out_color;
 
@@ -927,7 +925,6 @@ struct App {
     sun_moon_vp_loc: Option<web_sys::WebGlUniformLocation>,
     sun_moon_day_phase_loc: Option<web_sys::WebGlUniformLocation>,
     sun_moon_is_moon_loc: Option<web_sys::WebGlUniformLocation>,
-    sun_moon_color_loc: Option<web_sys::WebGlUniformLocation>,
     sun_moon_screen_pos_loc: Option<web_sys::WebGlUniformLocation>,
     sun_moon_radius_loc: Option<web_sys::WebGlUniformLocation>,
 
@@ -1472,7 +1469,7 @@ impl App {
 
         // — Phase 7: Sun/Moon disc program ————————————————————————
         let (sun_moon_program, sun_moon_vao, sun_moon_vp_loc, sun_moon_day_phase_loc,
-             sun_moon_is_moon_loc, sun_moon_color_loc, sun_moon_screen_pos_loc,
+             sun_moon_is_moon_loc, sun_moon_screen_pos_loc,
              sun_moon_radius_loc) =
             compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, SUN_MOON_VERTEX_SHADER)
             .and_then(|vert| {
@@ -1487,13 +1484,12 @@ impl App {
                 let vp_loc = gl.get_uniform_location(&prog, "u_vp");
                 let day_loc = gl.get_uniform_location(&prog, "u_day_phase");
                 let is_moon_loc = gl.get_uniform_location(&prog, "u_is_moon");
-                let color_loc = gl.get_uniform_location(&prog, "u_sun_color");
                 let screen_pos_loc = gl.get_uniform_location(&prog, "u_sun_screen_pos");
                 let radius_loc = gl.get_uniform_location(&prog, "u_sun_radius");
                 gl.bind_vertex_array(None);
-                (Some(prog), vao, vp_loc, day_loc, is_moon_loc, color_loc, screen_pos_loc, radius_loc)
+                (Some(prog), vao, vp_loc, day_loc, is_moon_loc, screen_pos_loc, radius_loc)
             })
-            .unwrap_or((None, None, None, None, None, None, None, None));
+            .unwrap_or((None, None, None, None, None, None, None));
 
         // Compile overlay shaders
         let overlay_vert = compile_shader(
@@ -1648,7 +1644,6 @@ impl App {
             sun_moon_vp_loc,
             sun_moon_day_phase_loc,
             sun_moon_is_moon_loc,
-            sun_moon_color_loc,
             sun_moon_screen_pos_loc,
             sun_moon_radius_loc,
 
@@ -2323,9 +2318,6 @@ impl App {
         if let Some(ref loc) = self.sun_moon_is_moon_loc {
             gl.uniform1i(Some(loc), 0);
         }
-        if let Some(ref loc) = self.sun_moon_color_loc {
-            gl.uniform3f(Some(loc), 1.0, 0.95, 0.85);
-        }
 
         gl.enable(WebGl2RenderingContext::BLEND);
         gl.blend_func(WebGl2RenderingContext::SRC_ALPHA, WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
@@ -2334,9 +2326,6 @@ impl App {
         // Draw moon (is_moon = 1) — opposite position
         if let Some(ref loc) = self.sun_moon_is_moon_loc {
             gl.uniform1i(Some(loc), 1);
-        }
-        if let Some(ref loc) = self.sun_moon_color_loc {
-            gl.uniform3f(Some(loc), 0.85, 0.88, 0.95);
         }
         if let Some(ref loc) = self.sun_moon_screen_pos_loc {
             gl.uniform2f(Some(loc), -ndc_x, -ndc_y);
