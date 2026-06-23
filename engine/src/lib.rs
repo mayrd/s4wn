@@ -166,6 +166,8 @@ uniform sampler2D u_water_normal;
 uniform float u_water_normal_ready;
 uniform float u_lightning;
 uniform sampler2D u_reflection_tex;
+uniform bool u_reflection_pass;
+uniform float u_reflection_horizon_y;
 
 out vec4 out_color;
 
@@ -217,6 +219,8 @@ r#"    float warmth = 0.5 + day_light * 0.5;
     // Water=3, DeepWater=4
     bool is_water = (v_terrain_id > 2.5 && v_terrain_id < 4.5);
     bool is_deep_water = (v_terrain_id > 3.5);
+    // Exclude water tiles from reflection FBO: they don't reflect themselves
+    if (u_reflection_pass && is_water) discard;
     if (is_water) {
         // Normal perturbation from water normal map (animated scrolling)
         vec3 n_w = normalize(v_normal);
@@ -256,6 +260,8 @@ r#"    float warmth = 0.5 + day_light * 0.5;
         // Sample screen-space reflection texture (mirrored upside-down for water mirror)
         vec2 screen_uv = gl_FragCoord.xy / u_resolution;
         screen_uv.y = 1.0 - screen_uv.y;
+        // Clamp sampling to below horizon: don't show reflection above water line
+        screen_uv.y = min(screen_uv.y, u_reflection_horizon_y);
         vec3 reflection = texture(u_reflection_tex, screen_uv).rgb;
 
         // Blend water color with terrain base using fresnel
@@ -963,6 +969,8 @@ struct App {
     reflection_fbo: Option<web_sys::WebGlFramebuffer>,
     reflection_tex: Option<web_sys::WebGlTexture>,
     reflection_tex_loc: Option<web_sys::WebGlUniformLocation>,
+    reflection_pass_loc: Option<web_sys::WebGlUniformLocation>,
+    reflection_horizon_y_loc: Option<web_sys::WebGlUniformLocation>,
 
 
 }
@@ -1363,6 +1371,8 @@ impl App {
         let water_normal_loc = gl.get_uniform_location(&program, "u_water_normal");
         let water_normal_ready_loc = gl.get_uniform_location(&program, "u_water_normal_ready");
         let reflection_tex_loc = gl.get_uniform_location(&program, "u_reflection_tex");
+        let reflection_pass_loc = gl.get_uniform_location(&program, "u_reflection_pass");
+        let reflection_horizon_y_loc = gl.get_uniform_location(&program, "u_reflection_horizon_y");
         let day_phase_loc = gl
             .get_uniform_location(&program, "u_day_phase")
             .ok_or("Cannot find u_day_phase")?;
@@ -1711,6 +1721,8 @@ impl App {
             reflection_fbo: None,
             reflection_tex: None,
             reflection_tex_loc,
+            reflection_pass_loc,
+            reflection_horizon_y_loc,
         })
     }
 
@@ -1962,6 +1974,10 @@ impl App {
         if let Some(ref loc) = self.lightning_loc {
             gl.uniform1f(Some(loc), self.lightning_flash);
         }
+        // Ensure reflection pass is off for normal terrain rendering
+        if let Some(ref loc) = self.reflection_pass_loc {
+            gl.uniform1i(Some(loc), 0);
+        }
         // Phase 5: Pass orbital camera View-Projection matrix to shader
         // When enabled (u_use_vp=true), shader uses VP matrix instead of legacy iso params
         if let (Some(ref vp_loc), Some(ref use_loc)) = (&self.vp_loc, &self.use_vp_loc) {
@@ -2105,6 +2121,17 @@ impl App {
             gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
             gl.uniform_matrix4fv_with_f32_array(Some(vp_loc), false, &ref_vp);
             gl.uniform1i(Some(use_loc), 1);
+            // Set reflection pass flag: discard water tiles in the FBO render
+            if let Some(ref loc) = self.reflection_pass_loc {
+                gl.uniform1i(Some(loc), 1);
+            }
+            // Compute reflection horizon Y: camera elevation relative to water plane
+            // Water is at world Y=0, reflected camera looks upward from below
+            let horizon_ndc = (-fwd_y) / (fwd_x * fwd_x + fwd_z * fwd_z + 0.001).sqrt() * (1.0 / ((45.0f32.to_radians() * 0.5).tan()));
+            let horizon_screen_y = ((1.0 - horizon_ndc) * 0.5).clamp(0.0, 1.0);
+            if let Some(ref loc) = self.reflection_horizon_y_loc {
+                gl.uniform1f(Some(loc), horizon_screen_y);
+            }
             gl.bind_vertex_array(Some(&self.vao));
             gl.draw_elements_with_i32(
                 WebGl2RenderingContext::TRIANGLES,
@@ -2114,6 +2141,10 @@ impl App {
             );
             gl.bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, None);
             gl.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
+            // Reset reflection pass flag for normal rendering
+            if let Some(ref loc) = self.reflection_pass_loc {
+                gl.uniform1i(Some(loc), 0);
+            }
         }
         // Bind reflection texture for water shader to sample
         if let (Some(ref loc), Some(ref tex)) = (&self.reflection_tex_loc, &self.reflection_tex) {
@@ -7162,6 +7193,35 @@ mod tests {
         assert!(water_section.contains("reflected"), "water shader should have reflected color variable");
         assert!(water_section.contains("reflection"), "water shader should compute reflection from texture");
         assert!(water_section.contains("fresnel"), "water shader should use fresnel for reflection blend");
+    }
+
+    // ── Reflection Pass Optimization Tests ─────────────────────────────────
+
+    #[test]
+    fn test_fragment_shader_has_reflection_pass_uniform() {
+        assert!(FRAGMENT_SHADER.contains("u_reflection_pass"), "fragment shader missing u_reflection_pass uniform");
+        assert!(FRAGMENT_SHADER.contains("uniform bool u_reflection_pass"), "u_reflection_pass should be bool uniform");
+    }
+
+    #[test]
+    fn test_fragment_shader_has_reflection_horizon_uniform() {
+        assert!(FRAGMENT_SHADER.contains("u_reflection_horizon_y"), "fragment shader missing u_reflection_horizon_y uniform");
+        assert!(FRAGMENT_SHADER.contains("uniform float u_reflection_horizon_y"), "u_reflection_horizon_y should be float uniform");
+    }
+
+    #[test]
+    fn test_water_discarded_during_reflection_pass() {
+        // During the reflection FBO pass, water tiles should be discarded
+        let water_section = FRAGMENT_SHADER.split("if (is_water)").nth(1).unwrap_or("");
+        assert!(FRAGMENT_SHADER.contains("u_reflection_pass && is_water"), "shader should check u_reflection_pass && is_water");
+        assert!(FRAGMENT_SHADER.contains("discard"), "shader should discard water during reflection pass");
+    }
+
+    #[test]
+    fn test_reflection_sampling_clamped_below_horizon() {
+        // Reflection sampling should clamp screen_uv.y to u_reflection_horizon_y
+        assert!(FRAGMENT_SHADER.contains("min(screen_uv.y, u_reflection_horizon_y)"), 
+            "reflection sampling should clamp Y to below horizon: min(screen_uv.y, u_reflection_horizon_y)");
     }
 
     // ── Terrain LOD Tests ──────────────────────────────────────────────────
