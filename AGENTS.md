@@ -182,8 +182,12 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 27d. ~~Add lightning flashes: periodic sky brightening with rapid fade (0.1-0.2s)~~ ✅
 28. ~~Water reflections: mirror terrain/buildings on water surface with Fresnel effect~~ ✅ (session 183 — FBO + reflection pass + shader sampling)
 29. ~~Terrain LOD: reduce vertex count for distant tiles~~ ✅ (session 184)
-30. Reflection pass optimization: render only solid objects (exclude water from FBO), clamp reflection to below horizon
+30. ~~Reflection pass optimization: render only solid objects (exclude water from FBO), clamp reflection to below horizon~~ ✅
 31. WASM size: measure new baseline with WebGlFramebuffer + WebGlTexture features
+32. Verify reflection optimization visually: ensure water tiles don't appear in reflection FBO
+33. Fine-tune horizon_y computation for different camera elevations and zoom levels
+34. Consider adding a depth attachment to the reflection FBO for better sorting
+35. Add rendering pipeline audit checklist document
 
 ---
 
