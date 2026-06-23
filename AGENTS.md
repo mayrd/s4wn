@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 188 | 2026-06-23 | Phase 7: Rendering pipeline audit checklist — RENDERING_AUDIT.md covering all 7 passes (FBO→terrain→shadows→clouds→sun/moon→models→overlay). Tracks 38 features done, 3 visual verification items (Steps 32-34), performance targets, shader uniforms audit. 645 tests pass. -- 645 tests
 | 187 | 2026-06-23 | Phase 7: Half-resolution reflection FBO — render at 50% resolution (canvas.width/2, canvas.height/2) to save 75% fill rate on water tiles. reflection_w/reflection_h fields on App struct. LINEAR filter upscales. 645 tests pass, WASM 377KB. -- 645 tests
 | 185 | 2026-06-23 | Fix #69: Add missing `uniform vec2 u_resolution;` to terrain fragment shader — was used but not declared, causing shader compile error. 644 tests pass. -- 644 tests
 | 184 | 2026-06-23 | Phase 7: Terrain LOD — multi-resolution mesh with 3 levels (LOD 0: 1×1, LOD 1: 2×2, LOD 2: 4×4 tiles per quad). Chebyshev distance from camera center. build_map_mesh() delegates to build_map_mesh_lod(). 6 new tests. -- 640 tests |
@@ -190,14 +191,17 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 32. Verify reflection optimization visually: ensure water tiles don't appear in reflection FBO
 33. Fine-tune horizon_y computation for different camera elevations and zoom levels
 34. Consider adding a depth attachment to the reflection FBO for better sorting
-35. Add rendering pipeline audit checklist document
-36. Fix #69: u_resolution missing uniform — DONE (session 185)
-37. Fix #70: Rebuild + deploy WASM with u_resolution fix — DONE (session 186)
-38. ~~WASM size: measure new baseline~~ ✅ 377KB (session 187)
-39. Verify reflection optimization visually: ensure water tiles don't appear in reflection FBO
-40. Fine-tune horizon_y computation for different camera elevations and zoom levels
-41. Add rendering pipeline audit checklist document
+35. ~~Add rendering pipeline audit checklist document~~ ✅ (session 188)
 
+---
+
+### Next Session — Updated Steps (Session 188+)
+32. Verify reflection optimization visually: ensure water tiles excluded from reflection FBO [MUST]
+33. Fine-tune horizon_y computation for different camera elevations and zoom levels [SHOULD]
+34. Add depth attachment to reflection FBO for better sorting [NICE]
+42. Run cargo clippy and fix warnings [SHOULD]
+43. Investigate WASM size: 377KB vs 300KB target — profile remaining 77KB [MUST]
+44. Measure draw calls per frame and benchmark FPS at 1080p/720p [SHOULD]
 ---
 
 *All building data must match BASE.md. Never modify BASE.md.*
