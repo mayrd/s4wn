@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 176 | 2026-06-23 | Phase 7: Cloud instanced rendering — draw_arrays_instanced, static unit-quad corner buffer, per-instance pos/size/alpha (divisor=1). 6× less vertex upload. -- 624 tests |
 | 175 | 2026-06-23 | WASM size audit: 364KB (64KB over target). wasm-opt no help. Clean build confirms 364KB baseline. -- 624 tests |
 | 174 | 2026-06-23 | Phase 7: Sun/Moon disc rendering — celestial body discs with glow, day/night visibility, positioned via VP projection — 624 tests |
 | 173 | 2026-06-23 | Phase 7: Building destruction animation — scale-to-zero with ease-in curve during destruction — 618 tests |
@@ -157,10 +158,18 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 18. Validate WASM <300KB -- currently 364KB (64KB over). wasm-opt -Oz no effect (rustc already optimal). Need source-level reduction.
 19. Add weather effects (rain particles, lightning flashes during storms)
 20. ~~Add building destruction animation (collapse particles, debris)~~ ✅ (session 173)
-21. Optimize cloud rendering: use instanced draw calls instead of per-vertex expansion
+21. ~~Optimize cloud rendering: use instanced draw calls instead of per-vertex expansion~~ ✅ (session 176)
 22. Add sun/moon disc rendering in the sky -- done (session 174)
 23. Validate WASM <300KB and optimize shader size
-24. Implement cloud instanced rendering (draw_arrays_instanced) to reduce vertex upload
+24. ~~Implement cloud instanced rendering (draw_arrays_instanced) to reduce vertex upload~~ ✅ (session 176)
+
+---
+
+25. WASM size audit: measure WASM size after cloud instancing change (target <300KB, was 364KB)
+26. Optimize WASM shader size: inline short uniforms, remove unused snippet variants
+27. Add weather effects: rain particle system with lightning flashes
+28. Water reflections: mirror terrain/buildings on water surface with Fresnel effect
+29. Terrain LOD: reduce vertex count for distant tiles
 
 ---
 
