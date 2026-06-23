@@ -3010,8 +3010,6 @@ fn unit_color(kind: &crate::units::UnitKind) -> [f32; 3] {
 /// Returns true on success.
 #[wasm_bindgen]
 pub fn init(canvas_id: &str) -> Result<bool, JsValue> {
-    console_error_panic_hook::set_once();
-
     let window = window().ok_or("No window")?;
     let document = window.document().ok_or("No document")?;
     let canvas = document
