@@ -562,6 +562,72 @@ void main() {
 }
 "#;
 
+// ── Cloud Shaders (Phase 7: Semi-transparent cloud layer with parallax) ────────
+
+const CLOUD_VERTEX_SHADER: &str = r#"#version 300 es
+precision highp float;
+
+in vec3 a_cloud_pos;    // world-space position (x, y_high, z)
+in vec2 a_cloud_size;   // width, height of quad
+in float a_cloud_alpha; // per-cloud opacity
+
+uniform mat4 u_vp;
+uniform vec2 u_cam_parallax; // camera-based parallax offset (xz only)
+uniform float u_day_phase;
+
+out float v_alpha;
+out float v_day_phase;
+out vec2 v_quad_coord; // -1..1 within quad
+
+void main() {
+    // Parallax: clouds shift opposite to camera movement (distant = less shift)
+    vec3 pos = a_cloud_pos;
+    pos.xz += u_cam_parallax * 0.15; // subtle parallax drift
+
+    // Expand quad from center point using vertex ID
+    int vid = gl_VertexID % 6;
+    vec2 corner;
+    if (vid == 0) corner = vec2(-1.0, -1.0);
+    else if (vid == 1) corner = vec2( 1.0, -1.0);
+    else if (vid == 2) corner = vec2( 1.0,  1.0);
+    else if (vid == 3) corner = vec2(-1.0, -1.0);
+    else if (vid == 4) corner = vec2( 1.0,  1.0);
+    else corner = vec2(-1.0,  1.0);
+
+    pos.xy += corner * a_cloud_size * 0.5;
+    v_quad_coord = corner;
+    v_alpha = a_cloud_alpha;
+    v_day_phase = u_day_phase;
+    gl_Position = u_vp * vec4(pos, 1.0);
+}
+"#;
+
+const CLOUD_FRAGMENT_SHADER: &str = r#"#version 300 es
+precision highp float;
+
+in float v_alpha;
+in float v_day_phase;
+in vec2 v_quad_coord;
+
+out vec4 out_color;
+
+void main() {
+    // Soft circular cloud shape
+    float d = length(v_quad_coord);
+    float shape = smoothstep(1.0, 0.2, d);
+
+    // Day-phase-aware cloud brightness: white at noon, grey-blue at night
+    float day_light = 0.5 + 0.5 * sin((v_day_phase - 0.25) * 6.2831853);
+    day_light = day_light * day_light * (3.0 - 2.0 * day_light);
+    vec3 day_color = vec3(0.95, 0.95, 0.97);   // bright white
+    vec3 night_color = vec3(0.18, 0.20, 0.28); // dark blue-grey
+    vec3 cloud_color = mix(night_color, day_color, day_light);
+
+    float alpha = shape * v_alpha * 0.45; // semi-transparent
+    out_color = vec4(cloud_color, alpha);
+}
+"#;
+
 const ELEVATION_SCALE: f32 = 0.5;
 
 /// Compute sky background color from day_phase (0.0–1.0 over a 300s day cycle).
@@ -765,6 +831,16 @@ struct App {
     /// Sound event counters — drained each frame by JS for audio playback
     recent_death_count: u32,
     recent_combat_count: u32,
+    // ── Phase 7: Cloud layer rendering ─────────────────────────────────────
+    cloud_program: Option<WebGlProgram>,
+    cloud_vao: Option<WebGlVertexArrayObject>,
+    cloud_pos_buffer: Option<WebGlBuffer>,
+    cloud_size_buffer: Option<WebGlBuffer>,
+    cloud_alpha_buffer: Option<WebGlBuffer>,
+    cloud_vp_loc: Option<web_sys::WebGlUniformLocation>,
+    cloud_parallax_loc: Option<web_sys::WebGlUniformLocation>,
+    cloud_day_phase_loc: Option<web_sys::WebGlUniformLocation>,
+    cloud_vertex_count: i32,
 
 }
 
@@ -1250,6 +1326,38 @@ impl App {
             .unwrap_or((None, None, None, None, None, None, None, None));
 
 
+        // ── Phase 7: Cloud program ──────────────────────────────────────
+        let (cloud_program, cloud_vao, cloud_pos_buffer, cloud_size_buffer, cloud_alpha_buffer,
+             cloud_vp_loc, cloud_parallax_loc, cloud_day_phase_loc) =
+            compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, CLOUD_VERTEX_SHADER)
+            .and_then(|vert| {
+                compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, CLOUD_FRAGMENT_SHADER)
+                .and_then(|frag| link_program(&gl, &vert, &frag))
+            })
+            .map(|prog| {
+                let vao = gl.create_vertex_array();
+                gl.bind_vertex_array(vao.as_ref());
+                gl.use_program(Some(&prog));
+                let pos_buf = gl.create_buffer();
+                gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, pos_buf.as_ref());
+                gl.vertex_attrib_pointer_with_i32(0, 3, WebGl2RenderingContext::FLOAT, false, 0, 0);
+                gl.enable_vertex_attrib_array(0);
+                let size_buf = gl.create_buffer();
+                gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, size_buf.as_ref());
+                gl.vertex_attrib_pointer_with_i32(1, 2, WebGl2RenderingContext::FLOAT, false, 0, 0);
+                gl.enable_vertex_attrib_array(1);
+                let alpha_buf = gl.create_buffer();
+                gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, alpha_buf.as_ref());
+                gl.vertex_attrib_pointer_with_i32(2, 1, WebGl2RenderingContext::FLOAT, false, 0, 0);
+                gl.enable_vertex_attrib_array(2);
+                let vp_loc = gl.get_uniform_location(&prog, "u_vp");
+                let parallax_loc = gl.get_uniform_location(&prog, "u_cam_parallax");
+                let day_loc = gl.get_uniform_location(&prog, "u_day_phase");
+                gl.bind_vertex_array(None);
+                (Some(prog), vao, pos_buf, size_buf, alpha_buf, vp_loc, parallax_loc, day_loc)
+            })
+            .unwrap_or((None, None, None, None, None, None, None, None));
+
         // Compile overlay shaders
         let overlay_vert = compile_shader(
             &gl,
@@ -1386,6 +1494,16 @@ impl App {
             water_normal_ready_loc,
             water_normal_ready: false,
             water_time_loc,
+            // ── Phase 7: Cloud layer rendering
+            cloud_program,
+            cloud_vao,
+            cloud_pos_buffer,
+            cloud_size_buffer,
+            cloud_alpha_buffer,
+            cloud_vp_loc,
+            cloud_parallax_loc,
+            cloud_day_phase_loc,
+            cloud_vertex_count: 0,
 
             // Phase 6: Particle system
             particle_system: particle::ParticleSystem::new(),
@@ -1665,6 +1783,7 @@ impl App {
         // ── Model 3D: auto-populate instances from game state, then draw ──
         self.populate_model_instances_from_game_state();
         self.render_shadows();
+        self.render_clouds(day_phase);
         self.render_models(elapsed as f32);
 
 // ── Overlay: draw buildings and units as colored dots ─────────────
@@ -1845,6 +1964,136 @@ impl App {
 
         gl.bind_vertex_array(None);
         gl.disable(WebGl2RenderingContext::BLEND);
+    }
+
+    // ── Phase 7: Cloud layer rendering ─────────────────────────────────────
+    fn render_clouds(&mut self, day_phase: f64) {
+        let gl = &self.gl;
+        let prog = match self.cloud_program.as_ref() {
+            Some(p) => p,
+            None => return,
+        };
+        let vao = match self.cloud_vao.as_ref() {
+            Some(v) => v,
+            None => return,
+        };
+
+        // Generate cloud instance data: semi-transparent quads at high elevation
+        // Clouds are placed in a grid above the map with some randomness
+        let mut positions: Vec<f32> = Vec::new();
+        let mut sizes: Vec<f32> = Vec::new();
+        let mut alphas: Vec<f32> = Vec::new();
+
+        let map_w = self.map.width as f32;
+        let map_h = self.map.height as f32;
+        let cloud_y = 8.0_f32; // high above terrain
+        let grid_step = 6.0_f32; // one cloud every N tiles
+
+        // Seed-based pseudo-random using position (deterministic)
+        let mut cloud_idx = 0u32;
+        let mut z = -grid_step * 0.5;
+        while z < map_h + grid_step {
+            let mut x = -grid_step * 0.5;
+            while x < map_w + grid_step {
+                // Deterministic hash for this grid cell
+                let h = ((x * 127.1 + z * 311.7 + 74.7).sin() * 43758.5453).fract();
+                let h2 = ((x * 269.5 + z * 183.3 + 67.2).sin() * 28374.1234).fract();
+                let h3 = ((x * 419.2 + z * 357.8 + 91.3).sin() * 19283.5678).fract();
+
+                // Skip some cells for natural spacing (density ~60%)
+                if h > 0.4 {
+                    let cx = x + h2 * grid_step * 0.8;
+                    let cz = z + h3 * grid_step * 0.8;
+                    let size_base = 2.0 + h * 3.0; // 2.0–5.0 tile width
+                    let alpha = 0.3 + h2 * 0.5; // 0.3–0.8 opacity
+
+                    // Each cloud = 6 vertices (2 triangles), all at same position
+                    for _ in 0..6 {
+                        positions.push(cx);
+                        positions.push(cloud_y);
+                        positions.push(cz);
+                        sizes.push(size_base);
+                        sizes.push(size_base * 0.6); // slightly elliptical
+                        alphas.push(alpha);
+                    }
+                    cloud_idx += 1;
+                }
+                x += grid_step;
+            }
+            z += grid_step;
+        }
+
+        if positions.is_empty() {
+            return;
+        }
+
+        gl.use_program(Some(prog));
+        gl.bind_vertex_array(Some(vao));
+
+        // Upload cloud instance data
+        if let Some(ref buf) = self.cloud_pos_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            unsafe {
+                let view = js_sys::Float32Array::view(&positions);
+                gl.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    &view,
+                    WebGl2RenderingContext::DYNAMIC_DRAW,
+                );
+            }
+        }
+        if let Some(ref buf) = self.cloud_size_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            unsafe {
+                let view = js_sys::Float32Array::view(&sizes);
+                gl.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    &view,
+                    WebGl2RenderingContext::DYNAMIC_DRAW,
+                );
+            }
+        }
+        if let Some(ref buf) = self.cloud_alpha_buffer {
+            gl.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(buf));
+            unsafe {
+                let view = js_sys::Float32Array::view(&alphas);
+                gl.buffer_data_with_array_buffer_view(
+                    WebGl2RenderingContext::ARRAY_BUFFER,
+                    &view,
+                    WebGl2RenderingContext::DYNAMIC_DRAW,
+                );
+            }
+        }
+
+        // Compute VP matrix (same as model rendering)
+        let (ex, ey, ez) = self.camera.eye();
+        let (tx, ty, tz) = self.camera.look_at_target();
+        let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
+        let proj = model::perspective(45.0, aspect, 0.1, 500.0);
+        let view = model::look_at(&[ex, ey, ez], &[tx, ty, tz], &[0.0, 1.0, 0.0]);
+        let vp = model::mat4_mul(&proj, &view);
+
+        if let Some(ref loc) = self.cloud_vp_loc {
+            gl.uniform_matrix4fv_with_f32_array(Some(loc), false, &vp);
+        }
+        // Parallax offset: based on camera center
+        if let Some(ref loc) = self.cloud_parallax_loc {
+            gl.uniform2f(Some(loc), self.camera.center_x, self.camera.center_y);
+        }
+        if let Some(ref loc) = self.cloud_day_phase_loc {
+            gl.uniform1f(Some(loc), day_phase as f32);
+        }
+
+        // Enable blending for semi-transparent clouds
+        gl.enable(WebGl2RenderingContext::BLEND);
+        gl.blend_func(WebGl2RenderingContext::SRC_ALPHA, WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
+
+        // Draw all cloud quads
+        let vertex_count = (positions.len() / 3) as i32;
+        gl.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, vertex_count);
+
+        gl.disable(WebGl2RenderingContext::BLEND);
+        gl.bind_vertex_array(None);
     }
 
     fn render_models(&mut self, elapsed: f32) {
@@ -6061,6 +6310,48 @@ mod tests {
         p.vz = -5.0;
         p.tick(0.5);
         assert!(p.z >= 0.0, "z: {}", p.z);
+    }
+
+    // ── Cloud Layer Tests ──────────────────────────────────────────────────
+
+    #[test]
+    fn test_cloud_vertex_shader_exists() {
+        assert!(!CLOUD_VERTEX_SHADER.is_empty(), "cloud vertex shader should not be empty");
+        assert!(CLOUD_VERTEX_SHADER.contains("a_cloud_pos"), "cloud vertex shader missing a_cloud_pos");
+        assert!(CLOUD_VERTEX_SHADER.contains("a_cloud_size"), "cloud vertex shader missing a_cloud_size");
+        assert!(CLOUD_VERTEX_SHADER.contains("a_cloud_alpha"), "cloud vertex shader missing a_cloud_alpha");
+        assert!(CLOUD_VERTEX_SHADER.contains("u_vp"), "cloud vertex shader missing u_vp");
+        assert!(CLOUD_VERTEX_SHADER.contains("u_cam_parallax"), "cloud vertex shader missing u_cam_parallax");
+        assert!(CLOUD_VERTEX_SHADER.contains("u_day_phase"), "cloud vertex shader missing u_day_phase");
+    }
+
+    #[test]
+    fn test_cloud_fragment_shader_exists() {
+        assert!(!CLOUD_FRAGMENT_SHADER.is_empty(), "cloud fragment shader should not be empty");
+        assert!(CLOUD_FRAGMENT_SHADER.contains("v_alpha"), "cloud fragment shader missing v_alpha");
+        assert!(CLOUD_FRAGMENT_SHADER.contains("v_day_phase"), "cloud fragment shader missing v_day_phase");
+        assert!(CLOUD_FRAGMENT_SHADER.contains("smoothstep"), "cloud fragment shader missing smoothstep for soft edges");
+        assert!(CLOUD_FRAGMENT_SHADER.contains("day_color"), "cloud fragment shader missing day_color");
+        assert!(CLOUD_FRAGMENT_SHADER.contains("night_color"), "cloud fragment shader missing night_color");
+    }
+
+    #[test]
+    fn test_cloud_vertex_shader_has_parallax_drift() {
+        assert!(CLOUD_VERTEX_SHADER.contains("u_cam_parallax"), "cloud shader should reference parallax uniform");
+        assert!(CLOUD_VERTEX_SHADER.contains("parallax"), "cloud shader should have parallax logic");
+    }
+
+    #[test]
+    fn test_cloud_fragment_shader_day_night_colors() {
+        // Verify the shader has distinct day and night cloud colors
+        assert!(CLOUD_FRAGMENT_SHADER.contains("0.95, 0.95, 0.97"), "cloud day color should be bright white");
+        assert!(CLOUD_FRAGMENT_SHADER.contains("0.18, 0.20, 0.28"), "cloud night color should be dark blue-grey");
+    }
+
+    #[test]
+    fn test_cloud_shader_semi_transparent() {
+        // Clouds should be semi-transparent (alpha < 1.0)
+        assert!(CLOUD_FRAGMENT_SHADER.contains("0.45"), "cloud alpha should be 0.45 for semi-transparency");
     }
 }
 
