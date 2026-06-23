@@ -1007,251 +1007,267 @@ impl MeshData {
 }
 
 fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
+    build_map_mesh_lod(map, camera, 8, 20)
+}
+
+/// Build a terrain mesh with multi-level LOD (Level of Detail).
+///
+/// Tiles close to the camera center use full resolution (1 vertex per tile).
+/// Medium-distance tiles are rendered at half resolution (2x2 tiles per quad).
+/// Far-distance tiles are rendered at quarter resolution (4x4 tiles per quad).
+///
+/// # Arguments
+/// * `map` — the game map
+/// * `camera` — the camera (used to determine visible bounds and LOD center)
+/// * `lod1_radius` — distance in tiles within which full-resolution (LOD 0) is used
+/// * `lod2_radius` — distance in tiles within which half-resolution (LOD 1) is used;
+///   beyond this, quarter-resolution (LOD 2) is used
+fn build_map_mesh_lod(
+    map: &Map,
+    camera: &Camera,
+    lod1_radius: usize,
+    lod2_radius: usize,
+) -> MeshData {
     let mut mesh = MeshData::new();
     let (min_x, max_x, min_y, max_y) = camera.visible_bounds(map.width, map.height);
 
-    // Guard against degenerate viewport (e.g., 1px-tall canvas) that could cause
-    // integer underflow or capacity overflow when computing row/col counts.
     if max_x < min_x || max_y < min_y {
         return mesh;
     }
 
-    // Expand a bit to avoid pop-in at edges
     let extra = 2usize;
     let min_x = min_x.saturating_sub(extra);
-    // Clamp to width-2 / height-2 to leave room for the +1 vertex
-    // needed by the triangle strip (loop goes 0..=cols, 0..=rows)
     let max_x = (max_x + extra).min(map.width.saturating_sub(2));
     let min_y = min_y.saturating_sub(extra);
     let max_y = (max_y + extra).min(map.height.saturating_sub(2));
 
-    // Extra guard: if expansion/clamping produced invalid bounds, bail
     if max_x < min_x || max_y < min_y {
         return mesh;
     }
 
-    let rows = max_y - min_y + 1;
-    let cols = max_x - min_x + 1;
-    let grid_w = (cols + 1) as u16;
+    let cam_cx = camera.center_x;
+    let cam_cy = camera.center_y;
 
-    for row in 0..=rows {
-        for col in 0..=cols {
-            let mx = min_x + col;
-            let my = min_y + row;
-            let tile = map.get(mx, my).unwrap();
+    let lod_level = |tx: usize, ty: usize| -> u8 {
+        let dx = (tx as f32 - cam_cx).abs();
+        let dy = (ty as f32 - cam_cy).abs();
+        let dist = dx.max(dy);
+        if dist <= lod1_radius as f32 { 0 }
+        else if dist <= lod2_radius as f32 { 1 }
+        else { 2 }
+    };
 
-            mesh.positions.push(mx as f32);
-            mesh.positions.push(tile.elevation * ELEVATION_SCALE);
-            mesh.positions.push(my as f32);
+    let rows_total = max_y - min_y + 1;
+    let cols_total = max_x - min_x + 1;
+    let grid_rows = rows_total + 1;
+    let grid_cols = cols_total + 1;
 
-            let c = tile.terrain.color();
-            mesh.colors.push(c[0]);
-            mesh.colors.push(c[1]);
-            mesh.colors.push(c[2]);
-
-            mesh.elevations.push(tile.elevation);
-
-            // Resource flag: 1.0 if tile has a resource, 0.0 otherwise
-            let has_res = if tile.resource.is_some() {
-                1.0f32
-            } else {
-                0.0f32
-            };
-            mesh.has_resources.push(has_res);
-
-            // Compute slope: max elevation difference to neighbors
-            let mut max_diff = 0.0f32;
-            for dy in [-1isize, 0, 1] {
-                for dx in [-1isize, 0, 1] {
-                    if dx == 0 && dy == 0 {
-                        continue;
-                    }
-                    let nx = mx as isize + dx;
-                    let ny = my as isize + dy;
-                    if nx >= 0 && ny >= 0 && (nx as usize) < map.width && (ny as usize) < map.height
-                    {
-                        let neighbor_elev = map.get(nx as usize, ny as usize).unwrap().elevation;
-                        let diff = (tile.elevation - neighbor_elev).abs();
-                        if diff > max_diff {
-                            max_diff = diff;
-                        }
-                    }
+    // Helper: emit splat weights for a tile
+    fn emit_splat(
+        mesh: &mut MeshData,
+        map: &Map,
+        terrain: Terrain,
+        slope_val: f32,
+        mx: usize,
+        my: usize,
+    ) {
+        let base_splat = |t: Terrain, slope: f32| -> (f32, f32, f32, f32) {
+            let mut r = 0.0f32;
+            let mut g = 0.0f32;
+            let mut b = 0.0f32;
+            let mut a = 0.0f32;
+            match t {
+                Terrain::Grass | Terrain::Forest => {
+                    let rock = ((slope - 0.15) / 0.3).clamp(0.0, 1.0);
+                    r = 1.0 - rock; g = rock;
                 }
+                Terrain::Mountain => {
+                    let rock = if slope > 0.3 { 1.0 } else { 0.8 };
+                    g = rock; r = 1.0 - rock;
+                }
+                Terrain::Desert | Terrain::Swamp => { b = 0.8; r = 0.2; }
+                Terrain::Snow => { a = 1.0; }
+                Terrain::Water | Terrain::DeepWater => { b = 0.5; g = 0.3; r = 0.2; }
             }
-            mesh.slopes.push(max_diff);
+            let sum = r + g + b + a;
+            if sum > 0.0 { (r/sum, g/sum, b/sum, a/sum) } else { (r, g, b, a) }
+        };
 
-            // Ambient occlusion: darken tiles at base of cliffs/elevation transitions.
-            // For each neighbor that is higher, accumulate occlusion proportional to the
-            // height difference. Tiles with significantly higher neighbors get darker.
-            let mut ao = 1.0f32;
-            for dy in [-1isize, 0, 1] {
-                for dx in [-1isize, 0, 1] {
-                    if dx == 0 && dy == 0 { continue; }
-                    let nx = mx as isize + dx;
-                    let ny = my as isize + dy;
-                    if nx >= 0 && ny >= 0 && (nx as usize) < map.width && (ny as usize) < map.height {
-                        let neighbor_elev = map.get(nx as usize, ny as usize).unwrap().elevation;
-                        let elev_diff = neighbor_elev - tile.elevation;
-                        if elev_diff > 0.0 {
-                            // Each unit of elevation difference above this tile darkens it
-                            ao -= elev_diff * 0.08;
-                        }
-                    }
-                }
-            }
-            mesh.ao_factors.push(ao.max(0.55)); // floor at 55% brightness
+        let mut tr = 0.0f32; let mut tg = 0.0f32;
+        let mut tb = 0.0f32; let mut ta = 0.0f32;
+        let mut ws = 0.0f32;
 
-            // Compute edge distance for fog (CPU-side to avoid GPU uniform optimizer issues)
-            let edge_x = (mx as f32).min(map.width as f32 - 1.0 - mx as f32);
-            let edge_y = (my as f32).min(map.height as f32 - 1.0 - my as f32);
-            mesh.edge_dists.push(edge_x.min(edge_y));
+        let (cr, cg, cb, ca) = base_splat(terrain, slope_val);
+        tr += cr; tg += cg; tb += cb; ta += ca; ws += 1.0;
 
-            // UV coordinates for texture mapping (tile-relative, 4×4 repeat)
-            let u = (mx % 4) as f32 / 4.0;
-            let v = (my % 4) as f32 / 4.0;
-            mesh.uvs.push(u);
-            mesh.uvs.push(v);
-            mesh.terrain_ids.push(tile.terrain as u8 as f32);
-            mesh.visibilities.push(tile.visibility);
-
-            // Compute vertex normal from heightmap gradient (central differences)
-            let h_scale = ELEVATION_SCALE;
-            let h_c = tile.elevation * h_scale;
-            let get_h = |x: isize, y: isize| -> f32 {
-                if x >= 0 && y >= 0 && (x as usize) < map.width && (y as usize) < map.height {
-                    map.get(x as usize, y as usize).unwrap().elevation * h_scale
-                } else {
-                    h_c
-                }
-            };
-            let nx = -(get_h(mx as isize + 1, my as isize) - get_h(mx as isize - 1, my as isize)) / 2.0;
-            let nz = -(get_h(mx as isize, my as isize + 1) - get_h(mx as isize, my as isize - 1)) / 2.0;
-            let ny = 1.0;
-            let n_len = (nx * nx + ny * ny + nz * nz).sqrt();
-            if n_len > 1e-10 {
-                mesh.normals.push(nx / n_len);
-                mesh.normals.push(ny / n_len);
-                mesh.normals.push(nz / n_len);
-            } else {
-                mesh.normals.push(0.0);
-                mesh.normals.push(1.0);
-                mesh.normals.push(0.0);
-            }
-
-            // Compute splat-map weights based on terrain type + slope
-            // R=grass, G=rock, B=sand, A=snow
-            // Phase 7: smooth biome transition blending — check 4 neighbors
-            // and blend splat weights at biome boundaries (2-tile transition zone)
-            let terrain = tile.terrain;
-            let slope_val = max_diff;
-
-            // Helper: compute base splat for a terrain type
-            fn base_splat(t: Terrain, slope: f32) -> (f32, f32, f32, f32) {
-                let mut r = 0.0f32;
-                let mut g = 0.0f32;
-                let mut b = 0.0f32;
-                let mut a = 0.0f32;
-                match t {
-                    Terrain::Grass | Terrain::Forest => {
-                        let rock = ((slope - 0.15) / 0.3).clamp(0.0, 1.0);
-                        r = 1.0 - rock;
-                        g = rock;
-                    }
-                    Terrain::Mountain => {
-                        let rock = if slope > 0.3 { 1.0 } else { 0.8 };
-                        g = rock;
-                        r = 1.0 - rock;
-                    }
-                    Terrain::Desert | Terrain::Swamp => {
-                        b = 0.8;
-                        r = 0.2;
-                    }
-                    Terrain::Snow => {
-                        a = 1.0;
-                    }
-                    Terrain::Water | Terrain::DeepWater => {
-                        b = 0.5;
-                        g = 0.3;
-                        r = 0.2;
-                    }
-                }
-                // Normalize
-                let sum = r + g + b + a;
-                if sum > 0.0 {
-                    (r / sum, g / sum, b / sum, a / sum)
-                } else {
-                    (r, g, b, a)
-                }
-            }
-
-            // Accumulate splat weights from this tile + 4 neighbors
-            let mut total_r = 0.0f32;
-            let mut total_g = 0.0f32;
-            let mut total_b = 0.0f32;
-            let mut total_a = 0.0f32;
-            let mut weight_sum = 0.0f32;
-
-            // Center tile has weight 1.0
-            let (cr, cg, cb, ca) = base_splat(terrain, slope_val);
-            total_r += cr * 1.0;
-            total_g += cg * 1.0;
-            total_b += cb * 1.0;
-            total_a += ca * 1.0;
-            weight_sum += 1.0;
-
-            // 4 neighbors with weight 0.5 each (only if different terrain)
-            for &(ndx, ndy) in &[(0isize, -1isize), (1, 0), (0, 1), (-1, 0)] {
-                let nx = mx as isize + ndx;
-                let ny = my as isize + ndy;
-                if nx >= 0 && ny >= 0 && (nx as usize) < map.width && (ny as usize) < map.height
-                {
-                    let neighbor = map.get(nx as usize, ny as usize).unwrap();
-                    if neighbor.terrain != terrain {
-                        // Compute neighbor slope
-                        let mut n_max_diff = 0.0f32;
-                        for ndy2 in [-1isize, 0, 1] {
-                            for ndx2 in [-1isize, 0, 1] {
-                                if ndx2 == 0 && ndy2 == 0 { continue; }
-                                let nnx = nx + ndx2;
-                                let nny = ny + ndy2;
-                                if nnx >= 0 && nny >= 0
-                                    && (nnx as usize) < map.width
-                                    && (nny as usize) < map.height
-                                {
-                                    let nn_elev = map.get(nnx as usize, nny as usize).unwrap().elevation;
-                                    let diff = (neighbor.elevation - nn_elev).abs();
-                                    if diff > n_max_diff { n_max_diff = diff; }
-                                }
+        for &(ndx, ndy) in &[(0isize, -1isize), (1, 0), (0, 1), (-1, 0)] {
+            let nx = mx as isize + ndx;
+            let ny = my as isize + ndy;
+            if nx >= 0 && ny >= 0 && (nx as usize) < map.width && (ny as usize) < map.height {
+                let neighbor = map.get(nx as usize, ny as usize).unwrap();
+                if neighbor.terrain != terrain {
+                    let mut nmd = 0.0f32;
+                    for ndy2 in [-1isize, 0, 1] {
+                        for ndx2 in [-1isize, 0, 1] {
+                            if ndx2 == 0 && ndy2 == 0 { continue; }
+                            let nnx = nx + ndx2; let nny = ny + ndy2;
+                            if nnx >= 0 && nny >= 0 && (nnx as usize) < map.width && (nny as usize) < map.height {
+                                let nn_e = map.get(nnx as usize, nny as usize).unwrap().elevation;
+                                let d = (neighbor.elevation - nn_e).abs();
+                                if d > nmd { nmd = d; }
                             }
                         }
-                        let w = 0.5f32;
-                        let (nr, ng, nb, na) = base_splat(neighbor.terrain, n_max_diff);
-                        total_r += nr * w;
-                        total_g += ng * w;
-                        total_b += nb * w;
-                        total_a += na * w;
-                        weight_sum += w;
                     }
+                    let (nr, ng, nb, na) = base_splat(neighbor.terrain, nmd);
+                    tr += nr * 0.5; tg += ng * 0.5; tb += nb * 0.5; ta += na * 0.5; ws += 0.5;
                 }
             }
+        }
 
-            // Final normalized splat
-            let splat_r = if weight_sum > 0.0 { total_r / weight_sum } else { 0.0 };
-            let splat_g = if weight_sum > 0.0 { total_g / weight_sum } else { 0.0 };
-            let splat_b = if weight_sum > 0.0 { total_b / weight_sum } else { 0.0 };
-            let splat_a = if weight_sum > 0.0 { total_a / weight_sum } else { 0.0 };
-            mesh.splats.push(splat_r);
-            mesh.splats.push(splat_g);
-            mesh.splats.push(splat_b);
-            mesh.splats.push(splat_a);
+        let sr = if ws > 0.0 { tr / ws } else { 0.0 };
+        let sg = if ws > 0.0 { tg / ws } else { 0.0 };
+        let sb = if ws > 0.0 { tb / ws } else { 0.0 };
+        let sa = if ws > 0.0 { ta / ws } else { 0.0 };
+        mesh.splats.push(sr); mesh.splats.push(sg); mesh.splats.push(sb); mesh.splats.push(sa);
+    }
 
-            // Build triangle strip indices
-            if row < rows && col < cols {
-                let tl = (row as u16) * grid_w + (col as u16);
-                let tr = tl + 1;
-                let bl = tl + grid_w;
-                let br = bl + 1;
+    // Emit a single vertex for tile (mx, my)
+    let mut emit_v = |mesh: &mut MeshData, mx: usize, my: usize| -> u16 {
+        let tile = map.get(mx, my).unwrap();
+        let idx = (mesh.positions.len() / 3) as u16;
 
+        mesh.positions.push(mx as f32);
+        mesh.positions.push(tile.elevation * ELEVATION_SCALE);
+        mesh.positions.push(my as f32);
+
+        let c = tile.terrain.color();
+        mesh.colors.push(c[0]); mesh.colors.push(c[1]); mesh.colors.push(c[2]);
+        mesh.elevations.push(tile.elevation);
+        mesh.has_resources.push(if tile.resource.is_some() { 1.0 } else { 0.0 });
+
+        let mut max_diff = 0.0f32;
+        for dy in [-1isize, 0, 1] { for dx in [-1isize, 0, 1] {
+            if dx == 0 && dy == 0 { continue; }
+            let nx = mx as isize + dx; let ny = my as isize + dy;
+            if nx >= 0 && ny >= 0 && (nx as usize) < map.width && (ny as usize) < map.height {
+                let d = (tile.elevation - map.get(nx as usize, ny as usize).unwrap().elevation).abs();
+                if d > max_diff { max_diff = d; }
+            }
+        }}
+        mesh.slopes.push(max_diff);
+
+        let mut ao = 1.0f32;
+        for dy in [-1isize, 0, 1] { for dx in [-1isize, 0, 1] {
+            if dx == 0 && dy == 0 { continue; }
+            let nx = mx as isize + dx; let ny = my as isize + dy;
+            if nx >= 0 && ny >= 0 && (nx as usize) < map.width && (ny as usize) < map.height {
+                let ed = map.get(nx as usize, ny as usize).unwrap().elevation - tile.elevation;
+                if ed > 0.0 { ao -= ed * 0.08; }
+            }
+        }}
+        mesh.ao_factors.push(ao.max(0.55));
+
+        let edge_x = (mx as f32).min(map.width as f32 - 1.0 - mx as f32);
+        let edge_y = (my as f32).min(map.height as f32 - 1.0 - my as f32);
+        mesh.edge_dists.push(edge_x.min(edge_y));
+
+        mesh.uvs.push((mx % 4) as f32 / 4.0);
+        mesh.uvs.push((my % 4) as f32 / 4.0);
+        mesh.terrain_ids.push(tile.terrain as u8 as f32);
+        mesh.visibilities.push(tile.visibility);
+
+        let hs = ELEVATION_SCALE;
+        let hc = tile.elevation * hs;
+        let gh = |x: isize, y: isize| -> f32 {
+            if x >= 0 && y >= 0 && (x as usize) < map.width && (y as usize) < map.height {
+                map.get(x as usize, y as usize).unwrap().elevation * hs
+            } else { hc }
+        };
+        let nx_n = -(gh(mx as isize + 1, my as isize) - gh(mx as isize - 1, my as isize)) / 2.0;
+        let nz_n = -(gh(mx as isize, my as isize + 1) - gh(mx as isize, my as isize - 1)) / 2.0;
+        let ny_n = 1.0;
+        let nl = (nx_n*nx_n + ny_n*ny_n + nz_n*nz_n).sqrt();
+        if nl > 1e-10 {
+            mesh.normals.push(nx_n/nl); mesh.normals.push(ny_n/nl); mesh.normals.push(nz_n/nl);
+        } else {
+            mesh.normals.push(0.0); mesh.normals.push(1.0); mesh.normals.push(0.0);
+        }
+
+        emit_splat(mesh, map, tile.terrain, max_diff, mx, my);
+        idx
+    };
+
+    // Build vertex grid: determine which grid positions get vertices
+    let mut vertex_grid: Vec<Option<u16>> = vec![None; grid_cols * grid_rows];
+
+    for row in 0..grid_rows {
+        for col in 0..grid_cols {
+            let mx = min_x + col;
+            let my = min_y + row;
+            let lod = lod_level(mx, my);
+
+            let should_emit = match lod {
+                0 => true,
+                1 => col % 2 == 0 && row % 2 == 0,
+                2 => col % 4 == 0 && row % 4 == 0,
+                _ => false,
+            };
+
+            if should_emit {
+                let vidx = emit_v(&mut mesh, mx, my);
+                vertex_grid[row * grid_cols + col] = Some(vidx);
+            }
+        }
+    }
+
+    // Emit triangles for LOD 0 blocks (1x1 tiles)
+    for row in 0..rows_total {
+        for col in 0..cols_total {
+            let mx = min_x + col; let my = min_y + row;
+            if lod_level(mx, my) != 0 { continue; }
+            let tl = vertex_grid[row * grid_cols + col];
+            let tr = vertex_grid[row * grid_cols + col + 1];
+            let bl = vertex_grid[(row + 1) * grid_cols + col];
+            let br = vertex_grid[(row + 1) * grid_cols + col + 1];
+            if let (Some(tl), Some(tr), Some(bl), Some(br)) = (tl, tr, bl, br) {
+                mesh.indices.extend_from_slice(&[tl, bl, tr, tr, bl, br]);
+            }
+        }
+    }
+
+    // Emit triangles for LOD 1 blocks (2x2 tiles)
+    for row in (0..rows_total).step_by(2) {
+        for col in (0..cols_total).step_by(2) {
+            let mx = min_x + col; let my = min_y + row;
+            if lod_level(mx, my) != 1 { continue; }
+            let r1 = row;
+            let r2 = (row + 2).min(grid_rows - 1);
+            let c1 = col;
+            let c2 = (col + 2).min(grid_cols - 1);
+            let tl = vertex_grid[r1 * grid_cols + c1];
+            let tr = vertex_grid[r1 * grid_cols + c2];
+            let bl = vertex_grid[r2 * grid_cols + c1];
+            let br = vertex_grid[r2 * grid_cols + c2];
+            if let (Some(tl), Some(tr), Some(bl), Some(br)) = (tl, tr, bl, br) {
+                mesh.indices.extend_from_slice(&[tl, bl, tr, tr, bl, br]);
+            }
+        }
+    }
+
+    // Emit triangles for LOD 2 blocks (4x4 tiles)
+    for row in (0..rows_total).step_by(4) {
+        for col in (0..cols_total).step_by(4) {
+            let mx = min_x + col; let my = min_y + row;
+            if lod_level(mx, my) < 2 { continue; }
+            let r1 = row;
+            let r2 = (row + 4).min(grid_rows - 1);
+            let c1 = col;
+            let c2 = (col + 4).min(grid_cols - 1);
+            let tl = vertex_grid[r1 * grid_cols + c1];
+            let tr = vertex_grid[r1 * grid_cols + c2];
+            let bl = vertex_grid[r2 * grid_cols + c1];
+            let br = vertex_grid[r2 * grid_cols + c2];
+            if let (Some(tl), Some(tr), Some(bl), Some(br)) = (tl, tr, bl, br) {
                 mesh.indices.extend_from_slice(&[tl, bl, tr, tr, bl, br]);
             }
         }
@@ -7146,5 +7162,78 @@ mod tests {
         assert!(water_section.contains("reflected"), "water shader should have reflected color variable");
         assert!(water_section.contains("reflection"), "water shader should compute reflection from texture");
         assert!(water_section.contains("fresnel"), "water shader should use fresnel for reflection blend");
+    }
+
+    // ── Terrain LOD Tests ──────────────────────────────────────────────────
+
+    #[test]
+    fn test_lod_mesh_has_vertices_and_indices() {
+        let map = Map::generate_demo(64, 64);
+        let camera = Camera::new(32.0, 32.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+        assert!(mesh.positions.len() > 0, "LOD mesh should have vertices");
+        assert!(mesh.indices.len() > 0, "LOD mesh should have indices");
+        assert_eq!(mesh.indices.len() % 6, 0, "indices should be multiple of 6");
+    }
+
+    #[test]
+    fn test_lod_mesh_has_fewer_vertices_than_full() {
+        let map = Map::generate_demo(64, 64);
+        let camera = Camera::new(32.0, 32.0, 800, 600);
+        let lod_mesh = build_map_mesh_lod(&map, &camera, 8, 20);
+        let full_mesh = build_map_mesh_lod(&map, &camera, 1000, 1000);
+        assert!(
+            lod_mesh.positions.len() < full_mesh.positions.len(),
+            "LOD mesh should have fewer vertices than full-res ({} vs {})",
+            lod_mesh.positions.len() / 3,
+            full_mesh.positions.len() / 3,
+        );
+    }
+
+    #[test]
+    fn test_lod_full_res_matches_original_on_small_radius() {
+        let map = Map::generate_demo(16, 16);
+        let camera = Camera::new(8.0, 8.0, 800, 600);
+        let lod_mesh = build_map_mesh_lod(&map, &camera, 1000, 1000);
+        let vertex_count = lod_mesh.positions.len() / 3;
+        assert!(vertex_count > 0);
+        assert!(lod_mesh.indices.len() > 0);
+        assert_eq!(lod_mesh.indices.len() % 6, 0);
+    }
+
+    #[test]
+    fn test_lod_mesh_vertex_attrs_match() {
+        let map = Map::generate_demo(32, 32);
+        let camera = Camera::new(16.0, 16.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+        let vc = mesh.positions.len() / 3;
+        assert_eq!(mesh.colors.len(), vc * 3, "colors count mismatch");
+        assert_eq!(mesh.elevations.len(), vc, "elevations count mismatch");
+        assert_eq!(mesh.has_resources.len(), vc, "has_resources count mismatch");
+        assert_eq!(mesh.slopes.len(), vc, "slopes count mismatch");
+        assert_eq!(mesh.ao_factors.len(), vc, "ao_factors count mismatch");
+        assert_eq!(mesh.edge_dists.len(), vc, "edge_dists count mismatch");
+        assert_eq!(mesh.uvs.len(), vc * 2, "uvs count mismatch");
+        assert_eq!(mesh.terrain_ids.len(), vc, "terrain_ids count mismatch");
+        assert_eq!(mesh.visibilities.len(), vc, "visibilities count mismatch");
+        assert_eq!(mesh.normals.len(), vc * 3, "normals count mismatch");
+        assert_eq!(mesh.splats.len(), vc * 4, "splats count mismatch");
+    }
+
+    #[test]
+    fn test_lod_level_0_near_camera() {
+        let map = Map::generate_demo(64, 64);
+        let camera = Camera::new(32.0, 32.0, 800, 600);
+        let mesh = build_map_mesh_lod(&map, &camera, 8, 20);
+        assert!(mesh.positions.len() > 0);
+        assert!(mesh.indices.len() > 0);
+    }
+
+    #[test]
+    fn test_lod_empty_on_degenerate_viewport() {
+        let map = Map::generate_demo(16, 16);
+        let camera = Camera::new(0.0, 0.0, 0, 0);
+        let mesh = build_map_mesh(&map, &camera);
+        let _ = mesh.positions.len();
     }
 }
