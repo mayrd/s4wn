@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 187 | 2026-06-23 | Phase 7: Half-resolution reflection FBO — render at 50% resolution (canvas.width/2, canvas.height/2) to save 75% fill rate on water tiles. reflection_w/reflection_h fields on App struct. LINEAR filter upscales. 645 tests pass, WASM 377KB. -- 645 tests
 | 185 | 2026-06-23 | Fix #69: Add missing `uniform vec2 u_resolution;` to terrain fragment shader — was used but not declared, causing shader compile error. 644 tests pass. -- 644 tests
 | 184 | 2026-06-23 | Phase 7: Terrain LOD — multi-resolution mesh with 3 levels (LOD 0: 1×1, LOD 1: 2×2, LOD 2: 4×4 tiles per quad). Chebyshev distance from camera center. build_map_mesh() delegates to build_map_mesh_lod(). 6 new tests. -- 640 tests |
 | 177 | 2026-06-23 | WASM size audit: 364KB (unchanged). Removed dead u_sun_color/u_moon_color shader uniforms + Rust plumbing. Added panic=abort to Cargo.toml. -- 624 tests |
@@ -184,14 +185,15 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 28. ~~Water reflections: mirror terrain/buildings on water surface with Fresnel effect~~ ✅ (session 183 — FBO + reflection pass + shader sampling)
 29. ~~Terrain LOD: reduce vertex count for distant tiles~~ ✅ (session 184)
 30. ~~Reflection pass optimization: render only solid objects (exclude water from FBO), clamp reflection to below horizon~~ ✅
-31. WASM size: measure new baseline with WebGlFramebuffer + WebGlTexture features
+30a. ~~Half-resolution reflection FBO (50% → 75% fill rate savings)~~ ✅ (session 187)
+31. ~~WASM size: measure new baseline~~ ✅ 377KB (session 187)
 32. Verify reflection optimization visually: ensure water tiles don't appear in reflection FBO
 33. Fine-tune horizon_y computation for different camera elevations and zoom levels
 34. Consider adding a depth attachment to the reflection FBO for better sorting
 35. Add rendering pipeline audit checklist document
 36. Fix #69: u_resolution missing uniform — DONE (session 185)
 37. Fix #70: Rebuild + deploy WASM with u_resolution fix — DONE (session 186)
-38. WASM size: measure new baseline with WebGlFramebuffer + WebGlTexture features (369KB currently, +5KB from reflections)
+38. ~~WASM size: measure new baseline~~ ✅ 377KB (session 187)
 39. Verify reflection optimization visually: ensure water tiles don't appear in reflection FBO
 40. Fine-tune horizon_y computation for different camera elevations and zoom levels
 41. Add rendering pipeline audit checklist document
