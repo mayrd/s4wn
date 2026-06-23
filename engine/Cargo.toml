@@ -29,6 +29,8 @@ web-sys = { version = "0.3", features = [
     "Element",
     "Performance",
     "console",
+    "WebGlFramebuffer",
+    "WebGlTexture",
 ] }
 
 [profile.release]

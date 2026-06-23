@@ -165,6 +165,7 @@ uniform float u_water_time;
 uniform sampler2D u_water_normal;
 uniform float u_water_normal_ready;
 uniform float u_lightning;
+uniform sampler2D u_reflection_tex;
 
 out vec4 out_color;
 
@@ -252,12 +253,18 @@ r#"    float warmth = 0.5 + day_light * 0.5;
         depth_t = clamp(depth_t, 0.0, 1.0);
         vec3 water_color = mix(shallow_color, deep_color, depth_t);
 
+        // Sample screen-space reflection texture (mirrored upside-down for water mirror)
+        vec2 screen_uv = gl_FragCoord.xy / u_resolution;
+        screen_uv.y = 1.0 - screen_uv.y;
+        vec3 reflection = texture(u_reflection_tex, screen_uv).rgb;
+
         // Blend water color with terrain base using fresnel
         vec3 water_surface = water_color * light;
         // Add specular sparkle
         water_surface += vec3(1.0, 0.95, 0.8) * specular_strength * 0.6;
-        // Fresnel blend with underlying terrain
-        lit = mix(water_surface, lit * vec3(0.3, 0.5, 0.6), fresnel * 0.6);
+        // Fresnel blend: at grazing angles (high fresnel) show reflection; head-on show water color
+        vec3 reflected = mix(water_surface, reflection, fresnel);
+        lit = mix(reflected, lit * vec3(0.3, 0.5, 0.6), 0.25);
         // Slight transparency simulation via color desaturation at edges
         float alpha_sim = mix(0.85, 1.0, fresnel);
         lit *= alpha_sim;
@@ -952,6 +959,11 @@ struct App {
     lightning_timer: f32,
     lightning_loc: Option<web_sys::WebGlUniformLocation>,
 
+    // ── Phase 7: Water reflection ──────────────────────────────────────────
+    reflection_fbo: Option<web_sys::WebGlFramebuffer>,
+    reflection_tex: Option<web_sys::WebGlTexture>,
+    reflection_tex_loc: Option<web_sys::WebGlUniformLocation>,
+
 
 }
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
@@ -1334,6 +1346,7 @@ impl App {
         let lightning_loc = gl.get_uniform_location(&program, "u_lightning");
         let water_normal_loc = gl.get_uniform_location(&program, "u_water_normal");
         let water_normal_ready_loc = gl.get_uniform_location(&program, "u_water_normal_ready");
+        let reflection_tex_loc = gl.get_uniform_location(&program, "u_reflection_tex");
         let day_phase_loc = gl
             .get_uniform_location(&program, "u_day_phase")
             .ok_or("Cannot find u_day_phase")?;
@@ -1679,6 +1692,9 @@ impl App {
             lightning_flash: 0.0,
             lightning_timer: 30.0,
             lightning_loc,
+            reflection_fbo: None,
+            reflection_tex: None,
+            reflection_tex_loc,
         })
     }
 
@@ -1986,6 +2002,110 @@ impl App {
                 gl.uniform1i(Some(loc), 0);
             }
         }
+        // ── Water reflection pass: render scene to FBO with camera Y flipped ──
+        // Create FBO lazily on first use (canvas required for dimensions)
+        if self.reflection_fbo.is_none() {
+            let fbo = gl.create_framebuffer();
+            let tex = gl.create_texture();
+            if let (Some(fbo), Some(tex)) = (fbo, tex) {
+                gl.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&tex));
+                gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
+                    WebGl2RenderingContext::TEXTURE_2D,
+                    0,
+                    WebGl2RenderingContext::RGBA as i32,
+                    canvas.width() as i32,
+                    canvas.height() as i32,
+                    0,
+                    WebGl2RenderingContext::RGBA,
+                    WebGl2RenderingContext::UNSIGNED_BYTE,
+                    None,
+                ).ok();
+                gl.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_MIN_FILTER, WebGl2RenderingContext::LINEAR as i32);
+                gl.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_MAG_FILTER, WebGl2RenderingContext::LINEAR as i32);
+                gl.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_WRAP_S, WebGl2RenderingContext::CLAMP_TO_EDGE as i32);
+                gl.tex_parameteri(WebGl2RenderingContext::TEXTURE_2D, WebGl2RenderingContext::TEXTURE_WRAP_T, WebGl2RenderingContext::CLAMP_TO_EDGE as i32);
+                gl.bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, Some(&fbo));
+                gl.framebuffer_texture_2d(
+                    WebGl2RenderingContext::FRAMEBUFFER,
+                    WebGl2RenderingContext::COLOR_ATTACHMENT0,
+                    WebGl2RenderingContext::TEXTURE_2D,
+                    Some(&tex),
+                    0,
+                );
+                gl.bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, None);
+                gl.bind_texture(WebGl2RenderingContext::TEXTURE_2D, None);
+                self.reflection_fbo = Some(fbo);
+                self.reflection_tex = Some(tex);
+            }
+        }
+        // Reflection render pass: flip camera Y across water plane (Y=0), render to FBO
+        if let (Some(ref fbo), Some(ref vp_loc), Some(ref use_loc)) = (&self.reflection_fbo, &self.vp_loc, &self.use_vp_loc) {
+            // Compute reflection VP
+            let (ex, ey, ez) = self.camera.eye();
+            let rey = -ey;
+            let (tx, ty, tz) = self.camera.look_at_target();
+            let rty = -ty;
+            let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
+            let fov = 45.0f32.to_radians();
+            let near = 0.1_f32;
+            let far = 500.0_f32;
+            let f = 1.0 / (fov * 0.5).tan();
+            let range_inv = 1.0 / (near - far);
+            let fwd_x = tx - ex;
+            let fwd_y = rty - rey;
+            let fwd_z = tz - ez;
+            let fwd_len = (fwd_x*fwd_x + fwd_y*fwd_y + fwd_z*fwd_z).sqrt();
+            let fwd_x = fwd_x / fwd_len;
+            let fwd_y = fwd_y / fwd_len;
+            let fwd_z = fwd_z / fwd_len;
+            let world_up = (0.0_f32, 1.0_f32, 0.0_f32);
+            let right_x = fwd_y * world_up.2 - fwd_z * world_up.1;
+            let right_y = fwd_z * world_up.0 - fwd_x * world_up.2;
+            let right_z = fwd_x * world_up.1 - fwd_y * world_up.0;
+            let right_len = (right_x*right_x + right_y*right_y + right_z*right_z).sqrt();
+            let right_x = right_x / right_len;
+            let right_y = right_y / right_len;
+            let right_z = right_z / right_len;
+            let up_x = right_y * fwd_z - right_z * fwd_y;
+            let up_y = right_z * fwd_x - right_x * fwd_z;
+            let up_z = right_x * fwd_y - right_y * fwd_x;
+            let v_tx = -(right_x * ex + right_y * rey + right_z * ez);
+            let v_ty = -(up_x * ex + up_y * rey + up_z * ez);
+            let v_tz = -(-fwd_x * ex - fwd_y * rey - fwd_z * ez);
+            let p00 = f / aspect;
+            let p11 = f;
+            let p22 = (near + far) * range_inv;
+            let p23 = 2.0 * near * far * range_inv;
+            let p32 = -1.0;
+            let ref_vp: [f32; 16] = [
+                p00 * right_x,  p11 * up_x,    p22 * (-fwd_x),  p32 * (-fwd_x),
+                p00 * right_y,  p11 * up_y,    p22 * (-fwd_y),  p32 * (-fwd_y),
+                p00 * right_z,  p11 * up_z,    p22 * (-fwd_z),  p32 * (-fwd_z),
+                p00 * v_tx,     p11 * v_ty,    p22 * v_tz + p23, p32 * v_tz,
+            ];
+            gl.bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, Some(fbo));
+            gl.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
+            gl.clear_color(sky_r, sky_g, sky_b, 1.0);
+            gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+            gl.uniform_matrix4fv_with_f32_array(Some(vp_loc), false, &ref_vp);
+            gl.uniform1i(Some(use_loc), 1);
+            gl.bind_vertex_array(Some(&self.vao));
+            gl.draw_elements_with_i32(
+                WebGl2RenderingContext::TRIANGLES,
+                self.index_count,
+                WebGl2RenderingContext::UNSIGNED_SHORT,
+                0,
+            );
+            gl.bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, None);
+            gl.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
+        }
+        // Bind reflection texture for water shader to sample
+        if let (Some(ref loc), Some(ref tex)) = (&self.reflection_tex_loc, &self.reflection_tex) {
+            gl.active_texture(WebGl2RenderingContext::TEXTURE2);
+            gl.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(tex));
+            gl.uniform1i(Some(loc), 2);
+        }
+
         gl.uniform2f(
             Some(&self.resolution_loc),
             canvas.width() as f32 * 0.5,
@@ -6996,5 +7116,35 @@ mod tests {
         // No military units - only settlers which can_fight=false
         let result = eco.units.military_in_rect(0.0, 0.0, 10.0, 10.0);
         assert_eq!(result.len(), 0);
+    }
+
+    // ── Water Reflection Tests ───────────────────────────────────────────
+
+    #[test]
+    fn test_fragment_shader_has_reflection_tex_uniform() {
+        assert!(FRAGMENT_SHADER.contains("u_reflection_tex"), "fragment shader missing u_reflection_tex uniform for water reflections");
+        assert!(FRAGMENT_SHADER.contains("sampler2D u_reflection_tex"), "u_reflection_tex should be sampler2D");
+    }
+
+    #[test]
+    fn test_water_shader_samples_reflection_texture() {
+        // Water section should sample the reflection texture using screen-space coordinates
+        assert!(FRAGMENT_SHADER.contains("texture(u_reflection_tex"), "water shader should sample u_reflection_tex");
+        assert!(FRAGMENT_SHADER.contains("gl_FragCoord.xy"), "water shader should use gl_FragCoord for screen-space UV");
+    }
+
+    #[test]
+    fn test_water_reflection_flips_screen_y() {
+        // Reflection should mirror upside-down: flip Y coordinate
+        assert!(FRAGMENT_SHADER.contains("1.0 - screen_uv.y"), "water shader should flip screen Y for reflection mirror");
+    }
+
+    #[test]
+    fn test_water_fresnel_blends_reflection() {
+        // Fresnel factor should blend between water surface and reflection
+        let water_section = FRAGMENT_SHADER.split("if (is_water)").nth(1).unwrap_or("");
+        assert!(water_section.contains("reflected"), "water shader should have reflected color variable");
+        assert!(water_section.contains("reflection"), "water shader should compute reflection from texture");
+        assert!(water_section.contains("fresnel"), "water shader should use fresnel for reflection blend");
     }
 }
