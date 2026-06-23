@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation — 624 tests passing
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs — 624 tests passing | WASM 364KB (target <300KB)
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 175 | 2026-06-23 | WASM size audit: 364KB (64KB over target). wasm-opt no help. Clean build confirms 364KB baseline. -- 624 tests |
 | 174 | 2026-06-23 | Phase 7: Sun/Moon disc rendering — celestial body discs with glow, day/night visibility, positioned via VP projection — 624 tests |
 | 173 | 2026-06-23 | Phase 7: Building destruction animation — scale-to-zero with ease-in curve during destruction — 618 tests |
 | 172 | 2026-06-23 | Phase 7: Cloud layer rendering — semi-transparent quads at high elevation with parallax + day-phase coloring — 612 tests |
@@ -153,12 +154,13 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 15. ~~Add unit idle animations (subtle breathing/bob cycle) visible on model instances~~ ✅ (already implemented)
 16. ~~Add day-phase-aware ambient light multiplier that scales hemisphere+directional lighting~~ ✅ (session 171)
 17. ~~Add cloud layer rendering (semi-transparent quads at high elevation with parallax)~~ ✅ (session 172)
-18. Validate WASM <300KB (currently tracking size regression from new shaders)
+18. Validate WASM <300KB -- currently 364KB (64KB over). wasm-opt -Oz no effect (rustc already optimal). Need source-level reduction.
 19. Add weather effects (rain particles, lightning flashes during storms)
 20. ~~Add building destruction animation (collapse particles, debris)~~ ✅ (session 173)
 21. Optimize cloud rendering: use instanced draw calls instead of per-vertex expansion
-22. Add sun/moon disc rendering in the sky
+22. Add sun/moon disc rendering in the sky -- done (session 174)
 23. Validate WASM <300KB and optimize shader size
+24. Implement cloud instanced rendering (draw_arrays_instanced) to reduce vertex upload
 
 ---
 
