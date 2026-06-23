@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires — 605 tests passing
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting — 607 tests passing
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 171 | 2026-06-23 | Phase 7: Day-phase-aware hemisphere ambient lighting for model instances — 607 tests |
 | 169 | 2026-06-22 | Phase 7: Dynamic sky color ramp (dawn→noon→dusk→night) — Fixed #66 #67 — 605 tests |
 | 170 | 2026-06-22 | Phase 7: Smooth shadow penumbra via multi-layer falloff + noise dither — 605 tests |
 | 168 | 2026-06-22 | Fix #68: Object Explorer silent-return path now shows toast notification — 605 tests |
@@ -146,8 +147,8 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 12. ~~Add ambient occlusion to terrain tiles at cliff/height boundaries~~ ✅ (session 167)
 13. ~~Add dynamic sky color ramp~~ ✅ (session 169)
 14. ~~Add smooth shadow penumbra (soft edges) using multi-layer falloff + noise dither~~ ✅ (session 170)
-15. Add unit idle animations (subtle breathing/bob cycle) visible on model instances
-16. Add day-phase-aware ambient light multiplier that scales hemisphere+directional lighting
+15. ~~Add unit idle animations (subtle breathing/bob cycle) visible on model instances~~ ✅ (already implemented)
+16. ~~Add day-phase-aware ambient light multiplier that scales hemisphere+directional lighting~~ ✅ (session 171)
 17. Add cloud layer rendering (semi-transparent quads at high elevation with parallax)
 18. Validate WASM <300KB (currently tracking size regression from new shaders)
 
