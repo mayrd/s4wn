@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, water reflection FBO + Fresnel blend, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro — 634 tests passing | WASM ~364KB
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, water reflection FBO + Fresnel blend, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro, terrain LOD (3 levels) — 640 tests passing | WASM ~364KB
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 184 | 2026-06-23 | Phase 7: Terrain LOD — multi-resolution mesh with 3 levels (LOD 0: 1×1, LOD 1: 2×2, LOD 2: 4×4 tiles per quad). Chebyshev distance from camera center. build_map_mesh() delegates to build_map_mesh_lod(). 6 new tests. -- 640 tests |
 | 177 | 2026-06-23 | WASM size audit: 364KB (unchanged). Removed dead u_sun_color/u_moon_color shader uniforms + Rust plumbing. Added panic=abort to Cargo.toml. -- 624 tests |
 | 178 | 2026-06-23 | Removed console_error_panic_hook dependency (Cargo.toml + lib.rs). Saved ~3.5KB (364KB → 360.5KB). 624 tests pass. -- 624 tests |
 | 179 | 2026-06-23 | Consolidated duplicated day_light GLSL fragment across 4 shaders (terrain/model/cloud/sun_moon). Used macro_rules! + concat! for zero-overhead code sharing. 624 tests pass. -- 624 tests |
@@ -180,7 +181,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 27c. ~~Consolidate duplicated day_light GLSL fragment (3 copies in model/cloud/sun_moon shaders)~~ ✅ (session 179)
 27d. ~~Add lightning flashes: periodic sky brightening with rapid fade (0.1-0.2s)~~ ✅
 28. ~~Water reflections: mirror terrain/buildings on water surface with Fresnel effect~~ ✅ (session 183 — FBO + reflection pass + shader sampling)
-29. Terrain LOD: reduce vertex count for distant tiles
+29. ~~Terrain LOD: reduce vertex count for distant tiles~~ ✅ (session 184)
 30. Reflection pass optimization: render only solid objects (exclude water from FBO), clamp reflection to below horizon
 31. WASM size: measure new baseline with WebGlFramebuffer + WebGlTexture features
 
