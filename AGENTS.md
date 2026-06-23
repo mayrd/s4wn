@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro — 630 tests passing | WASM 360.5KB
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, water reflection FBO + Fresnel blend, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro — 634 tests passing | WASM ~364KB
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -108,6 +108,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | 179 | 2026-06-23 | Consolidated duplicated day_light GLSL fragment across 4 shaders (terrain/model/cloud/sun_moon). Used macro_rules! + concat! for zero-overhead code sharing. 624 tests pass. -- 624 tests |
 | 180 | 2026-06-23 | Audited web-sys features: removed 8 unused (WebSocket, MessageEvent, ErrorEvent, CloseEvent, BinaryType, MouseEvent, WheelEvent, Node). No WASM size change — features only affect JS glue. 624 tests pass. -- 624 tests |
 | 181 | 2026-06-23 | Phase 7: Rain particle system — spawn_rain_particle/spawn_rain_burst with blue-white streaks, gravity fall, drift. Hooked into game loop every ~4 ticks across visible camera area. 6 new tests. -- 630 tests |
+| 183 | 2026-06-23 | Phase 7: Water reflections — FBO + reflection pass + shader sampling. Render terrain to FBO with camera Y flipped. Fragment shader samples u_reflection_tex with screen-space Y-flip, blends with Fresnel. Added WebGlFramebuffer + WebGlTexture features. -- 634 tests |
 | 182 | 2026-06-23 | Phase 7: Lightning flashes — periodic sky brightening with rapid 0.15s fade. u_lightning uniform in terrain shader boosts ambient + sky clear color during flashes. 20-90s interval, 30% double-flash chance. -- 630 tests |
 | 176 | 2026-06-23 | Phase 7: Cloud instanced rendering — draw_arrays_instanced, static unit-quad corner buffer, per-instance pos/size/alpha (divisor=1). 6× less vertex upload. -- 624 tests |
 | 175 | 2026-06-23 | WASM size audit: 364KB (64KB over target). wasm-opt no help. Clean build confirms 364KB baseline. -- 624 tests |
@@ -178,8 +179,10 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 27b. ~~Audit unused web-sys features in Cargo.toml~~ ✅ (session 180 — removed 8 unused features)
 27c. ~~Consolidate duplicated day_light GLSL fragment (3 copies in model/cloud/sun_moon shaders)~~ ✅ (session 179)
 27d. ~~Add lightning flashes: periodic sky brightening with rapid fade (0.1-0.2s)~~ ✅
-28. Water reflections: mirror terrain/buildings on water surface with Fresnel effect
+28. ~~Water reflections: mirror terrain/buildings on water surface with Fresnel effect~~ ✅ (session 183 — FBO + reflection pass + shader sampling)
 29. Terrain LOD: reduce vertex count for distant tiles
+30. Reflection pass optimization: render only solid objects (exclude water from FBO), clamp reflection to below horizon
+31. WASM size: measure new baseline with WebGlFramebuffer + WebGlTexture features
 
 ---
 
