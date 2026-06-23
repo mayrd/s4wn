@@ -628,6 +628,91 @@ void main() {
 }
 "#;
 
+
+// ── Sun/Moon Disc Shaders (Phase 7: Celestial body rendering) ────────────────
+
+const SUN_MOON_VERTEX_SHADER: &str = r#"#version 300 es
+precision highp float;
+
+// Full-screen quad: 6 vertices, no buffers needed
+// Vertex ID maps to quad corners:
+// 0: (-1,-1)  1: (1,-1)  2: (1, 1)
+// 3: (-1,-1)  4: (1, 1)  5: (-1, 1)
+
+uniform vec2 u_sun_screen_pos; // sun position in clip space (-1..1)
+uniform float u_sun_radius;    // sun disc radius in clip space
+
+out vec2 v_quad_coord; // -1..1 within disc
+
+void main() {
+    int vid = gl_VertexID % 6;
+    vec2 corner;
+    if (vid == 0) corner = vec2(-1.0, -1.0);
+    else if (vid == 1) corner = vec2( 1.0, -1.0);
+    else if (vid == 2) corner = vec2( 1.0,  1.0);
+    else if (vid == 3) corner = vec2(-1.0, -1.0);
+    else if (vid == 4) corner = vec2( 1.0,  1.0);
+    else corner = vec2(-1.0,  1.0);
+
+    v_quad_coord = corner;
+    gl_Position = vec4(u_sun_screen_pos + corner * u_sun_radius, 0.999, 1.0);
+}
+"#;
+
+const SUN_MOON_FRAGMENT_SHADER: &str = r#"#version 300 es
+precision highp float;
+
+in vec2 v_quad_coord;
+
+uniform float u_day_phase;
+uniform int u_is_moon;       // 0 = sun, 1 = moon
+uniform vec3 u_sun_color;    // warm sun tint
+uniform vec3 u_moon_color;   // cool moon tint
+
+out vec4 out_color;
+
+void main() {
+    float d = length(v_quad_coord);
+
+    // Soft disc edge
+    float disc = smoothstep(1.0, 0.85, d);
+
+    // Day light factor: 1.0 at noon, 0.0 at midnight
+    float day_light = 0.5 + 0.5 * sin((u_day_phase - 0.25) * 6.2831853);
+    day_light = day_light * day_light * (3.0 - 2.0 * day_light);
+
+    vec3 color;
+    float alpha;
+
+    if (u_is_moon == 0) {
+        // Sun: warm yellow-white, visible during day
+        vec3 sun_bright = vec3(1.0, 0.95, 0.85);
+        vec3 sun_warm  = vec3(1.0, 0.75, 0.4);
+        // Warmer near horizon (lower sun = more atmosphere)
+        float horizon_factor = 1.0 - day_light;
+        color = mix(sun_bright, sun_warm, horizon_factor * 0.5);
+        // Sun visible when above horizon
+        alpha = disc * smoothstep(-0.1, 0.2, day_light);
+        // Glow effect: larger soft halo
+        float glow = exp(-d * d * 2.0) * 0.3 * max(day_light, 0.1);
+        color += vec3(1.0, 0.9, 0.6) * glow;
+    } else {
+        // Moon: cool blue-white, visible at night
+        vec3 moon_color = vec3(0.85, 0.88, 0.95);
+        color = moon_color;
+        // Moon visible when sun is below horizon
+        alpha = disc * smoothstep(0.2, -0.05, day_light);
+        // Subtle glow
+        float glow = exp(-d * d * 3.0) * 0.15 * (1.0 - day_light);
+        color += vec3(0.7, 0.8, 1.0) * glow;
+    }
+
+    alpha = clamp(alpha, 0.0, 1.0);
+    out_color = vec4(color, alpha);
+}
+"#;
+
+
 const ELEVATION_SCALE: f32 = 0.5;
 
 /// Compute sky background color from day_phase (0.0–1.0 over a 300s day cycle).
@@ -841,9 +926,19 @@ struct App {
     cloud_parallax_loc: Option<web_sys::WebGlUniformLocation>,
     cloud_day_phase_loc: Option<web_sys::WebGlUniformLocation>,
     cloud_vertex_count: i32,
+    // — Phase 7: Sun/Moon disc rendering ———————————————————————
+    sun_moon_program: Option<WebGlProgram>,
+    sun_moon_vao: Option<WebGlVertexArrayObject>,
+    sun_moon_vp_loc: Option<web_sys::WebGlUniformLocation>,
+    sun_moon_day_phase_loc: Option<web_sys::WebGlUniformLocation>,
+    sun_moon_is_moon_loc: Option<web_sys::WebGlUniformLocation>,
+    sun_moon_color_loc: Option<web_sys::WebGlUniformLocation>,
+    sun_moon_screen_pos_loc: Option<web_sys::WebGlUniformLocation>,
+    sun_moon_radius_loc: Option<web_sys::WebGlUniformLocation>,
+
+
 
 }
-
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
 
 struct MeshData {
@@ -1358,6 +1453,31 @@ impl App {
             })
             .unwrap_or((None, None, None, None, None, None, None, None));
 
+        // — Phase 7: Sun/Moon disc program ————————————————————————
+        let (sun_moon_program, sun_moon_vao, sun_moon_vp_loc, sun_moon_day_phase_loc,
+             sun_moon_is_moon_loc, sun_moon_color_loc, sun_moon_screen_pos_loc,
+             sun_moon_radius_loc) =
+            compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, SUN_MOON_VERTEX_SHADER)
+            .and_then(|vert| {
+                compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, SUN_MOON_FRAGMENT_SHADER)
+                .and_then(|frag| link_program(&gl, &vert, &frag))
+            })
+            .map(|prog| {
+                let vao = gl.create_vertex_array();
+                gl.bind_vertex_array(vao.as_ref());
+                gl.use_program(Some(&prog));
+                // No vertex buffers needed — full-screen quad from vertex ID
+                let vp_loc = gl.get_uniform_location(&prog, "u_vp");
+                let day_loc = gl.get_uniform_location(&prog, "u_day_phase");
+                let is_moon_loc = gl.get_uniform_location(&prog, "u_is_moon");
+                let color_loc = gl.get_uniform_location(&prog, "u_sun_color");
+                let screen_pos_loc = gl.get_uniform_location(&prog, "u_sun_screen_pos");
+                let radius_loc = gl.get_uniform_location(&prog, "u_sun_radius");
+                gl.bind_vertex_array(None);
+                (Some(prog), vao, vp_loc, day_loc, is_moon_loc, color_loc, screen_pos_loc, radius_loc)
+            })
+            .unwrap_or((None, None, None, None, None, None, None, None));
+
         // Compile overlay shaders
         let overlay_vert = compile_shader(
             &gl,
@@ -1504,6 +1624,16 @@ impl App {
             cloud_parallax_loc,
             cloud_day_phase_loc,
             cloud_vertex_count: 0,
+            // — Phase 7: Sun/Moon disc rendering
+            sun_moon_program,
+            sun_moon_vao,
+            sun_moon_vp_loc,
+            sun_moon_day_phase_loc,
+            sun_moon_is_moon_loc,
+            sun_moon_color_loc,
+            sun_moon_screen_pos_loc,
+            sun_moon_radius_loc,
+
 
             // Phase 6: Particle system
             particle_system: particle::ParticleSystem::new(),
@@ -1784,6 +1914,7 @@ impl App {
         self.populate_model_instances_from_game_state();
         self.render_shadows();
         self.render_clouds(day_phase);
+        self.render_sun_moon(day_phase);
         self.render_models(elapsed as f32);
 
 // ── Overlay: draw buildings and units as colored dots ─────────────
@@ -2091,6 +2222,111 @@ impl App {
         // Draw all cloud quads
         let vertex_count = (positions.len() / 3) as i32;
         gl.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, vertex_count);
+
+        gl.disable(WebGl2RenderingContext::BLEND);
+        gl.bind_vertex_array(None);
+    }
+
+    // — Phase 7: Sun/Moon Disc Rendering —————————————————————————————
+
+    /// Render a sun or moon disc in the sky, positioned based on day_phase.
+    /// The sun follows an arc across the sky; the moon is opposite.
+    fn render_sun_moon(&mut self, day_phase: f64) {
+        let gl = &self.gl;
+        let prog = match self.sun_moon_program.as_ref() {
+            Some(p) => p,
+            None => return,
+        };
+        let vao = match self.sun_moon_vao.as_ref() {
+            Some(v) => v,
+            None => return,
+        };
+
+        // Compute sun position in world space using the same arc as the light direction
+        let p = day_phase as f32;
+        let sun_angle = (p - 0.25) * std::f32::consts::TAU;
+        let sun_elev = sun_angle.sin() * 0.8 + 0.2;
+        let sun_elev_clamped = sun_elev.max(-0.1);
+
+        // Sun direction in world space (normalized)
+        let lx = sun_angle.cos() * sun_elev_clamped.max(0.1);
+        let ly = sun_elev_clamped;
+        let lz = sun_angle.sin() * sun_elev_clamped.max(0.1);
+        let len = (lx*lx + ly*ly + lz*lz).sqrt();
+        let sun_dir = [lx/len, ly/len, lz/len];
+
+        // Project sun direction to screen space using the same VP matrix as models
+        let (ex, ey, ez) = self.camera.eye();
+        let (tx, ty, tz) = self.camera.look_at_target();
+        let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
+        let proj = model::perspective(45.0, aspect, 0.1, 500.0);
+        let view = model::look_at(&[ex, ey, ez], &[tx, ty, tz], &[0.0, 1.0, 0.0]);
+        let vp = model::mat4_mul(&proj, &view);
+
+        // Transform sun direction to clip space (as direction, ignore translation)
+        // Use a point far along the sun direction
+        let far_dist = 200.0;
+        let world_pos = [
+            ex + sun_dir[0] * far_dist,
+            ey + sun_dir[1] * far_dist,
+            ez + sun_dir[2] * far_dist,
+        ];
+        // Manual matrix multiply: clip = VP * vec4(world_pos, 1.0)
+        let clip = [
+            vp[0]*world_pos[0] + vp[4]*world_pos[1] + vp[8]*world_pos[2]  + vp[12],
+            vp[1]*world_pos[0] + vp[5]*world_pos[1] + vp[9]*world_pos[2]  + vp[13],
+            vp[2]*world_pos[0] + vp[6]*world_pos[1] + vp[10]*world_pos[2] + vp[14],
+            vp[3]*world_pos[0] + vp[7]*world_pos[1] + vp[11]*world_pos[2] + vp[15],
+        ];
+
+        // If sun is behind camera, skip rendering
+        if clip[3] <= 0.0 {
+            return;
+        }
+
+        let ndc_x = clip[0] / clip[3];
+        let ndc_y = clip[1] / clip[3];
+
+        // Disc radius in clip space (roughly 3% of screen)
+        let radius = 0.04_f32;
+
+        gl.use_program(Some(prog));
+        gl.bind_vertex_array(Some(vao));
+
+        if let Some(ref loc) = self.sun_moon_screen_pos_loc {
+            gl.uniform2f(Some(loc), ndc_x, ndc_y);
+        }
+        if let Some(ref loc) = self.sun_moon_radius_loc {
+            gl.uniform1f(Some(loc), radius);
+        }
+        if let Some(ref loc) = self.sun_moon_day_phase_loc {
+            gl.uniform1f(Some(loc), p);
+        }
+
+        // Draw sun (is_moon = 0)
+        if let Some(ref loc) = self.sun_moon_is_moon_loc {
+            gl.uniform1i(Some(loc), 0);
+        }
+        if let Some(ref loc) = self.sun_moon_color_loc {
+            gl.uniform3f(Some(loc), 1.0, 0.95, 0.85);
+        }
+
+        gl.enable(WebGl2RenderingContext::BLEND);
+        gl.blend_func(WebGl2RenderingContext::SRC_ALPHA, WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
+        gl.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, 6);
+
+        // Draw moon (is_moon = 1) — opposite position
+        if let Some(ref loc) = self.sun_moon_is_moon_loc {
+            gl.uniform1i(Some(loc), 1);
+        }
+        if let Some(ref loc) = self.sun_moon_color_loc {
+            gl.uniform3f(Some(loc), 0.85, 0.88, 0.95);
+        }
+        if let Some(ref loc) = self.sun_moon_screen_pos_loc {
+            gl.uniform2f(Some(loc), -ndc_x, -ndc_y);
+        }
+
+        gl.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, 6);
 
         gl.disable(WebGl2RenderingContext::BLEND);
         gl.bind_vertex_array(None);
@@ -6425,6 +6661,54 @@ mod tests {
     fn test_cloud_shader_semi_transparent() {
         // Clouds should be semi-transparent (alpha < 1.0)
         assert!(CLOUD_FRAGMENT_SHADER.contains("0.45"), "cloud alpha should be 0.45 for semi-transparency");
+    }
+
+    // — Sun/Moon Disc Tests ———————————————————————————————————————————
+
+    #[test]
+    fn test_sun_moon_vertex_shader_exists() {
+        assert!(!SUN_MOON_VERTEX_SHADER.is_empty(), "sun/moon vertex shader should not be empty");
+        assert!(SUN_MOON_VERTEX_SHADER.contains("u_sun_screen_pos"), "vertex shader missing u_sun_screen_pos");
+        assert!(SUN_MOON_VERTEX_SHADER.contains("u_sun_radius"), "vertex shader missing u_sun_radius");
+        assert!(SUN_MOON_VERTEX_SHADER.contains("gl_VertexID"), "vertex shader should use gl_VertexID for quad");
+    }
+
+    #[test]
+    fn test_sun_moon_fragment_shader_exists() {
+        assert!(!SUN_MOON_FRAGMENT_SHADER.is_empty(), "sun/moon fragment shader should not be empty");
+        assert!(SUN_MOON_FRAGMENT_SHADER.contains("u_day_phase"), "fragment shader missing u_day_phase");
+        assert!(SUN_MOON_FRAGMENT_SHADER.contains("u_is_moon"), "fragment shader missing u_is_moon");
+        assert!(SUN_MOON_FRAGMENT_SHADER.contains("smoothstep"), "fragment shader should use smoothstep for soft edges");
+    }
+
+    #[test]
+    fn test_sun_moon_shader_has_glow_effect() {
+        // Sun should have a glow/halo effect
+        assert!(SUN_MOON_FRAGMENT_SHADER.contains("glow"), "sun shader should have glow effect");
+        // Moon should also have a subtle glow
+        assert!(SUN_MOON_FRAGMENT_SHADER.contains("exp"), "moon shader should use exp for glow falloff");
+    }
+
+    #[test]
+    fn test_sun_moon_shader_day_night_visibility() {
+        // Sun visible during day, moon visible at night
+        assert!(SUN_MOON_FRAGMENT_SHADER.contains("day_light"), "shader should compute day_light factor");
+        // Both should use smoothstep for visibility transitions
+        let smoothstep_count = SUN_MOON_FRAGMENT_SHADER.matches("smoothstep").count();
+        assert!(smoothstep_count >= 2, "shader should have at least 2 smoothstep calls for sun/moon visibility");
+    }
+
+    #[test]
+    fn test_sun_moon_shader_sun_color_warm() {
+        // Sun should have warm yellow-white colors
+        assert!(SUN_MOON_FRAGMENT_SHADER.contains("1.0, 0.95, 0.85"), "sun bright color should be warm white");
+        assert!(SUN_MOON_FRAGMENT_SHADER.contains("1.0, 0.75, 0.4"), "sun warm color should be orange-tinted");
+    }
+
+    #[test]
+    fn test_sun_moon_shader_moon_color_cool() {
+        // Moon should have cool blue-white colors
+        assert!(SUN_MOON_FRAGMENT_SHADER.contains("0.85, 0.88, 0.95"), "moon color should be cool blue-white");
     }
 }
 
