@@ -4623,6 +4623,17 @@ impl App {
         0.3 + 0.7 * ease
     }
 
+    /// Compute the visual scale for a building being destroyed.
+    /// `progress` is 0.0 (just started) to 1.0 (about to vanish).
+    /// Returns a scale factor from 1.0 (full size) down to 0.0 (gone),
+    /// with an ease-out curve so the collapse accelerates at the end.
+    fn destruction_scale(progress: f32) -> f32 {
+        let t = progress.clamp(0.0, 1.0);
+        // Ease-in curve: starts slow, accelerates (building crumbles faster at end)
+        let ease = t * t;
+        1.0 - ease
+    }
+
     fn populate_model_instances_from_game_state(&mut self) -> i32 {
         self.model_instances.clear();
         let mut count = 0i32;
@@ -4630,7 +4641,12 @@ impl App {
         // Buildings
         for b in self.game_loop.state.economy.buildings.iter() {
             let model_id = Self::model_id_for_building(b.kind.name());
-            let scale = Self::construction_scale(b.construction);
+            // If the building is being destroyed, use destruction scale; otherwise construction scale
+            let scale = if let Some(prog) = b.destruction_progress() {
+                Self::destruction_scale(prog)
+            } else {
+                Self::construction_scale(b.construction)
+            };
             self.model_instances.push(model::ModelInstance::new(
                 model_id,
                 b.x as f32 + 0.5,
@@ -6206,6 +6222,63 @@ mod tests {
         let s_over = App::construction_scale(1.5);
         let s_one = App::construction_scale(1.0);
         assert!((s_over - s_one).abs() < 0.001, ">1.0 should clamp to 1.0");
+    }
+
+    // ── Phase 7: Destruction Animation Tests ────────────────────────────────
+
+    #[test]
+    fn test_destruction_scale_zero() {
+        // At progress=0.0 (just started), scale should be 1.0 (full size)
+        let s = App::destruction_scale(0.0);
+        assert!((s - 1.0).abs() < 0.001, "progress=0.0 should give scale 1.0, got {}", s);
+    }
+
+    #[test]
+    fn test_destruction_scale_complete() {
+        // At progress=1.0 (finished), scale should be 0.0 (gone)
+        let s = App::destruction_scale(1.0);
+        assert!((s - 0.0).abs() < 0.001, "progress=1.0 should give scale 0.0, got {}", s);
+    }
+
+    #[test]
+    fn test_destruction_scale_half() {
+        // At progress=0.5, ease = 0.5^2 = 0.25, scale = 1.0 - 0.25 = 0.75
+        let s = App::destruction_scale(0.5);
+        let expected = 0.75;
+        assert!((s - expected).abs() < 0.001, "progress=0.5 should give scale ~{}, got {}", expected, s);
+    }
+
+    #[test]
+    fn test_destruction_scale_monotonic() {
+        // Scale should decrease monotonically as destruction progresses
+        let steps = 20;
+        let mut prev = 1.01f32; // start just above 1.0
+        for i in 0..=steps {
+            let t = i as f32 / steps as f32;
+            let s = App::destruction_scale(t);
+            assert!(s <= prev + 0.001, "scale increased at t={}: {} > {}", t, s, prev);
+            prev = s;
+        }
+    }
+
+    #[test]
+    fn test_destruction_scale_clamped() {
+        // Values outside 0..1 should be clamped
+        let s_neg = App::destruction_scale(-0.5);
+        let s_zero = App::destruction_scale(0.0);
+        assert!((s_neg - s_zero).abs() < 0.001, "negative should clamp to 0.0");
+
+        let s_over = App::destruction_scale(1.5);
+        let s_one = App::destruction_scale(1.0);
+        assert!((s_over - s_one).abs() < 0.001, ">1.0 should clamp to 1.0");
+    }
+
+    #[test]
+    fn test_destruction_scale_quarter() {
+        // At progress=0.25, ease = 0.0625, scale = 0.9375
+        let s = App::destruction_scale(0.25);
+        let expected = 1.0 - 0.25 * 0.25;
+        assert!((s - expected).abs() < 0.001, "progress=0.25 should give scale ~{}, got {}", expected, s);
     }
 
     // ── Phase 6: Particle System Tests ──────────────────────────────────────
