@@ -418,6 +418,8 @@ uniform float u_roughness;
 uniform float u_metallic;
 uniform highp sampler2DArray u_terrain_textures;
 uniform bool u_use_textures;
+// Phase 7: day-phase aware ambient lighting for model instances
+uniform float u_day_phase;
 
 out vec4 out_color;
 
@@ -466,8 +468,17 @@ void main() {
     float NdotL = max(dot(N, L), 0.0);
     vec3 diffuse = base_albedo * NdotL;
 
-    // Ambient
-    vec3 ambient = base_albedo * 0.15;
+    // ── Phase 7: Day-phase-aware hemisphere ambient lighting ─────────
+    // Matches terrain shader: 0.0=midnight (darkest), 0.5=noon (brightest)
+    float day_light_raw = 0.5 + 0.5 * sin((u_day_phase - 0.25) * 6.2831853);
+    float day_light = day_light_raw * day_light_raw * (3.0 - 2.0 * day_light_raw);
+    // Hemisphere ambient: sky-colored from above, ground-colored from below
+    // day_light=0 → ambient_scale 0.10 (night), day_light=1 → 0.50 (noon)
+    float ambient_scale = 0.10 + day_light * 0.40;
+    float hemi_factor = 0.5 + 0.5 * N.y;
+    vec3 sky_ambient = vec3(0.6, 0.7, 0.9) * ambient_scale;
+    vec3 ground_ambient = vec3(0.3, 0.25, 0.2) * ambient_scale;
+    vec3 ambient = base_albedo * mix(ground_ambient, sky_ambient, hemi_factor);
 
     // Specular (Blinn-Phong with roughness)
     float NdotH = max(dot(N, H), 0.0);
@@ -739,6 +750,7 @@ struct App {
     model_anim_phase_buffer: Option<WebGlBuffer>,
     model_terrain_tex_loc: Option<web_sys::WebGlUniformLocation>,
     model_use_textures_loc: Option<web_sys::WebGlUniformLocation>,
+    model_day_phase_loc: Option<web_sys::WebGlUniformLocation>,
     // ── Phase 7: Shadow rendering ─────────────────────────────────────────
     shadow_program: Option<WebGlProgram>,
     shadow_vao: Option<WebGlVertexArrayObject>,
@@ -1159,7 +1171,8 @@ impl App {
              model_color_loc, model_roughness_loc, model_metallic_loc,
              model_instance_buffer, model_offset_buffer, model_vp_loc, model_use_instanced_loc,
              model_time_loc, model_anim_phase_buffer,
-             model_terrain_tex_loc, model_use_textures_loc) = 
+             model_terrain_tex_loc, model_use_textures_loc,
+             model_day_phase_loc) = 
             if let Some(ref prog) = model_program {
                 let pos_buf = gl.create_buffer();
                 let norm_buf = gl.create_buffer();
@@ -1184,9 +1197,10 @@ impl App {
                     anim_buf,
                     gl.get_uniform_location(prog, "u_terrain_textures"),
                     gl.get_uniform_location(prog, "u_use_textures"),
+                    gl.get_uniform_location(prog, "u_day_phase"),
                 )
             } else {
-                (None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+                (None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
             };
 
         // ── Phase 7: Shadow program ──────────────────────────
@@ -1358,6 +1372,7 @@ impl App {
             model_anim_phase_buffer,
             model_terrain_tex_loc,
             model_use_textures_loc,
+            model_day_phase_loc,
             // ── Phase 7: Shadow rendering
             shadow_program,
             shadow_vao,
@@ -1892,6 +1907,11 @@ impl App {
         }
         if let Some(ref loc) = self.model_use_textures_loc {
             gl.uniform1i(Some(loc), if self.textures_loaded { 1 } else { 0 });
+        }
+
+        // Day-phase uniform for model ambient lighting
+        if let Some(ref loc) = self.model_day_phase_loc {
+            gl.uniform1f(Some(loc), day_phase as f32);
         }
 
         // Build model matrix helper
@@ -6143,6 +6163,41 @@ mod tests {
         // Verify resource glow uses corrected phase
         assert!(FRAGMENT_SHADER.contains("sin((v_day_phase - 0.25) * 6.2831853 * 2.0)"),
             "resource glow should use shifted phase");
+    }
+
+    #[test]
+    fn test_model_shader_has_day_phase_ambient() {
+        // Verify model fragment shader has day-phase uniform
+        assert!(MODEL_FRAGMENT_SHADER.contains("uniform float u_day_phase"),
+            "model fragment shader should declare u_day_phase uniform");
+        // Verify it computes day_light with Hermite smoothstep
+        assert!(MODEL_FRAGMENT_SHADER.contains("day_light_raw"),
+            "model shader should compute day_light_raw");
+        assert!(MODEL_FRAGMENT_SHADER.contains("day_light_raw * day_light_raw * (3.0 - 2.0 * day_light_raw)"),
+            "model shader should use Hermite smoothstep for day_light");
+        // Verify hemisphere ambient lighting
+        assert!(MODEL_FRAGMENT_SHADER.contains("hemi_factor"),
+            "model shader should compute hemisphere blend factor");
+        assert!(MODEL_FRAGMENT_SHADER.contains("sky_ambient"),
+            "model shader should have sky ambient color");
+        assert!(MODEL_FRAGMENT_SHADER.contains("ground_ambient"),
+            "model shader should have ground ambient color");
+        // Verify ambient_scale ranges from 0.10 (night) to 0.50 (noon)
+        assert!(MODEL_FRAGMENT_SHADER.contains("0.10 + day_light * 0.40"),
+            "model shader should scale ambient from 0.10 (night) to 0.50 (noon)");
+    }
+
+    #[test]
+    fn test_model_shader_day_phase_ambient_values() {
+        // Verify the ambient scale formula: 0.10 + day_light * 0.40
+        // At midnight (day_light=0): ambient_scale = 0.10
+        // At noon (day_light=1): ambient_scale = 0.50
+        let midnight_scale = 0.10_f32 + 0.0_f32 * 0.40;
+        let noon_scale = 0.10_f32 + 1.0_f32 * 0.40;
+        assert!((midnight_scale - 0.10).abs() < 0.001,
+            "midnight ambient_scale should be 0.10, got {}", midnight_scale);
+        assert!((noon_scale - 0.50).abs() < 0.001,
+            "noon ambient_scale should be 0.50, got {}", noon_scale);
     }
 
     #[test]
