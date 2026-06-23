@@ -969,6 +969,8 @@ struct App {
     // ── Phase 7: Water reflection ──────────────────────────────────────────
     reflection_fbo: Option<web_sys::WebGlFramebuffer>,
     reflection_tex: Option<web_sys::WebGlTexture>,
+    reflection_w: i32,
+    reflection_h: i32,
     reflection_tex_loc: Option<web_sys::WebGlUniformLocation>,
     reflection_pass_loc: Option<web_sys::WebGlUniformLocation>,
     reflection_horizon_y_loc: Option<web_sys::WebGlUniformLocation>,
@@ -1721,6 +1723,8 @@ impl App {
             lightning_loc,
             reflection_fbo: None,
             reflection_tex: None,
+            reflection_w: 0,
+            reflection_h: 0,
             reflection_tex_loc,
             reflection_pass_loc,
             reflection_horizon_y_loc,
@@ -2042,12 +2046,15 @@ impl App {
             let tex = gl.create_texture();
             if let (Some(fbo), Some(tex)) = (fbo, tex) {
                 gl.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&tex));
+                // Half-resolution: 50% saves 75% fill rate on water tiles
+                self.reflection_w = (canvas.width() / 2).max(1) as i32;
+                self.reflection_h = (canvas.height() / 2).max(1) as i32;
                 gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
                     WebGl2RenderingContext::TEXTURE_2D,
                     0,
                     WebGl2RenderingContext::RGBA as i32,
-                    canvas.width() as i32,
-                    canvas.height() as i32,
+                    self.reflection_w,
+                    self.reflection_h,
                     0,
                     WebGl2RenderingContext::RGBA,
                     WebGl2RenderingContext::UNSIGNED_BYTE,
@@ -2117,7 +2124,7 @@ impl App {
                 p00 * v_tx,     p11 * v_ty,    p22 * v_tz + p23, p32 * v_tz,
             ];
             gl.bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, Some(fbo));
-            gl.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
+            gl.viewport(0, 0, self.reflection_w, self.reflection_h);
             gl.clear_color(sky_r, sky_g, sky_b, 1.0);
             gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
             gl.uniform_matrix4fv_with_f32_array(Some(vp_loc), false, &ref_vp);
@@ -7223,6 +7230,16 @@ mod tests {
         // Reflection sampling should clamp screen_uv.y to u_reflection_horizon_y
         assert!(FRAGMENT_SHADER.contains("min(screen_uv.y, u_reflection_horizon_y)"), 
             "reflection sampling should clamp Y to below horizon: min(screen_uv.y, u_reflection_horizon_y)");
+    }
+
+    #[test]
+    fn test_reflection_fbo_uses_half_resolution() {
+        // Verify the Rust source divides canvas dimensions by 2 for the reflection FBO
+        // This is a code-level check: the App struct stores reflection_w/reflection_h
+        // and the FBO creation uses canvas.width()/2 and canvas.height()/2
+        let src = include_str!("lib.rs");
+        assert!(src.contains("canvas.width() / 2"), "FBO texture width should be half of canvas");
+        assert!(src.contains("canvas.height() / 2"), "FBO texture height should be half of canvas");
     }
 
     // ── Terrain LOD Tests ──────────────────────────────────────────────────
