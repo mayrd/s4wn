@@ -190,6 +190,11 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 34. Consider adding a depth attachment to the reflection FBO for better sorting
 35. Add rendering pipeline audit checklist document
 36. Fix #69: u_resolution missing uniform — DONE (session 185)
+37. Fix #70: Rebuild + deploy WASM with u_resolution fix — DONE (session 186)
+38. WASM size: measure new baseline with WebGlFramebuffer + WebGlTexture features (369KB currently, +5KB from reflections)
+39. Verify reflection optimization visually: ensure water tiles don't appear in reflection FBO
+40. Fine-tune horizon_y computation for different camera elevations and zoom levels
+41. Add rendering pipeline audit checklist document
 
 ---
 
