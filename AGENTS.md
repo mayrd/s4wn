@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax — 612 tests passing
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation — 618 tests passing
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 173 | 2026-06-23 | Phase 7: Building destruction animation — scale-to-zero with ease-in curve during destruction — 618 tests |
 | 172 | 2026-06-23 | Phase 7: Cloud layer rendering — semi-transparent quads at high elevation with parallax + day-phase coloring — 612 tests |
 | 171 | 2026-06-23 | Phase 7: Day-phase-aware hemisphere ambient lighting for model instances — 607 tests |
 | 169 | 2026-06-22 | Phase 7: Dynamic sky color ramp (dawn→noon→dusk→night) — Fixed #66 #67 — 605 tests |
@@ -153,7 +154,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 17. ~~Add cloud layer rendering (semi-transparent quads at high elevation with parallax)~~ ✅ (session 172)
 18. Validate WASM <300KB (currently tracking size regression from new shaders)
 19. Add weather effects (rain particles, lightning flashes during storms)
-20. Add building destruction animation (collapse particles, debris)
+20. ~~Add building destruction animation (collapse particles, debris)~~ ✅ (session 173)
 21. Optimize cloud rendering: use instanced draw calls instead of per-vertex expansion
 22. Add sun/moon disc rendering in the sky
 23. Validate WASM <300KB and optimize shader size
