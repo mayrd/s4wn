@@ -168,6 +168,7 @@ uniform float u_lightning;
 uniform sampler2D u_reflection_tex;
 uniform bool u_reflection_pass;
 uniform float u_reflection_horizon_y;
+uniform vec2 u_resolution;
 
 out vec4 out_color;
 
