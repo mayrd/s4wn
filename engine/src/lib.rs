@@ -164,6 +164,7 @@ uniform vec3 u_light_direction;
 uniform float u_water_time;
 uniform sampler2D u_water_normal;
 uniform float u_water_normal_ready;
+uniform float u_lightning;
 
 out vec4 out_color;
 
@@ -206,7 +207,7 @@ r#"    float warmth = 0.5 + day_light * 0.5;
     vec3 n = normalize(v_normal);
     vec3 l = normalize(u_light_direction);
     float diffuse = max(dot(n, l), 0.0);
-    float ambient_base = 0.15 + day_light * 0.35;
+    float ambient_base = 0.15 + day_light * 0.35 + u_lightning * 0.3;
     float light = ambient_base + diffuse * 0.7;
 
     vec3 lit = base_color * shade * light;
@@ -946,6 +947,10 @@ struct App {
     sun_moon_screen_pos_loc: Option<web_sys::WebGlUniformLocation>,
     sun_moon_radius_loc: Option<web_sys::WebGlUniformLocation>,
 
+    // ── Phase 7: Lightning flashes ─────────────────────────────────────────
+    lightning_flash: f32,
+    lightning_timer: f32,
+    lightning_loc: Option<web_sys::WebGlUniformLocation>,
 
 
 }
@@ -1326,6 +1331,7 @@ impl App {
         let use_vp_loc = gl.get_uniform_location(&program, "u_use_vp");
         let light_dir_loc = gl.get_uniform_location(&program, "u_light_direction");
         let water_time_loc = gl.get_uniform_location(&program, "u_water_time");
+        let lightning_loc = gl.get_uniform_location(&program, "u_lightning");
         let water_normal_loc = gl.get_uniform_location(&program, "u_water_normal");
         let water_normal_ready_loc = gl.get_uniform_location(&program, "u_water_normal_ready");
         let day_phase_loc = gl
@@ -1670,6 +1676,9 @@ impl App {
             particle_system: particle::ParticleSystem::new(),
             recent_death_count: 0,
             recent_combat_count: 0,
+            lightning_flash: 0.0,
+            lightning_timer: 30.0,
+            lightning_loc,
         })
     }
 
@@ -1706,7 +1715,40 @@ impl App {
         // Compute day_phase from game time: cycle ~ 5 minutes of real-time per day
         // Day cycle = 300 seconds / 10 TPS = 3000 ticks per day
         let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
-        let (sky_r, sky_g, sky_b) = sky_color(day_phase);
+        let (mut sky_r, mut sky_g, mut sky_b) = sky_color(day_phase);
+
+        // ── Phase 7: Lightning flashes ──────────────────────────────────────
+        // Frame delta for frame-rate-independent fade
+        let dt = (now - self.last_frame_ms) / 1000.0;
+        self.last_frame_ms = now;
+        // Countdown to next lightning
+        self.lightning_timer -= dt as f32;
+        if self.lightning_timer <= 0.0 && self.lightning_flash <= 0.001 {
+            // Trigger flash with random intensity 0.5-1.0
+            let r = ((self.game_loop.state.game_time * 7919.0) % 1.0) as f32;
+            self.lightning_flash = 0.5 + r * 0.5_f32;
+            // Next flash in 20-90 seconds
+            let next = ((self.game_loop.state.game_time * 1373.0) % 1.0) as f32;
+            self.lightning_timer = 20.0 + next * 70.0_f32;
+            // 30% chance of double flash
+            if r > 0.7 {
+                self.lightning_timer = 0.15; // quick second flash
+            }
+        }
+        // Rapid fade: decays to ~15% in 0.15s at 60fps
+        if self.lightning_flash > 0.001 {
+            self.lightning_flash *= 0.85_f32.powf(dt as f32 * 60.0);
+            if self.lightning_flash < 0.001 {
+                self.lightning_flash = 0.0;
+            }
+        }
+        // Boost sky color during lightning
+        if self.lightning_flash > 0.001 {
+            let boost = 1.0_f32 + self.lightning_flash * 1.5;
+            sky_r = (sky_r * boost).min(1.0);
+            sky_g = (sky_g * boost).min(1.0);
+            sky_b = (sky_b * boost).min(1.0);
+        }
 
         // Update particles (always runs, even when paused, for visual effects)
         self.particle_system.update(0.016);
@@ -1884,6 +1926,9 @@ impl App {
         }
         if let Some(ref loc) = self.water_normal_ready_loc {
             gl.uniform1f(Some(loc), if self.water_normal_ready { 1.0 } else { 0.0 });
+        }
+        if let Some(ref loc) = self.lightning_loc {
+            gl.uniform1f(Some(loc), self.lightning_flash);
         }
         // Phase 5: Pass orbital camera View-Projection matrix to shader
         // When enabled (u_use_vp=true), shader uses VP matrix instead of legacy iso params
@@ -6746,7 +6791,6 @@ mod tests {
         // Moon should have cool blue-white colors
         assert!(SUN_MOON_FRAGMENT_SHADER.contains("0.85, 0.88, 0.95"), "moon color should be cool blue-white");
     }
-}
 
     // ── Day/Night Lighting Tests ───────────────────────────────────────────
 
@@ -6953,3 +6997,4 @@ mod tests {
         let result = eco.units.military_in_rect(0.0, 0.0, 10.0, 10.0);
         assert_eq!(result.len(), 0);
     }
+}
