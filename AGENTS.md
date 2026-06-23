@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 185 | 2026-06-23 | Fix #69: Add missing `uniform vec2 u_resolution;` to terrain fragment shader — was used but not declared, causing shader compile error. 644 tests pass. -- 644 tests
 | 184 | 2026-06-23 | Phase 7: Terrain LOD — multi-resolution mesh with 3 levels (LOD 0: 1×1, LOD 1: 2×2, LOD 2: 4×4 tiles per quad). Chebyshev distance from camera center. build_map_mesh() delegates to build_map_mesh_lod(). 6 new tests. -- 640 tests |
 | 177 | 2026-06-23 | WASM size audit: 364KB (unchanged). Removed dead u_sun_color/u_moon_color shader uniforms + Rust plumbing. Added panic=abort to Cargo.toml. -- 624 tests |
 | 178 | 2026-06-23 | Removed console_error_panic_hook dependency (Cargo.toml + lib.rs). Saved ~3.5KB (364KB → 360.5KB). 624 tests pass. -- 624 tests |
@@ -188,6 +189,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 33. Fine-tune horizon_y computation for different camera elevations and zoom levels
 34. Consider adding a depth attachment to the reflection FBO for better sorting
 35. Add rendering pipeline audit checklist document
+36. Fix #69: u_resolution missing uniform — DONE (session 185)
 
 ---
 
