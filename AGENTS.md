@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs — 624 tests passing | WASM 364KB (target <300KB)
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, dead uniform cleanup — 624 tests passing | WASM 364KB (target <300KB, -0KB this session)
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 177 | 2026-06-23 | WASM size audit: 364KB (unchanged). Removed dead u_sun_color/u_moon_color shader uniforms + Rust plumbing. Added panic=abort to Cargo.toml. -- 624 tests |
 | 176 | 2026-06-23 | Phase 7: Cloud instanced rendering — draw_arrays_instanced, static unit-quad corner buffer, per-instance pos/size/alpha (divisor=1). 6× less vertex upload. -- 624 tests |
 | 175 | 2026-06-23 | WASM size audit: 364KB (64KB over target). wasm-opt no help. Clean build confirms 364KB baseline. -- 624 tests |
 | 174 | 2026-06-23 | Phase 7: Sun/Moon disc rendering — celestial body discs with glow, day/night visibility, positioned via VP projection — 624 tests |
@@ -155,19 +156,22 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 15. ~~Add unit idle animations (subtle breathing/bob cycle) visible on model instances~~ ✅ (already implemented)
 16. ~~Add day-phase-aware ambient light multiplier that scales hemisphere+directional lighting~~ ✅ (session 171)
 17. ~~Add cloud layer rendering (semi-transparent quads at high elevation with parallax)~~ ✅ (session 172)
-18. Validate WASM <300KB -- currently 364KB (64KB over). wasm-opt -Oz no effect (rustc already optimal). Need source-level reduction.
+18. Validate WASM <300KB -- currently 364KB (session 177). panic=abort added (no size change). Shader dead uniforms removed. Next: remove console_error_panic_hook dep, audit web-sys features, consolidate shader day_light function.
 19. Add weather effects (rain particles, lightning flashes during storms)
 20. ~~Add building destruction animation (collapse particles, debris)~~ ✅ (session 173)
 21. ~~Optimize cloud rendering: use instanced draw calls instead of per-vertex expansion~~ ✅ (session 176)
 22. Add sun/moon disc rendering in the sky -- done (session 174)
-23. Validate WASM <300KB and optimize shader size
+23. Validate WASM <300KB — 364KB after cleanup + panic=abort (session 177). Try: remove panic_hook dep, audit web-sys features, consolidate shader day_light
 24. ~~Implement cloud instanced rendering (draw_arrays_instanced) to reduce vertex upload~~ ✅ (session 176)
 
 ---
 
-25. WASM size audit: measure WASM size after cloud instancing change (target <300KB, was 364KB)
-26. Optimize WASM shader size: inline short uniforms, remove unused snippet variants
+25. ~~WASM size audit: 364KB after cloud instancing~~ ✅ (session 177)
+26. ~~Shader cleanup: removed dead u_sun_color/u_moon_color uniforms + Rust plumbing~~ 🔄 (session 177 — more needed)
 27. Add weather effects: rain particle system with lightning flashes
+27a. Remove console_error_panic_hook dependency (may save 5-10KB with panic=abort)
+27b. Audit unused web-sys features in Cargo.toml
+27c. Consolidate duplicated day_light GLSL fragment (3 copies in model/cloud/sun_moon shaders)
 28. Water reflections: mirror terrain/buildings on water surface with Fresnel effect
 29. Terrain LOD: reduce vertex count for distant tiles
 
