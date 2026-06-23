@@ -106,6 +106,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | 177 | 2026-06-23 | WASM size audit: 364KB (unchanged). Removed dead u_sun_color/u_moon_color shader uniforms + Rust plumbing. Added panic=abort to Cargo.toml. -- 624 tests |
 | 178 | 2026-06-23 | Removed console_error_panic_hook dependency (Cargo.toml + lib.rs). Saved ~3.5KB (364KB → 360.5KB). 624 tests pass. -- 624 tests |
 | 179 | 2026-06-23 | Consolidated duplicated day_light GLSL fragment across 4 shaders (terrain/model/cloud/sun_moon). Used macro_rules! + concat! for zero-overhead code sharing. 624 tests pass. -- 624 tests |
+| 180 | 2026-06-23 | Audited web-sys features: removed 8 unused (WebSocket, MessageEvent, ErrorEvent, CloseEvent, BinaryType, MouseEvent, WheelEvent, Node). No WASM size change — features only affect JS glue. 624 tests pass. -- 624 tests |
 | 176 | 2026-06-23 | Phase 7: Cloud instanced rendering — draw_arrays_instanced, static unit-quad corner buffer, per-instance pos/size/alpha (divisor=1). 6× less vertex upload. -- 624 tests |
 | 175 | 2026-06-23 | WASM size audit: 364KB (64KB over target). wasm-opt no help. Clean build confirms 364KB baseline. -- 624 tests |
 | 174 | 2026-06-23 | Phase 7: Sun/Moon disc rendering — celestial body discs with glow, day/night visibility, positioned via VP projection — 624 tests |
@@ -172,7 +173,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 26. ~~Shader cleanup: removed dead u_sun_color/u_moon_color uniforms + Rust plumbing~~ 🔄 (session 177 — more needed)
 27. Add weather effects: rain particle system with lightning flashes
 27a. ~~Remove console_error_panic_hook dependency~~ ✅ (session 178, saved 3.5KB → 360.5KB)
-27b. Audit unused web-sys features in Cargo.toml
+27b. ~~Audit unused web-sys features in Cargo.toml~~ ✅ (session 180 — removed 8 unused features)
 27c. ~~Consolidate duplicated day_light GLSL fragment (3 copies in model/cloud/sun_moon shaders)~~ ✅ (session 179)
 28. Water reflections: mirror terrain/buildings on water surface with Fresnel effect
 29. Terrain LOD: reduce vertex count for distant tiles
