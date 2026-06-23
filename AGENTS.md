@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro — 624 tests passing | WASM 360.5KB (target <300KB)
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro — 630 tests passing | WASM 360.5KB (target <300KB)
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -107,6 +107,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | 178 | 2026-06-23 | Removed console_error_panic_hook dependency (Cargo.toml + lib.rs). Saved ~3.5KB (364KB → 360.5KB). 624 tests pass. -- 624 tests |
 | 179 | 2026-06-23 | Consolidated duplicated day_light GLSL fragment across 4 shaders (terrain/model/cloud/sun_moon). Used macro_rules! + concat! for zero-overhead code sharing. 624 tests pass. -- 624 tests |
 | 180 | 2026-06-23 | Audited web-sys features: removed 8 unused (WebSocket, MessageEvent, ErrorEvent, CloseEvent, BinaryType, MouseEvent, WheelEvent, Node). No WASM size change — features only affect JS glue. 624 tests pass. -- 624 tests |
+| 181 | 2026-06-23 | Phase 7: Rain particle system — spawn_rain_particle/spawn_rain_burst with blue-white streaks, gravity fall, drift. Hooked into game loop every ~4 ticks across visible camera area. 6 new tests. -- 630 tests |
 | 176 | 2026-06-23 | Phase 7: Cloud instanced rendering — draw_arrays_instanced, static unit-quad corner buffer, per-instance pos/size/alpha (divisor=1). 6× less vertex upload. -- 624 tests |
 | 175 | 2026-06-23 | WASM size audit: 364KB (64KB over target). wasm-opt no help. Clean build confirms 364KB baseline. -- 624 tests |
 | 174 | 2026-06-23 | Phase 7: Sun/Moon disc rendering — celestial body discs with glow, day/night visibility, positioned via VP projection — 624 tests |
@@ -171,10 +172,11 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 25. ~~WASM size audit: 364KB after cloud instancing~~ ✅ (session 177)
 26. ~~Shader cleanup: removed dead u_sun_color/u_moon_color uniforms + Rust plumbing~~ 🔄 (session 177 — more needed)
-27. Add weather effects: rain particle system with lightning flashes
+27. ~~Add weather effects: rain particle system~~ ✅ (session 181 — rain done, lightning flashes remain)
 27a. ~~Remove console_error_panic_hook dependency~~ ✅ (session 178, saved 3.5KB → 360.5KB)
 27b. ~~Audit unused web-sys features in Cargo.toml~~ ✅ (session 180 — removed 8 unused features)
 27c. ~~Consolidate duplicated day_light GLSL fragment (3 copies in model/cloud/sun_moon shaders)~~ ✅ (session 179)
+27d. Add lightning flashes: periodic sky brightening with rapid fade (0.1-0.2s)
 28. Water reflections: mirror terrain/buildings on water surface with Fresnel effect
 29. Terrain LOD: reduce vertex count for distant tiles
 
