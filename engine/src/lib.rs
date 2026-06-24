@@ -935,7 +935,6 @@ struct App {
     // ── Phase 7: Shadow rendering ─────────────────────────────────────────
     shadow_program: Option<WebGlProgram>,
     shadow_vao: Option<WebGlVertexArrayObject>,
-    shadow_quad_buffer: Option<WebGlBuffer>,
     shadow_vp_loc: Option<web_sys::WebGlUniformLocation>,
     shadow_light_dir_loc: Option<web_sys::WebGlUniformLocation>,
     shadow_instance_pos_loc: Option<web_sys::WebGlUniformLocation>,
@@ -955,12 +954,9 @@ struct App {
     cloud_vp_loc: Option<web_sys::WebGlUniformLocation>,
     cloud_parallax_loc: Option<web_sys::WebGlUniformLocation>,
     cloud_day_phase_loc: Option<web_sys::WebGlUniformLocation>,
-    cloud_corner_buffer: Option<WebGlBuffer>,
-    cloud_instance_count: i32,
     // — Phase 7: Sun/Moon disc rendering ———————————————————————
     sun_moon_program: Option<WebGlProgram>,
     sun_moon_vao: Option<WebGlVertexArrayObject>,
-    sun_moon_vp_loc: Option<web_sys::WebGlUniformLocation>,
     sun_moon_day_phase_loc: Option<web_sys::WebGlUniformLocation>,
     sun_moon_is_moon_loc: Option<web_sys::WebGlUniformLocation>,
     sun_moon_screen_pos_loc: Option<web_sys::WebGlUniformLocation>,
@@ -1444,7 +1440,7 @@ impl App {
             -1.0, -1.0,  1.0, -1.0,  1.0,  1.0,  // tri 1
             -1.0, -1.0,  1.0,  1.0, -1.0,  1.0,  // tri 2
         ];
-        let (shadow_program, shadow_vao, shadow_quad_buffer,
+        let (shadow_program, shadow_vao,
              shadow_vp_loc, shadow_light_dir_loc, shadow_instance_pos_loc, shadow_size_loc, _shadow_penumbra_loc) =
             compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, SHADOW_VERTEX_SHADER)
             .and_then(|vert| {
@@ -1475,7 +1471,6 @@ impl App {
                 (
                     Some(prog),
                     vao,
-                    quad_buf,
                     vp_loc,
                     ld_loc,
                     ip_loc,
@@ -1483,13 +1478,12 @@ impl App {
                     pn_loc,
                 )
             })
-            .unwrap_or((None, None, None, None, None, None, None, None));
+            .unwrap_or((None, None, None, None, None, None, None));
 
 
         // ── Phase 7: Cloud program ──────────────────────────────────────
         let (cloud_program, cloud_vao, cloud_pos_buffer, cloud_size_buffer, cloud_alpha_buffer,
-             cloud_corner_buffer,
-             cloud_vp_loc, cloud_parallax_loc, cloud_day_phase_loc) =
+              cloud_vp_loc, cloud_parallax_loc, cloud_day_phase_loc) =
             compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, CLOUD_VERTEX_SHADER)
             .and_then(|vert| {
                 compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, CLOUD_FRAGMENT_SHADER)
@@ -1536,12 +1530,12 @@ impl App {
                 let parallax_loc = gl.get_uniform_location(&prog, "u_cam_parallax");
                 let day_loc = gl.get_uniform_location(&prog, "u_day_phase");
                 gl.bind_vertex_array(None);
-                (Some(prog), vao, pos_buf, size_buf, alpha_buf, corner_buf, vp_loc, parallax_loc, day_loc)
+                (Some(prog), vao, pos_buf, size_buf, alpha_buf, vp_loc, parallax_loc, day_loc)
             })
-            .unwrap_or((None, None, None, None, None, None, None, None, None));
+            .unwrap_or((None, None, None, None, None, None, None, None));
 
         // — Phase 7: Sun/Moon disc program ————————————————————————
-        let (sun_moon_program, sun_moon_vao, sun_moon_vp_loc, sun_moon_day_phase_loc,
+        let (sun_moon_program, sun_moon_vao, sun_moon_day_phase_loc,
              sun_moon_is_moon_loc, sun_moon_screen_pos_loc,
              sun_moon_radius_loc) =
             compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, SUN_MOON_VERTEX_SHADER)
@@ -1554,15 +1548,15 @@ impl App {
                 gl.bind_vertex_array(vao.as_ref());
                 gl.use_program(Some(&prog));
                 // No vertex buffers needed — full-screen quad from vertex ID
-                let vp_loc = gl.get_uniform_location(&prog, "u_vp");
+                let _vp_loc = gl.get_uniform_location(&prog, "u_vp");
                 let day_loc = gl.get_uniform_location(&prog, "u_day_phase");
                 let is_moon_loc = gl.get_uniform_location(&prog, "u_is_moon");
                 let screen_pos_loc = gl.get_uniform_location(&prog, "u_sun_screen_pos");
                 let radius_loc = gl.get_uniform_location(&prog, "u_sun_radius");
                 gl.bind_vertex_array(None);
-                (Some(prog), vao, vp_loc, day_loc, is_moon_loc, screen_pos_loc, radius_loc)
+                (Some(prog), vao, day_loc, is_moon_loc, screen_pos_loc, radius_loc)
             })
-            .unwrap_or((None, None, None, None, None, None, None));
+            .unwrap_or((None, None, None, None, None, None));
 
         // Compile overlay shaders
         let overlay_vert = compile_shader(
@@ -1691,7 +1685,6 @@ impl App {
             // ── Phase 7: Shadow rendering
             shadow_program,
             shadow_vao,
-            shadow_quad_buffer,
             shadow_vp_loc,
             shadow_light_dir_loc,
             shadow_instance_pos_loc,
@@ -1707,15 +1700,12 @@ impl App {
             cloud_pos_buffer,
             cloud_size_buffer,
             cloud_alpha_buffer,
-            cloud_corner_buffer,
             cloud_vp_loc,
             cloud_parallax_loc,
             cloud_day_phase_loc,
-            cloud_instance_count: 0,
             // — Phase 7: Sun/Moon disc rendering
             sun_moon_program,
             sun_moon_vao,
-            sun_moon_vp_loc,
             sun_moon_day_phase_loc,
             sun_moon_is_moon_loc,
             sun_moon_screen_pos_loc,
