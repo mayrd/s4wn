@@ -210,11 +210,10 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ---
 
-### Next Session — Updated Steps (Session 196+)
+### Next Session — Updated Steps (Session 204+)
 ---
-43. WASM size: 331KB → 300KB — remaining 31KB gap. (e) compute_mvp_json + 7 other dead exports removed in session 201 (-7KB). Top remaining targets: (a) data[5]=27.9KB building/unit names — use phf crate for from_name hash (b) 28.5KB shader source across 4 data segments — move to JS or minify GLSL (c) 5.9KB game state JSON template — const encoding (d) ryu crate for flt2dec float formatting (~10KB estimated). [MUST — 31KB remains]
-44. FPS/draw-call benchmarking: 8 draw-call increment sites documented (terrain, overlay, shadows[N], clouds, sun, moon, models, dots). Next: add 1080p/720p FPS display toggle, record baseline numbers in RENDERING_AUDIT.md [SHOULD]
-45. Investigate if building model JSON definitions can be lazy-loaded from assets/ to reduce .rodata [NICE]
+43. WASM size: 331KB → 300KB — remaining 31KB gap. Session 204: hash-based from_name (FNV-1a) attempted, no savings — strings deduplicated with name()/all_names(). Top remaining targets: (a) 28.5KB shader source — minify GLSL in r#"..."# literals (est. 10-14KB savings) (b) 5.9KB game state JSON template — const encoding (c) ryu float formatting ~10KB (d) building model JSON lazy-loaded from assets/ (27.9KB). [MUST — 31KB remains]
+44. FPS/draw-call benchmarking: add 1080p/720p FPS display toggle, record baseline in RENDERING_AUDIT.md [SHOULD]
+45. Lazy-load building model JSON from assets/ to reduce .rodata [NICE — may be largest single win]
 32. Verify reflection optimization visually: ensure water tiles excluded from reflection FBO [visual confirmation pending]
-
 *All building data must match BASE.md. Never modify BASE.md.*
