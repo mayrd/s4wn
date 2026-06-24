@@ -2339,6 +2339,8 @@ let selectedUnit = null;     // unit id or null
 setTimeout(() => {
     splash.classList.add('hidden');
     document.body.classList.remove('splash-active');
+    // Remove splash from layout after fade transition (Fixes #72)
+    setTimeout(() => { splash.style.display = 'none'; }, 850);
     // Open menu so player can start a game
     setTimeout(() => openMenu(), 500);
 }, 2000);
