@@ -4,6 +4,9 @@
 //! Full WASM + WebGL2 pipeline with generated terrain maps,
 //! smooth camera pan (mouse drag) and zoom (scroll wheel).
 
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 pub mod ara_crypt;
 pub mod base_validation_tests;
 pub mod camera;
