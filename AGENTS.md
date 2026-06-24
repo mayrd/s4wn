@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, water reflection FBO + Fresnel blend, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro, terrain LOD (3 levels), wee_alloc global allocator, codegen-units=1 — 645 tests passing | WASM 365KB (was 377KB, -12KB)
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, water reflection FBO + Fresnel blend, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro, terrain LOD (3 levels), wee_alloc global allocator, codegen-units=1, fine-tuned horizon_y computation — 654 tests passing | WASM 365KB (was 377KB, -12KB)
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -104,6 +104,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | Session | Date | Summary |
 |---------|------|---------|
 | 190 | 2026-06-24 | Step 43: WASM size investigation. Profiled with twiggy — top functions: render(11.4%), .rodata(6.8%), serde_json deser(4.3%), flt2dec(2.9%). Added wee_alloc (-6.5KB), codegen-units=1 (-5.7KB). 377KB → 365KB. Remaining: ~82KB .rodata (model data, shaders), ~17KB render, ~14KB serde. 645 tests pass. -- 645 tests |
+|| 191 | 2026-06-24 | Step 33: Fine-tuned horizon_y computation — use precomputed f=1/tan(fov/2) from projection instead of duplicating hardcoded 45° FOV. Added -0.02 NDC bias to prevent horizon edge artifacts. Proper fwd_horiz clamping with max(0.01). horizon_ndc clamped to [-1,1], screen_y to [0.01,0.99]. 9 new horizon_tests (iso/steep/shallow/zero elevation, narrow/wide FOV, clamping, monotonic). 654 tests pass. -- 654 tests |
 | 189 | 2026-06-24 | Step 32: Code-reviewed water tile exclusion from reflection FBO — confirmed u_reflection_pass=1 → discard water tiles in shader during FBO render, reset to 0 for main pass. Logic verified correct. Step 42: Ran cargo clippy, fixed 4 errors (3x approx_constant TAU float literals, 1x boolean logic bug overlay_dirty||true). Applied 39 auto-fixes (unnecessary_cast, or_default, len_zero, etc.). 645 tests pass. -- 645 tests |
 | 188 | 2026-06-23 | Phase 7: Rendering pipeline audit checklist — RENDERING_AUDIT.md covering all 7 passes (FBO→terrain→shadows→clouds→sun/moon→models→overlay). Tracks 38 features done, 3 visual verification items (Steps 32-34), performance targets, shader uniforms audit. 645 tests pass. -- 645 tests
 | 187 | 2026-06-23 | Phase 7: Half-resolution reflection FBO — render at 50% resolution (canvas.width/2, canvas.height/2) to save 75% fill rate on water tiles. reflection_w/reflection_h fields on App struct. LINEAR filter upscales. 645 tests pass, WASM 377KB. -- 645 tests
@@ -198,12 +199,12 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 ---
 
 ### Next Session — Updated Steps (Session 190+)
+---
 43. WASM size: 365KB → 300KB — remaining 65KB gap. Next targets: (a) reduce .rodata — audit large model JSON/const data, (b) try wasm-opt -Oz (aggressive), (c) consider ryu instead of std flt2dec for float formatting (~10KB), (d) audit serde_json usage — could miniserde save space? [MUST — 65KB remains]
 44. Measure draw calls per frame and benchmark FPS at 1080p/720p [SHOULD]
 45. Investigate if building model JSON definitions in model.rs can be moved out of the binary (lazy-load from assets/) [NICE — would reduce .rodata significantly]
 32. Verify reflection optimization visually: ensure water tiles excluded from reflection FBO [visual confirmation pending]
-33. Fine-tune horizon_y computation for different camera elevations and zoom levels [SHOULD]
 34. Add depth attachment to reflection FBO for better sorting [NICE]
----
+46. Add soft particle fade-out for rain splashes when hitting ground [NICE]
 
 *All building data must match BASE.md. Never modify BASE.md.*
