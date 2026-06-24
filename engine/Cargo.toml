@@ -26,13 +26,11 @@ web-sys = { version = "0.3", features = [
     "WebGlBuffer",
     "WebGlUniformLocation",
     "WebGlVertexArrayObject",
-    "AngleInstancedArrays",
-    "HtmlElement",
-    "Element",
-    "Performance",
     "console",
+    "Performance",
     "WebGlFramebuffer",
     "WebGlTexture",
+    "WebGlRenderbuffer",
 ] }
 
 [profile.release]

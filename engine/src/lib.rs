@@ -970,6 +970,7 @@ struct App {
     // ── Phase 7: Water reflection ──────────────────────────────────────────
     reflection_fbo: Option<web_sys::WebGlFramebuffer>,
     reflection_tex: Option<web_sys::WebGlTexture>,
+    reflection_depth: Option<web_sys::WebGlRenderbuffer>,
     reflection_w: i32,
     reflection_h: i32,
     reflection_tex_loc: Option<web_sys::WebGlUniformLocation>,
@@ -1721,6 +1722,7 @@ impl App {
             lightning_loc,
             reflection_fbo: None,
             reflection_tex: None,
+            reflection_depth: None,
             reflection_w: 0,
             reflection_h: 0,
             reflection_tex_loc,
@@ -2031,6 +2033,25 @@ impl App {
                     Some(&tex),
                     0,
                 );
+                // Depth renderbuffer for proper depth sorting in reflection
+                let depth_rb = gl.create_renderbuffer().map(|r| r.clone());
+                if let Some(depth_rb) = depth_rb {
+                    gl.bind_renderbuffer(WebGl2RenderingContext::RENDERBUFFER, Some(&depth_rb));
+                    gl.renderbuffer_storage(
+                        WebGl2RenderingContext::RENDERBUFFER,
+                        WebGl2RenderingContext::DEPTH_COMPONENT24,
+                        self.reflection_w,
+                        self.reflection_h,
+                    );
+                    gl.framebuffer_renderbuffer(
+                        WebGl2RenderingContext::FRAMEBUFFER,
+                        WebGl2RenderingContext::DEPTH_ATTACHMENT,
+                        WebGl2RenderingContext::RENDERBUFFER,
+                        Some(&depth_rb),
+                    );
+                    gl.bind_renderbuffer(WebGl2RenderingContext::RENDERBUFFER, None);
+                    self.reflection_depth = Some(depth_rb);
+                }
                 gl.bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, None);
                 gl.bind_texture(WebGl2RenderingContext::TEXTURE_2D, None);
                 self.reflection_fbo = Some(fbo);
@@ -2046,7 +2067,7 @@ impl App {
             gl.bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, Some(fbo));
             gl.viewport(0, 0, self.reflection_w, self.reflection_h);
             gl.clear_color(sky_r, sky_g, sky_b, 1.0);
-            gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+            gl.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT);
             gl.uniform_matrix4fv_with_f32_array(Some(vp_loc), false, &ref_vp);
             gl.uniform1i(Some(use_loc), 1);
             // Set reflection pass flag: discard water tiles in the FBO render
@@ -2794,23 +2815,22 @@ impl App {
             positions.extend(p_positions);
             colors.extend(p_colors);
             sizes.extend(p_sizes);
-
-        // Map editor grid overlay: semi-transparent dots at tile corners
-        if self.editor_grid {
-            let map = &self.game_loop.state.map;
-            let dot_spacing = 2; // every Nth tile corner for performance
-            for y in (0..=map.height).step_by(dot_spacing) {
-                for x in (0..=map.width).step_by(dot_spacing) {
-                    positions.push(x as f32);
-                    positions.push(y as f32);
-                    colors.push(0.3);
-                    colors.push(0.3);
-                    colors.push(0.3);
-                    sizes.push(2.5);
-                }
+        }
+    // Map editor grid overlay: semi-transparent dots at tile corners
+    if self.editor_grid {
+        let map = &self.game_loop.state.map;
+        let dot_spacing = 2; // every Nth tile corner for performance
+        for y in (0..=map.height).step_by(dot_spacing) {
+            for x in (0..=map.width).step_by(dot_spacing) {
+                positions.push(x as f32);
+                positions.push(y as f32);
+                colors.push(0.3);
+                colors.push(0.3);
+                colors.push(0.3);
+                sizes.push(2.5);
             }
         }
-        }
+    }
 
         if positions.is_empty() {
             return;
@@ -7178,6 +7198,17 @@ mod tests {
         let src = include_str!("lib.rs");
         assert!(src.contains("canvas.width() / 2"), "FBO texture width should be half of canvas");
         assert!(src.contains("canvas.height() / 2"), "FBO texture height should be half of canvas");
+    }
+
+    #[test]
+    fn test_reflection_fbo_has_depth_attachment() {
+        // Verify the Rust source creates a depth renderbuffer and attaches it to the FBO
+        let src = include_str!("lib.rs");
+        assert!(src.contains("create_renderbuffer"), "FBO should create a depth renderbuffer");
+        assert!(src.contains("DEPTH_COMPONENT24"), "Depth renderbuffer should use DEPTH_COMPONENT24 format");
+        assert!(src.contains("DEPTH_ATTACHMENT"), "Depth renderbuffer should be attached as DEPTH_ATTACHMENT");
+        assert!(src.contains("reflection_depth"), "App struct should store reflection_depth field");
+        assert!(src.contains("DEPTH_BUFFER_BIT"), "Reflection pass should clear depth buffer");
     }
 
     // ── Terrain LOD Tests ──────────────────────────────────────────────────

@@ -1378,6 +1378,9 @@ function __wbg_get_imports() {
         __wbg_bindFramebuffer_63e837a5dc0accfb: function(arg0, arg1, arg2) {
             arg0.bindFramebuffer(arg1 >>> 0, arg2);
         },
+        __wbg_bindRenderbuffer_7f84d28a1462a95a: function(arg0, arg1, arg2) {
+            arg0.bindRenderbuffer(arg1 >>> 0, arg2);
+        },
         __wbg_bindTexture_7ab28ff4ff3dc506: function(arg0, arg1, arg2) {
             arg0.bindTexture(arg1 >>> 0, arg2);
         },
@@ -1413,6 +1416,10 @@ function __wbg_get_imports() {
         },
         __wbg_createProgram_4c8164d471c10346: function(arg0) {
             const ret = arg0.createProgram();
+            return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
+        },
+        __wbg_createRenderbuffer_5ada3a0bc7cf3a43: function(arg0) {
+            const ret = arg0.createRenderbuffer();
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
         },
         __wbg_createShader_9c5cd42709d915ff: function(arg0, arg1) {
@@ -1457,6 +1464,9 @@ function __wbg_get_imports() {
         },
         __wbg_enable_d1f42f78be33a553: function(arg0, arg1) {
             arg0.enable(arg1 >>> 0);
+        },
+        __wbg_framebufferRenderbuffer_f9d75924fbe9024a: function(arg0, arg1, arg2, arg3, arg4) {
+            arg0.framebufferRenderbuffer(arg1 >>> 0, arg2 >>> 0, arg3 >>> 0, arg4);
         },
         __wbg_framebufferTexture2D_367ab597a005e8d9: function(arg0, arg1, arg2, arg3, arg4, arg5) {
             arg0.framebufferTexture2D(arg1 >>> 0, arg2 >>> 0, arg3 >>> 0, arg4, arg5);
@@ -1554,6 +1564,9 @@ function __wbg_get_imports() {
         __wbg_performance_4c23a97261596fec: function(arg0) {
             const ret = arg0.performance;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
+        },
+        __wbg_renderbufferStorage_3049e13db5c4e60e: function(arg0, arg1, arg2, arg3, arg4) {
+            arg0.renderbufferStorage(arg1 >>> 0, arg2 >>> 0, arg3, arg4);
         },
         __wbg_set_height_ad5056ea051acd78: function(arg0, arg1) {
             arg0.height = arg1 >>> 0;
