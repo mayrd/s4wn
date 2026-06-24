@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 203 | 2026-06-24 | Session audit: 0 open GitHub issues, 659 tests pass, WASM 331KB (31KB over 300KB target), Clippy 0 errors/35 warnings. Analyzed remaining WASM optimization paths: (a) building/unit names 27.9KB → phf/const hash (b) shader source 28.5KB → minify GLSL (c) game state JSON 5.9KB → const encoding (d) ryu float formatting ~10KB. Verified all App struct fields active. FPS/draw-call exports unused by JS but kept for debugging. -- 659 tests |
 | Session | Date | Summary |
 |---------|------|---------|
 | 202 | 2026-06-24 | Fix #72: Splash display:none after fade-out — splash retained display:flex post-fade, causing layout tree pollution on mobile (WebKit/Mali-G710). Added setTimeout display:none 850ms after 0.8s CSS opacity transition. 659 tests pass. Clippy 0 errors. -- 659 tests |
