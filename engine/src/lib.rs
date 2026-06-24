@@ -1996,51 +1996,10 @@ impl App {
         // Phase 5: Pass orbital camera View-Projection matrix to shader
         // When enabled (u_use_vp=true), shader uses VP matrix instead of legacy iso params
         if let (Some(ref vp_loc), Some(ref use_loc)) = (&self.vp_loc, &self.use_vp_loc) {
-            // Compute VP from orbital camera params
             let (ex, ey, ez) = self.camera.eye();
             let (tx, ty, tz) = self.camera.look_at_target();
             let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
-            let fov = 45.0f32.to_radians();
-            let near = 0.1_f32;
-            let far = 500.0_f32;
-            let f = 1.0 / (fov * 0.5).tan();
-            let range_inv = 1.0 / (near - far);
-            // LookAt: forward, right, up
-            let fwd_x = tx - ex;
-            let fwd_y = ty - ey;
-            let fwd_z = tz - ez;
-            let fwd_len = (fwd_x*fwd_x + fwd_y*fwd_y + fwd_z*fwd_z).sqrt();
-            let fwd_x = fwd_x / fwd_len;
-            let fwd_y = fwd_y / fwd_len;
-            let fwd_z = fwd_z / fwd_len;
-            let world_up = (0.0_f32, 1.0_f32, 0.0_f32);
-            let right_x = fwd_y * world_up.2 - fwd_z * world_up.1;
-            let right_y = fwd_z * world_up.0 - fwd_x * world_up.2;
-            let right_z = fwd_x * world_up.1 - fwd_y * world_up.0;
-            let right_len = (right_x*right_x + right_y*right_y + right_z*right_z).sqrt();
-            let right_x = right_x / right_len;
-            let right_y = right_y / right_len;
-            let right_z = right_z / right_len;
-            let up_x = right_y * fwd_z - right_z * fwd_y;
-            let up_y = right_z * fwd_x - right_x * fwd_z;
-            let up_z = right_x * fwd_y - right_y * fwd_x;
-            // Translation part of view: -eye
-            let v_tx = -(right_x * ex + right_y * ey + right_z * ez);
-            let v_ty = -(up_x * ex + up_y * ey + up_z * ez);
-            let v_tz = -(-fwd_x * ex - fwd_y * ey - fwd_z * ez);
-            // Perspective projection matrix (column-major)
-            let p00 = f / aspect;
-            let p11 = f;
-            let p22 = (near + far) * range_inv;
-            let p23 = 2.0 * near * far * range_inv;
-            let p32 = -1.0;
-            // VP = P * V (column-major for WebGL)
-            let vp: [f32; 16] = [
-                p00 * right_x,  p11 * up_x,    p22 * (-fwd_x),  p32 * (-fwd_x),
-                p00 * right_y,  p11 * up_y,    p22 * (-fwd_y),  p32 * (-fwd_y),
-                p00 * right_z,  p11 * up_z,    p22 * (-fwd_z),  p32 * (-fwd_z),
-                p00 * v_tx,     p11 * v_ty,    p22 * v_tz + p23, p32 * v_tz,
-            ];
+            let vp = model::compute_vp(&[ex, ey, ez], &[tx, ty, tz], 45.0, aspect, 0.1, 500.0);
             gl.uniform_matrix4fv_with_f32_array(Some(vp_loc), false, &vp);
             gl.uniform1i(Some(use_loc), 1);
         } else {
@@ -2090,49 +2049,10 @@ impl App {
         }
         // Reflection render pass: flip camera Y across water plane (Y=0), render to FBO
         if let (Some(ref fbo), Some(ref vp_loc), Some(ref use_loc)) = (&self.reflection_fbo, &self.vp_loc, &self.use_vp_loc) {
-            // Compute reflection VP
             let (ex, ey, ez) = self.camera.eye();
-            let rey = -ey;
             let (tx, ty, tz) = self.camera.look_at_target();
-            let rty = -ty;
             let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
-            let fov = 45.0f32.to_radians();
-            let near = 0.1_f32;
-            let far = 500.0_f32;
-            let f = 1.0 / (fov * 0.5).tan();
-            let range_inv = 1.0 / (near - far);
-            let fwd_x = tx - ex;
-            let fwd_y = rty - rey;
-            let fwd_z = tz - ez;
-            let fwd_len = (fwd_x*fwd_x + fwd_y*fwd_y + fwd_z*fwd_z).sqrt();
-            let fwd_x = fwd_x / fwd_len;
-            let fwd_y = fwd_y / fwd_len;
-            let fwd_z = fwd_z / fwd_len;
-            let world_up = (0.0_f32, 1.0_f32, 0.0_f32);
-            let right_x = fwd_y * world_up.2 - fwd_z * world_up.1;
-            let right_y = fwd_z * world_up.0 - fwd_x * world_up.2;
-            let right_z = fwd_x * world_up.1 - fwd_y * world_up.0;
-            let right_len = (right_x*right_x + right_y*right_y + right_z*right_z).sqrt();
-            let right_x = right_x / right_len;
-            let right_y = right_y / right_len;
-            let right_z = right_z / right_len;
-            let up_x = right_y * fwd_z - right_z * fwd_y;
-            let up_y = right_z * fwd_x - right_x * fwd_z;
-            let up_z = right_x * fwd_y - right_y * fwd_x;
-            let v_tx = -(right_x * ex + right_y * rey + right_z * ez);
-            let v_ty = -(up_x * ex + up_y * rey + up_z * ez);
-            let v_tz = -(-fwd_x * ex - fwd_y * rey - fwd_z * ez);
-            let p00 = f / aspect;
-            let p11 = f;
-            let p22 = (near + far) * range_inv;
-            let p23 = 2.0 * near * far * range_inv;
-            let p32 = -1.0;
-            let ref_vp: [f32; 16] = [
-                p00 * right_x,  p11 * up_x,    p22 * (-fwd_x),  p32 * (-fwd_x),
-                p00 * right_y,  p11 * up_y,    p22 * (-fwd_y),  p32 * (-fwd_y),
-                p00 * right_z,  p11 * up_z,    p22 * (-fwd_z),  p32 * (-fwd_z),
-                p00 * v_tx,     p11 * v_ty,    p22 * v_tz + p23, p32 * v_tz,
-            ];
+            let ref_vp = model::compute_reflection_vp(&[ex, ey, ez], &[tx, ty, tz], 45.0, aspect, 0.1, 500.0);
             gl.bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, Some(fbo));
             gl.viewport(0, 0, self.reflection_w, self.reflection_h);
             gl.clear_color(sky_r, sky_g, sky_b, 1.0);
@@ -2143,15 +2063,7 @@ impl App {
             if let Some(ref loc) = self.reflection_pass_loc {
                 gl.uniform1i(Some(loc), 1);
             }
-            // Compute reflection horizon Y: camera elevation angle mapped to screen space.
-            // Uses the precomputed f = 1/tan(fov/2) from the projection to avoid
-            // duplicating the FOV constant. The forward vector Y component gives the
-            // sine of the elevation angle; dividing by the horizontal magnitude gives
-            // tan(elevation), which we then scale by f to get NDC Y.
-            // A small bias (-0.02) prevents edge artifacts at the exact horizon line.
-            let fwd_horiz = (fwd_x * fwd_x + fwd_z * fwd_z).sqrt().max(0.01);
-            let horizon_ndc = ((-fwd_y) / fwd_horiz * f - 0.02).clamp(-1.0, 1.0);
-            let horizon_screen_y = ((1.0 - horizon_ndc) * 0.5).clamp(0.01, 0.99);
+            let horizon_screen_y = model::compute_horizon_y(&[ex, ey, ez], &[tx, ty, tz], 45.0);
             if let Some(ref loc) = self.reflection_horizon_y_loc {
                 gl.uniform1f(Some(loc), horizon_screen_y);
             }
@@ -2344,12 +2256,10 @@ impl App {
         gl.blend_func(WebGl2RenderingContext::SRC_ALPHA, WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
 
         // Compute VP matrix (same as model rendering)
-        let (ex, _ey, ez) = self.camera.eye();
+        let (ex, ey, ez) = self.camera.eye();
         let (tx, ty, tz) = self.camera.look_at_target();
         let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
-        let proj = model::perspective(45.0, aspect, 0.1, 500.0);
-        let view = model::look_at(&[ex, _ey, ez], &[tx, ty, tz], &[0.0, 1.0, 0.0]);
-        let vp = model::mat4_mul(&proj, &view);
+        let vp = model::compute_vp(&[ex, ey, ez], &[tx, ty, tz], 45.0, aspect, 0.1, 500.0);
         gl.uniform_matrix4fv_with_f32_array(Some(vp_loc), false, &vp);
 
         // Light direction (same sun arc as model shader)
@@ -2481,9 +2391,7 @@ impl App {
         let (ex, ey, ez) = self.camera.eye();
         let (tx, ty, tz) = self.camera.look_at_target();
         let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
-        let proj = model::perspective(45.0, aspect, 0.1, 500.0);
-        let view = model::look_at(&[ex, ey, ez], &[tx, ty, tz], &[0.0, 1.0, 0.0]);
-        let vp = model::mat4_mul(&proj, &view);
+        let vp = model::compute_vp(&[ex, ey, ez], &[tx, ty, tz], 45.0, aspect, 0.1, 500.0);
 
         if let Some(ref loc) = self.cloud_vp_loc {
             gl.uniform_matrix4fv_with_f32_array(Some(loc), false, &vp);
@@ -2541,9 +2449,7 @@ impl App {
         let (ex, ey, ez) = self.camera.eye();
         let (tx, ty, tz) = self.camera.look_at_target();
         let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
-        let proj = model::perspective(45.0, aspect, 0.1, 500.0);
-        let view = model::look_at(&[ex, ey, ez], &[tx, ty, tz], &[0.0, 1.0, 0.0]);
-        let vp = model::mat4_mul(&proj, &view);
+        let vp = model::compute_vp(&[ex, ey, ez], &[tx, ty, tz], 45.0, aspect, 0.1, 500.0);
 
         // Transform sun direction to clip space (as direction, ignore translation)
         // Use a point far along the sun direction
@@ -2621,13 +2527,11 @@ impl App {
 
         gl.use_program(Some(prog));
 
-        // Compute VP matrix from orbital camera (reuse existing infrastructure)
+        // Compute VP matrix from orbital camera
         let (ex, ey, ez) = self.camera.eye();
         let (tx, ty, tz) = self.camera.look_at_target();
         let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
-        let proj = model::perspective(45.0, aspect, 0.1, 500.0);
-        let view = model::look_at(&[ex, ey, ez], &[tx, ty, tz], &[0.0, 1.0, 0.0]);
-        let vp = model::mat4_mul(&proj, &view);
+        let vp = model::compute_vp(&[ex, ey, ez], &[tx, ty, tz], 45.0, aspect, 0.1, 500.0);
 
         // Set VP matrix uniform (shared across all instances)
         if let Some(ref loc) = self.model_vp_loc {

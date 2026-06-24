@@ -464,6 +464,53 @@ fn fov_radians(degrees: f32) -> f32 {
     degrees * std::f32::consts::PI / 180.0
 }
 
+/// Compute a combined View-Projection matrix from orbital camera parameters.
+/// Returns a column-major 4x4 matrix (16 floats) suitable for WebGL2 uniforms.
+#[inline]
+pub fn compute_vp(
+    eye: &[f32; 3],
+    target: &[f32; 3],
+    fov_degrees: f32,
+    aspect: f32,
+    near: f32,
+    far: f32,
+) -> [f32; 16] {
+    let proj = perspective(fov_degrees, aspect, near, far);
+    let view = look_at(eye, target, &[0.0, 1.0, 0.0]);
+    mat4_mul(&proj, &view)
+}
+
+/// Compute a reflection View-Projection matrix: camera Y flipped across water plane.
+#[inline]
+pub fn compute_reflection_vp(
+    eye: &[f32; 3],
+    target: &[f32; 3],
+    fov_degrees: f32,
+    aspect: f32,
+    near: f32,
+    far: f32,
+) -> [f32; 16] {
+    let reye = [eye[0], -eye[1], eye[2]];
+    let rtarget = [target[0], -target[1], target[2]];
+    let proj = perspective(fov_degrees, aspect, near, far);
+    let view = look_at(&reye, &rtarget, &[0.0, 1.0, 0.0]);
+    mat4_mul(&proj, &view)
+}
+
+/// Compute the horizon Y coordinate in screen space for the reflection pass.
+/// Returns a value in [0.01, 0.99].
+#[inline]
+pub fn compute_horizon_y(eye: &[f32; 3], target: &[f32; 3], fov_degrees: f32) -> f32 {
+    let fwd_x = target[0] - eye[0];
+    let fwd_y = target[1] - eye[1];
+    let fwd_z = target[2] - eye[2];
+    let fwd_len = (fwd_x * fwd_x + fwd_y * fwd_y + fwd_z * fwd_z).sqrt();
+    let fwd_y = fwd_y / fwd_len;
+    let f = 1.0 / (fov_radians(fov_degrees) * 0.5).tan();
+    let fwd_horiz = (fwd_x * fwd_x + fwd_z * fwd_z).sqrt().max(0.01);
+    let horizon_ndc = ((-fwd_y) / fwd_horiz * f - 0.02).clamp(-1.0, 1.0);
+    ((1.0 - horizon_ndc) * 0.5).clamp(0.01, 0.99)
+}
 
 #[cfg(test)]
 mod tests {
@@ -993,3 +1040,49 @@ mod tests {
         assert_ne!(a, c, "different anim_phase should make instances unequal");
     }
 }
+
+    #[test]
+    fn test_compute_vp_identity() {
+        // Camera at origin looking along +Z should produce a valid VP matrix
+        let eye = [0.0_f32, 1.0, 0.0];
+        let target = [0.0_f32, 0.0, 1.0];
+        let vp = compute_vp(&eye, &target, 45.0, 1.0, 0.1, 500.0);
+        // VP should be a valid 4x4 matrix (no NaN)
+        for &v in &vp {
+            assert!(!v.is_nan(), "VP matrix contains NaN");
+        }
+        // VP should be finite
+        for &v in &vp {
+            assert!(v.is_finite(), "VP matrix contains infinite value");
+        }
+    }
+
+    #[test]
+    fn test_compute_reflection_vp_flips_y() {
+        let eye = [0.0_f32, 2.0, 0.0];
+        let target = [0.0_f32, 0.0, 1.0];
+        let vp_normal = compute_vp(&eye, &target, 45.0, 1.0, 0.1, 500.0);
+        let vp_reflect = compute_reflection_vp(&eye, &target, 45.0, 1.0, 0.1, 500.0);
+        // Reflection VP should differ from normal VP
+        let diff: f32 = vp_normal.iter().zip(vp_reflect.iter()).map(|(a, b)| (a - b).abs()).sum();
+        assert!(diff > 0.01, "Reflection VP should differ from normal VP");
+    }
+
+    #[test]
+    fn test_compute_horizon_y_range() {
+        // Looking straight ahead (horizontal) → horizon near middle of screen
+        let eye = [0.0_f32, 1.0, 0.0];
+        let target = [0.0_f32, 1.0, 1.0]; // same Y = horizontal
+        let h = compute_horizon_y(&eye, &target, 45.0);
+        assert!(h >= 0.01 && h <= 0.99, "horizon_y = {} (expected [0.01, 0.99])", h);
+
+        // Looking up → horizon below center
+        let target_up = [0.0_f32, 5.0, 1.0];
+        let h_up = compute_horizon_y(&eye, &target_up, 45.0);
+        assert!(h_up >= 0.01 && h_up <= 0.99, "horizon_y (up) = {} (expected [0.01, 0.99])", h_up);
+
+        // Looking down → horizon above center
+        let target_down = [0.0_f32, -3.0, 1.0];
+        let h_down = compute_horizon_y(&eye, &target_down, 45.0);
+        assert!(h_down >= 0.01 && h_down <= 0.99, "horizon_y (down) = {} (expected [0.01, 0.99])", h_down);
+    }
