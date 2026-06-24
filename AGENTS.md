@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 189 | 2026-06-24 | Step 32: Code-reviewed water tile exclusion from reflection FBO — confirmed u_reflection_pass=1 → discard water tiles in shader during FBO render, reset to 0 for main pass. Logic verified correct. Step 42: Ran cargo clippy, fixed 4 errors (3x approx_constant TAU float literals, 1x boolean logic bug overlay_dirty||true). Applied 39 auto-fixes (unnecessary_cast, or_default, len_zero, etc.). 645 tests pass. -- 645 tests |
 | 188 | 2026-06-23 | Phase 7: Rendering pipeline audit checklist — RENDERING_AUDIT.md covering all 7 passes (FBO→terrain→shadows→clouds→sun/moon→models→overlay). Tracks 38 features done, 3 visual verification items (Steps 32-34), performance targets, shader uniforms audit. 645 tests pass. -- 645 tests
 | 187 | 2026-06-23 | Phase 7: Half-resolution reflection FBO — render at 50% resolution (canvas.width/2, canvas.height/2) to save 75% fill rate on water tiles. reflection_w/reflection_h fields on App struct. LINEAR filter upscales. 645 tests pass, WASM 377KB. -- 645 tests
 | 185 | 2026-06-23 | Fix #69: Add missing `uniform vec2 u_resolution;` to terrain fragment shader — was used but not declared, causing shader compile error. 644 tests pass. -- 644 tests
@@ -195,11 +196,11 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ---
 
-### Next Session — Updated Steps (Session 188+)
-32. Verify reflection optimization visually: ensure water tiles excluded from reflection FBO [MUST]
+### Next Session — Updated Steps (Session 189+)
+32. Verify reflection optimization visually: ensure water tiles excluded from reflection FBO [MUST — code-verified in session 189, visual confirmation pending]
 33. Fine-tune horizon_y computation for different camera elevations and zoom levels [SHOULD]
 34. Add depth attachment to reflection FBO for better sorting [NICE]
-42. Run cargo clippy and fix warnings [SHOULD]
+42. Run cargo clippy and fix warnings [DONE — session 189]
 43. Investigate WASM size: 377KB vs 300KB target — profile remaining 77KB [MUST]
 44. Measure draw calls per frame and benchmark FPS at 1080p/720p [SHOULD]
 ---
