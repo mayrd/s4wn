@@ -105,6 +105,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 |---------|------|---------|
 | 190 | 2026-06-24 | Step 43: WASM size investigation. Profiled with twiggy — top functions: render(11.4%), .rodata(6.8%), serde_json deser(4.3%), flt2dec(2.9%). Added wee_alloc (-6.5KB), codegen-units=1 (-5.7KB). 377KB → 365KB. Remaining: ~82KB .rodata (model data, shaders), ~17KB render, ~14KB serde. 645 tests pass. -- 645 tests |
 || 192 | 2026-06-24 | Step 46: Soft rain particle ground fade-out — rain droplets cap remaining life at 0.15s on terrain impact instead of bouncing. Added test_rain_ground_fade_out. Updated RENDERING_AUDIT.md: mark Step 33 horizon_y done, bump tests 645→654. 655 tests pass. -- 655 tests |
+|| 194 | 2026-06-24 | Step 43 (cont): WASM size — opt-level=z reduces 365KB→338KB (-27KB, 7.4%). Clean build with cargo clean confirmed. 655 tests pass. RENDERING_AUDIT.md updated. 38KB remains to 300KB target. -- 655 tests |
 || 193 | 2026-06-24 | Step 44: Draw-call counter + FPS meter — Added draw_call_count field to App struct, incremented at all 8 WebGL draw call sites, exported get_fps()/get_draw_calls() via wasm_bindgen, displayed DC alongside FPS in debug panel. Investigated wasm-opt -Oz (no ARM64 binary available; wasm-pack uses wasm-opt by default). 655 tests pass. WASM 365KB. -- 655 tests |
 || 191 | 2026-06-24 | Step 33: Fine-tuned horizon_y computation — use precomputed f=1/tan(fov/2) from projection instead of duplicating hardcoded 45° FOV. Added -0.02 NDC bias to prevent horizon edge artifacts. Proper fwd_horiz clamping with max(0.01). horizon_ndc clamped to [-1,1], screen_y to [0.01,0.99]. 9 new horizon_tests (iso/steep/shallow/zero elevation, narrow/wide FOV, clamping, monotonic). 654 tests pass. -- 654 tests |
 | 189 | 2026-06-24 | Step 32: Code-reviewed water tile exclusion from reflection FBO — confirmed u_reflection_pass=1 → discard water tiles in shader during FBO render, reset to 0 for main pass. Logic verified correct. Step 42: Ran cargo clippy, fixed 4 errors (3x approx_constant TAU float literals, 1x boolean logic bug overlay_dirty||true). Applied 39 auto-fixes (unnecessary_cast, or_default, len_zero, etc.). 645 tests pass. -- 645 tests |
@@ -200,9 +201,9 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ---
 
-### Next Session — Updated Steps (Session 193+)
+### Next Session — Updated Steps (Session 194+)
 ---
-43. WASM size: 365KB → 300KB — remaining 65KB gap. wasm-opt -Oz not available on ARM64 (wasm-pack uses default wasm-opt). Next targets: (a) reduce .rodata — shaders are ~22KB, model JSONs loaded at runtime (not compiled in). Check for other large const arrays. (b) ryu for flt2dec float formatting (~10KB). (c) miniserde audit. [MUST — 65KB remains]
+43. WASM size: 338KB → 300KB — remaining 38KB gap. wasm-opt -Oz not available on ARM64 (wasm-pack uses default wasm-opt). Next targets: (a) reduce .rodata — shaders are ~22KB, model JSONs loaded at runtime (not compiled in). Check for other large const arrays. (b) ryu for flt2dec float formatting (~10KB). (c) miniserde audit. [MUST — 65KB remains]
 44. FPS/draw-call benchmarking: engine now exports get_fps() and get_draw_calls(). Next: add 1080p/720p FPS display toggle, record baseline numbers in RENDERING_AUDIT.md [SHOULD]
 45. Investigate if building model JSON definitions can be lazy-loaded from assets/ to reduce .rodata [NICE]
 32. Verify reflection optimization visually: ensure water tiles excluded from reflection FBO [visual confirmation pending]
