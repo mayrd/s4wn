@@ -69,6 +69,7 @@
 - [x] Construction particles
 - [x] Rain particles with burst spawning
 - [x] Leaf particles near forest tiles
+- [x] NICE: Rain splash soft fade-out on ground impact (Step 46) — session 192
 - [ ] NICE: Dust/wind particles in desert biomes
 - [ ] NICE: Snow particles in mountain biomes
 

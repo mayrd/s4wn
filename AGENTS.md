@@ -104,6 +104,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | Session | Date | Summary |
 |---------|------|---------|
 | 190 | 2026-06-24 | Step 43: WASM size investigation. Profiled with twiggy — top functions: render(11.4%), .rodata(6.8%), serde_json deser(4.3%), flt2dec(2.9%). Added wee_alloc (-6.5KB), codegen-units=1 (-5.7KB). 377KB → 365KB. Remaining: ~82KB .rodata (model data, shaders), ~17KB render, ~14KB serde. 645 tests pass. -- 645 tests |
+|| 192 | 2026-06-24 | Step 46: Soft rain particle ground fade-out — rain droplets cap remaining life at 0.15s on terrain impact instead of bouncing. Added test_rain_ground_fade_out. Updated RENDERING_AUDIT.md: mark Step 33 horizon_y done, bump tests 645→654. 655 tests pass. -- 655 tests |
 || 191 | 2026-06-24 | Step 33: Fine-tuned horizon_y computation — use precomputed f=1/tan(fov/2) from projection instead of duplicating hardcoded 45° FOV. Added -0.02 NDC bias to prevent horizon edge artifacts. Proper fwd_horiz clamping with max(0.01). horizon_ndc clamped to [-1,1], screen_y to [0.01,0.99]. 9 new horizon_tests (iso/steep/shallow/zero elevation, narrow/wide FOV, clamping, monotonic). 654 tests pass. -- 654 tests |
 | 189 | 2026-06-24 | Step 32: Code-reviewed water tile exclusion from reflection FBO — confirmed u_reflection_pass=1 → discard water tiles in shader during FBO render, reset to 0 for main pass. Logic verified correct. Step 42: Ran cargo clippy, fixed 4 errors (3x approx_constant TAU float literals, 1x boolean logic bug overlay_dirty||true). Applied 39 auto-fixes (unnecessary_cast, or_default, len_zero, etc.). 645 tests pass. -- 645 tests |
 | 188 | 2026-06-23 | Phase 7: Rendering pipeline audit checklist — RENDERING_AUDIT.md covering all 7 passes (FBO→terrain→shadows→clouds→sun/moon→models→overlay). Tracks 38 features done, 3 visual verification items (Steps 32-34), performance targets, shader uniforms audit. 645 tests pass. -- 645 tests
@@ -205,6 +206,6 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 45. Investigate if building model JSON definitions in model.rs can be moved out of the binary (lazy-load from assets/) [NICE — would reduce .rodata significantly]
 32. Verify reflection optimization visually: ensure water tiles excluded from reflection FBO [visual confirmation pending]
 34. Add depth attachment to reflection FBO for better sorting [NICE]
-46. Add soft particle fade-out for rain splashes when hitting ground [NICE]
+~~46. Add soft particle fade-out for rain splashes when hitting ground~~ ✅ [NICE]
 
 *All building data must match BASE.md. Never modify BASE.md.*
