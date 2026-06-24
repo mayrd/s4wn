@@ -35,7 +35,7 @@ web-sys = { version = "0.3", features = [
 ] }
 
 [profile.release]
-opt-level = "s"
+opt-level = "z"
 lto = true
 panic = "abort"
 codegen-units = 1

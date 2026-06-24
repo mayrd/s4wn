@@ -77,7 +77,7 @@
 
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
-| WASM size | under 300KB | ~377KB | WARN 77KB over |
+| WASM size | under 300KB | ~338KB | WARN 38KB over |
 | Tests passing | All | 645 | PASS |
 | Draw calls/frame | under 200 | TBD | TODO |
 | FPS desktop 1080p | 60 | TBD | TODO |
@@ -89,7 +89,7 @@
 - [x] Consolidate shader day_light function (3 to 1)
 - [x] Remove dead u_sun_color/u_moon_color uniforms
 - [x] Add panic=abort to Cargo.toml
-- [ ] MUST: Investigate 77KB over budget
+- [x] MUST: Investigate 77KB over budget — opt-level=z reduced 365KB→338KB (-27KB), 38KB remaining
 - [ ] NICE: Model data compression (quantize vertices)
 
 ## Shader Uniforms Audit
