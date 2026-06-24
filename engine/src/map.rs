@@ -716,8 +716,8 @@ fn simplex(x: f32, y: f32, seed: u64) -> f32 {
     let sx = x + (x + y) * skew + s;
     let sy = y + (x + y) * skew + s;
 
-    let v = sx.sin() * 43758.5453;
-    let w = sy.cos() * 78901.2345;
+    let v = sx.sin() * 43_758.547;
+    let w = sy.cos() * 78_901.234;
 
     ((v + w) * 0.5).sin().abs() * 2.0 - 1.0
 }

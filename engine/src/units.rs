@@ -1549,7 +1549,7 @@ mod death_animation_tests {
         assert_eq!(u.state, UnitState::Patrolling);
         assert_eq!(u.patrol_point, Some((10, 10)));
         assert!(u.target.is_none(), "Combat target should be cleared");
-        assert!(u.path.is_none() == false, "Unit should have a path");
+        assert!(u.path.is_some(), "Unit should have a path");
     }
 
     #[test]

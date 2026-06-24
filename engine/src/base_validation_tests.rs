@@ -3,7 +3,6 @@
 //! Validates that the S4WN codebase matches BASE.md building data,
 //! resource definitions, and production chains across all 5 nations.
 
-use super::*;
 
 /// ─── BASE.md Building Catalog (all 5 nations) ────────────────────────────
 /// Format: (config_id, nation, category, planks, stone, gold)

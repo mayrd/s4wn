@@ -84,7 +84,7 @@ impl WorkerAI {
                 .is_some();
             let tool_available = economy.buildings[building_idx]
                 .required_tool
-                .map_or(false, |tc| economy.get_tool_count(tc) > 0);
+                .is_some_and(|tc| economy.get_tool_count(tc) > 0);
 
             // Pre-compute storehouse index before mutable borrow
             let settler_pos = economy.units.get(settler_id).map(|u| (u.x, u.y));

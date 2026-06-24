@@ -1143,7 +1143,7 @@ fn build_map_mesh_lod(
     }
 
     // Emit a single vertex for tile (mx, my)
-    let mut emit_v = |mesh: &mut MeshData, mx: usize, my: usize| -> u16 {
+    let emit_v = |mesh: &mut MeshData, mx: usize, my: usize| -> u16 {
         let tile = map.get(mx, my).unwrap();
         let idx = (mesh.positions.len() / 3) as u16;
 
@@ -1816,7 +1816,7 @@ impl App {
         if self.particle_system.alive_count() < 64 {
             let tick = self.game_loop.state.game_time as u32;
             // Every ~30 ticks, try spawning ambient effects
-            if tick % 30 == 0 {
+            if tick.is_multiple_of(30) {
                 // Collect building positions for smoke
                 let buildings = self.game_loop.state.economy.buildings.clone();
                 for (i, b) in buildings.iter().enumerate() {
@@ -1827,7 +1827,7 @@ impl App {
                 }
             }
             // Construction particles for buildings being built (every ~20 ticks)
-            if tick % 20 == 0 {
+            if tick.is_multiple_of(20) {
                 if let Some(nation) = self.game_loop.state.player_nation {
                     let (nr, ng, nb, _) = nation.color();
                     let nr_f = nr as f32 / 255.0;
@@ -1846,7 +1846,7 @@ impl App {
                 }
             }
             // Leaf particles near forest tiles (every ~50 ticks)
-            if tick % 50 == 0 {
+            if tick.is_multiple_of(50) {
                 let map = &self.game_loop.state.map;
                 let cx = self.camera.center_x as usize;
                 let cy = self.camera.center_y as usize;
@@ -1865,7 +1865,7 @@ impl App {
             }
             // Rain particles: every ~4 ticks, spawn 3 droplets across the visible area
             // Rate-limited by the <64 alive_count guard above
-            if tick % 4 == 0 {
+            if tick.is_multiple_of(4) {
                 let map_w = self.game_loop.state.map.width as f32;
                 let map_h = self.game_loop.state.map.height as f32;
                 let vis_w = 24.0f32;
@@ -1957,7 +1957,7 @@ impl App {
         }
         // Pass light direction (tied to day/night cycle: sun arc)
         if let Some(ref loc) = self.light_dir_loc {
-            let sun_angle = (day_phase as f32 - 0.25) * 6.2831853;
+            let sun_angle = (day_phase as f32 - 0.25) * std::f32::consts::TAU;
             let sun_elev = sun_angle.sin() * 0.8 + 0.2;
             let lx = sun_angle.cos() * sun_elev.max(0.1);
             let ly = sun_elev.max(0.1);
@@ -2393,9 +2393,9 @@ impl App {
             let mut x = -grid_step * 0.5;
             while x < map_w + grid_step {
                 // Deterministic hash for this grid cell
-                let h = ((x * 127.1 + z * 311.7 + 74.7).sin() * 43758.5453).fract();
-                let h2 = ((x * 269.5 + z * 183.3 + 67.2).sin() * 28374.1234).fract();
-                let h3 = ((x * 419.2 + z * 357.8 + 91.3).sin() * 19283.5678).fract();
+                let h = ((x * 127.1 + z * 311.7 + 74.7).sin() * 43_758.547).fract();
+                let h2 = ((x * 269.5 + z * 183.3 + 67.2).sin() * 28_374.123).fract();
+                let h3 = ((x * 419.2 + z * 357.8 + 91.3).sin() * 19_283.568).fract();
 
                 // Skip some cells for natural spacing (density ~60%)
                 if h > 0.4 {
@@ -2641,7 +2641,7 @@ impl App {
 
         // Animation time uniform (for unit wobble)
         if let Some(ref loc) = self.model_time_loc {
-            gl.uniform1f(Some(loc), elapsed as f32);
+            gl.uniform1f(Some(loc), elapsed);
         }
 
         // Terrain texture atlas for model texturing (reuse terrain texture on TEXTURE0)
@@ -2674,7 +2674,7 @@ impl App {
         // Group instances by model_id
         let mut groups: std::collections::HashMap<&str, Vec<&model::ModelInstance>> = std::collections::HashMap::new();
         for inst in &self.model_instances {
-            groups.entry(&inst.model_id).or_insert_with(Vec::new).push(inst);
+            groups.entry(&inst.model_id).or_default().push(inst);
         }
 
         // Per-model instanced draw calls
@@ -2905,7 +2905,7 @@ impl App {
         let gl = &self.gl;
 
         // Rebuild overlay buffers if dirty
-        if self.overlay_dirty || true {
+        if true { // always rebuild since game state changes
             // always rebuild since game state changes
             gl.bind_buffer(
                 WebGl2RenderingContext::ARRAY_BUFFER,
@@ -4092,7 +4092,7 @@ pub fn get_unit_info(id: u32) -> String {
                     None => "null".to_string(),
                 };
                 let tool_name = u.carried_tool
-                    .map(|tc| crate::economy::tool_code_to_name(tc))
+                    .map(crate::economy::tool_code_to_name)
                     .unwrap_or("");
                 let dying_progress = u.death_animation_progress()
                     .map(|p| format!("{:.2}", p))
@@ -4243,7 +4243,7 @@ pub fn try_place_building(kind_name: &str, x: usize, y: usize) -> String {
             }
         }
     }
-    format!(r#"{{"error":"Engine not initialized"}}"#)
+    r#"{"error":"Engine not initialized"}"#.to_string()
 }
 
 /// Get build cost for a building type. Returns JSON: {"Wood":3} or {"error":"..."}
@@ -4660,7 +4660,7 @@ pub fn restore_game_state(json: &str) -> String {
                     _ => {
                         // Number or boolean or null
                         let end = after_key
-                            .find(|c: char| c == ',' || c == '}' || c == ']')
+                            .find([',', '}', ']'])
                             .unwrap_or(after_key.len());
                         Some(&after_key[..end])
                     }
@@ -4693,7 +4693,7 @@ pub fn restore_game_state(json: &str) -> String {
                 if let Some(pos) = resources_str.find(&search) {
                     let after = &resources_str[pos + search.len()..];
                     let end = after
-                        .find(|c: char| c == ',' || c == '}')
+                        .find([',', '}'])
                         .unwrap_or(after.len());
                     if let Ok(val) = after[..end].trim().parse::<u32>() {
                         new_eco.storage.set(rt, val);
@@ -4738,7 +4738,7 @@ pub fn restore_game_state(json: &str) -> String {
                     let construction = find_json_value(bjson, "construction")
                         .and_then(|v| v.parse::<f32>().ok())
                         .unwrap_or(0.0);
-                    let active = find_json_value(bjson, "active").map_or(false, |v| v == "true");
+                    let active = find_json_value(bjson, "active") == Some("true");
                     let production_counter = find_json_value(bjson, "production_counter")
                         .and_then(|v| v.parse::<u32>().ok())
                         .unwrap_or(0);
@@ -4773,7 +4773,7 @@ pub fn restore_game_state(json: &str) -> String {
                                 if let Some(pos) = inbuf_str.find(&search) {
                                     let after = &inbuf_str[pos + search.len()..];
                                     let end = after
-                                        .find(|c: char| c == ',' || c == '}')
+                                        .find([',', '}'])
                                         .unwrap_or(after.len());
                                     if let Ok(val) = after[..end].trim().parse::<u32>() {
                                         b.input_buffer[i] = val;
@@ -4789,7 +4789,7 @@ pub fn restore_game_state(json: &str) -> String {
                                 if let Some(pos) = outbuf_str.find(&search) {
                                     let after = &outbuf_str[pos + search.len()..];
                                     let end = after
-                                        .find(|c: char| c == ',' || c == '}')
+                                        .find([',', '}'])
                                         .unwrap_or(after.len());
                                     if let Ok(val) = after[..end].trim().parse::<u32>() {
                                         b.output_buffer[i] = val;
@@ -4920,7 +4920,7 @@ pub fn load_model_json(name: &str, json_str: &str) -> String {
         Err(e) => return format!("error:{}", e),
     };
     if mesh.is_empty() {
-        return format!("error:empty mesh");
+        return "error:empty mesh".to_string();
     }
     let tri_count = mesh.triangle_count;
     unsafe {
@@ -5169,7 +5169,7 @@ impl App {
 #[wasm_bindgen]
 pub fn model_instance_count() -> i32 {
     unsafe {
-        if let Some(ref app) = APP.as_ref() {
+        if let Some(app) = APP.as_ref() {
             app.model_instances.len() as i32
         } else {
             0
@@ -5275,7 +5275,7 @@ pub fn spawn_leaf_effect(tile_x: f32, tile_y: f32) {
 #[wasm_bindgen]
 pub fn particle_count() -> i32 {
     unsafe {
-        if let Some(ref app) = APP.as_ref() {
+        if let Some(app) = APP.as_ref() {
             app.particle_system.alive_count() as i32
         } else {
             0
@@ -5297,7 +5297,7 @@ pub fn clear_particles() {
 #[wasm_bindgen]
 pub fn get_particles_json() -> String {
     unsafe {
-        if let Some(ref app) = APP.as_ref() {
+        if let Some(app) = APP.as_ref() {
             app.particle_system.to_json()
         } else {
             String::from("[]")
@@ -5310,7 +5310,7 @@ pub fn get_particles_json() -> String {
 #[wasm_bindgen]
 pub fn recent_death_count() -> i32 {
     unsafe {
-        if let Some(ref app) = APP.as_ref() {
+        if let Some(app) = APP.as_ref() {
             app.recent_death_count as i32
         } else {
             0
@@ -5323,7 +5323,7 @@ pub fn recent_death_count() -> i32 {
 #[wasm_bindgen]
 pub fn recent_combat_count() -> i32 {
     unsafe {
-        if let Some(ref app) = APP.as_ref() {
+        if let Some(app) = APP.as_ref() {
             app.recent_combat_count as i32
         } else {
             0
@@ -5378,7 +5378,7 @@ pub fn toggle_editor_grid() -> bool {
 #[wasm_bindgen]
 pub fn editor_grid_enabled() -> bool {
     unsafe {
-        APP.as_ref().map_or(false, |app| app.editor_grid)
+        APP.as_ref().is_some_and(|app| app.editor_grid)
     }
 }
 
@@ -5609,7 +5609,7 @@ pub fn wasm_garrison_unit(building_index: usize, unit_id: u32) -> bool {
                 .economy
                 .units
                 .get(unit_id)
-                .map_or(false, |u| u.kind.can_fight() && u.hp > 0);
+                .is_some_and(|u| u.kind.can_fight() && u.hp > 0);
             if !can_garrison {
                 return false;
             }
@@ -6210,7 +6210,7 @@ mod tests {
         let camera = Camera::new(8.0, 8.0, 800, 600);
         let mesh = build_map_mesh(&map, &camera);
         for &ao in &mesh.ao_factors {
-            assert!(ao >= 0.54 && ao <= 1.01, "ao value {ao} out of [0.55, 1.0]");
+            assert!((0.54..=1.01).contains(&ao), "ao value {ao} out of [0.55, 1.0]");
         }
     }
 
@@ -6658,9 +6658,9 @@ mod tests {
         let unit_models = ["worker", "soldier", "archer"];
         for name in unit_models {
             let path = std::path::Path::new("../assets/models/json").join(format!("{}.json", name));
-            let json_str = std::fs::read_to_string(&path).expect(&format!("cannot read {}", path.display()));
+            let json_str = std::fs::read_to_string(&path).unwrap_or_else(|_| panic!("cannot read {}", path.display()));
             let mesh = crate::model::parse_json_mesh(&json_str)
-                .expect(&format!("cannot parse unit model {}", name));
+                .unwrap_or_else(|_| panic!("cannot parse unit model {}", name));
             assert!(mesh.positions.len() >= 16, "{} has too few vertices", name);
             assert!(mesh.indices.len() >= 12, "{} has too few indices", name);
         }
@@ -6840,7 +6840,7 @@ mod tests {
         let mut ps = particle::ParticleSystem::new();
         for i in 0..particle::MAX_PARTICLES + 10 {
             let spawned = ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
-            if (i as usize) < particle::MAX_PARTICLES {
+            if i < particle::MAX_PARTICLES {
                 assert!(spawned);
             } else {
                 assert!(!spawned);
@@ -7136,12 +7136,12 @@ mod tests {
     #[test]
     fn test_get_units_in_rect_wasm_finds_military() {
         // Test that the WASM wrapper works end-to-end
-        use crate::units::UnitManager;
+        
         use crate::economy::Economy;
         use crate::units::UnitKind;
         use crate::map::Map;
 
-        let mut map = Map::new(10, 10);
+        let _map = Map::new(10, 10);
         let mut eco = Economy::default();
         eco.units.spawn(UnitKind::Settler, 1.0, 1.0);    // settler - should NOT be selected
         eco.units.spawn(UnitKind::Swordsman, 2.0, 3.0);   // swordsman - IN rect
@@ -7161,7 +7161,7 @@ mod tests {
 
     #[test]
     fn test_get_units_in_rect_wasm_empty() {
-        use crate::units::UnitManager;
+        
         use crate::economy::Economy;
         use crate::units::UnitKind;
 
@@ -7220,7 +7220,7 @@ mod tests {
     #[test]
     fn test_water_discarded_during_reflection_pass() {
         // During the reflection FBO pass, water tiles should be discarded
-        let water_section = FRAGMENT_SHADER.split("if (is_water)").nth(1).unwrap_or("");
+        let _water_section = FRAGMENT_SHADER.split("if (is_water)").nth(1).unwrap_or("");
         assert!(FRAGMENT_SHADER.contains("u_reflection_pass && is_water"), "shader should check u_reflection_pass && is_water");
         assert!(FRAGMENT_SHADER.contains("discard"), "shader should discard water during reflection pass");
     }
@@ -7249,8 +7249,8 @@ mod tests {
         let map = Map::generate_demo(64, 64);
         let camera = Camera::new(32.0, 32.0, 800, 600);
         let mesh = build_map_mesh(&map, &camera);
-        assert!(mesh.positions.len() > 0, "LOD mesh should have vertices");
-        assert!(mesh.indices.len() > 0, "LOD mesh should have indices");
+        assert!(!mesh.positions.is_empty(), "LOD mesh should have vertices");
+        assert!(!mesh.indices.is_empty(), "LOD mesh should have indices");
         assert_eq!(mesh.indices.len() % 6, 0, "indices should be multiple of 6");
     }
 
@@ -7275,7 +7275,7 @@ mod tests {
         let lod_mesh = build_map_mesh_lod(&map, &camera, 1000, 1000);
         let vertex_count = lod_mesh.positions.len() / 3;
         assert!(vertex_count > 0);
-        assert!(lod_mesh.indices.len() > 0);
+        assert!(!lod_mesh.indices.is_empty());
         assert_eq!(lod_mesh.indices.len() % 6, 0);
     }
 
@@ -7303,8 +7303,8 @@ mod tests {
         let map = Map::generate_demo(64, 64);
         let camera = Camera::new(32.0, 32.0, 800, 600);
         let mesh = build_map_mesh_lod(&map, &camera, 8, 20);
-        assert!(mesh.positions.len() > 0);
-        assert!(mesh.indices.len() > 0);
+        assert!(!mesh.positions.is_empty());
+        assert!(!mesh.indices.is_empty());
     }
 
     #[test]

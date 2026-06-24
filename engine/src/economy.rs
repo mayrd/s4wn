@@ -1591,7 +1591,7 @@ impl Economy {
     pub fn is_building_available(&self, kind: BuildingType) -> bool {
         if let Some(required) = kind.nation_for_building() {
             // Nation-locked building: check player's nation
-            self.player_nation.map_or(false, |n| n == required)
+            self.player_nation == Some(required)
         } else {
             // Common building: available to all
             true
@@ -1863,11 +1863,10 @@ impl Economy {
             .map(|b| self.production_speed_for(b.kind))
             .collect();
         for (i, building) in self.buildings.iter_mut().enumerate() {
-            if can_produce[i] {
-                if building.try_produce(&mut self.storage, speeds[i]) {
+            if can_produce[i]
+                && building.try_produce(&mut self.storage, speeds[i]) {
                     self.production_events += 1;
                 }
-            }
         }
 
         // 3. Collect outputs from all buildings into storage
@@ -1940,7 +1939,7 @@ impl Economy {
             let dx = b.x as f32 + 0.5 - x;
             let dy = b.y as f32 + 0.5 - y;
             let dist = (dx * dx + dy * dy).sqrt();
-            if best.map_or(true, |(_, d)| dist < d) {
+            if best.is_none_or(|(_, d)| dist < d) {
                 best = Some((i, dist));
             }
         }
@@ -2168,7 +2167,7 @@ impl Economy {
             // Count garrisoned buildings in range owned by same faction
             let mut building_count = 0u32;
             for &(bx, by, b_owner) in &garrison_info {
-                if b_owner as u32 != owner_id as u32 {
+                if b_owner as u32 != owner_id {
                     continue; // different faction — no morale
                 }
                 let dx = ux - bx as f32;
@@ -3283,7 +3282,7 @@ mod tests {
 
         // With 2.0x speed, production should fire every ~15 ticks instead of 30
         // After 20 ticks, we should have at least 1 production event
-        let mut produced = 0u64;
+        let _produced = 0u64;
         for _ in 0..20 {
             e.update();
         }
@@ -4761,7 +4760,7 @@ mod rally_point_tests {
 
         // Progress should be near 0 at start
         let p = b.destruction_progress().unwrap();
-        assert!(p >= 0.0 && p < 0.5, "progress should be low at start: {}", p);
+        assert!((0.0..0.5).contains(&p), "progress should be low at start: {}", p);
 
         // Tick halfway
         b.tick_destruction(1.0);
@@ -4869,8 +4868,8 @@ mod rally_point_tests {
 #[cfg(test)]
 mod squad_leader_aura_tests {
     use super::*;
-    use crate::map::Map;
-    use crate::units::{UnitKind, SQUAD_LEADER_AURA_RANGE, SQUAD_LEADER_AURA_DAMAGE_BONUS};
+    
+    use crate::units::UnitKind;
 
     /// Helper: create an Economy with a completed Barracks, weapons, and gold for promotion.
     fn setup_economy_with_barracks() -> Economy {
@@ -4901,10 +4900,10 @@ mod squad_leader_aura_tests {
         let mut eco = setup_economy_with_barracks();
 
         // Spawn SquadLeader at (5, 5) — same tile as Barracks
-        let sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5);
+        let _sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5);
         // SquadLeader is faction 1 (odd ID)
         // Spawn allied Swordsman nearby (faction 1 if odd ID, spawn sequential)
-        let ally_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5);
+        let _ally_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5);
         // ally_id = sl_id + 1 = even if sl_id odd, so not same faction!
         // Let me use explicit IDs. Actually, let me just set positions relative.
         // Spawn uses sequential IDs starting at 1. sl_id=1, ally_id=2.
@@ -4921,11 +4920,11 @@ mod squad_leader_aura_tests {
         // SquadLeader id=1 (faction 1), ally id=2 (faction 0) — DIFFERENT.
         // Need both same faction: spawn a dummy first to shift IDs.
         let _dummy = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 (faction 1)
-        let sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=2 (faction 0)
-        let ally_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5); // id=3 (faction 1)
+        let _sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=2 (faction 0)
+        let _ally_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5); // id=3 (faction 1)
 
         // Apply aura
-        let buffed = eco.apply_squad_leader_auras();
+        let _buffed = eco.apply_squad_leader_auras();
 
         // ally (id=3) is faction 1, sl (id=2) is faction 0 — DIFFERENT, so not buffed
         // Actually let's check: we want same faction. sl_id=2 (0), ally_id should be even.
@@ -4944,7 +4943,7 @@ mod squad_leader_aura_tests {
         // Need 2 gaps: d1(1), d2(0), sl(3)=1, d3(0), ally(5)=1 — sl=1 ally=1 SAME
         let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
         let _d2 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=2 f=0
-        let sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
+        let _sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
         let _d3 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=4 f=0
         let ally_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5); // id=5 f=1 ✓ SAME
 
@@ -4962,7 +4961,7 @@ mod squad_leader_aura_tests {
 
         let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
         let _d2 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=2 f=0
-        let sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
+        let _sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
         let _d3 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=4 f=0
         let far_ally_id = eco.units.spawn(UnitKind::Swordsman, 15.5, 15.5); // id=5 f=1
 
@@ -4978,7 +4977,7 @@ mod squad_leader_aura_tests {
     fn test_aura_different_faction_not_buffed() {
         let mut eco = setup_economy_with_barracks();
 
-        let sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=1 f=1
+        let _sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=1 f=1
         // ally id=2 is faction 0 — different
         let enemy_ally_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5); // id=2 f=0
 
@@ -5021,7 +5020,7 @@ mod squad_leader_aura_tests {
 
         let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
         let _d2 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=2 f=0
-        let sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
+        let _sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
         let _d3 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=4 f=0
         let settler_id = eco.units.spawn(UnitKind::Settler, 6.5, 5.5); // id=5 f=1
 
@@ -5055,7 +5054,7 @@ mod squad_leader_aura_tests {
 
         let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
         let _d2 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=2 f=0
-        let sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
+        let _sl_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
         let _d3 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=4 f=0
         let ally_id = eco.units.spawn(UnitKind::Swordsman, 6.5, 5.5); // id=5 f=1
 
@@ -5078,9 +5077,9 @@ mod squad_leader_aura_tests {
 
         let _d1 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=1 f=1
         let _d2 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=2 f=0
-        let sl1_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
+        let _sl1_id = eco.units.spawn(UnitKind::SquadLeader, 5.5, 5.5); // id=3 f=1
         let _d3 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=4 f=0
-        let sl2_id = eco.units.spawn(UnitKind::SquadLeader, 9.5, 10.5); // id=5 f=1
+        let _sl2_id = eco.units.spawn(UnitKind::SquadLeader, 9.5, 10.5); // id=5 f=1
         let _d4 = eco.units.spawn(UnitKind::Settler, 0.5, 0.5); // id=6 f=0
         let ally_id = eco.units.spawn(UnitKind::Swordsman, 7.5, 7.5); // id=7 f=1
 

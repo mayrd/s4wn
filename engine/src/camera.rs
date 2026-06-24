@@ -389,7 +389,7 @@ mod tests {
     #[test]
     fn test_eye_classic_iso() {
         let cam = Camera::new(10.0, 10.0, 800, 600);
-        let (ex, ey, ez) = cam.eye();
+        let (_ex, ey, ez) = cam.eye();
         assert!(ey > 10.0, "Camera should be above ground, got ey={}", ey);
         assert!(ez > 0.0, "Camera should be behind scene, got ez={}", ez);
     }

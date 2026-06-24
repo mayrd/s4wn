@@ -75,13 +75,13 @@ impl Pathfinder {
         // Validate start and goal
         if map
             .get(start.0, start.1)
-            .map_or(true, |t| !t.terrain.is_passable())
+            .is_none_or(|t| !t.terrain.is_passable())
         {
             return None;
         }
         if map
             .get(goal.0, goal.1)
-            .map_or(true, |t| !t.terrain.is_passable())
+            .is_none_or(|t| !t.terrain.is_passable())
         {
             return None;
         }

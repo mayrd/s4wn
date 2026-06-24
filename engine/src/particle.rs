@@ -109,7 +109,7 @@ impl ParticleSystem {
                 dead_idx += 1;
             }
             if dead_idx >= max { break; }
-            let angle = (i as f32 / count as f32) * 6.28318;
+            let angle = (i as f32 / count as f32) * std::f32::consts::TAU;
             let up = 0.5 + (i as f32 * 0.17).sin().abs() * 0.5;
             let h_speed = speed * (1.0 - up) * 0.7;
             let vx = angle.cos() * h_speed;
@@ -189,15 +189,15 @@ pub fn spawn_smoke_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
 
 /// Spawn floating leaf/forest particle: gentle drift, green tint.
 pub fn spawn_leaf_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
-    let angle = (tile_x * 7.3 + tile_y * 3.7) % 6.28;
+    let angle = (tile_x * 7.3 + tile_y * 3.7) % std::f32::consts::TAU;
     let vx = angle.cos() * 0.08;
     let vy = angle.sin() * 0.08;
     let _ = ps.spawn(
         tile_x, tile_y, 0.5,
         vx, vy, 0.05,
         1.8,
-        0.25 + (((tile_x * 13.1) % 1.0) as f32) * 0.2,
-        0.65 + (((tile_y * 11.3) % 1.0) as f32) * 0.25,
+        0.25 + ((tile_x * 13.1) % 1.0) * 0.2,
+        0.65 + ((tile_y * 11.3) % 1.0) * 0.25,
         0.15,
         5.0,
     );
@@ -380,7 +380,7 @@ mod tests {
         let mut ps = ParticleSystem::new();
         for i in 0..MAX_PARTICLES + 10 {
             let spawned = ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
-            if (i as usize) < MAX_PARTICLES {
+            if i < MAX_PARTICLES {
                 assert!(spawned, "should spawn particle {}", i);
             } else {
                 assert!(!spawned, "should fail after MAX_PARTICLES");
@@ -469,7 +469,7 @@ mod tests {
         let mut ps = ParticleSystem::new();
         spawn_smoke_effect(&mut ps, 5.0, 5.0);
         let count = ps.alive_count();
-        assert!(count >= 1 && count <= 2, "smoke should spawn 1-2 particles, got {}", count);
+        assert!((1..=2).contains(&count), "smoke should spawn 1-2 particles, got {}", count);
     }
 
     #[test]

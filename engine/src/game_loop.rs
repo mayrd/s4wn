@@ -109,7 +109,7 @@ impl GameState {
         self.economy.units.tick_dying_units(TICK_DURATION as f32);
 
         // Recompute fog-of-war visibility every 100 ticks (~10 seconds)
-        if self.tick_count % 100 == 0 {
+        if self.tick_count.is_multiple_of(100) {
             let buildings: Vec<(crate::economy::BuildingType, usize, usize)> = self
                 .economy
                 .buildings
@@ -356,7 +356,7 @@ mod tests {
         let state = GameState::new(map);
         for _ in 0..100 {
             let r = state.random();
-            assert!(r >= 0.0 && r < 1.0, "random out of range: {}", r);
+            assert!((0.0..1.0).contains(&r), "random out of range: {}", r);
         }
     }
 

@@ -244,7 +244,6 @@ impl CombatAI {
             } else if is_stand_ground {
                 // StandGround: enemy in detection range but out of attack range → do NOT chase
                 // Just note the enemy exists but hold position
-                return;
             } else {
                 // Out of range → chase (Aggressive)
                 // Set target first so chase_target can find the destination
@@ -786,7 +785,7 @@ mod tests {
         let id1 = mgr.spawn(UnitKind::Swordsman, 5.5, 5.5);
         mgr.get_mut(id1).unwrap().stance = UnitStance::Passive;
         // Unit 2 (even = faction 2) is nearby but idle
-        let id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 5.5);
+        let _id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 5.5);
 
         let ai = CombatAI::new();
         ai.update(&mut mgr, &map, 0.016);
@@ -813,7 +812,7 @@ mod tests {
         mgr.get_mut(id1).unwrap().target = Some(2);
         mgr.get_mut(id1).unwrap().state = UnitState::Fighting;
         // Unit 2 is right next to unit 1 (adjacent)
-        let id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 5.5);
+        let _id2 = mgr.spawn(UnitKind::Swordsman, 6.5, 5.5);
 
         let ai = CombatAI::new();
         ai.update(&mut mgr, &map, 0.016);
@@ -833,7 +832,7 @@ mod tests {
         mgr.get_mut(id1).unwrap().stance = UnitStance::StandGround;
         // Unit 2 (enemy) is 4 tiles away — within bowman detection but out of range (3)
         // Actually, let's place them 5 tiles apart so both are out of attack range
-        let id2 = mgr.spawn(UnitKind::Swordsman, 10.5, 5.5);
+        let _id2 = mgr.spawn(UnitKind::Swordsman, 10.5, 5.5);
 
         let ai = CombatAI::new();
         ai.update(&mut mgr, &map, 0.016);
@@ -855,7 +854,7 @@ mod tests {
         mgr.get_mut(id1).unwrap().target = Some(2);
         mgr.get_mut(id1).unwrap().state = UnitState::Fighting;
         // Unit 2 is far away (out of range)
-        let id2 = mgr.spawn(UnitKind::Swordsman, 15.5, 5.5);
+        let _id2 = mgr.spawn(UnitKind::Swordsman, 15.5, 5.5);
 
         let ai = CombatAI::new();
         ai.update(&mut mgr, &map, 0.016);
