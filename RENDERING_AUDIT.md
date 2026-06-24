@@ -1,7 +1,7 @@
 # Rendering Pipeline Audit Checklist — Phase 7
 
 > Generated: 2026-06-23 | Session 188
-> Baseline: 654 tests passing | WASM ~377KB | 84 building models
+> Baseline: 659 tests passing | WASM ~330KB | 84 building models | Updated: 2026-06-24 Session 198
 
 ## Pipeline Render Order
 
@@ -34,7 +34,7 @@
 - [x] Water tiles discarded from reflection FBO
 - [ ] MUST: Verify water tiles excluded from reflection FBO visually (Step 32)
 - [x] SHOULD: Fine-tune horizon_y for camera elevations/zoom (Step 33) — DONE session 191
-- [ ] NICE: Add depth attachment to reflection FBO (Step 34)
+- [x] NICE: Add depth attachment to reflection FBO (Step 34) — DONE session 198
 
 ### Lighting
 - [x] Day-phase-aware hemisphere ambient lighting
@@ -77,8 +77,8 @@
 
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
-| WASM size | under 300KB | ~338KB | WARN 38KB over |
-| Tests passing | All | 645 | PASS |
+| WASM size | under 300KB | ~330KB | WARN 30KB over |
+| Tests passing | All | 659 | PASS |
 | Draw calls/frame | under 200 | TBD | TODO |
 | FPS desktop 1080p | 60 | TBD | TODO |
 | FPS RPI5 720p | 30 | TBD | TODO |
@@ -115,12 +115,12 @@
 
 ## Stability
 
-- [x] cargo test: 645 passed, 0 failed
+- [x] cargo test: 659 passed, 0 failed
 - [x] WASM build successful
 - [x] No known shader compilation errors
 - [x] Fix 69: u_resolution missing uniform
 - [x] Fix 70: WASM rebuild + deploy
-- [ ] SHOULD: cargo clippy + fix warnings
+- [x] SHOULD: cargo clippy (0 errors, 34 warnings: static mut refs)
 - [ ] SHOULD: trunk serve for visual smoke test
 - [ ] MUST: Verify reflection FBO on real WebGL2 hardware
 
@@ -136,5 +136,5 @@
 ## Summary
 
 Done: 38 rendering features across 7 passes.
-Needs verification: 3 visual items (Steps 32-34), 4 perf measurements, 2 stability checks.
-Next priority: Step 32 - Verify reflection FBO excludes water tiles visually.
+Needs verification: 1 visual item (Step 32 verify reflection FBO), 4 perf measurements (FPS/DC benchmarks), 2 stability checks.
+Next priority: Step 43 - WASM size reduction (30KB remains to 300KB target).

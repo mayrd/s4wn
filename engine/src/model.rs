@@ -1074,15 +1074,15 @@ mod tests {
         let eye = [0.0_f32, 1.0, 0.0];
         let target = [0.0_f32, 1.0, 1.0]; // same Y = horizontal
         let h = compute_horizon_y(&eye, &target, 45.0);
-        assert!(h >= 0.01 && h <= 0.99, "horizon_y = {} (expected [0.01, 0.99])", h);
+        assert!((0.01..=0.99).contains(&h), "horizon_y = {} (expected [0.01, 0.99])", h);
 
         // Looking up → horizon below center
         let target_up = [0.0_f32, 5.0, 1.0];
         let h_up = compute_horizon_y(&eye, &target_up, 45.0);
-        assert!(h_up >= 0.01 && h_up <= 0.99, "horizon_y (up) = {} (expected [0.01, 0.99])", h_up);
+        assert!((0.01..=0.99).contains(&h_up), "horizon_y (up) = {} (expected [0.01, 0.99])", h_up);
 
         // Looking down → horizon above center
         let target_down = [0.0_f32, -3.0, 1.0];
         let h_down = compute_horizon_y(&eye, &target_down, 45.0);
-        assert!(h_down >= 0.01 && h_down <= 0.99, "horizon_y (down) = {} (expected [0.01, 0.99])", h_down);
+        assert!((0.01..=0.99).contains(&h_down), "horizon_y (down) = {} (expected [0.01, 0.99])", h_down);
     }

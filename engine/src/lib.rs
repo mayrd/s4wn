@@ -2034,7 +2034,7 @@ impl App {
                     0,
                 );
                 // Depth renderbuffer for proper depth sorting in reflection
-                let depth_rb = gl.create_renderbuffer().map(|r| r.clone());
+                let depth_rb = gl.create_renderbuffer();
                 if let Some(depth_rb) = depth_rb {
                     gl.bind_renderbuffer(WebGl2RenderingContext::RENDERBUFFER, Some(&depth_rb));
                     gl.renderbuffer_storage(

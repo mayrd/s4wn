@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, water reflection FBO + Fresnel blend, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro, terrain LOD (3 levels), wee_alloc global allocator, codegen-units=1, fine-tuned horizon_y computation — 655 tests passing | WASM 339KB (was 377KB, -38KB)
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, water reflection FBO + Fresnel blend + depth attachment, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro, terrain LOD (3 levels), wee_alloc global allocator, codegen-units=1, fine-tuned horizon_y computation — 659 tests passing | WASM 330KB (was 377KB, -47KB)
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
+| 199 | 2026-06-24 | RENDERING_AUDIT.md updated: test count 645→659, WASM 338→330KB, depth attachment (Step 34) marked DONE, clippy auto-fixes applied. Clippy: 0 errors, 34 warnings. 659 tests pass. WASM 330KB. -- 659 tests |
 || 198 | 2026-06-24 | Step 34: Add depth attachment to reflection FBO — DEPTH_COMPONENT24 renderbuffer attached, clear DEPTH_BUFFER_BIT in reflection pass. Removed unused AngleInstancedArrays web-sys feature. 659 tests pass. WASM 338KB. -- 659 tests |
 | 190 | 2026-06-24 | Step 43: WASM size investigation. Profiled with twiggy — top functions: render(11.4%), .rodata(6.8%), serde_json deser(4.3%), flt2dec(2.9%). Added wee_alloc (-6.5KB), codegen-units=1 (-5.7KB). 377KB → 365KB. Remaining: ~82KB .rodata (model data, shaders), ~17KB render, ~14KB serde. 645 tests pass. -- 645 tests |
 || 192 | 2026-06-24 | Step 46: Soft rain particle ground fade-out — rain droplets cap remaining life at 0.15s on terrain impact instead of bouncing. Added test_rain_ground_fade_out. Updated RENDERING_AUDIT.md: mark Step 33 horizon_y done, bump tests 645→654. 655 tests pass. -- 655 tests |
