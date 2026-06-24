@@ -60,7 +60,16 @@ impl Particle {
         self.y += self.vy * dt;
         self.z += self.vz * dt;
         self.vz -= 2.0 * dt; // gravity
-        if self.z < 0.0 { self.z = 0.0; self.vz = -self.vz * 0.3; }
+        if self.z < 0.0 {
+            self.z = 0.0;
+            self.vz = -self.vz * 0.3;
+            // Soft fade-out when fast-falling particles (rain) hit the ground.
+            // Rain starts at z=3-5 with gravity; mid-flight ground impact
+            // caps remaining life for a brief splash fade (0.15s max).
+            if self.life > 0.15 {
+                self.life = 0.15;
+            }
+        }
         true
     }
 
@@ -627,5 +636,26 @@ mod tests {
         let n = spawn_rain_burst(&mut ps, 0.0, 0.0, 10.0, 10.0, 20);
         assert_eq!(n, 0, "rain burst should spawn 0 when system full");
     }
+
+    #[test]
+    fn test_rain_ground_fade_out() {
+        // Rain particles that hit the ground mid-flight should cap
+        // remaining life to 0.15s for a quick splash fade-out.
+        let mut ps = ParticleSystem::new();
+        spawn_rain_particle(&mut ps, 5.0, 5.0);
+        // Find the spawned particle
+        let idx = ps.particles.iter().position(|p| p.alive).unwrap();
+        // Force it to ground level and simulate tick hitting z < 0
+        ps.particles[idx].z = 0.01;
+        ps.particles[idx].vz = -8.0;
+        // The initial life is ~0.3-0.55s (from spawn_rain_particle)
+        let initial_life = ps.particles[idx].life;
+        assert!(initial_life > 0.15, "rain should start with >0.15s life, got {}", initial_life);
+        // Tick: should hit z < 0 and cap life to 0.15
+        ps.particles[idx].tick(0.1);
+        assert!(ps.particles[idx].life <= 0.15, "rain life should be capped to <=0.15 after ground hit, got {}", ps.particles[idx].life);
+        assert!(ps.particles[idx].alive || ps.particles[idx].life <= 0.15, "rain should fade quickly after ground impact");
+    }
+
 }
 

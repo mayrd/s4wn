@@ -1,7 +1,7 @@
 # Rendering Pipeline Audit Checklist — Phase 7
 
 > Generated: 2026-06-23 | Session 188
-> Baseline: 645 tests passing | WASM ~377KB | 84 building models
+> Baseline: 654 tests passing | WASM ~377KB | 84 building models
 
 ## Pipeline Render Order
 
@@ -33,7 +33,7 @@
 - [x] Half-resolution FBO (50pct, 75pct fill rate savings)
 - [x] Water tiles discarded from reflection FBO
 - [ ] MUST: Verify water tiles excluded from reflection FBO visually (Step 32)
-- [ ] SHOULD: Fine-tune horizon_y for camera elevations/zoom (Step 33)
+- [x] SHOULD: Fine-tune horizon_y for camera elevations/zoom (Step 33) — DONE session 191
 - [ ] NICE: Add depth attachment to reflection FBO (Step 34)
 
 ### Lighting
