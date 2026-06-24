@@ -103,7 +103,8 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | Session | Date | Summary |
 |---------|------|---------|
-| 199 | 2026-06-24 | RENDERING_AUDIT.md updated: test count 645→659, WASM 338→330KB, depth attachment (Step 34) marked DONE, clippy auto-fixes applied. Clippy: 0 errors, 34 warnings. 659 tests pass. WASM 330KB. -- 659 tests |
+| 200 | 2026-06-24 | WASM data section audit: parsed 127 data segments (78KB total). Top items: data[5]=27.9KB (building/unit names), data[94]=10.5KB shader src, data[63]=7.8KB shader, data[0]=5.9KB game state JSON. Identified dead export compute_mvp_json (0 JS uses). Updated RENDERING_AUDIT.md: draw-call baseline (7-20 DC/frame at 8 sites), WASM analysis. 659 tests pass. WASM 338KB. -- 659 tests |
+|| 199 | 2026-06-24 | RENDERING_AUDIT.md updated: test count 645→659, WASM 338→330KB, depth attachment (Step 34) marked DONE, clippy auto-fixes applied. Clippy: 0 errors, 34 warnings. 659 tests pass. WASM 330KB. -- 659 tests |
 || 198 | 2026-06-24 | Step 34: Add depth attachment to reflection FBO — DEPTH_COMPONENT24 renderbuffer attached, clear DEPTH_BUFFER_BIT in reflection pass. Removed unused AngleInstancedArrays web-sys feature. 659 tests pass. WASM 338KB. -- 659 tests |
 | 190 | 2026-06-24 | Step 43: WASM size investigation. Profiled with twiggy — top functions: render(11.4%), .rodata(6.8%), serde_json deser(4.3%), flt2dec(2.9%). Added wee_alloc (-6.5KB), codegen-units=1 (-5.7KB). 377KB → 365KB. Remaining: ~82KB .rodata (model data, shaders), ~17KB render, ~14KB serde. 645 tests pass. -- 645 tests |
 || 192 | 2026-06-24 | Step 46: Soft rain particle ground fade-out — rain droplets cap remaining life at 0.15s on terrain impact instead of bouncing. Added test_rain_ground_fade_out. Updated RENDERING_AUDIT.md: mark Step 33 horizon_y done, bump tests 645→654. 655 tests pass. -- 655 tests |
@@ -208,10 +209,9 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Next Session — Updated Steps (Session 196+)
 ---
-43. WASM size: 329KB → 300KB — remaining 29KB gap. Dead fields removed (-9KB). VP extraction saved 0.8KB. Next targets: (a) reduce .rodata — data[5]=28KB (shader strings), data[94]=10.5KB. Move shaders to JS-side or compress them. (b) ryu for flt2dec float formatting (~10KB). (c) miniserde audit — replace serde_json with lighter JSON parsing for simple cases. (d) Remove dead fields ✅. [MUST — 29KB remains]
-44. FPS/draw-call benchmarking: engine now exports get_fps() and get_draw_calls(). Next: add 1080p/720p FPS display toggle, record baseline numbers in RENDERING_AUDIT.md [SHOULD]
+43. WASM size: 338KB → 300KB — remaining 38KB gap. Session 200: parsed data sections. Top targets: (a) data[5]=27.9KB building/unit names — consider phf or const hash for from_name match (b) data[94]=10.5KB + data[63]=7.8KB + data[118]=5.3KB + data[87]=4.8KB shader source (28.5KB total) — move to JS or compress (c) data[0]=5.9KB game state JSON template — consider const encoding (d) ryu for flt2dec float formatting (~10KB) (e) Remove dead export compute_mvp_json (0 JS uses, removes serde_json::to_string code path). [MUST — 38KB remains]
+44. FPS/draw-call benchmarking: 8 draw-call increment sites documented (terrain, overlay, shadows[N], clouds, sun, moon, models, dots). Next: add 1080p/720p FPS display toggle, record baseline numbers in RENDERING_AUDIT.md [SHOULD]
 45. Investigate if building model JSON definitions can be lazy-loaded from assets/ to reduce .rodata [NICE]
 32. Verify reflection optimization visually: ensure water tiles excluded from reflection FBO [visual confirmation pending]
-34. ~~Add depth attachment to reflection FBO for better sorting~~ ✅ (session 198)
 
 *All building data must match BASE.md. Never modify BASE.md.*

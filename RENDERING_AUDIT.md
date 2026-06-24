@@ -79,7 +79,7 @@
 |--------|--------|---------|--------|
 | WASM size | under 300KB | ~330KB | WARN 30KB over |
 | Tests passing | All | 659 | PASS |
-| Draw calls/frame | under 200 | TBD | TODO |
+| Draw calls/frame | under 200 | 7~20 | WARN varies w/ visible objects |
 | FPS desktop 1080p | 60 | TBD | TODO |
 | FPS RPI5 720p | 30 | TBD | TODO |
 
@@ -90,6 +90,9 @@
 - [x] Remove dead u_sun_color/u_moon_color uniforms
 - [x] Add panic=abort to Cargo.toml
 - [x] MUST: Investigate 77KB over budget — opt-level=z reduced 365KB→338KB (-27KB), 38KB remaining
+- [x] MUST: WASM data section audit (session 200) — top items: building names 27.9KB, shader source 28.5KB (4 chunks), game state JSON 5.9KB. Total .rodata: ~78KB
+- [ ] NICE: Replace flt2dec float formatting with ryu (~10KB savings)
+- [ ] NICE: Replace from_name match with phf/const hash (~28KB savings potential)
 - [ ] NICE: Model data compression (quantize vertices)
 
 ## Shader Uniforms Audit
@@ -136,5 +139,5 @@
 ## Summary
 
 Done: 38 rendering features across 7 passes.
-Needs verification: 1 visual item (Step 32 verify reflection FBO), 4 perf measurements (FPS/DC benchmarks), 2 stability checks.
-Next priority: Step 43 - WASM size reduction (30KB remains to 300KB target).
+Needs verification: 1 visual item (Step 32 verify reflection FBO), 3 perf measurements (FPS benchmarks), 2 stability checks. Draw-call baseline documented (8 increment sites: terrain, overlay, shadows[N], clouds, sun, moon, models, dots).
+Next priority: Step 43 - WASM size reduction (38KB remains to 300KB target). Step 44 - FPS/draw-call display toggle + baseline recording. See AGENTS.md Next Session.
