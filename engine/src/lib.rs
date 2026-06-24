@@ -31,7 +31,7 @@ use network::{ClientInterpolator, NetworkManager};
 use wasm_bindgen::prelude::*;
 use web_sys::{
     window, HtmlCanvasElement, WebGl2RenderingContext, WebGlBuffer, WebGlProgram, WebGlShader,
-    WebGlVertexArrayObject,
+    WebGlVertexArrayObject, WebGlContextAttributes,
 };
 
 // ── Shaders ───────────────────────────────────────────────────────────────────
@@ -1296,8 +1296,10 @@ fn build_map_mesh_lod(
 
 impl App {
     fn new(canvas: &HtmlCanvasElement) -> Result<App, JsValue> {
+        let context_options = WebGlContextAttributes::new();
+        context_options.set_preserve_drawing_buffer(true);
         let gl = canvas
-            .get_context("webgl2")?
+            .get_context_with_context_options("webgl2", context_options.as_ref())?
             .ok_or("WebGL2 not available")?
             .dyn_into::<WebGl2RenderingContext>()?;
 

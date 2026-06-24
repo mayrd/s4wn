@@ -1461,8 +1461,8 @@ function __wbg_get_imports() {
         __wbg_framebufferTexture2D_367ab597a005e8d9: function(arg0, arg1, arg2, arg3, arg4, arg5) {
             arg0.framebufferTexture2D(arg1 >>> 0, arg2 >>> 0, arg3 >>> 0, arg4, arg5);
         },
-        __wbg_getContext_486aab500e1c34c9: function() { return handleError(function (arg0, arg1, arg2) {
-            const ret = arg0.getContext(getStringFromWasm0(arg1, arg2));
+        __wbg_getContext_9fd4db9b1cf155db: function() { return handleError(function (arg0, arg1, arg2, arg3) {
+            const ret = arg0.getContext(getStringFromWasm0(arg1, arg2), arg3);
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
         }, arguments); },
         __wbg_getElementById_c7aba6b93b34bf01: function(arg0, arg1, arg2) {
@@ -1543,6 +1543,10 @@ function __wbg_get_imports() {
         __wbg_log_6b5af08dd293697f: function(arg0) {
             console.log(arg0);
         },
+        __wbg_new_2e117a478906f062: function() {
+            const ret = new Object();
+            return ret;
+        },
         __wbg_now_0f628e0e435c541b: function(arg0) {
             const ret = arg0.now();
             return ret;
@@ -1553,6 +1557,9 @@ function __wbg_get_imports() {
         },
         __wbg_set_height_ad5056ea051acd78: function(arg0, arg1) {
             arg0.height = arg1 >>> 0;
+        },
+        __wbg_set_preserve_drawing_buffer_e204f30ff9d2df2e: function(arg0, arg1) {
+            arg0.preserveDrawingBuffer = arg1 !== 0;
         },
         __wbg_set_width_031bdecd763c5855: function(arg0, arg1) {
             arg0.width = arg1 >>> 0;
