@@ -8,6 +8,7 @@
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 pub mod ara_crypt;
+#[cfg(test)]
 pub mod base_validation_tests;
 pub mod camera;
 pub mod combat;
@@ -2136,10 +2137,15 @@ impl App {
             if let Some(ref loc) = self.reflection_pass_loc {
                 gl.uniform1i(Some(loc), 1);
             }
-            // Compute reflection horizon Y: camera elevation relative to water plane
-            // Water is at world Y=0, reflected camera looks upward from below
-            let horizon_ndc = (-fwd_y) / (fwd_x * fwd_x + fwd_z * fwd_z + 0.001).sqrt() * (1.0 / ((45.0f32.to_radians() * 0.5).tan()));
-            let horizon_screen_y = ((1.0 - horizon_ndc) * 0.5).clamp(0.0, 1.0);
+            // Compute reflection horizon Y: camera elevation angle mapped to screen space.
+            // Uses the precomputed f = 1/tan(fov/2) from the projection to avoid
+            // duplicating the FOV constant. The forward vector Y component gives the
+            // sine of the elevation angle; dividing by the horizontal magnitude gives
+            // tan(elevation), which we then scale by f to get NDC Y.
+            // A small bias (-0.02) prevents edge artifacts at the exact horizon line.
+            let fwd_horiz = (fwd_x * fwd_x + fwd_z * fwd_z).sqrt().max(0.01);
+            let horizon_ndc = ((-fwd_y) / fwd_horiz * f - 0.02).clamp(-1.0, 1.0);
+            let horizon_screen_y = ((1.0 - horizon_ndc) * 0.5).clamp(0.01, 0.99);
             if let Some(ref loc) = self.reflection_horizon_y_loc {
                 gl.uniform1f(Some(loc), horizon_screen_y);
             }
@@ -7316,5 +7322,158 @@ mod tests {
         let camera = Camera::new(0.0, 0.0, 0, 0);
         let mesh = build_map_mesh(&map, &camera);
         let _ = mesh.positions.len();
+    }
+}
+#[cfg(test)]
+mod horizon_tests {
+    /// Compute reflection horizon Y (mirrors the App's horizon computation).
+    /// fwd is the normalized forward vector of the reflected camera (looking upward, fwd_y > 0).
+    /// f = 1/tan(fov/2) is the precomputed projection scale factor.
+    fn compute_horizon_screen_y(fwd_x: f32, fwd_y: f32, fwd_z: f32, f: f32) -> f32 {
+        let fwd_horiz = (fwd_x * fwd_x + fwd_z * fwd_z).sqrt().max(0.01);
+        let horizon_ndc = ((-fwd_y) / fwd_horiz * f - 0.02).clamp(-1.0, 1.0);
+        ((1.0 - horizon_ndc) * 0.5).clamp(0.01, 0.99)
+    }
+
+    fn fov_to_f(fov_degrees: f32) -> f32 {
+        1.0 / (fov_degrees.to_radians() * 0.5).tan()
+    }
+
+    /// Build the reflected forward vector for a given elevation angle.
+    /// In the reflection pass, the camera is flipped across Y=0, so the
+    /// reflected forward vector points upward with fwd_y = sin(elevation).
+    fn reflected_fwd(elevation_deg: f32) -> (f32, f32, f32) {
+        let elev = elevation_deg.to_radians();
+        // Normalized forward vector of reflected camera
+        // fwd_horiz = cos(elev), fwd_y = sin(elev)
+        // Using azimuth=45° for the horizontal direction
+        let fwd_y = elev.sin();
+        let fwd_horiz = elev.cos();
+        let fwd_x = fwd_horiz * std::f32::consts::FRAC_1_SQRT_2; // sin(45°)
+        let fwd_z = fwd_horiz * std::f32::consts::FRAC_1_SQRT_2; // cos(45°)
+        (fwd_x, fwd_y, fwd_z)
+    }
+
+    #[test]
+    fn test_horizon_at_default_iso_elevation() {
+        // Classic iso: elevation=35.264°
+        // Reflected fwd_y = sin(35.264°) ≈ 0.577, fwd_horiz ≈ 0.816
+        // horizon_ndc = -0.577/0.816 * 2.414 - 0.02 ≈ -1.73 → clamped to -1.0
+        // horizon_screen_y = (1.0 - (-1.0)) * 0.5 = 1.0 → clamped to 0.99
+        let (fwd_x, fwd_y, fwd_z) = reflected_fwd(35.264);
+        let f = fov_to_f(45.0);
+        let hy = compute_horizon_screen_y(fwd_x, fwd_y, fwd_z, f);
+        assert!(hy > 0.9, "iso view horizon near top, got {}", hy);
+        assert!(hy <= 0.99, "horizon clamped to 0.99, got {}", hy);
+    }
+
+    #[test]
+    fn test_horizon_at_steep_elevation() {
+        // Steep top-down view: elevation=80°
+        // fwd_y = sin(80°) ≈ 0.985, fwd_horiz ≈ 0.174
+        // horizon_ndc = -0.985/0.174 * 2.414 - 0.02 ≈ -13.7 → clamped to -1.0
+        let (fwd_x, fwd_y, fwd_z) = reflected_fwd(80.0);
+        let f = fov_to_f(45.0);
+        let hy = compute_horizon_screen_y(fwd_x, fwd_y, fwd_z, f);
+        assert!(hy > 0.95, "steep view horizon at top, got {}", hy);
+        assert!(hy <= 0.99, "horizon clamped to 0.99, got {}", hy);
+    }
+
+    #[test]
+    fn test_horizon_at_shallow_elevation() {
+        // Shallow view: elevation=10°
+        // fwd_y = sin(10°) ≈ 0.174, fwd_horiz ≈ 0.985
+        // horizon_ndc = -0.174/0.985 * 2.414 - 0.02 ≈ -0.446
+        // horizon_screen_y = (1.0 - (-0.446)) * 0.5 ≈ 0.723
+        let (fwd_x, fwd_y, fwd_z) = reflected_fwd(10.0);
+        let f = fov_to_f(45.0);
+        let hy = compute_horizon_screen_y(fwd_x, fwd_y, fwd_z, f);
+        assert!(hy > 0.65, "shallow view horizon moderately high, got {}", hy);
+        assert!(hy < 0.80, "shallow view horizon not too high, got {}", hy);
+    }
+
+    #[test]
+    fn test_horizon_at_zero_elevation() {
+        // Camera looking horizontally (elevation=0°)
+        // fwd_y = 0.0, fwd_horiz = 1.0
+        // horizon_ndc = -0.02
+        // horizon_screen_y = (1.0 - (-0.02)) * 0.5 = 0.51
+        let (fwd_x, fwd_y, fwd_z) = reflected_fwd(0.0);
+        let f = fov_to_f(45.0);
+        let hy = compute_horizon_screen_y(fwd_x, fwd_y, fwd_z, f);
+        assert!(hy > 0.48, "zero elevation horizon near center, got {}", hy);
+        assert!(hy < 0.55, "zero elevation horizon near center, got {}", hy);
+    }
+
+    #[test]
+    fn test_horizon_with_narrow_fov() {
+        // For shallow elevation (5°), narrow FOV pushes horizon higher
+        let (fwd_x, fwd_y, fwd_z) = reflected_fwd(5.0);
+        let f_narrow = fov_to_f(30.0);
+        let f_wide = fov_to_f(60.0);
+        let hy_narrow = compute_horizon_screen_y(fwd_x, fwd_y, fwd_z, f_narrow);
+        let hy_wide = compute_horizon_screen_y(fwd_x, fwd_y, fwd_z, f_wide);
+        // Narrow FOV magnifies the elevation effect → horizon further from center
+        assert!(hy_narrow > hy_wide,
+            "narrow FOV horizon ({}) should be higher than wide FOV ({})",
+            hy_narrow, hy_wide);
+    }
+
+    #[test]
+    fn test_horizon_clamped_min() {
+        // Very negative fwd_y (camera looking down in reflected space)
+        // This shouldn't happen in practice, but test clamping
+        let fwd_x = 1.0_f32;
+        let fwd_y = -10.0_f32; // looking down
+        let fwd_z = 0.0_f32;
+        let f = fov_to_f(45.0);
+        let hy = compute_horizon_screen_y(fwd_x, fwd_y, fwd_z, f);
+        assert!(hy >= 0.01, "horizon clamped to min 0.01, got {}", hy);
+        assert!(hy <= 0.99, "horizon clamped to max 0.99, got {}", hy);
+    }
+
+    #[test]
+    fn test_horizon_clamped_max() {
+        // Very positive fwd_y (camera looking straight up in reflected space)
+        let fwd_x = 0.001_f32;
+        let fwd_y = 10.0_f32;
+        let fwd_z = 0.0_f32;
+        let f = fov_to_f(45.0);
+        let hy = compute_horizon_screen_y(fwd_x, fwd_y, fwd_z, f);
+        assert!(hy >= 0.01, "horizon clamped to min 0.01, got {}", hy);
+        assert!(hy <= 0.99, "horizon clamped to max 0.99, got {}", hy);
+    }
+
+    #[test]
+    fn test_horizon_uses_precomputed_f() {
+        // Verify that using the precomputed f gives same result as inline computation
+        let (fwd_x, fwd_y, fwd_z) = reflected_fwd(10.0);
+        let fov = 45.0_f32;
+        let f = fov_to_f(fov);
+        let hy = compute_horizon_screen_y(fwd_x, fwd_y, fwd_z, f);
+        // Inline computation (old way, without bias/clamp improvements)
+        let fwd_horiz = (fwd_x * fwd_x + fwd_z * fwd_z).sqrt().max(0.01);
+        let horizon_ndc_old = ((-fwd_y) / fwd_horiz * (1.0 / ((fov.to_radians() * 0.5).tan()))).clamp(-1.0, 1.0);
+        let hy_old = ((1.0 - horizon_ndc_old) * 0.5).clamp(0.0, 1.0);
+        // New formula adds -0.02 bias and tighter clamp, so they differ slightly
+        // but both should be in the same ballpark
+        assert!((hy - hy_old).abs() < 0.05,
+            "new result ({}) should be close to old result ({})", hy, hy_old);
+    }
+
+    #[test]
+    fn test_horizon_decreases_with_elevation() {
+        // Higher elevation → higher horizon (further from center)
+        let f = fov_to_f(45.0);
+        let elevations = [5.0_f32, 15.0, 30.0, 50.0, 70.0];
+        let mut prev_hy = 0.0_f32;
+        for &elev in &elevations {
+            let (fwd_x, fwd_y, fwd_z) = reflected_fwd(elev);
+            let hy = compute_horizon_screen_y(fwd_x, fwd_y, fwd_z, f);
+            assert!(hy >= prev_hy,
+                "horizon should increase with elevation: {}°→{} should be >= {}°→{}",
+                elev, hy, elev - 10.0, prev_hy);
+            prev_hy = hy;
+        }
     }
 }
