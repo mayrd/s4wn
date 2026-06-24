@@ -857,6 +857,7 @@ struct App {
     fps_frame_count: u32,
     fps_last_time: f64,
     current_fps: u32,
+    draw_call_count: u32,
 
     // Overlay (buildings + units) rendering
     overlay_program: WebGlProgram,
@@ -1633,6 +1634,7 @@ impl App {
             fps_frame_count: 0,
             fps_last_time: start_time,
             current_fps: 0,
+            draw_call_count: 0,
             overlay_program,
             overlay_vao,
             overlay_pos_buffer,
@@ -1893,6 +1895,8 @@ impl App {
             self.mesh_dirty = false;
         }
 
+        // Draw call counter: reset each frame
+        self.draw_call_count = 0;
         // FPS counter: count frames over 1-second windows
         self.fps_frame_count += 1;
         let fps_delta = now - self.fps_last_time;
@@ -2150,6 +2154,7 @@ impl App {
                 gl.uniform1f(Some(loc), horizon_screen_y);
             }
             gl.bind_vertex_array(Some(&self.vao));
+            self.draw_call_count += 1;
             gl.draw_elements_with_i32(
                 WebGl2RenderingContext::TRIANGLES,
                 self.index_count,
@@ -2177,7 +2182,7 @@ impl App {
         );
 
         gl.bind_vertex_array(Some(&self.vao));
-
+        self.draw_call_count += 1;
         gl.draw_elements_with_i32(
             WebGl2RenderingContext::TRIANGLES,
             self.index_count,
@@ -2365,6 +2370,7 @@ impl App {
 
             gl.uniform3f(Some(pos_loc), inst.x, 0.0, inst.y);
             gl.uniform1f(Some(size_loc), shadow_size);
+            self.draw_call_count += 1;
             gl.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, 6);
         }
 
@@ -2494,6 +2500,7 @@ impl App {
 
         // Draw all cloud quads using instanced rendering
         let instance_count = (positions.len() / 3) as i32;
+        self.draw_call_count += 1;
         gl.draw_arrays_instanced(WebGl2RenderingContext::TRIANGLES, 0, 6, instance_count);
 
         gl.disable(WebGl2RenderingContext::BLEND);
@@ -2583,6 +2590,7 @@ impl App {
 
         gl.enable(WebGl2RenderingContext::BLEND);
         gl.blend_func(WebGl2RenderingContext::SRC_ALPHA, WebGl2RenderingContext::ONE_MINUS_SRC_ALPHA);
+        self.draw_call_count += 1;
         gl.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, 6);
 
         // Draw moon (is_moon = 1) — opposite position
@@ -2592,7 +2600,7 @@ impl App {
         if let Some(ref loc) = self.sun_moon_screen_pos_loc {
             gl.uniform2f(Some(loc), -ndc_x, -ndc_y);
         }
-
+        self.draw_call_count += 1;
         gl.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, 6);
 
         gl.disable(WebGl2RenderingContext::BLEND);
@@ -2776,6 +2784,7 @@ impl App {
 
             // Instanced draw call for this model group
             let instance_count = instances.len() as i32;
+            self.draw_call_count += 1;
             gl.draw_elements_instanced_with_i32(
                 WebGl2RenderingContext::TRIANGLES,
                 gpu_model.index_count,
@@ -2992,6 +3001,7 @@ impl App {
         );
 
         gl.bind_vertex_array(Some(&self.overlay_vao));
+        self.draw_call_count += 1;
         gl.draw_arrays(WebGl2RenderingContext::POINTS, 0, self.overlay_index_count);
         gl.disable(WebGl2RenderingContext::BLEND);
     }
@@ -3801,6 +3811,29 @@ pub fn get_territory_border_tiles_json() -> String {
         }
     }
     String::new()
+}
+
+/// Get current FPS (frames per second), measured over 1-second windows.
+#[wasm_bindgen]
+pub fn get_fps() -> u32 {
+    unsafe {
+        if let Some(ref app) = APP {
+            return app.current_fps;
+        }
+    }
+    0
+}
+
+/// Get the number of WebGL draw calls made in the current frame.
+/// Useful for performance benchmarking.
+#[wasm_bindgen]
+pub fn get_draw_calls() -> u32 {
+    unsafe {
+        if let Some(ref app) = APP {
+            return app.draw_call_count;
+        }
+    }
+    0
 }
 
 /// Check if a building type is available for a given nation.

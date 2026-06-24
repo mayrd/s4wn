@@ -138,6 +138,17 @@ export function get_building_summary(): string;
 export function get_camera_state(): string;
 
 /**
+ * Get the number of WebGL draw calls made in the current frame.
+ * Useful for performance benchmarking.
+ */
+export function get_draw_calls(): number;
+
+/**
+ * Get current FPS (frames per second), measured over 1-second windows.
+ */
+export function get_fps(): number;
+
+/**
  * Get the current game speed multiplier.
  */
 export function get_game_speed(): number;
@@ -561,6 +572,8 @@ export interface InitOutput {
     readonly get_building_rally_point: (a: number) => [number, number];
     readonly get_building_summary: () => [number, number];
     readonly get_camera_state: () => [number, number];
+    readonly get_draw_calls: () => number;
+    readonly get_fps: () => number;
     readonly get_game_speed: () => number;
     readonly get_game_state: () => [number, number];
     readonly get_map_data: () => [number, number];

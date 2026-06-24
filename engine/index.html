@@ -1563,6 +1563,8 @@ import init, {
     populate_model_instances_from_game,
     add_model_instance,
     get_camera_state,
+    get_fps,
+    get_draw_calls,
     load_map_json,
     export_map_json,
     get_building_at_tile,
@@ -5945,7 +5947,8 @@ async function main() {
             const s = get_stats();
             if (s) {
                 const d = JSON.parse(s);
-                fpsEl.textContent = currentFps + ' FPS';
+                const dc = get_draw_calls ? get_draw_calls() : 0;
+                fpsEl.textContent = currentFps + ' FPS · ' + dc + ' DC';
                 // Update extra debug info
                 const dbgTime = document.getElementById('debug-time');
                 const dbgTicks = document.getElementById('debug-ticks');

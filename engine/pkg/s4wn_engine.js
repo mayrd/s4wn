@@ -352,6 +352,25 @@ export function get_camera_state() {
 }
 
 /**
+ * Get the number of WebGL draw calls made in the current frame.
+ * Useful for performance benchmarking.
+ * @returns {number}
+ */
+export function get_draw_calls() {
+    const ret = wasm.get_draw_calls();
+    return ret >>> 0;
+}
+
+/**
+ * Get current FPS (frames per second), measured over 1-second windows.
+ * @returns {number}
+ */
+export function get_fps() {
+    const ret = wasm.get_fps();
+    return ret >>> 0;
+}
+
+/**
  * Get the current game speed multiplier.
  * @returns {number}
  */
