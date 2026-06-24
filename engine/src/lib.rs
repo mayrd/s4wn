@@ -3713,21 +3713,7 @@ pub fn get_nation_buildings(nation_name: &str) -> String {
 }
 
 /// Get territory border tiles for the local player as a JSON string.
-/// Returns: [{"x":5,"y":10}, ...] — tiles at the edge of player 0's territory.
-#[wasm_bindgen]
-pub fn get_territory_border_tiles_json() -> String {
-    unsafe {
-        if let Some(ref app) = APP {
-            let border_tiles = app.game_loop.state.map.get_territory_border_tiles(0);
-            let parts: Vec<String> = border_tiles
-                .iter()
-                .map(|&(x, y)| format!("{{\"x\":{},\"y\":{}}}", x, y))
-                .collect();
-            return format!("[{}]", parts.join(","));
-        }
-    }
-    String::new()
-}
+
 
 /// Get current FPS (frames per second), measured over 1-second windows.
 #[wasm_bindgen]
@@ -4232,34 +4218,9 @@ pub fn list_building_types() -> String {
 
 // ── WebSocket Client API ─────────────────────────────────────────────────────
 
-/// Connect to a game server via WebSocket.
-/// Returns true if connection was initiated.
-#[wasm_bindgen]
-pub fn ws_connect(_url: &str) -> bool {
-    // TODO: integrate with JS WebSocket — currently a stub
-    false
-}
-
-/// Send a network message (JSON string) to the server.
-#[wasm_bindgen]
-pub fn ws_send(_json: &str) {
-    // TODO: integrate with JS WebSocket — currently a stub
-    // In multiplayer, JS would send this to the server
-}
 
 /// Receive pending network messages as JSON strings.
-/// Returns a JSON array of messages.
-#[wasm_bindgen]
-pub fn ws_receive() -> String {
-    // Stub — in the browser, JS would inject messages from the server
-    String::from("[]")
-}
 
-/// Get the current network connection state as a string.
-#[wasm_bindgen]
-pub fn ws_state() -> String {
-    String::from("disconnected")
-}
 
 /// Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
 #[wasm_bindgen]
@@ -4889,21 +4850,6 @@ pub fn load_model_json(name: &str, json_str: &str) -> String {
     format!("ok:{}:{}tri", name, tri_count)
 }
 
-/// Parse an OBJ model string and return vertex count, triangle count, and AABB as JSON.
-#[wasm_bindgen]
-pub fn parse_obj_info(obj_str: &str) -> String {
-    let mesh = model::parse_obj(obj_str);
-    if mesh.is_empty() {
-        return String::from("{\"error\":\"empty mesh\"}");
-    }
-    format!(
-        "{{\"vertices\":{},\"triangles\":{},\"aabb\":[{},{},{},{},{},{}]}}",
-        mesh.vertex_count,
-        mesh.triangle_count,
-        mesh.aabb.0, mesh.aabb.1, mesh.aabb.2,
-        mesh.aabb.3, mesh.aabb.4, mesh.aabb.5,
-    )
-}
 
 /// Compute a model-view-projection matrix for a model instance.
 /// Takes JSON input: {x, y, scale, rotation_y, view: [16], projection: [16]}
@@ -5139,39 +5085,10 @@ pub fn model_instance_count() -> i32 {
 
 /// Spawn a single particle.
 /// Parameters: x, y, z, vx, vy, vz, life, r, g, b, size
-#[wasm_bindgen]
-pub fn spawn_particle(
-    x: f32, y: f32, z: f32,
-    vx: f32, vy: f32, vz: f32,
-    life: f32,
-    r: f32, g: f32, b: f32,
-    size: f32,
-) -> bool {
-    unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
-            app.particle_system.spawn(x, y, z, vx, vy, vz, life, r, g, b, size)
-        } else {
-            false
-        }
-    }
-}
+
 
 /// Spawn a burst of particles. Returns number spawned.
-#[wasm_bindgen]
-pub fn spawn_particle_burst(
-    x: f32, y: f32,
-    count: u32,
-    r: f32, g: f32, b: f32,
-    speed: f32, life: f32, size: f32,
-) -> u32 {
-    unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
-            app.particle_system.spawn_burst(x, y, 0.0, count, r, g, b, speed, life, size)
-        } else {
-            0
-        }
-    }
-}
+
 
 /// Spawn a green "build success" effect at the given tile.
 #[wasm_bindgen]
@@ -5332,13 +5249,6 @@ pub fn toggle_editor_grid() -> bool {
     }
 }
 
-/// Check if editor grid overlay is active.
-#[wasm_bindgen]
-pub fn editor_grid_enabled() -> bool {
-    unsafe {
-        APP.as_ref().is_some_and(|app| app.editor_grid)
-    }
-}
 
 /// Export the current map as a JSON string (same format as load_map_json expects).
 /// Returns the JSON string on success, or an error string if no map is loaded.

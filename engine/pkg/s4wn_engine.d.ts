@@ -52,11 +52,6 @@ export function damage_building(building_index: number, amount: number): number;
 export function decompress_sav_chunk(data: Uint8Array, expected_length: number): Uint8Array;
 
 /**
- * Check if editor grid overlay is active.
- */
-export function editor_grid_enabled(): boolean;
-
-/**
  * Export the current map as a JSON string (same format as load_map_json expects).
  * Returns the JSON string on success, or an error string if no map is loaded.
  */
@@ -144,6 +139,7 @@ export function get_camera_state(): string;
 export function get_draw_calls(): number;
 
 /**
+ * Get territory border tiles for the local player as a JSON string.
  * Get current FPS (frames per second), measured over 1-second windows.
  */
 export function get_fps(): number;
@@ -192,12 +188,6 @@ export function get_resource_counts(): string;
  * Get engine stats as a JSON string (FPS, tick count, game time).
  */
 export function get_stats(): string;
-
-/**
- * Get territory border tiles for the local player as a JSON string.
- * Returns: [{"x":5,"y":10}, ...] — tiles at the edge of player 0's territory.
- */
-export function get_territory_border_tiles_json(): string;
 
 export function get_tile_at(x: number, y: number): string;
 
@@ -326,11 +316,6 @@ export function on_wheel(delta_y: number): void;
 export function order_patrol(unit_ids_json: string, target_x: number, target_y: number): number;
 
 /**
- * Parse an OBJ model string and return vertex count, triangle count, and AABB as JSON.
- */
-export function parse_obj_info(obj_str: string): string;
-
-/**
  * Get the number of alive particles.
  */
 export function particle_count(): number;
@@ -390,6 +375,7 @@ export function set_distance(dist: number): void;
 export function set_elevation(degrees: number): void;
 
 /**
+ * Receive pending network messages as JSON strings.
  * Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
  */
 export function set_game_speed(multiplier: number): void;
@@ -446,6 +432,9 @@ export function set_water_normal_ready(): void;
 export function setup_starter_base(settler_count: number): string;
 
 /**
+ * Spawn a single particle.
+ * Parameters: x, y, z, vx, vy, vz, life, r, g, b, size
+ * Spawn a burst of particles. Returns number spawned.
  * Spawn a green "build success" effect at the given tile.
  */
 export function spawn_build_effect(tile_x: number, tile_y: number): void;
@@ -465,17 +454,6 @@ export function spawn_construction_effect(tile_x: number, tile_y: number, nation
  * Spawn a floating leaf particle (forest ambient).
  */
 export function spawn_leaf_effect(tile_x: number, tile_y: number): void;
-
-/**
- * Spawn a single particle.
- * Parameters: x, y, z, vx, vy, vz, life, r, g, b, size
- */
-export function spawn_particle(x: number, y: number, z: number, vx: number, vy: number, vz: number, life: number, r: number, g: number, b: number, size: number): boolean;
-
-/**
- * Spawn a burst of particles. Returns number spawned.
- */
-export function spawn_particle_burst(x: number, y: number, count: number, r: number, g: number, b: number, speed: number, life: number, size: number): number;
 
 /**
  * Spawn chimney smoke puffs at a building location.
@@ -524,28 +502,6 @@ export function wasm_garrison_unit(building_index: number, unit_id: number): boo
  */
 export function wasm_ungarrison_unit(building_index: number, unit_id: number): boolean;
 
-/**
- * Connect to a game server via WebSocket.
- * Returns true if connection was initiated.
- */
-export function ws_connect(_url: string): boolean;
-
-/**
- * Receive pending network messages as JSON strings.
- * Returns a JSON array of messages.
- */
-export function ws_receive(): string;
-
-/**
- * Send a network message (JSON string) to the server.
- */
-export function ws_send(_json: string): void;
-
-/**
- * Get the current network connection state as a string.
- */
-export function ws_state(): string;
-
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
@@ -558,7 +514,6 @@ export interface InitOutput {
     readonly compute_mvp_json: (a: number, b: number) => [number, number];
     readonly damage_building: (a: number, b: number) => number;
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
-    readonly editor_grid_enabled: () => number;
     readonly export_map_json: () => [number, number];
     readonly formation_move: (a: number, b: number, c: number, d: number) => number;
     readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
@@ -582,7 +537,6 @@ export interface InitOutput {
     readonly get_player_nation: () => [number, number];
     readonly get_resource_counts: () => [number, number];
     readonly get_stats: () => [number, number];
-    readonly get_territory_border_tiles_json: () => [number, number];
     readonly get_tile_at: (a: number, b: number) => [number, number];
     readonly get_tool_counts: () => [number, number];
     readonly get_unit_info: (a: number) => [number, number];
@@ -604,7 +558,6 @@ export interface InitOutput {
     readonly on_mouse_up: () => void;
     readonly on_wheel: (a: number) => void;
     readonly order_patrol: (a: number, b: number, c: number, d: number) => number;
-    readonly parse_obj_info: (a: number, b: number) => [number, number];
     readonly particle_count: () => number;
     readonly populate_model_instances_from_game: () => number;
     readonly recent_combat_count: () => number;
@@ -629,8 +582,6 @@ export interface InitOutput {
     readonly spawn_combat_effect: (a: number, b: number) => void;
     readonly spawn_construction_effect: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly spawn_leaf_effect: (a: number, b: number) => void;
-    readonly spawn_particle: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number) => number;
-    readonly spawn_particle_burst: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => number;
     readonly spawn_smoke_effect: (a: number, b: number) => void;
     readonly start_building_destruction: (a: number, b: number) => number;
     readonly tick_building_destructions: (a: number) => [number, number];
@@ -639,10 +590,6 @@ export interface InitOutput {
     readonly try_place_building: (a: number, b: number, c: number, d: number) => [number, number];
     readonly wasm_garrison_unit: (a: number, b: number) => number;
     readonly wasm_ungarrison_unit: (a: number, b: number) => number;
-    readonly ws_connect: (a: number, b: number) => number;
-    readonly ws_receive: () => [number, number];
-    readonly ws_send: (a: number, b: number) => void;
-    readonly ws_state: () => [number, number];
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __externref_table_alloc: () => number;

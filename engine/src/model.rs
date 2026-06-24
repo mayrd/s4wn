@@ -986,8 +986,8 @@ mod tests {
 
     #[test]
     fn test_model_instance_with_anim_phase() {
-        let inst = ModelInstance::new("worker", 1.0, 2.0).with_anim_phase(3.14);
-        assert!((inst.anim_phase - 3.14).abs() < 0.001);
+        let inst = ModelInstance::new("worker", 1.0, 2.0).with_anim_phase(std::f32::consts::PI);
+        assert!((inst.anim_phase - std::f32::consts::PI).abs() < 0.001);
     }
 
     #[test]

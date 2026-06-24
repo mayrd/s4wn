@@ -117,15 +117,6 @@ export function decompress_sav_chunk(data, expected_length) {
 }
 
 /**
- * Check if editor grid overlay is active.
- * @returns {boolean}
- */
-export function editor_grid_enabled() {
-    const ret = wasm.editor_grid_enabled();
-    return ret !== 0;
-}
-
-/**
  * Export the current map as a JSON string (same format as load_map_json expects).
  * Returns the JSON string on success, or an error string if no map is loaded.
  * @returns {string}
@@ -362,6 +353,7 @@ export function get_draw_calls() {
 }
 
 /**
+ * Get territory border tiles for the local player as a JSON string.
  * Get current FPS (frames per second), measured over 1-second windows.
  * @returns {number}
  */
@@ -492,24 +484,6 @@ export function get_stats() {
     let deferred1_1;
     try {
         const ret = wasm.get_stats();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
-}
-
-/**
- * Get territory border tiles for the local player as a JSON string.
- * Returns: [{"x":5,"y":10}, ...] — tiles at the edge of player 0's territory.
- * @returns {string}
- */
-export function get_territory_border_tiles_json() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_territory_border_tiles_json();
         deferred1_0 = ret[0];
         deferred1_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);
@@ -856,26 +830,6 @@ export function order_patrol(unit_ids_json, target_x, target_y) {
 }
 
 /**
- * Parse an OBJ model string and return vertex count, triangle count, and AABB as JSON.
- * @param {string} obj_str
- * @returns {string}
- */
-export function parse_obj_info(obj_str) {
-    let deferred2_0;
-    let deferred2_1;
-    try {
-        const ptr0 = passStringToWasm0(obj_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.parse_obj_info(ptr0, len0);
-        deferred2_0 = ret[0];
-        deferred2_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-    }
-}
-
-/**
  * Get the number of alive particles.
  * @returns {number}
  */
@@ -989,6 +943,7 @@ export function set_elevation(degrees) {
 }
 
 /**
+ * Receive pending network messages as JSON strings.
  * Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
  * @param {number} multiplier
  */
@@ -1096,6 +1051,9 @@ export function setup_starter_base(settler_count) {
 }
 
 /**
+ * Spawn a single particle.
+ * Parameters: x, y, z, vx, vy, vz, life, r, g, b, size
+ * Spawn a burst of particles. Returns number spawned.
  * Spawn a green "build success" effect at the given tile.
  * @param {number} tile_x
  * @param {number} tile_y
@@ -1133,45 +1091,6 @@ export function spawn_construction_effect(tile_x, tile_y, nation_r, nation_g, na
  */
 export function spawn_leaf_effect(tile_x, tile_y) {
     wasm.spawn_leaf_effect(tile_x, tile_y);
-}
-
-/**
- * Spawn a single particle.
- * Parameters: x, y, z, vx, vy, vz, life, r, g, b, size
- * @param {number} x
- * @param {number} y
- * @param {number} z
- * @param {number} vx
- * @param {number} vy
- * @param {number} vz
- * @param {number} life
- * @param {number} r
- * @param {number} g
- * @param {number} b
- * @param {number} size
- * @returns {boolean}
- */
-export function spawn_particle(x, y, z, vx, vy, vz, life, r, g, b, size) {
-    const ret = wasm.spawn_particle(x, y, z, vx, vy, vz, life, r, g, b, size);
-    return ret !== 0;
-}
-
-/**
- * Spawn a burst of particles. Returns number spawned.
- * @param {number} x
- * @param {number} y
- * @param {number} count
- * @param {number} r
- * @param {number} g
- * @param {number} b
- * @param {number} speed
- * @param {number} life
- * @param {number} size
- * @returns {number}
- */
-export function spawn_particle_burst(x, y, count, r, g, b, speed, life, size) {
-    const ret = wasm.spawn_particle_burst(x, y, count, r, g, b, speed, life, size);
-    return ret >>> 0;
 }
 
 /**
@@ -1279,64 +1198,6 @@ export function wasm_garrison_unit(building_index, unit_id) {
 export function wasm_ungarrison_unit(building_index, unit_id) {
     const ret = wasm.wasm_ungarrison_unit(building_index, unit_id);
     return ret !== 0;
-}
-
-/**
- * Connect to a game server via WebSocket.
- * Returns true if connection was initiated.
- * @param {string} _url
- * @returns {boolean}
- */
-export function ws_connect(_url) {
-    const ptr0 = passStringToWasm0(_url, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.ws_connect(ptr0, len0);
-    return ret !== 0;
-}
-
-/**
- * Receive pending network messages as JSON strings.
- * Returns a JSON array of messages.
- * @returns {string}
- */
-export function ws_receive() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.ws_receive();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
-}
-
-/**
- * Send a network message (JSON string) to the server.
- * @param {string} _json
- */
-export function ws_send(_json) {
-    const ptr0 = passStringToWasm0(_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    wasm.ws_send(ptr0, len0);
-}
-
-/**
- * Get the current network connection state as a string.
- * @returns {string}
- */
-export function ws_state() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.ws_state();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
 }
 function __wbg_get_imports() {
     const import0 = {
