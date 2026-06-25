@@ -43,6 +43,7 @@ impl Particle {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn spawn(&mut self, x: f32, y: f32, z: f32, vx: f32, vy: f32, vz: f32,
                   life: f32, r: f32, g: f32, b: f32, size: f32) {
         self.x = x; self.y = y; self.z = z;
@@ -96,6 +97,7 @@ impl ParticleSystem {
         ParticleSystem { particles }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn spawn(&mut self, x: f32, y: f32, z: f32, vx: f32, vy: f32, vz: f32,
                   life: f32, r: f32, g: f32, b: f32, size: f32) -> bool {
         for p in &mut self.particles {
@@ -106,6 +108,7 @@ impl ParticleSystem {
 
     /// Spawn a burst of particles in a circular pattern.
     /// Uses O(n) scanning for dead slots (not O(n^2) per burst iteration).
+    #[allow(clippy::too_many_arguments)]
     pub fn spawn_burst(&mut self, x: f32, y: f32, z: f32, count: u32,
                         color_r: f32, color_g: f32, color_b: f32,
                         speed: f32, life: f32, size: f32) -> u32 {

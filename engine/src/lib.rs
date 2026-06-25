@@ -3186,7 +3186,7 @@ pub fn init(canvas_id: &str) -> Result<bool, JsValue> {
 /// JS creates the TEXTURE_2D_ARRAY with 8 layers (1024×1024), then calls this.
 #[wasm_bindgen]
 pub fn set_textures_ready() {
-    let app = unsafe { APP.as_mut().expect("App not initialized") };
+    let app = unsafe { (*std::ptr::addr_of_mut!(APP)).as_mut().expect("App not initialized") };
     app.textures_loaded = true;
     web_sys::console::log_1(&"Terrain textures ready (8 layers, 1024x1024)".into());
 }
@@ -3194,7 +3194,7 @@ pub fn set_textures_ready() {
 /// Called from JS after water normal map is loaded into TEXTURE1.
 #[wasm_bindgen]
 pub fn set_water_normal_ready() {
-    let app = unsafe { APP.as_mut().expect("App not initialized") };
+    let app = unsafe { (*std::ptr::addr_of_mut!(APP)).as_mut().expect("App not initialized") };
     app.water_normal_ready = true;
     web_sys::console::log_1(&"Water normal map ready (TEXTURE1)".into());
 }
@@ -4753,7 +4753,7 @@ pub fn load_model_json(name: &str, json_str: &str) -> String {
     }
     let tri_count = mesh.triangle_count;
     unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
+        if let Some(ref mut app) = (*std::ptr::addr_of_mut!(APP)).as_mut() {
             app.upload_model_to_gpu(name, &mesh);
         }
     }
@@ -4781,7 +4781,7 @@ pub fn decompress_sav_chunk(data: &[u8], expected_length: usize) -> Vec<u8> {
 #[wasm_bindgen]
 pub fn add_model_instance(model_id: &str, x: f32, y: f32, scale: f32, rotation_y: f32) -> bool {
     unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
+        if let Some(ref mut app) = (*std::ptr::addr_of_mut!(APP)).as_mut() {
             let inst = model::ModelInstance::new(model_id, x, y)
                 .with_scale(scale)
                 .with_rotation_y(rotation_y);
@@ -4799,7 +4799,7 @@ pub fn add_model_instance(model_id: &str, x: f32, y: f32, scale: f32, rotation_y
 #[wasm_bindgen]
 pub fn populate_model_instances_from_game() -> i32 {
     unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
+        if let Some(ref mut app) = (*std::ptr::addr_of_mut!(APP)).as_mut() {
             app.populate_model_instances_from_game_state()
         } else {
             0
@@ -4956,7 +4956,7 @@ impl App {
 #[wasm_bindgen]
 pub fn spawn_build_effect(tile_x: f32, tile_y: f32) {
     unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
+        if let Some(ref mut app) = (*std::ptr::addr_of_mut!(APP)).as_mut() {
             particle::spawn_build_effect(&mut app.particle_system, tile_x, tile_y);
         }
     }
@@ -4972,7 +4972,7 @@ pub fn spawn_build_effect(tile_x: f32, tile_y: f32) {
 #[wasm_bindgen]
 pub fn get_particles_json() -> String {
     unsafe {
-        if let Some(app) = APP.as_ref() {
+        if let Some(app) = (*std::ptr::addr_of!(APP)).as_ref() {
             app.particle_system.to_json()
         } else {
             String::from("[]")
@@ -4985,7 +4985,7 @@ pub fn get_particles_json() -> String {
 #[wasm_bindgen]
 pub fn recent_death_count() -> i32 {
     unsafe {
-        if let Some(app) = APP.as_ref() {
+        if let Some(app) = (*std::ptr::addr_of!(APP)).as_ref() {
             app.recent_death_count as i32
         } else {
             0
@@ -4998,7 +4998,7 @@ pub fn recent_death_count() -> i32 {
 #[wasm_bindgen]
 pub fn recent_combat_count() -> i32 {
     unsafe {
-        if let Some(app) = APP.as_ref() {
+        if let Some(app) = (*std::ptr::addr_of!(APP)).as_ref() {
             app.recent_combat_count as i32
         } else {
             0
@@ -5025,7 +5025,7 @@ pub fn set_tile_terrain(x: usize, y: usize, terrain_id: u8) -> bool {
         _ => return false,
     };
     unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
+        if let Some(ref mut app) = (*std::ptr::addr_of_mut!(APP)).as_mut() {
             if app.game_loop.state.map.set_terrain(x, y, terrain) {
                 app.mesh_dirty = true;
                 return true;
@@ -5039,7 +5039,7 @@ pub fn set_tile_terrain(x: usize, y: usize, terrain_id: u8) -> bool {
 #[wasm_bindgen]
 pub fn toggle_editor_grid() -> bool {
     unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
+        if let Some(ref mut app) = (*std::ptr::addr_of_mut!(APP)).as_mut() {
             app.editor_grid = !app.editor_grid;
             app.mesh_dirty = true;
             app.editor_grid
@@ -5055,7 +5055,7 @@ pub fn toggle_editor_grid() -> bool {
 #[wasm_bindgen]
 pub fn export_map_json() -> String {
     unsafe {
-        APP.as_ref()
+        (*std::ptr::addr_of!(APP)).as_ref()
             .map(|app| app.game_loop.state.map.to_json())
             .unwrap_or_else(|| String::from("error: no map loaded"))
     }
