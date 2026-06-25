@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, water reflection FBO + Fresnel blend + depth attachment, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro, terrain LOD (3 levels), wee_alloc global allocator, codegen-units=1, fine-tuned horizon_y computation, GLSL minified (comments/whitespace stripped) — 684 tests passing | WASM 318KB (was 377KB, -59KB)
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, water reflection FBO + Fresnel blend + depth attachment, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro, terrain LOD (3 levels), wee_alloc global allocator, codegen-units=1, fine-tuned horizon_y computation, GLSL minified (comments/whitespace stripped), ember/spark particle effect for Smelter buildings — 692 tests passing | WASM 318KB (was 377KB, -59KB)
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -229,6 +229,6 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 211. ~~Add leaf particle effect for Forest tiles (seasonal/autumn aesthetic)~~ ✅ (session 210)
 212. ~~GLSL minification: strip comments and extra whitespace from shader r#"..."# literals (est. 10-14KB savings)~~ ✅ (session 212 — 8KB source / 12KB WASM)
 213. Investigate building model JSON const encoding to reduce .rodata 5.9KB
-214. Add ember/spark particle effect for Smelter buildings (iron/gold smelter)
+214. ~~Add ember/spark particle effect for Smelter buildings (iron/gold smelter)~~ ✅ (session 213)
 215. Verify Fix #73 on mobile: request new render snapshot from Daniel (Android/WebKit/Mali-G710) to confirm tiles now display
 *All building data must match BASE.md. Never modify BASE.md.*
