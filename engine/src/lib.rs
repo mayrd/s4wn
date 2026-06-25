@@ -2012,6 +2012,10 @@ impl App {
         }
         // Reflection render pass: flip camera Y across water plane (Y=0), render to FBO
         if let (Some(ref fbo), Some(ref vp_loc), Some(ref use_loc)) = (&self.reflection_fbo, &self.vp_loc, &self.use_vp_loc) {
+            // Unbind reflection texture from TEXTURE2 to prevent feedback loop
+            // (FBO color attachment == reflection_tex, and shader declares u_reflection_tex sampler)
+            gl.active_texture(WebGl2RenderingContext::TEXTURE2);
+            gl.bind_texture(WebGl2RenderingContext::TEXTURE_2D, None);
             let (ex, ey, ez) = self.camera.eye();
             let (tx, ty, tz) = self.camera.look_at_target();
             let aspect = self.camera.viewport_width as f32 / self.camera.viewport_height.max(1) as f32;
