@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S219 · 697 tests · WASM 316KB — Removed 13 dead WASM exports (camera, particles, rally points). Saved 3KB (319KB→316KB). 68 exports remaining. Rendering Overhaul — Next: wasm <300KB (16KB gap), lazy-load model JSON, remaining dead export audit.
+**Status:** S220 · 701 tests · WASM 316KB — Removed 13 dead WASM exports (camera, particles, rally points). Saved 3KB (319KB→316KB). 68 exports remaining. Rendering Overhaul — Next: wasm <300KB (16KB gap), lazy-load model JSON, remaining dead export audit.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -102,6 +102,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 ### Session Log (recent)
 
 | 218 | 2026-06-25 | Removed 3 dead WASM exports: compute_mvp_json (4.6KB code, 0 JS refs), clear_model_instances (0 JS refs), model_instance_count (0 JS refs). Removed 2 corresponding tests. WASM 326KB→319KB (-7KB). 697 tests pass. Clippy 0 errors/21 warnings. 81 exports remaining (was 84). -- 697 tests |
+| 220 | 2026-06-25 | Added 4 particle edge-case tests: bounce velocity reversal (vz inversion after ground impact), alpha at full life (=1.0 above 0.7 threshold), alpha fade at 50% life (~0.71), alpha zero when dead. 697→701 tests pass. Clippy 0 errors/15 warnings. -- 701 tests |
 | 219 | 2026-06-25 | Removed 13 dead WASM exports: set_azimuth, set_elevation, set_distance (camera -- JS uses orbital pan/zoom), set_paused (JS uses toggle_pause), spawn_construction_effect, spawn_combat_effect, spawn_smoke_effect, spawn_leaf_effect (game loop spawns these automatically), particle_count, clear_particles, set_building_rally_point, clear_building_rally_point, get_building_rally_point. Internal Rust functions preserved (used by game loop + tests). WASM 319KB->316KB (-3KB). 81->68 exports. 697 tests pass. Clippy 0 errors/15 warnings. -- 697 tests |
 | 217 | 2026-06-25 | Fix #75: Unbind reflection texture from TEXTURE2 before FBO pass to prevent feedback loop — FBO color attachment (reflection_tex) was still bound to TEXTURE2 sampler from previous frame, causing GL_INVALID_OPERATION (feedback loop + sampler type mismatch). Added gl.active_texture(TEXTURE2) + bind_texture(None) before FBO bind. 699 tests pass. Clippy 0 errors/23 warnings. WASM rebuilt. -- 699 tests |
 | 211 | 2026-06-25 | Fix #73: Replace GLSL uniform bool with int for mobile GPU compat — uniform bool causes blank tiles on ANGLE/Mali-G710 (Android/WebKit) due to driver issues evaluating bool conditionals. Changed u_use_vp, u_use_textures, u_reflection_pass from bool to int (0/1) in all 3 shader pairs (vertex/fragment/model). Updated condition checks to `== 1`. Added test_no_uniform_bool_in_shaders regression test. 683 tests pass. Clippy 0 errors. -- 683 tests |
@@ -243,4 +244,8 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 219. ~~Audit remaining 81 exports for dead code — found 16 dead, 13 still in codebase~~ ✅ (session 219 — all 13 removed)
 220. ~~Remove remaining 13 dead exports~~ ✅ (session 219 — all removed, internal Rust functions preserved)
 221. Consider removing all_names() / name() string functions if JS-side can provide names [NICE — 19.5KB potential]
+222. Clean up 15 clippy warnings: 12 static_mut_refs (Rust 2024 compat) + 3 too_many_arguments in particle.rs [SHOULD]
+223. WASM size: 316KB → 300KB — remaining 16KB gap [MUST]
+224. Lazy-load building model JSON from assets/ to reduce .rodata (~15KB potential) [NICE]
+225. Verify Fix #73 on mobile: request new render snapshot from Daniel to confirm tiles display on ANGLE/Mali-G710 [SHOULD]
 *All building data must match BASE.md. Never modify BASE.md.*
