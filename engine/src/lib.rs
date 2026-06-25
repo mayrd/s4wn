@@ -1878,6 +1878,26 @@ impl App {
                 let max_y = (cy + vis_h).max(0.0).min(map_h);
                 particle::spawn_rain_burst(&mut self.particle_system, min_x, min_y, max_x, max_y, 3);
             }
+            // Snow particles: spawn near mountain/snow tiles
+            if tick.is_multiple_of(6) {
+                let map = &self.game_loop.state.map;
+                let cx = self.camera.center_x as usize;
+                let cy = self.camera.center_y as usize;
+                let range = 12usize;
+                let mut snow_count = 0u32;
+                for dy in 0..range {
+                    for dx in 0..range {
+                        let tx = cx.saturating_sub(range/2) + dx;
+                        let ty = cy.saturating_sub(range/2) + dy;
+                        if let Some(tile) = map.get(tx, ty) {
+                            if (tile.terrain == crate::map::Terrain::Snow || tile.terrain == crate::map::Terrain::Mountain) && snow_count < 4 {
+                                particle::spawn_snow_particle(&mut self.particle_system, tx as f32, ty as f32);
+                                snow_count += 1;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Smooth camera

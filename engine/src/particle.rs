@@ -261,6 +261,45 @@ pub fn spawn_rain_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: 
     spawned
 }
 
+/// Spawn a single snow particle: slow-falling white flake with wind drift.
+/// Used for snowfall in mountain/snow biomes during winter weather.
+pub fn spawn_snow_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 13.7 + y * 19.3;
+    let z = 4.0 + (seed * 1.1).sin() * 3.0;
+    let drift = (seed * 2.3).cos() * 0.8;
+    let life = 2.0 + (seed * 3.7).sin().abs() * 3.0;
+    let _ = ps.spawn(x + drift, y + drift * 0.5, z,
+        (seed * 1.7).cos() * 0.15, (seed * 2.1).sin() * 0.15,
+        -1.5 - (seed * 3.0).sin().abs() * 1.0,
+        life, 0.92, 0.95, 1.0, 1.8);
+}
+
+/// Spawn a burst of snow particles across a rectangular area.
+/// Used periodically for continuous snowfall — flakes appear at
+/// random positions within the given bounds with gentle drift.
+pub fn spawn_snow_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 11.3 + 5.7).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 17.9 + 2.3).sin() * 0.5 + 0.5) * sy;
+        let seed = x * 13.7 + y * 19.3;
+        let z = 4.0 + (seed * 1.1).sin() * 3.0;
+        if ps.spawn(x, y, z,
+            (seed * 1.7).cos() * 0.15, (seed * 2.1).sin() * 0.15,
+            -1.5 - (seed * 3.0).sin().abs() * 1.0,
+            2.0 + (seed * 3.7).sin().abs() * 3.0,
+            0.92, 0.95, 1.0, 1.8) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
+
 /// Spawn construction activity particles at a building site.
 /// Nation color is blended with construction dust for faction-specific effects.
 /// Called periodically during building construction (when construction < 1.0).
@@ -656,6 +695,60 @@ mod tests {
         assert!(ps.particles[idx].life <= 0.15, "rain life should be capped to <=0.15 after ground hit, got {}", ps.particles[idx].life);
         assert!(ps.particles[idx].alive || ps.particles[idx].life <= 0.15, "rain should fade quickly after ground impact");
     }
+
+    #[test]
+    fn test_snow_particle_spawns_white() {
+        let mut ps = ParticleSystem::new();
+        spawn_snow_particle(&mut ps, 5.0, 5.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Snow should be white/light: high r,g,b
+        assert!(p.r > 0.9, "snow r should be >0.9, got {}", p.r);
+        assert!(p.g > 0.9, "snow g should be >0.9, got {}", p.g);
+        assert!(p.b > 0.95, "snow b should be >0.95, got {}", p.b);
+    }
+
+    #[test]
+    fn test_snow_falls_slowly() {
+        let mut ps = ParticleSystem::new();
+        spawn_snow_particle(&mut ps, 5.0, 5.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Snow falls slower than rain (vz > -2.5 means less negative)
+        assert!(p.vz > -2.5, "snow vz should be >-2.5 (slow fall), got {}", p.vz);
+    }
+
+    #[test]
+    fn test_snow_long_lifetime() {
+        let mut ps = ParticleSystem::new();
+        spawn_snow_particle(&mut ps, 5.0, 5.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Snow should live longer than rain (>1.5s)
+        assert!(p.life > 1.5, "snow life should be >1.5s, got {}", p.life);
+    }
+
+    #[test]
+    fn test_snow_burst_bounds() {
+        let mut ps = ParticleSystem::new();
+        let n = spawn_snow_burst(&mut ps, 10.0, 10.0, 30.0, 30.0, 5);
+        assert!(n > 0);
+        let alive: Vec<&Particle> = ps.particles.iter().filter(|p| p.alive).collect();
+        for p in &alive {
+            assert!(p.x >= 10.0 && p.x <= 30.0, "snow x={} out of [10,30]", p.x);
+            assert!(p.y >= 10.0 && p.y <= 30.0, "snow y={} out of [10,30]", p.y);
+        }
+    }
+
+    #[test]
+    fn test_snow_burst_limited_by_max() {
+        let mut ps = ParticleSystem::new();
+        for i in 0..MAX_PARTICLES {
+            ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+        }
+        assert_eq!(ps.alive_count(), MAX_PARTICLES);
+        let n = spawn_snow_burst(&mut ps, 0.0, 0.0, 10.0, 10.0, 20);
+        assert_eq!(n, 0, "snow burst should spawn 0 when system full");
+    }
+
+
 
 }
 
