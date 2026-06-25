@@ -22,21 +22,9 @@ export function add_starting_resources(difficulty: string): string;
 export function clear_building_rally_point(building_index: number): boolean;
 
 /**
- * Clear all model instances (called at start of each frame).
- */
-export function clear_model_instances(): void;
-
-/**
  * Clear all particles.
  */
 export function clear_particles(): void;
-
-/**
- * Compute a model-view-projection matrix for a model instance.
- * Takes JSON input: {x, y, scale, rotation_y, view: [16], projection: [16]}
- * Returns JSON array of 16 floats (column-major MVP matrix).
- */
-export function compute_mvp_json(input_json: string): string;
 
 /**
  * Apply damage to a building at the given index. If HP reaches 0, destruction starts.
@@ -275,11 +263,6 @@ export function load_map_json(json: string): string;
 export function load_model_json(name: string, json_str: string): string;
 
 /**
- * Get the number of loaded model instances for this frame.
- */
-export function model_instance_count(): number;
-
-/**
  * Order a set of units to move to a target tile.
  * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
  * target_x, target_y: destination tile coordinates
@@ -509,9 +492,7 @@ export interface InitOutput {
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
     readonly clear_building_rally_point: (a: number) => number;
-    readonly clear_model_instances: () => void;
     readonly clear_particles: () => void;
-    readonly compute_mvp_json: (a: number, b: number) => [number, number];
     readonly damage_building: (a: number, b: number) => number;
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
     readonly export_map_json: () => [number, number];
@@ -551,7 +532,6 @@ export interface InitOutput {
     readonly list_nations: () => [number, number];
     readonly load_map_json: (a: number, b: number) => [number, number];
     readonly load_model_json: (a: number, b: number, c: number, d: number) => [number, number];
-    readonly model_instance_count: () => number;
     readonly move_units_to_tile: (a: number, b: number, c: number, d: number) => number;
     readonly on_mouse_down: (a: number, b: number) => void;
     readonly on_mouse_move: (a: number, b: number) => void;

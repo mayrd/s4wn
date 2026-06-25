@@ -52,39 +52,10 @@ export function clear_building_rally_point(building_index) {
 }
 
 /**
- * Clear all model instances (called at start of each frame).
- */
-export function clear_model_instances() {
-    wasm.clear_model_instances();
-}
-
-/**
  * Clear all particles.
  */
 export function clear_particles() {
     wasm.clear_particles();
-}
-
-/**
- * Compute a model-view-projection matrix for a model instance.
- * Takes JSON input: {x, y, scale, rotation_y, view: [16], projection: [16]}
- * Returns JSON array of 16 floats (column-major MVP matrix).
- * @param {string} input_json
- * @returns {string}
- */
-export function compute_mvp_json(input_json) {
-    let deferred2_0;
-    let deferred2_1;
-    try {
-        const ptr0 = passStringToWasm0(input_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.compute_mvp_json(ptr0, len0);
-        deferred2_0 = ret[0];
-        deferred2_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-    }
 }
 
 /**
@@ -751,15 +722,6 @@ export function load_model_json(name, json_str) {
     } finally {
         wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
     }
-}
-
-/**
- * Get the number of loaded model instances for this frame.
- * @returns {number}
- */
-export function model_instance_count() {
-    const ret = wasm.model_instance_count();
-    return ret;
 }
 
 /**

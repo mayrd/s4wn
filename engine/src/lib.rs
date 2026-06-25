@@ -4802,33 +4802,7 @@ pub fn load_model_json(name: &str, json_str: &str) -> String {
 }
 
 
-/// Compute a model-view-projection matrix for a model instance.
-/// Takes JSON input: {x, y, scale, rotation_y, view: [16], projection: [16]}
-/// Returns JSON array of 16 floats (column-major MVP matrix).
-#[wasm_bindgen]
-pub fn compute_mvp_json(input_json: &str) -> String {
-    #[derive(serde::Deserialize)]
-    struct MvpInput {
-        x: f32,
-        y: f32,
-        scale: f32,
-        rotation_y: f32,
-        view: [f32; 16],
-        projection: [f32; 16],
-    }
 
-    let input: MvpInput = match serde_json::from_str(input_json) {
-        Ok(v) => v,
-        Err(e) => return format!("{{\"error\":\"{}\"}}", e),
-    };
-
-    let instance = model::ModelInstance::new("", input.x, input.y)
-        .with_scale(input.scale)
-        .with_rotation_y(input.rotation_y);
-
-    let mvp = model::compute_mvp(&instance, &input.view, &input.projection);
-    serde_json::to_string(&mvp.to_vec()).unwrap_or_else(|_| String::from("{\"error\":\"serialize failed\"}"))
-}
 
 /// Decompress a .sav savegame chunk: ARA-decrypt then LZ+Huffman decompress.
 /// Used by the JS .sav loader to extract game data from savegame chunks.
@@ -4859,15 +4833,7 @@ pub fn add_model_instance(model_id: &str, x: f32, y: f32, scale: f32, rotation_y
     false
 }
 
-/// Clear all model instances (called at start of each frame).
-#[wasm_bindgen]
-pub fn clear_model_instances() {
-    unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
-            app.model_instances.clear();
-        }
-    }
-}
+// clear_model_instances wasm export removed — dead, 0 JS refs
 
 /// Populate model_instances from current game state (buildings).
 /// Maps building types to model IDs. Called from JS each frame before render().
@@ -5020,17 +4986,7 @@ impl App {
     }
 }
 
-/// Get the number of loaded model instances for this frame.
-#[wasm_bindgen]
-pub fn model_instance_count() -> i32 {
-    unsafe {
-        if let Some(app) = APP.as_ref() {
-            app.model_instances.len() as i32
-        } else {
-            0
-        }
-    }
-}
+// model_instance_count wasm export removed — dead, 0 JS refs
 
 // ── Phase 6: Particle System WASM Exports ─────────────────────────────────────
 
@@ -6397,17 +6353,7 @@ mod tests {
         assert!(result.starts_with("error:"), "expected error for wrong version, got: {}", result);
     }
 
-    #[test]
-    fn test_model_instance_count_zero_when_no_app() {
-        // model_instance_count returns 0 when APP is None (no WebGL context)
-        assert_eq!(model_instance_count(), 0);
-    }
 
-    #[test]
-    fn test_clear_model_instances_no_app() {
-        // clear_model_instances should not panic when APP is None
-        clear_model_instances();
-    }
 
     #[test]
     fn test_add_model_instance_no_app() {
