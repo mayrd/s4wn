@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 209 | 2026-06-25 | Firefly particle effect: spawn_firefly_effect with warm yellow-green glow, slow drift, 2.5-5.5s life. Wired into game loop — spawns near Forest/Grass tiles every 10 ticks at dusk/night (day_phase < 0.2 or > 0.8, max 2/tick). 2 new tests. 678 tests pass. Clippy 0 errors/23 warnings. -- 678 tests |
 | 208 | 2026-06-25 | Fog/mist particle system: spawn_fog_particle/spawn_fog_burst with pale grey-white color, gentle horizontal drift, slight upward rise. Wired into game loop — spawns near Water/Swamp tiles every 8 ticks (max 2/tick). 6 new tests. 676 tests pass. Clippy 0 errors. -- 676 tests |
 | 207 | 2026-06-25 | Clippy warning cleanup: fixed 12 warnings (empty_line_after_outer_attr, empty_line_after_doc_comments, matches! macro, needless_range_loop, hex digit grouping). 35→23 warnings. 670 tests pass. -- 670 tests |
 | 206 | 2026-06-25 | Dust storm particle system: spawn_dust_storm_particle/spawn_dust_storm_burst with sandy brown color, strong eastward wind drift, suspended fall. Wired into game loop — spawns near Desert tiles every 5 ticks (max 3/tick). 6 new tests. 670 tests pass. Clippy 0 errors. -- 670 tests |
@@ -221,7 +222,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 45. Lazy-load building model JSON from assets/ to reduce .rodata [NICE — may be largest single win]
 32. Verify reflection optimization visually: ensure water tiles excluded from reflection FBO [visual confirmation pending]
 209. Add leaf particle effect for Forest tiles (seasonal/autumn aesthetic)
-210. Add firefly particle effect for Grass/Forest tiles at dusk (subtle glow, slow drift)
+210. ~~Add firefly particle effect for Grass/Forest tiles at dusk (subtle glow, slow drift)~~ ✅ (session 209)
 211. GLSL minification: strip comments and extra whitespace from shader r#"..."# literals (est. 10-14KB savings)
 212. Investigate building model JSON const encoding to reduce .rodata 5.9KB
 *All building data must match BASE.md. Never modify BASE.md.*
