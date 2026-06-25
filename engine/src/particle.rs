@@ -1339,3 +1339,44 @@ mod tests {
         let n = spawn_ember_burst(&mut ps, 5.0, 5.0, 10);
         assert_eq!(n, 0, "ember burst should spawn 0 when system full");
     }
+
+
+#[test]
+fn test_particle_bounce_velocity_reversal() {
+    let mut p = Particle::new();
+    p.spawn(0.0, 0.0, 1.0, 0.0, 0.0, -6.0, 2.0, 1.0, 0.5, 0.2, 8.0);
+    // Tick enough to hit the ground
+    p.tick(0.3);
+    assert!(p.z >= 0.0, "z should not go below 0 after bounce");
+    // After bounce, vz should be positive (reversed direction, reduced)
+    assert!(p.vz > 0.0, "vz should reverse upward after bounce, got {}", p.vz);
+}
+
+#[test]
+fn test_particle_alpha_full_at_start() {
+    let mut p = Particle::new();
+    p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 1.0, 8.0);
+    // At full life, alpha should be 1.0 (t > 0.7)
+    assert!((p.alpha() - 1.0).abs() < 0.01, "alpha should be 1.0 at full life, got {}", p.alpha());
+}
+
+#[test]
+fn test_particle_alpha_fades_below_threshold() {
+    let mut p = Particle::new();
+    p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 1.0, 8.0);
+    // Tick to 50% life, falls below 0.7 threshold
+    p.tick(1.0);
+    let alpha = p.alpha();
+    assert!(alpha > 0.4 && alpha < 0.8,
+        "alpha at 50% life should be ~0.71, got {}", alpha);
+}
+
+#[test]
+fn test_particle_alpha_zero_when_dead() {
+    let mut p = Particle::new();
+    p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 1.0, 1.0, 1.0, 8.0);
+    // Tick past lifetime
+    p.tick(0.2);
+    assert!((p.alpha() - 0.0).abs() < 0.01, "dead particle alpha should be 0, got {}", p.alpha());
+}
+
