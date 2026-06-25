@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 207 | 2026-06-25 | Clippy warning cleanup: fixed 12 warnings (empty_line_after_outer_attr, empty_line_after_doc_comments, matches! macro, needless_range_loop, hex digit grouping). 35→23 warnings. 670 tests pass. -- 670 tests |
 | 206 | 2026-06-25 | Dust storm particle system: spawn_dust_storm_particle/spawn_dust_storm_burst with sandy brown color, strong eastward wind drift, suspended fall. Wired into game loop — spawns near Desert tiles every 5 ticks (max 3/tick). 6 new tests. 670 tests pass. Clippy 0 errors. -- 670 tests |
 | 205 | 2026-06-25 | Snow particle system: spawn_snow_particle/spawn_snow_burst with slow-fall, wind drift, white color. Wired into game loop — spawns near Snow/Mountain tiles every 6 ticks (max 4/tick). 5 new tests. 664 tests pass. Clippy 0 errors. -- 664 tests |
 | 203 | 2026-06-24 | Session audit: 0 open GitHub issues, 659 tests pass, WASM 331KB (31KB over 300KB target), Clippy 0 errors/35 warnings. Analyzed remaining WASM optimization paths: (a) building/unit names 27.9KB → phf/const hash (b) shader source 28.5KB → minify GLSL (c) game state JSON 5.9KB → const encoding (d) ryu float formatting ~10KB. Verified all App struct fields active. FPS/draw-call exports unused by JS but kept for debugging. -- 659 tests |
