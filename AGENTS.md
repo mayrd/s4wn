@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S221 · 701 tests · WASM 316KB — Clippy: 0 errors, 0 warnings. Fixed all 15 clippy warnings: 12 static_mut_refs (raw pointer deref) + 3 too_many_arguments (allow attr). Rust 2024 compat. 0 open issues.
+**Status:** S222 · 701 tests · WASM 316KB — Clippy: 0 errors, 0 warnings. Particle refactor: config structs replace all 3 #[allow] workarounds. Fixed all 15 clippy warnings: 12 static_mut_refs (raw pointer deref) + 3 too_many_arguments (allow attr). Rust 2024 compat. 0 open issues.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -103,6 +103,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 | 218 | 2026-06-25 | Removed 3 dead WASM exports: compute_mvp_json (4.6KB code, 0 JS refs), clear_model_instances (0 JS refs), model_instance_count (0 JS refs). Removed 2 corresponding tests. WASM 326KB→319KB (-7KB). 697 tests pass. Clippy 0 errors/21 warnings. 81 exports remaining (was 84). -- 697 tests |
 | 220 | 2026-06-25 | Added 4 particle edge-case tests: bounce velocity reversal (vz inversion after ground impact), alpha at full life (=1.0 above 0.7 threshold), alpha fade at 50% life (~0.71), alpha zero when dead. 697→701 tests pass. Clippy 0 errors/15 warnings. -- 701 tests |
+| 222 | 2026-06-25 | Refactored particle spawn functions to use config structs: ParticleConfig (11-field) and BurstConfig (10-field). Removed all 3 #[allow(clippy::too_many_arguments)] workarounds from session 221. Converted 39 .spawn() + 15 .spawn_burst() call sites. Clippy auto-fixed 76 redundant_field_names. Clippy: 0 errors, 0 warnings. 701 tests pass. -- 701 tests |
 | 221 | 2026-06-25 | Fixed all 15 clippy warnings: 12 static_mut_refs in lib.rs (replaced APP.as_mut()/APP.as_ref() with raw pointer deref: (*std::ptr::addr_of_mut!(APP)).as_mut() / (*std::ptr::addr_of!(APP)).as_ref()), 3 too_many_arguments in particle.rs (added #[allow(clippy::too_many_arguments)]). Clippy: 0 errors, 0 warnings. 701 tests pass. -- 701 tests |
 | 219 | 2026-06-25 | Removed 13 dead WASM exports: set_azimuth, set_elevation, set_distance (camera -- JS uses orbital pan/zoom), set_paused (JS uses toggle_pause), spawn_construction_effect, spawn_combat_effect, spawn_smoke_effect, spawn_leaf_effect (game loop spawns these automatically), particle_count, clear_particles, set_building_rally_point, clear_building_rally_point, get_building_rally_point. Internal Rust functions preserved (used by game loop + tests). WASM 319KB->316KB (-3KB). 81->68 exports. 697 tests pass. Clippy 0 errors/15 warnings. -- 697 tests |
 | 217 | 2026-06-25 | Fix #75: Unbind reflection texture from TEXTURE2 before FBO pass to prevent feedback loop — FBO color attachment (reflection_tex) was still bound to TEXTURE2 sampler from previous frame, causing GL_INVALID_OPERATION (feedback loop + sampler type mismatch). Added gl.active_texture(TEXTURE2) + bind_texture(None) before FBO bind. 699 tests pass. Clippy 0 errors/23 warnings. WASM rebuilt. -- 699 tests |
@@ -252,5 +253,10 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 226. WASM size: 316KB → 300KB — remaining 16KB gap [MUST — top priority]
 227. Lazy-load building model JSON from assets/ to reduce .rodata (~15KB potential) [NICE — largest single win]
 228. Consider removing all_names() / name() string functions if JS-side can provide names [NICE — 19.5KB potential]
-229. Refactor particle spawn functions to use config struct (remove #[allow] workaround) [NICE]
+229. ~~Refactor particle spawn functions to use config struct (remove #[allow] workaround)~~ ✅ (session 222)
+230. WASM size: 316KB → 300KB — remaining 16KB gap [MUST — top priority]
+231. Lazy-load building model JSON from assets/ to reduce .rodata (~15KB potential) [NICE — largest single win]
+232. Consider removing all_names() / name() string functions if JS-side can provide names [NICE — 19.5KB potential]
+233. Verify Fix #73 on mobile: request new render snapshot from Daniel to confirm tiles display on ANGLE/Mali-G710 [SHOULD]
+234. Investigate rebuilding WASM after particle refactor to measure size delta [SHOULD]
 *All building data must match BASE.md. Never modify BASE.md.*
