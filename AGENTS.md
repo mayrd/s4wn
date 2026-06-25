@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 211 | 2026-06-25 | Fix #73: Replace GLSL uniform bool with int for mobile GPU compat — uniform bool causes blank tiles on ANGLE/Mali-G710 (Android/WebKit) due to driver issues evaluating bool conditionals. Changed u_use_vp, u_use_textures, u_reflection_pass from bool to int (0/1) in all 3 shader pairs (vertex/fragment/model). Updated condition checks to `== 1`. Added test_no_uniform_bool_in_shaders regression test. 683 tests pass. Clippy 0 errors. -- 683 tests |
 | 210 | 2026-06-25 | Autumn leaf particle effect: spawn_autumn_leaf_particle/burst with warm amber/orange/red-brown colors, gentle eastward wind drift, slow swaying descent (3-6s life). Wired into game loop — spawns near Forest tiles every 12 ticks (max 3/tick). 4 new tests. 682 tests pass. Clippy 0 errors/23 warnings. -- 682 tests |
 | 209 | 2026-06-25 | Firefly particle effect: spawn_firefly_effect with warm yellow-green glow, slow drift, 2.5-5.5s life. Wired into game loop — spawns near Forest/Grass tiles every 10 ticks at dusk/night (day_phase < 0.2 or > 0.8, max 2/tick). 2 new tests. 678 tests pass. Clippy 0 errors/23 warnings. -- 678 tests |
 | 208 | 2026-06-25 | Fog/mist particle system: spawn_fog_particle/spawn_fog_burst with pale grey-white color, gentle horizontal drift, slight upward rise. Wired into game loop — spawns near Water/Swamp tiles every 8 ticks (max 2/tick). 6 new tests. 676 tests pass. Clippy 0 errors. -- 676 tests |
@@ -216,7 +217,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ---
 
-### Next Session — Updated Steps (Session 209+)
+### Next Session — Updated Steps (Session 211+)
 ---
 43. WASM size: 331KB → 300KB — remaining 31KB gap. Session 204: hash-based from_name (FNV-1a) attempted, no savings — strings deduplicated with name()/all_names(). Top remaining targets: (a) 28.5KB shader source — minify GLSL in r#"..."# literals (est. 10-14KB savings) (b) 5.9KB game state JSON template — const encoding (c) ryu float formatting ~10KB (d) building model JSON lazy-loaded from assets/ (27.9KB). [MUST — 31KB remains]
 44. FPS/draw-call benchmarking: add 1080p/720p FPS display toggle, record baseline in RENDERING_AUDIT.md [SHOULD]
@@ -228,4 +229,5 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 212. GLSL minification: strip comments and extra whitespace from shader r#"..."# literals (est. 10-14KB savings)
 213. Investigate building model JSON const encoding to reduce .rodata 5.9KB
 214. Add ember/spark particle effect for Smelter buildings (iron/gold smelter)
+215. Verify Fix #73 on mobile: request new render snapshot from Daniel (Android/WebKit/Mali-G710) to confirm tiles now display
 *All building data must match BASE.md. Never modify BASE.md.*
