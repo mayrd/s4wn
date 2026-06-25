@@ -1898,6 +1898,26 @@ impl App {
                     }
                 }
             }
+            // Dust storm particles: spawn near desert tiles
+            if tick.is_multiple_of(5) {
+                let map = &self.game_loop.state.map;
+                let cx = self.camera.center_x as usize;
+                let cy = self.camera.center_y as usize;
+                let range = 14usize;
+                let mut dust_count = 0u32;
+                for dy in 0..range {
+                    for dx in 0..range {
+                        let tx = cx.saturating_sub(range/2) + dx;
+                        let ty = cy.saturating_sub(range/2) + dy;
+                        if let Some(tile) = map.get(tx, ty) {
+                            if tile.terrain == crate::map::Terrain::Desert && dust_count < 3 {
+                                particle::spawn_dust_storm_particle(&mut self.particle_system, tx as f32, ty as f32);
+                                dust_count += 1;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Smooth camera

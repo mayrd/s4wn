@@ -300,6 +300,51 @@ pub fn spawn_snow_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: 
     spawned
 }
 
+/// Spawn a single dust storm particle with high wind drift and sandy color.
+pub fn spawn_dust_storm_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 11.3 + y * 17.9;
+    let z = 1.5 + (seed * 1.3).sin() * 1.5;
+    let life = 3.0 + (seed * 4.1).sin().abs() * 4.0;
+    let hue_var = (seed * 7.3).sin() * 0.08;
+    let _ = ps.spawn(x, y, z,
+        (seed * 1.9).cos() * 0.8 + 0.4,  // vx: strong prevailing wind (eastward)
+        (seed * 2.7).sin() * 0.4,        // vy: gentle lateral sway
+        -0.3 - (seed * 3.3).sin().abs() * 0.5,  // vz: very slow fall (suspended)
+        life,
+        0.72 + hue_var,                   // r: sandy brown
+        0.60 + hue_var * 0.5,             // g
+        0.42,                             // b
+        2.2);                             // size: larger wind-blown particle
+}
+
+/// Spawn a burst of dust storm particles across a sand/desert area.
+pub fn spawn_dust_storm_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 13.1 + 7.3).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 19.7 + 3.1).sin() * 0.5 + 0.5) * sy;
+        let seed = x * 11.3 + y * 17.9;
+        let z = 1.5 + (seed * 1.3).sin() * 1.5;
+        if ps.spawn(x, y, z,
+            (seed * 1.9).cos() * 0.8 + 0.4,
+            (seed * 2.7).sin() * 0.4,
+            -0.3 - (seed * 3.3).sin().abs() * 0.5,
+            3.0 + (seed * 4.1).sin().abs() * 4.0,
+            0.72 + (seed * 7.3).sin() * 0.08,
+            0.60 + (seed * 7.3).sin() * 0.04,
+            0.42,
+            2.2) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
+
 /// Spawn construction activity particles at a building site.
 /// Nation color is blended with construction dust for faction-specific effects.
 /// Called periodically during building construction (when construction < 1.0).
@@ -748,7 +793,71 @@ mod tests {
         assert_eq!(n, 0, "snow burst should spawn 0 when system full");
     }
 
+    #[test]
+    fn test_dust_storm_particle_spawns_sandy_color() {
+        let mut ps = ParticleSystem::new();
+        spawn_dust_storm_particle(&mut ps, 5.0, 5.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Dust storm should be sandy brown: high r, medium g, low b
+        assert!(p.r > 0.65, "dust r should be >0.65, got {}", p.r);
+        assert!(p.g > 0.5, "dust g should be >0.5, got {}", p.g);
+        assert!(p.b < 0.55, "dust b should be <0.55, got {}", p.b);
+    }
 
+    #[test]
+    fn test_dust_storm_strong_wind_drift() {
+        let mut ps = ParticleSystem::new();
+        spawn_dust_storm_particle(&mut ps, 8.0, 8.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Dust has prevailing eastward wind (base +0.4) plus cos drift (+-0.8).
+        // Range: -0.4 to +1.2. Strong drift means |vx| > 0.1 (not perfectly still).
+        assert!(p.vx.abs() > 0.1, "dust vx should be >0.1 or <-0.1 (wind drift), got {}", p.vx);
+        // The wind is generally eastward: vx should be positive most of the time.
+        // Over prevailing +0.4 base, even negative cos gives ~-0.4, so just check
+        // the spawned particle is moving (not exactly zero).
+        assert!(p.vx != 0.0, "dust vx should never be exactly zero, got {}", p.vx);
+    }
+
+    #[test]
+    fn test_dust_storm_slow_fall() {
+        let mut ps = ParticleSystem::new();
+        spawn_dust_storm_particle(&mut ps, 3.0, 3.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Dust particles stay suspended: very slow fall (vz > -1.0)
+        assert!(p.vz > -1.0, "dust vz should be >-1.0 (suspended), got {}", p.vz);
+    }
+
+    #[test]
+    fn test_dust_storm_long_lifetime() {
+        let mut ps = ParticleSystem::new();
+        spawn_dust_storm_particle(&mut ps, 2.0, 2.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Dust should live 3-7 seconds
+        assert!(p.life > 2.5, "dust life should be >2.5s, got {}", p.life);
+    }
+
+    #[test]
+    fn test_dust_storm_burst_bounds() {
+        let mut ps = ParticleSystem::new();
+        let n = spawn_dust_storm_burst(&mut ps, 0.0, 0.0, 20.0, 20.0, 5);
+        assert!(n > 0);
+        let alive: Vec<&Particle> = ps.particles.iter().filter(|p| p.alive).collect();
+        for p in &alive {
+            assert!(p.x >= 0.0 && p.x <= 20.0, "dust x={} out of [0,20]", p.x);
+            assert!(p.y >= 0.0 && p.y <= 20.0, "dust y={} out of [0,20]", p.y);
+        }
+    }
+
+    #[test]
+    fn test_dust_storm_burst_limited_by_max() {
+        let mut ps = ParticleSystem::new();
+        for i in 0..MAX_PARTICLES {
+            ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+        }
+        assert_eq!(ps.alive_count(), MAX_PARTICLES);
+        let n = spawn_dust_storm_burst(&mut ps, 0.0, 0.0, 10.0, 10.0, 20);
+        assert_eq!(n, 0, "dust burst should spawn 0 when system full");
+    }
 
 }
 
