@@ -48,7 +48,6 @@ macro_rules! day_light_glsl_v {
 
 const VERTEX_SHADER: &str = r#"#version 300 es
 precision highp float;
-
 in vec3 a_position;
 in vec3 a_color;
 in float a_elevation;
@@ -61,17 +60,14 @@ in float a_terrain_id;
 in vec3 a_normal;
 in vec4 a_splat;
 in float a_ao;
-
 uniform vec2 u_resolution;
 uniform float u_time;
 uniform vec2 u_camera_center;
 uniform float u_zoom;
 uniform float u_day_phase;
-// Phase 5: Orbital camera View-Projection matrix (dual-path migration)
 uniform mat4 u_vp;
 uniform int u_use_vp;
 uniform float u_water_time;
-
 out vec3 v_color;
 out float v_elevation;
 out float v_has_resource;
@@ -84,70 +80,53 @@ out float v_terrain_id;
 out vec3 v_normal;
 out vec4 v_splat;
 out float v_ao;
-
 void main() {
-    float x = a_position.x;
-    float y = a_position.y;
-    float elev = a_elevation;
-
-    // Subtle terrain animation: slight elevation wave driven by u_time
-    elev += sin(u_time * 0.5 + x * 0.3 + y * 0.3) * 0.02;
-
-    // Water vertex animation: sine-wave displacement for water tiles
-    // Water=3, DeepWater=4 — animate with u_water_time for independent control
-    if (a_terrain_id > 2.5 && a_terrain_id < 4.5) {
-        float wave1 = sin(u_water_time * 1.8 + x * 1.2 + y * 0.8) * 0.06;
-        float wave2 = sin(u_water_time * 2.4 + x * 0.5 - y * 1.1) * 0.04;
-        float wave3 = sin(u_water_time * 0.7 + (x + y) * 1.5) * 0.03;
-        float water_anim = wave1 + wave2 + wave3;
-        // DeepWater gets slightly smaller waves
-        if (a_terrain_id > 3.5) {
-            water_anim *= 0.7;
-        }
-        elev += water_anim;
-    }
-
-    if (u_use_vp == 1) {
-        // Phase 5: Orbital camera — use View-Projection matrix
-        // Y is elevation for height-displacement (flat grid currently, will be 3D mesh later)
-        float world_y = elev * 0.5;
-        gl_Position = u_vp * vec4(x, world_y, y, 1.0);
-    } else {
-        // Legacy isometric projection
-        float iso_x = (x - y) * 0.866;  // cos(30°)
-        float iso_y = (x + y) * 0.5 - elev * 0.3;
-
-        // Camera transform
-        iso_x -= u_camera_center.x;
-        iso_y -= u_camera_center.y;
-        iso_x *= u_zoom;
-        iso_y *= u_zoom;
-
-        // Convert to clip space
-        vec2 clip = (vec2(iso_x, iso_y) / u_resolution) * 2.0;
-        clip.y = -clip.y;
-
-        gl_Position = vec4(clip, 0.0, 1.0);
-    }
-    v_color = a_color;
-    v_elevation = elev;
-    v_has_resource = a_has_resource;
-    v_day_phase = u_day_phase;
-    v_slope = a_slope;
-    v_edge_dist = a_edge_dist;
-    v_uv = a_uv;
-    v_terrain_id = a_terrain_id;
-    v_visibility = a_visibility;
-    v_normal = a_normal;
-    v_splat = a_splat;
-    v_ao = a_ao;
+float x = a_position.x;
+float y = a_position.y;
+float elev = a_elevation;
+elev += sin(u_time * 0.5 + x * 0.3 + y * 0.3) * 0.02;
+if (a_terrain_id > 2.5 && a_terrain_id < 4.5) {
+float wave1 = sin(u_water_time * 1.8 + x * 1.2 + y * 0.8) * 0.06;
+float wave2 = sin(u_water_time * 2.4 + x * 0.5 - y * 1.1) * 0.04;
+float wave3 = sin(u_water_time * 0.7 + (x + y) * 1.5) * 0.03;
+float water_anim = wave1 + wave2 + wave3;
+if (a_terrain_id > 3.5) {
+water_anim *= 0.7;
+}
+elev += water_anim;
+}
+if (u_use_vp == 1) {
+float world_y = elev * 0.5;
+gl_Position = u_vp * vec4(x, world_y, y, 1.0);
+} else {
+float iso_x = (x - y) * 0.866;
+float iso_y = (x + y) * 0.5 - elev * 0.3;
+iso_x -= u_camera_center.x;
+iso_y -= u_camera_center.y;
+iso_x *= u_zoom;
+iso_y *= u_zoom;
+vec2 clip = (vec2(iso_x, iso_y) / u_resolution) * 2.0;
+clip.y = -clip.y;
+gl_Position = vec4(clip, 0.0, 1.0);
+}
+v_color = a_color;
+v_elevation = elev;
+v_has_resource = a_has_resource;
+v_day_phase = u_day_phase;
+v_slope = a_slope;
+v_edge_dist = a_edge_dist;
+v_uv = a_uv;
+v_terrain_id = a_terrain_id;
+v_visibility = a_visibility;
+v_normal = a_normal;
+v_splat = a_splat;
+v_ao = a_ao;
 }
 "#;
 
 const FRAGMENT_SHADER: &str = concat!(
 r#"#version 300 es
 precision highp float;
-
 in vec3 v_color;
 in float v_elevation;
 in float v_has_resource;
@@ -160,7 +139,6 @@ in float v_terrain_id;
 in vec3 v_normal;
 in vec4 v_splat;
 in float v_ao;
-
 uniform highp sampler2DArray u_terrain_textures;
 uniform int u_use_textures;
 uniform vec3 u_fog_color;
@@ -173,144 +151,93 @@ uniform sampler2D u_reflection_tex;
 uniform int u_reflection_pass;
 uniform float u_reflection_horizon_y;
 uniform vec2 u_resolution;
-
 out vec4 out_color;
-
 void main() {
-    // Base color: splat-blended terrain atlas or fall back to vertex color
-    // Atlas layout: 4 horizontal slices (grass=0, rock=1, sand=2, snow=3), each 512x512 in 2048x512 image
-    // v_splat.rgba = weights for grass/rock/sand/snow
-    vec3 base_color;
-    if (u_use_textures == 1) {
-        // Remap UV into each 512-wide slice: U = (layer + uv.x) / 4.0, V = uv.y
-        vec2 atlas_uv_grass = vec2((0.0 + v_uv.x) / 4.0, v_uv.y);
-        vec2 atlas_uv_rock  = vec2((1.0 + v_uv.x) / 4.0, v_uv.y);
-        vec2 atlas_uv_sand  = vec2((2.0 + v_uv.x) / 4.0, v_uv.y);
-        vec2 atlas_uv_snow  = vec2((3.0 + v_uv.x) / 4.0, v_uv.y);
-        vec3 tex_grass = texture(u_terrain_textures, vec3(atlas_uv_grass, 0.0)).rgb;
-        vec3 tex_rock  = texture(u_terrain_textures, vec3(atlas_uv_rock,  0.0)).rgb;
-        vec3 tex_sand  = texture(u_terrain_textures, vec3(atlas_uv_sand,  0.0)).rgb;
-        vec3 tex_snow  = texture(u_terrain_textures, vec3(atlas_uv_snow,  0.0)).rgb;
-        float w = dot(v_splat, vec4(1.0)); // total weight for normalization
-        if (w < 0.001) w = 1.0; // avoid division by zero
-        base_color = (tex_grass * v_splat.r + tex_rock * v_splat.g
-                    + tex_sand * v_splat.b + tex_snow * v_splat.a) / w;
-    } else {
-        base_color = v_color;
-    }
-
-    // Slope-based shading: steeper = darker
-    float slope_shade = 1.0 - smoothstep(0.0, 0.4, v_slope) * 0.5;
-    // Elevation-based shade: higher = slightly brighter
-    float elev_shade = 1.0 + v_elevation * 0.1;
-    float shade = slope_shade * elev_shade;
-
-    // Day/night cycle: 0.0=midnight (darkest), 0.5=noon (brightest)
-    // Computed by shared day_light_glsl_v!() macro
+vec3 base_color;
+if (u_use_textures == 1) {
+vec2 atlas_uv_grass = vec2((0.0 + v_uv.x) / 4.0, v_uv.y);
+vec2 atlas_uv_rock = vec2((1.0 + v_uv.x) / 4.0, v_uv.y);
+vec2 atlas_uv_sand = vec2((2.0 + v_uv.x) / 4.0, v_uv.y);
+vec2 atlas_uv_snow = vec2((3.0 + v_uv.x) / 4.0, v_uv.y);
+vec3 tex_grass = texture(u_terrain_textures, vec3(atlas_uv_grass, 0.0)).rgb;
+vec3 tex_rock = texture(u_terrain_textures, vec3(atlas_uv_rock, 0.0)).rgb;
+vec3 tex_sand = texture(u_terrain_textures, vec3(atlas_uv_sand, 0.0)).rgb;
+vec3 tex_snow = texture(u_terrain_textures, vec3(atlas_uv_snow, 0.0)).rgb;
+float w = dot(v_splat, vec4(1.0));
+if (w < 0.001) w = 1.0;
+base_color = (tex_grass * v_splat.r + tex_rock * v_splat.g
++ tex_sand * v_splat.b + tex_snow * v_splat.a) / w;
+} else {
+base_color = v_color;
+}
+float slope_shade = 1.0 - smoothstep(0.0, 0.4, v_slope) * 0.5;
+float elev_shade = 1.0 + v_elevation * 0.1;
+float shade = slope_shade * elev_shade;
 "#,
 day_light_glsl_v!(),
-r#"    float warmth = 0.5 + day_light * 0.5;
-
-    // Diffuse lighting from vertex normal
-    vec3 n = normalize(v_normal);
-    vec3 l = normalize(u_light_direction);
-    float diffuse = max(dot(n, l), 0.0);
-    float ambient_base = 0.15 + day_light * 0.35 + u_lightning * 0.3;
-    float light = ambient_base + diffuse * 0.7;
-
-    vec3 lit = base_color * shade * light;
-
-    // Water rendering path: Fresnel-based transparency + specular + depth color ramp
-    // Water=3, DeepWater=4
-    bool is_water = (v_terrain_id > 2.5 && v_terrain_id < 4.5);
-    bool is_deep_water = (v_terrain_id > 3.5);
-    // Exclude water tiles from reflection FBO: they don't reflect themselves
-    if (u_reflection_pass == 1 && is_water) discard;
-    if (is_water) {
-        // Normal perturbation from water normal map (animated scrolling)
-        vec3 n_w = normalize(v_normal);
-        vec3 l_w = normalize(u_light_direction);
-        vec3 view_dir = vec3(0.0, 1.0, 0.0); // simplified top-down-ish view
-
-        if (u_water_normal_ready > 0.5) {
-            vec2 nm_uv1 = v_uv * 4.0 + vec2(u_water_time * 0.15, u_water_time * 0.1);
-            vec2 nm_uv2 = v_uv * 4.0 - vec2(u_water_time * 0.12, u_water_time * 0.08) + vec2(0.33, 0.5);
-            vec3 nm1 = texture(u_water_normal, nm_uv1).rgb * 2.0 - 1.0;
-            vec3 nm2 = texture(u_water_normal, nm_uv2).rgb * 2.0 - 1.0;
-            vec3 nm = normalize(nm1 + nm2);
-            vec3 t = normalize(cross(n_w, vec3(1.0, 0.0, 0.0)));
-            vec3 b = normalize(cross(n_w, t));
-            n_w = normalize(n_w + nm.x * t * 0.6 + nm.y * b * 0.6);
-            view_dir = normalize(vec3(0.0, 1.0, 0.0) - nm.z * n_w * 0.3);
-        }
-
-        // Animated specular highlight (sun reflection on waves)
-        vec3 h = normalize(l_w + view_dir);
-        float spec = pow(max(dot(n_w, h), 0.0), 64.0);
-        float specular_strength = spec * (0.4 + day_light * 0.6);
-
-        // Fresnel: stronger reflection at grazing edges
-        float fresnel = pow(1.0 - max(dot(n_w, view_dir), 0.0), 3.0);
-        fresnel = mix(0.04, 1.0, fresnel);
-
-        // Depth-based color ramp
-        vec3 shallow_color = vec3(0.1, 0.45, 0.55);  // turquoise shallow
-        vec3 deep_color    = vec3(0.02, 0.12, 0.35);  // dark navy deep
-        float depth_t = is_deep_water ? 0.7 : 0.3;
-        // Add spatial variation
-        depth_t += 0.15 * sin(u_water_time * 1.5 + v_uv.x * 6.28 + v_uv.y * 6.28);
-        depth_t = clamp(depth_t, 0.0, 1.0);
-        vec3 water_color = mix(shallow_color, deep_color, depth_t);
-
-        // Sample screen-space reflection texture (mirrored upside-down for water mirror)
-        vec2 screen_uv = gl_FragCoord.xy / u_resolution;
-        screen_uv.y = 1.0 - screen_uv.y;
-        // Clamp sampling to below horizon: don't show reflection above water line
-        screen_uv.y = min(screen_uv.y, u_reflection_horizon_y);
-        vec3 reflection = texture(u_reflection_tex, screen_uv).rgb;
-
-        // Blend water color with terrain base using fresnel
-        vec3 water_surface = water_color * light;
-        // Add specular sparkle
-        water_surface += vec3(1.0, 0.95, 0.8) * specular_strength * 0.6;
-        // Fresnel blend: at grazing angles (high fresnel) show reflection; head-on show water color
-        vec3 reflected = mix(water_surface, reflection, fresnel);
-        lit = mix(reflected, lit * vec3(0.3, 0.5, 0.6), 0.25);
-        // Slight transparency simulation via color desaturation at edges
-        float alpha_sim = mix(0.85, 1.0, fresnel);
-        lit *= alpha_sim;
-    }
-
-    // Resource glow: tiles with resources get a subtle pulsing overlay
-    if (v_has_resource > 0.5) {
-        float pulse = 0.8 + 0.2 * sin((v_day_phase - 0.25) * 6.2831853 * 2.0);
-        vec3 glow = vec3(0.9, 0.85, 0.3) * 0.15 * pulse;
-        lit = lit + glow;
-    }
-
-    // Edge-of-map fog: darken tiles near map border (pre-computed on CPU)
-    float edge_dist = v_edge_dist;
-    float edge_zone = 8.0;  // tiles from edge where fog starts
-    float edge_factor = smoothstep(0.0, edge_zone, edge_dist);
-    lit = mix(u_fog_color, lit, edge_factor);
-
-    // Fog of war: darken tiles based on visibility
-    // v_visibility is 0.0 (unexplored/hidden) to 1.0 (fully visible)
-    // Smooth transition: below 0.2 visibility → fully fogged, above 0.5 → fully visible
-    float vis = smoothstep(0.15, 0.6, v_visibility);
-    lit = mix(u_fog_color, lit, vis);
-
-    // Add warmth tint
-    lit = mix(lit * 0.7, lit, warmth);
-
-    // Ambient occlusion at cliff bases: darken lower tiles at elevation transitions
-    // v_ao is 1.0 on flat ground, down to 0.55 at base of steep cliffs (computed CPU-side)
-    // Only apply to non-water tiles (water has its own depth-based shading)
-    if (!is_water) {
-        lit *= v_ao;
-    }
-
-    out_color = vec4(lit, 1.0);
+r#"float warmth = 0.5 + day_light * 0.5;
+vec3 n = normalize(v_normal);
+vec3 l = normalize(u_light_direction);
+float diffuse = max(dot(n, l), 0.0);
+float ambient_base = 0.15 + day_light * 0.35 + u_lightning * 0.3;
+float light = ambient_base + diffuse * 0.7;
+vec3 lit = base_color * shade * light;
+bool is_water = (v_terrain_id > 2.5 && v_terrain_id < 4.5);
+bool is_deep_water = (v_terrain_id > 3.5);
+if (u_reflection_pass == 1 && is_water) discard;
+if (is_water) {
+vec3 n_w = normalize(v_normal);
+vec3 l_w = normalize(u_light_direction);
+vec3 view_dir = vec3(0.0, 1.0, 0.0);
+if (u_water_normal_ready > 0.5) {
+vec2 nm_uv1 = v_uv * 4.0 + vec2(u_water_time * 0.15, u_water_time * 0.1);
+vec2 nm_uv2 = v_uv * 4.0 - vec2(u_water_time * 0.12, u_water_time * 0.08) + vec2(0.33, 0.5);
+vec3 nm1 = texture(u_water_normal, nm_uv1).rgb * 2.0 - 1.0;
+vec3 nm2 = texture(u_water_normal, nm_uv2).rgb * 2.0 - 1.0;
+vec3 nm = normalize(nm1 + nm2);
+vec3 t = normalize(cross(n_w, vec3(1.0, 0.0, 0.0)));
+vec3 b = normalize(cross(n_w, t));
+n_w = normalize(n_w + nm.x * t * 0.6 + nm.y * b * 0.6);
+view_dir = normalize(vec3(0.0, 1.0, 0.0) - nm.z * n_w * 0.3);
+}
+vec3 h = normalize(l_w + view_dir);
+float spec = pow(max(dot(n_w, h), 0.0), 64.0);
+float specular_strength = spec * (0.4 + day_light * 0.6);
+float fresnel = pow(1.0 - max(dot(n_w, view_dir), 0.0), 3.0);
+fresnel = mix(0.04, 1.0, fresnel);
+vec3 shallow_color = vec3(0.1, 0.45, 0.55);
+vec3 deep_color = vec3(0.02, 0.12, 0.35);
+float depth_t = is_deep_water ? 0.7 : 0.3;
+depth_t += 0.15 * sin(u_water_time * 1.5 + v_uv.x * 6.28 + v_uv.y * 6.28);
+depth_t = clamp(depth_t, 0.0, 1.0);
+vec3 water_color = mix(shallow_color, deep_color, depth_t);
+vec2 screen_uv = gl_FragCoord.xy / u_resolution;
+screen_uv.y = 1.0 - screen_uv.y;
+screen_uv.y = min(screen_uv.y, u_reflection_horizon_y);
+vec3 reflection = texture(u_reflection_tex, screen_uv).rgb;
+vec3 water_surface = water_color * light;
+water_surface += vec3(1.0, 0.95, 0.8) * specular_strength * 0.6;
+vec3 reflected = mix(water_surface, reflection, fresnel);
+lit = mix(reflected, lit * vec3(0.3, 0.5, 0.6), 0.25);
+float alpha_sim = mix(0.85, 1.0, fresnel);
+lit *= alpha_sim;
+}
+if (v_has_resource > 0.5) {
+float pulse = 0.8 + 0.2 * sin((v_day_phase - 0.25) * 6.2831853 * 2.0);
+vec3 glow = vec3(0.9, 0.85, 0.3) * 0.15 * pulse;
+lit = lit + glow;
+}
+float edge_dist = v_edge_dist;
+float edge_zone = 8.0;
+float edge_factor = smoothstep(0.0, edge_zone, edge_dist);
+lit = mix(u_fog_color, lit, edge_factor);
+float vis = smoothstep(0.15, 0.6, v_visibility);
+lit = mix(u_fog_color, lit, vis);
+lit = mix(lit * 0.7, lit, warmth);
+if (!is_water) {
+lit *= v_ao;
+}
+out_color = vec4(lit, 1.0);
 }
 "#,
 );
@@ -319,64 +246,45 @@ r#"    float warmth = 0.5 + day_light * 0.5;
 
 const OVERLAY_VERTEX_SHADER: &str = r#"#version 300 es
 precision highp float;
-
 in vec2 a_overlay_pos;
 in vec3 a_overlay_color;
 in float a_overlay_size;
-
 uniform vec2 u_resolution;
 uniform vec2 u_camera_center;
 uniform float u_zoom;
-
 out vec3 v_overlay_color;
-
 void main() {
-    float x = a_overlay_pos.x;
-    float y = a_overlay_pos.y;
-
-    // Isometric projection (same as terrain)
-    float iso_x = (x - y) * 0.866;
-    float iso_y = (x + y) * 0.5;
-
-    // Camera transform
-    iso_x -= u_camera_center.x;
-    iso_y -= u_camera_center.y;
-    iso_x *= u_zoom;
-    iso_y *= u_zoom;
-
-    // Convert to clip space
-    vec2 clip = (vec2(iso_x, iso_y) / u_resolution) * 2.0;
-    clip.y = -clip.y;
-
-    gl_Position = vec4(clip, 0.0, 1.0);
-    gl_PointSize = a_overlay_size * u_zoom;
-    v_overlay_color = a_overlay_color;
+float x = a_overlay_pos.x;
+float y = a_overlay_pos.y;
+float iso_x = (x - y) * 0.866;
+float iso_y = (x + y) * 0.5;
+iso_x -= u_camera_center.x;
+iso_y -= u_camera_center.y;
+iso_x *= u_zoom;
+iso_y *= u_zoom;
+vec2 clip = (vec2(iso_x, iso_y) / u_resolution) * 2.0;
+clip.y = -clip.y;
+gl_Position = vec4(clip, 0.0, 1.0);
+gl_PointSize = a_overlay_size * u_zoom;
+v_overlay_color = a_overlay_color;
 }
 "#;
 
 const OVERLAY_FRAGMENT_SHADER: &str = r#"#version 300 es
 precision highp float;
-
 in vec3 v_overlay_color;
-uniform vec3 u_player_rgb; // (0,0,0) = no nation tint; otherwise nation color
-
+uniform vec3 u_player_rgb;
 out vec4 out_color;
-
 void main() {
-    // Draw a soft circle for each point
-    vec2 coord = gl_PointCoord - vec2(0.5);
-    float dist = length(coord);
-    if (dist > 0.5) discard;
-
-    // Soft edge
-    float alpha = 1.0 - smoothstep(0.3, 0.5, dist);
-
-    // Tint with player nation color (40% blend) when a nation is selected
-    vec3 final_color = v_overlay_color;
-    if (u_player_rgb != vec3(0.0)) {
-        final_color = mix(v_overlay_color, u_player_rgb, 0.4);
-    }
-    out_color = vec4(final_color, alpha);
+vec2 coord = gl_PointCoord - vec2(0.5);
+float dist = length(coord);
+if (dist > 0.5) discard;
+float alpha = 1.0 - smoothstep(0.3, 0.5, dist);
+vec3 final_color = v_overlay_color;
+if (u_player_rgb != vec3(0.0)) {
+final_color = mix(v_overlay_color, u_player_rgb, 0.4);
+}
+out_color = vec4(final_color, alpha);
 }
 "#;
 
@@ -385,138 +293,99 @@ void main() {
 
 const MODEL_VERTEX_SHADER: &str = r#"#version 300 es
 precision highp float;
-
 in vec3 a_position;
 in vec3 a_normal;
 in vec2 a_uv;
-// Instanced model matrix (4 vec4 attributes at locations 3-6)
 in mat4 a_model;
-// Per-instance world offset (location 7)
 in vec3 a_offset;
-// Per-instance animation phase (location 8) — 0.0 = no wobble (buildings), non-zero = unit idle wobble
 in float a_anim_phase;
-
 uniform mat4 u_vp;
 uniform mat4 u_model;
 uniform vec3 u_view_pos;
 uniform vec3 u_light_dir;
 uniform float u_use_instanced;
 uniform float u_time;
-
 out vec3 v_normal;
 out vec3 v_world_pos;
 out vec2 v_uv;
 out vec3 v_light_dir;
 out vec3 v_view_dir;
-
 void main() {
-    mat4 model = (u_use_instanced > 0.5) ? a_model : u_model;
-    vec3 pos = a_position + a_offset;
-
-    // Unit idle wobble: subtle sine-wave displacement when a_anim_phase != 0.0
-    // Y bob: gentle vertical sway, X/Z: slight horizontal drift
-    if (a_anim_phase > 0.0 || a_anim_phase < 0.0) {
-        float t = u_time * 2.0 + a_anim_phase;
-        pos.y += sin(t) * 0.04;
-        pos.x += sin(t * 1.3 + 1.0) * 0.015;
-        pos.z += cos(t * 0.7 + 2.0) * 0.015;
-    }
-
-    vec4 world_pos = model * vec4(pos, 1.0);
-    v_world_pos = world_pos.xyz;
-    v_normal = normalize(mat3(model) * a_normal);
-    v_uv = a_uv;
-    v_light_dir = normalize(u_light_dir);
-    v_view_dir = normalize(u_view_pos - world_pos.xyz);
-    gl_Position = u_vp * world_pos;
+mat4 model = (u_use_instanced > 0.5) ? a_model : u_model;
+vec3 pos = a_position + a_offset;
+if (a_anim_phase > 0.0 || a_anim_phase < 0.0) {
+float t = u_time * 2.0 + a_anim_phase;
+pos.y += sin(t) * 0.04;
+pos.x += sin(t * 1.3 + 1.0) * 0.015;
+pos.z += cos(t * 0.7 + 2.0) * 0.015;
+}
+vec4 world_pos = model * vec4(pos, 1.0);
+v_world_pos = world_pos.xyz;
+v_normal = normalize(mat3(model) * a_normal);
+v_uv = a_uv;
+v_light_dir = normalize(u_light_dir);
+v_view_dir = normalize(u_view_pos - world_pos.xyz);
+gl_Position = u_vp * world_pos;
 }
 "#;
 
 const MODEL_FRAGMENT_SHADER: &str = concat!(
 r#"#version 300 es
 precision highp float;
-
 in vec3 v_normal;
 in vec3 v_world_pos;
 in vec2 v_uv;
 in vec3 v_light_dir;
 in vec3 v_view_dir;
-
 uniform vec4 u_model_color;
 uniform float u_roughness;
 uniform float u_metallic;
 uniform highp sampler2DArray u_terrain_textures;
 uniform int u_use_textures;
-// Phase 7: day-phase aware ambient lighting for model instances
 uniform float u_day_phase;
-
 out vec4 out_color;
-
 void main() {
-    vec3 N = normalize(v_normal);
-    vec3 L = normalize(v_light_dir);
-    vec3 V = normalize(v_view_dir);
-    vec3 H = normalize(L + V);
-
-    // ── Procedural detail normals (Phase 7) ──────────────────────────
-    // Adds micro-surface detail to building walls via hash-based noise gradient.
-    // Uses world-space position + UVs for stable, camera-independent detail.
-    if (u_use_textures == 1) {
-        float detail_scale = 12.0;
-        float detail_strength = 0.18;
-
-        // Hash function for pseudo-random noise
-        vec3 p = v_world_pos * detail_scale + vec3(v_uv.x, v_uv.y, 0.0) * 3.0;
-        float eps = 0.008;
-        float h0 = fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
-        float hx = fract(sin(dot(p + vec3(eps, 0.0, 0.0), vec3(127.1, 311.7, 74.7))) * 43758.5453);
-        float hy = fract(sin(dot(p + vec3(0.0, eps, 0.0), vec3(127.1, 311.7, 74.7))) * 43758.5453);
-        float nx = (hx - h0) / eps;
-        float ny = (hy - h0) / eps;
-
-        // Compute tangent and bitangent from the normal
-        vec3 up = vec3(0.0, 1.0, 0.0);
-        if (abs(dot(N, up)) > 0.999) { up = vec3(1.0, 0.0, 0.0); }
-        vec3 T = normalize(cross(up, N));
-        vec3 B = normalize(cross(N, T));
-
-        // Perturb normal in tangent space
-        N = normalize(N + detail_strength * (nx * T + ny * B));
-    }
-
-    // Sample terrain atlas for base texture detail
-    vec3 base_albedo;
-    if (u_use_textures == 1) {
-        vec3 tex_sample = texture(u_terrain_textures, vec3(v_uv, 0.0)).rgb;
-        base_albedo = tex_sample * u_model_color.rgb;
-    } else {
-        base_albedo = u_model_color.rgb;
-    }
-
-    // Diffuse (Lambert)
-    float NdotL = max(dot(N, L), 0.0);
-    vec3 diffuse = base_albedo * NdotL;
-
-    // ── Phase 7: Day-phase-aware hemisphere ambient lighting ─────────
-    // Matches terrain shader: 0.0=midnight (darkest), 0.5=noon (brightest)
-    // Day-phase illumination computed by shared day_light_glsl_u!() macro
+vec3 N = normalize(v_normal);
+vec3 L = normalize(v_light_dir);
+vec3 V = normalize(v_view_dir);
+vec3 H = normalize(L + V);
+if (u_use_textures == 1) {
+float detail_scale = 12.0;
+float detail_strength = 0.18;
+vec3 p = v_world_pos * detail_scale + vec3(v_uv.x, v_uv.y, 0.0) * 3.0;
+float eps = 0.008;
+float h0 = fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+float hx = fract(sin(dot(p + vec3(eps, 0.0, 0.0), vec3(127.1, 311.7, 74.7))) * 43758.5453);
+float hy = fract(sin(dot(p + vec3(0.0, eps, 0.0), vec3(127.1, 311.7, 74.7))) * 43758.5453);
+float nx = (hx - h0) / eps;
+float ny = (hy - h0) / eps;
+vec3 up = vec3(0.0, 1.0, 0.0);
+if (abs(dot(N, up)) > 0.999) { up = vec3(1.0, 0.0, 0.0); }
+vec3 T = normalize(cross(up, N));
+vec3 B = normalize(cross(N, T));
+N = normalize(N + detail_strength * (nx * T + ny * B));
+}
+vec3 base_albedo;
+if (u_use_textures == 1) {
+vec3 tex_sample = texture(u_terrain_textures, vec3(v_uv, 0.0)).rgb;
+base_albedo = tex_sample * u_model_color.rgb;
+} else {
+base_albedo = u_model_color.rgb;
+}
+float NdotL = max(dot(N, L), 0.0);
+vec3 diffuse = base_albedo * NdotL;
 "#,
 day_light_glsl_u!(),
-r#"    // Hemisphere ambient: sky-colored from above, ground-colored from below
-    // day_light=0 → ambient_scale 0.10 (night), day_light=1 → 0.50 (noon)
-    float ambient_scale = 0.10 + day_light * 0.40;
-    float hemi_factor = 0.5 + 0.5 * N.y;
-    vec3 sky_ambient = vec3(0.6, 0.7, 0.9) * ambient_scale;
-    vec3 ground_ambient = vec3(0.3, 0.25, 0.2) * ambient_scale;
-    vec3 ambient = base_albedo * mix(ground_ambient, sky_ambient, hemi_factor);
-
-    // Specular (Blinn-Phong with roughness)
-    float NdotH = max(dot(N, H), 0.0);
-    float spec = pow(NdotH, 2.0 / (u_roughness * u_roughness + 0.001));
-    vec3 specular = mix(vec3(0.04), base_albedo, u_metallic) * spec * 0.5;
-
-    vec3 final_color = ambient + diffuse + specular;
-    out_color = vec4(final_color, u_model_color.a);
+r#"float ambient_scale = 0.10 + day_light * 0.40;
+float hemi_factor = 0.5 + 0.5 * N.y;
+vec3 sky_ambient = vec3(0.6, 0.7, 0.9) * ambient_scale;
+vec3 ground_ambient = vec3(0.3, 0.25, 0.2) * ambient_scale;
+vec3 ambient = base_albedo * mix(ground_ambient, sky_ambient, hemi_factor);
+float NdotH = max(dot(N, H), 0.0);
+float spec = pow(NdotH, 2.0 / (u_roughness * u_roughness + 0.001));
+vec3 specular = mix(vec3(0.04), base_albedo, u_metallic) * spec * 0.5;
+vec3 final_color = ambient + diffuse + specular;
+out_color = vec4(final_color, u_model_color.a);
 }
 "#,
 );
@@ -527,67 +396,46 @@ r#"    // Hemisphere ambient: sky-colored from above, ground-colored from below
 // ── Shadow Shaders (Phase 7: Soft ground-plane shadows) ───────────────────────
 const SHADOW_VERTEX_SHADER: &str = r#"#version 300 es
 precision highp float;
-
 in vec2 a_shadow_vert;
-
 uniform mat4 u_vp;
 uniform vec3 u_instance_pos;
 uniform vec3 u_light_dir;
 uniform float u_shadow_size;
 uniform float u_shadow_penumbra;
-
 out float v_dist;
 out float v_penumbra;
-
 void main() {
-    // Ground-plane shadow: project to Y ≈ 0, offset slightly in light direction
-    vec3 center = vec3(u_instance_pos.x, 0.02, u_instance_pos.z);
-    center.xz -= u_light_dir.xz * u_instance_pos.y * 0.35;
-
-    vec3 corner = center;
-    corner.x += a_shadow_vert.x * u_shadow_size;
-    corner.z += a_shadow_vert.y * u_shadow_size;
-
-    v_dist = length(a_shadow_vert);       // 0.0 at center, ~1.414 at quad corner
-    v_penumbra = u_shadow_penumbra;
-
-    gl_Position = u_vp * vec4(corner, 1.0);
+vec3 center = vec3(u_instance_pos.x, 0.02, u_instance_pos.z);
+center.xz -= u_light_dir.xz * u_instance_pos.y * 0.35;
+vec3 corner = center;
+corner.x += a_shadow_vert.x * u_shadow_size;
+corner.z += a_shadow_vert.y * u_shadow_size;
+v_dist = length(a_shadow_vert);
+v_penumbra = u_shadow_penumbra;
+gl_Position = u_vp * vec4(corner, 1.0);
 }
 "#;
 
 const SHADOW_FRAGMENT_SHADER: &str = r#"#version 300 es
 precision highp float;
-
 in float v_dist;
 in float v_penumbra;
-
 out vec4 out_color;
-
-// Pseudo-random hash for dither noise
 float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
-
 void main() {
-    float d = v_dist;  // distance from shadow center (0.0–~1.414)
-    float p = v_penumbra;
-
-    // Multi-layer penumbra: inner umbra (dark core) + mid tones + soft outer edge
-    // Each layer uses smoothstep to create concentric soft rings
-    float core = smoothstep(0.40, 0.15, d);       // inner umbra: fully opaque
-    float mid  = smoothstep(0.70, 0.30, d);       // mid penumbra
-    float outer = smoothstep(1.00, 0.55, d);      // outer soft falloff
-
-    // Blend layers: core is always present, mid+outer scaled by penumbra strength
-    float alpha = core * 0.35;
-    alpha = mix(alpha, mid * 0.20, p * 0.8);
-    alpha = mix(alpha, outer * 0.06, p * 0.5);
-
-    // Spatial dither: subtle noise to break up the perfect radial gradient
-    float dither = (hash(gl_FragCoord.xy) - 0.5) * 0.04 * p;
-    alpha = clamp(alpha + dither, 0.0, 0.42);
-
-    out_color = vec4(0.0, 0.0, 0.0, alpha);
+float d = v_dist;
+float p = v_penumbra;
+float core = smoothstep(0.40, 0.15, d);
+float mid = smoothstep(0.70, 0.30, d);
+float outer = smoothstep(1.00, 0.55, d);
+float alpha = core * 0.35;
+alpha = mix(alpha, mid * 0.20, p * 0.8);
+alpha = mix(alpha, outer * 0.06, p * 0.5);
+float dither = (hash(gl_FragCoord.xy) - 0.5) * 0.04 * p;
+alpha = clamp(alpha + dither, 0.0, 0.42);
+out_color = vec4(0.0, 0.0, 0.0, alpha);
 }
 "#;
 
@@ -595,61 +443,45 @@ void main() {
 
 const CLOUD_VERTEX_SHADER: &str = r#"#version 300 es
 precision highp float;
-
-in vec3 a_cloud_pos;    // world-space position (x, y_high, z) — instance-rate
-in vec2 a_cloud_size;   // width, height of quad — instance-rate
-in float a_cloud_alpha; // per-cloud opacity — instance-rate
-in vec2 a_corner;       // unit-quad corner (-1..1) — per-vertex
-
+in vec3 a_cloud_pos;
+in vec2 a_cloud_size;
+in float a_cloud_alpha;
+in vec2 a_corner;
 uniform mat4 u_vp;
-uniform vec2 u_cam_parallax; // camera-based parallax offset (xz only)
+uniform vec2 u_cam_parallax;
 uniform float u_day_phase;
-
 out float v_alpha;
 out float v_day_phase;
-out vec2 v_quad_coord; // -1..1 within quad
-
+out vec2 v_quad_coord;
 void main() {
-    // Parallax: clouds shift opposite to camera movement (distant = less shift)
-    vec3 pos = a_cloud_pos;
-    pos.xz += u_cam_parallax * 0.15; // subtle parallax drift
-
-    // Expand quad from center point using per-vertex corner attribute
-    vec2 corner = a_corner;
-
-    pos.xy += corner * a_cloud_size * 0.5;
-    v_quad_coord = corner;
-    v_alpha = a_cloud_alpha;
-    v_day_phase = u_day_phase;
-    gl_Position = u_vp * vec4(pos, 1.0);
+vec3 pos = a_cloud_pos;
+pos.xz += u_cam_parallax * 0.15;
+vec2 corner = a_corner;
+pos.xy += corner * a_cloud_size * 0.5;
+v_quad_coord = corner;
+v_alpha = a_cloud_alpha;
+v_day_phase = u_day_phase;
+gl_Position = u_vp * vec4(pos, 1.0);
 }
 "#;
 
 const CLOUD_FRAGMENT_SHADER: &str = concat!(
 r#"#version 300 es
 precision highp float;
-
 in float v_alpha;
 in float v_day_phase;
 in vec2 v_quad_coord;
-
 out vec4 out_color;
-
 void main() {
-    // Soft circular cloud shape
-    float d = length(v_quad_coord);
-    float shape = smoothstep(1.0, 0.2, d);
-
-    // Day-phase-aware cloud brightness: white at noon, grey-blue at night
-    // Day-phase illumination computed by shared day_light_glsl_v!() macro
+float d = length(v_quad_coord);
+float shape = smoothstep(1.0, 0.2, d);
 "#,
 day_light_glsl_v!(),
-r#"    vec3 day_color = vec3(0.95, 0.95, 0.97);   // bright white
-    vec3 night_color = vec3(0.18, 0.20, 0.28); // dark blue-grey
-    vec3 cloud_color = mix(night_color, day_color, day_light);
-
-    float alpha = shape * v_alpha * 0.45; // semi-transparent
-    out_color = vec4(cloud_color, alpha);
+r#"vec3 day_color = vec3(0.95, 0.95, 0.97);
+vec3 night_color = vec3(0.18, 0.20, 0.28);
+vec3 cloud_color = mix(night_color, day_color, day_light);
+float alpha = shape * v_alpha * 0.45;
+out_color = vec4(cloud_color, alpha);
 }
 "#,
 );
@@ -659,82 +491,54 @@ r#"    vec3 day_color = vec3(0.95, 0.95, 0.97);   // bright white
 
 const SUN_MOON_VERTEX_SHADER: &str = r#"#version 300 es
 precision highp float;
-
-// Full-screen quad: 6 vertices, no buffers needed
-// Vertex ID maps to quad corners:
-// 0: (-1,-1)  1: (1,-1)  2: (1, 1)
-// 3: (-1,-1)  4: (1, 1)  5: (-1, 1)
-
-uniform vec2 u_sun_screen_pos; // sun position in clip space (-1..1)
-uniform float u_sun_radius;    // sun disc radius in clip space
-
-out vec2 v_quad_coord; // -1..1 within disc
-
+uniform vec2 u_sun_screen_pos;
+uniform float u_sun_radius;
+out vec2 v_quad_coord;
 void main() {
-    int vid = gl_VertexID % 6;
-    vec2 corner;
-    if (vid == 0) corner = vec2(-1.0, -1.0);
-    else if (vid == 1) corner = vec2( 1.0, -1.0);
-    else if (vid == 2) corner = vec2( 1.0,  1.0);
-    else if (vid == 3) corner = vec2(-1.0, -1.0);
-    else if (vid == 4) corner = vec2( 1.0,  1.0);
-    else corner = vec2(-1.0,  1.0);
-
-    v_quad_coord = corner;
-    gl_Position = vec4(u_sun_screen_pos + corner * u_sun_radius, 0.999, 1.0);
+int vid = gl_VertexID % 6;
+vec2 corner;
+if (vid == 0) corner = vec2(-1.0, -1.0);
+else if (vid == 1) corner = vec2( 1.0, -1.0);
+else if (vid == 2) corner = vec2( 1.0, 1.0);
+else if (vid == 3) corner = vec2(-1.0, -1.0);
+else if (vid == 4) corner = vec2( 1.0, 1.0);
+else corner = vec2(-1.0, 1.0);
+v_quad_coord = corner;
+gl_Position = vec4(u_sun_screen_pos + corner * u_sun_radius, 0.999, 1.0);
 }
 "#;
 
 const SUN_MOON_FRAGMENT_SHADER: &str = concat!(
 r#"#version 300 es
 precision highp float;
-
 in vec2 v_quad_coord;
-
 uniform float u_day_phase;
-uniform int u_is_moon;       // 0 = sun, 1 = moon
-
+uniform int u_is_moon;
 out vec4 out_color;
-
 void main() {
-    float d = length(v_quad_coord);
-
-    // Soft disc edge
-    float disc = smoothstep(1.0, 0.85, d);
-
-    // Day light factor: 1.0 at noon, 0.0 at midnight
-    // Day-phase illumination computed by shared day_light_glsl_u!() macro
+float d = length(v_quad_coord);
+float disc = smoothstep(1.0, 0.85, d);
 "#,
 day_light_glsl_u!(),
-r#"
-    vec3 color;
-    float alpha;
-
-    if (u_is_moon == 0) {
-        // Sun: warm yellow-white, visible during day
-        vec3 sun_bright = vec3(1.0, 0.95, 0.85);
-        vec3 sun_warm  = vec3(1.0, 0.75, 0.4);
-        // Warmer near horizon (lower sun = more atmosphere)
-        float horizon_factor = 1.0 - day_light;
-        color = mix(sun_bright, sun_warm, horizon_factor * 0.5);
-        // Sun visible when above horizon
-        alpha = disc * smoothstep(-0.1, 0.2, day_light);
-        // Glow effect: larger soft halo
-        float glow = exp(-d * d * 2.0) * 0.3 * max(day_light, 0.1);
-        color += vec3(1.0, 0.9, 0.6) * glow;
-    } else {
-        // Moon: cool blue-white, visible at night
-        vec3 moon_color = vec3(0.85, 0.88, 0.95);
-        color = moon_color;
-        // Moon visible when sun is below horizon
-        alpha = disc * smoothstep(0.2, -0.05, day_light);
-        // Subtle glow
-        float glow = exp(-d * d * 3.0) * 0.15 * (1.0 - day_light);
-        color += vec3(0.7, 0.8, 1.0) * glow;
-    }
-
-    alpha = clamp(alpha, 0.0, 1.0);
-    out_color = vec4(color, alpha);
+r#"vec3 color;
+float alpha;
+if (u_is_moon == 0) {
+vec3 sun_bright = vec3(1.0, 0.95, 0.85);
+vec3 sun_warm = vec3(1.0, 0.75, 0.4);
+float horizon_factor = 1.0 - day_light;
+color = mix(sun_bright, sun_warm, horizon_factor * 0.5);
+alpha = disc * smoothstep(-0.1, 0.2, day_light);
+float glow = exp(-d * d * 2.0) * 0.3 * max(day_light, 0.1);
+color += vec3(1.0, 0.9, 0.6) * glow;
+} else {
+vec3 moon_color = vec3(0.85, 0.88, 0.95);
+color = moon_color;
+alpha = disc * smoothstep(0.2, -0.05, day_light);
+float glow = exp(-d * d * 3.0) * 0.15 * (1.0 - day_light);
+color += vec3(0.7, 0.8, 1.0) * glow;
+}
+alpha = clamp(alpha, 0.0, 1.0);
+out_color = vec4(color, alpha);
 }
 "#,
 );
@@ -6360,8 +6164,8 @@ mod tests {
             "fragment shader missing is_water boolean"
         );
         assert!(
-            FRAGMENT_SHADER.contains("Water=3, DeepWater=4"),
-            "fragment shader missing water terrain ID comment"
+            FRAGMENT_SHADER.contains("is_deep_water") && FRAGMENT_SHADER.contains("is_water"),
+            "fragment shader missing water terrain ID variables"
         );
     }
 
@@ -6462,7 +6266,7 @@ mod tests {
     #[test]
     fn test_model_fragment_shader_has_detail_normals() {
         assert!(MODEL_FRAGMENT_SHADER.contains("detail_strength"), "model fragment shader missing detail_strength for normal perturbation");
-        assert!(MODEL_FRAGMENT_SHADER.contains("detail normals"), "model fragment shader missing detail normals comment");
+        assert!(MODEL_FRAGMENT_SHADER.contains("normalize(N + detail_strength"), "model fragment shader missing normal perturbation code");
         assert!(MODEL_FRAGMENT_SHADER.contains("fract(sin(dot("), "model fragment shader missing hash function for detail normals");
     }
 
@@ -7298,6 +7102,35 @@ mod tests {
         let camera = Camera::new(0.0, 0.0, 0, 0);
         let mesh = build_map_mesh(&map, &camera);
         let _ = mesh.positions.len();
+    }
+    #[test]
+    fn test_shaders_have_no_comment_only_lines() {
+        // Regression: GLSL minification strips comment-only lines from shader source.
+        // This saves ~8KB in WASM binary. Verify no comment-only lines remain.
+        for (name, src) in [
+            ("VERTEX_SHADER", VERTEX_SHADER),
+            ("FRAGMENT_SHADER", FRAGMENT_SHADER),
+            ("OVERLAY_VERTEX_SHADER", OVERLAY_VERTEX_SHADER),
+            ("OVERLAY_FRAGMENT_SHADER", OVERLAY_FRAGMENT_SHADER),
+            ("MODEL_VERTEX_SHADER", MODEL_VERTEX_SHADER),
+            ("MODEL_FRAGMENT_SHADER", MODEL_FRAGMENT_SHADER),
+            ("SHADOW_VERTEX_SHADER", SHADOW_VERTEX_SHADER),
+            ("SHADOW_FRAGMENT_SHADER", SHADOW_FRAGMENT_SHADER),
+            ("CLOUD_VERTEX_SHADER", CLOUD_VERTEX_SHADER),
+            ("CLOUD_FRAGMENT_SHADER", CLOUD_FRAGMENT_SHADER),
+            ("SUN_MOON_VERTEX_SHADER", SUN_MOON_VERTEX_SHADER),
+            ("SUN_MOON_FRAGMENT_SHADER", SUN_MOON_FRAGMENT_SHADER),
+        ] {
+            for (i, line) in src.lines().enumerate() {
+                let trimmed = line.trim();
+                if trimmed.starts_with("//") && !trimmed.starts_with("//#") {
+                    panic!(
+                        "{} has comment-only line at line {}: {:?} — should be stripped by GLSL minifier",
+                        name, i + 1, line
+                    );
+                }
+            }
+        }
     }
 }
 #[cfg(test)]
