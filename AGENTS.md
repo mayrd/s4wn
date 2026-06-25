@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — Fix #75: reflection texture unbind prevents FBO feedback loop (GL_INVALID_OPERATION resolved). 699 tests passing | WASM 318KB — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, water reflection FBO + Fresnel blend + depth attachment, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro, terrain LOD (3 levels), wee_alloc global allocator, codegen-units=1, fine-tuned horizon_y computation, GLSL minified (comments/whitespace stripped), ember/spark particle effect for Smelter buildings — 699 tests passing | WASM 318KB (was 377KB, -59KB)
+**Status:** S218 · 697 tests · WASM 319KB — Removed 3 dead WASM exports (compute_mvp_json -4.6KB, clear_model_instances, model_instance_count). Saved 7KB (326KB→319KB). 81 exports remaining. Rendering Overhaul — Next: wasm <300KB (19KB gap), lazy-load model JSON, remaining dead export audit.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 218 | 2026-06-25 | Removed 3 dead WASM exports: compute_mvp_json (4.6KB code, 0 JS refs), clear_model_instances (0 JS refs), model_instance_count (0 JS refs). Removed 2 corresponding tests. WASM 326KB→319KB (-7KB). 697 tests pass. Clippy 0 errors/21 warnings. 81 exports remaining (was 84). -- 697 tests |
 | 217 | 2026-06-25 | Fix #75: Unbind reflection texture from TEXTURE2 before FBO pass to prevent feedback loop — FBO color attachment (reflection_tex) was still bound to TEXTURE2 sampler from previous frame, causing GL_INVALID_OPERATION (feedback loop + sampler type mismatch). Added gl.active_texture(TEXTURE2) + bind_texture(None) before FBO bind. 699 tests pass. Clippy 0 errors/23 warnings. WASM rebuilt. -- 699 tests |
 | 211 | 2026-06-25 | Fix #73: Replace GLSL uniform bool with int for mobile GPU compat — uniform bool causes blank tiles on ANGLE/Mali-G710 (Android/WebKit) due to driver issues evaluating bool conditionals. Changed u_use_vp, u_use_textures, u_reflection_pass from bool to int (0/1) in all 3 shader pairs (vertex/fragment/model). Updated condition checks to `== 1`. Added test_no_uniform_bool_in_shaders regression test. 683 tests pass. Clippy 0 errors. -- 683 tests |
 | 210 | 2026-06-25 | Autumn leaf particle effect: spawn_autumn_leaf_particle/burst with warm amber/orange/red-brown colors, gentle eastward wind drift, slow swaying descent (3-6s life). Wired into game loop — spawns near Forest tiles every 12 ticks (max 3/tick). 4 new tests. 682 tests pass. Clippy 0 errors/23 warnings. -- 682 tests |
@@ -236,6 +237,9 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 214. ~~Add ember/spark particle effect for Smelter buildings (iron/gold smelter)~~ ✅ (session 213)
 215. Verify Fix #73 on mobile: request new render snapshot from Daniel (Android/WebKit/Mali-G710) to confirm tiles now display
 216. Verify Fix #75: check browser console for GL_INVALID_OPERATION warnings (reflection FBO feedback loop + sampler mismatch) — should be silent now
-217. WASM size: 318KB → 300KB — remaining 18KB gap [MUST]
-218. Lazy-load building model JSON from assets/ to reduce .rodata [NICE]
+217. WASM size: 319KB → 300KB — remaining 19KB gap [MUST]
+218. Lazy-load building model JSON from assets/ to reduce .rodata [NICE — ~15KB potential]
+219. Audit remaining 81 exports for dead code — found 16 dead, 13 still in codebase [SHOULD]
+220. Remove remaining 13 dead exports (set_azimuth, set_distance, set_elevation, set_paused, clear_building_rally_point, get_building_rally_point, set_building_rally_point, clear_particles, particle_count, spawn_combat_effect, spawn_construction_effect, spawn_leaf_effect, spawn_smoke_effect) — verify internal usage first [SHOULD]
+221. Consider removing all_names() / name() string functions if JS-side can provide names [NICE — 19.5KB potential]
 *All building data must match BASE.md. Never modify BASE.md.*
