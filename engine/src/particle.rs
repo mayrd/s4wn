@@ -408,6 +408,23 @@ pub fn spawn_construction_effect(
     ps.spawn_burst(tile_x, tile_y, 0.3, 4, sr, sg, sb, 2.0, 0.4, 2.5);
 }
 
+/// Spawn a single firefly particle near forest/grass tiles at dusk/night.
+/// Fireflies drift slowly with a warm yellow-green glow, gentle bobbing motion,
+/// and short lifespan. Only active during low-light conditions (day_phase near 0.0 or 1.0).
+pub fn spawn_firefly_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
+    let seed = tile_x * 5.7 + tile_y * 13.3;
+    // Slow horizontal drift with gentle sinusoidal bobbing
+    let vx = (seed * 2.1).sin() * 0.04;
+    let vy = (seed * 3.7).cos() * 0.03;
+    let z = 0.3 + (seed * 1.1).sin().abs() * 0.5;  // low to ground (0.3-0.8)
+    let life = 2.5 + (seed * 4.3).sin().abs() * 3.0;  // 2.5-5.5s
+    // Warm yellow-green glow: high green, medium-high red, low blue
+    let r = 0.7 + (seed * 8.1).sin().abs() * 0.25;
+    let g = 0.85 + (seed * 6.3).cos().abs() * 0.12;
+    let b = 0.15 + (seed * 9.7).sin().abs() * 0.1;
+    let _ = ps.spawn(tile_x, tile_y, z, vx, vy, 0.01, life, r, g, b, 4.0);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -610,6 +627,26 @@ mod tests {
         let mut ps = ParticleSystem::new();
         spawn_leaf_effect(&mut ps, 3.0, 7.0);
         assert_eq!(ps.alive_count(), 1);
+    }
+
+    #[test]
+    fn test_firefly_effect() {
+        let mut ps = ParticleSystem::new();
+        spawn_firefly_effect(&mut ps, 4.0, 8.0);
+        assert_eq!(ps.alive_count(), 1);
+        // Verify warm yellow-green color (green dominant, low blue)
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        assert!(p.g > p.b, "firefly should be greener than blue");
+    }
+
+    #[test]
+    fn test_firefly_drift_direction() {
+        let mut ps = ParticleSystem::new();
+        spawn_firefly_effect(&mut ps, 2.5, 3.5);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Fireflies should have near-zero horizontal drift (slow)
+        assert!(p.vx.abs() < 0.1, "firefly vx should be slow: {}", p.vx);
+        assert!(p.vy.abs() < 0.1, "firefly vy should be slow: {}", p.vy);
     }
 
     #[test]

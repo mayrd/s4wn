@@ -1937,6 +1937,30 @@ impl App {
                     }
                 }
             }
+            // Firefly particles: spawn near Forest/Grass tiles at dusk/night
+            // Only spawn during low-light conditions (day_phase < 0.2 or > 0.8)
+            if tick.is_multiple_of(10) {
+                let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
+                if !(0.2..=0.8).contains(&day_phase) {
+                    let map = &self.game_loop.state.map;
+                    let cx = self.camera.center_x as usize;
+                    let cy = self.camera.center_y as usize;
+                    let range = 10usize;
+                    let mut firefly_count = 0u32;
+                    for dy in 0..range {
+                        for dx in 0..range {
+                            let tx = cx.saturating_sub(range/2) + dx;
+                            let ty = cy.saturating_sub(range/2) + dy;
+                            if let Some(tile) = map.get(tx, ty) {
+                                if (tile.terrain == crate::map::Terrain::Forest || tile.terrain == crate::map::Terrain::Grass) && firefly_count < 2 {
+                                    particle::spawn_firefly_effect(&mut self.particle_system, tx as f32, ty as f32);
+                                    firefly_count += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Smooth camera
