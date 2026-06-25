@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 208 | 2026-06-25 | Fog/mist particle system: spawn_fog_particle/spawn_fog_burst with pale grey-white color, gentle horizontal drift, slight upward rise. Wired into game loop — spawns near Water/Swamp tiles every 8 ticks (max 2/tick). 6 new tests. 676 tests pass. Clippy 0 errors. -- 676 tests |
 | 207 | 2026-06-25 | Clippy warning cleanup: fixed 12 warnings (empty_line_after_outer_attr, empty_line_after_doc_comments, matches! macro, needless_range_loop, hex digit grouping). 35→23 warnings. 670 tests pass. -- 670 tests |
 | 206 | 2026-06-25 | Dust storm particle system: spawn_dust_storm_particle/spawn_dust_storm_burst with sandy brown color, strong eastward wind drift, suspended fall. Wired into game loop — spawns near Desert tiles every 5 ticks (max 3/tick). 6 new tests. 670 tests pass. Clippy 0 errors. -- 670 tests |
 | 205 | 2026-06-25 | Snow particle system: spawn_snow_particle/spawn_snow_burst with slow-fall, wind drift, white color. Wired into game loop — spawns near Snow/Mountain tiles every 6 ticks (max 4/tick). 5 new tests. 664 tests pass. Clippy 0 errors. -- 664 tests |
@@ -213,10 +214,14 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ---
 
-### Next Session — Updated Steps (Session 204+)
+### Next Session — Updated Steps (Session 209+)
 ---
 43. WASM size: 331KB → 300KB — remaining 31KB gap. Session 204: hash-based from_name (FNV-1a) attempted, no savings — strings deduplicated with name()/all_names(). Top remaining targets: (a) 28.5KB shader source — minify GLSL in r#"..."# literals (est. 10-14KB savings) (b) 5.9KB game state JSON template — const encoding (c) ryu float formatting ~10KB (d) building model JSON lazy-loaded from assets/ (27.9KB). [MUST — 31KB remains]
 44. FPS/draw-call benchmarking: add 1080p/720p FPS display toggle, record baseline in RENDERING_AUDIT.md [SHOULD]
 45. Lazy-load building model JSON from assets/ to reduce .rodata [NICE — may be largest single win]
 32. Verify reflection optimization visually: ensure water tiles excluded from reflection FBO [visual confirmation pending]
+209. Add leaf particle effect for Forest tiles (seasonal/autumn aesthetic)
+210. Add firefly particle effect for Grass/Forest tiles at dusk (subtle glow, slow drift)
+211. GLSL minification: strip comments and extra whitespace from shader r#"..."# literals (est. 10-14KB savings)
+212. Investigate building model JSON const encoding to reduce .rodata 5.9KB
 *All building data must match BASE.md. Never modify BASE.md.*
