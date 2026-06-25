@@ -69,7 +69,7 @@ uniform float u_zoom;
 uniform float u_day_phase;
 // Phase 5: Orbital camera View-Projection matrix (dual-path migration)
 uniform mat4 u_vp;
-uniform bool u_use_vp;
+uniform int u_use_vp;
 uniform float u_water_time;
 
 out vec3 v_color;
@@ -107,7 +107,7 @@ void main() {
         elev += water_anim;
     }
 
-    if (u_use_vp) {
+    if (u_use_vp == 1) {
         // Phase 5: Orbital camera — use View-Projection matrix
         // Y is elevation for height-displacement (flat grid currently, will be 3D mesh later)
         float world_y = elev * 0.5;
@@ -162,7 +162,7 @@ in vec4 v_splat;
 in float v_ao;
 
 uniform highp sampler2DArray u_terrain_textures;
-uniform bool u_use_textures;
+uniform int u_use_textures;
 uniform vec3 u_fog_color;
 uniform vec3 u_light_direction;
 uniform float u_water_time;
@@ -170,7 +170,7 @@ uniform sampler2D u_water_normal;
 uniform float u_water_normal_ready;
 uniform float u_lightning;
 uniform sampler2D u_reflection_tex;
-uniform bool u_reflection_pass;
+uniform int u_reflection_pass;
 uniform float u_reflection_horizon_y;
 uniform vec2 u_resolution;
 
@@ -181,7 +181,7 @@ void main() {
     // Atlas layout: 4 horizontal slices (grass=0, rock=1, sand=2, snow=3), each 512x512 in 2048x512 image
     // v_splat.rgba = weights for grass/rock/sand/snow
     vec3 base_color;
-    if (u_use_textures) {
+    if (u_use_textures == 1) {
         // Remap UV into each 512-wide slice: U = (layer + uv.x) / 4.0, V = uv.y
         vec2 atlas_uv_grass = vec2((0.0 + v_uv.x) / 4.0, v_uv.y);
         vec2 atlas_uv_rock  = vec2((1.0 + v_uv.x) / 4.0, v_uv.y);
@@ -225,7 +225,7 @@ r#"    float warmth = 0.5 + day_light * 0.5;
     bool is_water = (v_terrain_id > 2.5 && v_terrain_id < 4.5);
     bool is_deep_water = (v_terrain_id > 3.5);
     // Exclude water tiles from reflection FBO: they don't reflect themselves
-    if (u_reflection_pass && is_water) discard;
+    if (u_reflection_pass == 1 && is_water) discard;
     if (is_water) {
         // Normal perturbation from water normal map (animated scrolling)
         vec3 n_w = normalize(v_normal);
@@ -446,7 +446,7 @@ uniform vec4 u_model_color;
 uniform float u_roughness;
 uniform float u_metallic;
 uniform highp sampler2DArray u_terrain_textures;
-uniform bool u_use_textures;
+uniform int u_use_textures;
 // Phase 7: day-phase aware ambient lighting for model instances
 uniform float u_day_phase;
 
@@ -461,7 +461,7 @@ void main() {
     // ── Procedural detail normals (Phase 7) ──────────────────────────
     // Adds micro-surface detail to building walls via hash-based noise gradient.
     // Uses world-space position + UVs for stable, camera-independent detail.
-    if (u_use_textures) {
+    if (u_use_textures == 1) {
         float detail_scale = 12.0;
         float detail_strength = 0.18;
 
@@ -486,7 +486,7 @@ void main() {
 
     // Sample terrain atlas for base texture detail
     vec3 base_albedo;
-    if (u_use_textures) {
+    if (u_use_textures == 1) {
         vec3 tex_sample = texture(u_terrain_textures, vec3(v_uv, 0.0)).rgb;
         base_albedo = tex_sample * u_model_color.rgb;
     } else {
@@ -5859,7 +5859,7 @@ mod tests {
     fn test_fragment_shader_texture_fallback() {
         // Fragment shader must support both texture sampling and flat-color fallback
         assert!(
-            FRAGMENT_SHADER.contains("if (u_use_textures)"),
+            FRAGMENT_SHADER.contains("if (u_use_textures == 1)"),
             "fragment shader missing u_use_textures branch"
         );
         assert!(
@@ -6076,7 +6076,7 @@ mod tests {
             "fragment shader missing sampler2DArray declaration"
         );
         assert!(
-            FRAGMENT_SHADER.contains("uniform bool u_use_textures"),
+            FRAGMENT_SHADER.contains("uniform int u_use_textures"),
             "fragment shader missing u_use_textures declaration"
         );
     }
@@ -7167,7 +7167,7 @@ mod tests {
     #[test]
     fn test_fragment_shader_has_reflection_pass_uniform() {
         assert!(FRAGMENT_SHADER.contains("u_reflection_pass"), "fragment shader missing u_reflection_pass uniform");
-        assert!(FRAGMENT_SHADER.contains("uniform bool u_reflection_pass"), "u_reflection_pass should be bool uniform");
+        assert!(FRAGMENT_SHADER.contains("uniform int u_reflection_pass"), "u_reflection_pass should be int uniform");
     }
 
     #[test]
@@ -7180,7 +7180,7 @@ mod tests {
     fn test_water_discarded_during_reflection_pass() {
         // During the reflection FBO pass, water tiles should be discarded
         let _water_section = FRAGMENT_SHADER.split("if (is_water)").nth(1).unwrap_or("");
-        assert!(FRAGMENT_SHADER.contains("u_reflection_pass && is_water"), "shader should check u_reflection_pass && is_water");
+        assert!(FRAGMENT_SHADER.contains("u_reflection_pass == 1 && is_water"), "shader should check u_reflection_pass == 1 && is_water");
         assert!(FRAGMENT_SHADER.contains("discard"), "shader should discard water during reflection pass");
     }
 
@@ -7189,6 +7189,21 @@ mod tests {
         // Reflection sampling should clamp screen_uv.y to u_reflection_horizon_y
         assert!(FRAGMENT_SHADER.contains("min(screen_uv.y, u_reflection_horizon_y)"), 
             "reflection sampling should clamp Y to below horizon: min(screen_uv.y, u_reflection_horizon_y)");
+    }
+
+    #[test]
+    fn test_no_uniform_bool_in_shaders() {
+        // uniform bool is known to cause issues on some mobile GPUs (ANGLE/Mali)
+        // where the driver may not correctly evaluate the bool as a conditional.
+        // All boolean uniforms should use int (0/1) instead.
+        assert!(!VERTEX_SHADER.contains("uniform bool"), "vertex shader must not use uniform bool (mobile GPU compat)");
+        assert!(!FRAGMENT_SHADER.contains("uniform bool"), "fragment shader must not use uniform bool (mobile GPU compat)");
+        assert!(!MODEL_VERTEX_SHADER.contains("uniform bool"), "model vertex shader must not use uniform bool");
+        assert!(!MODEL_FRAGMENT_SHADER.contains("uniform bool"), "model fragment shader must not use uniform bool");
+        assert!(!CLOUD_VERTEX_SHADER.contains("uniform bool"), "cloud vertex shader must not use uniform bool");
+        assert!(!CLOUD_FRAGMENT_SHADER.contains("uniform bool"), "cloud fragment shader must not use uniform bool");
+        assert!(!SUN_MOON_VERTEX_SHADER.contains("uniform bool"), "sun_moon vertex shader must not use uniform bool");
+        assert!(!SUN_MOON_FRAGMENT_SHADER.contains("uniform bool"), "sun_moon fragment shader must not use uniform bool");
     }
 
     #[test]
