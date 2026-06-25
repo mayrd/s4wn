@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S223 · 701 tests · WASM 316.9KB — Clippy: 0 errors, 0 warnings. Particle config refactor WASM bump +0.8KB (structs vs raw params). 0 open issues. Next: WASM 300KB target (16.9KB gap — top priority).**
+**Status:** S224 · 701 tests · WASM 316.9KB — Clippy: 0 errors, 0 warnings. 0 open issues. Audited WASM data segments: 18.7KB in 4 unknown segments — 2 are 94.7% identical (likely duplicate model JSON). Next: Investigate model JSON deduplication (target 5-10KB savings).**
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -105,6 +105,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | 220 | 2026-06-25 | Added 4 particle edge-case tests: bounce velocity reversal (vz inversion after ground impact), alpha at full life (=1.0 above 0.7 threshold), alpha fade at 50% life (~0.71), alpha zero when dead. 697→701 tests pass. Clippy 0 errors/15 warnings. -- 701 tests |
 | 222 | 2026-06-25 | Refactored particle spawn functions to use config structs: ParticleConfig (11-field) and BurstConfig (10-field). Removed all 3 #[allow(clippy::too_many_arguments)] workarounds from session 221. Converted 39 .spawn() + 15 .spawn_burst() call sites. Clippy auto-fixed 76 redundant_field_names. Clippy: 0 errors, 0 warnings. 701 tests pass. -- 701 tests |
 | 223 | 2026-06-25 | Rebuilt WASM after particle config refactor: 316.1→316.9KB (+0.8KB). Investigated lazy-load model JSON — already done (load_model_json WASM export). Analyzed twiggy data segments: data[5]=19.4KB building/unit names, data[0]=5.8KB game state JSON, data[94]=10.5KB minified shaders. 701 tests pass. Clippy 0 errors/0 warnings. 0 open issues. -- 701 tests |
+| 224 | 2026-06-25 | Audited 4 unknown WASM data segments (#238): data[118]=5.3KB, data[87]=4.8KB (94.7% identical — likely 2 copies of same model JSON structure), data[63]=4.7KB (compressed/encoded binary), data[61]=3.9KB (flt2dec float formatting table). Total 18.7KB. Key finding: data[87]+[118] share 4559/4815 bytes identical → deduplication could save ~4.8KB. 701 tests pass. Clippy 0 errors/0 warnings. -- 701 tests |
 | 221 | 2026-06-25 | Fixed all 15 clippy warnings: 12 static_mut_refs in lib.rs (replaced APP.as_mut()/APP.as_ref() with raw pointer deref: (*std::ptr::addr_of_mut!(APP)).as_mut() / (*std::ptr::addr_of!(APP)).as_ref()), 3 too_many_arguments in particle.rs (added #[allow(clippy::too_many_arguments)]). Clippy: 0 errors, 0 warnings. 701 tests pass. -- 701 tests |
 | 219 | 2026-06-25 | Removed 13 dead WASM exports: set_azimuth, set_elevation, set_distance (camera -- JS uses orbital pan/zoom), set_paused (JS uses toggle_pause), spawn_construction_effect, spawn_combat_effect, spawn_smoke_effect, spawn_leaf_effect (game loop spawns these automatically), particle_count, clear_particles, set_building_rally_point, clear_building_rally_point, get_building_rally_point. Internal Rust functions preserved (used by game loop + tests). WASM 319KB->316KB (-3KB). 81->68 exports. 697 tests pass. Clippy 0 errors/15 warnings. -- 697 tests |
 | 217 | 2026-06-25 | Fix #75: Unbind reflection texture from TEXTURE2 before FBO pass to prevent feedback loop — FBO color attachment (reflection_tex) was still bound to TEXTURE2 sampler from previous frame, causing GL_INVALID_OPERATION (feedback loop + sampler type mismatch). Added gl.active_texture(TEXTURE2) + bind_texture(None) before FBO bind. 699 tests pass. Clippy 0 errors/23 warnings. WASM rebuilt. -- 699 tests |
@@ -258,6 +259,9 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 235. WASM size: 316.9KB → 300KB — remaining 16.9KB gap [MUST — top priority]
 236. Lazy-load building model JSON from assets/ — already done (load_model_json WASM export), no further action needed
 237. Consider converting from_name() match arms to integer discriminant lookup — 19.4KB building/unit name strings in data[5] [NICE — largest single win]
-238. Audit data[118]=5.3KB, data[87]=4.8KB, data[63]=4.7KB, data[61]=3.9KB segments — identify content and reduction opportunities [SHOULD]
+238. ~~Audit data[118]=5.3KB, data[87]=4.8KB, data[63]=4.7KB, data[61]=3.9KB segments~~ ✅ (S224 — identified: model JSON duplicates, flt2dec table, compressed data)
 239. Verify Fix #73 on mobile: request new render snapshot from Daniel to confirm tiles display on ANGLE/Mali-G710 [SHOULD]
+240. Investigate data[87]+[118] duplicate: grep Rust source for which model JSON files are compiled into WASM; deduplicate if 2 copies of same model [MUST — saves 4.8KB]
+241. Identify data[63]=4.7KB content — possibly serde_json internal buffers or compressed terrain data [SHOULD]
+242. WASM size: 316.9KB → 300KB — remaining 16.9KB gap. Model JSON dedup (est. 4.8KB) + from_name integer discriminant (est. 15KB) would hit target [MUST]
 *All building data must match BASE.md. Never modify BASE.md.*
