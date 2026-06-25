@@ -529,6 +529,49 @@ pub fn spawn_ember_burst(ps: &mut ParticleSystem, x: f32, y: f32, count: u32) ->
     }
     spawned
 }
+
+/// Spawn a single pollen/drifting seed particle near grass tiles.
+/// Tiny white-yellow-tan particles that float gently upward and drift horizontally,
+/// simulating dandelion seeds or pollen in a light breeze during daytime.
+pub fn spawn_pollen_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 17.3 + y * 23.7;
+    let z = 0.5 + (seed * 1.3).sin().abs() * 1.5;    // start near ground
+    let vx = (seed * 2.1).cos() * 0.12 + 0.05;        // gentle eastward drift
+    let vy = (seed * 3.5).sin() * 0.08;
+    let vz = 0.05 + (seed * 4.1).sin().abs() * 0.15;  // slight upward float
+    let life = 1.0 + (seed * 6.7).sin().abs() * 1.5;   // 1.0-2.5s, short breezy life
+    let r = 0.85 + (seed * 7.3).sin().abs() * 0.15;    // warm white/yellow
+    let g = 0.80 + (seed * 8.9).sin().abs() * 0.15;
+    let b = 0.70 + (seed * 9.7).sin().abs() * 0.15;    // low blue = warm tone
+    let _ = ps.spawn(x, y, z, vx, vy, vz, life, r, g, b, 1.2);
+}
+
+/// Spawn a burst of pollen/drifting seed particles across a rectangular area.
+pub fn spawn_pollen_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 11.3 + 5.7).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 17.9 + 2.3).sin() * 0.5 + 0.5) * sy;
+        let seed = x * 17.3 + y * 23.7;
+        let z = 0.5 + (seed * 1.3).sin().abs() * 1.5;
+        let vx = (seed * 2.1).cos() * 0.12 + 0.05;
+        let vy = (seed * 3.5).sin() * 0.08;
+        let vz = 0.05 + (seed * 4.1).sin().abs() * 0.15;
+        let life = 1.0 + (seed * 6.7).sin().abs() * 1.5;
+        let r = 0.85 + (seed * 7.3).sin().abs() * 0.15;
+        let g = 0.80 + (seed * 8.9).sin().abs() * 0.15;
+        let b = 0.70 + (seed * 9.7).sin().abs() * 0.15;
+        if ps.spawn(x, y, z, vx, vy, vz, life, r, g, b, 1.2) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1152,6 +1195,75 @@ mod tests {
         assert_eq!(n, 0, "fog burst should spawn 0 when system full");
     }
 }
+
+
+    #[test]
+    fn test_pollen_particle_spawns() {
+        let mut ps = ParticleSystem::new();
+        spawn_pollen_particle(&mut ps, 5.0, 8.0);
+        assert_eq!(ps.alive_count(), 1, "pollen particle should spawn one particle");
+    }
+
+    #[test]
+    fn test_pollen_particle_floats_upward() {
+        let mut ps = ParticleSystem::new();
+        spawn_pollen_particle(&mut ps, 3.0, 7.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Pollen should float gently upward (positive vz)
+        assert!(p.vz > 0.0, "pollen should float upward (vz > 0), got vz={}", p.vz);
+        // Slow drift: vz < 0.5
+        assert!(p.vz < 0.5, "pollen vz should be gentle (<0.5), got vz={}", p.vz);
+    }
+
+    #[test]
+    fn test_pollen_particle_warm_white_color() {
+        let mut ps = ParticleSystem::new();
+        spawn_pollen_particle(&mut ps, 2.0, 4.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Pollen is warm white/tan: all channels high, red-dominant
+        assert!(p.r > 0.8, "pollen r should be >0.8, got {}", p.r);
+        assert!(p.g > 0.75, "pollen g should be >0.75, got {}", p.g);
+        assert!(p.b > 0.65, "pollen b should be >0.65, got {}", p.b);
+        assert!(p.r > p.b, "pollen should be warm: r > b");
+    }
+
+    #[test]
+    fn test_pollen_particle_short_life() {
+        let mut ps = ParticleSystem::new();
+        spawn_pollen_particle(&mut ps, 4.0, 6.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Pollen has short breezy life (1.0-2.5s)
+        assert!(p.life > 0.8, "pollen life should be >0.8s, got {}", p.life);
+        assert!(p.life < 3.0, "pollen life should be <3.0s, got {}", p.life);
+    }
+
+    #[test]
+    fn test_pollen_burst_spawns() {
+        let mut ps = ParticleSystem::new();
+        let n = spawn_pollen_burst(&mut ps, 0.0, 0.0, 5.0, 5.0, 4);
+        assert_eq!(n, 4, "pollen burst should spawn 4 particles");
+        assert_eq!(ps.alive_count(), 4);
+    }
+
+    #[test]
+    fn test_pollen_burst_all_float_upward() {
+        let mut ps = ParticleSystem::new();
+        spawn_pollen_burst(&mut ps, 0.0, 0.0, 3.0, 7.0, 5);
+        for p in ps.particles.iter().filter(|p| p.alive) {
+            assert!(p.vz > 0.0, "pollen burst particle should float upward (vz > 0), got vz={}", p.vz);
+        }
+    }
+
+    #[test]
+    fn test_pollen_burst_limited_by_max() {
+        let mut ps = ParticleSystem::new();
+        for i in 0..MAX_PARTICLES {
+            ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+        }
+        assert_eq!(ps.alive_count(), MAX_PARTICLES);
+        let n = spawn_pollen_burst(&mut ps, 0.0, 0.0, 5.0, 5.0, 10);
+        assert_eq!(n, 0, "pollen burst should spawn 0 when system full");
+    }
 
     #[test]
     fn test_ember_particle_spawns() {

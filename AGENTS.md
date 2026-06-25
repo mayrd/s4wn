@@ -111,6 +111,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | 203 | 2026-06-24 | Session audit: 0 open GitHub issues, 659 tests pass, WASM 331KB (31KB over 300KB target), Clippy 0 errors/35 warnings. Analyzed remaining WASM optimization paths: (a) building/unit names 27.9KB → phf/const hash (b) shader source 28.5KB → minify GLSL (c) game state JSON 5.9KB → const encoding (d) ryu float formatting ~10KB. Verified all App struct fields active. FPS/draw-call exports unused by JS but kept for debugging. -- 659 tests |
 | Session | Date | Summary |
 |---------|------|---------|
+| 214 | 2026-06-25 | .rodata investigation (Item 213): Analyzed all data segments in WASM binary. data[5]=19.5KB building/unit names (from_name match), data[95]=10.5KB minified shaders, data[0]=5.9KB JSON format templates. Top savings path: replace string-based from_name with integer discriminant lookup (est. -15KB). JSON templates could save ~2KB via shorter keys. 692 tests pass. Clippy 0 errors. -- 692 tests
 | 212 | 2026-06-25 | GLSL minification: strip comments + whitespace from all 12 shader strings. Source -8KB (21818→13661 chars), WASM 330KB→318KB (-12KB). Added test_shaders_have_no_comment_only_lines regression test. Fixed 2 tests that checked for comment strings. Added scripts/minify_shaders.py. 684 tests pass. Clippy 0 errors/23 warnings. -- 684 tests
 | 202 | 2026-06-24 | Fix #72: Splash display:none after fade-out — splash retained display:flex post-fade, causing layout tree pollution on mobile (WebKit/Mali-G710). Added setTimeout display:none 850ms after 0.8s CSS opacity transition. 659 tests pass. Clippy 0 errors. -- 659 tests |
 | 201 | 2026-06-24 | WASM dead code removal: removed 8 dead exports (ws_connect/receive/send/state, parse_obj_info, editor_grid_enabled, get_territory_border_tiles_json, spawn_particle/burst). Fixed clippy approx_constant (3.14 to PI). 659 tests pass. Clippy 0 errors. WASM 331KB. -- 659 tests |
@@ -228,7 +229,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 210. ~~Add firefly particle effect for Grass/Forest tiles at dusk (subtle glow, slow drift)~~ ✅ (session 209)
 211. ~~Add leaf particle effect for Forest tiles (seasonal/autumn aesthetic)~~ ✅ (session 210)
 212. ~~GLSL minification: strip comments and extra whitespace from shader r#"..."# literals (est. 10-14KB savings)~~ ✅ (session 212 — 8KB source / 12KB WASM)
-213. Investigate building model JSON const encoding to reduce .rodata 5.9KB
+213. ~~Investigate building model JSON const encoding to reduce .rodata 5.9KB~~ ✅ (session 214 — data[0]=5.9KB JSON templates, data[5]=19.5KB building/unit names; top savings: integer discriminant lookup est. -15KB)
 214. ~~Add ember/spark particle effect for Smelter buildings (iron/gold smelter)~~ ✅ (session 213)
 215. Verify Fix #73 on mobile: request new render snapshot from Daniel (Android/WebKit/Mali-G710) to confirm tiles now display
 *All building data must match BASE.md. Never modify BASE.md.*

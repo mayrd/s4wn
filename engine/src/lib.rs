@@ -1803,6 +1803,33 @@ impl App {
                     if ember_count >= 2 { break; }
                 }
             }
+
+            // Pollen/drifting seeds: spawn near Grass tiles during daytime
+            if tick.is_multiple_of(6) {
+                let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
+                if (0.2..=0.8).contains(&day_phase) {
+                    let map = &self.game_loop.state.map;
+                    let cx = self.camera.center_x as usize;
+                    let cy = self.camera.center_y as usize;
+                    let range = 12usize;
+                    let mut pollen_count = 0u32;
+                    for dy in 0..range {
+                        for dx in 0..range {
+                            let tx = cx.saturating_sub(range / 2) + dx;
+                            let ty = cy.saturating_sub(range / 2) + dy;
+                            if let Some(tile) = map.get(tx, ty) {
+                                if tile.terrain == crate::map::Terrain::Grass && pollen_count < 4 {
+                                    particle::spawn_pollen_particle(&mut self.particle_system, tx as f32, ty as f32);
+                                    pollen_count += 1;
+                                }
+                            }
+                            if pollen_count >= 4 { break; }
+                        }
+                        if pollen_count >= 4 { break; }
+                    }
+                }
+            }
+
         }
 
         // Smooth camera
