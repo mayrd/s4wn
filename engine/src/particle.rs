@@ -212,6 +212,59 @@ pub fn spawn_leaf_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
     );
 }
 
+/// Spawn autumn leaf particle: warm amber/orange/red-brown, slow swaying fall.
+/// Unlike spawn_leaf_effect (green, floating), this simulates falling leaves
+/// in autumn — they drift horizontally with a sinusoidal sway and descend gently.
+/// Color varies per-tile to give a mix of amber, orange, and deep red-brown.
+pub fn spawn_autumn_leaf_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 11.3 + y * 7.7;
+    // Start above the tile, varying height (1.5-4.0)
+    let z = 2.5 + (seed * 1.3).sin() * 1.5;
+    // Gentle horizontal drift with wind variation
+    let vx = (seed * 2.1).cos() * 0.06 + 0.03;  // slight eastward bias (wind)
+    let vy = (seed * 3.7).sin() * 0.05;
+    // Slow descent with slight oscillation
+    let vz = -0.15 + (seed * 5.3).sin() * 0.05;
+    // Long life: 3.0-6.0 seconds for a slow, scenic fall
+    let life = 4.0 + (seed * 4.3).sin().abs() * 2.0;
+    // Autumn color palette: amber, orange, red-brown
+    // r: dominant (0.7-1.0), g: medium (0.3-0.6), b: low (0.05-0.15)
+    let r = 0.75 + (seed * 6.1).sin().abs() * 0.25;
+    let g = 0.30 + (seed * 8.3).cos().abs() * 0.30;
+    let b = 0.05 + (seed * 9.7).sin().abs() * 0.10;
+    let _ = ps.spawn(x, y, z, vx, vy, vz, life, r, g, b, 5.0);
+}
+
+/// Spawn a burst of autumn leaves across a rectangular area.
+/// Used periodically to create continuous gentle leaf-fall in forest areas.
+pub fn spawn_autumn_leaf_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 7.3 + 2.1).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 11.7 + 5.3).sin() * 0.5 + 0.5) * sy;
+        if ps.spawn(
+            x, y,
+            2.5 + ((fi * 3.1).sin()) * 1.5,
+            ((fi * 2.3).cos()) * 0.06 + 0.03,
+            ((fi * 4.1).sin()) * 0.05,
+            -0.15 + ((fi * 1.7).sin()) * 0.05,
+            4.0 + ((fi * 6.3).sin().abs()) * 2.0,
+            0.75 + ((fi * 5.1).sin().abs()) * 0.25,
+            0.30 + ((fi * 7.3).cos().abs()) * 0.30,
+            0.05 + ((fi * 8.9).sin().abs()) * 0.10,
+            5.0,
+        ) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
+
 /// Spawn building destruction rubble: brown/grey chunks burst + dust cloud.
 /// Used when a building is destroyed (combat damage or demolition).
 pub fn spawn_rubble_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
@@ -682,6 +735,52 @@ mod tests {
         assert!(!alive.is_empty());
         let p = alive[0];
         assert!(p.g > p.r, "leaf should be green-dominant (g > r): g={}, r={}", p.g, p.r);
+    }
+
+    #[test]
+    fn test_autumn_leaf_particle() {
+        let mut ps = ParticleSystem::new();
+        spawn_autumn_leaf_particle(&mut ps, 3.0, 7.0);
+        assert_eq!(ps.alive_count(), 1);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Autumn leaf should have warm colors: red dominant, green medium, blue low
+        assert!(p.r > 0.7, "autumn leaf r should be > 0.7: {}", p.r);
+        assert!(p.g < p.r, "autumn leaf green should be < red: g={}, r={}", p.g, p.r);
+        assert!(p.b < 0.2, "autumn leaf blue should be low: {}", p.b);
+    }
+
+    #[test]
+    fn test_autumn_leaf_falling() {
+        let mut ps = ParticleSystem::new();
+        spawn_autumn_leaf_particle(&mut ps, 2.0, 5.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Should be descending (negative vz)
+        assert!(p.vz < 0.0, "autumn leaf should fall (vz < 0): {}", p.vz);
+        // Should start above ground
+        assert!(p.z > 1.0, "autumn leaf should start above ground (z > 1): {}", p.z);
+    }
+
+    #[test]
+    fn test_autumn_leaf_burst() {
+        let mut ps = ParticleSystem::new();
+        let n = spawn_autumn_leaf_burst(&mut ps, 0.0, 0.0, 20.0, 20.0, 8);
+        assert_eq!(n, 8);
+        assert_eq!(ps.alive_count(), 8);
+        // All should have autumn colors (red dominant)
+        for p in ps.particles.iter().filter(|p| p.alive) {
+            assert!(p.r > p.g, "autumn leaf burst: r should be > g");
+        }
+    }
+
+    #[test]
+    fn test_autumn_leaf_drift_wind_bias() {
+        let mut ps = ParticleSystem::new();
+        spawn_autumn_leaf_particle(&mut ps, 4.0, 3.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Should have slight eastward drift (vx has +0.03 bias)
+        // The sinusoidal component can be up to 0.06, so vx ranges from -0.03 to +0.09
+        // Most positions should have positive vx; we just verify it's slow
+        assert!(p.vx.abs() < 0.15, "autumn leaf drift should be slow: {}", p.vx);
     }
 
     #[test]

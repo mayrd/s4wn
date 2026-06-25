@@ -1961,6 +1961,27 @@ impl App {
                     }
                 }
             }
+            // Autumn leaf particles: spawn near Forest tiles
+            // Slow falling leaves with warm amber/orange/red-brown colors
+            if tick.is_multiple_of(12) {
+                let map = &self.game_loop.state.map;
+                let cx = self.camera.center_x as usize;
+                let cy = self.camera.center_y as usize;
+                let range = 10usize;
+                let mut leaf_count = 0u32;
+                for dy in 0..range {
+                    for dx in 0..range {
+                        let tx = cx.saturating_sub(range/2) + dx;
+                        let ty = cy.saturating_sub(range/2) + dy;
+                        if let Some(tile) = map.get(tx, ty) {
+                            if tile.terrain == crate::map::Terrain::Forest && leaf_count < 3 {
+                                particle::spawn_autumn_leaf_particle(&mut self.particle_system, tx as f32, ty as f32);
+                                leaf_count += 1;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Smooth camera
