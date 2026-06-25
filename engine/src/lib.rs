@@ -2044,6 +2044,10 @@ impl App {
             if let Some(ref loc) = self.reflection_pass_loc {
                 gl.uniform1i(Some(loc), 0);
             }
+            // Restore main VP matrix (reflection pass overwrote u_vp with Y-flipped VP)
+            let main_vp = model::compute_vp(&[ex, ey, ez], &[tx, ty, tz], 45.0, aspect, 0.1, 500.0);
+            gl.uniform_matrix4fv_with_f32_array(Some(vp_loc), false, &main_vp);
+            gl.uniform1i(Some(use_loc), 1);
         }
         // Bind reflection texture for water shader to sample
         if let (Some(ref loc), Some(ref tex)) = (&self.reflection_tex_loc, &self.reflection_tex) {
