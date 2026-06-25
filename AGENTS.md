@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, water reflection FBO + Fresnel blend + depth attachment, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro, terrain LOD (3 levels), wee_alloc global allocator, codegen-units=1, fine-tuned horizon_y computation — 659 tests passing | WASM 330KB (was 377KB, -47KB)
+**Status:** Phase 7.1 — Rendering Overhaul — terrain atlas regenerated, 84 models with hipped roofs, stepped temple bases + spires, day-phase hemisphere ambient lighting, cloud layer with parallax, building destruction animation, sun/moon discs, rain particle system, lightning flashes, water reflection FBO + Fresnel blend + depth attachment, dead uniform cleanup, console_error_panic_hook removed, shared day_light GLSL macro, terrain LOD (3 levels), wee_alloc global allocator, codegen-units=1, fine-tuned horizon_y computation, GLSL minified (comments/whitespace stripped) — 684 tests passing | WASM 318KB (was 377KB, -59KB)
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -111,6 +111,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | 203 | 2026-06-24 | Session audit: 0 open GitHub issues, 659 tests pass, WASM 331KB (31KB over 300KB target), Clippy 0 errors/35 warnings. Analyzed remaining WASM optimization paths: (a) building/unit names 27.9KB → phf/const hash (b) shader source 28.5KB → minify GLSL (c) game state JSON 5.9KB → const encoding (d) ryu float formatting ~10KB. Verified all App struct fields active. FPS/draw-call exports unused by JS but kept for debugging. -- 659 tests |
 | Session | Date | Summary |
 |---------|------|---------|
+| 212 | 2026-06-25 | GLSL minification: strip comments + whitespace from all 12 shader strings. Source -8KB (21818→13661 chars), WASM 330KB→318KB (-12KB). Added test_shaders_have_no_comment_only_lines regression test. Fixed 2 tests that checked for comment strings. Added scripts/minify_shaders.py. 684 tests pass. Clippy 0 errors/23 warnings. -- 684 tests
 | 202 | 2026-06-24 | Fix #72: Splash display:none after fade-out — splash retained display:flex post-fade, causing layout tree pollution on mobile (WebKit/Mali-G710). Added setTimeout display:none 850ms after 0.8s CSS opacity transition. 659 tests pass. Clippy 0 errors. -- 659 tests |
 | 201 | 2026-06-24 | WASM dead code removal: removed 8 dead exports (ws_connect/receive/send/state, parse_obj_info, editor_grid_enabled, get_territory_border_tiles_json, spawn_particle/burst). Fixed clippy approx_constant (3.14 to PI). 659 tests pass. Clippy 0 errors. WASM 331KB. -- 659 tests |
 | 200 | 2026-06-24 | WASM data section audit: parsed 127 data segments (78KB total). Top items: data[5]=27.9KB (building/unit names), data[94]=10.5KB shader src, data[63]=7.8KB shader, data[0]=5.9KB game state JSON. Identified dead export compute_mvp_json (0 JS uses). Updated RENDERING_AUDIT.md: draw-call baseline (7-20 DC/frame at 8 sites), WASM analysis. 659 tests pass. WASM 338KB. -- 659 tests |
@@ -219,14 +220,14 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Next Session — Updated Steps (Session 211+)
 ---
-43. WASM size: 331KB → 300KB — remaining 31KB gap. Session 204: hash-based from_name (FNV-1a) attempted, no savings — strings deduplicated with name()/all_names(). Top remaining targets: (a) 28.5KB shader source — minify GLSL in r#"..."# literals (est. 10-14KB savings) (b) 5.9KB game state JSON template — const encoding (c) ryu float formatting ~10KB (d) building model JSON lazy-loaded from assets/ (27.9KB). [MUST — 31KB remains]
+43. WASM size: 318KB → 300KB — remaining 18KB gap. Session 204: hash-based from_name (FNV-1a) attempted, no savings — strings deduplicated with name()/all_names(). Top remaining targets: (a) 28.5KB shader source — minify GLSL in r#"..."# literals (est. 10-14KB savings) (b) 5.9KB game state JSON template — const encoding (c) ryu float formatting ~10KB (d) building model JSON lazy-loaded from assets/ (27.9KB). [MUST — 18KB remains]
 44. FPS/draw-call benchmarking: add 1080p/720p FPS display toggle, record baseline in RENDERING_AUDIT.md [SHOULD]
 45. Lazy-load building model JSON from assets/ to reduce .rodata [NICE — may be largest single win]
 32. Verify reflection optimization visually: ensure water tiles excluded from reflection FBO [visual confirmation pending]
 209. ~~Add leaf particle effect for Forest tiles (seasonal/autumn aesthetic)~~ ✅ (session 210)
 210. ~~Add firefly particle effect for Grass/Forest tiles at dusk (subtle glow, slow drift)~~ ✅ (session 209)
 211. ~~Add leaf particle effect for Forest tiles (seasonal/autumn aesthetic)~~ ✅ (session 210)
-212. GLSL minification: strip comments and extra whitespace from shader r#"..."# literals (est. 10-14KB savings)
+212. ~~GLSL minification: strip comments and extra whitespace from shader r#"..."# literals (est. 10-14KB savings)~~ ✅ (session 212 — 8KB source / 12KB WASM)
 213. Investigate building model JSON const encoding to reduce .rodata 5.9KB
 214. Add ember/spark particle effect for Smelter buildings (iron/gold smelter)
 215. Verify Fix #73 on mobile: request new render snapshot from Daniel (Android/WebKit/Mali-G710) to confirm tiles now display
