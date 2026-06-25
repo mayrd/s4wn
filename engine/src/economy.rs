@@ -1294,12 +1294,12 @@ impl Building {
     /// Returns the amounts collected.
     pub fn collect_output(&mut self, storage: &mut ResourceStorage) -> [u32; ResourceType::COUNT] {
         let mut collected = [0u32; ResourceType::COUNT];
-        for i in 0..ResourceType::COUNT {
-            if self.output_buffer[i] > 0 {
-                collected[i] = self.output_buffer[i];
-                self.output_buffer[i] = 0;
+        for (i, item) in self.output_buffer.iter().enumerate() {
+            if *item > 0 {
+                collected[i] = *item;
             }
         }
+        self.output_buffer = [0u32; ResourceType::COUNT];
         storage.add_all(&collected);
         collected
     }
@@ -1354,10 +1354,10 @@ impl ResourceStorage {
 
     /// Add multiple resource amounts at once
     pub fn add_all(&mut self, amounts: &[u32; ResourceType::COUNT]) {
-        for i in 0..ResourceType::COUNT {
-            if amounts[i] > 0 {
+        for (i, amount) in amounts.iter().enumerate() {
+            if *amount > 0 {
                 self.amounts[i] = self.amounts[i]
-                    .saturating_add(amounts[i])
+                    .saturating_add(*amount)
                     .min(self.capacity);
             }
         }

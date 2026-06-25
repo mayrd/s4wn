@@ -524,9 +524,7 @@ r#"    // Hemisphere ambient: sky-colored from above, ground-colored from below
 
 /// Scale factor for converting tile elevation (0.0–1.0) to world-space Y units.
 /// Default 0.5 means a full-height tile displaces upward by 0.5 world units.
-
 // ── Shadow Shaders (Phase 7: Soft ground-plane shadows) ───────────────────────
-
 const SHADOW_VERTEX_SHADER: &str = r#"#version 300 es
 precision highp float;
 
@@ -3753,8 +3751,6 @@ pub fn get_nation_buildings(nation_name: &str) -> String {
 }
 
 /// Get territory border tiles for the local player as a JSON string.
-
-
 /// Get current FPS (frames per second), measured over 1-second windows.
 #[wasm_bindgen]
 pub fn get_fps() -> u32 {
@@ -4182,10 +4178,7 @@ pub fn try_place_building(kind_name: &str, x: usize, y: usize) -> String {
 
             // Validate terrain is buildable (not water, deep water, or mountain)
             let tile = app.map.get(x, y).unwrap();
-            let buildable = match tile.terrain {
-                Terrain::Water | Terrain::DeepWater | Terrain::Mountain => false,
-                _ => true,
-            };
+            let buildable = !matches!(tile.terrain, Terrain::Water | Terrain::DeepWater | Terrain::Mountain);
             if !buildable {
                 return format!(
                     r#"{{"error":"Cannot build on {} terrain at ({},{})"}}"#,
@@ -4257,11 +4250,7 @@ pub fn list_building_types() -> String {
 }
 
 // ── WebSocket Client API ─────────────────────────────────────────────────────
-
-
 /// Receive pending network messages as JSON strings.
-
-
 /// Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
 #[wasm_bindgen]
 pub fn set_game_speed(multiplier: f64) {
@@ -5125,11 +5114,7 @@ pub fn model_instance_count() -> i32 {
 
 /// Spawn a single particle.
 /// Parameters: x, y, z, vx, vy, vz, life, r, g, b, size
-
-
 /// Spawn a burst of particles. Returns number spawned.
-
-
 /// Spawn a green "build success" effect at the given tile.
 #[wasm_bindgen]
 pub fn spawn_build_effect(tile_x: f32, tile_y: f32) {
