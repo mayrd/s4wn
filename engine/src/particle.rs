@@ -32,6 +32,27 @@ pub struct Particle {
     pub alive: bool,
 }
 
+/// Configuration for spawning a single particle.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ParticleConfig {
+    pub x: f32, pub y: f32, pub z: f32,
+    pub vx: f32, pub vy: f32, pub vz: f32,
+    pub life: f32, pub r: f32, pub g: f32, pub b: f32, pub size: f32,
+}
+impl Default for ParticleConfig {
+    fn default() -> Self {
+        ParticleConfig { x:0.0,y:0.0,z:0.0, vx:0.0,vy:0.0,vz:0.0, life:1.0, r:1.0,g:1.0,b:1.0, size:8.0 }
+    }
+}
+/// Configuration for spawning a burst of particles.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct BurstConfig {
+    pub x: f32, pub y: f32, pub z: f32, pub count: u32,
+    pub color_r: f32, pub color_g: f32, pub color_b: f32,
+    pub speed: f32, pub life: f32, pub size: f32,
+}
+
+
 impl Particle {
     pub fn new() -> Self {
         Particle {
@@ -43,14 +64,12 @@ impl Particle {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
-    pub fn spawn(&mut self, x: f32, y: f32, z: f32, vx: f32, vy: f32, vz: f32,
-                  life: f32, r: f32, g: f32, b: f32, size: f32) {
-        self.x = x; self.y = y; self.z = z;
-        self.vx = vx; self.vy = vy; self.vz = vz;
-        self.life = life; self.max_life = life;
-        self.r = r; self.g = g; self.b = b;
-        self.size = size; self.alive = true;
+    pub fn spawn(&mut self, cfg: &ParticleConfig) {
+        self.x = cfg.x; self.y = cfg.y; self.z = cfg.z;
+        self.vx = cfg.vx; self.vy = cfg.vy; self.vz = cfg.vz;
+        self.life = cfg.life; self.max_life = cfg.life;
+        self.r = cfg.r; self.g = cfg.g; self.b = cfg.b;
+        self.size = cfg.size; self.alive = true;
     }
 
     pub fn tick(&mut self, dt: f32) -> bool {
@@ -97,26 +116,23 @@ impl ParticleSystem {
         ParticleSystem { particles }
     }
 
-    #[allow(clippy::too_many_arguments)]
-    pub fn spawn(&mut self, x: f32, y: f32, z: f32, vx: f32, vy: f32, vz: f32,
-                  life: f32, r: f32, g: f32, b: f32, size: f32) -> bool {
+    pub fn spawn(&mut self, cfg: &ParticleConfig) -> bool {
         for p in &mut self.particles {
-            if !p.alive { p.spawn(x, y, z, vx, vy, vz, life, r, g, b, size); return true; }
+            if !p.alive { p.spawn(cfg); return true; }
         }
         false
     }
 
     /// Spawn a burst of particles in a circular pattern.
     /// Uses O(n) scanning for dead slots (not O(n^2) per burst iteration).
-    #[allow(clippy::too_many_arguments)]
-    pub fn spawn_burst(&mut self, x: f32, y: f32, z: f32, count: u32,
-                        color_r: f32, color_g: f32, color_b: f32,
-                        speed: f32, life: f32, size: f32) -> u32 {
+    pub fn spawn_burst(&mut self, cfg: &BurstConfig) -> u32 {
+        let x = cfg.x; let y = cfg.y; let z = cfg.z; let count = cfg.count;
+        let color_r = cfg.color_r; let color_g = cfg.color_g; let color_b = cfg.color_b;
+        let speed = cfg.speed; let life = cfg.life; let size = cfg.size;
         let mut spawned = 0u32;
         let max = self.particles.len();
         let mut dead_idx = 0usize;
         for i in 0..count {
-            // Find next dead particle slot (single-pass cursor, O(n) total)
             while dead_idx < max && self.particles[dead_idx].alive {
                 dead_idx += 1;
             }
@@ -127,7 +143,8 @@ impl ParticleSystem {
             let vx = angle.cos() * h_speed;
             let vy = angle.sin() * h_speed;
             let vz = up * speed * 1.5;
-            self.particles[dead_idx].spawn(x, y, z, vx, vy, vz, life, color_r, color_g, color_b, size);
+            let pcfg = ParticleConfig { x, y, z, vx, vy, vz, life, r: color_r, g: color_g, b: color_b, size };
+            self.particles[dead_idx].spawn(&pcfg);
             spawned += 1;
             dead_idx += 1;
         }
@@ -182,21 +199,21 @@ impl Default for ParticleSystem {
 }
 
 pub fn spawn_build_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
-    ps.spawn_burst(tile_x, tile_y, 0.0, 12, 0.2, 0.9, 0.3, 3.0, 0.8, 6.0);
+    ps.spawn_burst(&BurstConfig { x: tile_x, y: tile_y, z: 0.0, count: 12, color_r: 0.2, color_g: 0.9, color_b: 0.3, speed: 3.0, life: 0.8, size: 6.0 });
 }
 
 pub fn spawn_combat_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
-    ps.spawn_burst(tile_x, tile_y, 0.0, 16, 1.0, 0.4, 0.1, 4.5, 0.6, 5.0);
+    ps.spawn_burst(&BurstConfig { x: tile_x, y: tile_y, z: 0.0, count: 16, color_r: 1.0, color_g: 0.4, color_b: 0.1, speed: 4.5, life: 0.6, size: 5.0 });
 }
 
 pub fn spawn_dust_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
-    ps.spawn_burst(tile_x, tile_y, 0.0, 4, 0.6, 0.55, 0.45, 1.0, 0.4, 4.0);
+    ps.spawn_burst(&BurstConfig { x: tile_x, y: tile_y, z: 0.0, count: 4, color_r: 0.6, color_g: 0.55, color_b: 0.45, speed: 1.0, life: 0.4, size: 4.0 });
 }
 
 /// Spawn chimney smoke: slow-rising grey puffs.
 pub fn spawn_smoke_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
-    let _ = ps.spawn(tile_x, tile_y, 1.5, 0.05, 0.0, 0.15, 1.5, 0.55, 0.55, 0.58, 10.0);
-    let _ = ps.spawn(tile_x + 0.1, tile_y, 1.5, -0.03, 0.0, 0.12, 1.2, 0.50, 0.50, 0.53, 8.0);
+    let _ = ps.spawn(&ParticleConfig { x: tile_x, y: tile_y, z: 1.5, vx: 0.05, vy: 0.0, vz: 0.15, life: 1.5, r: 0.55, g: 0.55, b: 0.58, size: 10.0 });
+    let _ = ps.spawn(&ParticleConfig { x: tile_x + 0.1, y: tile_y, z: 1.5, vx: -0.03, vy: 0.0, vz: 0.12, life: 1.2, r: 0.50, g: 0.50, b: 0.53, size: 8.0 });
 }
 
 /// Spawn floating leaf/forest particle: gentle drift, green tint.
@@ -204,15 +221,7 @@ pub fn spawn_leaf_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
     let angle = (tile_x * 7.3 + tile_y * 3.7) % std::f32::consts::TAU;
     let vx = angle.cos() * 0.08;
     let vy = angle.sin() * 0.08;
-    let _ = ps.spawn(
-        tile_x, tile_y, 0.5,
-        vx, vy, 0.05,
-        1.8,
-        0.25 + ((tile_x * 13.1) % 1.0) * 0.2,
-        0.65 + ((tile_y * 11.3) % 1.0) * 0.25,
-        0.15,
-        5.0,
-    );
+    let _ = ps.spawn(&ParticleConfig { x: tile_x, y: tile_y, z: 0.5, vx, vy, vz: 0.05, life: 1.8, r: 0.25 + ((tile_x * 13.1) % 1.0) * 0.2, g: 0.65 + ((tile_y * 11.3) % 1.0) * 0.25, b: 0.15, size: 5.0 });
 }
 
 /// Spawn autumn leaf particle: warm amber/orange/red-brown, slow swaying fall.
@@ -235,7 +244,7 @@ pub fn spawn_autumn_leaf_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
     let r = 0.75 + (seed * 6.1).sin().abs() * 0.25;
     let g = 0.30 + (seed * 8.3).cos().abs() * 0.30;
     let b = 0.05 + (seed * 9.7).sin().abs() * 0.10;
-    let _ = ps.spawn(x, y, z, vx, vy, vz, life, r, g, b, 5.0);
+    let _ = ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r, g, b, size: 5.0 });
 }
 
 /// Spawn a burst of autumn leaves across a rectangular area.
@@ -248,18 +257,7 @@ pub fn spawn_autumn_leaf_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, 
         let fi = i as f32;
         let x = min_x + ((fi * 7.3 + 2.1).sin() * 0.5 + 0.5) * sx;
         let y = min_y + ((fi * 11.7 + 5.3).sin() * 0.5 + 0.5) * sy;
-        if ps.spawn(
-            x, y,
-            2.5 + ((fi * 3.1).sin()) * 1.5,
-            ((fi * 2.3).cos()) * 0.06 + 0.03,
-            ((fi * 4.1).sin()) * 0.05,
-            -0.15 + ((fi * 1.7).sin()) * 0.05,
-            4.0 + ((fi * 6.3).sin().abs()) * 2.0,
-            0.75 + ((fi * 5.1).sin().abs()) * 0.25,
-            0.30 + ((fi * 7.3).cos().abs()) * 0.30,
-            0.05 + ((fi * 8.9).sin().abs()) * 0.10,
-            5.0,
-        ) {
+        if ps.spawn(&ParticleConfig { x, y, z: 2.5 + ((fi * 3.1).sin()) * 1.5, vx: ((fi * 2.3).cos()) * 0.06 + 0.03, vy: ((fi * 4.1).sin()) * 0.05, vz: -0.15 + ((fi * 1.7).sin()) * 0.05, life: 4.0 + ((fi * 6.3).sin().abs()) * 2.0, r: 0.75 + ((fi * 5.1).sin().abs()) * 0.25, g: 0.30 + ((fi * 7.3).cos().abs()) * 0.30, b: 0.05 + ((fi * 8.9).sin().abs()) * 0.10, size: 5.0 }) {
             spawned += 1;
         } else {
             break;
@@ -272,9 +270,9 @@ pub fn spawn_autumn_leaf_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, 
 /// Used when a building is destroyed (combat damage or demolition).
 pub fn spawn_rubble_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
     // Rubble chunks: brown/grey, medium speed, 20 particles
-    ps.spawn_burst(tile_x, tile_y, 0.0, 20, 0.45, 0.35, 0.25, 3.5, 1.2, 7.0);
+    ps.spawn_burst(&BurstConfig { x: tile_x, y: tile_y, z: 0.0, count: 20, color_r: 0.45, color_g: 0.35, color_b: 0.25, speed: 3.5, life: 1.2, size: 7.0 });
     // Dust overlay: lighter, slower, 8 particles
-    ps.spawn_burst(tile_x, tile_y, 0.0, 8, 0.7, 0.65, 0.55, 1.5, 0.8, 10.0);
+    ps.spawn_burst(&BurstConfig { x: tile_x, y: tile_y, z: 0.0, count: 8, color_r: 0.7, color_g: 0.65, color_b: 0.55, speed: 1.5, life: 0.8, size: 10.0 });
 }
 
 /// Spawn a single rain droplet: fast-falling blue-white streak from the sky.
@@ -285,10 +283,7 @@ pub fn spawn_rain_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
     let z = 3.0 + (seed * 1.3).sin() * 2.0;
     let drift = (seed * 3.7).cos() * 0.3;
     let life = 0.3 + (seed * 7.1).sin().abs() * 0.25;
-    let _ = ps.spawn(x + drift, y + drift * 0.7, z,
-        (seed * 2.3).cos() * 0.25, (seed * 2.9).sin() * 0.25,
-        -8.0 - (seed * 5.0).sin().abs() * 3.0,
-        life, 0.7, 0.78, 0.95, 2.5);
+    let _ = ps.spawn(&ParticleConfig { x: x + drift, y: y + drift * 0.7, z, vx: (seed * 2.3).cos() * 0.25, vy: (seed * 2.9).sin() * 0.25, vz: -8.0 - (seed * 5.0).sin().abs() * 3.0, life, r: 0.7, g: 0.78, b: 0.95, size: 2.5 });
 }
 
 /// Spawn a burst of rain droplets across a rectangular area.
@@ -304,11 +299,7 @@ pub fn spawn_rain_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: 
         let y = min_y + ((fi * 17.3 + 7.9).sin() * 0.5 + 0.5) * sy;
         let seed = x * 17.3 + y * 11.7;
         let z = 3.0 + (seed * 1.3).sin() * 2.0;
-        if ps.spawn(x, y, z,
-            (seed * 2.3).cos() * 0.25, (seed * 2.9).sin() * 0.25,
-            -8.0 - (seed * 5.0).sin().abs() * 3.0,
-            0.3 + (seed * 7.1).sin().abs() * 0.25,
-            0.7, 0.78, 0.95, 2.5) {
+        if ps.spawn(&ParticleConfig { x, y, z, vx: (seed * 2.3).cos() * 0.25, vy: (seed * 2.9).sin() * 0.25, vz: -8.0 - (seed * 5.0).sin().abs() * 3.0, life: 0.3 + (seed * 7.1).sin().abs() * 0.25, r: 0.7, g: 0.78, b: 0.95, size: 2.5 }) {
             spawned += 1;
         } else {
             break;
@@ -324,10 +315,7 @@ pub fn spawn_snow_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
     let z = 4.0 + (seed * 1.1).sin() * 3.0;
     let drift = (seed * 2.3).cos() * 0.8;
     let life = 2.0 + (seed * 3.7).sin().abs() * 3.0;
-    let _ = ps.spawn(x + drift, y + drift * 0.5, z,
-        (seed * 1.7).cos() * 0.15, (seed * 2.1).sin() * 0.15,
-        -1.5 - (seed * 3.0).sin().abs() * 1.0,
-        life, 0.92, 0.95, 1.0, 1.8);
+    let _ = ps.spawn(&ParticleConfig { x: x + drift, y: y + drift * 0.5, z, vx: (seed * 1.7).cos() * 0.15, vy: (seed * 2.1).sin() * 0.15, vz: -1.5 - (seed * 3.0).sin().abs() * 1.0, life, r: 0.92, g: 0.95, b: 1.0, size: 1.8 });
 }
 
 /// Spawn a burst of snow particles across a rectangular area.
@@ -343,11 +331,7 @@ pub fn spawn_snow_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: 
         let y = min_y + ((fi * 17.9 + 2.3).sin() * 0.5 + 0.5) * sy;
         let seed = x * 13.7 + y * 19.3;
         let z = 4.0 + (seed * 1.1).sin() * 3.0;
-        if ps.spawn(x, y, z,
-            (seed * 1.7).cos() * 0.15, (seed * 2.1).sin() * 0.15,
-            -1.5 - (seed * 3.0).sin().abs() * 1.0,
-            2.0 + (seed * 3.7).sin().abs() * 3.0,
-            0.92, 0.95, 1.0, 1.8) {
+        if ps.spawn(&ParticleConfig { x, y, z, vx: (seed * 1.7).cos() * 0.15, vy: (seed * 2.1).sin() * 0.15, vz: -1.5 - (seed * 3.0).sin().abs() * 1.0, life: 2.0 + (seed * 3.7).sin().abs() * 3.0, r: 0.92, g: 0.95, b: 1.0, size: 1.8 }) {
             spawned += 1;
         } else {
             break;
@@ -362,15 +346,7 @@ pub fn spawn_dust_storm_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
     let z = 1.5 + (seed * 1.3).sin() * 1.5;
     let life = 3.0 + (seed * 4.1).sin().abs() * 4.0;
     let hue_var = (seed * 7.3).sin() * 0.08;
-    let _ = ps.spawn(x, y, z,
-        (seed * 1.9).cos() * 0.8 + 0.4,  // vx: strong prevailing wind (eastward)
-        (seed * 2.7).sin() * 0.4,        // vy: gentle lateral sway
-        -0.3 - (seed * 3.3).sin().abs() * 0.5,  // vz: very slow fall (suspended)
-        life,
-        0.72 + hue_var,                   // r: sandy brown
-        0.60 + hue_var * 0.5,             // g
-        0.42,                             // b
-        2.2);                             // size: larger wind-blown particle
+    let _ = ps.spawn(&ParticleConfig { x, y, z, vx: (seed * 1.9).cos() * 0.8 + 0.4, vy: (seed * 2.7).sin() * 0.4, vz: -0.3 - (seed * 3.3).sin().abs() * 0.5, life, r: 0.72 + hue_var, g: 0.60 + hue_var * 0.5, b: 0.42, size: 2.2 });                             // size: larger wind-blown particle
 }
 
 /// Spawn a burst of dust storm particles across a sand/desert area.
@@ -384,15 +360,7 @@ pub fn spawn_dust_storm_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, m
         let y = min_y + ((fi * 19.7 + 3.1).sin() * 0.5 + 0.5) * sy;
         let seed = x * 11.3 + y * 17.9;
         let z = 1.5 + (seed * 1.3).sin() * 1.5;
-        if ps.spawn(x, y, z,
-            (seed * 1.9).cos() * 0.8 + 0.4,
-            (seed * 2.7).sin() * 0.4,
-            -0.3 - (seed * 3.3).sin().abs() * 0.5,
-            3.0 + (seed * 4.1).sin().abs() * 4.0,
-            0.72 + (seed * 7.3).sin() * 0.08,
-            0.60 + (seed * 7.3).sin() * 0.04,
-            0.42,
-            2.2) {
+        if ps.spawn(&ParticleConfig { x, y, z, vx: (seed * 1.9).cos() * 0.8 + 0.4, vy: (seed * 2.7).sin() * 0.4, vz: -0.3 - (seed * 3.3).sin().abs() * 0.5, life: 3.0 + (seed * 4.1).sin().abs() * 4.0, r: 0.72 + (seed * 7.3).sin() * 0.08, g: 0.60 + (seed * 7.3).sin() * 0.04, b: 0.42, size: 2.2 }) {
             spawned += 1;
         } else {
             break;
@@ -408,13 +376,7 @@ pub fn spawn_fog_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
     let seed = x * 11.3 + y * 17.9;
     let z = 0.5 + (seed * 0.7).sin() * 0.8;  // low to ground
     let life = 4.0 + (seed * 2.3).sin().abs() * 4.0;
-    let _ = ps.spawn(x, y, z,
-        (seed * 1.3).cos() * 0.08,   // vx: very gentle drift
-        (seed * 1.9).sin() * 0.06,   // vy: minimal
-        0.02 + (seed * 0.5).sin().abs() * 0.03,  // vz: slight rise (mist lifts)
-        life,
-        0.82, 0.85, 0.88,           // r,g,b: pale grey-white
-        3.5);                         // size: large soft puff
+    let _ = ps.spawn(&ParticleConfig { x, y, z, vx: (seed * 1.3).cos() * 0.08, vy: (seed * 1.9).sin() * 0.06, vz: 0.02 + (seed * 0.5).sin().abs() * 0.03, life, r: 0.82, g: 0.85, b: 0.88, size: 3.5 });                         // size: large soft puff
 }
 
 /// Spawn a burst of fog/mist particles across a rectangular area.
@@ -428,11 +390,7 @@ pub fn spawn_fog_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f
         let y = min_y + ((fi * 19.3 + 7.9).sin() * 0.5 + 0.5) * sy;
         let seed = x * 11.3 + y * 17.9;
         let z = 0.5 + (seed * 0.7).sin() * 0.8;
-        if ps.spawn(x, y, z,
-            (seed * 1.3).cos() * 0.08, (seed * 1.9).sin() * 0.06,
-            0.02 + (seed * 0.5).sin().abs() * 0.03,
-            4.0 + (seed * 2.3).sin().abs() * 4.0,
-            0.82, 0.85, 0.88, 3.5) {
+        if ps.spawn(&ParticleConfig { x, y, z, vx: (seed * 1.3).cos() * 0.08, vy: (seed * 1.9).sin() * 0.06, vz: 0.02 + (seed * 0.5).sin().abs() * 0.03, life: 4.0 + (seed * 2.3).sin().abs() * 4.0, r: 0.82, g: 0.85, b: 0.88, size: 3.5 }) {
             spawned += 1;
         } else {
             break;
@@ -456,12 +414,12 @@ pub fn spawn_construction_effect(
     let r = 0.35 + nation_r * 0.25;
     let g = 0.30 + nation_g * 0.25;
     let b = 0.20 + nation_b * 0.20;
-    ps.spawn_burst(tile_x, tile_y, 0.1, 6, r, g, b, 1.2, 0.6, 3.5);
+    ps.spawn_burst(&BurstConfig { x: tile_x, y: tile_y, z: 0.1, count: 6, color_r: r, color_g: g, color_b: b, speed: 1.2, life: 0.6, size: 3.5 });
     // Sparkle highlights -- brighter, faster, nation-dominant color
     let sr = 0.5 + nation_r * 0.4;
     let sg = 0.45 + nation_g * 0.4;
     let sb = 0.4 + nation_b * 0.35;
-    ps.spawn_burst(tile_x, tile_y, 0.3, 4, sr, sg, sb, 2.0, 0.4, 2.5);
+    ps.spawn_burst(&BurstConfig { x: tile_x, y: tile_y, z: 0.3, count: 4, color_r: sr, color_g: sg, color_b: sb, speed: 2.0, life: 0.4, size: 2.5 });
 }
 
 /// Spawn a single firefly particle near forest/grass tiles at dusk/night.
@@ -478,7 +436,7 @@ pub fn spawn_firefly_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
     let r = 0.7 + (seed * 8.1).sin().abs() * 0.25;
     let g = 0.85 + (seed * 6.3).cos().abs() * 0.12;
     let b = 0.15 + (seed * 9.7).sin().abs() * 0.1;
-    let _ = ps.spawn(tile_x, tile_y, z, vx, vy, 0.01, life, r, g, b, 4.0);
+    let _ = ps.spawn(&ParticleConfig { x: tile_x, y: tile_y, z, vx, vy, vz: 0.01, life, r, g, b, size: 4.0 });
 }
 
 /// Spawn a single ember/spark particle near Smelter buildings.
@@ -500,7 +458,7 @@ pub fn spawn_ember_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
     let r = 0.9 + (seed * 6.1).sin().abs() * 0.1;   // 0.9-1.0
     let g = 0.35 + (seed * 8.3).cos().abs() * 0.35;  // 0.35-0.70 (orange to yellow)
     let b = 0.02 + (seed * 9.7).sin().abs() * 0.06;  // 0.02-0.08 (almost no blue)
-    let _ = ps.spawn(x, y, z, vx, vy, vz, life, r, g, b, 3.0);
+    let _ = ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r, g, b, size: 3.0 });
 }
 
 /// Spawn a burst of ember/spark particles at a smelter building.
@@ -512,19 +470,7 @@ pub fn spawn_ember_burst(ps: &mut ParticleSystem, x: f32, y: f32, count: u32) ->
         let fi = i as f32;
         let seed = x * 7.3 + y * 11.1 + fi * 3.7;
         let z = 1.5 + (seed * 1.7).sin().abs() * 1.0;
-        if ps.spawn(
-            x + (fi * 2.1).cos() * 0.3,
-            y + (fi * 3.7).sin() * 0.3,
-            z,
-            (seed * 2.3).cos() * 0.15,
-            (seed * 3.1).sin() * 0.12,
-            0.8 + (seed * 4.7).sin().abs() * 1.2,
-            0.6 + (seed * 5.3).sin().abs() * 0.6,
-            0.9 + (seed * 6.1).sin().abs() * 0.1,
-            0.35 + (seed * 8.3).cos().abs() * 0.35,
-            0.02 + (seed * 9.7).sin().abs() * 0.06,
-            3.0,
-        ) {
+        if ps.spawn(&ParticleConfig { x: x + (fi * 2.1).cos() * 0.3, y: y + (fi * 3.7).sin() * 0.3, z, vx: (seed * 2.3).cos() * 0.15, vy: (seed * 3.1).sin() * 0.12, vz: 0.8 + (seed * 4.7).sin().abs() * 1.2, life: 0.6 + (seed * 5.3).sin().abs() * 0.6, r: 0.9 + (seed * 6.1).sin().abs() * 0.1, g: 0.35 + (seed * 8.3).cos().abs() * 0.35, b: 0.02 + (seed * 9.7).sin().abs() * 0.06, size: 3.0 }) {
             spawned += 1;
         } else {
             break;
@@ -546,7 +492,7 @@ pub fn spawn_pollen_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
     let r = 0.85 + (seed * 7.3).sin().abs() * 0.15;    // warm white/yellow
     let g = 0.80 + (seed * 8.9).sin().abs() * 0.15;
     let b = 0.70 + (seed * 9.7).sin().abs() * 0.15;    // low blue = warm tone
-    let _ = ps.spawn(x, y, z, vx, vy, vz, life, r, g, b, 1.2);
+    let _ = ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r, g, b, size: 1.2 });
 }
 
 /// Spawn a burst of pollen/drifting seed particles across a rectangular area.
@@ -567,7 +513,7 @@ pub fn spawn_pollen_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x
         let r = 0.85 + (seed * 7.3).sin().abs() * 0.15;
         let g = 0.80 + (seed * 8.9).sin().abs() * 0.15;
         let b = 0.70 + (seed * 9.7).sin().abs() * 0.15;
-        if ps.spawn(x, y, z, vx, vy, vz, life, r, g, b, 1.2) {
+        if ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r, g, b, size: 1.2 }) {
             spawned += 1;
         } else {
             break;
@@ -588,7 +534,7 @@ mod tests {
     #[test]
     fn test_particle_spawn_activates() {
         let mut p = Particle::new();
-        p.spawn(1.0, 2.0, 0.0, 0.5, 0.5, 2.0, 1.0, 1.0, 0.0, 0.0, 8.0);
+        p.spawn(&ParticleConfig { x: 1.0, y: 2.0, z: 0.0, vx: 0.5, vy: 0.5, vz: 2.0, life: 1.0, r: 1.0, g: 0.0, b: 0.0, size: 8.0 });
         assert!(p.alive);
         assert_eq!(p.x, 1.0);
         assert_eq!(p.vz, 2.0);
@@ -597,7 +543,7 @@ mod tests {
     #[test]
     fn test_particle_tick_moves() {
         let mut p = Particle::new();
-        p.spawn(0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 2.0, 1.0, 1.0, 1.0, 8.0);
+        p.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 1.0, vx: 1.0, vy: 0.0, vz: 0.0, life: 2.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         p.tick(0.1);
         assert!(p.alive);
         assert!((p.x - 0.1).abs() < 0.001);
@@ -611,7 +557,7 @@ mod tests {
     #[test]
     fn test_particle_dies_after_lifetime() {
         let mut p = Particle::new();
-        p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0, 8.0);
+        p.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 0.5, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         assert!(p.tick(0.3));
         assert!(!p.tick(0.3));
         assert!(!p.alive);
@@ -620,7 +566,7 @@ mod tests {
     #[test]
     fn test_particle_alpha_fade() {
         let mut p = Particle::new();
-        p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 8.0);
+        p.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 1.0, r: 1.0, g: 0.0, b: 0.0, size: 8.0 });
         assert!((p.alpha() - 1.0).abs() < 0.001);
         p.life = 0.5;
         let alpha = p.alpha();
@@ -630,7 +576,7 @@ mod tests {
     #[test]
     fn test_particle_bounce() {
         let mut p = Particle::new();
-        p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 1.0, 8.0);
+        p.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 2.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         p.vz = -5.0;
         p.tick(0.5);
         assert!(p.z >= 0.0);
@@ -645,14 +591,14 @@ mod tests {
     #[test]
     fn test_system_spawn_succeeds() {
         let mut ps = ParticleSystem::new();
-        assert!(ps.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 8.0));
+        assert!(ps.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 1.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 }));
         assert_eq!(ps.alive_count(), 1);
     }
 
     #[test]
     fn test_system_spawn_burst() {
         let mut ps = ParticleSystem::new();
-        let n = ps.spawn_burst(5.0, 5.0, 0.0, 8, 0.0, 1.0, 0.0, 2.0, 1.0, 6.0);
+        let n = ps.spawn_burst(&BurstConfig { x: 0.0, y: 5.0, z: 0.0, count: 8, color_r: 0.0, color_g: 1.0, color_b: 0.0, speed: 2.0, life: 1.0, size: 6.0 });
         assert_eq!(n, 8);
         assert_eq!(ps.alive_count(), 8);
     }
@@ -660,7 +606,7 @@ mod tests {
     #[test]
     fn test_system_update_removes_dead() {
         let mut ps = ParticleSystem::new();
-        ps.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 1.0, 1.0, 1.0, 8.0);
+        ps.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 0.3, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         assert_eq!(ps.alive_count(), 1);
         ps.update(0.5);
         assert_eq!(ps.alive_count(), 0);
@@ -669,7 +615,7 @@ mod tests {
     #[test]
     fn test_system_clear() {
         let mut ps = ParticleSystem::new();
-        ps.spawn_burst(0.0, 0.0, 0.0, 10, 1.0, 1.0, 1.0, 2.0, 1.0, 6.0);
+        ps.spawn_burst(&BurstConfig { x: 0.0, y: 0.0, z: 0.0, count: 10, color_r: 1.0, color_g: 1.0, color_b: 1.0, speed: 2.0, life: 1.0, size: 6.0 });
         assert_eq!(ps.alive_count(), 10);
         ps.clear();
         assert_eq!(ps.alive_count(), 0);
@@ -679,7 +625,7 @@ mod tests {
     fn test_system_max_particles() {
         let mut ps = ParticleSystem::new();
         for i in 0..MAX_PARTICLES + 10 {
-            let spawned = ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+            let spawned = ps.spawn(&ParticleConfig { x: i as f32, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 10.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
             if i < MAX_PARTICLES {
                 assert!(spawned, "should spawn particle {}", i);
             } else {
@@ -699,7 +645,7 @@ mod tests {
     #[test]
     fn test_overlay_data_has_alive() {
         let mut ps = ParticleSystem::new();
-        ps.spawn(3.0, 4.0, 0.5, 0.0, 0.0, 0.0, 1.0, 0.2, 0.8, 0.3, 10.0);
+        ps.spawn(&ParticleConfig { x: 3.0, y: 4.0, z: 0.5, vx: 0.0, vy: 0.0, vz: 0.0, life: 1.0, r: 0.2, g: 0.8, b: 0.3, size: 10.0 });
         let (pos, col, sizes) = ps.get_overlay_data();
         assert_eq!(pos.len(), 2);
         assert_eq!(col.len(), 3);
@@ -717,7 +663,7 @@ mod tests {
     #[test]
     fn test_to_json_one_particle() {
         let mut ps = ParticleSystem::new();
-        ps.spawn(1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.2, 8.0);
+        ps.spawn(&ParticleConfig { x: 1.0, y: 2.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 1.0, r: 1.0, g: 0.5, b: 0.2, size: 8.0 });
         let json = ps.to_json();
         assert!(json.contains("\"x\":1.00"));
         assert!(json.contains("\"r\":1.00"));
@@ -747,7 +693,7 @@ mod tests {
     #[test]
     fn test_particle_gravity() {
         let mut p = Particle::new();
-        p.spawn(0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 3.0, 1.0, 1.0, 1.0, 8.0);
+        p.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 5.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 3.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         p.tick(0.1);
         assert!(p.vz < 0.0, "vz should be negative after gravity");
         p.tick(0.1);
@@ -758,8 +704,8 @@ mod tests {
     fn test_burst_deterministic() {
         let mut ps1 = ParticleSystem::new();
         let mut ps2 = ParticleSystem::new();
-        let n1 = ps1.spawn_burst(0.0, 0.0, 0.0, 10, 1.0, 0.0, 0.0, 2.0, 1.0, 6.0);
-        let n2 = ps2.spawn_burst(0.0, 0.0, 0.0, 10, 1.0, 0.0, 0.0, 2.0, 1.0, 6.0);
+        let n1 = ps1.spawn_burst(&BurstConfig { x: 0.0, y: 0.0, z: 0.0, count: 10, color_r: 1.0, color_g: 0.0, color_b: 0.0, speed: 2.0, life: 1.0, size: 6.0 });
+        let n2 = ps2.spawn_burst(&BurstConfig { x: 0.0, y: 0.0, z: 0.0, count: 10, color_r: 1.0, color_g: 0.0, color_b: 0.0, speed: 2.0, life: 1.0, size: 6.0 });
         assert_eq!(n1, n2);
         assert_eq!(n1, 10);
     }
@@ -815,11 +761,11 @@ mod tests {
     fn test_burst_alive_count_after_clear_then_burst() {
         // Regression: burst should work after clearing and re-spawning
         let mut ps = ParticleSystem::new();
-        ps.spawn_burst(0.0, 0.0, 0.0, 50, 1.0, 0.0, 0.0, 2.0, 1.0, 6.0);
+        ps.spawn_burst(&BurstConfig { x: 0.0, y: 0.0, z: 0.0, count: 50, color_r: 1.0, color_g: 0.0, color_b: 0.0, speed: 2.0, life: 1.0, size: 6.0 });
         assert_eq!(ps.alive_count(), 50);
         ps.clear();
         assert_eq!(ps.alive_count(), 0);
-        let n = ps.spawn_burst(0.0, 0.0, 0.0, 30, 0.0, 1.0, 0.0, 2.0, 1.0, 6.0);
+        let n = ps.spawn_burst(&BurstConfig { x: 0.0, y: 0.0, z: 0.0, count: 30, color_r: 0.0, color_g: 1.0, color_b: 0.0, speed: 2.0, life: 1.0, size: 6.0 });
         assert_eq!(n, 30);
         assert_eq!(ps.alive_count(), 30);
     }
@@ -987,7 +933,7 @@ mod tests {
         let mut ps = ParticleSystem::new();
         // Fill all slots
         for i in 0..MAX_PARTICLES {
-            ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+            ps.spawn(&ParticleConfig { x: i as f32, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 10.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         }
         assert_eq!(ps.alive_count(), MAX_PARTICLES);
         let n = spawn_rain_burst(&mut ps, 0.0, 0.0, 10.0, 10.0, 20);
@@ -1059,7 +1005,7 @@ mod tests {
     fn test_snow_burst_limited_by_max() {
         let mut ps = ParticleSystem::new();
         for i in 0..MAX_PARTICLES {
-            ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+            ps.spawn(&ParticleConfig { x: i as f32, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 10.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         }
         assert_eq!(ps.alive_count(), MAX_PARTICLES);
         let n = spawn_snow_burst(&mut ps, 0.0, 0.0, 10.0, 10.0, 20);
@@ -1125,7 +1071,7 @@ mod tests {
     fn test_dust_storm_burst_limited_by_max() {
         let mut ps = ParticleSystem::new();
         for i in 0..MAX_PARTICLES {
-            ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+            ps.spawn(&ParticleConfig { x: i as f32, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 10.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         }
         assert_eq!(ps.alive_count(), MAX_PARTICLES);
         let n = spawn_dust_storm_burst(&mut ps, 0.0, 0.0, 10.0, 10.0, 20);
@@ -1191,7 +1137,7 @@ mod tests {
     fn test_fog_burst_limited_by_max() {
         let mut ps = ParticleSystem::new();
         for i in 0..MAX_PARTICLES {
-            ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+            ps.spawn(&ParticleConfig { x: i as f32, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 10.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         }
         assert_eq!(ps.alive_count(), MAX_PARTICLES);
         let n = spawn_fog_burst(&mut ps, 0.0, 0.0, 10.0, 10.0, 20);
@@ -1261,7 +1207,7 @@ mod tests {
     fn test_pollen_burst_limited_by_max() {
         let mut ps = ParticleSystem::new();
         for i in 0..MAX_PARTICLES {
-            ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+            ps.spawn(&ParticleConfig { x: i as f32, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 10.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         }
         assert_eq!(ps.alive_count(), MAX_PARTICLES);
         let n = spawn_pollen_burst(&mut ps, 0.0, 0.0, 5.0, 5.0, 10);
@@ -1336,7 +1282,7 @@ mod tests {
     fn test_ember_burst_limited_by_max() {
         let mut ps = ParticleSystem::new();
         for i in 0..MAX_PARTICLES {
-            ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+            ps.spawn(&ParticleConfig { x: i as f32, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 10.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         }
         assert_eq!(ps.alive_count(), MAX_PARTICLES);
         let n = spawn_ember_burst(&mut ps, 5.0, 5.0, 10);
@@ -1347,7 +1293,7 @@ mod tests {
 #[test]
 fn test_particle_bounce_velocity_reversal() {
     let mut p = Particle::new();
-    p.spawn(0.0, 0.0, 1.0, 0.0, 0.0, -6.0, 2.0, 1.0, 0.5, 0.2, 8.0);
+    p.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 1.0, vx: 0.0, vy: 0.0, vz: -6.0, life: 2.0, r: 1.0, g: 0.5, b: 0.2, size: 8.0 });
     // Tick enough to hit the ground
     p.tick(0.3);
     assert!(p.z >= 0.0, "z should not go below 0 after bounce");
@@ -1358,7 +1304,7 @@ fn test_particle_bounce_velocity_reversal() {
 #[test]
 fn test_particle_alpha_full_at_start() {
     let mut p = Particle::new();
-    p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 1.0, 8.0);
+    p.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 2.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
     // At full life, alpha should be 1.0 (t > 0.7)
     assert!((p.alpha() - 1.0).abs() < 0.01, "alpha should be 1.0 at full life, got {}", p.alpha());
 }
@@ -1366,7 +1312,7 @@ fn test_particle_alpha_full_at_start() {
 #[test]
 fn test_particle_alpha_fades_below_threshold() {
     let mut p = Particle::new();
-    p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 1.0, 8.0);
+    p.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 2.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
     // Tick to 50% life, falls below 0.7 threshold
     p.tick(1.0);
     let alpha = p.alpha();
@@ -1377,7 +1323,7 @@ fn test_particle_alpha_fades_below_threshold() {
 #[test]
 fn test_particle_alpha_zero_when_dead() {
     let mut p = Particle::new();
-    p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 1.0, 1.0, 1.0, 8.0);
+    p.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 0.1, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
     // Tick past lifetime
     p.tick(0.2);
     assert!((p.alpha() - 0.0).abs() < 0.01, "dead particle alpha should be 0, got {}", p.alpha());

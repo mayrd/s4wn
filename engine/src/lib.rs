@@ -5265,6 +5265,7 @@ pub fn wasm_ungarrison_unit(building_index: usize, unit_id: u32) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::particle::{ParticleConfig, BurstConfig};
 
     #[test]
     fn test_shader_constants() {
@@ -6400,7 +6401,7 @@ mod tests {
     #[test]
     fn test_particle_spawn_and_update() {
         let mut ps = particle::ParticleSystem::new();
-        assert!(ps.spawn(1.0, 2.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.5, 0.5, 8.0));
+        assert!(ps.spawn(&ParticleConfig { x: 1.0, y: 2.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 1.0, life: 1.0, r: 0.5, g: 0.5, b: 0.5, size: 8.0 }));
         assert_eq!(ps.alive_count(), 1);
         ps.update(0.5);
         assert_eq!(ps.alive_count(), 1);
@@ -6411,7 +6412,7 @@ mod tests {
     #[test]
     fn test_particle_burst() {
         let mut ps = particle::ParticleSystem::new();
-        let n = ps.spawn_burst(5.0, 5.0, 0.0, 10, 1.0, 0.0, 0.0, 2.0, 1.0, 6.0);
+        let n = ps.spawn_burst(&BurstConfig { x: 0.0, y: 5.0, z: 0.0, count: 10, color_r: 1.0, color_g: 0.0, color_b: 0.0, speed: 2.0, life: 1.0, size: 6.0 });
         assert_eq!(n, 10);
         assert_eq!(ps.alive_count(), 10);
     }
@@ -6419,7 +6420,7 @@ mod tests {
     #[test]
     fn test_particle_overlay_data() {
         let mut ps = particle::ParticleSystem::new();
-        ps.spawn(3.0, 4.0, 0.5, 0.0, 0.0, 0.0, 1.0, 0.2, 0.8, 0.3, 10.0);
+        ps.spawn(&ParticleConfig { x: 3.0, y: 4.0, z: 0.5, vx: 0.0, vy: 0.0, vz: 0.0, life: 1.0, r: 0.2, g: 0.8, b: 0.3, size: 10.0 });
         let (pos, col, sizes) = ps.get_overlay_data();
         assert_eq!(pos.len(), 2);
         assert_eq!(col.len(), 3);
@@ -6432,7 +6433,7 @@ mod tests {
     fn test_particle_to_json() {
         let mut ps = particle::ParticleSystem::new();
         assert_eq!(ps.to_json(), "[]");
-        ps.spawn(1.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.2, 8.0);
+        ps.spawn(&ParticleConfig { x: 1.0, y: 2.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 1.0, r: 1.0, g: 0.5, b: 0.2, size: 8.0 });
         let json = ps.to_json();
         assert!(json.contains("\"x\":1.00"), "json: {}", json);
     }
@@ -6455,7 +6456,7 @@ mod tests {
     fn test_particle_max_pool() {
         let mut ps = particle::ParticleSystem::new();
         for i in 0..particle::MAX_PARTICLES + 10 {
-            let spawned = ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+            let spawned = ps.spawn(&ParticleConfig { x: i as f32, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 10.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
             if i < particle::MAX_PARTICLES {
                 assert!(spawned);
             } else {
@@ -6468,7 +6469,7 @@ mod tests {
     #[test]
     fn test_particle_clear() {
         let mut ps = particle::ParticleSystem::new();
-        ps.spawn_burst(0.0, 0.0, 0.0, 20, 1.0, 1.0, 1.0, 2.0, 1.0, 6.0);
+        ps.spawn_burst(&BurstConfig { x: 0.0, y: 0.0, z: 0.0, count: 20, color_r: 1.0, color_g: 1.0, color_b: 1.0, speed: 2.0, life: 1.0, size: 6.0 });
         assert_eq!(ps.alive_count(), 20);
         ps.clear();
         assert_eq!(ps.alive_count(), 0);
@@ -6477,7 +6478,7 @@ mod tests {
     #[test]
     fn test_particle_alpha_fade() {
         let mut p = particle::Particle::new();
-        p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 8.0);
+        p.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 1.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         assert!((p.alpha() - 1.0).abs() < 0.001);
         p.life = 0.5;
         let alpha = p.alpha();
@@ -6487,7 +6488,7 @@ mod tests {
     #[test]
     fn test_particle_bounce() {
         let mut p = particle::Particle::new();
-        p.spawn(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 1.0, 8.0);
+        p.spawn(&ParticleConfig { x: 0.0, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 2.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
         p.vz = -5.0;
         p.tick(0.5);
         assert!(p.z >= 0.0, "z: {}", p.z);
