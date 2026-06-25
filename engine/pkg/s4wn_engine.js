@@ -41,24 +41,6 @@ export function add_starting_resources(difficulty) {
 }
 
 /**
- * Clear the rally point for a building.
- * Returns true if the building existed.
- * @param {number} building_index
- * @returns {boolean}
- */
-export function clear_building_rally_point(building_index) {
-    const ret = wasm.clear_building_rally_point(building_index);
-    return ret !== 0;
-}
-
-/**
- * Clear all particles.
- */
-export function clear_particles() {
-    wasm.clear_particles();
-}
-
-/**
  * Apply damage to a building at the given index. If HP reaches 0, destruction starts.
  * Returns the remaining HP, or 0 if the building doesn't exist.
  * @param {number} building_index
@@ -257,24 +239,6 @@ export function get_building_info(idx) {
 export function get_building_max_hp(building_index) {
     const ret = wasm.get_building_max_hp(building_index);
     return ret >>> 0;
-}
-
-/**
- * Get the rally point for a building as JSON: {"x":N,"y":N} or null if none set.
- * @param {number} building_index
- * @returns {string}
- */
-export function get_building_rally_point(building_index) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_building_rally_point(building_index);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
 }
 
 /**
@@ -792,15 +756,6 @@ export function order_patrol(unit_ids_json, target_x, target_y) {
 }
 
 /**
- * Get the number of alive particles.
- * @returns {number}
- */
-export function particle_count() {
-    const ret = wasm.particle_count();
-    return ret;
-}
-
-/**
  * Populate model_instances from current game state (buildings).
  * Maps building types to model IDs. Called from JS each frame before render().
  * @returns {number}
@@ -866,59 +821,12 @@ export function restore_game_state(json) {
 }
 
 /**
- * Phase 5: Set orbital camera azimuth (horizontal orbit), degrees [0–360).
- * @param {number} degrees
- */
-export function set_azimuth(degrees) {
-    wasm.set_azimuth(degrees);
-}
-
-/**
- * Set the rally point for a building.
- * building_index: index into the economy's buildings list.
- * x, y: target tile coordinates for the rally point.
- * Returns true if the building exists and the rally point was set.
- * @param {number} building_index
- * @param {number} x
- * @param {number} y
- * @returns {boolean}
- */
-export function set_building_rally_point(building_index, x, y) {
-    const ret = wasm.set_building_rally_point(building_index, x, y);
-    return ret !== 0;
-}
-
-/**
- * Phase 5: Set orbital camera distance from focus, tile units [2–100].
- * @param {number} dist
- */
-export function set_distance(dist) {
-    wasm.set_distance(dist);
-}
-
-/**
- * Phase 5: Set orbital camera elevation (vertical angle), degrees [10–80].
- * @param {number} degrees
- */
-export function set_elevation(degrees) {
-    wasm.set_elevation(degrees);
-}
-
-/**
  * Receive pending network messages as JSON strings.
  * Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
  * @param {number} multiplier
  */
 export function set_game_speed(multiplier) {
     wasm.set_game_speed(multiplier);
-}
-
-/**
- * Set the game pause state.
- * @param {boolean} paused
- */
-export function set_paused(paused) {
-    wasm.set_paused(paused);
 }
 
 /**
@@ -1022,46 +930,6 @@ export function setup_starter_base(settler_count) {
  */
 export function spawn_build_effect(tile_x, tile_y) {
     wasm.spawn_build_effect(tile_x, tile_y);
-}
-
-/**
- * Spawn a red/orange "combat hit" effect at the given tile.
- * @param {number} tile_x
- * @param {number} tile_y
- */
-export function spawn_combat_effect(tile_x, tile_y) {
-    wasm.spawn_combat_effect(tile_x, tile_y);
-}
-
-/**
- * Spawn construction activity particles with per-nation color tint.
- * nation_r/g/b should be in 0.0-1.0 range (from NationType::color() / 255.0).
- * @param {number} tile_x
- * @param {number} tile_y
- * @param {number} nation_r
- * @param {number} nation_g
- * @param {number} nation_b
- */
-export function spawn_construction_effect(tile_x, tile_y, nation_r, nation_g, nation_b) {
-    wasm.spawn_construction_effect(tile_x, tile_y, nation_r, nation_g, nation_b);
-}
-
-/**
- * Spawn a floating leaf particle (forest ambient).
- * @param {number} tile_x
- * @param {number} tile_y
- */
-export function spawn_leaf_effect(tile_x, tile_y) {
-    wasm.spawn_leaf_effect(tile_x, tile_y);
-}
-
-/**
- * Spawn chimney smoke puffs at a building location.
- * @param {number} tile_x
- * @param {number} tile_y
- */
-export function spawn_smoke_effect(tile_x, tile_y) {
-    wasm.spawn_smoke_effect(tile_x, tile_y);
 }
 
 /**

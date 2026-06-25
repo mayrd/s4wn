@@ -16,17 +16,6 @@ export function add_model_instance(model_id: string, x: number, y: number, scale
 export function add_starting_resources(difficulty: string): string;
 
 /**
- * Clear the rally point for a building.
- * Returns true if the building existed.
- */
-export function clear_building_rally_point(building_index: number): boolean;
-
-/**
- * Clear all particles.
- */
-export function clear_particles(): void;
-
-/**
  * Apply damage to a building at the given index. If HP reaches 0, destruction starts.
  * Returns the remaining HP, or 0 if the building doesn't exist.
  */
@@ -102,11 +91,6 @@ export function get_building_info(idx: number): string;
  * Get the max HP of a building at the given index. Returns 0 if not found.
  */
 export function get_building_max_hp(building_index: number): number;
-
-/**
- * Get the rally point for a building as JSON: {"x":N,"y":N} or null if none set.
- */
-export function get_building_rally_point(building_index: number): string;
 
 /**
  * Get building summary as a JSON string for the HUD.
@@ -299,11 +283,6 @@ export function on_wheel(delta_y: number): void;
 export function order_patrol(unit_ids_json: string, target_x: number, target_y: number): number;
 
 /**
- * Get the number of alive particles.
- */
-export function particle_count(): number;
-
-/**
  * Populate model_instances from current game state (buildings).
  * Maps building types to model IDs. Called from JS each frame before render().
  */
@@ -335,38 +314,10 @@ export function resize(): void;
 export function restore_game_state(json: string): string;
 
 /**
- * Phase 5: Set orbital camera azimuth (horizontal orbit), degrees [0–360).
- */
-export function set_azimuth(degrees: number): void;
-
-/**
- * Set the rally point for a building.
- * building_index: index into the economy's buildings list.
- * x, y: target tile coordinates for the rally point.
- * Returns true if the building exists and the rally point was set.
- */
-export function set_building_rally_point(building_index: number, x: number, y: number): boolean;
-
-/**
- * Phase 5: Set orbital camera distance from focus, tile units [2–100].
- */
-export function set_distance(dist: number): void;
-
-/**
- * Phase 5: Set orbital camera elevation (vertical angle), degrees [10–80].
- */
-export function set_elevation(degrees: number): void;
-
-/**
  * Receive pending network messages as JSON strings.
  * Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
  */
 export function set_game_speed(multiplier: number): void;
-
-/**
- * Set the game pause state.
- */
-export function set_paused(paused: boolean): void;
 
 /**
  * Set the player's nation for the current game.
@@ -423,27 +374,6 @@ export function setup_starter_base(settler_count: number): string;
 export function spawn_build_effect(tile_x: number, tile_y: number): void;
 
 /**
- * Spawn a red/orange "combat hit" effect at the given tile.
- */
-export function spawn_combat_effect(tile_x: number, tile_y: number): void;
-
-/**
- * Spawn construction activity particles with per-nation color tint.
- * nation_r/g/b should be in 0.0-1.0 range (from NationType::color() / 255.0).
- */
-export function spawn_construction_effect(tile_x: number, tile_y: number, nation_r: number, nation_g: number, nation_b: number): void;
-
-/**
- * Spawn a floating leaf particle (forest ambient).
- */
-export function spawn_leaf_effect(tile_x: number, tile_y: number): void;
-
-/**
- * Spawn chimney smoke puffs at a building location.
- */
-export function spawn_smoke_effect(tile_x: number, tile_y: number): void;
-
-/**
  * Start the destruction animation for a building at the given index.
  * `duration_secs` controls how long the scale-down animation plays (e.g. 1.5).
  * Returns true if the building exists and destruction was started.
@@ -491,8 +421,6 @@ export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
-    readonly clear_building_rally_point: (a: number) => number;
-    readonly clear_particles: () => void;
     readonly damage_building: (a: number, b: number) => number;
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
     readonly export_map_json: () => [number, number];
@@ -505,7 +433,6 @@ export interface InitOutput {
     readonly get_building_hp: (a: number) => number;
     readonly get_building_info: (a: number) => [number, number];
     readonly get_building_max_hp: (a: number) => number;
-    readonly get_building_rally_point: (a: number) => [number, number];
     readonly get_building_summary: () => [number, number];
     readonly get_camera_state: () => [number, number];
     readonly get_draw_calls: () => number;
@@ -538,19 +465,13 @@ export interface InitOutput {
     readonly on_mouse_up: () => void;
     readonly on_wheel: (a: number) => void;
     readonly order_patrol: (a: number, b: number, c: number, d: number) => number;
-    readonly particle_count: () => number;
     readonly populate_model_instances_from_game: () => number;
     readonly recent_combat_count: () => number;
     readonly recent_death_count: () => number;
     readonly render: (a: number) => void;
     readonly resize: () => void;
     readonly restore_game_state: (a: number, b: number) => [number, number];
-    readonly set_azimuth: (a: number) => void;
-    readonly set_building_rally_point: (a: number, b: number, c: number) => number;
-    readonly set_distance: (a: number) => void;
-    readonly set_elevation: (a: number) => void;
     readonly set_game_speed: (a: number) => void;
-    readonly set_paused: (a: number) => void;
     readonly set_player_nation: (a: number, b: number) => number;
     readonly set_textures_ready: () => void;
     readonly set_tile_terrain: (a: number, b: number, c: number) => number;
@@ -559,10 +480,6 @@ export interface InitOutput {
     readonly set_water_normal_ready: () => void;
     readonly setup_starter_base: (a: number) => [number, number];
     readonly spawn_build_effect: (a: number, b: number) => void;
-    readonly spawn_combat_effect: (a: number, b: number) => void;
-    readonly spawn_construction_effect: (a: number, b: number, c: number, d: number, e: number) => void;
-    readonly spawn_leaf_effect: (a: number, b: number) => void;
-    readonly spawn_smoke_effect: (a: number, b: number) => void;
     readonly start_building_destruction: (a: number, b: number) => number;
     readonly tick_building_destructions: (a: number) => [number, number];
     readonly toggle_editor_grid: () => number;

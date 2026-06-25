@@ -3280,38 +3280,6 @@ pub fn on_wheel(delta_y: f32) {
     }
 }
 
-/// Phase 5: Set orbital camera azimuth (horizontal orbit), degrees [0–360).
-#[wasm_bindgen]
-pub fn set_azimuth(degrees: f32) {
-    unsafe {
-        if let Some(ref mut app) = APP {
-            app.camera.set_azimuth(degrees);
-            app.mesh_dirty = true;
-        }
-    }
-}
-
-/// Phase 5: Set orbital camera elevation (vertical angle), degrees [10–80].
-#[wasm_bindgen]
-pub fn set_elevation(degrees: f32) {
-    unsafe {
-        if let Some(ref mut app) = APP {
-            app.camera.set_elevation(degrees);
-            app.mesh_dirty = true;
-        }
-    }
-}
-
-/// Phase 5: Set orbital camera distance from focus, tile units [2–100].
-#[wasm_bindgen]
-pub fn set_distance(dist: f32) {
-    unsafe {
-        if let Some(ref mut app) = APP {
-            app.camera.set_distance(dist);
-            app.mesh_dirty = true;
-        }
-    }
-}
 
 /// Get engine stats as a JSON string (FPS, tick count, game time).
 #[wasm_bindgen]
@@ -4195,15 +4163,6 @@ pub fn get_game_speed() -> f64 {
     }
 }
 
-/// Set the game pause state.
-#[wasm_bindgen]
-pub fn set_paused(paused: bool) {
-    unsafe {
-        if let Some(ref mut app) = APP {
-            app.paused = paused;
-        }
-    }
-}
 
 /// Get camera state for minimap viewport calculation.
 /// Returns JSON: {"center_x":10.5,"center_y":12.3,"zoom":1.0,"vp_w":1280,"vp_h":720}
@@ -5003,73 +4962,11 @@ pub fn spawn_build_effect(tile_x: f32, tile_y: f32) {
     }
 }
 
-/// Spawn construction activity particles with per-nation color tint.
-/// nation_r/g/b should be in 0.0-1.0 range (from NationType::color() / 255.0).
-#[wasm_bindgen]
-pub fn spawn_construction_effect(
-    tile_x: f32, tile_y: f32,
-    nation_r: f32, nation_g: f32, nation_b: f32,
-) {
-    unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
-            particle::spawn_construction_effect(
-                &mut app.particle_system, tile_x, tile_y, nation_r, nation_g, nation_b,
-            );
-        }
-    }
-}
 
-/// Spawn a red/orange "combat hit" effect at the given tile.
-#[wasm_bindgen]
-pub fn spawn_combat_effect(tile_x: f32, tile_y: f32) {
-    unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
-            particle::spawn_combat_effect(&mut app.particle_system, tile_x, tile_y);
-        }
-    }
-}
 
-/// Spawn chimney smoke puffs at a building location.
-#[wasm_bindgen]
-pub fn spawn_smoke_effect(tile_x: f32, tile_y: f32) {
-    unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
-            particle::spawn_smoke_effect(&mut app.particle_system, tile_x, tile_y);
-        }
-    }
-}
 
-/// Spawn a floating leaf particle (forest ambient).
-#[wasm_bindgen]
-pub fn spawn_leaf_effect(tile_x: f32, tile_y: f32) {
-    unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
-            particle::spawn_leaf_effect(&mut app.particle_system, tile_x, tile_y);
-        }
-    }
-}
 
-/// Get the number of alive particles.
-#[wasm_bindgen]
-pub fn particle_count() -> i32 {
-    unsafe {
-        if let Some(app) = APP.as_ref() {
-            app.particle_system.alive_count() as i32
-        } else {
-            0
-        }
-    }
-}
 
-/// Clear all particles.
-#[wasm_bindgen]
-pub fn clear_particles() {
-    unsafe {
-        if let Some(ref mut app) = APP.as_mut() {
-            app.particle_system.clear();
-        }
-    }
-}
 
 /// Get particles as JSON for JS-side rendering fallback.
 #[wasm_bindgen]
@@ -5164,48 +5061,6 @@ pub fn export_map_json() -> String {
     }
 }
 
-/// Set the rally point for a building.
-/// building_index: index into the economy's buildings list.
-/// x, y: target tile coordinates for the rally point.
-/// Returns true if the building exists and the rally point was set.
-#[wasm_bindgen]
-pub fn set_building_rally_point(building_index: usize, x: usize, y: usize) -> bool {
-    unsafe {
-        if let Some(ref mut app) = APP {
-            app.game_loop.state.economy.set_building_rally_point(building_index, x, y)
-        } else {
-            false
-        }
-    }
-}
-
-/// Clear the rally point for a building.
-/// Returns true if the building existed.
-#[wasm_bindgen]
-pub fn clear_building_rally_point(building_index: usize) -> bool {
-    unsafe {
-        if let Some(ref mut app) = APP {
-            app.game_loop.state.economy.clear_building_rally_point(building_index)
-        } else {
-            false
-        }
-    }
-}
-
-/// Get the rally point for a building as JSON: {"x":N,"y":N} or null if none set.
-#[wasm_bindgen]
-pub fn get_building_rally_point(building_index: usize) -> String {
-    unsafe {
-        if let Some(ref app) = APP {
-            match app.game_loop.state.economy.get_building_rally_point(building_index) {
-                Some((x, y)) => format!(r#"{{"x":{},"y":{}}}"#, x, y),
-                None => String::from("null"),
-            }
-        } else {
-            String::from("null")
-        }
-    }
-}
 
 /// Start the destruction animation for a building at the given index.
 /// `duration_secs` controls how long the scale-down animation plays (e.g. 1.5).
