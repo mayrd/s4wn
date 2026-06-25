@@ -345,6 +345,46 @@ pub fn spawn_dust_storm_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, m
     spawned
 }
 
+/// Spawn a single fog/mist particle.
+/// Fog is slow-moving, low-density, and spawns near water/swamp tiles.
+/// Color is a pale grey-white to simulate morning mist over water.
+pub fn spawn_fog_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 11.3 + y * 17.9;
+    let z = 0.5 + (seed * 0.7).sin() * 0.8;  // low to ground
+    let life = 4.0 + (seed * 2.3).sin().abs() * 4.0;
+    let _ = ps.spawn(x, y, z,
+        (seed * 1.3).cos() * 0.08,   // vx: very gentle drift
+        (seed * 1.9).sin() * 0.06,   // vy: minimal
+        0.02 + (seed * 0.5).sin().abs() * 0.03,  // vz: slight rise (mist lifts)
+        life,
+        0.82, 0.85, 0.88,           // r,g,b: pale grey-white
+        3.5);                         // size: large soft puff
+}
+
+/// Spawn a burst of fog/mist particles across a rectangular area.
+pub fn spawn_fog_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 13.7 + 4.1).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 19.3 + 7.9).sin() * 0.5 + 0.5) * sy;
+        let seed = x * 11.3 + y * 17.9;
+        let z = 0.5 + (seed * 0.7).sin() * 0.8;
+        if ps.spawn(x, y, z,
+            (seed * 1.3).cos() * 0.08, (seed * 1.9).sin() * 0.06,
+            0.02 + (seed * 0.5).sin().abs() * 0.03,
+            4.0 + (seed * 2.3).sin().abs() * 4.0,
+            0.82, 0.85, 0.88, 3.5) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
+
 /// Spawn construction activity particles at a building site.
 /// Nation color is blended with construction dust for faction-specific effects.
 /// Called periodically during building construction (when construction < 1.0).
@@ -859,5 +899,70 @@ mod tests {
         assert_eq!(n, 0, "dust burst should spawn 0 when system full");
     }
 
+    #[test]
+    fn test_fog_particle_spawns_pale_grey_color() {
+        let mut ps = ParticleSystem::new();
+        spawn_fog_particle(&mut ps, 5.0, 5.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Fog should be pale grey-white: high r,g,b values, all similar
+        assert!(p.r > 0.8, "fog r should be >0.8, got {}", p.r);
+        assert!(p.g > 0.8, "fog g should be >0.8, got {}", p.g);
+        assert!(p.b > 0.8, "fog b should be >0.8, got {}", p.b);
+        // Grey: all channels within 0.1 of each other
+        let diff = (p.r - p.b).abs();
+        assert!(diff < 0.1, "fog should be grey (r-b diff <0.1), got {}", diff);
+    }
+
+    #[test]
+    fn test_fog_gentle_drift() {
+        let mut ps = ParticleSystem::new();
+        spawn_fog_particle(&mut ps, 8.0, 8.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Fog has very gentle horizontal drift (+-0.08)
+        assert!(p.vx >= -0.1 && p.vx <= 0.1, "fog vx should be in [-0.1,0.1], got {}", p.vx);
+        assert!(p.vy >= -0.08 && p.vy <= 0.08, "fog vy should be in [-0.08,0.08], got {}", p.vy);
+    }
+
+    #[test]
+    fn test_fog_slight_rise() {
+        let mut ps = ParticleSystem::new();
+        spawn_fog_particle(&mut ps, 3.0, 3.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Fog lifts slightly (vz positive, slow)
+        assert!(p.vz > 0.0, "fog vz should be positive (rising), got {}", p.vz);
+        assert!(p.vz < 0.1, "fog vz should be <0.1 (slow rise), got {}", p.vz);
+    }
+
+    #[test]
+    fn test_fog_long_lifetime() {
+        let mut ps = ParticleSystem::new();
+        spawn_fog_particle(&mut ps, 2.0, 2.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Fog should persist 4-8 seconds
+        assert!(p.life > 3.5, "fog life should be >3.5s, got {}", p.life);
+    }
+
+    #[test]
+    fn test_fog_burst_bounds() {
+        let mut ps = ParticleSystem::new();
+        let n = spawn_fog_burst(&mut ps, 5.0, 5.0, 25.0, 25.0, 6);
+        assert!(n > 0);
+        let alive: Vec<&Particle> = ps.particles.iter().filter(|p| p.alive).collect();
+        for p in &alive {
+            assert!(p.x >= 5.0 && p.x <= 25.0, "fog x={} out of [5,25]", p.x);
+            assert!(p.y >= 5.0 && p.y <= 25.0, "fog y={} out of [5,25]", p.y);
+        }
+    }
+
+    #[test]
+    fn test_fog_burst_limited_by_max() {
+        let mut ps = ParticleSystem::new();
+        for i in 0..MAX_PARTICLES {
+            ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+        }
+        assert_eq!(ps.alive_count(), MAX_PARTICLES);
+        let n = spawn_fog_burst(&mut ps, 0.0, 0.0, 10.0, 10.0, 20);
+        assert_eq!(n, 0, "fog burst should spawn 0 when system full");
+    }
 }
 

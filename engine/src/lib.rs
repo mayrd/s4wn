@@ -1916,6 +1916,27 @@ impl App {
                     }
                 }
             }
+
+            // Fog/mist particles: spawn near Water and Swamp tiles
+            if tick.is_multiple_of(8) {
+                let map = &self.game_loop.state.map;
+                let cx = self.camera.center_x as usize;
+                let cy = self.camera.center_y as usize;
+                let range = 14usize;
+                let mut fog_count = 0u32;
+                for dy in 0..range {
+                    for dx in 0..range {
+                        let tx = cx.saturating_sub(range/2) + dx;
+                        let ty = cy.saturating_sub(range/2) + dy;
+                        if let Some(tile) = map.get(tx, ty) {
+                            if (tile.terrain == crate::map::Terrain::Water || tile.terrain == crate::map::Terrain::Swamp) && fog_count < 2 {
+                                particle::spawn_fog_particle(&mut self.particle_system, tx as f32, ty as f32);
+                                fog_count += 1;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Smooth camera
