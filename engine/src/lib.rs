@@ -1786,6 +1786,23 @@ impl App {
                     }
                 }
             }
+            // Ember/spark particles: spawn near Iron/Gold Smelter buildings
+            // Embers rise from furnace chimneys with orange-red-yellow color
+            if tick.is_multiple_of(7) {
+                let mut ember_count = 0u32;
+                for b in self.game_loop.state.economy.buildings.iter() {
+                    if b.is_complete() && b.active {
+                        let is_smelter = b.kind == crate::economy::BuildingType::IronSmelter
+                            || b.kind == crate::economy::BuildingType::GoldSmelter
+                            || b.kind == crate::economy::BuildingType::Smelter;
+                        if is_smelter && ember_count < 2 {
+                            particle::spawn_ember_particle(&mut self.particle_system, b.x as f32, b.y as f32);
+                            ember_count += 1;
+                        }
+                    }
+                    if ember_count >= 2 { break; }
+                }
+            }
         }
 
         // Smooth camera

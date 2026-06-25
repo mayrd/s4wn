@@ -478,6 +478,57 @@ pub fn spawn_firefly_effect(ps: &mut ParticleSystem, tile_x: f32, tile_y: f32) {
     let _ = ps.spawn(tile_x, tile_y, z, vx, vy, 0.01, life, r, g, b, 4.0);
 }
 
+/// Spawn a single ember/spark particle near Smelter buildings.
+/// Embers rise from the furnace with hot orange-red-yellow color, slight
+/// horizontal drift, and short lifespan. They simulate the sparks and
+/// glowing debris ejected from iron/gold smelter chimneys.
+pub fn spawn_ember_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 7.3 + y * 11.1;
+    // Start at building height (~1.5-2.5, like a chimney)
+    let z = 1.5 + (seed * 1.7).sin().abs() * 1.0;
+    // Rise upward with slight horizontal scatter
+    let vx = (seed * 2.3).cos() * 0.15;  // slight horizontal scatter
+    let vy = (seed * 3.1).sin() * 0.12;
+    let vz = 0.8 + (seed * 4.7).sin().abs() * 1.2;  // upward (0.8-2.0)
+    // Short life: 0.4-1.2 seconds (embers burn out quickly)
+    let life = 0.6 + (seed * 5.3).sin().abs() * 0.6;
+    // Ember color: bright orange-red, occasionally yellow-hot
+    // High red, medium-high green (orange tint), very low blue
+    let r = 0.9 + (seed * 6.1).sin().abs() * 0.1;   // 0.9-1.0
+    let g = 0.35 + (seed * 8.3).cos().abs() * 0.35;  // 0.35-0.70 (orange to yellow)
+    let b = 0.02 + (seed * 9.7).sin().abs() * 0.06;  // 0.02-0.08 (almost no blue)
+    let _ = ps.spawn(x, y, z, vx, vy, vz, life, r, g, b, 3.0);
+}
+
+/// Spawn a burst of ember/spark particles at a smelter building.
+/// Used periodically to create continuous furnace activity — embers
+/// appear at the building position with rising scatter pattern.
+pub fn spawn_ember_burst(ps: &mut ParticleSystem, x: f32, y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    for i in 0..count {
+        let fi = i as f32;
+        let seed = x * 7.3 + y * 11.1 + fi * 3.7;
+        let z = 1.5 + (seed * 1.7).sin().abs() * 1.0;
+        if ps.spawn(
+            x + (fi * 2.1).cos() * 0.3,
+            y + (fi * 3.7).sin() * 0.3,
+            z,
+            (seed * 2.3).cos() * 0.15,
+            (seed * 3.1).sin() * 0.12,
+            0.8 + (seed * 4.7).sin().abs() * 1.2,
+            0.6 + (seed * 5.3).sin().abs() * 0.6,
+            0.9 + (seed * 6.1).sin().abs() * 0.1,
+            0.35 + (seed * 8.3).cos().abs() * 0.35,
+            0.02 + (seed * 9.7).sin().abs() * 0.06,
+            3.0,
+        ) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1102,3 +1153,77 @@ mod tests {
     }
 }
 
+    #[test]
+    fn test_ember_particle_spawns() {
+        let mut ps = ParticleSystem::new();
+        spawn_ember_particle(&mut ps, 5.0, 8.0);
+        assert_eq!(ps.alive_count(), 1, "ember particle should spawn one particle");
+    }
+
+    #[test]
+    fn test_ember_particle_rises() {
+        let mut ps = ParticleSystem::new();
+        spawn_ember_particle(&mut ps, 3.0, 7.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Embers should rise upward (positive vz)
+        assert!(p.vz > 0.0, "ember should rise (vz > 0), got vz={}", p.vz);
+    }
+
+    #[test]
+    fn test_ember_particle_orange_red_color() {
+        let mut ps = ParticleSystem::new();
+        spawn_ember_particle(&mut ps, 2.0, 4.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Embers should be red/orange: high red, low blue
+        assert!(p.r > 0.85, "ember r should be >0.85, got {}", p.r);
+        assert!(p.b < 0.15, "ember b should be <0.15, got {}", p.b);
+        // Red should dominate green (orange-red, not yellow-green)
+        assert!(p.r > p.g, "ember r should be > g: r={}, g={}", p.r, p.g);
+    }
+
+    #[test]
+    fn test_ember_particle_starts_above_ground() {
+        let mut ps = ParticleSystem::new();
+        spawn_ember_particle(&mut ps, 5.0, 5.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Embers start at chimney height (z > 1.0)
+        assert!(p.z > 1.0, "ember z should be >1.0 (chimney height), got {}", p.z);
+    }
+
+    #[test]
+    fn test_ember_particle_short_life() {
+        let mut ps = ParticleSystem::new();
+        spawn_ember_particle(&mut ps, 4.0, 6.0);
+        let p = ps.particles.iter().find(|p| p.alive).unwrap();
+        // Embers burn out quickly (0.6-1.2s)
+        assert!(p.life > 0.4, "ember life should be >0.4s, got {}", p.life);
+        assert!(p.life < 1.5, "ember life should be <1.5s, got {}", p.life);
+    }
+
+    #[test]
+    fn test_ember_burst_spawns() {
+        let mut ps = ParticleSystem::new();
+        let n = spawn_ember_burst(&mut ps, 5.0, 5.0, 4);
+        assert_eq!(n, 4, "ember burst should spawn 4 particles");
+        assert_eq!(ps.alive_count(), 4);
+    }
+
+    #[test]
+    fn test_ember_burst_all_rise() {
+        let mut ps = ParticleSystem::new();
+        spawn_ember_burst(&mut ps, 3.0, 7.0, 5);
+        for p in ps.particles.iter().filter(|p| p.alive) {
+            assert!(p.vz > 0.0, "ember burst particle should rise (vz > 0), got vz={}", p.vz);
+        }
+    }
+
+    #[test]
+    fn test_ember_burst_limited_by_max() {
+        let mut ps = ParticleSystem::new();
+        for i in 0..MAX_PARTICLES {
+            ps.spawn(i as f32, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 1.0, 1.0, 1.0, 8.0);
+        }
+        assert_eq!(ps.alive_count(), MAX_PARTICLES);
+        let n = spawn_ember_burst(&mut ps, 5.0, 5.0, 10);
+        assert_eq!(n, 0, "ember burst should spawn 0 when system full");
+    }
