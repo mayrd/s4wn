@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S225 · 701 tests · WASM 311.8KB — Clippy: 0 errors, 0 warnings. 0 open issues. 12 dead exports removed (-5.1KB). Remaining 11.8KB gap to 300KB target. Next: Investigate data[87]+[118] duplicate model JSON (est. 4.8KB savings), then from_name integer discriminant lookup (est. 15KB).**
+**Status:** S226 · 706 tests · WASM 311.8KB — Clippy: 0 errors, 0 warnings. 0 open issues. Water splash particle effect added. Remaining 11.8KB gap to 300KB target. Next: Investigate data[87]+[118] duplicate model JSON (est. 4.8KB savings), then from_name integer discriminant lookup (est. 15KB).**
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
