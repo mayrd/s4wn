@@ -3619,8 +3619,9 @@ pub fn get_player_nation() -> String {
         if let Some(ref app) = APP {
             if let Some(nation) = app.game_loop.state.player_nation {
                 return format!(
-                    "{{\"name\":\"{}\",\"color\":\"{}\",\"emoji\":\"{}\",\"description\":\"{}\"}}",
+                    "{{\"name\":\"{}\",\"name_id\":{},\"color\":\"{}\",\"emoji\":\"{}\",\"description\":\"{}\"}}",
                     nation.name(),
+                    nation.discriminant(),
                     nation.color_hex(),
                     nation.emoji(),
                     nation.description()

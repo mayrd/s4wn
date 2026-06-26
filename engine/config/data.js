@@ -1966,6 +1966,34 @@ window.S4WN_CONFIG = {
     C.buildings.forEach(b => { window.BUILDING_ICONS[b.id] = "🏗️"; });
     window.BUILDING_NAMES_DE = {};
     C.buildings.forEach(b => { window.BUILDING_NAMES_DE[b.id] = b.name_de; });
+    window.BUILDING_NAMES_BY_ID = {
+        0: "Castle", 1: "Sawmill", 2: "Stonecutter", 3: "Mine", 4: "Toolsmith",
+        5: "Weaponsmith", 7: "Bakery", 8: "Butcher", 9: "Mill", 10: "Farm",
+        11: "Fisherman", 12: "Woodcutter", 13: "Storehouse", 14: "Waterworks",
+        15: "Smelter", 16: "Barracks", 18: "Guard Tower", 19: "Fortress",
+        20: "Siege Workshop", 21: "Shipyard", 22: "Road Layer",
+        27: "Apiary", 28: "Mead Maker",
+        31: "Temple of Bacchus", 32: "Colosseum", 33: "Sanctuary of Minerva",
+        34: "Sanctuary of Vulcan", 35: "Mead Hall", 36: "Sanctuary of Odin",
+        37: "Sanctuary of Thor", 38: "Sanctuary of Freya", 39: "Runestone",
+        40: "Temple of Chac", 41: "Agave Farm", 42: "Distillery",
+        43: "Sanctuary of Kukulkan", 44: "Sanctuary of Quetzalcoatl",
+        45: "Sanctuary of Huitzilopochtli", 46: "Observatory",
+        47: "Oracle of Apollo", 50: "Sanctuary of Artemis",
+        51: "Sanctuary of Poseidon", 52: "Sanctuary of Apollo", 53: "Amphitheater",
+        54: "Dark Temple", 55: "Dark Garden", 56: "Mushroom Farm",
+        57: "Sanctuary of Morbus", 58: "Sanctuary of Pestilence",
+        59: "Dark Fortress", 60: "Demon Gate", 61: "Gold Mine", 62: "Coal Mine",
+        63: "Iron Ore Mine", 64: "Sulfur Mine", 65: "Gold Smelter",
+        66: "Iron Smelter", 67: "Slaughterhouse", 68: "Oil Press",
+        69: "Powder Mill", 70: "Weapon Foundry", 71: "Forester", 72: "Healer",
+        73: "Goat Ranch", 74: "Pig Ranch", 75: "Goose Ranch",
+        76: "Donkey Ranch", 77: "Trojan Farm", 78: "Marketplace",
+        79: "Landing Dock", 80: "Vineyard", 81: "Storage Yard",
+        82: "Small Residence", 83: "Medium Residence", 84: "Large Residence",
+        85: "Small Temple", 86: "Large Temple"
+    };
+
     window.RESOURCE_ICONS = {};
     C.resources.forEach(r => { window.RESOURCE_ICONS[r.id] = r.icon; });
     // Use SVG icons from resource-icons.js if available

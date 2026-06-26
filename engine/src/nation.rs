@@ -128,6 +128,24 @@ impl NationType {
             NationType::DarkTribe => "💀",
         }
     }
+
+    /// Returns the numeric discriminant (0–4) for this nation.
+    #[inline]
+    pub fn discriminant(self) -> u8 {
+        self as u8
+    }
+
+    /// Reconstruct a NationType from its numeric discriminant.
+    /// Returns None for discriminants ≥ 5 (invalid values).
+    #[inline]
+    pub fn from_discriminant(d: u8) -> Option<Self> {
+        if (d as usize) < Self::ALL.len() {
+            // SAFETY: d < ALL.len() ensures d is a valid discriminant
+            Some(unsafe { core::mem::transmute::<u8, NationType>(d) })
+        } else {
+            None
+        }
+    }
 }
 
 // ── Nation Modifiers ──────────────────────────────────────────────────────────
@@ -860,6 +878,33 @@ mod tests {
         assert_eq!(NationType::from_name(""), None);
         assert_eq!(NationType::from_name("roman"), None);
         assert_eq!(NationType::from_name("Garbage"), None);
+    }
+
+    /// Verify all 5 NationType discriminants round-trip through from_discriminant().
+    #[test]
+    fn test_discriminant_round_trip() {
+        for &disc in &[0u8, 1, 2, 3, 4] {
+            let nt = NationType::from_discriminant(disc).unwrap();
+            assert_eq!(nt.discriminant(), disc);
+        }
+    }
+
+    /// Verify from_discriminant() rejects invalid values.
+    #[test]
+    fn test_from_discriminant_rejects_invalid() {
+        assert_eq!(NationType::from_discriminant(5), None);
+        assert_eq!(NationType::from_discriminant(255), None);
+    }
+
+    /// Verify discriminant() matches name() for all 5 variants.
+    #[test]
+    fn test_discriminant_name_consistency() {
+        for disc in 0..5u8 {
+            let nt = NationType::from_discriminant(disc).unwrap();
+            let name = nt.name();
+            // Verify it round-trips back to the same discriminant
+            assert_eq!(NationType::from_name(name), Some(nt));
+        }
     }
 
     #[test]
