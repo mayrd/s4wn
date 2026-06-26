@@ -1228,6 +1228,27 @@
   }
   .obj-model-canvas:active { cursor: grabbing; }
 
+  /* Terrain tile animations */
+  .obj-terrain-tile {
+    width: 100%; aspect-ratio: 1;
+    image-rendering: pixelated; border-radius: 6px;
+    background: rgba(0,0,0,0.3);
+  }
+  @keyframes terrain-water { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+  @keyframes terrain-wave { 0%{transform:scaleY(0.97)} 50%{transform:scaleY(1.03)} 100%{transform:scaleY(0.97)} }
+  @keyframes terrain-sway { 0%,100%{transform:rotate(-0.5deg)} 50%{transform:rotate(0.5deg)} }
+  @keyframes terrain-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+  @keyframes terrain-shimmer { 0%,100%{opacity:0.85} 50%{opacity:1} }
+  @keyframes terrain-drift { 0%{transform:translateX(-2px)} 100%{transform:translateX(2px)} }
+  .obj-terrain-water { animation: terrain-water 2s ease-in-out infinite, terrain-wave 3s ease-in-out infinite; }
+  .obj-terrain-grass { animation: terrain-sway 3s ease-in-out infinite; }
+  .obj-terrain-forest { animation: terrain-pulse 4s ease-in-out infinite; }
+  .obj-terrain-desert { animation: terrain-shimmer 2s ease-in-out infinite; }
+  .obj-terrain-snow { animation: terrain-drift 5s ease-in-out infinite alternate; }
+  .obj-terrain-mountain { animation: terrain-pulse 6s ease-in-out infinite; }
+  .obj-terrain-swamp { animation: terrain-water 3s ease-in-out infinite, terrain-pulse 4s ease-in-out infinite; }
+  .obj-terrain-default { animation: terrain-pulse 3s ease-in-out infinite; }
+
   /* ── Mobile Responsive (viewport < 768px) ─────────────────────────── */
   @media (max-width: 767px) {
     /* Menu: full-width card, larger touch targets */
@@ -6458,13 +6479,14 @@ function showObjectDetail(category, itemId) {
         html += '<div class="obj-field"><span>Description</span><span style="font-size:11px;text-align:right;max-width:180px">' + data.description + '</span></div>';
     }
     html += '</div>';
-    // Sprite
+    // Sprite / Terrain Tile
     html += '<div class="obj-detail-section">';
-    html += '<h4>Sprite</h4>';
+    html += '<h4>' + (data.category === 'terrain' ? 'Terrain Tile' : 'Sprite') + '</h4>';
     html += '<div class="obj-detail-sprite-wrap">';
     if (data.spriteFile) {
         var spriteDir = data.category === 'terrain' ? 'assets/textures/' : 'assets/buildings/';
-        html += '<img class="obj-detail-sprite" src="' + spriteDir + data.spriteFile + '" alt="' + data.name + '" onerror="this.parentNode.innerHTML=\'<span style=color:#556;font-size:11px>No sprite available</span>\'">';
+        var animClass = data.category === 'terrain' ? (' obj-terrain-tile obj-terrain-' + data.name.toLowerCase()) : ' obj-detail-sprite';
+        html += '<img class="' + animClass + '" src="' + spriteDir + data.spriteFile + '" alt="' + data.name + '" onerror="this.parentNode.innerHTML=\'<span style=color:#556;font-size:11px>No sprite available</span>\'">';
     } else {
         html += '<span style="color:#556;font-size:11px">No sprite available</span>';
     }
