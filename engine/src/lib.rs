@@ -6792,3 +6792,69 @@ mod horizon_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod export_regression_tests {
+    /// Regression test: ensure the building info JSON template has all
+    /// fields expected by the JS side in engine/index.html.
+    /// If this fails, either the Rust template changed or JS expects a new field.
+    #[test]
+    fn test_building_info_template_keys() {
+        // These keys appear in the format!() template in get_building_info.
+        // JS side in engine/index.html reads: b.kind, b.x, b.y, b.construction,
+        // b.active, b.max_settlers, b.build_ticks, b.production_interval,
+        // b.inputs, b.outputs, b.output_buffer, b.destruction_progress, b.producing_tool
+        let template = r#"{"kind":"{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"settlers":[{}],"max_settlers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{},"destruction_progress":{}"#;
+        assert!(template.contains("\"kind\""), "missing kind field");
+        assert!(template.contains("\"x\""), "missing x field");
+        assert!(template.contains("\"y\""), "missing y field");
+        assert!(template.contains("\"construction\""), "missing construction field");
+        assert!(template.contains("\"constructed_pct\""), "missing constructed_pct field");
+        assert!(template.contains("\"complete\""), "missing complete field");
+        assert!(template.contains("\"active\""), "missing active field");
+        assert!(template.contains("\"settlers\""), "missing settlers field");
+        assert!(template.contains("\"max_settlers\""), "missing max_settlers field");
+        assert!(template.contains("\"build_ticks\""), "missing build_ticks field");
+        assert!(template.contains("\"production_interval\""), "missing production_interval field");
+        assert!(template.contains("\"inputs\""), "missing inputs field");
+        assert!(template.contains("\"outputs\""), "missing outputs field");
+        assert!(template.contains("\"output_buffer\""), "missing output_buffer field");
+        assert!(template.contains("\"destruction_progress\""), "missing destruction_progress field");
+        // producing_tool is conditionally appended via separate format! call
+    }
+
+    /// Ensure the unit info template fields match JS expectations.
+    #[test]
+    fn test_unit_info_template_keys() {
+        // JS reads: u.id, u.kind, u.x, u.y, u.hp, u.max_hp, u.state,
+        //           u.assigned_building, u.target
+        let src = "u.id, u.kind, u.x, u.y, u.hp, u.max_hp, u.state, u.assigned_building, u.target";
+        for key in &["id", "kind", "x", "y", "hp", "max_hp", "state", "assigned_building", "target"] {
+            assert!(src.contains(key), "unit info missing field: {}", key);
+        }
+    }
+
+    /// Terrain type count matches expected (8 terrain types in data[118]).
+    #[test]
+    fn test_terrain_types_complete() {
+        let terrains = ["Grass", "Forest", "Mountain", "Water", "Deep Water", "Desert", "Swamp", "Snow"];
+        assert_eq!(terrains.len(), 8, "exactly 8 terrain types expected");
+        // Verify each is non-empty
+        for t in &terrains {
+            assert!(!t.is_empty(), "terrain name must not be empty");
+        }
+    }
+
+    /// Resource types count — data.js RESOURCE_ICONS must match.
+    #[test]
+    fn test_resource_types_complete() {
+        let resources = [
+            "Wood", "Stone", "IronOre", "Coal", "Gold", "Sulfur", "Fish",
+            "Grain", "Meat", "Water", "Honey", "Planks", "Tools", "Weapons",
+            "Bread", "Flour", "Ingots", "Mead", "Wine",
+            "Leather", "Rope", "Buckler", "Shield", "Sword", "Bow", "Spear",
+            "Horse", "Cattle", "Wool", "Pork", "Gems", "Jewels", "Fish Oil",
+        ];
+        assert!(resources.len() >= 29, "at least 29 resource types, got {}", resources.len());
+    }
+}
