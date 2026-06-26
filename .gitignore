@@ -28,3 +28,4 @@ Thumbs.db
 
 # Exception: test map corpus is version-controlled
 !assets/maps/test/
+engine/core

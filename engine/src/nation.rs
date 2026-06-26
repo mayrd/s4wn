@@ -819,6 +819,49 @@ mod tests {
         assert_eq!(NationType::DarkTribe.name(), "Dark Tribe");
     }
 
+    /// Verify every NationType discriminant round-trips through FNV-1a hash lookup.
+    #[test]
+    fn test_from_name_hash_round_trip_all() {
+        // All 5 valid NationType discriminants.
+        const VALID_DISCS: &[u8] = &[0, 1, 2, 3, 4];
+        for &disc in VALID_DISCS {
+            let nt: NationType = unsafe { core::mem::transmute::<u8, NationType>(disc) };
+            let name = nt.name();
+            let result = NationType::from_name(name);
+            let expected = Some(nt);
+            assert_eq!(
+                result, expected,
+                "from_name(\"{}\") = {:?}, expected {:?} (disc {})",
+                name, result, nt, disc
+            );
+        }
+    }
+
+    /// Verify all 9 lookup-table keys (5 base + 4 aliases) resolve via from_name().
+    #[test]
+    fn test_from_name_all_keys_resolve() {
+        let keys: &[(&str, NationType)] = &[
+            ("Roman", NationType::Roman),
+            ("Romans", NationType::Roman),
+            ("Viking", NationType::Viking),
+            ("Vikings", NationType::Viking),
+            ("Maya", NationType::Maya),
+            ("Trojan", NationType::Trojan),
+            ("Trojans", NationType::Trojan),
+            ("DarkTribe", NationType::DarkTribe),
+            ("Dark Tribe", NationType::DarkTribe),
+        ];
+        for (name, expected) in keys {
+            assert_eq!(
+                NationType::from_name(name), Some(*expected),
+                "from_name(\"{}\") failed", name
+            );
+        }
+        assert_eq!(NationType::from_name(""), None);
+        assert_eq!(NationType::from_name("roman"), None);
+        assert_eq!(NationType::from_name("Garbage"), None);
+    }
+
     #[test]
     fn test_nation_type_colors() {
         let roman = NationType::Roman.color();

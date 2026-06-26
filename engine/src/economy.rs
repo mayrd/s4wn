@@ -5407,6 +5407,76 @@ mod squad_leader_aura_tests {
         assert!(!fortress.is_garrisoned());
     }
 
+    /// Verify every BuildingType discriminant (0..=86) round-trips through FNV-1a hash lookup.
+    /// from_name(name(disc)) must return Some(disc) for every valid variant.
+    #[test]
+    fn test_from_name_hash_round_trip_all() {
+        // All valid BuildingType discriminants (77 total — gaps in enum).
+        const VALID_DISCS: &[u8] = &[
+            0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            18, 19, 20, 21, 22, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 39,
+            40, 41, 42, 43, 44, 45, 46, 47, 50, 51, 52, 53, 54, 55, 56,
+            57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
+            72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86,
+        ];
+        for &disc in VALID_DISCS {
+            let bt: BuildingType = unsafe { core::mem::transmute::<u8, BuildingType>(disc) };
+            let name = bt.name();
+            let result = BuildingType::from_name(name);
+            let expected = Some(bt);
+            assert_eq!(
+                result, expected,
+                "from_name(\"{}\") = {:?}, expected {:?} (disc {})",
+                name, result, bt, disc
+            );
+        }
+    }
+
+    /// Verify all 77 known building name keys resolve via from_name().
+    #[test]
+    fn test_from_name_all_77_keys_resolve() {
+        let names: &[&str] = &[
+            "Castle", "Sawmill", "Stonecutter", "Mine", "Toolsmith", "Weaponsmith",
+            "Bakery", "Butcher", "Mill", "Farm", "Fisherman", "Woodcutter",
+            "Storehouse", "Waterworks", "Smelter", "Barracks", "Guard Tower",
+            "Fortress", "Siege Workshop", "Shipyard", "Road Layer", "Apiary",
+            "Mead Maker", "Temple of Bacchus", "Colosseum", "Sanctuary of Minerva",
+            "Sanctuary of Vulcan", "Mead Hall", "Sanctuary of Odin",
+            "Sanctuary of Thor", "Sanctuary of Freya", "Runestone",
+            "Temple of Chac", "Agave Farm", "Distillery", "Sanctuary of Kukulkan",
+            "Sanctuary of Quetzalcoatl", "Sanctuary of Huitzilopochtli",
+            "Observatory", "Oracle of Apollo", "Sanctuary of Artemis",
+            "Sanctuary of Poseidon", "Sanctuary of Apollo", "Amphitheater",
+            "Dark Temple", "Dark Garden", "Mushroom Farm", "Sanctuary of Morbus",
+            "Sanctuary of Pestilence", "Dark Fortress", "Demon Gate",
+            "Gold Mine", "Coal Mine", "Iron Ore Mine", "Sulfur Mine",
+            "Gold Smelter", "Iron Smelter", "Slaughterhouse", "Oil Press",
+            "Powder Mill", "Weapon Foundry", "Forester", "Healer",
+            "Goat Ranch", "Pig Ranch", "Goose Ranch", "Donkey Ranch",
+            "Trojan Farm", "Marketplace", "Landing Dock", "Vineyard",
+            "Storage Yard", "Small Residence", "Medium Residence", "Large Residence",
+            "Small Temple", "Large Temple",
+        ];
+        let mut count = 0;
+        for name in names {
+            assert!(
+                BuildingType::from_name(name).is_some(),
+                "from_name(\"{}\") returned None", name
+            );
+            count += 1;
+        }
+        assert_eq!(count, 77);
+    }
+
+    /// Verify from_name returns None for garbage inputs.
+    #[test]
+    fn test_from_name_none_for_garbage() {
+        assert_eq!(BuildingType::from_name(""), None);
+        assert_eq!(BuildingType::from_name("NonExistent"), None);
+        assert_eq!(BuildingType::from_name("castle"), None);
+        assert_eq!(BuildingType::from_name("  Sawmill"), None);
+    }
+
     #[test]
     fn test_garrison_new_building_empty() {
         let castle = Building::new(BuildingType::Castle, 5, 5);
