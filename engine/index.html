@@ -1155,14 +1155,14 @@
   }
   .obj-explorer-list {
     flex: 1; min-width: 0;
-    overflow-y: auto; max-height: 60vh;
+    overflow-y: auto;
   }
   .obj-explorer-detail {
-    width: 320px; min-width: 280px;
+    width: 380px; min-width: 300px;
     background: rgba(10,16,30,0.7);
     border: 1px solid rgba(200,170,100,0.12);
     border-radius: 8px; padding: 16px;
-    overflow-y: auto; max-height: 60vh;
+    overflow-y: auto;
     display: flex; flex-direction: column; gap: 12px;
   }
   .obj-detail-placeholder {
@@ -1219,6 +1219,12 @@
     background: rgba(200,100,100,0.15);
     color: #f88;
   }
+  .obj-model-canvas {
+    width: 100%; aspect-ratio: 1.2;
+    border-radius: 4px; background: rgba(6,10,20,0.5);
+    cursor: grab; display: block;
+  }
+  .obj-model-canvas:active { cursor: grabbing; }
 
   /* ── Mobile Responsive (viewport < 768px) ─────────────────────────── */
   @media (max-width: 767px) {
@@ -6211,6 +6217,134 @@ function _buildDetailCache() {
     });
 }
 
+// ── 3D Model Preview Renderer (pure JS WebGL) ──────────────────────────
+function ModelPreviewRenderer(canvas, modelJson) {
+    var gl = canvas.getContext('webgl2', {antialias: true, alpha: false});
+    if (!gl) { canvas.outerHTML = '<p style="color:#a88;font-size:11px;text-align:center;padding:20px">WebGL2 not available</p>'; return; }
+    var model = typeof modelJson === 'string' ? JSON.parse(modelJson) : modelJson;
+    var material = model.material || {diffuse: [0.5,0.5,0.5], roughness: 0.7, metallic: 0.05};
+
+    // Shaders
+    var vs = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vs, '#version 300 es\nprecision highp float;\nuniform mat4 u_mvp;\nuniform mat4 u_model;\nin vec3 a_pos;\nin vec3 a_norm;\nout vec3 v_norm;\nout vec3 v_pos;\nvoid main(){vec4 wp=u_model*vec4(a_pos,1.0);v_pos=wp.xyz;v_norm=mat3(u_model)*a_norm;gl_Position=u_mvp*vec4(a_pos,1.0);}');
+    gl.compileShader(vs);
+    var fs = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fs, '#version 300 es\nprecision highp float;\nuniform vec3 u_color;\nuniform float u_rough;\nuniform float u_metal;\nuniform vec3 u_light;\nuniform vec3 u_cam;\nin vec3 v_norm;\nin vec3 v_pos;\nout vec4 frag;\nvoid main(){vec3 N=normalize(v_norm);vec3 L=normalize(u_light-v_pos);vec3 V=normalize(u_cam-v_pos);vec3 H=normalize(L+V);float diff=max(dot(N,L),0.0);float spec=pow(max(dot(N,H),0.0),32.0/(u_rough+0.01));float amb=0.15;vec3 col=u_color*(amb+diff*0.85)+vec3(0.3)*spec*(1.0-u_rough);frag=vec4(col,1.0);}');
+    gl.compileShader(fs);
+    var prog = gl.createProgram();
+    gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+    gl.useProgram(prog);
+    var u_mvp = gl.getUniformLocation(prog, 'u_mvp');
+    var u_model = gl.getUniformLocation(prog, 'u_model');
+    var u_color = gl.getUniformLocation(prog, 'u_color');
+    var u_rough = gl.getUniformLocation(prog, 'u_rough');
+    var u_metal = gl.getUniformLocation(prog, 'u_metal');
+    var u_light = gl.getUniformLocation(prog, 'u_light');
+    var u_cam = gl.getUniformLocation(prog, 'u_cam');
+
+    // Buffers
+    var verts = new Float32Array(model.vertices.flat());
+    var norms = new Float32Array(model.normals.flat());
+    var idx = new Uint16Array(model.indices);
+    var vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+    var vbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, verts.length*4 + norms.length*4, gl.STATIC_DRAW);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, verts);
+    gl.bufferSubData(gl.ARRAY_BUFFER, verts.length*4, norms);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0); gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, verts.length*4); gl.enableVertexAttribArray(1);
+    gl.bindAttribLocation(prog, 0, 'a_pos'); gl.bindAttribLocation(prog, 1, 'a_norm');
+    var ibo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idx, gl.STATIC_DRAW);
+
+    // Orbit state
+    var rotY = 0.8, rotX = 0.5, zoom = 2.5;
+    var autoRotate = true, dragging = false, lastX = 0, lastY = 0;
+
+    canvas.addEventListener('mousedown', function(e) { dragging = true; autoRotate = false; lastX = e.clientX; lastY = e.clientY; e.preventDefault(); });
+    canvas.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        rotY += (e.clientX - lastX) * 0.01;
+        rotX += (e.clientY - lastY) * 0.01;
+        rotX = Math.max(-1.4, Math.min(1.4, rotX));
+        lastX = e.clientX; lastY = e.clientY;
+    });
+    canvas.addEventListener('mouseup', function() { dragging = false; });
+    canvas.addEventListener('mouseleave', function() { dragging = false; });
+    canvas.addEventListener('wheel', function(e) { zoom *= e.deltaY > 0 ? 1.1 : 0.9; zoom = Math.max(0.5, Math.min(8, zoom)); e.preventDefault(); }, {passive: false});
+    // Touch
+    canvas.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 1) { dragging = true; autoRotate = false; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; }
+    }, {passive: false});
+    canvas.addEventListener('touchmove', function(e) {
+        if (!dragging || e.touches.length !== 1) return;
+        rotY += (e.touches[0].clientX - lastX) * 0.01;
+        rotX += (e.touches[0].clientY - lastY) * 0.01;
+        rotX = Math.max(-1.4, Math.min(1.4, rotX));
+        lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+        e.preventDefault();
+    }, {passive: false});
+    canvas.addEventListener('touchend', function() { dragging = false; });
+
+    // Matrices
+    function perspective(fov, aspect, near, far) {
+        var f = 1.0 / Math.tan(fov / 2), d = 1.0 / (near - far);
+        return [f/aspect,0,0,0, 0,f,0,0, 0,0,(near+far)*d,-1, 0,0,2*near*far*d,0];
+    }
+    function mul4(a, b) {
+        var r = new Array(16);
+        for (var i = 0; i < 4; i++)
+            for (var j = 0; j < 4; j++)
+                r[i*4+j] = a[i*4+0]*b[0*4+j] + a[i*4+1]*b[1*4+j] + a[i*4+2]*b[2*4+j] + a[i*4+3]*b[3*4+j];
+        return r;
+    }
+    function rotYMatrix(a) { var c=Math.cos(a),s=Math.sin(a); return [c,0,s,0, 0,1,0,0, -s,0,c,0, 0,0,0,1]; }
+    function rotXMatrix(a) { var c=Math.cos(a),s=Math.sin(a); return [1,0,0,0, 0,c,-s,0, 0,s,c,0, 0,0,0,1]; }
+    function translate(x,y,z) { return [1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]; }
+    function scaleMatrix(x,y,z) { return [x,0,0,0, 0,y,0,0, 0,0,z,0, 0,0,0,1]; }
+
+    var aabb = model.aabb || [0,0,0,1,1,1];
+    var cx = (aabb[0]+aabb[3])/2, cy = (aabb[1]+aabb[4])/2, cz = (aabb[2]+aabb[5])/2;
+    var animStart = performance.now();
+
+    function render(now) {
+        var w = canvas.clientWidth, h = canvas.clientHeight;
+        if (w === 0 || h === 0) { requestAnimationFrame(render); return; }
+        canvas.width = w; canvas.height = h;
+        gl.viewport(0, 0, w, h);
+        gl.clearColor(0.06, 0.10, 0.18, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.enable(gl.DEPTH_TEST);
+
+        // Auto-rotate
+        if (autoRotate) rotY += 0.005;
+
+        // Construction animation: 0.3→1.0 over 2.5s, loop
+        var t = ((now - animStart) % 2500) / 2500;
+        var ease = 1.0 - (1.0 - t) * (1.0 - t);
+        var animScale = 0.3 + 0.7 * ease;
+
+        var proj = perspective(0.8, w/h, 0.1, 20);
+        var view = mul4(translate(0, 0, -zoom), mul4(rotXMatrix(rotX), rotYMatrix(rotY)));
+        view = mul4(view, translate(-cx, -cy, -cz));
+        var modelMat = scaleMatrix(animScale, animScale, animScale);
+        var mvp = mul4(proj, mul4(view, modelMat));
+
+        gl.uniformMatrix4fv(u_mvp, false, mvp);
+        gl.uniformMatrix4fv(u_model, false, modelMat);
+        gl.uniform3f(u_color, material.diffuse[0], material.diffuse[1], material.diffuse[2]);
+        gl.uniform1f(u_rough, material.roughness || 0.7);
+        gl.uniform1f(u_metal, material.metallic || 0.05);
+        gl.uniform3f(u_light, 3, 5, 4);
+        gl.uniform3f(u_cam, 0, 0, zoom);
+
+        gl.bindVertexArray(vao);
+        gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
+        requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+}
+
 function openObjectExplorer() {
     console.log('ObjectExplorer: opening...');
     try { closeMenu(); } catch(e) { console.warn('ObjectExplorer: closeMenu failed', e); }
@@ -6330,6 +6464,7 @@ function showObjectDetail(category, itemId) {
     html += '<div class="obj-detail-section" id="obj-model-section">';
     html += '<h4>3D Model</h4>';
     html += '<p style="color:#556;font-size:11px">Loading model data...</p>';
+    html += '<canvas id="obj-model-canvas" class="obj-model-canvas" width="300" height="250"></canvas>';
     html += '</div>';
     // Animation
     html += '<div class="obj-detail-section">';
@@ -6376,7 +6511,13 @@ function showObjectDetail(category, itemId) {
                 mh += '<div class="obj-field"><span>Material</span><span><span class="obj-color-swatch" style="background:' + rgb + '"></span>' + rgb + '</span></div>';
                 mh += '<div class="obj-field"><span>Roughness</span><span>' + (mat.roughness||0).toFixed(2) + '</span></div>';
                 mh += '<div class="obj-field"><span>Metallic</span><span>' + (mat.metallic||0).toFixed(2) + '</span></div>';
+                mh += '<canvas class="obj-model-canvas" id="obj-model-canvas" width="300" height="250"></canvas>';
                 ms.innerHTML = mh;
+                // Start 3D preview renderer
+                var previewCanvas = document.getElementById('obj-model-canvas');
+                if (previewCanvas && model.vertices && model.vertices.length > 0) {
+                    new ModelPreviewRenderer(previewCanvas, model);
+                }
             })
             .catch(function() {
                 var ms = document.getElementById('obj-model-section');
