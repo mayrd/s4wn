@@ -4166,6 +4166,7 @@ mod tests {
 
     /// Result of a balance simulation for one nation.
     #[derive(Debug)]
+    #[allow(dead_code)]
     struct BalanceResult {
         nation_name: &'static str,
         settlers: usize,
@@ -4281,7 +4282,6 @@ mod tests {
     }
 
     #[test]
-    #[test]
     fn test_resource_group_categories() {
         // Construction group
         assert_eq!(ResourceType::Wood.group_name(), "Construction");
@@ -4308,7 +4308,8 @@ mod tests {
         assert_eq!(ResourceType::IronIngots.group_name(), "Metal Products");
     }
 
-        fn test_balance_simulation_deterministic() {
+    #[test]
+    fn test_balance_simulation_deterministic() {
         let first: Vec<String> = NationType::ALL.iter().map(|&n| {
             let r = simulate_nation(n);
             format!("{}:{}:{}", r.settlers, r.total_resources, r.unique_resources)
@@ -4884,16 +4885,6 @@ mod squad_leader_aura_tests {
         eco
     }
 
-    /// Promote a Swordsman to SquadLeader and return the unit ID.
-    /// Unit must be idle, ranked, and near a Barracks.
-    fn promote_to_squad_leader(eco: &mut Economy, unit_id: u32) -> bool {
-        if let Some(u) = eco.units.get_mut(unit_id) {
-            u.rank = 1; // must be ranked
-            u.state = crate::units::UnitState::Idle;
-        }
-        let promoted = eco.promote_ranked_soldiers();
-        promoted > 0
-    }
 
     #[test]
     fn test_aura_buffs_allied_units_in_range() {

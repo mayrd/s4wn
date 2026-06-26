@@ -5868,7 +5868,6 @@ mod tests {
         );
     }
     #[test]
-    #[test]
     fn test_fragment_shader_water_normal_uniforms() {
         assert!(
             FRAGMENT_SHADER.contains("uniform sampler2D u_water_normal"),
@@ -5884,6 +5883,7 @@ mod tests {
         );
     }
 
+    #[test]
     fn test_fragment_shader_water_depth_animation() {
         assert!(
             FRAGMENT_SHADER.contains("u_water_time * 1.5"),
@@ -6791,7 +6791,7 @@ mod tests {
         assert!(g < 0.15, "night sky green should be dark, got {}", g);
         assert!(b < 0.25, "night sky blue should be dark-ish, got {}", b);
 
-        let (r2, g2, b2) = sky_color(0.95);
+        let (r2, g2, _b2) = sky_color(0.95);
         assert!(r2 < 0.15, "late-night sky red should be dark, got {}", r2);
         assert!(g2 < 0.15, "late-night sky green should be dark, got {}", g2);
     }
