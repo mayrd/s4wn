@@ -118,11 +118,6 @@ impl NationType {
         }
     }
 
-    /// All nation type names (for UI population).
-    pub fn all_names() -> Vec<&'static str> {
-        vec!["Roman", "Viking", "Maya", "Trojan", "DarkTribe"]
-    }
-
     /// Emoji icon for this nation (for HUD display).
     pub fn emoji(self) -> &'static str {
         match self {

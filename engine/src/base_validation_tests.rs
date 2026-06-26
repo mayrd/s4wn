@@ -6,7 +6,6 @@
 
 /// ─── BASE.md Building Catalog (all 5 nations) ────────────────────────────
 /// Format: (config_id, nation, category, planks, stone, gold)
-
 type BuildingDef<'a> = (&'a str, &'a str, &'a str, u32, u32, u32);
 
 const BASE_ROMAN: &[BuildingDef] = &[

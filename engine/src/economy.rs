@@ -489,89 +489,6 @@ impl BuildingType {
         }
     }
 
-    /// Get all building type names.
-    pub fn all_names() -> Vec<&'static str> {
-        vec![
-            "Castle",
-            "Sawmill",
-            "Stonecutter",
-            "Mine",
-            "Toolsmith",
-            "Weaponsmith",
-            "Bakery",
-            "Butcher",
-            "Mill",
-            "Farm",
-            "Fisherman",
-            "Woodcutter",
-            "Storehouse",
-            "Waterworks",
-            "Smelter",
-            "Barracks",
-            "Guard Tower",
-            "Fortress",
-            "Siege Workshop",
-            "Shipyard",
-            "Road Layer",
-            "Apiary",
-            "Mead Maker",
-            "Temple of Bacchus",
-            "Colosseum",
-            "Sanctuary of Minerva",
-            "Sanctuary of Vulcan",
-            "Mead Hall",
-            "Sanctuary of Odin",
-            "Sanctuary of Thor",
-            "Sanctuary of Freya",
-            "Runestone",
-            "Temple of Chac",
-            "Agave Farm",
-            "Distillery",
-            "Sanctuary of Kukulkan",
-            "Sanctuary of Quetzalcoatl",
-            "Sanctuary of Huitzilopochtli",
-            "Observatory",
-            "Oracle of Apollo",
-            "Sanctuary of Artemis",
-            "Sanctuary of Poseidon",
-            "Sanctuary of Apollo",
-            "Amphitheater",
-            "Dark Temple",
-            "Dark Garden",
-            "Mushroom Farm",
-            "Sanctuary of Morbus",
-            "Sanctuary of Pestilence",
-            "Dark Fortress",
-                        "Demon Gate",
-            "Gold Mine",
-            "Coal Mine",
-            "Iron Ore Mine",
-            "Sulfur Mine",
-            "Gold Smelter",
-            "Iron Smelter",
-            "Slaughterhouse",
-            "Oil Press",
-            "Powder Mill",
-            "Weapon Foundry",
-            "Forester",
-            "Healer",
-            "Goat Ranch",
-            "Pig Ranch",
-            "Goose Ranch",
-            "Donkey Ranch",
-            "Trojan Farm",
-            "Marketplace",
-            "Landing Dock",
-            "Vineyard",
-            "Storage Yard",
-            "Small Residence",
-            "Medium Residence",
-            "Large Residence",
-            "Small Temple",
-            "Large Temple",
-        ]
-    }
-
     /// Resource cost to construct this building
     pub fn build_cost(self) -> &'static [(ResourceType, u32)] {
         match self {
@@ -2661,23 +2578,54 @@ mod tests {
         assert!(ResourceType::IronIngots.is_processed());
     }
 
+
+    /// Count how many building types can be resolved via from_name().
+    /// Used for validating the total building count without all_names().
+    #[cfg(test)]
+    fn all_names_via_from_name() -> usize {
+        [
+            "Castle", "Sawmill", "Stonecutter", "Mine", "Toolsmith", "Weaponsmith",
+            "Bakery", "Butcher", "Mill", "Farm", "Fisherman", "Woodcutter",
+            "Storehouse", "Waterworks", "Smelter", "Barracks", "Guard Tower",
+            "Fortress", "Siege Workshop", "Shipyard", "Road Layer", "Apiary",
+            "Mead Maker", "Temple of Bacchus", "Colosseum", "Sanctuary of Minerva",
+            "Sanctuary of Vulcan", "Mead Hall", "Sanctuary of Odin",
+            "Sanctuary of Thor", "Sanctuary of Freya", "Runestone",
+            "Temple of Chac", "Agave Farm", "Distillery", "Sanctuary of Kukulkan",
+            "Sanctuary of Quetzalcoatl", "Sanctuary of Huitzilopochtli",
+            "Observatory", "Oracle of Apollo", "Sanctuary of Artemis",
+            "Sanctuary of Poseidon", "Sanctuary of Apollo", "Amphitheater",
+            "Dark Temple", "Dark Garden", "Mushroom Farm", "Sanctuary of Morbus",
+            "Sanctuary of Pestilence", "Dark Fortress", "Demon Gate",
+            "Gold Mine", "Coal Mine", "Iron Ore Mine", "Sulfur Mine",
+            "Gold Smelter", "Iron Smelter", "Slaughterhouse", "Oil Press",
+            "Powder Mill", "Weapon Foundry", "Forester", "Healer",
+            "Goat Ranch", "Pig Ranch", "Goose Ranch", "Donkey Ranch",
+            "Trojan Farm", "Marketplace", "Landing Dock", "Vineyard",
+            "Storage Yard", "Small Residence", "Medium Residence", "Large Residence",
+            "Small Temple", "Large Temple",
+        ].iter().filter(|n| BuildingType::from_name(n).is_some()).count()
+    }
     #[test]
     fn test_new_building_types_count() {
-        // 51 existing + 26 new generic buildings = 77
-        assert_eq!(BuildingType::all_names().len(), 77);
-        assert!(BuildingType::all_names().contains(&"Waterworks"));
-        assert!(BuildingType::all_names().contains(&"Smelter"));
-        assert!(BuildingType::all_names().contains(&"Barracks"));
-        assert!(BuildingType::all_names().contains(&"Guard Tower"));
-        assert!(BuildingType::all_names().contains(&"Fortress"));
-        assert!(BuildingType::all_names().contains(&"Siege Workshop"));
-        assert!(BuildingType::all_names().contains(&"Shipyard"));
-        assert!(BuildingType::all_names().contains(&"Road Layer"));
+        // 77 building types total: verify specific new+original types exist via from_name()
+        // Generic buildings
+        assert!(BuildingType::from_name("Waterworks").is_some());
+        assert!(BuildingType::from_name("Smelter").is_some());
+        assert!(BuildingType::from_name("Barracks").is_some());
+        assert!(BuildingType::from_name("Guard Tower").is_some());
+        assert!(BuildingType::from_name("Fortress").is_some());
+        assert!(BuildingType::from_name("Siege Workshop").is_some());
+        assert!(BuildingType::from_name("Shipyard").is_some());
+        assert!(BuildingType::from_name("Road Layer").is_some());
         // Roman unique buildings
-        assert!(BuildingType::all_names().contains(&"Mead Hall"));
-        assert!(BuildingType::all_names().contains(&"Bakery"));
-        assert!(BuildingType::all_names().contains(&"Temple of Bacchus"));
-        assert!(BuildingType::all_names().contains(&"Colosseum"));
+        assert!(BuildingType::from_name("Mead Hall").is_some());
+        assert!(BuildingType::from_name("Bakery").is_some());
+        assert!(BuildingType::from_name("Temple of Bacchus").is_some());
+        assert!(BuildingType::from_name("Colosseum").is_some());
+        // Count all known named variants
+        let total = all_names_via_from_name();
+        assert_eq!(total, 77, "Should have 77 building types accessible via from_name()");
     }
 
     #[test]
@@ -4047,18 +3995,6 @@ mod tests {
     }
 
     #[test]
-    fn test_all_names_includes_viking_unique() {
-        let names = BuildingType::all_names();
-        assert!(names.contains(&"Mead Hall"));
-        assert!(names.contains(&"Sanctuary of Odin"));
-        assert!(names.contains(&"Sanctuary of Thor"));
-        assert!(names.contains(&"Sanctuary of Freya"));
-        assert!(names.contains(&"Runestone"));
-        // 51 existing + 26 new generic buildings = 77
-        assert_eq!(names.len(), 77, "Should have 77 total building names");
-    }
-
-    #[test]
     fn test_from_name_viking_unique() {
         assert_eq!(BuildingType::from_name("Mead Hall"), Some(BuildingType::MeadHall));
         assert_eq!(BuildingType::from_name("Sanctuary of Odin"), Some(BuildingType::SanctuaryOfOdin));
@@ -4136,18 +4072,6 @@ mod tests {
         assert!(!e.is_building_available(BuildingType::Amphitheater));
         assert!(!e.is_building_available(BuildingType::SanctuaryOfArtemis));
         assert!(!e.is_building_available(BuildingType::SanctuaryOfApollo));
-    }
-
-    #[test]
-    fn test_all_names_includes_trojan_unique() {
-        let names = BuildingType::all_names();
-        assert!(names.contains(&"Oracle of Apollo"));
-        assert!(names.contains(&"Apiary"));
-        assert!(names.contains(&"Mead Maker"));
-        assert!(names.contains(&"Sanctuary of Artemis"));
-        assert!(names.contains(&"Sanctuary of Poseidon"));
-        assert!(names.contains(&"Sanctuary of Apollo"));
-        assert!(names.contains(&"Amphitheater"));
     }
 
     #[test]
@@ -4253,10 +4177,10 @@ mod tests {
         let mut unique_resources: u32 = 0;
         let mut total_resources: u32 = 0;
         let mut resource_amounts = [0u32; ResourceType::COUNT];
-        for i in 0..ResourceType::COUNT {
+        for (i, amt_slot) in resource_amounts.iter_mut().enumerate().take(ResourceType::COUNT) {
             if let Some(rt) = ResourceType::from_u8(i as u8) {
                 let amt = eco.storage.get(rt);
-                resource_amounts[i] = amt;
+                *amt_slot = amt;
                 total_resources = total_resources.saturating_add(amt);
                 if amt > 0 { unique_resources += 1; }
             }

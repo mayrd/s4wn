@@ -5141,7 +5141,7 @@ mod tests {
         // At the horizon (fog_factor=1.0), shader fully blends to u_fog_color,
         // so fog must match the sky ramp to avoid visual discontinuities.
         for &day_phase in &[0.0, 0.15, 0.20, 0.50, 0.70, 0.76, 0.95] {
-            let (sr, sg, sb) = sky_color(day_phase as f64);
+            let (sr, sg, sb) = sky_color(day_phase);
             assert!((0.0..=1.0).contains(&sr), "sky_r out of range at p={}", day_phase);
             assert!((0.0..=1.0).contains(&sg), "sky_g out of range at p={}", day_phase);
             assert!((0.0..=1.0).contains(&sb), "sky_b out of range at p={}", day_phase);
@@ -6885,7 +6885,7 @@ mod tests {
         let mut p = 0.0;
         while p <= 1.0 {
             let dl = compute_day_light(p);
-            assert!(dl >= 0.0 && dl <= 1.0, "day_light out of range at p={}: {}", p, dl);
+            assert!((0.0..=1.0).contains(&dl), "day_light out of range at p={}: {}", p, dl);
             p += 0.001;
         }
     }
