@@ -384,6 +384,35 @@ impl BuildingType {
         }
     }
 
+    /// Valid BuildingType discriminants (77 total — gaps in the enum).
+    /// Sorted for binary_search. Used by from_discriminant() and tests.
+    pub const VALID_DISCRIMINANTS: [u8; 77] = [
+        0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+        18, 19, 20, 21, 22, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 39,
+        40, 41, 42, 43, 44, 45, 46, 47, 50, 51, 52, 53, 54, 55, 56,
+        57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
+        72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86,
+    ];
+
+    /// Returns the numeric discriminant (0–86) for this building type.
+    /// This is the efficient integer representation for JSON/JS communication.
+    pub fn discriminant(self) -> u8 {
+        self as u8
+    }
+
+    /// Reconstruct a BuildingType from its numeric discriminant.
+    /// Returns None for invalid/gap values (not in VALID_DISCRIMINANTS).
+    /// # Safety
+    /// Only transmutes values known to be valid via binary search of VALID_DISCRIMINANTS.
+    pub fn from_discriminant(d: u8) -> Option<Self> {
+        if Self::VALID_DISCRIMINANTS.binary_search(&d).is_ok() {
+            // SAFETY: d has been verified against the known-valid discriminant list
+            Some(unsafe { core::mem::transmute::<u8, BuildingType>(d) })
+        } else {
+            None
+        }
+    }
+
     /// Look up a building type by name (FNV-1a hash → discriminant lookup).
     pub fn from_name(name: &str) -> Option<Self> {
         const fn fnv1a_64(s: &[u8]) -> u64 {
@@ -5412,14 +5441,7 @@ mod squad_leader_aura_tests {
     #[test]
     fn test_from_name_hash_round_trip_all() {
         // All valid BuildingType discriminants (77 total — gaps in enum).
-        const VALID_DISCS: &[u8] = &[
-            0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-            18, 19, 20, 21, 22, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 39,
-            40, 41, 42, 43, 44, 45, 46, 47, 50, 51, 52, 53, 54, 55, 56,
-            57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
-            72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86,
-        ];
-        for &disc in VALID_DISCS {
+        for &disc in &BuildingType::VALID_DISCRIMINANTS {
             let bt: BuildingType = unsafe { core::mem::transmute::<u8, BuildingType>(disc) };
             let name = bt.name();
             let result = BuildingType::from_name(name);
@@ -5475,6 +5497,39 @@ mod squad_leader_aura_tests {
         assert_eq!(BuildingType::from_name("NonExistent"), None);
         assert_eq!(BuildingType::from_name("castle"), None);
         assert_eq!(BuildingType::from_name("  Sawmill"), None);
+    }
+
+    /// Verify discriminant() and from_discriminant() round-trip for all 77 variants.
+    #[test]
+    fn test_discriminant_round_trip_all() {
+        for &disc in &BuildingType::VALID_DISCRIMINANTS {
+            let bt: BuildingType = unsafe { core::mem::transmute::<u8, BuildingType>(disc) };
+            assert_eq!(bt.discriminant(), disc, "discriminant mismatch for disc {}", disc);
+            let back = BuildingType::from_discriminant(disc);
+            assert_eq!(back, Some(bt), "from_discriminant({}) round-trip failed", disc);
+        }
+    }
+
+    /// Verify from_discriminant returns None for gap values.
+    #[test]
+    fn test_from_discriminant_rejects_gaps() {
+        // Known gap values in the enum
+        let gaps = &[6u8, 17, 23, 24, 25, 26, 29, 30, 48, 49, 87, 255];
+        for &g in gaps {
+            assert_eq!(BuildingType::from_discriminant(g), None, "gap {} should be None", g);
+        }
+    }
+
+    /// Verify discriminant() matches name-based identity.
+    #[test]
+    fn test_discriminant_consistent_with_name() {
+        for &disc in &BuildingType::VALID_DISCRIMINANTS {
+            let bt: BuildingType = unsafe { core::mem::transmute::<u8, BuildingType>(disc) };
+            let by_name = BuildingType::from_name(bt.name());
+            let by_disc = BuildingType::from_discriminant(disc);
+            assert_eq!(by_disc, by_name,
+                "from_discriminant({}) and from_name mismatch", disc);
+        }
     }
 
     #[test]
