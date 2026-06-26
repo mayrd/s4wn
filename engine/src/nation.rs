@@ -81,15 +81,40 @@ impl NationType {
         }
     }
 
-    /// Parse a nation type from its name string.
+    /// Parse a nation type from its name string (FNV-1a hash → discriminant lookup).
     pub fn from_name(name: &str) -> Option<Self> {
-        match name {
-            "Roman" | "Romans" => Some(NationType::Roman),
-            "Viking" | "Vikings" => Some(NationType::Viking),
-            "Maya" => Some(NationType::Maya),
-            "Trojan" | "Trojans" => Some(NationType::Trojan),
-            "DarkTribe" | "Dark Tribe" => Some(NationType::DarkTribe),
-            _ => None,
+        const fn fnv1a_64(s: &[u8]) -> u64 {
+            let mut h: u64 = 0xcbf29ce484222325;
+            let mut i = 0;
+            while i < s.len() {
+                h ^= s[i] as u64;
+                h = h.wrapping_mul(0x100000001b3);
+                i += 1;
+            }
+            h
+        }
+
+        /// Sorted (hash, discriminant) pairs; aliases map to same discriminant.
+        const LOOKUP: &[(u64, u8)] = &[
+            (0x0fe49ce6858cb07a, 3), // Trojan
+            (0x49b142aecfdab025, 2), // Maya
+            (0x7667ffa7b27a7232, 0), // Roman
+            (0xad29aaf446102473, 0), // Romans → Roman
+            (0xcd3c544893fd07d4, 1), // Viking
+            (0xd39162a1f4e112c9, 4), // DarkTribe
+            (0xde1babbaf4a9d883, 4), // Dark Tribe → DarkTribe
+            (0xdf9ad38cd1d926af, 1), // Vikings → Viking
+            (0xfa6b29c8088bcced, 3), // Trojans → Trojan
+        ];
+
+        let hash = fnv1a_64(name.as_bytes());
+        match LOOKUP.binary_search_by_key(&hash, |&(h, _)| h) {
+            Ok(idx) => {
+                let disc = LOOKUP[idx].1;
+                // SAFETY: discriminants are valid (verified at compile time)
+                Some(unsafe { core::mem::transmute::<u8, NationType>(disc) })
+            }
+            Err(_) => None,
         }
     }
 
