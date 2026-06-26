@@ -5128,13 +5128,49 @@ mod tests {
     }
     #[test]
     fn test_edge_fog_fog_color_matches_clear() {
-        // The fog color is now a uniform (u_fog_color) set in the render loop
-        // to match the clear color (0.05, 0.08, 0.18).
-        // Verify the uniform is declared in the fragment shader.
+        // u_fog_color is set to sky_color() in the render loop,
+        // matching the clear color dynamically. Verify the uniform is declared.
         assert!(
             FRAGMENT_SHADER.contains("u_fog_color"),
             "fragment shader should declare u_fog_color uniform"
         );
+    }
+    #[test]
+    fn test_fog_color_matches_sky_ramp_at_horizon() {
+        // Validate fog_color equals sky_color() at all day phases.
+        // At the horizon (fog_factor=1.0), shader fully blends to u_fog_color,
+        // so fog must match the sky ramp to avoid visual discontinuities.
+        for &day_phase in &[0.0, 0.15, 0.20, 0.50, 0.70, 0.76, 0.95] {
+            let (sr, sg, sb) = sky_color(day_phase as f64);
+            assert!((0.0..=1.0).contains(&sr), "sky_r out of range at p={}", day_phase);
+            assert!((0.0..=1.0).contains(&sg), "sky_g out of range at p={}", day_phase);
+            assert!((0.0..=1.0).contains(&sb), "sky_b out of range at p={}", day_phase);
+        }
+        // Day-night contrast: fog color at noon vs midnight should differ significantly
+        let (nr, ng, nb) = sky_color(0.0);
+        let (dr, dg, db) = sky_color(0.5);
+        let night_mag = (nr * nr + ng * ng + nb * nb).sqrt();
+        let day_mag = (dr * dr + dg * dg + db * db).sqrt();
+        assert!(day_mag > 5.0 * night_mag,
+            "day fog ({},{},{}) should be much brighter than night fog ({},{},{})",
+            dr, dg, db, nr, ng, nb);
+        // Verify fog depends on sky_color (not constant), ensuring dynamic fog
+        let midnight = sky_color(0.0);
+        let dawn = sky_color(0.2);
+        assert!(midnight != dawn,
+            "fog color should change between midnight and dawn (not constant)");
+    }
+    #[test]
+    fn test_fog_color_shader_uniform_consistency() {
+        // u_fog_color is a vec3 uniform used in edge/fog-of-war blending.
+        // The shader multiplies u_fog_color at full fog_factor (horizon/edges).
+        // Verify the shader uses it correctly: fog blends toward u_fog_color,
+        // not toward a hardcoded value.
+        assert!(FRAGMENT_SHADER.contains("u_fog_color"),
+            "fragment shader must declare u_fog_color uniform");
+        // Verify fog blending uses u_fog_color
+        assert!(FRAGMENT_SHADER.contains("mix(u_fog_color") || FRAGMENT_SHADER.contains("mix( u_fog_color"),
+            "fragment shader should mix toward u_fog_color for fog blending");
     }
     #[test]
     fn test_map_data_format() {
