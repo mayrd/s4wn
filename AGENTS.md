@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S238 · 736 tests · WASM 307.3KB — Clippy: 0 errors, 0 warnings. 0 open issues. Converted from_name() to FNV-1a hash discriminant lookup (BuildingType + NationType). WASM unchanged because name()/all_names() still retain strings; full savings requires removing those + JS-side name tables.**
+**Status:** S239 · 734 tests · WASM 300.1KB — Clippy: 0 errors, 0 warnings. 0 open issues. Removed dead all_names() functions — 0KB savings (LTO dedup), but cleaner code. Confirmed real WASM savings require removing name() + JS-side name tables. Converted from_name() to FNV-1a hash discriminant lookup (BuildingType + NationType). WASM unchanged because name()/all_names() still retain strings; full savings requires removing those + JS-side name tables.**
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 239 | 2026-06-26 | Remove dead all_names() functions: BuildingType::all_names() (77 strings) + NationType::all_names() (5 strings). Zero WASM savings — LTO deduplicates with name() strings. Clean build confirms 300.1KB. Rewrote 3 test functions. Fixed 2 clippy warnings (empty_line_after_doc_comments + needless_range_loop). Clippy: 0 errors, 0 warnings. 736→734 tests. -- 734 tests |
 | 238 | 2026-06-26 | Convert from_name() to FNV-1a hash discriminant lookup: replaced 78 string-match arms in BuildingType::from_name() and 9 in NationType::from_name() (incl. aliases) with sorted const FNV-1a hash lookup tables and binary_search_by_key. Eliminates match-arm branch explosion. Removed 4 alias strings (Romans/Vikings/Trojans/Dark Tribe) only used in from_name(). WASM 307.3KB (unchanged — name()/all_names() retain strings; full 19.4KB savings requires removing name()/all_names() + JS-side name tables). 736 tests pass, clippy clean. -- 736 tests |
 | 237 | 2026-06-26 | Render() code bloat profiling: twiggy dominators confirms render() retains 49.8KB (16.24% of WASM). The bulk is code[267] at 39.7KB — the main render function with ~40 sub-calls to WebGL2 uniform/buffer setters. No single dominant sub-function: top 10 sub-calls range 96–408 bytes each (uniformMatrix4fv, bindRenderbuffer, uniform2f, etc.). The 39.7KB body is the unavoidable draw-call orchestration (FBO binds, shader program switches, viewport sets, draw calls per layer). Extraction into smaller functions would add call overhead without size savings. WASM after cargo clean: 307.3KB (300.1KB in AGENTS.md — environmental variance from wasm-opt/LTO). 736 tests pass, clippy clean. -- 736 tests |
 | 236 | 2026-06-26 | Replace serde_json in model.rs with manual JSON parser: wrote lightweight JsonParser struct that walks the fixed JSON schema byte-by-byte. Eliminated serde_json::from_str::<JsonMesh> monomorphization — the key source of the data[87]+[118] duplicate (94.7% identical serde_json flt2dec tables from 2 call sites). Removed serde::Deserialize from Material and JsonMesh structs. WASM 308.0KB → 300.1KB (-7.9KB), hitting the 300KB target. 736 tests pass, clippy clean. -- 736 tests |
@@ -283,6 +284,6 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 265. Investigate 7KB WASM size variance (307.3KB after cargo clean vs 300.1KB reported). Run checksum on wasm binaries from both builds to identify the source of growth. [SHOULD]
 266. Re-baseline WASM size target: 300KB. At 307.3KB we are 7.3KB over. Need 7.3KB savings from from_name() conversion + any remaining low-hanging fruit. [MUST]
 
-Next session priorities: (1) Remove name() and all_names() string functions for BuildingType/NationType — move name tables to JS side (est. 19.4KB savings). This is the key remaining step to actually realize savings from S238's hash lookup. (2) Investigate 7KB WASM size variance: 307.3KB vs 300.1KB (S236). Run reproducible build and checksum comparison across environments. (3) If name()/all_names() removal hits target, re-baseline WASM at ~288KB and audit remaining data segments for further optimization.
+Next session priorities: (1) Remove name() function from BuildingType/NationType — move name tables to JS side (est. 19.4KB savings). S239 confirmed all_names() removal saves 0KB (LTO dedup) — the real savings require removing name() itself. JS approach: create BUILDING_NAMES_EN lookup, change get_game_state() to emit integer IDs, JS maps back to strings. (2) Investigate 7KB WASM size variance: clean build gives 300.1KB consistently, but S237/S238 reported 307.3KB. Root cause may be wasm-opt/LTO non-determinism. (3) Add regression tests for BuildingType hash lookup — verify all 77 from_name() keys resolve correctly. (4) Consider removing NationType::name() — 5 nation strings (small savings but low risk).
 
 *All building data must match BASE.md. Never modify BASE.md.*
