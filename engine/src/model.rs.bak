@@ -3,19 +3,25 @@
 //! Phase 5 Step 7: OBJ parser + JSON model format + model instance rendering.
 //! Phase 7.1: per-building material colors + texture UVs.
 
+use serde::Deserialize;
 use std::collections::HashMap;
 
 
 /// Material parameters for PBR-like rendering.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Material {
     /// Diffuse/albedo color (RGB, 0.0–1.0)
     pub diffuse: [f32; 3],
     /// Surface roughness (0.0 = mirror, 1.0 = matte)
+    #[serde(default = "default_roughness")]
     pub roughness: f32,
     /// Metallic factor (0.0 = dielectric, 1.0 = metal)
+    #[serde(default = "default_metallic")]
     pub metallic: f32,
 }
+
+fn default_roughness() -> f32 { 0.7 }
+fn default_metallic() -> f32 { 0.05 }
 
 impl Default for Material {
     fn default() -> Self {
@@ -209,334 +215,58 @@ impl ModelRegistry {
 }
 
 
-// ── Manual JSON Parser for Model Mesh ──────────────────────────────────────────
+// ── JSON Mesh Format ────────────────────────────────────────────────────────────
 
-/// Lightweight JSON parser for the fixed model mesh schema.
-/// Handles objects, arrays, strings, and numbers. No serde dependency needed.
-struct JsonParser<'a> {
-    bytes: &'a [u8],
-    pos: usize,
+/// JSON-serializable mesh format for model data exchange.
+///
+/// Format:
+/// ```json
+/// {
+///   "version": 1,
+///   "vertices": [[x,y,z], ...],
+///   "normals": [[nx,ny,nz], ...],
+///   "uvs": [[u,v], ...],
+///   "indices": [i0, i1, i2, ...],
+///   "aabb": [min_x, min_y, min_z, max_x, max_y, max_z],
+///   "material": {"diffuse": [r,g,b], "roughness": 0.7, "metallic": 0.05}
+/// }
+/// ```
+#[derive(Debug, Deserialize, PartialEq)]
+pub struct JsonMesh {
+    pub version: u32,
+    pub vertices: Vec<[f32; 3]>,
+    pub normals: Vec<[f32; 3]>,
+    pub uvs: Vec<[f32; 2]>,
+    pub indices: Vec<u16>,
+    pub aabb: [f32; 6],
+    #[serde(default)]
+    pub material: Option<Material>,
 }
 
-impl<'a> JsonParser<'a> {
-    fn new(src: &'a str) -> Self {
-        JsonParser { bytes: src.as_bytes(), pos: 0 }
-    }
-
-    fn peek(&self) -> Option<u8> {
-        self.bytes.get(self.pos).copied()
-    }
-
-    fn skip_ws(&mut self) {
-        while self.pos < self.bytes.len() {
-            match self.bytes[self.pos] {
-                b' ' | b'\t' | b'\n' | b'\r' => self.pos += 1,
-                _ => break,
-            }
-        }
-    }
-
-    fn expect(&mut self, ch: u8) -> Result<(), String> {
-        self.skip_ws();
-        if self.peek() == Some(ch) {
-            self.pos += 1;
-            Ok(())
-        } else {
-            Err(format!("expected '{}' at pos {}, got {:?}", ch as char, self.pos,
-                self.peek().map(|c| c as char)))
-        }
-    }
-
-    fn read_string(&mut self) -> Result<String, String> {
-        self.expect(b'"')?;
-        let start = self.pos;
-        while self.pos < self.bytes.len() {
-            match self.bytes[self.pos] {
-                b'"' => {
-                    let s = std::str::from_utf8(&self.bytes[start..self.pos])
-                        .map_err(|e| format!("invalid UTF-8: {}", e))?;
-                    self.pos += 1;
-                    return Ok(s.to_string());
-                }
-                b'\\' => {
-                    // Skip escaped character (not needed for field names)
-                    self.pos += 2;
-                }
-                _ => self.pos += 1,
-            }
-        }
-        Err("unterminated string".to_string())
-    }
-
-    fn read_number(&mut self) -> Result<f64, String> {
-        self.skip_ws();
-        let start = self.pos;
-        // Optional minus
-        if self.peek() == Some(b'-') { self.pos += 1; }
-        // Integer part
-        while self.pos < self.bytes.len() && self.bytes[self.pos].is_ascii_digit() {
-            self.pos += 1;
-        }
-        // Optional fractional part
-        if self.peek() == Some(b'.') {
-            self.pos += 1;
-            while self.pos < self.bytes.len() && self.bytes[self.pos].is_ascii_digit() {
-                self.pos += 1;
-            }
-        }
-        // Optional exponent
-        if self.peek() == Some(b'e') || self.peek() == Some(b'E') {
-            self.pos += 1;
-            if self.peek() == Some(b'+') || self.peek() == Some(b'-') {
-                self.pos += 1;
-            }
-            while self.pos < self.bytes.len() && self.bytes[self.pos].is_ascii_digit() {
-                self.pos += 1;
-            }
-        }
-        if self.pos == start {
-            return Err("expected number".to_string());
-        }
-        let s = std::str::from_utf8(&self.bytes[start..self.pos])
-            .map_err(|e| format!("invalid UTF-8 in number: {}", e))?;
-        s.parse::<f64>().map_err(|e| format!("invalid number '{}': {}", s, e))
-    }
-
-    fn read_f32(&mut self) -> Result<f32, String> {
-        Ok(self.read_number()? as f32)
-    }
-
-    fn read_u32(&mut self) -> Result<u32, String> {
-        let n = self.read_number()?;
-        Ok(n as u32)
-    }
-
-    fn read_u16(&mut self) -> Result<u16, String> {
-        let n = self.read_number()?;
-        Ok(n as u16)
-    }
-
-    fn read_array_3f32(&mut self) -> Result<[f32; 3], String> {
-        self.expect(b'[')?;
-        let x = self.read_f32()?;
-        self.expect(b',')?;
-        let y = self.read_f32()?;
-        self.expect(b',')?;
-        let z = self.read_f32()?;
-        self.expect(b']')?;
-        Ok([x, y, z])
-    }
-
-    fn read_array_2f32(&mut self) -> Result<[f32; 2], String> {
-        self.expect(b'[')?;
-        let u = self.read_f32()?;
-        self.expect(b',')?;
-        let v = self.read_f32()?;
-        self.expect(b']')?;
-        Ok([u, v])
-    }
-
-    fn read_array_6f32(&mut self) -> Result<[f32; 6], String> {
-        self.expect(b'[')?;
-        let v0 = self.read_f32()?;
-        self.expect(b',')?;
-        let v1 = self.read_f32()?;
-        self.expect(b',')?;
-        let v2 = self.read_f32()?;
-        self.expect(b',')?;
-        let v3 = self.read_f32()?;
-        self.expect(b',')?;
-        let v4 = self.read_f32()?;
-        self.expect(b',')?;
-        let v5 = self.read_f32()?;
-        self.expect(b']')?;
-        Ok([v0, v1, v2, v3, v4, v5])
-    }
-
-    fn read_material(&mut self) -> Result<Material, String> {
-        self.expect(b'{')?;
-        let key = self.read_string()?;
-        if key != "diffuse" {
-            return Err(format!("expected \"diffuse\" in material, got \"{}\"", key));
-        }
-        self.expect(b':')?;
-        self.expect(b'[')?;
-        let r = self.read_f32()?;
-        self.expect(b',')?;
-        let g = self.read_f32()?;
-        self.expect(b',')?;
-        let b = self.read_f32()?;
-        self.expect(b']')?;
-
-        self.expect(b',')?;
-        let roughness_key = self.read_string()?;
-        if roughness_key != "roughness" {
-            return Err(format!("expected \"roughness\", got \"{}\"", roughness_key));
-        }
-        self.expect(b':')?;
-        let roughness = self.read_f32()?;
-
-        self.expect(b',')?;
-        let metallic_key = self.read_string()?;
-        if metallic_key != "metallic" {
-            return Err(format!("expected \"metallic\", got \"{}\"", metallic_key));
-        }
-        self.expect(b':')?;
-        let metallic = self.read_f32()?;
-
-        self.expect(b'}')?;
-        Ok(Material { diffuse: [r, g, b], roughness, metallic })
-    }
-}
-
-/// Parse a JSON mesh string into a ModelMesh using a manual parser (no serde).
+/// Parse a JSON mesh string into a ModelMesh.
 pub fn parse_json_mesh(src: &str) -> Result<ModelMesh, String> {
-    let mut p = JsonParser::new(src);
-    p.expect(b'{')?;
+    let json: JsonMesh = serde_json::from_str(src)
+        .map_err(|e| format!("JSON parse error: {}", e))?;
 
-    // Read version
-    let version_key = p.read_string()?;
-    if version_key != "version" {
-        return Err(format!("expected \"version\" field, got \"{}\"", version_key));
-    }
-    p.expect(b':')?;
-    let version = p.read_u32()?;
-
-    if version != 1 {
-        return Err(format!("unsupported version: {}", version));
+    if json.version != 1 {
+        return Err(format!("unsupported version: {}", json.version));
     }
 
-    // Read vertices
-    p.expect(b',')?;
-    let vtx_key = p.read_string()?;
-    if vtx_key != "vertices" {
-        return Err(format!("expected \"vertices\" field, got \"{}\"", vtx_key));
-    }
-    p.expect(b':')?;
-    p.expect(b'[')?;
-    let mut vertices: Vec<[f32; 3]> = Vec::new();
-    if p.peek() != Some(b']') {
-        loop {
-            vertices.push(p.read_array_3f32()?);
-            p.skip_ws();
-            if p.peek() == Some(b',') {
-                p.pos += 1;
-            } else {
-                break;
-            }
-        }
-    }
-    p.expect(b']')?;
-
-    // Read normals
-    p.expect(b',')?;
-    let n_key = p.read_string()?;
-    if n_key != "normals" {
-        return Err(format!("expected \"normals\" field, got \"{}\"", n_key));
-    }
-    p.expect(b':')?;
-    p.expect(b'[')?;
-    let mut normals_vec: Vec<[f32; 3]> = Vec::new();
-    if p.peek() != Some(b']') {
-        loop {
-            normals_vec.push(p.read_array_3f32()?);
-            p.skip_ws();
-            if p.peek() == Some(b',') {
-                p.pos += 1;
-            } else {
-                break;
-            }
-        }
-    }
-    p.expect(b']')?;
-
-    // Read uvs
-    p.expect(b',')?;
-    let uv_key = p.read_string()?;
-    if uv_key != "uvs" {
-        return Err(format!("expected \"uvs\" field, got \"{}\"", uv_key));
-    }
-    p.expect(b':')?;
-    p.expect(b'[')?;
-    let mut uvs_vec: Vec<[f32; 2]> = Vec::new();
-    if p.peek() != Some(b']') {
-        loop {
-            uvs_vec.push(p.read_array_2f32()?);
-            p.skip_ws();
-            if p.peek() == Some(b',') {
-                p.pos += 1;
-            } else {
-                break;
-            }
-        }
-    }
-    p.expect(b']')?;
-
-    // Read indices
-    p.expect(b',')?;
-    let idx_key = p.read_string()?;
-    if idx_key != "indices" {
-        return Err(format!("expected \"indices\" field, got \"{}\"", idx_key));
-    }
-    p.expect(b':')?;
-    p.expect(b'[')?;
-    let mut indices_vec: Vec<u16> = Vec::new();
-    if p.peek() != Some(b']') {
-        loop {
-            indices_vec.push(p.read_u16()?);
-            p.skip_ws();
-            if p.peek() == Some(b',') {
-                p.pos += 1;
-            } else {
-                break;
-            }
-        }
-    }
-    p.expect(b']')?;
-
-    // Read aabb
-    p.expect(b',')?;
-    let aabb_key = p.read_string()?;
-    if aabb_key != "aabb" {
-        return Err(format!("expected \"aabb\" field, got \"{}\"", aabb_key));
-    }
-    p.expect(b':')?;
-    let aabb = p.read_array_6f32()?;
-
-    // Optional material field
-    let material: Material;
-    p.skip_ws();
-    if p.peek() == Some(b',') {
-        p.pos += 1;
-        p.skip_ws();
-        let mat_key = p.read_string()?;
-        if mat_key == "material" {
-            p.expect(b':')?;
-            material = p.read_material()?;
-        } else {
-            return Err(format!("expected \"material\" field, got \"{}\"", mat_key));
-        }
-    } else {
-        material = Material::default();
-    }
-
-    p.expect(b'}')?;
-
-    if vertices.is_empty() || indices_vec.is_empty() {
+    if json.vertices.is_empty() || json.indices.is_empty() {
         return Ok(ModelMesh::empty());
     }
 
-    let vertex_count = vertices.len();
+    let vertex_count = json.vertices.len();
     let mut positions: Vec<f32> = Vec::with_capacity(vertex_count * 3);
-    for v in &vertices {
+    for v in &json.vertices {
         positions.push(v[0]);
         positions.push(v[1]);
         positions.push(v[2]);
     }
 
     let mut normals: Vec<f32> = Vec::with_capacity(vertex_count * 3);
-    if normals_vec.len() == vertex_count {
-        for n in &normals_vec {
+    if json.normals.len() == vertex_count {
+        for n in &json.normals {
             let len = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
             if len > 1e-8 {
                 normals.push(n[0] / len);
@@ -558,8 +288,8 @@ pub fn parse_json_mesh(src: &str) -> Result<ModelMesh, String> {
     }
 
     let mut uvs: Vec<f32> = Vec::with_capacity(vertex_count * 2);
-    if uvs_vec.len() == vertex_count {
-        for uv in &uvs_vec {
+    if json.uvs.len() == vertex_count {
+        for uv in &json.uvs {
             uvs.push(uv[0]);
             uvs.push(uv[1]);
         }
@@ -570,18 +300,20 @@ pub fn parse_json_mesh(src: &str) -> Result<ModelMesh, String> {
         }
     }
 
-    let triangle_count = indices_vec.len() / 3;
+    let triangle_count = json.indices.len() / 3;
+
+    let material = json.material.unwrap_or_default();
 
     Ok(ModelMesh {
         positions,
         normals,
         uvs,
-        indices: indices_vec,
+        indices: json.indices,
         vertex_count,
         triangle_count,
         aabb: (
-            aabb[0], aabb[1], aabb[2],
-            aabb[3], aabb[4], aabb[5],
+            json.aabb[0], json.aabb[1], json.aabb[2],
+            json.aabb[3], json.aabb[4], json.aabb[5],
         ),
         material,
     })
