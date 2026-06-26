@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S229 · 720 tests · WASM 312.2KB — Clippy: 0 errors, 0 warnings. 0 open issues. Regression tests for camera projection + sky_color ramp. WASM size at 312.2KB (12.2KB gap to 300KB target). Next: (1) Add day-light uniform regression tests in Rust (validate GLSL sin formula output), (2) Convert from_name to integer discriminant lookup (est. 15-19KB savings — largest single win), (3) Profile render() code bloat (39.7KB).**
+**Status:** S230 · 726 tests · WASM 312.2KB — Clippy: 0 errors, 0 warnings. 0 open issues. 6 frustum culling regression tests for camera visible_bounds + LOD mesh validation. WASM size at 312.2KB (12.2KB gap to 300KB target). Next: (1) Convert from_name to integer discriminant lookup (est. 15-19KB savings — largest single win), (2) Profile render() code bloat (39.7KB).**
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -106,6 +106,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | 222 | 2026-06-25 | Refactored particle spawn functions to use config structs: ParticleConfig (11-field) and BurstConfig (10-field). Removed all 3 #[allow(clippy::too_many_arguments)] workarounds from session 221. Converted 39 .spawn() + 15 .spawn_burst() call sites. Clippy auto-fixed 76 redundant_field_names. Clippy: 0 errors, 0 warnings. 701 tests pass. -- 701 tests |
 | 223 | 2026-06-25 | Rebuilt WASM after particle config refactor: 316.1→316.9KB (+0.8KB). Investigated lazy-load model JSON — already done (load_model_json WASM export). Analyzed twiggy data segments: data[5]=19.4KB building/unit names, data[0]=5.8KB game state JSON, data[94]=10.5KB minified shaders. 701 tests pass. Clippy 0 errors/0 warnings. 0 open issues. -- 701 tests |
 | 229 | 2026-06-26 | Added 6 regression tests for Phase 7 sky_color() day-phase sky color ramp: night darkness (<0.15), noon blue dominance, dawn warmth (red>blue), dusk warmth (red>blue), output range validation (0-1), day-night contrast (>5x). 714→720 tests pass. Clippy clean. 0 open issues. -- 720 tests |
+| 230 | 2026-06-26 | Added 6 camera frustum culling regression tests for LOD system: visible_bounds map boundary clamping, zoom scaling, non-empty range, center shift, LOD vertex count bounded by visible area, map edge mesh validation. 720→726 tests pass. Clippy clean. 0 open issues. -- 726 tests |
 | 228 | 2026-06-26 | Added 4 camera perspective projection regression tests: center→NDC origin, aspect ratio X scaling, Y-offset validity, FOV NDC magnitude. 710→714 tests pass. Clippy 0 errors/0 warnings. 0 open issues. Camera math validated for Phase 7 orbital rendering. -- 714 tests |
 | 226 | 2026-06-26 | Added regression tests for game_state JSON template keys — asserts all expected field names (kind, x, y, construction, active, production_counter, assigned_settlers, max_settlers, input_buffer, output_buffer, id, hp, max_hp, state, stance, assigned_building, target, version, game_time, map_json, resources, buildings, units) exist in get_game_state output. Prevents silent key removal. 701→710 tests pass. Clippy 0 errors/0 warnings. -- 710 tests |
 | 225 | 2026-06-26 | Removed 12 dead WASM exports (0 JS refs, 0 Rust callers): list_nations, get_fps, is_building_available_for_nation, move_units_to_tile, set_unit_stance, list_building_types, get_game_speed, populate_model_instances_from_game, get_building_destruction_progress, damage_building, get_building_hp, get_building_max_hp. Cleaned up orphaned doc comments + blank lines from removal. WASM 316.9KB→311.8KB (-5.1KB). Exports 68→56. 701 tests pass. Clippy 0 errors/0 warnings. -- 701 tests |
@@ -272,6 +273,6 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 261. **Convert from_name() to integer discriminant lookup** — eliminates 19.4KB building/unit name strings (data[5]). Replace match name { "Castle" => ... } with FromPrimitive trait or const array index. Requires JS-side name lookup table since get_game_state() outputs names in JSON. [MUST — largest single win]
 262. Investigate data[87]+[118] duplicate: model JSON structure duplication — possibly building config strings compiled twice (economy.rs + lib.rs). Dedup by extracting to shared const. [MUST — saves 4.8KB]
 
-*Next session priorities*: (1) from_name integer discriminant lookup (-19.4KB, hits 300KB target), (2) model JSON dedup (-4.8KB backup), (3) Add camera frustum culling test for LOD system validation.
+*Next session priorities*: (1) from_name integer discriminant lookup (-19.4KB, hits 300KB target), (2) model JSON dedup (data[87]+[118], est. -4.8KB), (3) Add day-light uniform regression tests in Rust (validate GLSL sin formula output).
 
 *All building data must match BASE.md. Never modify BASE.md.*
