@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S231 · 734 tests · WASM 312.2KB — Clippy: 0 errors, 0 warnings. 0 open issues. 8 day_light uniform regression tests added — Rust-side validation of GLSL sin+smoothstep formula for sky lighting. WASM size at 312.2KB (12.2KB gap to 300KB target). Next: (1) Convert from_name to integer discriminant lookup (est. 15-19KB savings — largest single win), (2) Model JSON dedup data[87]+[118] (est. 4.8KB), (3) Profile render() code bloat (39.7KB).**
+**Status:** S232 · 736 tests · WASM 304.9KB — Clippy: 0 errors, 0 warnings. 0 open issues. 2 fog_color/sky_color sync validation tests added — validates fog matches sky ramp at horizon, fog_color uniform consistency in fragment shader — Rust-side validation of GLSL sin+smoothstep formula for sky lighting. WASM size at 312.2KB (12.2KB gap to 300KB target). Next: (1) Convert from_name to integer discriminant lookup (est. 15-19KB savings — largest single win), (2) Model JSON dedup data[87]+[118] (est. 4.8KB), (3) Profile render() code bloat (39.7KB).**
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 232 | 2026-06-26 | Added 2 fog_color/sky_color sync validation tests: test_fog_color_matches_sky_ramp_at_horizon validates fog_color equals sky_color() at 7 key day phases (midnight→night fall), day/night contrast >5x, dynamic fog not constant. test_fog_color_shader_uniform_consistency verifies u_fog_color uniform and mix() blending in fragment shader. Updated outdated comment in test_edge_fog_fog_color_matches_clear (fog color is dynamic, not hardcoded). 734→736 tests pass. Clippy: 0 errors, 0 warnings. WASM 304.9KB. -- 736 tests |
 | 231 | 2026-06-26 | Added 8 day_light uniform regression tests: compute_day_light() Rust function mirrors GLSL sin+smoothstep formula used in day_light_glsl_u/day_light_glsl_v shader macros. Validates midnight darkness, noon brightness, dawn/dusk midpoint, output range [0,1], day/night contrast (>100x), monotonic dawn→noon and noon→dusk, phase continuity at cycle wrap. Reverted uncommitted BUILDING_DATA consolidation in economy.rs (static array of &str fat pointers would increase WASM per skill warning). 726→734 tests pass. Clippy: 0 errors, 0 warnings. -- 734 tests |
 | 218 | 2026-06-25 | Removed 3 dead WASM exports: compute_mvp_json (4.6KB code, 0 JS refs), clear_model_instances (0 JS refs), model_instance_count (0 JS refs). Removed 2 corresponding tests. WASM 326KB→319KB (-7KB). 697 tests pass. Clippy 0 errors/21 warnings. 81 exports remaining (was 84). -- 697 tests |
 | 220 | 2026-06-25 | Added 4 particle edge-case tests: bounce velocity reversal (vz inversion after ground impact), alpha at full life (=1.0 above 0.7 threshold), alpha fade at 50% life (~0.71), alpha zero when dead. 697→701 tests pass. Clippy 0 errors/15 warnings. -- 701 tests |
@@ -274,6 +275,6 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 261. **Convert from_name() to integer discriminant lookup** — eliminates 19.4KB building/unit name strings (data[5]). Replace match name { "Castle" => ... } with FromPrimitive trait or const array index. Requires JS-side name lookup table since get_game_state() outputs names in JSON. [MUST — largest single win]
 262. Investigate data[87]+[118] duplicate: model JSON structure duplication — possibly building config strings compiled twice (economy.rs + lib.rs). Dedup by extracting to shared const. [MUST — saves 4.8KB]
 
-*Next session priorities*: (1) from_name integer discriminant lookup (-19.4KB, hits 300KB target), (2) model JSON dedup (data[87]+[118], est. -4.8KB), (3) Add GLSL uniform validation for fog_color/camera projection sync (ensure fog matches sky ramp at horizon).
+*Next session priorities*: (1) from_name integer discriminant lookup (-19.4KB, hits 300KB target), (2) model JSON dedup (data[87]+[118], est. -4.8KB), (3) Investigate long unused test functions (test_fragment_shader_water_depth_animation, promote_to_squad_leader, test_balance_simulation_deterministic — restore or remove).
 
 *All building data must match BASE.md. Never modify BASE.md.*
