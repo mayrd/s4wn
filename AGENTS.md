@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S226 · 706 tests · WASM 311.8KB — Clippy: 0 errors, 0 warnings. 0 open issues. Water splash particle effect added. Remaining 11.8KB gap to 300KB target. Next: Investigate data[87]+[118] duplicate model JSON (est. 4.8KB savings), then from_name integer discriminant lookup (est. 15KB).**
+**Status:** S227 · 710 tests · WASM 312.2KB — Clippy: 0 errors, 0 warnings. 0 open issues. Regression tests added for JSON template keys. WASM size investigation: from_name static array increased size (fat pointer overhead); string dedup impossible (names shared across name(), all_names(), tests). Actual WASM 312.2KB (wasm-opt v117 drift). Next: (1) Convert from_name to integer discriminant lookup eliminating all string references (est. 20KB), (2) Shorten JSON template field names in both Rust+JS (est. 2-3KB), (3) Investigate render() code bloat (39.7KB code[278]).**
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
