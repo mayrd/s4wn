@@ -6619,6 +6619,89 @@ mod tests {
         let mesh = build_map_mesh(&map, &camera);
         let _ = mesh.positions.len();
     }
+    // ── Camera frustum culling tests for LOD system ─────────────────────
+    #[test]
+    fn test_visible_bounds_clamp_to_map_boundaries() {
+        // Camera centered at corner should produce in-bounds tile indices
+        let cam = Camera::new(0.0, 0.0, 800, 600);
+        let (min_x, max_x, min_y, max_y) = cam.visible_bounds(32, 32);
+        assert!(min_x < 32, "min_x {} should be within map width", min_x);
+        assert!(max_x < 32, "max_x {} should be within map width", max_x);
+        assert!(min_y < 32, "min_y {} should be within map height", min_y);
+        assert!(max_y < 32, "max_y {} should be within map height", max_y);
+    }
+    #[test]
+    fn test_visible_bounds_scales_with_zoom() {
+        // Lower zoom (wider view) should produce larger visible bounds
+        let cam_narrow = Camera::new(32.0, 32.0, 800, 600);
+        let mut cam_wide = cam_narrow.clone();
+        cam_wide.set_zoom(0.5);
+        let (n_min_x, n_max_x, n_min_y, n_max_y) = cam_narrow.visible_bounds(64, 64);
+        let (w_min_x, w_max_x, w_min_y, w_max_y) = cam_wide.visible_bounds(64, 64);
+        let narrow_tiles = (n_max_x - n_min_x + 1) * (n_max_y - n_min_y + 1);
+        let wide_tiles = (w_max_x - w_min_x + 1) * (w_max_y - w_min_y + 1);
+        assert!(
+            wide_tiles > narrow_tiles,
+            "Lower zoom should show more tiles: narrow={}, wide={}",
+            narrow_tiles, wide_tiles
+        );
+    }
+    #[test]
+    fn test_visible_bounds_nonempty_for_valid_camera() {
+        let cam = Camera::new(32.0, 32.0, 800, 600);
+        let (min_x, max_x, min_y, max_y) = cam.visible_bounds(64, 64);
+        assert!(max_x >= min_x, "x range [{}, {}] should be non-empty", min_x, max_x);
+        assert!(max_y >= min_y, "y range [{}, {}] should be non-empty", min_y, max_y);
+    }
+    #[test]
+    fn test_visible_bounds_shift_with_camera_center() {
+        // Moving the camera to the right should shift visible X bounds
+        let cam_left = Camera::new(10.0, 32.0, 800, 600);
+        let cam_right = Camera::new(50.0, 32.0, 800, 600);
+        let (l_min_x, l_max_x, _, _) = cam_left.visible_bounds(64, 64);
+        let (r_min_x, r_max_x, _, _) = cam_right.visible_bounds(64, 64);
+        assert!(
+            l_max_x < r_max_x,
+            "Right camera max_x {} should exceed left max_x {}", r_max_x, l_max_x
+        );
+        assert!(
+            r_min_x > l_min_x,
+            "Right camera min_x {} should exceed left min_x {}", r_min_x, l_min_x
+        );
+    }
+    #[test]
+    fn test_lod_mesh_vertices_within_visible_bounds() {
+        // Vertex count should not exceed the total tile quads in visible area
+        let map = Map::generate_demo(64, 64);
+        let camera = Camera::new(32.0, 32.0, 800, 600);
+        let (min_x, max_x, min_y, max_y) = camera.visible_bounds(map.width, map.height);
+        let mesh = build_map_mesh(&map, &camera);
+        let vertex_count = mesh.positions.len() / 3;
+        assert!(vertex_count > 0, "LOD mesh should have vertices for visible area");
+        let visible_area_tiles = (max_x - min_x + 1) * (max_y - min_y + 1);
+        // Each LOD quad covers up to 4x4 tiles; bound: grid cells + overhead
+        let max_vertices = visible_area_tiles * 4 + 8;
+        assert!(
+            vertex_count <= max_vertices,
+            "LOD vertices {} exceed visible area max {}",
+            vertex_count, max_vertices
+        );
+    }
+    #[test]
+    fn test_lod_mesh_respects_map_edge() {
+        // Camera at map corner should produce valid mesh with no out-of-bounds data
+        let map = Map::generate_demo(32, 32);
+        let camera = Camera::new(0.0, 0.0, 800, 600);
+        let mesh = build_map_mesh(&map, &camera);
+        assert!(
+            !mesh.positions.is_empty(),
+            "Edge camera should still produce valid mesh"
+        );
+        let vc = mesh.positions.len() / 3;
+        assert_eq!(mesh.colors.len(), vc * 3, "color count should match vertex count");
+        assert_eq!(mesh.elevations.len(), vc, "elevation count should match vertex count");
+        assert_eq!(mesh.slopes.len(), vc, "slope count should match vertex count");
+    }
     #[test]
     fn test_shaders_have_no_comment_only_lines() {
         // Regression: GLSL minification strips comment-only lines from shader source.
