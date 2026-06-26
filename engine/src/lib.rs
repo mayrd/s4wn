@@ -546,6 +546,19 @@ out_color = vec4(color, alpha);
 
 const ELEVATION_SCALE: f32 = 0.5;
 
+
+/// Compute the shared day_light value from day_phase (0.0–1.0).
+#[allow(dead_code)]
+/// Mirrors the GLSL sin+smoothstep formula used in day_light_glsl_u/day_light_glsl_v.
+/// day_phase: 0.0=midnight, 0.5=noon, 1.0=next midnight
+/// Returns value in 0.0-1.0 range (Hermite smoothstep of a sine wave).
+fn compute_day_light(day_phase: f64) -> f32 {
+    let p = day_phase as f32;
+    let raw = 0.5 + 0.5 * ((p - 0.25) * std::f32::consts::TAU).sin();
+    // Hermite smoothstep: t^2 * (3 - 2*t)
+    raw * raw * (3.0 - 2.0 * raw)
+}
+
 /// Compute sky background color from day_phase (0.0–1.0 over a 300s day cycle).
 /// Returns (r, g, b) in 0.0–1.0 range.
 /// Phase 7: Dynamic sky color ramp — warm dawn → blue noon → orange dusk → dark night.
@@ -6802,6 +6815,87 @@ mod tests {
             lum_noon, lum_night
         );
     }
+
+    // ── Phase 7: Day-Light Uniform Regression Tests ──
+
+    #[test]
+    fn test_day_light_midnight_is_dark() {
+        // p=0.0 (midnight): sin((-0.25)*TAU) = sin(-π/2) = -1.0
+        // raw = 0.0, smoothstep(0) = 0
+        assert!(compute_day_light(0.0) <= 0.01, "midnight day_light near zero");
+        assert!(compute_day_light(0.99) <= 0.01, "late night day_light near zero");
+    }
+
+    #[test]
+    fn test_day_light_noon_is_bright() {
+        // p=0.5 (noon): sin((0.25)*TAU) = sin(π/2) = 1.0
+        // raw = 1.0, smoothstep(1) = 1
+        assert!(compute_day_light(0.5) >= 0.99, "noon day_light near 1.0");
+    }
+
+    #[test]
+    fn test_day_light_dawn_dusk_are_mid() {
+        // p=0.25 (dawn): sin(0*TAU) = 0 → raw=0.5 → smoothstep(0.5)=0.5
+        // p=0.75 (dusk): sin((0.5)*TAU) = sin(π) = 0 → raw=0.5 → same
+        let dawn = compute_day_light(0.25);
+        let dusk = compute_day_light(0.75);
+        assert!((dawn - 0.5).abs() < 0.01, "dawn day_light ~0.5, got {}", dawn);
+        assert!((dusk - 0.5).abs() < 0.01, "dusk day_light ~0.5, got {}", dusk);
+    }
+
+    #[test]
+    fn test_day_light_output_range() {
+        // All values must be in 0.0-1.0 across full cycle
+        let mut p = 0.0;
+        while p <= 1.0 {
+            let dl = compute_day_light(p);
+            assert!(dl >= 0.0 && dl <= 1.0, "day_light out of range at p={}: {}", p, dl);
+            p += 0.001;
+        }
+    }
+
+    #[test]
+    fn test_day_light_day_night_contrast() {
+        // Noon should be >> midnight (at least 100x)
+        let night = compute_day_light(0.0);
+        let noon = compute_day_light(0.5);
+        assert!(noon > night * 100.0, "noon {} should be much brighter than midnight {}", noon, night);
+    }
+
+    #[test]
+    fn test_day_light_monotonic_dawn_to_noon() {
+        // 0.25→0.5 should be strictly increasing
+        let mut prev = compute_day_light(0.25);
+        let mut p = 0.251;
+        while p <= 0.5 {
+            let curr = compute_day_light(p);
+            assert!(curr >= prev, "day_light not non-decreasing at p={}: prev={} curr={}", p, prev, curr);
+            prev = curr;
+            p += 0.001;
+        }
+    }
+
+    #[test]
+    fn test_day_light_monotonic_noon_to_dusk() {
+        // 0.5→0.75 should be strictly decreasing
+        let mut prev = compute_day_light(0.5);
+        let mut p = 0.501;
+        while p <= 0.75 {
+            let curr = compute_day_light(p);
+            assert!(curr <= prev, "day_light not non-increasing at p={}: prev={} curr={}", p, prev, curr);
+            prev = curr;
+            p += 0.001;
+        }
+    }
+
+    #[test]
+    fn test_day_light_phase_continuity() {
+        // p=0.999 should be close to p=0.0 — day cycle wraps
+        let end = compute_day_light(0.999);
+        let start = compute_day_light(0.0);
+        assert!((end - start).abs() < 0.05, "day_light not continuous at wrap: end={} start={}", end, start);
+    }
+
 
 #[cfg(test)]
 mod horizon_tests {
