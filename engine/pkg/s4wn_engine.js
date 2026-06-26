@@ -41,18 +41,6 @@ export function add_starting_resources(difficulty) {
 }
 
 /**
- * Apply damage to a building at the given index. If HP reaches 0, destruction starts.
- * Returns the remaining HP, or 0 if the building doesn't exist.
- * @param {number} building_index
- * @param {number} amount
- * @returns {number}
- */
-export function damage_building(building_index, amount) {
-    const ret = wasm.damage_building(building_index, amount);
-    return ret >>> 0;
-}
-
-/**
  * Decompress a .sav savegame chunk: ARA-decrypt then LZ+Huffman decompress.
  * Used by the JS .sav loader to extract game data from savegame chunks.
  * Returns the decompressed data, or an empty Vec on failure.
@@ -150,6 +138,8 @@ export function get_build_cost(kind_name) {
 }
 
 /**
+ * Returns the remaining HP, or 0 if the building doesn't exist.
+ * Get the max HP of a building at the given index. Returns 0 if not found.
  * Get building info at a tile position. Returns JSON or "null" if no building.
  * @param {number} tile_x
  * @param {number} tile_y
@@ -166,16 +156,6 @@ export function get_building_at_tile(tile_x, tile_y) {
     } finally {
         wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
     }
-}
-
-/**
- * Get the destruction animation progress for a building (0.0 to 1.0, or -1.0 if not destroying).
- * @param {number} building_index
- * @returns {number}
- */
-export function get_building_destruction_progress(building_index) {
-    const ret = wasm.get_building_destruction_progress(building_index);
-    return ret;
 }
 
 /**
@@ -196,16 +176,6 @@ export function get_building_garrison_json(building_index) {
     } finally {
         wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
     }
-}
-
-/**
- * Get the current HP of a building at the given index. Returns 0 if not found.
- * @param {number} building_index
- * @returns {number}
- */
-export function get_building_hp(building_index) {
-    const ret = wasm.get_building_hp(building_index);
-    return ret >>> 0;
 }
 
 /**
@@ -232,17 +202,6 @@ export function get_building_info(idx) {
 }
 
 /**
- * Get the max HP of a building at the given index. Returns 0 if not found.
- * @param {number} building_index
- * @returns {number}
- */
-export function get_building_max_hp(building_index) {
-    const ret = wasm.get_building_max_hp(building_index);
-    return ret >>> 0;
-}
-
-/**
- * Get building summary as a JSON string for the HUD.
  * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1,"owner_id":0,"garrison":0,"max_garrison":0},...]
  * @returns {string}
  */
@@ -278,32 +237,11 @@ export function get_camera_state() {
 }
 
 /**
- * Get the number of WebGL draw calls made in the current frame.
- * Useful for performance benchmarking.
  * @returns {number}
  */
 export function get_draw_calls() {
     const ret = wasm.get_draw_calls();
     return ret >>> 0;
-}
-
-/**
- * Get territory border tiles for the local player as a JSON string.
- * Get current FPS (frames per second), measured over 1-second windows.
- * @returns {number}
- */
-export function get_fps() {
-    const ret = wasm.get_fps();
-    return ret >>> 0;
-}
-
-/**
- * Get the current game speed multiplier.
- * @returns {number}
- */
-export function get_game_speed() {
-    const ret = wasm.get_game_speed();
-    return ret;
 }
 
 /**
@@ -574,71 +512,12 @@ export function init(canvas_id) {
 }
 
 /**
- * Check if a building type is available for a given nation.
- * Returns "true" or "false".
- * @param {string} building_name
- * @param {string} nation_name
- * @returns {string}
- */
-export function is_building_available_for_nation(building_name, nation_name) {
-    let deferred3_0;
-    let deferred3_1;
-    try {
-        const ptr0 = passStringToWasm0(building_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passStringToWasm0(nation_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len1 = WASM_VECTOR_LEN;
-        const ret = wasm.is_building_available_for_nation(ptr0, len0, ptr1, len1);
-        deferred3_0 = ret[0];
-        deferred3_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
-    }
-}
-
-/**
  * Get the current pause state.
  * @returns {boolean}
  */
 export function is_paused() {
     const ret = wasm.is_paused();
     return ret !== 0;
-}
-
-/**
- * Get a list of all building types as JSON.
- * Returns: ["Castle","Farm","Sawmill",...]
- * @returns {string}
- */
-export function list_building_types() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.list_building_types();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
-}
-
-/**
- * List all available nation types as a JSON array.
- * @returns {string}
- */
-export function list_nations() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.list_nations();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
 }
 
 /**
@@ -689,23 +568,6 @@ export function load_model_json(name, json_str) {
 }
 
 /**
- * Order a set of units to move to a target tile.
- * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
- * target_x, target_y: destination tile coordinates
- * Returns: number of units successfully ordered to move
- * @param {string} unit_ids_json
- * @param {number} target_x
- * @param {number} target_y
- * @returns {number}
- */
-export function move_units_to_tile(unit_ids_json, target_x, target_y) {
-    const ptr0 = passStringToWasm0(unit_ids_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.move_units_to_tile(ptr0, len0, target_x, target_y);
-    return ret >>> 0;
-}
-
-/**
  * Handle mouse down for panning
  * @param {number} x
  * @param {number} y
@@ -739,9 +601,8 @@ export function on_wheel(delta_y) {
 }
 
 /**
- * Order a set of units to patrol to a target tile.
  * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
- * target_x, target_y: destination tile coordinates for patrol
+ * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
  * Returns: number of units successfully ordered to patrol
  * @param {string} unit_ids_json
  * @param {number} target_x
@@ -753,16 +614,6 @@ export function order_patrol(unit_ids_json, target_x, target_y) {
     const len0 = WASM_VECTOR_LEN;
     const ret = wasm.order_patrol(ptr0, len0, target_x, target_y);
     return ret >>> 0;
-}
-
-/**
- * Populate model_instances from current game state (buildings).
- * Maps building types to model IDs. Called from JS each frame before render().
- * @returns {number}
- */
-export function populate_model_instances_from_game() {
-    const ret = wasm.populate_model_instances_from_game();
-    return ret;
 }
 
 /**
@@ -864,22 +715,7 @@ export function set_tile_terrain(x, y, terrain_id) {
 }
 
 /**
- * Set the combat stance for a single unit.
- * stance: 0=Aggressive, 1=StandGround, 2=Passive
- * Returns true if the unit was found and stance was set.
- * @param {number} unit_id
- * @param {number} stance
- * @returns {boolean}
- */
-export function set_unit_stance(unit_id, stance) {
-    const ret = wasm.set_unit_stance(unit_id, stance);
-    return ret !== 0;
-}
-
-/**
- * Set the combat stance for multiple units (batch).
  * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
- * stance: 0=Aggressive, 1=StandGround, 2=Passive
  * Returns the number of units whose stance was successfully set.
  * @param {string} unit_ids_json
  * @param {number} stance
@@ -1020,7 +856,6 @@ export function wasm_garrison_unit(building_index, unit_id) {
 }
 
 /**
- * Ungarrison a unit from a building. Returns true if the unit was found and removed.
  * @param {number} building_index
  * @param {number} unit_id
  * @returns {boolean}

@@ -824,7 +824,6 @@ impl MeshData {
 fn build_map_mesh(map: &Map, camera: &Camera) -> MeshData {
     build_map_mesh_lod(map, camera, 8, 20)
 }
-
 /// Build a terrain mesh with multi-level LOD (Level of Detail).
 ///
 /// Tiles close to the camera center use full resolution (1 vertex per tile).
@@ -3055,7 +3054,6 @@ fn update_f32_buffer(gl: &WebGl2RenderingContext, data: &[f32]) {
         );
     }
 }
-
 /// Get the color for a building type (RGB, 0.0-1.0).
 fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
     use crate::economy::BuildingType::*;
@@ -3140,7 +3138,6 @@ fn building_color(kind: &crate::economy::BuildingType) -> [f32; 3] {
 
     }
 }
-
 /// Get the color for a unit kind (RGB, 0.0-1.0).
 fn unit_color(kind: &crate::units::UnitKind) -> [f32; 3] {
     use crate::units::UnitKind::*;
@@ -3181,7 +3178,6 @@ pub fn init(canvas_id: &str) -> Result<bool, JsValue> {
 
     Ok(true)
 }
-
 /// Called from JS after terrain textures are fully loaded into the shared WebGL context.
 /// JS creates the TEXTURE_2D_ARRAY with 8 layers (1024×1024), then calls this.
 #[wasm_bindgen]
@@ -3190,7 +3186,6 @@ pub fn set_textures_ready() {
     app.textures_loaded = true;
     web_sys::console::log_1(&"Terrain textures ready (8 layers, 1024x1024)".into());
 }
-
 /// Called from JS after water normal map is loaded into TEXTURE1.
 #[wasm_bindgen]
 pub fn set_water_normal_ready() {
@@ -3198,7 +3193,6 @@ pub fn set_water_normal_ready() {
     app.water_normal_ready = true;
     web_sys::console::log_1(&"Water normal map ready (TEXTURE1)".into());
 }
-
 #[wasm_bindgen]
 pub fn render(timestamp: f64) {
     unsafe {
@@ -3207,7 +3201,6 @@ pub fn render(timestamp: f64) {
         }
     }
 }
-
 /// Handle window/canvas resize.
 #[wasm_bindgen]
 pub fn resize() {
@@ -3228,7 +3221,6 @@ pub fn resize() {
         }
     }
 }
-
 /// Handle mouse down for panning
 #[wasm_bindgen]
 pub fn on_mouse_down(x: f32, y: f32) {
@@ -3240,7 +3232,6 @@ pub fn on_mouse_down(x: f32, y: f32) {
         }
     }
 }
-
 /// Handle mouse move for panning
 #[wasm_bindgen]
 pub fn on_mouse_move(x: f32, y: f32) {
@@ -3257,7 +3248,6 @@ pub fn on_mouse_move(x: f32, y: f32) {
         }
     }
 }
-
 /// Handle mouse up (stop panning)
 #[wasm_bindgen]
 pub fn on_mouse_up() {
@@ -3267,7 +3257,6 @@ pub fn on_mouse_up() {
         }
     }
 }
-
 /// Handle scroll wheel for zooming
 #[wasm_bindgen]
 pub fn on_wheel(delta_y: f32) {
@@ -3279,8 +3268,6 @@ pub fn on_wheel(delta_y: f32) {
         }
     }
 }
-
-
 /// Get engine stats as a JSON string (FPS, tick count, game time).
 #[wasm_bindgen]
 pub fn get_stats() -> String {
@@ -3297,7 +3284,6 @@ pub fn get_stats() -> String {
     }
     String::new()
 }
-
 /// Get the full map as a compact Vec<u8> for minimap rendering.
 /// Layout: [width_lo, width_hi, height_lo, height_hi, terrain_byte, terrain_byte, ...]
 /// Each tile is one byte (terrain type as u8, matching Terrain enum repr).
@@ -3332,7 +3318,6 @@ pub fn get_map_data() -> Vec<u8> {
     }
     Vec::new()
 }
-
 /// Load a map from JSON string (same format as exported by to_json()).
 /// Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":null},...]}
 /// Also accepts verbose format: {"width":64,"height":64,"tiles":[{"terrain":"Grass","elevation":0.0,"resource":"Iron"},...]}
@@ -3495,7 +3480,6 @@ fn parse_map_json(json: &str) -> Result<Map, String> {
 
     Ok(map)
 }
-
 #[wasm_bindgen]
 pub fn get_tile_at(x: f32, y: f32) -> String {
     unsafe {
@@ -3537,7 +3521,6 @@ pub fn get_tile_at(x: f32, y: f32) -> String {
     }
     String::new()
 }
-
 /// Get resource counts as a JSON string for the HUD.
 /// Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Planks":0,...}
 #[wasm_bindgen]
@@ -3556,7 +3539,6 @@ pub fn get_resource_counts() -> String {
     }
     String::new()
 }
-
 /// Get tool counts as a JSON string for the HUD.
 /// Returns: {"Hammer":3,"Pickaxe":0,"Axe":2,...} — all 11 tool types.
 #[wasm_bindgen]
@@ -3575,7 +3557,6 @@ pub fn get_tool_counts() -> String {
     }
     String::new()
 }
-
 /// Set the player's nation for the current game.
 /// Returns true if the nation name was recognized and applied.
 #[wasm_bindgen]
@@ -3596,7 +3577,6 @@ pub fn set_player_nation(nation_name: &str) -> bool {
     }
     false
 }
-
 /// Get the player's nation as a JSON string {name, color, emoji, description}
 /// Returns empty string if no nation is set.
 #[wasm_bindgen]
@@ -3616,21 +3596,6 @@ pub fn get_player_nation() -> String {
     }
     String::new()
 }
-
-/// List all available nation types as a JSON array.
-#[wasm_bindgen]
-pub fn list_nations() -> String {
-    use crate::nation::NationType;
-    let nations: Vec<String> = NationType::all_names().iter().map(|name| {
-        if let Some(nt) = NationType::from_name(name) {
-            format!("{{\"name\":\"{}\",\"color\":\"{}\",\"emoji\":\"{}\",\"description\":\"{}\"}}",
-                nt.name(), nt.color_hex(), nt.emoji(), nt.description())
-        } else {
-            String::new()
-        }
-    }).collect();
-    format!("[{}]", nations.join(","))
-}
 /// Get unique building names for a nation as JSON array.
 #[wasm_bindgen]
 pub fn get_nation_buildings(nation_name: &str) -> String {
@@ -3639,21 +3604,6 @@ pub fn get_nation_buildings(nation_name: &str) -> String {
     let quoted: Vec<String> = names.iter().map(|n| format!("\"{}\"", n)).collect();
     format!("[{}]", quoted.join(","))
 }
-
-/// Get territory border tiles for the local player as a JSON string.
-/// Get current FPS (frames per second), measured over 1-second windows.
-#[wasm_bindgen]
-pub fn get_fps() -> u32 {
-    unsafe {
-        if let Some(ref app) = APP {
-            return app.current_fps;
-        }
-    }
-    0
-}
-
-/// Get the number of WebGL draw calls made in the current frame.
-/// Useful for performance benchmarking.
 #[wasm_bindgen]
 pub fn get_draw_calls() -> u32 {
     unsafe {
@@ -3663,31 +3613,6 @@ pub fn get_draw_calls() -> u32 {
     }
     0
 }
-
-/// Check if a building type is available for a given nation.
-/// Returns "true" or "false".
-#[wasm_bindgen]
-pub fn is_building_available_for_nation(building_name: &str, nation_name: &str) -> String {
-    let kind = match crate::economy::BuildingType::from_name(building_name) {
-        Some(k) => k,
-        None => return String::from("false"),
-    };
-    let nation = match crate::nation::NationType::from_name(nation_name) {
-        Some(n) => n,
-        None => return String::from("false"),
-    };
-    if let Some(required) = kind.nation_for_building() {
-        if required == nation {
-            String::from("true")
-        } else {
-            String::from("false")
-        }
-    } else {
-        String::from("true") // common building
-    }
-}
-
-/// Get building summary as a JSON string for the HUD.
 /// Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1,"owner_id":0,"garrison":0,"max_garrison":0},...]
 #[wasm_bindgen]
 pub fn get_building_summary() -> String {
@@ -3712,7 +3637,6 @@ pub fn get_building_summary() -> String {
     }
     String::new()
 }
-
 /// Get unit summary as a JSON string for the HUD.
 /// Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"max_hp":50,"state":"Working"},...]
 #[wasm_bindgen]
@@ -3754,7 +3678,6 @@ pub fn get_unit_summary() -> String {
     }
     String::new()
 }
-
 /// Get military units within a world-coordinate rectangle.
 /// Returns JSON array of unit IDs for Swordsman and Bowman within [min_x, max_x] x [min_y, max_y].
 /// Used for Shift+drag marquee selection in the UI.
@@ -3793,31 +3716,8 @@ pub fn get_units_in_rect(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> Stri
     }
     "[]".to_string()
 }
-
-/// Order a set of units to move to a target tile.
 /// unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
-/// target_x, target_y: destination tile coordinates
-/// Returns: number of units successfully ordered to move
-#[wasm_bindgen]
-pub fn move_units_to_tile(unit_ids_json: &str, target_x: usize, target_y: usize) -> u32 {
-    unsafe {
-        if let Some(ref mut app) = APP {
-            let unit_ids: Vec<u32> = serde_json::from_str(unit_ids_json).unwrap_or_default();
-            app.game_loop.state.economy.units.move_units_to(
-                &unit_ids,
-                target_x,
-                target_y,
-                &app.game_loop.state.map,
-            )
-        } else {
-            0
-        }
-    }
-}
-
-/// Order a set of units to patrol to a target tile.
 /// unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
-/// target_x, target_y: destination tile coordinates for patrol
 /// Returns: number of units successfully ordered to patrol
 #[wasm_bindgen]
 pub fn order_patrol(unit_ids_json: &str, target_x: usize, target_y: usize) -> u32 {
@@ -3835,7 +3735,6 @@ pub fn order_patrol(unit_ids_json: &str, target_x: usize, target_y: usize) -> u3
         }
     }
 }
-
 /// Order a set of units to move in formation to a target tile.
 /// Each unit maintains its relative offset from the group center.
 /// unit_ids_json: JSON array of unit IDs, e.g. [1,2,3]
@@ -3856,7 +3755,6 @@ pub fn formation_move(unit_ids_json: &str, target_x: usize, target_y: usize) -> 
         }
     }
 }
-
 /// Get detailed building info by index.
 /// Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
 ///   "active":true,"settlers":[1],"max_settlers":1,
@@ -3928,7 +3826,6 @@ pub fn get_building_info(idx: usize) -> String {
     }
     format!(r#"{{"error":"Building at index {} not found"}}"#, idx)
 }
-
 /// Get detailed unit info by ID.
 /// Returns JSON: {"id":1,"kind":"Settler","x":5.5,"y":3.0,"hp":50,"max_hp":50,
 ///   "state":"Working","assigned_building":2,"target":null}
@@ -3987,29 +3884,7 @@ pub fn get_unit_info(id: u32) -> String {
     }
     format!(r#"{{"error":"Unit {} not found"}}"#, id)
 }
-
-/// Set the combat stance for a single unit.
-/// stance: 0=Aggressive, 1=StandGround, 2=Passive
-/// Returns true if the unit was found and stance was set.
-#[wasm_bindgen]
-pub fn set_unit_stance(unit_id: u32, stance: u8) -> bool {
-    use crate::units::UnitStance;
-    unsafe {
-        if let Some(ref mut app) = APP {
-            if let Some(unit) = app.game_loop.state.economy.units.get_mut(unit_id) {
-                if unit.is_alive() && unit.kind.can_fight() {
-                    unit.stance = UnitStance::from_u8(stance);
-                    return true;
-                }
-            }
-        }
-    }
-    false
-}
-
-/// Set the combat stance for multiple units (batch).
 /// unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
-/// stance: 0=Aggressive, 1=StandGround, 2=Passive
 /// Returns the number of units whose stance was successfully set.
 #[wasm_bindgen]
 pub fn set_units_stance(unit_ids_json: &str, stance: u8) -> u32 {
@@ -4032,7 +3907,6 @@ pub fn set_units_stance(unit_ids_json: &str, stance: u8) -> u32 {
     }
     0
 }
-
 /// Get the current stance of a unit.
 /// Returns: 0=Aggressive, 1=StandGround, 2=Passive. Returns 0 if unit not found.
 #[wasm_bindgen]
@@ -4046,7 +3920,6 @@ pub fn get_unit_stance(unit_id: u32) -> u8 {
     }
     0
 }
-
 /// Try to place a building on the map.
 /// Takes building type name (e.g. "Farm"), tile x, tile y.
 /// Returns JSON: {"ok":true,"idx":0} or {"error":"message"}
@@ -4112,7 +3985,6 @@ pub fn try_place_building(kind_name: &str, x: usize, y: usize) -> String {
     }
     r#"{"error":"Engine not initialized"}"#.to_string()
 }
-
 /// Get build cost for a building type. Returns JSON: {"Wood":3} or {"error":"..."}
 #[wasm_bindgen]
 pub fn get_build_cost(kind_name: &str) -> String {
@@ -4129,16 +4001,6 @@ pub fn get_build_cost(kind_name: &str) -> String {
     format!("{{{}}}", parts.join(","))
 }
 
-/// Get a list of all building types as JSON.
-/// Returns: ["Castle","Farm","Sawmill",...]
-#[wasm_bindgen]
-pub fn list_building_types() -> String {
-    use crate::economy::BuildingType;
-    let names: Vec<&str> = BuildingType::all_names();
-    let quoted: Vec<String> = names.iter().map(|n| format!(r#""{}""#, n)).collect();
-    format!("[{}]", quoted.join(","))
-}
-
 // ── WebSocket Client API ─────────────────────────────────────────────────────
 /// Receive pending network messages as JSON strings.
 /// Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
@@ -4147,18 +4009,6 @@ pub fn set_game_speed(multiplier: f64) {
     unsafe {
         if let Some(ref mut app) = APP {
             app.speed_multiplier = multiplier.clamp(0.25, 8.0);
-        }
-    }
-}
-
-/// Get the current game speed multiplier.
-#[wasm_bindgen]
-pub fn get_game_speed() -> f64 {
-    unsafe {
-        if let Some(ref app) = APP {
-            app.speed_multiplier
-        } else {
-            1.0
         }
     }
 }
@@ -4182,7 +4032,6 @@ pub fn get_camera_state() -> String {
     }
     String::new()
 }
-
 /// Toggle the game pause state. Returns the new state.
 #[wasm_bindgen]
 pub fn toggle_pause() -> bool {
@@ -4195,7 +4044,6 @@ pub fn toggle_pause() -> bool {
         }
     }
 }
-
 /// Get the current pause state.
 #[wasm_bindgen]
 pub fn is_paused() -> bool {
@@ -4207,7 +4055,6 @@ pub fn is_paused() -> bool {
         }
     }
 }
-
 /// Generate a procedural map and return it as a JSON string.
 /// map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
 /// width/height: map dimensions (clamped to 16..1024)
@@ -4226,7 +4073,6 @@ pub fn generate_map(map_type: &str, width: u32, height: u32) -> String {
     };
     map.to_json()
 }
-
 /// Apply starting resources based on difficulty level.
 /// Should be called AFTER load_map_json() to seed the new game state.
 /// difficulty: "easy" (2× resources), "medium" (1×), "hard" (0.5×)
@@ -4260,7 +4106,6 @@ pub fn add_starting_resources(difficulty: &str) -> String {
         }
     }
 }
-
 /// Place a free Castle near map center and spawn starter settlers.
 /// Called after load_map_json() + add_starting_resources() to set up the initial base.
 /// settler_count: number of idle settlers to spawn (clamped to 1..8).
@@ -4355,7 +4200,6 @@ pub fn setup_starter_base(settler_count: u32) -> String {
         }
     }
 }
-
 /// Get the complete game state as a JSON string for save/load.
 /// Returns JSON with: map_json, resources, buildings, units, game_time, player_name, difficulty, map_type
 #[wasm_bindgen]
@@ -4442,7 +4286,6 @@ pub fn get_game_state() -> String {
     }
     String::from(r#"{"error":"engine not initialized"}"#)
 }
-
 /// Restore game state from a JSON save string (produced by get_game_state).
 /// Returns "ok" on success or an error message.
 #[wasm_bindgen]
@@ -4739,7 +4582,6 @@ pub fn restore_game_state(json: &str) -> String {
     }
     String::from("error: engine not initialized")
 }
-
 /// Load a model from a JSON mesh string, validate it, and upload to GPU buffers.
 /// Returns "ok:{name}:{indices}tri" if successful, or "error:{message}" on failure.
 #[wasm_bindgen]
@@ -4775,7 +4617,6 @@ pub fn decompress_sav_chunk(data: &[u8], expected_length: usize) -> Vec<u8> {
     let decrypted = ara.decrypt(data);
     Decompressor::unpack(&decrypted, 0, decrypted.len(), expected_length)
 }
-
 /// Add a model instance to the render list for this frame.
 /// Called from JS each frame for every building/unit to render.
 #[wasm_bindgen]
@@ -4794,18 +4635,6 @@ pub fn add_model_instance(model_id: &str, x: f32, y: f32, scale: f32, rotation_y
 
 // clear_model_instances wasm export removed — dead, 0 JS refs
 
-/// Populate model_instances from current game state (buildings).
-/// Maps building types to model IDs. Called from JS each frame before render().
-#[wasm_bindgen]
-pub fn populate_model_instances_from_game() -> i32 {
-    unsafe {
-        if let Some(ref mut app) = (*std::ptr::addr_of_mut!(APP)).as_mut() {
-            app.populate_model_instances_from_game_state()
-        } else {
-            0
-        }
-    }
-}
 
 impl App {
     /// Map a unit kind to a 3D model ID.
@@ -4817,7 +4646,6 @@ impl App {
             _ => "worker",
         }
     }
-
     /// Map a building type name to a 3D model ID.
     fn model_id_for_building(kind_name: &str) -> &'static str {
         match kind_name {
@@ -4885,7 +4713,6 @@ impl App {
             _ => "construction",
         }
     }
-
     /// Compute a smooth scale factor from construction progress.
     /// Returns 0.3 at construction=0.0, easing up to 1.0 at construction=1.0.
     /// Uses ease-out curve (1 - (1-t)^2) for a natural "settling" feel.
@@ -4894,7 +4721,6 @@ impl App {
         let ease = 1.0 - (1.0 - t) * (1.0 - t);
         0.3 + 0.7 * ease
     }
-
     /// Compute the visual scale for a building being destroyed.
     /// `progress` is 0.0 (just started) to 1.0 (about to vanish).
     /// Returns a scale factor from 1.0 (full size) down to 0.0 (gone),
@@ -4979,7 +4805,6 @@ pub fn get_particles_json() -> String {
         }
     }
 }
-
 /// Get number of unit deaths since last call (drains each frame).
 /// Used by JS to trigger death sound effects.
 #[wasm_bindgen]
@@ -4992,7 +4817,6 @@ pub fn recent_death_count() -> i32 {
         }
     }
 }
-
 /// Get number of combat hits since last call (drains each frame).
 /// Used by JS to trigger combat sound effects.
 #[wasm_bindgen]
@@ -5034,7 +4858,6 @@ pub fn set_tile_terrain(x: usize, y: usize, terrain_id: u8) -> bool {
     }
     false
 }
-
 /// Toggle map editor grid overlay on/off. Returns new state.
 #[wasm_bindgen]
 pub fn toggle_editor_grid() -> bool {
@@ -5048,8 +4871,6 @@ pub fn toggle_editor_grid() -> bool {
         }
     }
 }
-
-
 /// Export the current map as a JSON string (same format as load_map_json expects).
 /// Returns the JSON string on success, or an error string if no map is loaded.
 #[wasm_bindgen]
@@ -5060,8 +4881,6 @@ pub fn export_map_json() -> String {
             .unwrap_or_else(|| String::from("error: no map loaded"))
     }
 }
-
-
 /// Start the destruction animation for a building at the given index.
 /// `duration_secs` controls how long the scale-down animation plays (e.g. 1.5).
 /// Returns true if the building exists and destruction was started.
@@ -5075,7 +4894,6 @@ pub fn start_building_destruction(building_index: usize, duration_secs: f32) -> 
         }
     }
 }
-
 /// Tick destruction timers for all buildings by `dt` seconds.
 /// Returns JSON array of completed destructions: [{"index":N,"x":N,"y":N}, ...]
 /// JS should call this each frame and remove buildings from the model list.
@@ -5101,63 +4919,8 @@ pub fn tick_building_destructions(dt: f32) -> String {
         }
     }
 }
-
-/// Get the destruction animation progress for a building (0.0 to 1.0, or -1.0 if not destroying).
-#[wasm_bindgen]
-pub fn get_building_destruction_progress(building_index: usize) -> f32 {
-    unsafe {
-        if let Some(ref app) = APP {
-            if let Some(b) = app.game_loop.state.economy.buildings.get(building_index) {
-                b.destruction_progress().unwrap_or(-1.0)
-            } else {
-                -1.0
-            }
-        } else {
-            -1.0
-        }
-    }
-}
-
-/// Apply damage to a building at the given index. If HP reaches 0, destruction starts.
 /// Returns the remaining HP, or 0 if the building doesn't exist.
-#[wasm_bindgen]
-pub fn damage_building(building_index: usize, amount: u32) -> u32 {
-    unsafe {
-        if let Some(ref mut app) = APP {
-            if let Some(b) = app.game_loop.state.economy.buildings.get_mut(building_index) {
-                return b.take_damage(amount);
-            }
-        }
-        0
-    }
-}
-
-/// Get the current HP of a building at the given index. Returns 0 if not found.
-#[wasm_bindgen]
-pub fn get_building_hp(building_index: usize) -> u32 {
-    unsafe {
-        if let Some(ref app) = APP {
-            app.game_loop.state.economy.buildings.get(building_index)
-                .map_or(0, |b| b.hp)
-        } else {
-            0
-        }
-    }
-}
-
 /// Get the max HP of a building at the given index. Returns 0 if not found.
-#[wasm_bindgen]
-pub fn get_building_max_hp(building_index: usize) -> u32 {
-    unsafe {
-        if let Some(ref app) = APP {
-            app.game_loop.state.economy.buildings.get(building_index)
-                .map_or(0, |b| b.max_hp)
-        } else {
-            0
-        }
-    }
-}
-
 /// Get building info at a tile position. Returns JSON or "null" if no building.
 #[wasm_bindgen]
 pub fn get_building_at_tile(tile_x: usize, tile_y: usize) -> String {
@@ -5202,7 +4965,6 @@ pub fn get_building_garrison_json(building_index: usize) -> String {
     }
     String::from(r#"{{"count":0,"capacity":0,"unit_ids":[],"garrisoned":false}}"#)
 }
-
 /// Get morale bonus for a unit by ID.
 /// Returns JSON: {"morale_bonus":0.15,"morale_percent":"15%"}
 /// or {"morale_bonus":0.0,"morale_percent":"0%"} if unit not found.
@@ -5221,7 +4983,6 @@ pub fn get_unit_morale_json(unit_id: u32) -> String {
     }
     String::from(r#"{{"morale_bonus":0.0,"morale_percent":"0%"}}"#)
 }
-
 /// Garrison a unit into a building. Returns true if successful.
 /// The unit must be a combat unit and adjacent to the building.
 #[wasm_bindgen]
@@ -5246,8 +5007,6 @@ pub fn wasm_garrison_unit(building_index: usize, unit_id: u32) -> bool {
         false
     }
 }
-
-/// Ungarrison a unit from a building. Returns true if the unit was found and removed.
 #[wasm_bindgen]
 pub fn wasm_ungarrison_unit(building_index: usize, unit_id: u32) -> bool {
     unsafe {
@@ -5290,7 +5049,6 @@ mod tests {
         assert!(VERTEX_SHADER.contains("u_vp"), "missing u_vp uniform");
         assert!(VERTEX_SHADER.contains("u_use_vp"), "missing u_use_vp uniform");
     }
-
     #[test]
     fn test_edge_fog_shader_attribute() {
         // Verify edge-of-map fog uses CPU-computed vertex attributes (not GPU uniforms)
@@ -5334,7 +5092,6 @@ mod tests {
             "fragment shader missing u_fog_color uniform"
         );
     }
-
     #[test]
     fn test_edge_fog_fog_color_matches_clear() {
         // The fog color is now a uniform (u_fog_color) set in the render loop
@@ -5345,7 +5102,6 @@ mod tests {
             "fragment shader should declare u_fog_color uniform"
         );
     }
-
     #[test]
     fn test_map_data_format() {
         // Verify the map data format: header + terrain bytes
@@ -5373,14 +5129,12 @@ mod tests {
             assert!(byte <= 7, "terrain byte out of range: {}", byte);
         }
     }
-
     #[test]
     fn test_overlay_shaders_present() {
         assert!(OVERLAY_VERTEX_SHADER.contains("a_overlay_pos"));
         assert!(OVERLAY_FRAGMENT_SHADER.contains("gl_PointCoord"));
         assert!(OVERLAY_FRAGMENT_SHADER.contains("u_player_rgb"));
     }
-
     #[test]
     fn test_building_color_coverage() {
         // Ensure all building types have a color
@@ -5437,7 +5191,6 @@ mod tests {
             assert!(c[2] >= 0.0 && c[2] <= 1.0);
         }
     }
-
     #[test]
     fn test_unit_color_coverage() {
         use crate::units::UnitKind::*;
@@ -5465,7 +5218,6 @@ mod tests {
         assert_eq!(Swamp as u8, 6);
         assert_eq!(Snow as u8, 7);
     }
-
     #[test]
     fn test_mesh_contains_uv_and_terrain_id() {
         // build_map_mesh must populate uvs (2 floats per vertex) and terrain_ids (1 float)
@@ -5501,7 +5253,6 @@ mod tests {
             );
         }
     }
-
     #[test]
     fn test_terrain_id_matches_uv_correspondence() {
         // Each vertex's terrain_id should correspond to the actual tile's terrain
@@ -5522,7 +5273,6 @@ mod tests {
             );
         }
     }
-
     #[test]
     fn test_fragment_shader_texture_fallback() {
         // Fragment shader must support both texture sampling and flat-color fallback
@@ -5544,7 +5294,6 @@ mod tests {
             "fragment shader not using base_color in shading"
         );
     }
-
     #[test]
     fn test_texture_varying_pass_through() {
         // Vertex shader must pass v_uv and v_terrain_id to fragment shader
@@ -5592,7 +5341,6 @@ mod tests {
                 "height mismatch at ({},{}): {} vs {}", mx, my, h, expected_h);
         }
     }
-
     #[test]
     fn test_mesh_normals_count() {
         // Normals must be 3 floats per vertex
@@ -5603,7 +5351,6 @@ mod tests {
         let vertex_count = mesh.positions.len() / 3;
         assert_eq!(mesh.normals.len(), vertex_count * 3, "normals count mismatch");
     }
-
     #[test]
     fn test_normals_are_unit_vectors() {
         // All computed normals must be unit vectors (or default up)
@@ -5621,7 +5368,6 @@ mod tests {
             assert!((len - 1.0).abs() < 0.01, "normal at vertex {} not unit: {}", v, len);
         }
     }
-
     #[test]
     fn test_splat_map_blending_at_biome_boundary() {
         // Phase 7: Splat weights should blend smoothly at biome boundaries.
@@ -5686,7 +5432,6 @@ mod tests {
             "No blended splats found at Grass→Desert boundary"
         );
     }
-
     #[test]
     fn test_splat_map_pure_biome_no_blend() {
         // A uniform Grass field should have pure grass splats (R≈1, G≈0)
@@ -5719,7 +5464,6 @@ mod tests {
             );
         }
     }
-
     #[test]
     fn test_vertex_shader_has_position_z_and_normal() {
         assert!(VERTEX_SHADER.contains("in vec3 a_position"),
@@ -5729,13 +5473,11 @@ mod tests {
         assert!(VERTEX_SHADER.contains("out vec3 v_normal"),
             "vertex shader missing out vec3 v_normal");
     }
-
     #[test]
     fn test_fragment_shader_has_v_normal() {
         assert!(FRAGMENT_SHADER.contains("in vec3 v_normal"),
             "fragment shader missing in vec3 v_normal");
     }
-
     #[test]
     fn test_texture_uniforms_declared() {
         // Both texture-related uniforms must be declared in the fragment shader
@@ -5758,7 +5500,6 @@ mod tests {
             "fragment shader missing u_light_direction uniform"
         );
     }
-
     #[test]
     fn test_fragment_shader_uses_v_normal_for_diffuse() {
         // Fragment shader must normalize v_normal and compute dot product with light dir
@@ -5771,7 +5512,6 @@ mod tests {
             "fragment shader missing dot(n, l) diffuse calculation"
         );
     }
-
     #[test]
     fn test_fragment_shader_combined_lighting() {
         // Fragment shader must combine ambient + diffuse (not just ambient alone)
@@ -5807,7 +5547,6 @@ mod tests {
             "vertex shader missing v_ao = a_ao pass-through"
         );
     }
-
     #[test]
     fn test_fragment_shader_has_ao_varying() {
         assert!(
@@ -5819,7 +5558,6 @@ mod tests {
             "fragment shader missing lit *= v_ao (cliff AO application)"
         );
     }
-
     #[test]
     fn test_mesh_contains_ao_data() {
         let map = Map::generate_demo(16, 16);
@@ -5829,7 +5567,6 @@ mod tests {
         assert!(vertex_count > 0, "mesh should have vertices");
         assert_eq!(mesh.ao_factors.len(), vertex_count, "ao_factors count mismatch");
     }
-
     #[test]
     fn test_ao_values_in_range() {
         // AO values should be in [0.55, 1.0]
@@ -5840,7 +5577,6 @@ mod tests {
             assert!((0.54..=1.01).contains(&ao), "ao value {ao} out of [0.55, 1.0]");
         }
     }
-
     #[test]
     fn test_vertex_shader_has_splat_attribute() {
         assert!(
@@ -5856,7 +5592,6 @@ mod tests {
             "vertex shader missing v_splat = a_splat pass-through"
         );
     }
-
     #[test]
     fn test_fragment_shader_has_splat_varying() {
         assert!(
@@ -5864,7 +5599,6 @@ mod tests {
             "fragment shader missing in vec4 v_splat"
         );
     }
-
     #[test]
     fn test_mesh_contains_splat_data() {
         // build_map_mesh must populate splats (4 floats per vertex)
@@ -5878,7 +5612,6 @@ mod tests {
         // Splats: 4 floats per vertex (R=grass, G=rock, B=sand, A=snow)
         assert_eq!(mesh.splats.len(), vertex_count * 4, "splats count mismatch");
     }
-
     #[test]
     fn test_splat_weights_sum_to_one() {
         // All splat weights at each vertex should sum to approximately 1.0
@@ -5898,7 +5631,6 @@ mod tests {
             );
         }
     }
-
     #[test]
     fn test_splat_weights_non_negative() {
         // All splat weights should be non-negative
@@ -5910,7 +5642,6 @@ mod tests {
             assert!(w >= 0.0, "splat weight at index {} is negative: {}", i, w);
         }
     }
-
     #[test]
     fn test_grass_terrain_has_grass_splat() {
         // A grass tile should have non-zero grass (R) splat weight
@@ -5935,7 +5666,6 @@ mod tests {
         }
         assert!(found_grass, "should have found at least one grass vertex");
     }
-
     #[test]
     fn test_fragment_shader_splat_blending() {
         // Fragment shader must contain splat-based atlas sampling
@@ -5952,7 +5682,6 @@ mod tests {
             "fragment shader missing splat normalization by total weight"
         );
     }
-
     #[test]
     fn test_fragment_shader_splat_atlas_uv_remap() {
         // Verify the UV remapping divides by 4.0 (4 horizontal slices)
@@ -5971,7 +5700,6 @@ mod tests {
             "vertex shader missing u_water_time uniform"
         );
     }
-
     #[test]
     fn test_fragment_shader_has_water_time_uniform() {
         assert!(
@@ -5979,7 +5707,6 @@ mod tests {
             "fragment shader missing u_water_time uniform declaration"
         );
     }
-
     #[test]
     fn test_vertex_shader_water_animation_for_water_tiles() {
         assert!(
@@ -5991,7 +5718,6 @@ mod tests {
             "vertex shader missing water_anim variable"
         );
     }
-
     #[test]
     fn test_vertex_shader_water_wave_components() {
         // Three wave components for realistic water animation
@@ -6008,7 +5734,6 @@ mod tests {
             "vertex shader missing wave3 frequency"
         );
     }
-
     #[test]
     fn test_vertex_shader_deep_water_smaller_waves() {
         assert!(
@@ -6020,7 +5745,6 @@ mod tests {
             "vertex shader missing deep water wave reduction"
         );
     }
-
     #[test]
     fn test_fragment_shader_water_rendering_path() {
         assert!(
@@ -6032,7 +5756,6 @@ mod tests {
             "fragment shader missing water terrain ID variables"
         );
     }
-
     #[test]
     fn test_fragment_shader_water_specular_highlight() {
         assert!(
@@ -6044,7 +5767,6 @@ mod tests {
             "fragment shader missing Blinn-Phong specular computation"
         );
     }
-
     #[test]
     fn test_fragment_shader_water_fresnel() {
         assert!(
@@ -6056,7 +5778,6 @@ mod tests {
             "fragment shader missing fresnel computation"
         );
     }
-
     #[test]
     fn test_fragment_shader_water_depth_color_ramp() {
         assert!(
@@ -6076,7 +5797,6 @@ mod tests {
             "fragment shader missing dark navy deep color"
         );
     }
-
     #[test]
     #[test]
     fn test_fragment_shader_water_normal_uniforms() {
@@ -6117,7 +5837,6 @@ mod tests {
         assert!(MODEL_VERTEX_SHADER.contains("a_normal"), "model vertex shader missing a_normal");
         assert!(MODEL_VERTEX_SHADER.contains("a_uv"), "model vertex shader missing a_uv");
     }
-
     #[test]
     fn test_model_fragment_shader_has_required_uniforms() {
         assert!(MODEL_FRAGMENT_SHADER.contains("u_model_color"), "model fragment shader missing u_model_color");
@@ -6126,7 +5845,6 @@ mod tests {
         assert!(MODEL_FRAGMENT_SHADER.contains("u_terrain_textures"), "model fragment shader missing u_terrain_textures");
         assert!(MODEL_FRAGMENT_SHADER.contains("u_use_textures"), "model fragment shader missing u_use_textures");
     }
-
     #[test]
     fn test_model_fragment_shader_has_detail_normals() {
         assert!(MODEL_FRAGMENT_SHADER.contains("detail_strength"), "model fragment shader missing detail_strength for normal perturbation");
@@ -6145,7 +5863,6 @@ mod tests {
         assert!(SHADOW_VERTEX_SHADER.contains("u_shadow_penumbra"), "shadow vertex shader missing u_shadow_penumbra");
         assert!(SHADOW_VERTEX_SHADER.contains("a_shadow_vert"), "shadow vertex shader missing a_shadow_vert attribute");
     }
-
     #[test]
     fn test_shadow_fragment_shader_has_alpha_output() {
         assert!(SHADOW_FRAGMENT_SHADER.contains("out_color"), "shadow fragment shader missing out_color");
@@ -6161,47 +5878,39 @@ mod tests {
     fn test_model_vertex_shader_has_time_uniform() {
         assert!(MODEL_VERTEX_SHADER.contains("u_time"), "model vertex shader missing u_time uniform for wobble animation");
     }
-
     #[test]
     fn test_model_vertex_shader_has_anim_phase_attribute() {
         assert!(MODEL_VERTEX_SHADER.contains("a_anim_phase"), "model vertex shader missing a_anim_phase instanced attribute");
     }
-
     #[test]
     fn test_model_vertex_shader_wobble_uses_sin() {
         assert!(MODEL_VERTEX_SHADER.contains("sin("), "model vertex shader wobble should use sin() for smooth oscillation");
     }
-
     #[test]
     fn test_model_vertex_shader_wobble_displaces_y() {
         assert!(MODEL_VERTEX_SHADER.contains("pos.y += sin"), "model vertex shader should displace Y with sin for vertical bob");
     }
-
     #[test]
     fn test_model_vertex_shader_wobble_displaces_xz() {
         assert!(MODEL_VERTEX_SHADER.contains("pos.x += sin") && MODEL_VERTEX_SHADER.contains("pos.z += cos"),
             "model vertex shader should displace X/Z for horizontal sway");
     }
-
     #[test]
     fn test_model_vertex_shader_wobble_conditional_on_phase() {
         // Wobble should only apply when a_anim_phase is non-zero (units, not buildings)
         assert!(MODEL_VERTEX_SHADER.contains("a_anim_phase"), "wobble should check a_anim_phase");
     }
-
     #[test]
     fn test_load_model_json_valid() {
         let json = r#"{"version":1,"vertices":[[0,0,0],[1,0,0],[0,1,0]],"normals":[[0,1,0],[0,1,0],[0,1,0]],"uvs":[[0,0],[1,0],[0,1]],"indices":[0,1,2],"aabb":[0,0,0,1,1,0]}"#;
         let result = load_model_json("TestModel", json);
         assert!(result.starts_with("ok:TestModel:"), "expected ok, got: {}", result);
     }
-
     #[test]
     fn test_load_model_json_invalid_json() {
         let result = load_model_json("Bad", "not json");
         assert!(result.starts_with("error:"), "expected error, got: {}", result);
     }
-
     #[test]
     fn test_load_model_json_wrong_version() {
         let json = r#"{"version":99,"vertices":[[0,0,0],[1,0,0]],"normals":[[0,1,0],[0,1,0]],"uvs":[[0,0],[1,0]],"indices":[0,1,2],"aabb":[0,0,0,0,0,0]}"#;
@@ -6216,37 +5925,31 @@ mod tests {
         // add_model_instance should return false when APP is None
         assert!(!add_model_instance("test", 1.0, 2.0, 1.0, 0.0));
     }
-
     #[test]
     fn test_load_model_json_empty_mesh() {
         let json = r#"{"version":1,"vertices":[],"normals":[],"uvs":[],"indices":[],"aabb":[0,0,0,0,0,0]}"#;
         let result = load_model_json("Empty", json);
         assert!(result.starts_with("error:"), "expected error for empty mesh, got: {}", result);
     }
-
     #[test]
     fn test_load_model_json_missing_fields() {
         let json = r#"{"version":1}"#;
         let result = load_model_json("Missing", json);
         assert!(result.starts_with("error:"), "expected error for missing fields, got: {}", result);
     }
-
     #[test]
     fn test_model_id_for_unit_settler() {
         // Settler -> "worker" model
         assert_eq!(App::model_id_for_unit(units::UnitKind::Settler), "worker");
     }
-
     #[test]
     fn test_model_id_for_unit_swordsman() {
         assert_eq!(App::model_id_for_unit(units::UnitKind::Swordsman), "soldier");
     }
-
     #[test]
     fn test_model_id_for_unit_bowman() {
         assert_eq!(App::model_id_for_unit(units::UnitKind::Bowman), "archer");
     }
-
     #[test]
     fn test_model_id_for_unit_all_variants_covered() {
         // Verify all 3 unit kinds have model mappings
@@ -6257,7 +5960,6 @@ mod tests {
             assert!(!model_id.is_empty(), "{:?} should map to a model", kind);
         }
     }
-
     #[test]
     fn test_unit_model_json_files_exist() {
         // Verify the JSON model files for units exist on disk
@@ -6268,7 +5970,6 @@ mod tests {
             assert!(path.exists(), "missing unit model: {}", path.display());
         }
     }
-
     #[test]
     fn test_unit_model_json_parsable() {
         // Verify all 3 unit models parse correctly
@@ -6292,14 +5993,12 @@ mod tests {
         let s = App::construction_scale(0.0);
         assert!((s - 0.3).abs() < 0.001, "construction=0.0 should give scale ~0.3, got {}", s);
     }
-
     #[test]
     fn test_construction_scale_complete() {
         // At construction=1.0, scale should be 1.0
         let s = App::construction_scale(1.0);
         assert!((s - 1.0).abs() < 0.001, "construction=1.0 should give scale 1.0, got {}", s);
     }
-
     #[test]
     fn test_construction_scale_half() {
         // At construction=0.5, ease = 1 - 0.5^2 = 0.75, scale = 0.3 + 0.7*0.75 = 0.825
@@ -6307,7 +6006,6 @@ mod tests {
         let expected = 0.3 + 0.7 * 0.75;
         assert!((s - expected).abs() < 0.001, "construction=0.5 should give scale ~{}, got {}", expected, s);
     }
-
     #[test]
     fn test_construction_scale_monotonic() {
         // Scale should increase monotonically
@@ -6320,7 +6018,6 @@ mod tests {
             prev = s;
         }
     }
-
     #[test]
     fn test_construction_scale_clamped() {
         // Values outside 0..1 should be clamped
@@ -6341,14 +6038,12 @@ mod tests {
         let s = App::destruction_scale(0.0);
         assert!((s - 1.0).abs() < 0.001, "progress=0.0 should give scale 1.0, got {}", s);
     }
-
     #[test]
     fn test_destruction_scale_complete() {
         // At progress=1.0 (finished), scale should be 0.0 (gone)
         let s = App::destruction_scale(1.0);
         assert!((s - 0.0).abs() < 0.001, "progress=1.0 should give scale 0.0, got {}", s);
     }
-
     #[test]
     fn test_destruction_scale_half() {
         // At progress=0.5, ease = 0.5^2 = 0.25, scale = 1.0 - 0.25 = 0.75
@@ -6356,7 +6051,6 @@ mod tests {
         let expected = 0.75;
         assert!((s - expected).abs() < 0.001, "progress=0.5 should give scale ~{}, got {}", expected, s);
     }
-
     #[test]
     fn test_destruction_scale_monotonic() {
         // Scale should decrease monotonically as destruction progresses
@@ -6369,7 +6063,6 @@ mod tests {
             prev = s;
         }
     }
-
     #[test]
     fn test_destruction_scale_clamped() {
         // Values outside 0..1 should be clamped
@@ -6381,7 +6074,6 @@ mod tests {
         let s_one = App::destruction_scale(1.0);
         assert!((s_over - s_one).abs() < 0.001, ">1.0 should clamp to 1.0");
     }
-
     #[test]
     fn test_destruction_scale_quarter() {
         // At progress=0.25, ease = 0.0625, scale = 0.9375
@@ -6397,7 +6089,6 @@ mod tests {
         let ps = particle::ParticleSystem::new();
         assert_eq!(ps.alive_count(), 0);
     }
-
     #[test]
     fn test_particle_spawn_and_update() {
         let mut ps = particle::ParticleSystem::new();
@@ -6408,7 +6099,6 @@ mod tests {
         ps.update(0.6);
         assert_eq!(ps.alive_count(), 0);
     }
-
     #[test]
     fn test_particle_burst() {
         let mut ps = particle::ParticleSystem::new();
@@ -6416,7 +6106,6 @@ mod tests {
         assert_eq!(n, 10);
         assert_eq!(ps.alive_count(), 10);
     }
-
     #[test]
     fn test_particle_overlay_data() {
         let mut ps = particle::ParticleSystem::new();
@@ -6428,7 +6117,6 @@ mod tests {
         assert_eq!(pos[0], 3.0);
         assert!((sizes[0] - 11.0).abs() < 0.001);
     }
-
     #[test]
     fn test_particle_to_json() {
         let mut ps = particle::ParticleSystem::new();
@@ -6437,21 +6125,18 @@ mod tests {
         let json = ps.to_json();
         assert!(json.contains("\"x\":1.00"), "json: {}", json);
     }
-
     #[test]
     fn test_build_effect() {
         let mut ps = particle::ParticleSystem::new();
         particle::spawn_build_effect(&mut ps, 10.0, 20.0);
         assert!(ps.alive_count() > 0 && ps.alive_count() <= 12);
     }
-
     #[test]
     fn test_combat_effect() {
         let mut ps = particle::ParticleSystem::new();
         particle::spawn_combat_effect(&mut ps, 5.0, 5.0);
         assert!(ps.alive_count() > 0 && ps.alive_count() <= 16);
     }
-
     #[test]
     fn test_particle_max_pool() {
         let mut ps = particle::ParticleSystem::new();
@@ -6465,7 +6150,6 @@ mod tests {
         }
         assert_eq!(ps.alive_count(), particle::MAX_PARTICLES);
     }
-
     #[test]
     fn test_particle_clear() {
         let mut ps = particle::ParticleSystem::new();
@@ -6474,7 +6158,6 @@ mod tests {
         ps.clear();
         assert_eq!(ps.alive_count(), 0);
     }
-
     #[test]
     fn test_particle_alpha_fade() {
         let mut p = particle::Particle::new();
@@ -6484,7 +6167,6 @@ mod tests {
         let alpha = p.alpha();
         assert!(alpha < 1.0 && alpha > 0.0, "alpha: {}", alpha);
     }
-
     #[test]
     fn test_particle_bounce() {
         let mut p = particle::Particle::new();
@@ -6506,7 +6188,6 @@ mod tests {
         assert!(CLOUD_VERTEX_SHADER.contains("u_cam_parallax"), "cloud vertex shader missing u_cam_parallax");
         assert!(CLOUD_VERTEX_SHADER.contains("u_day_phase"), "cloud vertex shader missing u_day_phase");
     }
-
     #[test]
     fn test_cloud_fragment_shader_exists() {
         assert!(!CLOUD_FRAGMENT_SHADER.is_empty(), "cloud fragment shader should not be empty");
@@ -6516,20 +6197,17 @@ mod tests {
         assert!(CLOUD_FRAGMENT_SHADER.contains("day_color"), "cloud fragment shader missing day_color");
         assert!(CLOUD_FRAGMENT_SHADER.contains("night_color"), "cloud fragment shader missing night_color");
     }
-
     #[test]
     fn test_cloud_vertex_shader_has_parallax_drift() {
         assert!(CLOUD_VERTEX_SHADER.contains("u_cam_parallax"), "cloud shader should reference parallax uniform");
         assert!(CLOUD_VERTEX_SHADER.contains("parallax"), "cloud shader should have parallax logic");
     }
-
     #[test]
     fn test_cloud_fragment_shader_day_night_colors() {
         // Verify the shader has distinct day and night cloud colors
         assert!(CLOUD_FRAGMENT_SHADER.contains("0.95, 0.95, 0.97"), "cloud day color should be bright white");
         assert!(CLOUD_FRAGMENT_SHADER.contains("0.18, 0.20, 0.28"), "cloud night color should be dark blue-grey");
     }
-
     #[test]
     fn test_cloud_shader_semi_transparent() {
         // Clouds should be semi-transparent (alpha < 1.0)
@@ -6545,7 +6223,6 @@ mod tests {
         assert!(SUN_MOON_VERTEX_SHADER.contains("u_sun_radius"), "vertex shader missing u_sun_radius");
         assert!(SUN_MOON_VERTEX_SHADER.contains("gl_VertexID"), "vertex shader should use gl_VertexID for quad");
     }
-
     #[test]
     fn test_sun_moon_fragment_shader_exists() {
         assert!(!SUN_MOON_FRAGMENT_SHADER.is_empty(), "sun/moon fragment shader should not be empty");
@@ -6553,7 +6230,6 @@ mod tests {
         assert!(SUN_MOON_FRAGMENT_SHADER.contains("u_is_moon"), "fragment shader missing u_is_moon");
         assert!(SUN_MOON_FRAGMENT_SHADER.contains("smoothstep"), "fragment shader should use smoothstep for soft edges");
     }
-
     #[test]
     fn test_sun_moon_shader_has_glow_effect() {
         // Sun should have a glow/halo effect
@@ -6561,7 +6237,6 @@ mod tests {
         // Moon should also have a subtle glow
         assert!(SUN_MOON_FRAGMENT_SHADER.contains("exp"), "moon shader should use exp for glow falloff");
     }
-
     #[test]
     fn test_sun_moon_shader_day_night_visibility() {
         // Sun visible during day, moon visible at night
@@ -6570,14 +6245,12 @@ mod tests {
         let smoothstep_count = SUN_MOON_FRAGMENT_SHADER.matches("smoothstep").count();
         assert!(smoothstep_count >= 2, "shader should have at least 2 smoothstep calls for sun/moon visibility");
     }
-
     #[test]
     fn test_sun_moon_shader_sun_color_warm() {
         // Sun should have warm yellow-white colors
         assert!(SUN_MOON_FRAGMENT_SHADER.contains("1.0, 0.95, 0.85"), "sun bright color should be warm white");
         assert!(SUN_MOON_FRAGMENT_SHADER.contains("1.0, 0.75, 0.4"), "sun warm color should be orange-tinted");
     }
-
     #[test]
     fn test_sun_moon_shader_moon_color_cool() {
         // Moon should have cool blue-white colors
@@ -6591,19 +6264,16 @@ mod tests {
     fn compute_sun_angle(day_phase: f32) -> f32 {
         (day_phase - 0.25) * std::f32::consts::TAU
     }
-
     /// Helper: replicate the shader day_light_raw formula.
     #[allow(dead_code)]
     fn compute_day_light_raw(day_phase: f32) -> f32 {
         0.5 + 0.5 * (compute_sun_angle(day_phase)).sin()
     }
-
     /// Helper: Hermite smoothstep for transition smoothing.
     #[allow(dead_code)]
     fn smooth_day_light(raw: f32) -> f32 {
         raw * raw * (3.0 - 2.0 * raw)
     }
-
     #[test]
     fn test_sun_angle_midnight_below_horizon() {
         // At midnight (phase 0.0), sun should be at nadir (below horizon)
@@ -6611,7 +6281,6 @@ mod tests {
         let elev = angle.sin() * 0.8 + 0.2;
         assert!(elev < 0.0, "sun elevation at midnight should be below horizon, got {}", elev);
     }
-
     #[test]
     fn test_sun_angle_noon_overhead() {
         // At noon (phase 0.5), sun should be at zenith (overhead)
@@ -6619,7 +6288,6 @@ mod tests {
         let elev = angle.sin() * 0.8 + 0.2;
         assert!((elev - 1.0).abs() < 0.01, "sun elevation at noon should be ~1.0, got {}", elev);
     }
-
     #[test]
     fn test_sun_angle_dawn_horizon() {
         // At dawn (phase 0.25), sun should be at horizon
@@ -6627,46 +6295,39 @@ mod tests {
         let elev = angle.sin() * 0.8 + 0.2;
         assert!((elev - 0.2).abs() < 0.01, "sun at dawn should be at horizon, got {}", elev);
     }
-
     #[test]
     fn test_day_light_raw_darkest_at_midnight() {
         let raw = compute_day_light_raw(0.0);
         assert!((raw - 0.0).abs() < 0.001, "day_light at midnight should be 0 (darkest), got {}", raw);
     }
-
     #[test]
     fn test_day_light_raw_brightest_at_noon() {
         let raw = compute_day_light_raw(0.5);
         assert!((raw - 1.0).abs() < 0.001, "day_light at noon should be 1.0 (brightest), got {}", raw);
     }
-
     #[test]
     fn test_day_light_smoothed_preserves_extrema() {
         // Smoothing should preserve 0.0 and 1.0
         assert!((smooth_day_light(0.0) - 0.0).abs() < 0.001);
         assert!((smooth_day_light(1.0) - 1.0).abs() < 0.001);
     }
-
     #[test]
     fn test_day_light_smoothed_eases_midpoint() {
         // At 0.5 raw, smoothed should be 0.5 (Hermite S-curve symmetric)
         assert!((smooth_day_light(0.5) - 0.5).abs() < 0.001);
     }
-
     #[test]
     fn test_day_light_smoothed_night_stays_dark() {
         // Dawn transition should be gentle: raw 0.25 should map to < 0.25
         let smoothed = smooth_day_light(0.25);
         assert!(smoothed < 0.25, "smoothed dawn should be slower than linear, got {}", smoothed);
     }
-
     #[test]
     fn test_day_light_smoothed_day_stays_bright() {
         // Dusk transition: raw 0.75 should map to > 0.75
         let smoothed = smooth_day_light(0.75);
         assert!(smoothed > 0.75, "smoothed dusk should stay bright longer, got {}", smoothed);
     }
-
     #[test]
     fn test_fragment_shader_has_corrected_day_light() {
         // Verify the fragment shader contains the corrected formula
@@ -6678,14 +6339,12 @@ mod tests {
         assert!(FRAGMENT_SHADER.contains("day_light_raw * day_light_raw * (3.0 - 2.0 * day_light_raw)"),
             "fragment shader should use Hermite smoothstep via shared macro");
     }
-
     #[test]
     fn test_fragment_shader_has_corrected_resource_glow() {
         // Verify resource glow uses corrected phase
         assert!(FRAGMENT_SHADER.contains("sin((v_day_phase - 0.25) * 6.2831853 * 2.0)"),
             "resource glow should use shifted phase");
     }
-
     #[test]
     fn test_model_shader_has_day_phase_ambient() {
         // Verify model fragment shader has day-phase uniform
@@ -6707,7 +6366,6 @@ mod tests {
         assert!(MODEL_FRAGMENT_SHADER.contains("0.10 + day_light * 0.40"),
             "model shader should scale ambient from 0.10 (night) to 0.50 (noon)");
     }
-
     #[test]
     fn test_model_shader_day_phase_ambient_values() {
         // Verify the ambient scale formula: 0.10 + day_light * 0.40
@@ -6720,7 +6378,6 @@ mod tests {
         assert!((noon_scale - 0.50).abs() < 0.001,
             "noon ambient_scale should be 0.50, got {}", noon_scale);
     }
-
     #[test]
     fn test_export_map_json() {
         use crate::map::{Map, Terrain, Resource};
@@ -6749,7 +6406,6 @@ mod tests {
         assert!(json.contains("\"r\":null"), "missing null resource");
         assert!(json.ends_with("]}"), "bad footer");
     }
-
     #[test]
     fn test_get_units_in_rect_wasm_finds_military() {
         // Test that the WASM wrapper works end-to-end
@@ -6775,7 +6431,6 @@ mod tests {
         assert!(!ids.contains(&1), "Should NOT contain Settler id=1");
         assert!(!ids.contains(&4), "Should NOT contain unit id=4 (outside rect)");
     }
-
     #[test]
     fn test_get_units_in_rect_wasm_empty() {
         
@@ -6797,20 +6452,17 @@ mod tests {
         assert!(FRAGMENT_SHADER.contains("u_reflection_tex"), "fragment shader missing u_reflection_tex uniform for water reflections");
         assert!(FRAGMENT_SHADER.contains("sampler2D u_reflection_tex"), "u_reflection_tex should be sampler2D");
     }
-
     #[test]
     fn test_water_shader_samples_reflection_texture() {
         // Water section should sample the reflection texture using screen-space coordinates
         assert!(FRAGMENT_SHADER.contains("texture(u_reflection_tex"), "water shader should sample u_reflection_tex");
         assert!(FRAGMENT_SHADER.contains("gl_FragCoord.xy"), "water shader should use gl_FragCoord for screen-space UV");
     }
-
     #[test]
     fn test_water_reflection_flips_screen_y() {
         // Reflection should mirror upside-down: flip Y coordinate
         assert!(FRAGMENT_SHADER.contains("1.0 - screen_uv.y"), "water shader should flip screen Y for reflection mirror");
     }
-
     #[test]
     fn test_water_fresnel_blends_reflection() {
         // Fresnel factor should blend between water surface and reflection
@@ -6827,13 +6479,11 @@ mod tests {
         assert!(FRAGMENT_SHADER.contains("u_reflection_pass"), "fragment shader missing u_reflection_pass uniform");
         assert!(FRAGMENT_SHADER.contains("uniform int u_reflection_pass"), "u_reflection_pass should be int uniform");
     }
-
     #[test]
     fn test_fragment_shader_has_reflection_horizon_uniform() {
         assert!(FRAGMENT_SHADER.contains("u_reflection_horizon_y"), "fragment shader missing u_reflection_horizon_y uniform");
         assert!(FRAGMENT_SHADER.contains("uniform float u_reflection_horizon_y"), "u_reflection_horizon_y should be float uniform");
     }
-
     #[test]
     fn test_water_discarded_during_reflection_pass() {
         // During the reflection FBO pass, water tiles should be discarded
@@ -6841,14 +6491,12 @@ mod tests {
         assert!(FRAGMENT_SHADER.contains("u_reflection_pass == 1 && is_water"), "shader should check u_reflection_pass == 1 && is_water");
         assert!(FRAGMENT_SHADER.contains("discard"), "shader should discard water during reflection pass");
     }
-
     #[test]
     fn test_reflection_sampling_clamped_below_horizon() {
         // Reflection sampling should clamp screen_uv.y to u_reflection_horizon_y
         assert!(FRAGMENT_SHADER.contains("min(screen_uv.y, u_reflection_horizon_y)"), 
             "reflection sampling should clamp Y to below horizon: min(screen_uv.y, u_reflection_horizon_y)");
     }
-
     #[test]
     fn test_no_uniform_bool_in_shaders() {
         // uniform bool is known to cause issues on some mobile GPUs (ANGLE/Mali)
@@ -6863,7 +6511,6 @@ mod tests {
         assert!(!SUN_MOON_VERTEX_SHADER.contains("uniform bool"), "sun_moon vertex shader must not use uniform bool");
         assert!(!SUN_MOON_FRAGMENT_SHADER.contains("uniform bool"), "sun_moon fragment shader must not use uniform bool");
     }
-
     #[test]
     fn test_reflection_fbo_uses_half_resolution() {
         // Verify the Rust source divides canvas dimensions by 2 for the reflection FBO
@@ -6873,7 +6520,6 @@ mod tests {
         assert!(src.contains("canvas.width() / 2"), "FBO texture width should be half of canvas");
         assert!(src.contains("canvas.height() / 2"), "FBO texture height should be half of canvas");
     }
-
     #[test]
     fn test_reflection_fbo_has_depth_attachment() {
         // Verify the Rust source creates a depth renderbuffer and attaches it to the FBO
@@ -6896,7 +6542,6 @@ mod tests {
         assert!(!mesh.indices.is_empty(), "LOD mesh should have indices");
         assert_eq!(mesh.indices.len() % 6, 0, "indices should be multiple of 6");
     }
-
     #[test]
     fn test_lod_mesh_has_fewer_vertices_than_full() {
         let map = Map::generate_demo(64, 64);
@@ -6910,7 +6555,6 @@ mod tests {
             full_mesh.positions.len() / 3,
         );
     }
-
     #[test]
     fn test_lod_full_res_matches_original_on_small_radius() {
         let map = Map::generate_demo(16, 16);
@@ -6921,7 +6565,6 @@ mod tests {
         assert!(!lod_mesh.indices.is_empty());
         assert_eq!(lod_mesh.indices.len() % 6, 0);
     }
-
     #[test]
     fn test_lod_mesh_vertex_attrs_match() {
         let map = Map::generate_demo(32, 32);
@@ -6940,7 +6583,6 @@ mod tests {
         assert_eq!(mesh.normals.len(), vc * 3, "normals count mismatch");
         assert_eq!(mesh.splats.len(), vc * 4, "splats count mismatch");
     }
-
     #[test]
     fn test_lod_level_0_near_camera() {
         let map = Map::generate_demo(64, 64);
@@ -6949,7 +6591,6 @@ mod tests {
         assert!(!mesh.positions.is_empty());
         assert!(!mesh.indices.is_empty());
     }
-
     #[test]
     fn test_lod_empty_on_degenerate_viewport() {
         let map = Map::generate_demo(16, 16);
@@ -7001,7 +6642,6 @@ mod horizon_tests {
     fn fov_to_f(fov_degrees: f32) -> f32 {
         1.0 / (fov_degrees.to_radians() * 0.5).tan()
     }
-
     /// Build the reflected forward vector for a given elevation angle.
     /// In the reflection pass, the camera is flipped across Y=0, so the
     /// reflected forward vector points upward with fwd_y = sin(elevation).
@@ -7016,7 +6656,6 @@ mod horizon_tests {
         let fwd_z = fwd_horiz * std::f32::consts::FRAC_1_SQRT_2; // cos(45°)
         (fwd_x, fwd_y, fwd_z)
     }
-
     #[test]
     fn test_horizon_at_default_iso_elevation() {
         // Classic iso: elevation=35.264°
@@ -7029,7 +6668,6 @@ mod horizon_tests {
         assert!(hy > 0.9, "iso view horizon near top, got {}", hy);
         assert!(hy <= 0.99, "horizon clamped to 0.99, got {}", hy);
     }
-
     #[test]
     fn test_horizon_at_steep_elevation() {
         // Steep top-down view: elevation=80°
@@ -7041,7 +6679,6 @@ mod horizon_tests {
         assert!(hy > 0.95, "steep view horizon at top, got {}", hy);
         assert!(hy <= 0.99, "horizon clamped to 0.99, got {}", hy);
     }
-
     #[test]
     fn test_horizon_at_shallow_elevation() {
         // Shallow view: elevation=10°
@@ -7054,7 +6691,6 @@ mod horizon_tests {
         assert!(hy > 0.65, "shallow view horizon moderately high, got {}", hy);
         assert!(hy < 0.80, "shallow view horizon not too high, got {}", hy);
     }
-
     #[test]
     fn test_horizon_at_zero_elevation() {
         // Camera looking horizontally (elevation=0°)
@@ -7067,7 +6703,6 @@ mod horizon_tests {
         assert!(hy > 0.48, "zero elevation horizon near center, got {}", hy);
         assert!(hy < 0.55, "zero elevation horizon near center, got {}", hy);
     }
-
     #[test]
     fn test_horizon_with_narrow_fov() {
         // For shallow elevation (5°), narrow FOV pushes horizon higher
@@ -7081,7 +6716,6 @@ mod horizon_tests {
             "narrow FOV horizon ({}) should be higher than wide FOV ({})",
             hy_narrow, hy_wide);
     }
-
     #[test]
     fn test_horizon_clamped_min() {
         // Very negative fwd_y (camera looking down in reflected space)
@@ -7094,7 +6728,6 @@ mod horizon_tests {
         assert!(hy >= 0.01, "horizon clamped to min 0.01, got {}", hy);
         assert!(hy <= 0.99, "horizon clamped to max 0.99, got {}", hy);
     }
-
     #[test]
     fn test_horizon_clamped_max() {
         // Very positive fwd_y (camera looking straight up in reflected space)
@@ -7106,7 +6739,6 @@ mod horizon_tests {
         assert!(hy >= 0.01, "horizon clamped to min 0.01, got {}", hy);
         assert!(hy <= 0.99, "horizon clamped to max 0.99, got {}", hy);
     }
-
     #[test]
     fn test_horizon_uses_precomputed_f() {
         // Verify that using the precomputed f gives same result as inline computation
@@ -7123,7 +6755,6 @@ mod horizon_tests {
         assert!((hy - hy_old).abs() < 0.05,
             "new result ({}) should be close to old result ({})", hy, hy_old);
     }
-
     #[test]
     fn test_horizon_decreases_with_elevation() {
         // Higher elevation → higher horizon (further from center)

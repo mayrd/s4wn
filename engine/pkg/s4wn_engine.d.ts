@@ -16,12 +16,6 @@ export function add_model_instance(model_id: string, x: number, y: number, scale
 export function add_starting_resources(difficulty: string): string;
 
 /**
- * Apply damage to a building at the given index. If HP reaches 0, destruction starts.
- * Returns the remaining HP, or 0 if the building doesn't exist.
- */
-export function damage_building(building_index: number, amount: number): number;
-
-/**
  * Decompress a .sav savegame chunk: ARA-decrypt then LZ+Huffman decompress.
  * Used by the JS .sav loader to extract game data from savegame chunks.
  * Returns the decompressed data, or an empty Vec on failure.
@@ -56,14 +50,11 @@ export function generate_map(map_type: string, width: number, height: number): s
 export function get_build_cost(kind_name: string): string;
 
 /**
+ * Returns the remaining HP, or 0 if the building doesn't exist.
+ * Get the max HP of a building at the given index. Returns 0 if not found.
  * Get building info at a tile position. Returns JSON or "null" if no building.
  */
 export function get_building_at_tile(tile_x: number, tile_y: number): string;
-
-/**
- * Get the destruction animation progress for a building (0.0 to 1.0, or -1.0 if not destroying).
- */
-export function get_building_destruction_progress(building_index: number): number;
 
 /**
  * Get garrison info for a building at the given index.
@@ -71,11 +62,6 @@ export function get_building_destruction_progress(building_index: number): numbe
  * or {"count":0,"capacity":0,"unit_ids":[],"garrisoned":false} if building not found.
  */
 export function get_building_garrison_json(building_index: number): string;
-
-/**
- * Get the current HP of a building at the given index. Returns 0 if not found.
- */
-export function get_building_hp(building_index: number): number;
 
 /**
  * Get detailed building info by index.
@@ -88,12 +74,6 @@ export function get_building_hp(building_index: number): number;
 export function get_building_info(idx: number): string;
 
 /**
- * Get the max HP of a building at the given index. Returns 0 if not found.
- */
-export function get_building_max_hp(building_index: number): number;
-
-/**
- * Get building summary as a JSON string for the HUD.
  * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1,"owner_id":0,"garrison":0,"max_garrison":0},...]
  */
 export function get_building_summary(): string;
@@ -104,22 +84,7 @@ export function get_building_summary(): string;
  */
 export function get_camera_state(): string;
 
-/**
- * Get the number of WebGL draw calls made in the current frame.
- * Useful for performance benchmarking.
- */
 export function get_draw_calls(): number;
-
-/**
- * Get territory border tiles for the local player as a JSON string.
- * Get current FPS (frames per second), measured over 1-second windows.
- */
-export function get_fps(): number;
-
-/**
- * Get the current game speed multiplier.
- */
-export function get_game_speed(): number;
 
 /**
  * Get the complete game state as a JSON string for save/load.
@@ -211,26 +176,9 @@ export function get_units_in_rect(min_x: number, min_y: number, max_x: number, m
 export function init(canvas_id: string): boolean;
 
 /**
- * Check if a building type is available for a given nation.
- * Returns "true" or "false".
- */
-export function is_building_available_for_nation(building_name: string, nation_name: string): string;
-
-/**
  * Get the current pause state.
  */
 export function is_paused(): boolean;
-
-/**
- * Get a list of all building types as JSON.
- * Returns: ["Castle","Farm","Sawmill",...]
- */
-export function list_building_types(): string;
-
-/**
- * List all available nation types as a JSON array.
- */
-export function list_nations(): string;
 
 /**
  * Load a map from JSON string (same format as exported by to_json()).
@@ -245,14 +193,6 @@ export function load_map_json(json: string): string;
  * Returns "ok:{name}:{indices}tri" if successful, or "error:{message}" on failure.
  */
 export function load_model_json(name: string, json_str: string): string;
-
-/**
- * Order a set of units to move to a target tile.
- * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
- * target_x, target_y: destination tile coordinates
- * Returns: number of units successfully ordered to move
- */
-export function move_units_to_tile(unit_ids_json: string, target_x: number, target_y: number): number;
 
 /**
  * Handle mouse down for panning
@@ -275,18 +215,11 @@ export function on_mouse_up(): void;
 export function on_wheel(delta_y: number): void;
 
 /**
- * Order a set of units to patrol to a target tile.
  * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
- * target_x, target_y: destination tile coordinates for patrol
+ * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
  * Returns: number of units successfully ordered to patrol
  */
 export function order_patrol(unit_ids_json: string, target_x: number, target_y: number): number;
-
-/**
- * Populate model_instances from current game state (buildings).
- * Maps building types to model IDs. Called from JS each frame before render().
- */
-export function populate_model_instances_from_game(): number;
 
 /**
  * Get number of combat hits since last call (drains each frame).
@@ -338,16 +271,7 @@ export function set_textures_ready(): void;
 export function set_tile_terrain(x: number, y: number, terrain_id: number): boolean;
 
 /**
- * Set the combat stance for a single unit.
- * stance: 0=Aggressive, 1=StandGround, 2=Passive
- * Returns true if the unit was found and stance was set.
- */
-export function set_unit_stance(unit_id: number, stance: number): boolean;
-
-/**
- * Set the combat stance for multiple units (batch).
  * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
- * stance: 0=Aggressive, 1=StandGround, 2=Passive
  * Returns the number of units whose stance was successfully set.
  */
 export function set_units_stance(unit_ids_json: string, stance: number): number;
@@ -410,9 +334,6 @@ export function try_place_building(kind_name: string, x: number, y: number): str
  */
 export function wasm_garrison_unit(building_index: number, unit_id: number): boolean;
 
-/**
- * Ungarrison a unit from a building. Returns true if the unit was found and removed.
- */
 export function wasm_ungarrison_unit(building_index: number, unit_id: number): boolean;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -421,23 +342,17 @@ export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
-    readonly damage_building: (a: number, b: number) => number;
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
     readonly export_map_json: () => [number, number];
     readonly formation_move: (a: number, b: number, c: number, d: number) => number;
     readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
     readonly get_build_cost: (a: number, b: number) => [number, number];
     readonly get_building_at_tile: (a: number, b: number) => [number, number];
-    readonly get_building_destruction_progress: (a: number) => number;
     readonly get_building_garrison_json: (a: number) => [number, number];
-    readonly get_building_hp: (a: number) => number;
     readonly get_building_info: (a: number) => [number, number];
-    readonly get_building_max_hp: (a: number) => number;
     readonly get_building_summary: () => [number, number];
     readonly get_camera_state: () => [number, number];
     readonly get_draw_calls: () => number;
-    readonly get_fps: () => number;
-    readonly get_game_speed: () => number;
     readonly get_game_state: () => [number, number];
     readonly get_map_data: () => [number, number];
     readonly get_nation_buildings: (a: number, b: number) => [number, number];
@@ -453,19 +368,14 @@ export interface InitOutput {
     readonly get_unit_summary: () => [number, number];
     readonly get_units_in_rect: (a: number, b: number, c: number, d: number) => [number, number];
     readonly init: (a: number, b: number) => [number, number, number];
-    readonly is_building_available_for_nation: (a: number, b: number, c: number, d: number) => [number, number];
     readonly is_paused: () => number;
-    readonly list_building_types: () => [number, number];
-    readonly list_nations: () => [number, number];
     readonly load_map_json: (a: number, b: number) => [number, number];
     readonly load_model_json: (a: number, b: number, c: number, d: number) => [number, number];
-    readonly move_units_to_tile: (a: number, b: number, c: number, d: number) => number;
     readonly on_mouse_down: (a: number, b: number) => void;
     readonly on_mouse_move: (a: number, b: number) => void;
     readonly on_mouse_up: () => void;
     readonly on_wheel: (a: number) => void;
     readonly order_patrol: (a: number, b: number, c: number, d: number) => number;
-    readonly populate_model_instances_from_game: () => number;
     readonly recent_combat_count: () => number;
     readonly recent_death_count: () => number;
     readonly render: (a: number) => void;
@@ -475,7 +385,6 @@ export interface InitOutput {
     readonly set_player_nation: (a: number, b: number) => number;
     readonly set_textures_ready: () => void;
     readonly set_tile_terrain: (a: number, b: number, c: number) => number;
-    readonly set_unit_stance: (a: number, b: number) => number;
     readonly set_units_stance: (a: number, b: number, c: number) => number;
     readonly set_water_normal_ready: () => void;
     readonly setup_starter_base: (a: number) => [number, number];
