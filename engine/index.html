@@ -171,7 +171,7 @@
 
   /* ── Menu ──────────────────────────────────────────────────────────── */
   #menu {
-    position: fixed; inset: 0; z-index: 90;
+    position: fixed; inset: 0; z-index: 500;
     display: none;
     align-items: center; justify-content: center;
     background: rgba(6,10,20,0.85);
@@ -1105,15 +1105,7 @@
     pointer-events: auto; user-select: none;
   }
   #debug-extra { margin-top: 4px; opacity: 0.7; }
-  /* ── Mobile Responsive (viewport < 768px) ─────────────────────────── */
-  @media (max-width: 767px) {
-    /* Menu: full-width card, larger touch targets */
-    .menu-card {
-      min-width: 0; width: calc(100vw - 32px);
-      padding: 28px 20px; border-radius: 12px;
-    }
-
-  /* Object Explorer */
+  /* ── Object Explorer ─────────────────────────────────────────────── */
   #obj-explorer {
     position: fixed; inset: 0; z-index: 200;
     display: none;
@@ -1156,6 +1148,14 @@
     border-radius: 6px; cursor: pointer;
   }
   .obj-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+  /* ── Mobile Responsive (viewport < 768px) ─────────────────────────── */
+  @media (max-width: 767px) {
+    /* Menu: full-width card, larger touch targets */
+    .menu-card {
+      min-width: 0; width: calc(100vw - 32px);
+      padding: 28px 20px; border-radius: 12px;
+    }
     .menu-card h2 { font-size: 20px; margin-bottom: 18px; }
     .menu-btn { padding: 14px 16px; font-size: 15px; margin: 6px 0; }
     .recent-files { max-height: 100px; }
