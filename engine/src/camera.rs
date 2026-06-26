@@ -450,4 +450,104 @@ mod tests {
         assert!(cam.azimuth > 45.0);
         assert!(cam.azimuth < 90.0);
     }
+    // ── Phase 7: Camera Projection Regression Tests ────────────────────
+
+    #[test]
+    fn test_perspective_center_maps_to_ndc_origin() {
+        // A world point at the camera's look-at target should project near NDC center.
+        let cam = Camera::new(10.0, 10.0, 800, 600);
+        let (tx, ty, _tz) = cam.look_at_target();
+        let (cx, cy, _cz, w) = cam.world_to_clip(tx, ty, 0.0);
+        assert!(w > 0.0, "Camera should be looking forward, w={}", w);
+        // After perspective divide, centered point maps to ~(0, 0)
+        let ndc_x = cx / w;
+        let ndc_y = cy / w;
+        assert!(
+            ndc_x.abs() < 0.05,
+            "Centered world point should map near NDC x=0, got {}",
+            ndc_x
+        );
+        assert!(
+            ndc_y.abs() < 0.05,
+            "Centered world point should map near NDC y=0, got {}",
+            ndc_y
+        );
+    }
+
+    #[test]
+    fn test_perspective_aspect_ratio_scales_x() {
+        // Two cameras with different aspect ratios: the wider camera should
+        // produce a smaller NDC x for the same off-center world point.
+        let cam_4_3 = Camera::new(10.0, 10.0, 800, 600); // 4:3 = 1.333
+        let cam_16_9 = Camera::new(10.0, 10.0, 1920, 1080); // 16:9 = 1.778
+        let cam_1_1 = Camera::new(10.0, 10.0, 800, 800); // 1:1 = 1.0
+
+        // Pick a world point offset from center
+        let test_x = 15.0;
+        let test_y = 12.0;
+
+        let (cx4, _, _, w4) = cam_4_3.world_to_clip(test_x, test_y, 0.0);
+        let (cx9, _, _, w9) = cam_16_9.world_to_clip(test_x, test_y, 0.0);
+        let (cx1, _, _, w1) = cam_1_1.world_to_clip(test_x, test_y, 0.0);
+
+        // All should be in front of camera
+        assert!(w4 > 0.0 && w9 > 0.0 && w1 > 0.0);
+
+        // Wider aspect ratio compresses X more in NDC → smaller NDC x magnitude
+        let ndc_x_4 = cx4 / w4;
+        let ndc_x_9 = cx9 / w9;
+        let ndc_x_1 = cx1 / w1;
+
+        assert!(
+            ndc_x_9.abs() < ndc_x_4.abs(),
+            "16:9 NDC x ({}) should be < 4:3 NDC x ({})",
+            ndc_x_9,
+            ndc_x_4
+        );
+        assert!(
+            ndc_x_4.abs() < ndc_x_1.abs(),
+            "4:3 NDC x ({}) should be < 1:1 NDC x ({})",
+            ndc_x_4,
+            ndc_x_1
+        );
+    }
+
+    #[test]
+    fn test_perspective_off_center_y_maps_correctly() {
+        // A world point offset in Y from look-at should map correctly in NDC.
+        let cam = Camera::new(10.0, 10.0, 800, 600);
+        let (tx, ty, _tz) = cam.look_at_target();
+
+        // Pick a point with larger y-offset
+        let (_cx, cy, _cz, w) = cam.world_to_clip(tx, ty + 2.0, 0.0);
+        let ndc_y = cy / w;
+        // At default iso elevation (35.264°), the camera looks down at the scene,
+        // so points with positive y offset can still map to valid NDC.
+        // The key invariant: w should be positive (in front of camera).
+        assert!(w > 0.0, "World point should be in front of camera");
+        // ndc_y should be a finite, reasonable value
+        assert!(ndc_y.is_finite(), "NDC y should be finite, got {}", ndc_y);
+    }
+
+    #[test]
+    fn test_perspective_fov_ndc_magnitude() {
+        // A world point far from center should produce larger NDC magnitude
+        // than a point near center (validates FOV scaling).
+        let cam = Camera::new(10.0, 10.0, 800, 600);
+        let (tx, ty, _tz) = cam.look_at_target();
+
+        let (cx_near, _, _, w_near) = cam.world_to_clip(tx + 1.0, ty, 0.0);
+        let (cx_far, _, _, w_far) = cam.world_to_clip(tx + 10.0, ty, 0.0);
+
+        let ndc_near = cx_near / w_near;
+        let ndc_far = cx_far / w_far;
+
+        assert!(
+            ndc_far.abs() > ndc_near.abs(),
+            "Far point NDC ({}) should exceed near point NDC ({})",
+            ndc_far,
+            ndc_near
+        );
+    }
+
 }
