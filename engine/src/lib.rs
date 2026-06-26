@@ -6649,6 +6649,77 @@ mod tests {
         }
     }
 }
+    // ── Phase 7: Sky Color Ramp Regression Tests ──
+
+    #[test]
+    fn test_sky_color_night_is_dark() {
+        // p=0.0 (midnight) and p=0.95 should be dark
+        let (r, g, b) = sky_color(0.0);
+        assert!(r < 0.15, "night sky red should be dark, got {}", r);
+        assert!(g < 0.15, "night sky green should be dark, got {}", g);
+        assert!(b < 0.25, "night sky blue should be dark-ish, got {}", b);
+
+        let (r2, g2, b2) = sky_color(0.95);
+        assert!(r2 < 0.15, "late-night sky red should be dark, got {}", r2);
+        assert!(g2 < 0.15, "late-night sky green should be dark, got {}", g2);
+    }
+
+    #[test]
+    fn test_sky_color_noon_is_blue() {
+        // p=0.5 (noon) should be blue: blue channel dominates
+        let (r, g, b) = sky_color(0.5);
+        assert!(b > r, "noon sky should be more blue than red, r={} b={}", r, b);
+        assert!(b > g, "noon sky should be more blue than green, g={} b={}", g, b);
+        assert!(b > 0.7, "noon sky blue should be bright, got {}", b);
+    }
+
+    #[test]
+    fn test_sky_color_dawn_is_warm() {
+        // p=0.20 is at the end of dawn_start->dawn_peak transition (peak warm orange)
+        let (r, _, b) = sky_color(0.20);
+        assert!(r > b, "dawn sky should be warmer than blue, r={} b={}", r, b);
+        assert!(r > 0.4, "dawn sky should be bright/warm, got {}", r);
+        // Verify: dawn_peak = (0.65, 0.32, 0.18) — red clearly dominates
+        assert!(r > 0.5, "dawn peak should be strongly red, got {}", r);
+    }
+
+    #[test]
+    fn test_sky_color_dusk_is_warm() {
+        // p=0.76 is at the end of day_afternoon->dusk_peak transition (warm orange/red)
+        let (r, _, b) = sky_color(0.76);
+        assert!(r > b, "dusk sky should be warmer than blue, r={} b={}", r, b);
+        assert!(r > 0.4, "dusk sky red should be strong, got {}", r);
+        // Verify: dusk_peak = (0.68, 0.30, 0.15) — red clearly dominates
+        assert!(r > 0.5, "dusk peak should be strongly red, got {}", r);
+    }
+
+    #[test]
+    fn test_sky_color_output_range() {
+        // All output values must be in valid 0.0-1.0 range across full day cycle
+        let mut p = 0.0;
+        while p < 1.0 {
+            let (r, g, b) = sky_color(p);
+            assert!((0.0..=1.0).contains(&r), "r out of range at p={}: {}", p, r);
+            assert!((0.0..=1.0).contains(&g), "g out of range at p={}: {}", p, g);
+            assert!((0.0..=1.0).contains(&b), "b out of range at p={}: {}", p, b);
+            p += 0.01;
+        }
+    }
+
+    #[test]
+    fn test_sky_color_day_night_contrast() {
+        // Noon should be significantly brighter than midnight
+        let (r_night, g_night, b_night) = sky_color(0.0);
+        let (r_noon, g_noon, b_noon) = sky_color(0.5);
+        let lum_night = r_night + g_night + b_night;
+        let lum_noon = r_noon + g_noon + b_noon;
+        assert!(
+            lum_noon > lum_night * 5.0,
+            "noon should be much brighter than night: noon={} night={}",
+            lum_noon, lum_night
+        );
+    }
+
 #[cfg(test)]
 mod horizon_tests {
     /// Compute reflection horizon Y (mirrors the App's horizon computation).
