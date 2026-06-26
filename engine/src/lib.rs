@@ -1785,6 +1785,27 @@ impl App {
                     }
                 }
             }
+            // Water splash particles: spawn near Water tiles
+            // Small upward burst to simulate wave action on water surface
+            if tick.is_multiple_of(8) {
+                let map = &self.game_loop.state.map;
+                let cx = self.camera.center_x as usize;
+                let cy = self.camera.center_y as usize;
+                let range = 12usize;
+                let mut splash_count = 0u32;
+                for dy in 0..range {
+                    for dx in 0..range {
+                        let tx = cx.saturating_sub(range/2) + dx;
+                        let ty = cy.saturating_sub(range/2) + dy;
+                        if let Some(tile) = map.get(tx, ty) {
+                            if tile.terrain == crate::map::Terrain::Water && splash_count < 2 {
+                                particle::spawn_water_splash_particle(&mut self.particle_system, tx as f32, ty as f32);
+                                splash_count += 1;
+                            }
+                        }
+                    }
+                }
+            }
             // Ember/spark particles: spawn near Iron/Gold Smelter buildings
             // Embers rise from furnace chimneys with orange-red-yellow color
             if tick.is_multiple_of(7) {

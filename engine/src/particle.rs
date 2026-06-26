@@ -521,6 +521,47 @@ pub fn spawn_pollen_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x
     }
     spawned
 }
+/// Spawn a single water splash particle (tiny upward arc on water surface).
+pub fn spawn_water_splash_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 19.7 + y * 13.3;
+    let z = 0.05 + (seed * 2.3).sin().abs() * 0.1;  // at water surface level
+    let vx = (seed * 1.3).cos() * 0.3;               // gentle radial scatter
+    let vy = (seed * 2.7).sin() * 0.25;
+    let vz = 1.0 + (seed * 3.9).sin().abs() * 1.5;   // upward splash
+    let life = 0.3 + (seed * 4.1).sin().abs() * 0.25; // short splash (0.3-0.55s)
+    let r = 0.72 + (seed * 5.7).sin().abs() * 0.13;   // light blue
+    let g = 0.85 + (seed * 6.3).cos().abs() * 0.10;
+    let b = 0.95 + (seed * 7.1).sin().abs() * 0.05;   // near-full blue
+    let _ = ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r, g, b, size: 2.0 });
+}
+
+/// Spawn a burst of water splash particles across a rectangular water area.
+pub fn spawn_water_splash_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 13.1 + 7.9).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 17.3 + 3.1).sin() * 0.5 + 0.5) * sy;
+        let seed = x * 19.7 + y * 13.3;
+        let z = 0.05 + (seed * 2.3).sin().abs() * 0.1;
+        let vx = (seed * 1.3).cos() * 0.3;
+        let vy = (seed * 2.7).sin() * 0.25;
+        let vz = 1.0 + (seed * 3.9).sin().abs() * 1.5;
+        let life = 0.3 + (seed * 4.1).sin().abs() * 0.25;
+        let r = 0.72 + (seed * 5.7).sin().abs() * 0.13;
+        let g = 0.85 + (seed * 6.3).cos().abs() * 0.10;
+        let b = 0.95 + (seed * 7.1).sin().abs() * 0.05;
+        if ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r, g, b, size: 2.0 }) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1327,5 +1368,50 @@ fn test_particle_alpha_zero_when_dead() {
     // Tick past lifetime
     p.tick(0.2);
     assert!((p.alpha() - 0.0).abs() < 0.01, "dead particle alpha should be 0, got {}", p.alpha());
+}
+
+#[test]
+fn test_water_splash_particle_spawns_with_correct_color() {
+    let mut ps = ParticleSystem::new();
+    spawn_water_splash_particle(&mut ps, 3.0, 7.0);
+    assert_eq!(ps.alive_count(), 1);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.b > p.r, "water splash should be bluer than red (b={} r={})", p.b, p.r);
+    assert!(p.g > 0.75, "water splash g should be >0.75, got {}", p.g);
+}
+
+#[test]
+fn test_water_splash_rises_and_falls() {
+    let mut ps = ParticleSystem::new();
+    spawn_water_splash_particle(&mut ps, 5.0, 5.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.vz > 0.0, "water splash should rise initially, got vz={}", p.vz);
+}
+
+#[test]
+fn test_water_splash_starts_at_water_level() {
+    let mut ps = ParticleSystem::new();
+    spawn_water_splash_particle(&mut ps, 8.0, 4.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.z < 0.2, "splash starts at water surface, z < 0.2, got z={}", p.z);
+}
+
+#[test]
+fn test_water_splash_short_lifetime() {
+    let mut ps = ParticleSystem::new();
+    spawn_water_splash_particle(&mut ps, 2.0, 9.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.life >= 0.3 && p.life <= 0.55, "splash life should be 0.3-0.55s, got {}", p.life);
+}
+
+#[test]
+fn test_water_splash_burst_bounds_and_capacity() {
+    let mut ps = ParticleSystem::new();
+    let spawned = spawn_water_splash_burst(&mut ps, 10.0, 20.0, 14.0, 24.0, 5);
+    assert!(spawned <= 5, "burst should spawn at most {} particles, got 5", spawned);
+    for p in ps.particles.iter().filter(|p| p.alive) {
+        assert!(p.x >= 10.0 && p.x <= 14.0, "splash x={} out of bounds [10,14]", p.x);
+        assert!(p.y >= 20.0 && p.y <= 24.0, "splash y={} out of bounds [20,24]", p.y);
+    }
 }
 
