@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S240 · 739 tests · WASM 300.1KB — Clippy: 0 errors, 0 warnings. 0 open issues. Removed dead all_names() functions — 0KB savings (LTO dedup), but cleaner code. Confirmed real WASM savings require removing name() + JS-side name tables. Converted from_name() to FNV-1a hash discriminant lookup (BuildingType + NationType). WASM unchanged because name()/all_names() still retain strings; full savings requires removing those + JS-side name tables.**
+**Status:** S241 · 742 tests · WASM 300.1KB — Clippy: 0 errors, 0 warnings. 0 open issues. Added BuildingType::discriminant() + from_discriminant() + VALID_DISCRIMINANTS const — integer accessor foundation for removing name() strings from WASM. Next: replace name() calls in lib.rs JSON output with discriminants, wire up JS-side BUILDING_NAMES_BY_ID lookup table.**
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 241 | 2026-06-26 | Add BuildingType::discriminant() + from_discriminant() + VALID_DISCRIMINANTS (77 sorted discriminants) — integer accessor foundation for WASM name-string removal. Refactored test to use shared const. 3 new discriminant tests: full round-trip (77), gap rejection (12 gaps), name consistency. 739→742 tests. Clippy clean. WASM 300.1KB. -- 742 tests |
 | 240 | 2026-06-26 | Add FNV-1a hash lookup regression tests: BuildingType round-trip (all 77 valid discriminants via explicit const array), all 77 name keys resolve, garbage-input rejection. NationType round-trip (all 5 discriminants), all 9 lookup keys (5 base + 4 aliases). Added engine/core to .gitignore. 734→739 tests. Clippy clean. No WASM rebuild needed (pure Rust test additions). -- 739 tests |
 | 239 | 2026-06-26 | Remove dead all_names() functions: BuildingType::all_names() (77 strings) + NationType::all_names() (5 strings). Zero WASM savings — LTO deduplicates with name() strings. Clean build confirms 300.1KB. Rewrote 3 test functions. Fixed 2 clippy warnings (empty_line_after_doc_comments + needless_range_loop). Clippy: 0 errors, 0 warnings. 736→734 tests. -- 734 tests |
 | 238 | 2026-06-26 | Convert from_name() to FNV-1a hash discriminant lookup: replaced 78 string-match arms in BuildingType::from_name() and 9 in NationType::from_name() (incl. aliases) with sorted const FNV-1a hash lookup tables and binary_search_by_key. Eliminates match-arm branch explosion. Removed 4 alias strings (Romans/Vikings/Trojans/Dark Tribe) only used in from_name(). WASM 307.3KB (unchanged — name()/all_names() retain strings; full 19.4KB savings requires removing name()/all_names() + JS-side name tables). 736 tests pass, clippy clean. -- 736 tests |
@@ -285,6 +286,6 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 265. Investigate 7KB WASM size variance (307.3KB after cargo clean vs 300.1KB reported). Run checksum on wasm binaries from both builds to identify the source of growth. [SHOULD]
 266. Re-baseline WASM size target: 300KB. At 307.3KB we are 7.3KB over. Need 7.3KB savings from from_name() conversion + any remaining low-hanging fruit. [MUST]
 
-Next session priorities: (1) Remove name() function from BuildingType/NationType — move name tables to JS side (est. 19.4KB savings). S239 confirmed all_names() removal saves 0KB (LTO dedup) — the real savings require removing name() itself. JS approach: create BUILDING_NAMES_EN lookup, change get_game_state() to emit integer IDs, JS maps back to strings. (2) Investigate 7KB WASM size variance: clean build gives 300.1KB consistently, but S237/S238 reported 307.3KB. Root cause may be wasm-opt/LTO non-determinism. (3) Consider removing NationType::name() — 5 nation strings (small savings but low risk). (4) Regression tests added S240: hash lookup round-trips verified for all 77 BuildingType + 5 NationType discriminants. Ready to safely remove name()/all_names() with confidence.
+Next session priorities: (1) Replace .name() with .discriminant() in lib.rs JSON output functions — get_game_state(), get_building_summary(), get_building_info(), try_place_building(), get_nation_buildings(), get_player_nation(). Add BUILDING_NAMES_BY_ID = {} in data.js (mapping u8→string). JS fallback handles unknown IDs gracefully. Expect 19.4KB WASM savings after name() method removal. S241 added discriminant() and from_discriminant() with 77-variant validation — foundation is ready. (2) Verify 300.1KB WASM size is consistent — S241 clean build confirms 300.09 KiB. The 307.3KB variance was likely dirty builds. (3) Add NationType::discriminant() for consistency. (4) After JSON switchover is complete and JS maps are verified, remove name() methods from BuildingType + NationType entirely.
 
 *All building data must match BASE.md. Never modify BASE.md.*
