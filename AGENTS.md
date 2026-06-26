@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S230 · 726 tests · WASM 312.2KB — Clippy: 0 errors, 0 warnings. 0 open issues. 6 frustum culling regression tests for camera visible_bounds + LOD mesh validation. WASM size at 312.2KB (12.2KB gap to 300KB target). Next: (1) Convert from_name to integer discriminant lookup (est. 15-19KB savings — largest single win), (2) Profile render() code bloat (39.7KB).**
+**Status:** S231 · 734 tests · WASM 312.2KB — Clippy: 0 errors, 0 warnings. 0 open issues. 8 day_light uniform regression tests added — Rust-side validation of GLSL sin+smoothstep formula for sky lighting. WASM size at 312.2KB (12.2KB gap to 300KB target). Next: (1) Convert from_name to integer discriminant lookup (est. 15-19KB savings — largest single win), (2) Model JSON dedup data[87]+[118] (est. 4.8KB), (3) Profile render() code bloat (39.7KB).**
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 231 | 2026-06-26 | Added 8 day_light uniform regression tests: compute_day_light() Rust function mirrors GLSL sin+smoothstep formula used in day_light_glsl_u/day_light_glsl_v shader macros. Validates midnight darkness, noon brightness, dawn/dusk midpoint, output range [0,1], day/night contrast (>100x), monotonic dawn→noon and noon→dusk, phase continuity at cycle wrap. Reverted uncommitted BUILDING_DATA consolidation in economy.rs (static array of &str fat pointers would increase WASM per skill warning). 726→734 tests pass. Clippy: 0 errors, 0 warnings. -- 734 tests |
 | 218 | 2026-06-25 | Removed 3 dead WASM exports: compute_mvp_json (4.6KB code, 0 JS refs), clear_model_instances (0 JS refs), model_instance_count (0 JS refs). Removed 2 corresponding tests. WASM 326KB→319KB (-7KB). 697 tests pass. Clippy 0 errors/21 warnings. 81 exports remaining (was 84). -- 697 tests |
 | 220 | 2026-06-25 | Added 4 particle edge-case tests: bounce velocity reversal (vz inversion after ground impact), alpha at full life (=1.0 above 0.7 threshold), alpha fade at 50% life (~0.71), alpha zero when dead. 697→701 tests pass. Clippy 0 errors/15 warnings. -- 701 tests |
 | 222 | 2026-06-25 | Refactored particle spawn functions to use config structs: ParticleConfig (11-field) and BurstConfig (10-field). Removed all 3 #[allow(clippy::too_many_arguments)] workarounds from session 221. Converted 39 .spawn() + 15 .spawn_burst() call sites. Clippy auto-fixed 76 redundant_field_names. Clippy: 0 errors, 0 warnings. 701 tests pass. -- 701 tests |
@@ -273,6 +274,6 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 261. **Convert from_name() to integer discriminant lookup** — eliminates 19.4KB building/unit name strings (data[5]). Replace match name { "Castle" => ... } with FromPrimitive trait or const array index. Requires JS-side name lookup table since get_game_state() outputs names in JSON. [MUST — largest single win]
 262. Investigate data[87]+[118] duplicate: model JSON structure duplication — possibly building config strings compiled twice (economy.rs + lib.rs). Dedup by extracting to shared const. [MUST — saves 4.8KB]
 
-*Next session priorities*: (1) from_name integer discriminant lookup (-19.4KB, hits 300KB target), (2) model JSON dedup (data[87]+[118], est. -4.8KB), (3) Add day-light uniform regression tests in Rust (validate GLSL sin formula output).
+*Next session priorities*: (1) from_name integer discriminant lookup (-19.4KB, hits 300KB target), (2) model JSON dedup (data[87]+[118], est. -4.8KB), (3) Add GLSL uniform validation for fog_color/camera projection sync (ensure fog matches sky ramp at horizon).
 
 *All building data must match BASE.md. Never modify BASE.md.*
