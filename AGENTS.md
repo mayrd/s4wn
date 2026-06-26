@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S237 · 736 tests · WASM 307.3KB — Clippy: 0 errors, 0 warnings. 0 open issues. Profiled render() code bloat: twiggy dominators confirms render() retains 49.8KB (16.24% of WASM). code[267] at 39.7KB is the main render body with ~40 sub-calls to WebGL2 uniform/buffer setters. No single dominant sub-function — all are small (96–408 bytes) draw-call helpers. The 39.7KB body is unavoidable draw-call orchestration. 7KB size regression (300.1KB → 307.3KB) is environmental (cargo clean + wasm-opt/LTO variance), not a code change. S236 serde_json removal is intact (data[87]+[118] dedup confirmed).**
+**Status:** S238 · 736 tests · WASM 307.3KB — Clippy: 0 errors, 0 warnings. 0 open issues. Converted from_name() to FNV-1a hash discriminant lookup (BuildingType + NationType). WASM unchanged because name()/all_names() still retain strings; full savings requires removing those + JS-side name tables.**
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 238 | 2026-06-26 | Convert from_name() to FNV-1a hash discriminant lookup: replaced 78 string-match arms in BuildingType::from_name() and 9 in NationType::from_name() (incl. aliases) with sorted const FNV-1a hash lookup tables and binary_search_by_key. Eliminates match-arm branch explosion. Removed 4 alias strings (Romans/Vikings/Trojans/Dark Tribe) only used in from_name(). WASM 307.3KB (unchanged — name()/all_names() retain strings; full 19.4KB savings requires removing name()/all_names() + JS-side name tables). 736 tests pass, clippy clean. -- 736 tests |
 | 237 | 2026-06-26 | Render() code bloat profiling: twiggy dominators confirms render() retains 49.8KB (16.24% of WASM). The bulk is code[267] at 39.7KB — the main render function with ~40 sub-calls to WebGL2 uniform/buffer setters. No single dominant sub-function: top 10 sub-calls range 96–408 bytes each (uniformMatrix4fv, bindRenderbuffer, uniform2f, etc.). The 39.7KB body is the unavoidable draw-call orchestration (FBO binds, shader program switches, viewport sets, draw calls per layer). Extraction into smaller functions would add call overhead without size savings. WASM after cargo clean: 307.3KB (300.1KB in AGENTS.md — environmental variance from wasm-opt/LTO). 736 tests pass, clippy clean. -- 736 tests |
 | 236 | 2026-06-26 | Replace serde_json in model.rs with manual JSON parser: wrote lightweight JsonParser struct that walks the fixed JSON schema byte-by-byte. Eliminated serde_json::from_str::<JsonMesh> monomorphization — the key source of the data[87]+[118] duplicate (94.7% identical serde_json flt2dec tables from 2 call sites). Removed serde::Deserialize from Material and JsonMesh structs. WASM 308.0KB → 300.1KB (-7.9KB), hitting the 300KB target. 736 tests pass, clippy clean. -- 736 tests |
 | 235 | 2026-06-26 | Investigated data[87]+[118] WASM duplicate root cause: Byte-by-byte comparison confirms 4559 identical bytes (94.7%) — serde_json flt2dec internal tables. data[118] differs at tail: Rust std error strings vs data[87]'s flt2dec extension bytes (460 extra in 118). Multiple serde_json::from_str monomorphizations (JsonMesh in model.rs, Value+Vec<u32> in lib.rs) each pull serde data tables. LTO/codegen-units=1 already set — linker can't fully dedup different monomorphized paths. Fix: replace model.rs serde_json usage with manual parser (JSON format is simple arrays). wasm-opt not available for post-link dedup. 736 tests pass. -- 736 tests |
@@ -270,7 +271,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 229. ~~Refactor particle spawn functions to use config struct (remove #[allow] workaround)~~ ✅ (session 222)
 235. WASM size: 316.9KB → 300KB — remaining 16.9KB gap [MUST — top priority]
 236. Lazy-load building model JSON from assets/ — already done (load_model_json WASM export), no further action needed
-237. Consider converting from_name() match arms to integer discriminant lookup — 19.4KB building/unit name strings in data[5] [NICE — largest single win]
+237. ~~Convert from_name() match arms to integer discriminant lookup~~ ✅ (S238 — FNV-1a hash lookup done; zero WASM savings because name()/all_names() retain strings)
 238. ~~Audit data[118]=5.3KB, data[87]=4.8KB, data[63]=4.7KB, data[61]=3.9KB segments~~ ✅ (S224 — identified: model JSON duplicates, flt2dec table, compressed data)
 239. Verify Fix #73 on mobile: request new render snapshot from Daniel to confirm tiles display on ANGLE/Mali-G710 [SHOULD]
 240. Investigate data[87]+[118] duplicate: grep Rust source for which model JSON files are compiled into WASM; deduplicate if 2 copies of same model [MUST — saves 4.8KB]
@@ -278,10 +279,10 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 242. WASM size: 316.9KB → 300KB — remaining 16.9KB gap. Model JSON dedup (est. 4.8KB) + from_name integer discriminant (est. 15KB) would hit target [MUST]
 260. WASM size: 312.2KB → 300KB — remaining 12.2KB gap [MUST]
 263. Render profiling confirms no easy wins: 39.7KB render() body is essential draw-call pipeline code. Focus on data-segment elimination instead. ✅ (S237)
-264. **Convert from_name() to integer discriminant lookup** — eliminates 19.4KB building/unit name strings (data[5]). Replace match name { "Castle" => ... } with FromPrimitive trait or const array index. Requires JS-side name lookup table since get_game_state() outputs names in JSON. [MUST — largest single win]
+264. ~~Convert from_name() to integer discriminant lookup~~ ✅ (S238 — hash lookup done; removing name()/all_names() still needed for WASM savings)
 265. Investigate 7KB WASM size variance (307.3KB after cargo clean vs 300.1KB reported). Run checksum on wasm binaries from both builds to identify the source of growth. [SHOULD]
 266. Re-baseline WASM size target: 300KB. At 307.3KB we are 7.3KB over. Need 7.3KB savings from from_name() conversion + any remaining low-hanging fruit. [MUST]
 
-Next session priorities: (1) Convert from_name() to integer discriminant lookup — eliminates 19.4KB building/unit name strings (data[5]). Largest remaining single win. Now confirmed that data[3]=17KB also contains from_name() match strings (both CamelCase and lowercase forms) plus terrain shader GLSL. (2) Investigate 7KB WASM size variance: cargo clean → 307.3KB vs reported 300.1KB (S236). Possible wasm-opt version or LTO difference. Measure on both build environments to establish reproducible baseline. (3) Audit all data segment growth to stay under 300KB target — at 307.3KB we are over budget.
+Next session priorities: (1) Remove name() and all_names() string functions for BuildingType/NationType — move name tables to JS side (est. 19.4KB savings). This is the key remaining step to actually realize savings from S238's hash lookup. (2) Investigate 7KB WASM size variance: 307.3KB vs 300.1KB (S236). Run reproducible build and checksum comparison across environments. (3) If name()/all_names() removal hits target, re-baseline WASM at ~288KB and audit remaining data segments for further optimization.
 
 *All building data must match BASE.md. Never modify BASE.md.*
