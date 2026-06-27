@@ -136,10 +136,6 @@ impl UnitKind {
         self as u8
     }
 
-    /// Display name — delegates to UNIT_KIND_NAMES const array.
-    pub fn name(self) -> &'static str {
-        UNIT_KIND_NAMES[self as usize]
-    }
 
     /// Maximum HP for this unit type
     pub fn max_hp(self) -> u32 {
@@ -244,6 +240,18 @@ pub enum UnitState {
     /// Dead
     Dead,
 }
+
+/// Names for UnitState discriminants (8 slots, indexed by discriminant).
+pub const UNIT_STATE_NAMES: [&str; 8] = [
+    "Idle",          // 0
+    "Moving",        // 1
+    "Working",       // 2
+    "Fighting",      // 3
+    "Patrolling",   // 4
+    "FormationMove", // 5
+    "Dying",         // 6
+    "Dead",          // 7
+];
 
 /// Combat stance controls how units react to enemies.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -809,16 +817,7 @@ impl UnitManager {
             .filter(|u| u.is_alive() && u.kind.can_fight())
             .filter(|u| u.x >= min_x && u.x <= max_x && u.y >= min_y && u.y <= max_y)
             .map(|u| {
-                let state_name = match u.state {
-                    UnitState::Idle => "Idle",
-                    UnitState::Moving => "Moving",
-                    UnitState::Working => "Working",
-                    UnitState::Fighting => "Fighting",
-                    UnitState::Patrolling => "Patrolling",
-                    UnitState::FormationMove => "FormationMove",
-                    UnitState::Dying => "Dying",
-                    UnitState::Dead => "Dead",
-                };
+                let state_name = UNIT_STATE_NAMES[u.state as usize];
                 (u.id, UNIT_KIND_NAMES[u.kind as usize], u.x, u.y, u.hp, state_name)
             })
             .collect()
@@ -1324,6 +1323,23 @@ mod marquee_selection_tests {
     }
 }
 
+
+    #[test]
+    fn test_unit_state_names() {
+        assert_eq!(UNIT_STATE_NAMES.len(), 8);
+        assert_eq!(UNIT_STATE_NAMES[UnitState::Idle as usize], "Idle");
+        assert_eq!(UNIT_STATE_NAMES[UnitState::Moving as usize], "Moving");
+        assert_eq!(UNIT_STATE_NAMES[UnitState::Working as usize], "Working");
+        assert_eq!(UNIT_STATE_NAMES[UnitState::Fighting as usize], "Fighting");
+        assert_eq!(UNIT_STATE_NAMES[UnitState::Patrolling as usize], "Patrolling");
+        assert_eq!(UNIT_STATE_NAMES[UnitState::FormationMove as usize], "FormationMove");
+        assert_eq!(UNIT_STATE_NAMES[UnitState::Dying as usize], "Dying");
+        assert_eq!(UNIT_STATE_NAMES[UnitState::Dead as usize], "Dead");
+        // Verify all names are non-empty
+        for i in 0..8 {
+            assert!(!UNIT_STATE_NAMES[i].is_empty(), "UNIT_STATE_NAMES[{}] is empty", i);
+        }
+    }
 
 #[cfg(test)]
 mod death_animation_tests {
