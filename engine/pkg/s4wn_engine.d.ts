@@ -335,6 +335,12 @@ export function toggle_pause(): boolean;
 export function try_place_building(kind_name: string, x: number, y: number): string;
 
 /**
+ * Try to place a building by BuildingType integer discriminant.
+ * Returns JSON: {"ok":true,"idx":0,"kind":5} or {"error":"message"}
+ */
+export function try_place_building_by_id(discriminant: number, x: number, y: number): string;
+
+/**
  * Garrison a unit into a building. Returns true if successful.
  * The unit must be a combat unit and adjacent to the building.
  */
@@ -401,6 +407,7 @@ export interface InitOutput {
     readonly toggle_editor_grid: () => number;
     readonly toggle_pause: () => number;
     readonly try_place_building: (a: number, b: number, c: number, d: number) => [number, number];
+    readonly try_place_building_by_id: (a: number, b: number, c: number) => [number, number];
     readonly wasm_garrison_unit: (a: number, b: number) => number;
     readonly wasm_ungarrison_unit: (a: number, b: number) => number;
     readonly __wbindgen_malloc: (a: number, b: number) => number;

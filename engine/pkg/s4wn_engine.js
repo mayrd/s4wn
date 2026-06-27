@@ -863,6 +863,27 @@ export function try_place_building(kind_name, x, y) {
 }
 
 /**
+ * Try to place a building by BuildingType integer discriminant.
+ * Returns JSON: {"ok":true,"idx":0,"kind":5} or {"error":"message"}
+ * @param {number} discriminant
+ * @param {number} x
+ * @param {number} y
+ * @returns {string}
+ */
+export function try_place_building_by_id(discriminant, x, y) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.try_place_building_by_id(discriminant, x, y);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Garrison a unit into a building. Returns true if successful.
  * The unit must be a combat unit and adjacent to the building.
  * @param {number} building_index

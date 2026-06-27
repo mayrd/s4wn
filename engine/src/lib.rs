@@ -4069,6 +4069,71 @@ pub fn try_place_building(kind_name: &str, x: usize, y: usize) -> String {
     }
     r#"{"error":"Engine not initialized"}"#.to_string()
 }
+
+/// Try to place a building by BuildingType integer discriminant.
+/// Returns JSON: {"ok":true,"idx":0,"kind":5} or {"error":"message"}
+#[wasm_bindgen]
+pub fn try_place_building_by_id(discriminant: u8, x: usize, y: usize) -> String {
+    use crate::economy::BuildingType;
+    // Validate discriminant before accessing APP (so tests can check rejection)
+    let kind = match BuildingType::from_discriminant(discriminant) {
+        Some(k) => k,
+        None => return format!(r#"{{"error":"Invalid building discriminant: {}"}}"#, discriminant),
+    };
+    unsafe {
+        if let Some(ref mut app) = APP {
+            // Validate tile is within map bounds
+            if x >= app.map.width || y >= app.map.height {
+                return format!(r#"{{"error":"Tile ({},{}) out of bounds"}}"#, x, y);
+            }
+
+            // Validate terrain is buildable (not water, deep water, or mountain)
+            let tile = app.map.get(x, y).unwrap();
+            let buildable = !matches!(tile.terrain, Terrain::Water | Terrain::DeepWater | Terrain::Mountain);
+            if !buildable {
+                return format!(
+                    r#"{{"error":"Cannot build on {} terrain at ({},{})"}}"#,
+                    match tile.terrain {
+                        Terrain::Water => "water",
+                        Terrain::DeepWater => "deep water",
+                        Terrain::Mountain => "mountain",
+                        _ => "unbuildable",
+                    },
+                    x,
+                    y
+                );
+            }
+
+            // Validate tile isn't already occupied by another building
+            let occupied = app
+                .game_loop
+                .state
+                .economy
+                .buildings
+                .iter()
+                .any(|b| b.x == x && b.y == y);
+            if occupied {
+                return format!(r#"{{"error":"Tile ({},{}) already has a building"}}"#, x, y);
+            }
+
+            // Try to place the building
+            match app.game_loop.state.economy.try_place_building(kind, x, y) {
+                Some(idx) => {
+                    app.overlay_dirty = true;
+                    return format!(r#"{{"ok":true,"idx":{},"kind":{}}}"#, idx, kind.discriminant());
+                }
+                None => {
+                    return format!(
+                        r#"{{"error":"Cannot afford {} — insufficient resources"}}"#,
+                        crate::economy::BuildingType::BUILDING_NAMES[kind.discriminant() as usize]
+                    );
+                }
+            }
+        }
+    }
+    r#"{"error":"Engine not initialized"}"#.to_string()
+}
+
 /// Get build cost for a building type. Returns JSON: {"Wood":3} or {"error":"..."}
 #[wasm_bindgen]
 pub fn get_build_cost(kind_name: &str) -> String {
@@ -7246,5 +7311,28 @@ mod export_regression_tests {
             "Horse", "Cattle", "Wool", "Pork", "Gems", "Jewels", "Fish Oil",
         ];
         assert!(resources.len() >= 29, "at least 29 resource types, got {}", resources.len());
+    }
+
+    /// Verify try_place_building_by_id rejects invalid discriminants.
+    #[test]
+    fn test_try_place_building_by_id_rejects_invalid() {
+        // These discriminants are not in BuildingType::VALID_DISCRIMINANTS
+        // 6, 17, 23, 24, 25, 26 are gaps in VALID_DISCRIMINANTS; 255 is >COUNT
+        for invalid in [255u8, 6u8, 17u8, 23u8, 24u8] {
+            let json = super::try_place_building_by_id(invalid, 0, 0);
+            assert!(json.contains("error"), "should reject invalid discriminant {}, got: {}", invalid, json);
+            assert!(json.contains("Invalid building discriminant"), "got: {}", json);
+        }
+    }
+
+    /// Verify try_place_building_by_id rejects calls when engine not initialized.
+    #[test]
+    fn test_try_place_building_by_id_rejects_uninitialized() {
+        // Valid discriminant but no engine initialized (APP is None)
+        use crate::economy::BuildingType;
+        for &d in BuildingType::VALID_DISCRIMINANTS.iter().take(3) {
+            let json = super::try_place_building_by_id(d, 5, 5);
+            assert!(json.contains("Engine not initialized"), "got: {}", json);
+        }
     }
 }

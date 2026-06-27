@@ -1652,6 +1652,7 @@ import init, {
     toggle_pause,
     is_paused,
     try_place_building,
+    try_place_building_by_id,
     get_build_cost,
     get_build_cost_by_id,
     get_tool_counts,
@@ -1685,7 +1686,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=62';
+} from './pkg/s4wn_engine.js?v=63';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3365,7 +3366,7 @@ function tUnit(name) {
     return name;
 }
 
-let placementMode = null; // building type string or null (Rust name, not config ID)
+let placementMode = null; // building type discriminant or null
 let placementButtons = [];
 
 // Mapping from data.js building IDs to Rust BuildingType::from_name strings
@@ -3461,7 +3462,8 @@ function refreshBuildingAffordability() {
         } else {
             btn.classList.remove('affordable');
             // Cancel placement if current building becomes unaffordable
-            if (placementMode === name) {
+            const placementDisc = BUILDING_DISCRIMINANT_BY_CONFIG_ID[name];
+            if (placementDisc !== undefined && placementMode === placementDisc) {
                 cancelPlacement();
             }
         }
@@ -3471,10 +3473,10 @@ function refreshBuildingAffordability() {
 // Keyboard shortcut: B to enter build mode, Escape to cancel, A for attack-move
 window.addEventListener('keydown', (e) => {
     if (showMenu) return;
-    if (e.key.toLowerCase() === 'b' && !placementMode) {
-    } else if (e.key === 'Escape' && placementMode) {
+    if (e.key.toLowerCase() === 'b' && placementMode === null) {
+    } else if (e.key === 'Escape' && placementMode !== null) {
         cancelPlacement();
-    } else if (e.key.toLowerCase() === 'a' && selectedUnitIds.length > 0 && !placementMode) {
+    } else if (e.key.toLowerCase() === 'a' && selectedUnitIds.length > 0 && placementMode === null) {
         attackMoveMode = true;
         canvas.classList.add('attack-move');
         console.log('Attack-move mode: click destination for ' + selectedUnitIds.length + ' unit(s)');
@@ -3482,7 +3484,7 @@ window.addEventListener('keydown', (e) => {
     } else if (e.key === 'Escape' && attackMoveMode) {
         attackMoveMode = false;
         canvas.classList.remove('attack-move');
-    } else if (e.key.toLowerCase() === 'p' && selectedUnitIds.length > 0 && !placementMode) {
+    } else if (e.key.toLowerCase() === 'p' && selectedUnitIds.length > 0 && placementMode === null) {
         patrolMoveMode = true;
         canvas.classList.add('patrol');
         console.log('Patrol mode: click destination for ' + selectedUnitIds.length + ' unit(s)');
@@ -3490,7 +3492,7 @@ window.addEventListener('keydown', (e) => {
     } else if (e.key === 'Escape' && patrolMoveMode) {
         patrolMoveMode = false;
         canvas.classList.remove('patrol');
-    } else if (e.key.toLowerCase() === 'x' && !placementMode && !attackMoveMode && !patrolMoveMode) {
+    } else if (e.key.toLowerCase() === 'x' && placementMode === null && !attackMoveMode && !patrolMoveMode) {
         // Demolition mode: click a building to destroy it
         if (demolitionMode) {
             demolitionMode = false;
@@ -3507,7 +3509,7 @@ window.addEventListener('keydown', (e) => {
     }
 
     // Garrison hotkey: G = garrison selected units into clicked military building
-    if (e.key.toLowerCase() === 'g' && selectedUnitIds.length > 0 && !placementMode && !attackMoveMode && !patrolMoveMode && !demolitionMode) {
+    if (e.key.toLowerCase() === 'g' && selectedUnitIds.length > 0 && placementMode === null && !attackMoveMode && !patrolMoveMode && !demolitionMode) {
         garrisonMoveMode = true;
         canvas.classList.add('garrison');
         console.log('Garrison mode: click a military building to garrison');
@@ -3683,12 +3685,12 @@ document.addEventListener('mousedown', (e) => {
 canvas.addEventListener('click', (e) => {
     if (!engineReady) return;
 
-    if (placementMode) {
+    if (placementMode !== null) {
         // ── Placement mode ──
         const info = get_tile_at(e.offsetX, e.offsetY);
         if (!info) return;
         const t = JSON.parse(info);
-        const result = try_place_building(placementMode, t.x, t.y);
+        const result = try_place_building_by_id(placementMode, t.x, t.y);
         const r = JSON.parse(result);
         showPlacementPulse(e.clientX, e.clientY, r.ok);
         if (r.ok) {
@@ -3709,7 +3711,7 @@ canvas.addEventListener('click', (e) => {
             placementStatus.textContent = `❌ ${r.error}`;
             try { Sfx.playError(); } catch(e) {}
             setTimeout(() => {
-                if (placementMode) placementStatus.textContent = `Place ${placementMode} — click tile · Esc to cancel`;
+                if (placementMode !== null) placementStatus.textContent = `Place ${buildingName(placementMode)} — click tile · Esc to cancel`;
             }, 2000);
         }
         lastPopUpdate = 0;
@@ -4120,7 +4122,7 @@ window.addEventListener('resize', resizeCanvas);
 canvas.addEventListener('mousedown', (e) => {
     if (showMenu) return;
     // Shift+drag: start marquee selection (for military units)
-    if (e.shiftKey && !placementMode) {
+    if (e.shiftKey && placementMode === null) {
         marqueeActive = true;
         marqueeStartX = e.clientX;
         marqueeStartY = e.clientY;
@@ -6803,14 +6805,13 @@ function populateConstructionPanel() {
 
 function selectBuilding(name) {
     try { Sfx.playUIClick(); } catch(e) {}
-    // Convert config ID to Rust building name
-    const rustName = toRustName(name);
-    // Use the existing placement system
+    const disc = BUILDING_DISCRIMINANT_BY_CONFIG_ID[name];
+    if (disc === undefined) return;
     placementButtons.forEach(b => b.classList.remove('active'));
-    placementMode = rustName;
+    placementMode = disc;
     canvas.classList.add('placing');
-    const icon = BUILDING_ICONS[name] || '🏗️';
-    placementStatus.textContent = `Place ${tBuilding(name)} — click tile · Right-click/B to cancel`;
+    const icon = (window.BUILDING_ICONS_BY_ID && window.BUILDING_ICONS_BY_ID[disc]) || '🏗️';
+    placementStatus.textContent = `Place ${buildingName(disc)} — click tile · Right-click/B to cancel`;
     placementStatus.classList.add('visible');
     // Highlight the matching toolbar button
     placementButtons.forEach(b => {
@@ -7170,6 +7171,7 @@ window.__s4wn_debug = {
   get_building_summary,
   get_unit_summary,
   try_place_building,
+  try_place_building_by_id,
   add_starting_resources,
   set_game_speed,
   get_camera_state,

@@ -56,6 +56,7 @@ export const tick_building_destructions: (a: number) => [number, number];
 export const toggle_editor_grid: () => number;
 export const toggle_pause: () => number;
 export const try_place_building: (a: number, b: number, c: number, d: number) => [number, number];
+export const try_place_building_by_id: (a: number, b: number, c: number) => [number, number];
 export const wasm_garrison_unit: (a: number, b: number) => number;
 export const wasm_ungarrison_unit: (a: number, b: number) => number;
 export const __wbindgen_malloc: (a: number, b: number) => number;
