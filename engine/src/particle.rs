@@ -562,6 +562,51 @@ pub fn spawn_water_splash_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32,
     spawned
 }
 
+/// Spawn a single butterfly particle — colorful, gentle floating motion near Forest/Grass.
+pub fn spawn_butterfly_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 11.3 + y * 17.7;
+    let z = 1.5 + (seed * 1.3).sin().abs() * 2.0;
+    let vx = (seed * 2.7).cos() * 0.08;
+    let vy = (seed * 3.3).sin() * 0.06;
+    let vz = 0.02 + (seed * 4.1).sin().abs() * 0.05;
+    let life = 3.0 + (seed * 5.7).sin().abs() * 2.0;
+    let hue_seed = (seed * 7.3).sin().abs();
+    let (r, g, b) = if hue_seed < 0.25 {
+        (0.95, 0.55 + hue_seed * 0.4, 0.1)
+    } else if hue_seed < 0.5 {
+        (0.95, 0.85, 0.1 + hue_seed * 0.2)
+    } else if hue_seed < 0.75 {
+        (0.6 + hue_seed * 0.2, 0.2, 0.85)
+    } else {
+        (0.2, 0.5 + hue_seed * 0.3, 0.95)
+    };
+    let _ = ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r, g, b, size: 2.5 });
+}
+
+/// Spawn a burst of butterflies across a rectangular area.
+pub fn spawn_butterfly_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 13.7 + 3.1).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 19.3 + 7.9).sin() * 0.5 + 0.5) * sy;
+        let seed = x * 11.3 + y * 17.7;
+        let z = 1.5 + (seed * 1.3).sin().abs() * 2.0;
+        let vx = (seed * 2.7).cos() * 0.08;
+        let vy = (seed * 3.3).sin() * 0.06;
+        let vz = 0.02 + (seed * 4.1).sin().abs() * 0.05;
+        let life = 3.0 + (seed * 5.7).sin().abs() * 2.0;
+        if ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r: 0.9, g: 0.7, b: 0.1, size: 2.5 }) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1415,3 +1460,49 @@ fn test_water_splash_burst_bounds_and_capacity() {
     }
 }
 
+#[test]
+fn test_butterfly_particle_spawns_with_color() {
+    let mut ps = ParticleSystem::new();
+    spawn_butterfly_particle(&mut ps, 5.0, 3.0);
+    assert_eq!(ps.alive_count(), 1);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    let max_c = p.r.max(p.g).max(p.b);
+    assert!(max_c > 0.7, "butterfly should have a dominant color, got r={} g={} b={}", p.r, p.g, p.b);
+}
+
+#[test]
+fn test_butterfly_floats_gently() {
+    let mut ps = ParticleSystem::new();
+    spawn_butterfly_particle(&mut ps, 4.0, 8.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.vx.abs() < 0.2, "butterfly vx should be gentle, got {}", p.vx);
+    assert!(p.vy.abs() < 0.2, "butterfly vy should be gentle, got {}", p.vy);
+}
+
+#[test]
+fn test_butterfly_hovers_above_ground() {
+    let mut ps = ParticleSystem::new();
+    spawn_butterfly_particle(&mut ps, 6.0, 2.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.z > 1.0, "butterfly should hover above ground (z > 1.0), got z={}", p.z);
+    assert!(p.z < 4.0, "butterfly should not fly too high (z < 4.0), got z={}", p.z);
+}
+
+#[test]
+fn test_butterfly_has_scenic_lifetime() {
+    let mut ps = ParticleSystem::new();
+    spawn_butterfly_particle(&mut ps, 3.0, 9.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.life >= 2.5 && p.life <= 5.5, "butterfly life should be 2.5-5.5s, got {}", p.life);
+}
+
+#[test]
+fn test_butterfly_burst_bounds_and_capacity() {
+    let mut ps = ParticleSystem::new();
+    let spawned = spawn_butterfly_burst(&mut ps, 10.0, 20.0, 14.0, 24.0, 5);
+    assert!(spawned <= 5, "burst should spawn at most 5 particles, got {}", spawned);
+    for p in ps.particles.iter().filter(|p| p.alive) {
+        assert!(p.x >= 10.0 && p.x <= 14.0, "butterfly x={} out of bounds [10,14]", p.x);
+        assert!(p.y >= 20.0 && p.y <= 24.0, "butterfly y={} out of bounds [20,24]", p.y);
+    }
+}
