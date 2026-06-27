@@ -66,6 +66,12 @@ impl ResourceType {
     /// Total number of distinct resource types
     pub const COUNT: usize = 29; // max discriminant (Wine=28) + 1
 
+    /// All valid ResourceType discriminants (sorted).
+    /// Covers 0-9 (raw), 12 (Honey), 16-18 (processed), 20 (Bread), 22-23 (Flour/IronIngots), 27-28 (Mead/Wine).
+    pub const VALID_RESOURCE_DISCRIMINANTS: [u8; 19] = [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 16, 17, 18, 20, 22, 23, 27, 28,
+    ];
+
     /// Whether this is a raw resource (harvested from the map)
     pub fn is_raw(self) -> bool {
         (self as u8) < 16
@@ -5538,6 +5544,46 @@ mod squad_leader_aura_tests {
         assert!(castle.garrison.is_empty());
         assert_eq!(castle.max_garrison, 6);
         assert!(castle.can_garrison());
+    }
+
+    /// Validate VALID_RESOURCE_DISCRIMINANTS covers all 19 resource types.
+    #[test]
+    fn test_valid_resource_discriminants_count() {
+        assert_eq!(ResourceType::VALID_RESOURCE_DISCRIMINANTS.len(), 19);
+    }
+
+    /// Verify each valid discriminant round-trips through from_u8.
+    #[test]
+    fn test_resource_discriminants_round_trip() {
+        for &disc in &ResourceType::VALID_RESOURCE_DISCRIMINANTS {
+            let rt = ResourceType::from_u8(disc);
+            assert!(rt.is_some(), "from_u8({}) should succeed", disc);
+            let rt = rt.unwrap();
+            assert_eq!(rt as u8, disc, "round-trip mismatch for {}", disc);
+        }
+    }
+
+    /// Verify gap discriminants are rejected.
+    #[test]
+    fn test_resource_discriminants_reject_gaps() {
+        let gaps = &[10u8, 11, 13, 14, 15, 19, 21, 24, 25, 26, 29, 30, 255];
+        for &g in gaps {
+            assert_eq!(ResourceType::from_u8(g), None, "gap {} should be None", g);
+        }
+    }
+
+    /// Verify discriminant matches name for all resource types.
+    /// Each valid discriminant's name() should be non-empty and unique.
+    #[test]
+    fn test_resource_discriminant_name_consistency() {
+        let mut names = std::collections::HashSet::new();
+        for &disc in &ResourceType::VALID_RESOURCE_DISCRIMINANTS {
+            let rt = ResourceType::from_u8(disc).unwrap();
+            let name = rt.name();
+            assert!(!name.is_empty(), "name() should not be empty for disc={}", disc);
+            assert!(names.insert(name), "duplicate name '{}' for disc={}", name, disc);
+            assert_eq!(rt as u8, disc, "discriminant mismatch for {}", name);
+        }
     }
     }
 }

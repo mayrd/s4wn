@@ -2006,6 +2006,12 @@ window.S4WN_CONFIG = {
     C.resources.forEach(r => { window.RESOURCE_NAMES_DE[r.id] = r.name_de; });
     window.RESOURCE_NAMES = {};
     C.resources.forEach(r => { window.RESOURCE_NAMES[r.id] = r.name; });
+    window.RESOURCE_NAMES_BY_ID = {
+        0: "Wood", 1: "Stone", 2: "IronOre", 3: "Coal", 4: "Gold", 5: "Sulfur",
+        6: "Fish", 7: "Grain", 8: "Meat", 9: "Water", 12: "Honey",
+        16: "Planks", 17: "Tools", 18: "Weapons", 20: "Bread", 22: "Flour",
+        23: "IronIngots", 27: "Mead", 28: "Wine"
+    };
     window.RESOURCE_ORDER = C.resources.map(r => r.id);
     window.TERRAIN_BY_ID = {};
     C.terrain.forEach(t => { window.TERRAIN_BY_ID[t.id] = t; });
