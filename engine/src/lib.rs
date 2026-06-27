@@ -4060,7 +4060,7 @@ pub fn try_place_building(kind_name: &str, x: usize, y: usize) -> String {
                 None => {
                     return format!(
                         r#"{{"error":"Cannot afford {} — insufficient resources"}}"#,
-                        kind.name()
+                        crate::economy::BuildingType::BUILDING_NAMES[kind.discriminant() as usize]
                     );
                 }
             }
@@ -4750,69 +4750,66 @@ impl App {
         }
     }
     /// Map a building type name to a 3D model ID.
-    fn model_id_for_building(kind_name: &str) -> &'static str {
-        match kind_name {
-            "Sawmill" => "sawmill",
-            "Mine" => "mine",
-            "Bakery" => "bakery",
-            "Butcher" => "butcher",
-            "Farm" => "farm",
-            "Fisherman" => "fishery",
-            "Woodcutter" => "lumberjack",
-            "Castle" => "headquarters",
-            "Armory" => "armory",
-            "Blacksmith" => "blacksmith",
-            "Mill" => "mill",
-            "Toolsmith" => "toolsmith",
-            "Weaponsmith" => "weaponsmith",
-            "Stonecutter" => "stonecutter",
-            "Storehouse" => "storehouse",
-            "Waterworks" => "waterworks",
-            "Smelter" => "smelter",
-            "Barracks" => "barracks",
-            "Guard Tower" => "guardtower",
-            "Fortress" => "fortress",
-            "Siege Workshop" => "siegeworkshop",
-            "Shipyard" => "shipyard",
-            "Road Layer" => "roadlayer",
-            "Apiary" => "apiary",
-            "Mead Maker" => "meadmaker",
+    fn model_id_for_building(kind: crate::economy::BuildingType) -> &'static str {
+        use crate::economy::BuildingType;
+        match kind {
+            BuildingType::Sawmill => "sawmill",
+            BuildingType::Mine => "mine",
+            BuildingType::Bakery => "bakery",
+            BuildingType::Butcher => "butcher",
+            BuildingType::Farm => "farm",
+            BuildingType::Fisherman => "fishery",
+            BuildingType::Woodcutter => "lumberjack",
+            BuildingType::Castle => "headquarters",
+            BuildingType::Mill => "mill",
+            BuildingType::Toolsmith => "toolsmith",
+            BuildingType::Weaponsmith => "weaponsmith",
+            BuildingType::Stonecutter => "stonecutter",
+            BuildingType::Storehouse => "storehouse",
+            BuildingType::Waterworks => "waterworks",
+            BuildingType::Smelter => "smelter",
+            BuildingType::Barracks => "barracks",
+            BuildingType::GuardTower => "guardtower",
+            BuildingType::Fortress => "fortress",
+            BuildingType::SiegeWorkshop => "siegeworkshop",
+            BuildingType::Shipyard => "shipyard",
+            BuildingType::RoadLayer => "roadlayer",
+            BuildingType::Apiary => "apiary",
+            BuildingType::MeadMaker => "meadmaker",
             // Roman unique
-            "Wine Press" => "winepress",
-            "Temple of Bacchus" => "templeofbacchus",
-            "Colosseum" => "colosseum",
-            "Sanctuary of Minerva" => "sanctuaryofminerva",
-            "Sanctuary of Vulcan" => "sanctuaryofvulcan",
+            BuildingType::TempleOfBacchus => "templeofbacchus",
+            BuildingType::Colosseum => "colosseum",
+            BuildingType::SanctuaryOfMinerva => "sanctuaryofminerva",
+            BuildingType::SanctuaryOfVulcan => "sanctuaryofvulcan",
             // Viking unique
-            "Mead Hall" => "meadhall",
-            "Sanctuary of Odin" => "sanctuaryofodin",
-            "Sanctuary of Thor" => "sanctuaryofthor",
-            "Sanctuary of Freya" => "sanctuaryoffreya",
-            "Runestone" => "runestone",
+            BuildingType::MeadHall => "meadhall",
+            BuildingType::SanctuaryOfOdin => "sanctuaryofodin",
+            BuildingType::SanctuaryOfThor => "sanctuaryofthor",
+            BuildingType::SanctuaryOfFreya => "sanctuaryoffreya",
+            BuildingType::Runestone => "runestone",
             // Maya unique
-            "Temple of Chac" => "templeofchac",
-            "Agave Farm" => "agavefarm",
-            "Distillery" => "distillery",
-            "Sanctuary of Kukulkan" => "sanctuaryofkukulkan",
-            "Sanctuary of Quetzalcoatl" => "sanctuaryofquetzalcoatl",
-            "Sanctuary of Huitzilopochtli" => "sanctuaryofhuitzilopochtli",
-            "Observatory" => "observatory",
+            BuildingType::TempleOfChac => "templeofchac",
+            BuildingType::AgaveFarm => "agavefarm",
+            BuildingType::Distillery => "distillery",
+            BuildingType::SanctuaryOfKukulkan => "sanctuaryofkukulkan",
+            BuildingType::SanctuaryOfQuetzalcoatl => "sanctuaryofquetzalcoatl",
+            BuildingType::SanctuaryOfHuitzilopochtli => "sanctuaryofhuitzilopochtli",
+            BuildingType::Observatory => "observatory",
             // Trojan unique
-            "Oracle of Apollo" => "oracleofapollo",
-            "Olive Grove" => "olivegrove",
-            "Oil Press" => "oilpress",
-            "Sanctuary of Artemis" => "sanctuaryofartemis",
-            "Sanctuary of Poseidon" => "sanctuaryofposeidon",
-            "Sanctuary of Apollo" => "sanctuaryofapollo",
-            "Amphitheater" => "amphitheater",
+            BuildingType::OracleOfApollo => "oracleofapollo",
+            BuildingType::OilPress => "oilpress",
+            BuildingType::SanctuaryOfArtemis => "sanctuaryofartemis",
+            BuildingType::SanctuaryOfPoseidon => "sanctuaryofposeidon",
+            BuildingType::SanctuaryOfApollo => "sanctuaryofapollo",
+            BuildingType::Amphitheater => "amphitheater",
             // Dark Tribe unique
-            "Dark Temple" => "darktemple",
-            "Dark Garden" => "darkgarden",
-            "Mushroom Farm" => "mushroomfarm",
-            "Sanctuary of Morbus" => "sanctuaryofmorbus",
-            "Sanctuary of Pestilence" => "sanctuaryofpestilence",
-            "Dark Fortress" => "darkfortress",
-            "Demon Gate" => "demongate",
+            BuildingType::DarkTemple => "darktemple",
+            BuildingType::DarkGarden => "darkgarden",
+            BuildingType::MushroomFarm => "mushroomfarm",
+            BuildingType::SanctuaryOfMorbus => "sanctuaryofmorbus",
+            BuildingType::SanctuaryOfPestilence => "sanctuaryofpestilence",
+            BuildingType::DarkFortress => "darkfortress",
+            BuildingType::DemonGate => "demongate",
             _ => "construction",
         }
     }
@@ -4841,7 +4838,7 @@ impl App {
 
         // Buildings
         for b in self.game_loop.state.economy.buildings.iter() {
-            let model_id = Self::model_id_for_building(b.kind.name());
+            let model_id = Self::model_id_for_building(b.kind);
             // If the building is being destroyed, use destruction scale; otherwise construction scale
             let scale = if let Some(prog) = b.destruction_progress() {
                 Self::destruction_scale(prog)

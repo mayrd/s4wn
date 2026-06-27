@@ -334,89 +334,6 @@ pub enum BuildingType {
 }
 
 impl BuildingType {
-    /// Display name
-    pub fn name(self) -> &'static str {
-        match self {
-            BuildingType::Castle => "Castle",
-            BuildingType::Sawmill => "Sawmill",
-            BuildingType::Stonecutter => "Stonecutter",
-            BuildingType::Mine => "Mine",
-            BuildingType::Toolsmith => "Toolsmith",
-            BuildingType::Weaponsmith => "Weaponsmith",
-            BuildingType::Bakery => "Bakery",
-            BuildingType::Butcher => "Butcher",
-            BuildingType::Mill => "Mill",
-            BuildingType::Farm => "Farm",
-            BuildingType::Fisherman => "Fisherman",
-            BuildingType::Woodcutter => "Woodcutter",
-            BuildingType::Storehouse => "Storehouse",
-            BuildingType::Waterworks => "Waterworks",
-            BuildingType::Smelter => "Smelter",
-            BuildingType::Barracks => "Barracks",
-            BuildingType::GuardTower => "Guard Tower",
-            BuildingType::Fortress => "Fortress",
-            BuildingType::SiegeWorkshop => "Siege Workshop",
-            BuildingType::Shipyard => "Shipyard",
-            BuildingType::RoadLayer => "Road Layer",
-            BuildingType::Apiary => "Apiary",
-            BuildingType::MeadMaker => "Mead Maker",
-            BuildingType::TempleOfBacchus => "Temple of Bacchus",
-            BuildingType::Colosseum => "Colosseum",
-            BuildingType::SanctuaryOfMinerva => "Sanctuary of Minerva",
-            BuildingType::SanctuaryOfVulcan => "Sanctuary of Vulcan",
-            BuildingType::MeadHall => "Mead Hall",
-            BuildingType::SanctuaryOfOdin => "Sanctuary of Odin",
-            BuildingType::SanctuaryOfThor => "Sanctuary of Thor",
-            BuildingType::SanctuaryOfFreya => "Sanctuary of Freya",
-            BuildingType::Runestone => "Runestone",
-            BuildingType::TempleOfChac => "Temple of Chac",
-            BuildingType::AgaveFarm => "Agave Farm",
-            BuildingType::Distillery => "Distillery",
-            BuildingType::SanctuaryOfKukulkan => "Sanctuary of Kukulkan",
-            BuildingType::SanctuaryOfQuetzalcoatl => "Sanctuary of Quetzalcoatl",
-            BuildingType::SanctuaryOfHuitzilopochtli => "Sanctuary of Huitzilopochtli",
-            BuildingType::Observatory => "Observatory",
-            BuildingType::OracleOfApollo => "Oracle of Apollo",
-            BuildingType::SanctuaryOfArtemis => "Sanctuary of Artemis",
-            BuildingType::SanctuaryOfPoseidon => "Sanctuary of Poseidon",
-            BuildingType::SanctuaryOfApollo => "Sanctuary of Apollo",
-            BuildingType::Amphitheater => "Amphitheater",
-            BuildingType::DarkTemple => "Dark Temple",
-            BuildingType::DarkGarden => "Dark Garden",
-            BuildingType::MushroomFarm => "Mushroom Farm",
-            BuildingType::SanctuaryOfMorbus => "Sanctuary of Morbus",
-            BuildingType::SanctuaryOfPestilence => "Sanctuary of Pestilence",
-            BuildingType::DarkFortress => "Dark Fortress",
-            BuildingType::DemonGate => "Demon Gate",
-            BuildingType::GoldMine => "Gold Mine",
-            BuildingType::CoalMine => "Coal Mine",
-            BuildingType::IronOreMine => "Iron Ore Mine",
-            BuildingType::SulfurMine => "Sulfur Mine",
-            BuildingType::GoldSmelter => "Gold Smelter",
-            BuildingType::IronSmelter => "Iron Smelter",
-            BuildingType::Slaughterhouse => "Slaughterhouse",
-            BuildingType::OilPress => "Oil Press",
-            BuildingType::PowderMill => "Powder Mill",
-            BuildingType::WeaponFoundry => "Weapon Foundry",
-            BuildingType::Forester => "Forester",
-            BuildingType::Healer => "Healer",
-            BuildingType::GoatRanch => "Goat Ranch",
-            BuildingType::PigRanch => "Pig Ranch",
-            BuildingType::GooseRanch => "Goose Ranch",
-            BuildingType::DonkeyRanch => "Donkey Ranch",
-            BuildingType::TrojanFarm => "Trojan Farm",
-            BuildingType::Marketplace => "Marketplace",
-            BuildingType::LandingDock => "Landing Dock",
-            BuildingType::Vineyard => "Vineyard",
-            BuildingType::StorageYard => "Storage Yard",
-            BuildingType::SmallResidence => "Small Residence",
-            BuildingType::MediumResidence => "Medium Residence",
-            BuildingType::LargeResidence => "Large Residence",
-            BuildingType::SmallTemple => "Small Temple",
-            BuildingType::LargeTemple => "Large Temple",
-        }
-    }
-
     /// Valid BuildingType discriminants (77 total — gaps in the enum).
     /// Sorted for binary_search. Used by from_discriminant() and tests.
     pub const VALID_DISCRIMINANTS: [u8; 77] = [
@@ -425,6 +342,101 @@ impl BuildingType {
         40, 41, 42, 43, 44, 45, 46, 47, 50, 51, 52, 53, 54, 55, 56,
         57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
         72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86,
+    ];
+
+    /// Total number of discriminant slots (max discriminant + 1).
+    pub const COUNT: usize = 87;
+
+    /// Display names for all building types, indexed by discriminant.
+    /// Gaps (invalid discriminants) contain empty strings.
+    pub const BUILDING_NAMES: [&'static str; Self::COUNT] = [
+        "Castle",                     // 0
+        "Sawmill",                    // 1
+        "Stonecutter",                // 2
+        "Mine",                       // 3
+        "Toolsmith",                  // 4
+        "Weaponsmith",                // 5
+        "",                           // 6 (gap)
+        "Bakery",                     // 7
+        "Butcher",                    // 8
+        "Mill",                       // 9
+        "Farm",                       // 10
+        "Fisherman",                  // 11
+        "Woodcutter",                 // 12
+        "Storehouse",                 // 13
+        "Waterworks",                 // 14
+        "Smelter",                    // 15
+        "Barracks",                   // 16
+        "",                           // 17 (gap)
+        "Guard Tower",                // 18
+        "Fortress",                   // 19
+        "Siege Workshop",             // 20
+        "Shipyard",                   // 21
+        "Road Layer",                 // 22
+        "",                           // 23 (gap)
+        "",                           // 24 (gap)
+        "",                           // 25 (gap)
+        "",                           // 26 (gap)
+        "Apiary",                     // 27
+        "Mead Maker",                 // 28
+        "",                           // 29 (gap)
+        "",                           // 30 (gap)
+        "Temple of Bacchus",          // 31
+        "Colosseum",                  // 32
+        "Sanctuary of Minerva",       // 33
+        "Sanctuary of Vulcan",        // 34
+        "Mead Hall",                  // 35
+        "Sanctuary of Odin",          // 36
+        "Sanctuary of Thor",          // 37
+        "Sanctuary of Freya",         // 38
+        "Runestone",                  // 39
+        "Temple of Chac",             // 40
+        "Agave Farm",                 // 41
+        "Distillery",                 // 42
+        "Sanctuary of Kukulkan",      // 43
+        "Sanctuary of Quetzalcoatl",  // 44
+        "Sanctuary of Huitzilopochtli", // 45
+        "Observatory",                // 46
+        "Oracle of Apollo",           // 47
+        "",                           // 48 (gap)
+        "",                           // 49 (gap)
+        "Sanctuary of Artemis",       // 50
+        "Sanctuary of Poseidon",      // 51
+        "Sanctuary of Apollo",        // 52
+        "Amphitheater",               // 53
+        "Dark Temple",                // 54
+        "Dark Garden",                // 55
+        "Mushroom Farm",              // 56
+        "Sanctuary of Morbus",        // 57
+        "Sanctuary of Pestilence",    // 58
+        "Dark Fortress",              // 59
+        "Demon Gate",                 // 60
+        "Gold Mine",                  // 61
+        "Coal Mine",                  // 62
+        "Iron Ore Mine",              // 63
+        "Sulfur Mine",                // 64
+        "Gold Smelter",               // 65
+        "Iron Smelter",               // 66
+        "Slaughterhouse",             // 67
+        "Oil Press",                  // 68
+        "Powder Mill",                // 69
+        "Weapon Foundry",             // 70
+        "Forester",                   // 71
+        "Healer",                     // 72
+        "Goat Ranch",                 // 73
+        "Pig Ranch",                  // 74
+        "Goose Ranch",                // 75
+        "Donkey Ranch",               // 76
+        "Trojan Farm",                // 77
+        "Marketplace",                // 78
+        "Landing Dock",               // 79
+        "Vineyard",                   // 80
+        "Storage Yard",               // 81
+        "Small Residence",            // 82
+        "Medium Residence",           // 83
+        "Large Residence",            // 84
+        "Small Temple",               // 85
+        "Large Temple",               // 86
     ];
 
     /// Returns the numeric discriminant (0–86) for this building type.
@@ -2279,10 +2291,31 @@ mod tests {
 
     #[test]
     fn test_building_type_name() {
-        assert_eq!(BuildingType::Castle.name(), "Castle");
-        assert_eq!(BuildingType::Sawmill.name(), "Sawmill");
+        assert_eq!(BuildingType::BUILDING_NAMES[BuildingType::Castle.discriminant() as usize], "Castle");
+        assert_eq!(BuildingType::BUILDING_NAMES[BuildingType::Sawmill.discriminant() as usize], "Sawmill");
     }
 
+
+    #[test]
+    fn test_building_names_count() {
+        assert_eq!(BuildingType::COUNT, 87);
+        // 77 non-empty names
+        let non_empty = BuildingType::BUILDING_NAMES.iter().filter(|n| !n.is_empty()).count();
+        assert_eq!(non_empty, 77);
+        assert_eq!(BuildingType::VALID_DISCRIMINANTS.len(), 77);
+    }
+
+    #[test]
+    fn test_building_names_key_entries() {
+        assert_eq!(BuildingType::BUILDING_NAMES[BuildingType::Castle.discriminant() as usize], "Castle");
+        assert_eq!(BuildingType::BUILDING_NAMES[BuildingType::Sawmill.discriminant() as usize], "Sawmill");
+        assert_eq!(BuildingType::BUILDING_NAMES[BuildingType::LargeTemple.discriminant() as usize], "Large Temple");
+        assert_eq!(BuildingType::BUILDING_NAMES[BuildingType::GoldMine.discriminant() as usize], "Gold Mine");
+        assert_eq!(BuildingType::BUILDING_NAMES[BuildingType::DarkFortress.discriminant() as usize], "Dark Fortress");
+        // Gap check
+        assert_eq!(BuildingType::BUILDING_NAMES[6], "");
+        assert_eq!(BuildingType::BUILDING_NAMES[17], "");
+    }
     #[test]
     fn test_building_build_cost() {
         let cost = BuildingType::Sawmill.build_cost();
@@ -2601,12 +2634,12 @@ mod tests {
         ] {
             let inputs = kind.inputs();
             let outputs = kind.outputs();
-            assert!(!inputs.is_empty(), "{} should have inputs", kind.name());
-            assert!(!outputs.is_empty(), "{} should have outputs", kind.name());
+            assert!(!inputs.is_empty(), "{} should have inputs", BuildingType::BUILDING_NAMES[kind.discriminant() as usize]);
+            assert!(!outputs.is_empty(), "{} should have outputs", BuildingType::BUILDING_NAMES[kind.discriminant() as usize]);
             assert!(
                 kind.production_interval() > 0,
                 "{} should have production interval",
-                kind.name()
+                BuildingType::BUILDING_NAMES[kind.discriminant() as usize]
             );
         }
     }
@@ -5476,7 +5509,7 @@ mod squad_leader_aura_tests {
         // All valid BuildingType discriminants (77 total — gaps in enum).
         for &disc in &BuildingType::VALID_DISCRIMINANTS {
             let bt: BuildingType = unsafe { core::mem::transmute::<u8, BuildingType>(disc) };
-            let name = bt.name();
+            let name = BuildingType::BUILDING_NAMES[bt.discriminant() as usize];
             let result = BuildingType::from_name(name);
             let expected = Some(bt);
             assert_eq!(
@@ -5558,7 +5591,7 @@ mod squad_leader_aura_tests {
     fn test_discriminant_consistent_with_name() {
         for &disc in &BuildingType::VALID_DISCRIMINANTS {
             let bt: BuildingType = unsafe { core::mem::transmute::<u8, BuildingType>(disc) };
-            let by_name = BuildingType::from_name(bt.name());
+            let by_name = BuildingType::from_name(BuildingType::BUILDING_NAMES[bt.discriminant() as usize]);
             let by_disc = BuildingType::from_discriminant(disc);
             assert_eq!(by_disc, by_name,
                 "from_discriminant({}) and from_name mismatch", disc);
