@@ -78,21 +78,67 @@ pub enum UnitKind {
     ShadowSoldier = 47,
 }
 
+/// Names for UnitKind discriminants (48 slots, indexed by discriminant).
+pub const UNIT_KIND_NAMES: [&str; 48] = [
+    "Settler",          // 0
+    "Swordsman",        // 1
+    "Bowman",           // 2
+    "Pioneer",          // 3
+    "Geologist",        // 4
+    "Thief",            // 5
+    "Gardener",         // 6
+    "Carrier",          // 7
+    "Digger",           // 8
+    "Builder",          // 9
+    "Forester",         // 10
+    "Woodcutter",       // 11
+    "Sawyer",           // 12
+    "Stonecutter",      // 13
+    "Miner",            // 14
+    "Smelter",          // 15
+    "Toolsmith",        // 16
+    "Weaponsmith",      // 17
+    "Farmer",           // 18
+    "Miller",           // 19
+    "Baker",            // 20
+    "Water Worker",     // 21
+    "Animal Breeder",   // 22
+    "Butcher",          // 23
+    "Fisherman",        // 24
+    "Trader",           // 25
+    "Shipwright",       // 26
+    "Healer",            // 27
+    "Priest",           // 28
+    "Squad Leader",     // 29
+    "Vintner",          // 30
+    "Medic",            // 31
+    "Agave Farmer",     // 32
+    "Tequila Distiller",// 33
+    "Powder Maker",     // 34
+    "Blowgun Warrior",  // 35
+    "Beekeeper",        // 36
+    "Mead Brewer",      // 37
+    "Axe Warrior",      // 38
+    "Sunflower Farmer", // 39
+    "Oil Miller",       // 40
+    "Weapon Founder",   // 41
+    "Backpack Catapultist", // 42
+    "Dark Digger",      // 43
+    "Dark Farmer",      // 44
+    "Cultist",           // 45
+    "Shaman",           // 46
+    "Shadow Soldier",   // 47
+];
+
 impl UnitKind {
     /// Discriminant (variant index) as u8
     pub fn discriminant(self) -> u8 {
         self as u8
     }
 
-    /// Display name
+    /// Display name — delegates to UNIT_KIND_NAMES const array.
     pub fn name(self) -> &'static str {
-        match self {
-            UnitKind::Settler => "Settler",
-            UnitKind::Swordsman => "Swordsman",
-            UnitKind::Bowman => "Bowman",
-            UnitKind::SquadLeader => "Squad Leader",
-            _ => unreachable!(),
-        }
+        UNIT_KIND_NAMES[self as usize]
     }
 
     /// Maximum HP for this unit type
@@ -773,7 +819,7 @@ impl UnitManager {
                     UnitState::Dying => "Dying",
                     UnitState::Dead => "Dead",
                 };
-                (u.id, u.kind.name(), u.x, u.y, u.hp, state_name)
+                (u.id, UNIT_KIND_NAMES[u.kind as usize], u.x, u.y, u.hp, state_name)
             })
             .collect()
     }

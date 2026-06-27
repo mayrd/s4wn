@@ -224,6 +224,15 @@ pub enum UnitSpecial {
     None,
 }
 
+/// Names for UnitSpecial discriminants (indexed by discriminant).
+pub const UNIT_SPECIAL_NAMES: [&str; 5] = [
+    "Formation Bonus", // 0 - FormationBonus
+    "Berserk",         // 1 - Berserk
+    "Forest Guard",    // 2 - ForestGuard
+    "Shield Wall",     // 3 - ShieldWall
+    "None",            // 4 - None
+];
+
 impl UnitSpecial {
     /// The unit special for each nation.
     pub fn for_nation(nation: NationType) -> UnitSpecial {
@@ -233,17 +242,6 @@ impl UnitSpecial {
             NationType::Maya => UnitSpecial::ForestGuard,
             NationType::Trojan => UnitSpecial::ShieldWall,
             NationType::DarkTribe => UnitSpecial::None,
-        }
-    }
-
-    /// Display name for this special.
-    pub fn name(self) -> &'static str {
-        match self {
-            UnitSpecial::FormationBonus => "Formation Bonus",
-            UnitSpecial::Berserk => "Berserk",
-            UnitSpecial::ForestGuard => "Forest Guard",
-            UnitSpecial::ShieldWall => "Shield Wall",
-            UnitSpecial::None => "None",
         }
     }
 
@@ -628,6 +626,63 @@ pub enum UniqueBuildingType {
     DemonGate = 47,
 }
 
+/// Names for UniqueBuildingType discriminants (48 slots, indexed by discriminant).
+pub const UNIQUE_BUILDING_NAMES: [&str; 48] = [
+    // Romans (0-5)
+    "Temple of Bacchus",          // 0
+    "",                            // 1 (gap)
+    "",                            // 2 (gap)
+    "Sanctuary of Minerva",       // 3
+    "Sanctuary of Vulcan",        // 4
+    "Colosseum",                   // 5
+    "",                            // 6 (gap)
+    "",                            // 7 (gap)
+    "",                            // 8 (gap)
+    "",                            // 9 (gap)
+    // Vikings (10-15)
+    "Mead Hall",                   // 10
+    "Apiary",                      // 11
+    "Sanctuary of Odin",          // 12
+    "Sanctuary of Thor",          // 13
+    "Sanctuary of Freya",         // 14
+    "Runestone",                   // 15
+    "",                            // 16 (gap)
+    "",                            // 17 (gap)
+    "",                            // 18 (gap)
+    "",                            // 19 (gap)
+    // Mayas (20-26)
+    "Temple of Chac",             // 20
+    "Agave Farm",                  // 21
+    "Distillery",                  // 22
+    "Sanctuary of Kukulkan",      // 23
+    "Sanctuary of Quetzalcoatl",  // 24
+    "Sanctuary of Huitzilopochtli", // 25
+    "Observatory",                 // 26
+    "",                            // 27 (gap)
+    "",                            // 28 (gap)
+    "",                            // 29 (gap)
+    // Trojans (30-36)
+    "Oracle of Apollo",           // 30
+    "",                            // 31 (gap)
+    "",                            // 32 (gap)
+    "Sanctuary of Artemis",       // 33
+    "Sanctuary of Poseidon",      // 34
+    "Sanctuary of Apollo",        // 35
+    "Amphitheater",                // 36
+    "",                            // 37 (gap)
+    "",                            // 38 (gap)
+    "",                            // 39 (gap)
+    // Dark Tribe (40-47)
+    "Dark Temple",                 // 40
+    "Dark Garden",                 // 41
+    "Mushroom Farm",              // 42
+    "",                            // 43 (gap)
+    "Sanctuary of Morbus",        // 44
+    "Sanctuary of Pestilence",    // 45
+    "Dark Fortress",              // 46
+    "Demon Gate",                  // 47
+];
+
 impl UniqueBuildingType {
     /// The nation this unique building belongs to.
     pub fn nation(self) -> NationType {
@@ -641,40 +696,6 @@ impl UniqueBuildingType {
         }
     }
 
-    /// Display name for this unique building.
-    pub fn name(self) -> &'static str {
-        match self {
-            UniqueBuildingType::TempleOfBacchus => "Temple of Bacchus",
-            UniqueBuildingType::SanctuaryOfMinerva => "Sanctuary of Minerva",
-            UniqueBuildingType::SanctuaryOfVulcan => "Sanctuary of Vulcan",
-            UniqueBuildingType::Colosseum => "Colosseum",
-            UniqueBuildingType::MeadHall => "Mead Hall",
-            UniqueBuildingType::Apiary => "Apiary",
-            UniqueBuildingType::SanctuaryOfOdin => "Sanctuary of Odin",
-            UniqueBuildingType::SanctuaryOfThor => "Sanctuary of Thor",
-            UniqueBuildingType::SanctuaryOfFreya => "Sanctuary of Freya",
-            UniqueBuildingType::Runestone => "Runestone",
-            UniqueBuildingType::TempleOfChac => "Temple of Chac",
-            UniqueBuildingType::AgaveFarm => "Agave Farm",
-            UniqueBuildingType::Distillery => "Distillery",
-            UniqueBuildingType::SanctuaryOfKukulkan => "Sanctuary of Kukulkan",
-            UniqueBuildingType::SanctuaryOfQuetzalcoatl => "Sanctuary of Quetzalcoatl",
-            UniqueBuildingType::SanctuaryOfHuitzilopochtli => "Sanctuary of Huitzilopochtli",
-            UniqueBuildingType::Observatory => "Observatory",
-            UniqueBuildingType::OracleOfApollo => "Oracle of Apollo",
-            UniqueBuildingType::SanctuaryOfArtemis => "Sanctuary of Artemis",
-            UniqueBuildingType::SanctuaryOfPoseidon => "Sanctuary of Poseidon",
-            UniqueBuildingType::SanctuaryOfApollo => "Sanctuary of Apollo",
-            UniqueBuildingType::Amphitheater => "Amphitheater",
-            UniqueBuildingType::DarkTemple => "Dark Temple",
-            UniqueBuildingType::DarkGarden => "Dark Garden",
-            UniqueBuildingType::MushroomFarm => "Mushroom Farm",
-            UniqueBuildingType::SanctuaryOfMorbus => "Sanctuary of Morbus",
-            UniqueBuildingType::SanctuaryOfPestilence => "Sanctuary of Pestilence",
-            UniqueBuildingType::DarkFortress => "Dark Fortress",
-            UniqueBuildingType::DemonGate => "Demon Gate",
-        }
-    }
 
     /// All unique buildings for a given nation.
     pub fn for_nation(nation: NationType) -> &'static [UniqueBuildingType] {
@@ -730,7 +751,7 @@ pub fn get_nation_buildings(nation_name: &str) -> Vec<String> {
     };
     UniqueBuildingType::for_nation(nation)
         .iter()
-        .map(|ub| ub.name().to_string())
+        .map(|ub| UNIQUE_BUILDING_NAMES[*ub as usize].to_string())
         .collect()
 }
 
@@ -749,17 +770,17 @@ pub enum SpecialistType {
     Shaman = 5,
 }
 
+/// Names for SpecialistType discriminants (indexed by discriminant).
+pub const SPECIALIST_NAMES: [&str; 6] = [
+    "Pioneer",   // 0
+    "Geologist", // 1
+    "Thief",     // 2
+    "Saboteur",  // 3
+    "Priest",    // 4
+    "Shaman",    // 5
+];
+
 impl SpecialistType {
-    pub fn name(self) -> &'static str {
-        match self {
-            SpecialistType::Pioneer => "Pioneer",
-            SpecialistType::Geologist => "Geologist",
-            SpecialistType::Thief => "Thief",
-            SpecialistType::Saboteur => "Saboteur",
-            SpecialistType::Priest => "Priest",
-            SpecialistType::Shaman => "Shaman",
-        }
-    }
 
     pub fn description(self) -> &'static str {
         match self {
@@ -802,23 +823,20 @@ pub enum ToolType {
     Bow = 10,
 }
 
-impl ToolType {
-    pub fn name(self) -> &'static str {
-        match self {
-            ToolType::Hammer => "Hammer",
-            ToolType::Pickaxe => "Pickaxe",
-            ToolType::Axe => "Axe",
-            ToolType::Saw => "Saw",
-            ToolType::FishingRod => "Fishing Rod",
-            ToolType::RollingPin => "Rolling Pin",
-            ToolType::Cleaver => "Cleaver",
-            ToolType::Bucket => "Bucket",
-            ToolType::Dagger => "Dagger",
-            ToolType::Shovel => "Shovel",
-            ToolType::Bow => "Bow",
-        }
-    }
-}
+/// Names for ToolType discriminants (indexed by discriminant).
+pub const TOOL_NAMES: [&str; 11] = [
+    "Hammer",       // 0
+    "Pickaxe",      // 1
+    "Axe",          // 2
+    "Saw",          // 3
+    "Fishing Rod",  // 4
+    "Rolling Pin",  // 5
+    "Cleaver",      // 6
+    "Bucket",       // 7
+    "Dagger",       // 8
+    "Shovel",       // 9
+    "Bow",          // 10
+];
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
@@ -962,11 +980,11 @@ mod tests {
 
     #[test]
     fn test_unit_special_names() {
-        assert_eq!(UnitSpecial::FormationBonus.name(), "Formation Bonus");
-        assert_eq!(UnitSpecial::Berserk.name(), "Berserk");
-        assert_eq!(UnitSpecial::ForestGuard.name(), "Forest Guard");
-        assert_eq!(UnitSpecial::ShieldWall.name(), "Shield Wall");
-        assert_eq!(UnitSpecial::None.name(), "None");
+        assert_eq!(UNIT_SPECIAL_NAMES[UnitSpecial::FormationBonus as usize], "Formation Bonus");
+        assert_eq!(UNIT_SPECIAL_NAMES[UnitSpecial::Berserk as usize], "Berserk");
+        assert_eq!(UNIT_SPECIAL_NAMES[UnitSpecial::ForestGuard as usize], "Forest Guard");
+        assert_eq!(UNIT_SPECIAL_NAMES[UnitSpecial::ShieldWall as usize], "Shield Wall");
+        assert_eq!(UNIT_SPECIAL_NAMES[UnitSpecial::None as usize], "None");
     }
 
     #[test]
@@ -1055,15 +1073,15 @@ mod tests {
 
     #[test]
     fn test_unique_building_names() {
-        assert_eq!(UniqueBuildingType::Colosseum.name(), "Colosseum");
-        assert_eq!(UniqueBuildingType::MeadHall.name(), "Mead Hall");
-        assert_eq!(UniqueBuildingType::DarkFortress.name(), "Dark Fortress");
+        assert_eq!(UNIQUE_BUILDING_NAMES[UniqueBuildingType::Colosseum as usize], "Colosseum");
+        assert_eq!(UNIQUE_BUILDING_NAMES[UniqueBuildingType::MeadHall as usize], "Mead Hall");
+        assert_eq!(UNIQUE_BUILDING_NAMES[UniqueBuildingType::DarkFortress as usize], "Dark Fortress");
     }
 
     #[test]
     fn test_specialist_types() {
-        assert_eq!(SpecialistType::Pioneer.name(), "Pioneer");
-        assert_eq!(SpecialistType::Shaman.name(), "Shaman");
+        assert_eq!(SPECIALIST_NAMES[SpecialistType::Pioneer as usize], "Pioneer");
+        assert_eq!(SPECIALIST_NAMES[SpecialistType::Shaman as usize], "Shaman");
         assert_eq!(
             SpecialistType::Pioneer.required_tool(),
             Some(ToolType::Hammer)
@@ -1073,9 +1091,9 @@ mod tests {
 
     #[test]
     fn test_tool_types() {
-        assert_eq!(ToolType::Hammer.name(), "Hammer");
-        assert_eq!(ToolType::FishingRod.name(), "Fishing Rod");
-        assert_eq!(ToolType::Dagger.name(), "Dagger");
+        assert_eq!(TOOL_NAMES[ToolType::Hammer as usize], "Hammer");
+        assert_eq!(TOOL_NAMES[ToolType::FishingRod as usize], "Fishing Rod");
+        assert_eq!(TOOL_NAMES[ToolType::Dagger as usize], "Dagger");
     }
 
     #[test]
