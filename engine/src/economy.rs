@@ -148,6 +148,16 @@ Resource::Grain => Some(ResourceType::Grain),
         }
     }
 
+    /// Reconstruct a ResourceType from its numeric discriminant.
+    /// Returns None for invalid/gap values (not in VALID_RESOURCE_DISCRIMINANTS).
+    pub fn from_discriminant(d: u8) -> Option<Self> {
+        if Self::VALID_RESOURCE_DISCRIMINANTS.binary_search(&d).is_ok() {
+            Some(unsafe { core::mem::transmute::<u8, ResourceType>(d) })
+        } else {
+            None
+        }
+    }
+
     /// Resource group for UI categorization (#47).
     pub fn group_name(self) -> &'static str {
         match self {
@@ -5583,6 +5593,38 @@ mod squad_leader_aura_tests {
             assert!(!name.is_empty(), "name() should not be empty for disc={}", disc);
             assert!(names.insert(name), "duplicate name '{}' for disc={}", name, disc);
             assert_eq!(rt as u8, disc, "discriminant mismatch for {}", name);
+        }
+    }
+
+    /// Verify from_discriminant round-trips for all valid discriminants.
+    #[test]
+    fn test_resource_from_discriminant_round_trip_all() {
+        for &disc in &ResourceType::VALID_RESOURCE_DISCRIMINANTS {
+            let rt: ResourceType = unsafe { core::mem::transmute::<u8, ResourceType>(disc) };
+            assert_eq!(rt as u8, disc, "discriminant mismatch for disc {}", disc);
+            let back = ResourceType::from_discriminant(disc);
+            assert_eq!(back, Some(rt), "from_discriminant({}) round-trip failed", disc);
+        }
+    }
+
+    /// Verify from_discriminant returns None for gap values.
+    #[test]
+    fn test_resource_from_discriminant_rejects_gaps() {
+        let gaps = &[10u8, 11, 13, 14, 15, 19, 21, 24, 25, 26, 29, 30, 255];
+        for &g in gaps {
+            assert_eq!(ResourceType::from_discriminant(g), None, "gap {} should be None", g);
+        }
+    }
+
+    /// Verify from_discriminant() is consistent with from_u8().
+    #[test]
+    fn test_resource_from_discriminant_consistent_with_u8() {
+        for &disc in &ResourceType::VALID_RESOURCE_DISCRIMINANTS {
+            let rt: ResourceType = unsafe { core::mem::transmute::<u8, ResourceType>(disc) };
+            let by_u8 = ResourceType::from_u8(disc);
+            let by_disc = ResourceType::from_discriminant(disc);
+            assert_eq!(by_disc, by_u8,
+                "from_discriminant({}) and from_u8 mismatch", disc);
         }
     }
     }
