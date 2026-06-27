@@ -331,15 +331,16 @@ export function get_player_nation() {
 }
 
 /**
- * Get resource counts as a JSON string for the HUD.
- * Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Planks":0,...}
+ * Get resource counts with integer discriminant keys (new format).
+ * Returns: {"0":100,"1":50,"2":0,...} — keys are ResourceType discriminants.
+ * Use RESOURCE_NAMES_BY_ID (data.js) for JS-side name lookup.
  * @returns {string}
  */
-export function get_resource_counts() {
+export function get_resource_counts_by_id() {
     let deferred1_0;
     let deferred1_1;
     try {
-        const ret = wasm.get_resource_counts();
+        const ret = wasm.get_resource_counts_by_id();
         deferred1_0 = ret[0];
         deferred1_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);

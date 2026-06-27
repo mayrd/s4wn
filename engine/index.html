@@ -1643,7 +1643,6 @@ import init, {
     resize,
     on_mouse_down, on_mouse_move, on_mouse_up, on_wheel,
     get_tile_at, get_stats, get_map_data,
-    get_resource_counts,
     get_resource_counts_by_id,
     get_building_summary,
     get_unit_summary,
@@ -1685,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=60';
+} from './pkg/s4wn_engine.js?v=61';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -7173,7 +7172,6 @@ window.__s4wn_debug = {
   get_camera_state,
   get_game_state,
   restore_game_state,
-  get_resource_counts,
   get_tool_counts,
   set_player_nation,
   get_player_nation,

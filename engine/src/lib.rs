@@ -3602,24 +3602,6 @@ pub fn get_tile_at(x: f32, y: f32) -> String {
     }
     String::new()
 }
-/// Get resource counts as a JSON string for the HUD.
-/// Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Planks":0,...}
-#[wasm_bindgen]
-pub fn get_resource_counts() -> String {
-    unsafe {
-        if let Some(ref app) = APP {
-            let storage = &app.game_loop.state.economy.storage;
-            use crate::economy::ResourceType;
-            let mut parts = Vec::new();
-            for i in 0..ResourceType::COUNT {
-                let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
-                parts.push(format!("\"{}\":{}", rt.name(), storage.get(rt)));
-            }
-            return format!("{{{}}}", parts.join(","));
-        }
-    }
-    String::new()
-}
 /// Get resource counts with integer discriminant keys (new format).
 /// Returns: {"0":100,"1":50,"2":0,...} — keys are ResourceType discriminants.
 /// Use RESOURCE_NAMES_BY_ID (data.js) for JS-side name lookup.

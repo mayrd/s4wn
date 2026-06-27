@@ -116,10 +116,11 @@ export function get_particles_json(): string;
 export function get_player_nation(): string;
 
 /**
- * Get resource counts as a JSON string for the HUD.
- * Returns: {"Wood":100,"Stone":50,"Iron":0,"Coal":0,"Gold":0,"Grain":0,"Planks":0,...}
+ * Get resource counts with integer discriminant keys (new format).
+ * Returns: {"0":100,"1":50,"2":0,...} — keys are ResourceType discriminants.
+ * Use RESOURCE_NAMES_BY_ID (data.js) for JS-side name lookup.
  */
-export function get_resource_counts(): string;
+export function get_resource_counts_by_id(): string;
 
 /**
  * Get engine stats as a JSON string (FPS, tick count, game time).
@@ -358,7 +359,7 @@ export interface InitOutput {
     readonly get_nation_buildings: (a: number, b: number) => [number, number];
     readonly get_particles_json: () => [number, number];
     readonly get_player_nation: () => [number, number];
-    readonly get_resource_counts: () => [number, number];
+    readonly get_resource_counts_by_id: () => [number, number];
     readonly get_stats: () => [number, number];
     readonly get_tile_at: (a: number, b: number) => [number, number];
     readonly get_tool_counts: () => [number, number];
