@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S249 · 765 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Replaced ResourceType.name() 19-arm match with RESOURCE_NAMES const array lookup. Added BUILDING_ICONS_BY_ID (77 entries, discriminant→emoji) in data.js. WASM 301.8KB. Next: replace restore_game_state backward-compat name() calls with direct RESOURCE_NAMES access, then remove name() method entirely (~8KB WASM savings once strings eliminated).**
+**Status:** S250 · 765 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Removed ResourceType.name() — all 8 callers replaced with direct RESOURCE_NAMES array access (restore_game_state + tests). Removed name() method entirely. WASM 301.7KB. Next: replace BuildingType.name() callers with direct names array access, then remove BuildingType.name() method.**
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 250 | 2026-06-27 | Remove ResourceType.name() method: replaced all 8 remaining callers (3 in restore_game_state backward-compat, 5 test assertions, 1 discriminant consistency test) with direct ResourceType::RESOURCE_NAMES[discriminant as usize] access. Removed name() fn from ResourceType impl. WASM 301.7KB (minimal delta — strings still live in RESOURCE_NAMES const). 765 tests pass, clippy clean. -- 765 tests |
 | 249 | 2026-06-27 | Refactor ResourceType.name() from 19-arm match to RESOURCE_NAMES const array (29 elements, indexed by discriminant). Centralizes all name strings for future removal. Add BUILDING_ICONS_BY_ID (77 entries, u8→emoji) in data.js alongside BUILDING_NAMES_BY_ID. WASM 301.8KB. 765 tests pass, clippy clean. -- 765 tests |
 | 248 | 2026-06-27 | Remove dead get_resource_counts() WASM export: All JS consumers migrated to get_resource_counts_by_id() in S247. Removed the old string-key-based export from lib.rs, removed imports from index.html (2 places), bumped cache v60→v61. WASM 301.8KB (baseline 300.1KB, variance ~1.7KB from build non-determinism). 765 tests pass, clippy clean. No open issues. -- 765 tests |
 | 247 | 2026-06-27 | Migrate JS resource consumers to get_resource_counts_by_id(): Fixed canAffordAll() (was broken — get_build_cost() returns integer keys since S246), migrated updateResourceBar() (uses RESOURCE_ICONS_BY_ID + ELEMENTARY_DISCS), migrated renderResources() (uses RESOURCE_DISCRIMINANT_BY_CONFIG_ID mapping). Added RESOURCE_DISCRIMINANT_BY_CONFIG_ID (17 entries) in data.js bridging UI config resource IDs → Rust ResourceType discriminants. 765 tests pass. -- 765 tests |
@@ -294,6 +295,6 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 265. Investigate 7KB WASM size variance (307.3KB after cargo clean vs 300.1KB reported). Run checksum on wasm binaries from both builds to identify the source of growth. [SHOULD]
 266. Re-baseline WASM size target: 300KB. At 307.3KB we are 7.3KB over. Need 7.3KB savings from from_name() conversion + any remaining low-hanging fruit. [MUST]
 
-Next session priorities: (1) Replace restore_game_state backward-compat .name() calls with direct RESOURCE_NAMES array access — then remove ResourceType.name() method entirely (~8KB WASM savings once strings eliminated). (2) Replace BuildingType.name() with .discriminant() in try_place_building() error messages. (3) Migrate JS building-related consumers to use BUILDING_NAMES_BY_ID + BUILDING_ICONS_BY_ID for integer key lookups. (4) Verify BUILDING_ICONS_BY_ID entries match all 77 building discriminants used in engine. (5) After all consumers use discriminants, remove name() methods from BuildingType + NationType (~11KB additional WASM savings).
+Next session priorities: (1) Replace BuildingType.name() callers with direct NAMES array access, then remove BuildingType.name() method. (2) Replace NationType.name() callers, then remove NationType.name(). (3) After BuildingType/NationType name() removal, audit remaining name() methods (UnitKind, WorkerKind, UnitState) and convert to integer-only consumers. (4) Migrate JS building-related consumers to use BUILDING_NAMES_BY_ID + BUILDING_ICONS_BY_ID for integer key lookups (no more string-based key matching). (5) Once ALL name() methods removed from economy.rs/nation.rs/units.rs, ~20KB+ WASM strings can be deleted from RESOURCE_NAMES/BUILDING_NAMES/NATION_NAMES const arrays for target WASM savings.
 
 *All building data must match BASE.md. Never modify BASE.md.*
