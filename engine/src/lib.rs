@@ -3703,8 +3703,8 @@ pub fn get_building_summary() -> String {
             let mut parts = Vec::new();
             for b in app.game_loop.state.economy.buildings.iter() {
                 parts.push(format!(
-                    "{{\"type\":\"{}\",\"x\":{},\"y\":{},\"complete\":{},\"settlers\":{},\"owner_id\":{},\"garrison\":{},\"max_garrison\":{}}}",
-                    b.kind.name(),
+                    "{{\"type\":{},\"x\":{},\"y\":{},\"complete\":{},\"settlers\":{},\"owner_id\":{},\"garrison\":{},\"max_garrison\":{}}}",
+                    b.kind.discriminant(),
                     b.x,
                     b.y,
                     b.is_complete(),
@@ -3743,9 +3743,9 @@ pub fn get_unit_summary() -> String {
                     tool_code_to_name(tc)
                 }).unwrap_or("");
                 parts.push(format!(
-                    "{{\"id\":{},\"kind\":\"{}\",\"x\":{:.1},\"y\":{:.1},\"hp\":{},\"max_hp\":{},\"state\":\"{}\",\"stance\":\"{}\",\"carried_tool\":\"{}\"}}",
+                    "{{\"id\":{},\"kind\":{},\"x\":{:.1},\"y\":{:.1},\"hp\":{},\"max_hp\":{},\"state\":\"{}\",\"stance\":\"{}\",\"carried_tool\":\"{}\"}}",
                     u.id,
-                    u.kind.name(),
+                    u.kind.discriminant(),
                     u.x,
                     u.y,
                     u.hp,
@@ -3787,8 +3787,8 @@ pub fn get_units_in_rect(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> Stri
                         crate::units::UnitState::Dead => "Dead",
                     };
                     parts.push(format!(
-                        r#"{{"id":{},"kind":"{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","stance":"{}"}}"#,
-                        u.id, u.kind.name(), u.x, u.y, u.hp,
+                        r#"{{"id":{},"kind":{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","stance":"{}"}}"#,
+                        u.id, u.kind.discriminant(), u.x, u.y, u.hp,
                     u.max_hp, state_name, stance_name
                     ));
                 }
@@ -3885,8 +3885,8 @@ pub fn get_building_info(idx: usize) -> String {
                 };
 
                 return format!(
-                    r#"{{"kind":"{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"settlers":[{}],"max_settlers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}},"destruction_progress":{}{}"#,
-                    kind.name(),
+                    r#"{{"kind":{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"settlers":[{}],"max_settlers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}},"destruction_progress":{}{}"#,
+                    kind.discriminant(),
                     b.x,
                     b.y,
                     b.construction,
@@ -3947,9 +3947,9 @@ pub fn get_unit_info(id: u32) -> String {
                     .map(|p| format!("{:.2}", p))
                     .unwrap_or_else(|| "null".to_string());
                 return format!(
-                    r#"{{"id":{},"kind":"{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","stance":"{}","dying_progress":{},"assigned_building":{},"target":{},"carried_tool":"{}"}}"#,
+                    r#"{{"id":{},"kind":{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","stance":"{}","dying_progress":{},"assigned_building":{},"target":{},"carried_tool":"{}"}}"#,
                     u.id,
-                    u.kind.name(),
+                    u.kind.discriminant(),
                     u.x,
                     u.y,
                     u.hp,
@@ -4054,7 +4054,7 @@ pub fn try_place_building(kind_name: &str, x: usize, y: usize) -> String {
             match app.game_loop.state.economy.try_place_building(kind, x, y) {
                 Some(idx) => {
                     app.overlay_dirty = true;
-                    return format!(r#"{{"ok":true,"idx":{},"kind":"{}"}}"#, idx, kind.name());
+                    return format!(r#"{{"ok":true,"idx":{},"kind":{}"}}"#, idx, kind.discriminant());
                 }
                 None => {
                     return format!(
@@ -4320,8 +4320,8 @@ pub fn get_game_state() -> String {
                     }
                 }
                 bldg_parts.push(format!(
-                    r#"{{"kind":"{}","x":{},"y":{},"construction":{},"active":{},"production_counter":{},"assigned_settlers":[{}],"max_settlers":{},"input_buffer":{{{}}},"output_buffer":{{{}}}}}"#,
-                    b.kind.name(), b.x, b.y, b.construction, b.active, b.production_counter,
+                    r#"{{"kind":{}","x":{},"y":{},"construction":{},"active":{},"production_counter":{},"assigned_settlers":[{}],"max_settlers":{},"input_buffer":{{{}}},"output_buffer":{{{}}}}}"#,
+                    b.kind.discriminant(), b.x, b.y, b.construction, b.active, b.production_counter,
                     settler_ids.join(","), b.max_settlers,
                     inbuf_parts.join(","), outbuf_parts.join(",")
                 ));
@@ -4350,8 +4350,8 @@ pub fn get_game_state() -> String {
                     None => "null".to_string(),
                 };
                 unit_parts.push(format!(
-                    r#"{{"id":{},"kind":"{}","x":{},"y":{},"hp":{},"max_hp":{},"state":"{}","stance":"{}","assigned_building":{},"target":{}}}"#,
-                    u.id, u.kind.name(), u.x, u.y, u.hp,
+                    r#"{{"id":{},"kind":{}","x":{},"y":{},"hp":{},"max_hp":{},"state":"{}","stance":"{}","assigned_building":{},"target":{}}}"#,
+                    u.id, u.kind.discriminant(), u.x, u.y, u.hp,
                     u.max_hp, state_name, stance_name, ab, tgt
                 ));
             }
@@ -5012,8 +5012,8 @@ pub fn get_building_at_tile(tile_x: usize, tile_y: usize) -> String {
                 if b.x == tile_x && b.y == tile_y {
                     let progress = b.destruction_progress().unwrap_or(-1.0);
                     return format!(
-                        r#"{{"index":{},"kind":"{}","x":{},"y":{},"construction":{},"active":{},"destruction_progress":{}}}"#,
-                        i, b.kind.name(), b.x, b.y, b.construction, b.active, progress
+                        r#"{{"index":{},"kind":{}","x":{},"y":{},"construction":{},"active":{},"destruction_progress":{}}}"#,
+                        i, b.kind.discriminant(), b.x, b.y, b.construction, b.active, progress
                     );
                 }
             }

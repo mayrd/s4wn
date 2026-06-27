@@ -2013,6 +2013,19 @@ window.S4WN_CONFIG = {
     C.terrain.forEach(t => { window.TERRAIN_NAMES_DE[t.name] = t.name_de; });
     window.TERRAIN_NAMES = C.terrain.map(t => t.name);
     window.UNIT_NAMES_DE = {};
+    window.UNIT_NAMES_BY_ID = {
+        0: "Settler",        1: "Swordsman",        2: "Bowman",        3: "Pioneer",        4: "Geologist",
+        5: "Thief",        6: "Gardener",        7: "Carrier",        8: "Digger",        9: "Builder",
+        10: "Forester",        11: "Woodcutter",        12: "Sawyer",        13: "Stonecutter",        14: "Miner",
+        15: "Smelter",        16: "ToolsmithWorker",        17: "WeaponsmithWorker",        18: "Farmer",        19: "Miller",
+        20: "Baker",        21: "WaterWorker",        22: "AnimalBreeder",        23: "Butcher",        24: "Fisherman",
+        25: "Trader",        26: "Shipwright",        27: "Healer",        28: "Priest",        29: "SquadLeader",
+        30: "Vintner",        31: "Medic",        32: "AgaveFarmer",        33: "TequilaDistiller",        34: "PowderMaker",
+        35: "BlowgunWarrior",        36: "Beekeeper",        37: "MeadBrewer",        38: "AxeWarrior",        39: "SunflowerFarmer",
+        40: "OilMiller",        41: "WeaponFoundryWorker",        42: "BackpackCatapultist",        43: "DarkDigger",        44: "DarkFarmer",
+        45: "Cultist",        46: "Shaman",        47: "ShadowSoldier"
+    };
+
     C.units.forEach(u => { window.UNIT_NAMES_DE[u.id] = u.name_de; });
     window.BUILDING_CATEGORIES = C.categories;
     window.UNIT_STATS = {};

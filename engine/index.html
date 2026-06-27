@@ -3217,14 +3217,14 @@ function confirmMapLoad() {
 
                     // Build buildings array
                     const bldgParts = savBuildings.map(b => {
-                        return `{"kind":"${b.kind}","x":${b.x},"y":${b.y},"construction":${b.construction},"active":${b.active},"production_counter":0,"assigned_workers":[],"max_workers":${b.max_workers},"input_buffer":{},"output_buffer":{}}`;
+                        return `{"kind":${b.kind},"x":${b.x},"y":${b.y},"construction":${b.construction},"active":${b.active},"production_counter":0,"assigned_workers":[],"max_workers":${b.max_workers},"input_buffer":{},"output_buffer":{}}`;
                     });
 
                     // Build units array
                     const unitParts = savUnits.map(u => {
                         const ab = u.assigned_building !== null ? u.assigned_building : 'null';
                         const tgt = u.target !== null ? u.target : 'null';
-                        return `{"id":${u.id},"kind":"${u.kind}","x":${u.x.toFixed(1)},"y":${u.y.toFixed(1)},"hp":${u.hp},"max_hp":${u.max_hp},"state":"${u.state}","assigned_building":${ab},"target":${tgt}}`;
+                        return `{"id":${u.id},"kind":${u.kind},"x":${u.x.toFixed(1)},"y":${u.y.toFixed(1)},"hp":${u.hp},"max_hp":${u.max_hp},"state":"${u.state}","assigned_building":${ab},"target":${tgt}}`;
                     });
 
                     const stateJson = `{"version":1,"game_time":${savGameTime},"map_json":${JSON.stringify(JSON.stringify(jsonData))},"resources":{${resParts.join(',')}},"buildings":[${bldgParts.join(',')}],"units":[${unitParts.join(',')}]}`;
@@ -3605,7 +3605,7 @@ function selectUnitsInMarquee() {
             units = JSON.parse(raw);
         } else {
             const summary = JSON.parse(get_unit_summary());
-            const milKinds = ['Swordsman', 'Bowman'];
+            const milKinds = [1, 2]; // Swordsman=1, Bowman=2
             units = summary.filter(u => milKinds.includes(u.kind) &&
                 u.x >= minX && u.x <= maxX && u.y >= minY && u.y <= maxY);
         }
@@ -3689,10 +3689,10 @@ canvas.addEventListener('click', (e) => {
         const r = JSON.parse(result);
         showPlacementPulse(e.clientX, e.clientY, r.ok);
         if (r.ok) {
-            placementStatus.textContent = `✅ ${r.kind} placed at (${t.x},${t.y})`;
+            placementStatus.textContent = `✅ ${buildingName(r.kind)} placed at (${t.x},${t.y})`;
             // Spawn 3D model instance for the newly placed building
             if (typeof add_model_instance === 'function') {
-                const mid = modelIdForBuilding(r.kind);
+                const mid = modelIdForBuildingKindId(r.kind);
                 add_model_instance(mid, t.x + 0.5, t.y + 0.5, 0.7, 0.0);
             }
             // Spawn particle effect for building placement (green sparkles)
@@ -3739,7 +3739,7 @@ canvas.addEventListener('click', (e) => {
                 if (b.index !== undefined && typeof start_building_destruction === 'function') {
                     const started = start_building_destruction(b.index, 1.5);
                     if (started) {
-                        console.log(`Demolition started for building ${b.index} (${b.kind}) at (${b.x},${b.y})`);
+                        console.log(`Demolition started for building ${b.index} (${buildingName(b.kind)}) at (${b.x},${b.y})`);
                         try { Sfx.playError(); } catch(e) {}
                     }
                 }
@@ -3767,7 +3767,7 @@ canvas.addEventListener('click', (e) => {
                         }
                     }
                     if (garrisoned > 0) {
-                        console.log('Garrisoned ' + garrisoned + ' unit(s) into ' + bldg.kind + ' at (' + gt.x + ',' + gt.y + ')');
+                        console.log('Garrisoned ' + garrisoned + ' unit(s) into ' + buildingName(bldg.kind) + ' at (' + gt.x + ',' + gt.y + ')');
                         try { Sfx.playUIClick(); } catch(e) {}
                     }
                 }
@@ -3920,7 +3920,7 @@ function showBuildingInfo(idx, cx, cy) {
         }
 
         selInfo.innerHTML = `
-            <div class="sel-title">${tBuilding(b.kind)}</div>
+            <div class="sel-title">${tBuilding(buildingName(b.kind))}</div>
             <div class="sel-stat">Status: <span>${statusIcon}</span></div>
             <div class="sel-stat">Pos: <span>(${b.x}, ${b.y})</span></div>
             <div class="sel-stat">Workers: <span>${workers}</span></div>
@@ -3967,7 +3967,7 @@ function showUnitInfo(id, cx, cy) {
         }
 
         selInfo.innerHTML = `
-            <div class="sel-title">${tUnit(u.kind)} #${u.id}</div>
+            <div class="sel-title">${tUnit(unitName(u.kind))} #${u.id}</div>
             <div class="sel-stat">HP: <span>${hpBar} ${u.hp}/${u.max_hp} (${hpPct}%)</span></div>
             <div class="sel-stat">State: <span>${u.state}</span></div>
             ${tool ? `<div class="sel-stat">${tool}</div>` : ''}
@@ -4246,8 +4246,8 @@ function showTileInspector(cx, cy, source) {
         '<div class="ti-row"><span class="ti-label">Elevation</span><span class="ti-value">' + info.elevation.toFixed(2) + '</span></div>' +
         '<div class="ti-row"><span class="ti-label">Resource</span>' + rn + '</div>';
     if (buildingInfo) {
-        const bldgName = translateName && window.BUILDING_NAMES_DE && window.BUILDING_NAMES_DE[buildingInfo.kind]
-            ? window.BUILDING_NAMES_DE[buildingInfo.kind] : buildingInfo.kind;
+        const bldgName = translateName && window.BUILDING_NAMES_DE && window.BUILDING_NAMES_DE[buildingName(buildingInfo.kind)]
+            ? window.BUILDING_NAMES_DE[buildingName(buildingInfo.kind)] : buildingInfo.kind;
         html += '<div class="ti-row"><span class="ti-label">Building</span><span class="ti-value">' + bldgName + '</span></div>';
         if (!buildingInfo.construction) {
             html += '<div class="ti-row"><span class="ti-label">Active</span><span class="ti-value">' + (buildingInfo.active ? '✅' : '⏸️') + '</span></div>';
@@ -4448,11 +4448,11 @@ function renderMinimap() {
                     const my = Math.round(unit.y);
                     if (mx >= 0 && mx < w && my >= 0 && my < h) {
                         // Settler = gray dot, Swordsman = red dot, Bowman = orange dot
-                        if (unit.kind === 'Settler') {
+                        if (unit.kind === 0) {
                             mctx.fillStyle = '#aaaaaa';
-                        } else if (unit.kind === 'Swordsman') {
+                        } else if (unit.kind === 1) {
                             mctx.fillStyle = '#ff4444';
-                        } else if (unit.kind === 'Bowman') {
+                        } else if (unit.kind === 2) {
                             mctx.fillStyle = '#ff8800';
                         } else {
                             mctx.fillStyle = '#ffffff';
@@ -5268,7 +5268,7 @@ function trackToolPickups() {
         const units = JSON.parse(uRaw);
         const currentToolSettlers = new Set();
         for (const u of units) {
-            if (u.kind === 'Settler' && u.carried_tool) {
+            if (u.kind === 0 && u.carried_tool) {
                 currentToolSettlers.add(u.id);
                 if (!_knownToolSettlers.has(u.id)) {
                     // New tool pickup detected!
@@ -5747,6 +5747,22 @@ function modelIdForBuilding(name) {
         'Armory': 'armory', 'Blacksmith': 'blacksmith',
     };
     return map[name] || 'construction';
+}
+
+// ── Kind ID → Name Lookup ───────────────────────────────────────────────────
+// The WASM engine now emits integer discriminants instead of string names
+// for building/unit kinds in JSON output. These helpers resolve back to names.
+function buildingName(kindId) {
+    return (window.BUILDING_NAMES_BY_ID && window.BUILDING_NAMES_BY_ID[kindId])
+        ? window.BUILDING_NAMES_BY_ID[kindId] : 'Unknown';
+}
+function unitName(kindId) {
+    return (window.UNIT_NAMES_BY_ID && window.UNIT_NAMES_BY_ID[kindId])
+        ? window.UNIT_NAMES_BY_ID[kindId] : 'Settler';
+}
+function modelIdForBuildingKindId(kindId) {
+    const name = buildingName(kindId);
+    return modelIdForBuilding(name);
 }
 
 // ── Model Loading ────────────────────────────────────────────────────────
@@ -6899,7 +6915,7 @@ function renderSettlers() {
         const counts = {};
         let total = 0, working = 0, idle = 0;
         for (const u of units) {
-            const kind = u.kind || 'Settler';
+            const kind = u.kind || 0;
             counts[kind] = (counts[kind] || 0) + 1;
             total++;
             if (u.state === 'Working') working++;

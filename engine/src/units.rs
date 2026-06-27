@@ -79,6 +79,11 @@ pub enum UnitKind {
 }
 
 impl UnitKind {
+    /// Discriminant (variant index) as u8
+    pub fn discriminant(self) -> u8 {
+        self as u8
+    }
+
     /// Display name
     pub fn name(self) -> &'static str {
         match self {
@@ -1953,5 +1958,42 @@ mod rank_experience_tests {
         assert_eq!(UnitKind::SquadLeader.experience_on_kill(), 40);
         assert_eq!(UnitKind::AxeWarrior.experience_on_kill(), 30);
         assert_eq!(UnitKind::Shaman.experience_on_kill(), 35);
+    }
+
+    #[test]
+    fn test_unit_kind_discriminant() {
+        // Discriminant should match the explicit enum values
+        assert_eq!(UnitKind::Settler.discriminant(), 0);
+        assert_eq!(UnitKind::Swordsman.discriminant(), 1);
+        assert_eq!(UnitKind::Bowman.discriminant(), 2);
+        assert_eq!(UnitKind::Pioneer.discriminant(), 3);
+        assert_eq!(UnitKind::SquadLeader.discriminant(), 29);
+        assert_eq!(UnitKind::ShadowSoldier.discriminant(), 47);
+    }
+
+    #[test]
+    fn test_unit_kind_discriminant_round_trip() {
+        // All 48 unit kinds should have discriminant == self as u8
+        let kinds = [
+            UnitKind::Settler, UnitKind::Swordsman, UnitKind::Bowman,
+            UnitKind::Pioneer, UnitKind::Geologist, UnitKind::Thief,
+            UnitKind::Gardener, UnitKind::Carrier, UnitKind::Digger,
+            UnitKind::Builder, UnitKind::Forester, UnitKind::Woodcutter,
+            UnitKind::Sawyer, UnitKind::Stonecutter, UnitKind::Miner,
+            UnitKind::Smelter, UnitKind::ToolsmithWorker, UnitKind::WeaponsmithWorker,
+            UnitKind::Farmer, UnitKind::Miller, UnitKind::Baker,
+            UnitKind::WaterWorker, UnitKind::AnimalBreeder, UnitKind::Butcher,
+            UnitKind::Fisherman, UnitKind::Trader, UnitKind::Shipwright,
+            UnitKind::Healer, UnitKind::Priest, UnitKind::SquadLeader,
+            UnitKind::Vintner, UnitKind::Medic, UnitKind::AgaveFarmer,
+            UnitKind::TequilaDistiller, UnitKind::PowderMaker, UnitKind::BlowgunWarrior,
+            UnitKind::Beekeeper, UnitKind::MeadBrewer, UnitKind::AxeWarrior,
+            UnitKind::SunflowerFarmer, UnitKind::OilMiller, UnitKind::WeaponFoundryWorker,
+            UnitKind::BackpackCatapultist, UnitKind::DarkDigger, UnitKind::DarkFarmer,
+            UnitKind::Cultist, UnitKind::Shaman, UnitKind::ShadowSoldier,
+        ];
+        for (i, kind) in kinds.iter().enumerate() {
+            assert_eq!(kind.discriminant(), i as u8, "discriminant mismatch for {:?}", kind);
+        }
     }
 }
