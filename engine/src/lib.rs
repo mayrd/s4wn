@@ -4134,21 +4134,6 @@ pub fn try_place_building_by_id(discriminant: u8, x: usize, y: usize) -> String 
     r#"{"error":"Engine not initialized"}"#.to_string()
 }
 
-/// Get build cost for a building type. Returns JSON: {"Wood":3} or {"error":"..."}
-#[wasm_bindgen]
-pub fn get_build_cost(kind_name: &str) -> String {
-    use crate::economy::BuildingType;
-    let kind = match BuildingType::from_name(kind_name) {
-        Some(k) => k,
-        None => return format!(r#"{{"error":"Unknown building type: {}"}}"#, kind_name),
-    };
-    let cost = kind.build_cost();
-    let mut parts = Vec::new();
-    for &(rt, amt) in cost.iter() {
-        parts.push(format!(r#""{}":{}"#, rt.discriminant(), amt));
-    }
-    format!("{{{}}}", parts.join(","))
-}
 
 /// Get build cost by BuildingType integer discriminant (JSON with integer keys).
 #[wasm_bindgen]
