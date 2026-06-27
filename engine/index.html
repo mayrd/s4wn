@@ -3423,14 +3423,14 @@ function cancelPlacement() {
 }
 
 function canAffordAll(needed) {
-    // needed: {\"Wood\":5,\"Stone\":2} or error string
+    // needed: {0:5,1:2} — integer discriminant keys from get_build_cost()
     if (!needed || typeof needed === 'string' || needed.error) return false;
     try {
-        const raw = get_resource_counts();
+        const raw = get_resource_counts_by_id();
         if (!raw) return false;
         const resources = JSON.parse(raw);
-        for (const [name, amount] of Object.entries(needed)) {
-            if ((resources[name] || 0) < amount) return false;
+        for (const [disc, amount] of Object.entries(needed)) {
+            if ((resources[disc] || 0) < amount) return false;
         }
         return true;
     } catch (e) {
@@ -5179,21 +5179,19 @@ function updateResourceBar() {
     lastResourceUpdate = now;
 
     try {
-        const raw = get_resource_counts();
+        const raw = get_resource_counts_by_id();
         if (!raw) { lastResourceUpdate = 0; return; }
         const counts = JSON.parse(raw);
         let html = '';
-        const ELEMENTARY_RESOURCES = ['Wood', 'Stone', 'Tools', 'Planks'];
-        const displayOrder = ELEMENTARY_RESOURCES.filter(n => counts[n] !== undefined);
-        // If none of the elementary resources exist, show all raw resources
-        const showNames = displayOrder.length > 0 ? displayOrder : Object.keys(counts).filter(n => {
-            // Fallback: show all raw resources
-            return true;
-        });
-        showNames.forEach(name => {
-            const count = counts[name];
+        // Elementary resource discriminants: Wood=0, Stone=1, Tools=17, Planks=16
+        const ELEMENTARY_DISCS = [0, 1, 17, 16];
+        const displayDiscs = ELEMENTARY_DISCS.filter(d => counts[d] !== undefined);
+        const showDiscs = displayDiscs.length > 0 ? displayDiscs : Object.keys(counts).map(Number).filter(d => true);
+        showDiscs.forEach(disc => {
+            const count = counts[disc];
             if (count === undefined) return;
-            const icon = RESOURCE_ICONS[name] || '📦';
+            const icon = RESOURCE_ICONS_BY_ID[disc] || '📦';
+            const name = RESOURCE_NAMES_BY_ID[disc] || String(disc);
             html += `<div class="res-item" title="${tResource(name)}: ${count}"><span class="res-icon">${icon}</span><span class="res-count">${count}</span></div>`;
         });
         document.getElementById('resource-bar').innerHTML = html || '<span class="res-placeholder">' + t('no_resources') + '</span>';
@@ -6874,11 +6872,12 @@ function toggleSettlersPanel() {
 }
 
 function renderResources() {
+function renderResources() {
     const body = document.getElementById('resources-body');
     if (!body) return;
     const C = window.S4WN_CONFIG;
     try {
-        const counts = JSON.parse(get_resource_counts());
+        const countsById = JSON.parse(get_resource_counts_by_id());
         let html = '';
         // Show resources grouped by category from config
         const catMap = {};
@@ -6890,8 +6889,9 @@ function renderResources() {
         for (const [cat, resources] of Object.entries(catMap)) {
             html += `<div class="set-section">${tCategory(cat)}</div>`;
             for (const r of resources) {
-                const count = counts[r.id] ?? 0;
-                const icon = RESOURCE_ICONS[r.id] || '📦';
+                const disc = RESOURCE_DISCRIMINANT_BY_CONFIG_ID[r.id];
+                const count = disc !== undefined ? (countsById[disc] ?? 0) : 0;
+                const icon = disc !== undefined ? (RESOURCE_ICONS_BY_ID[disc] || '📦') : (RESOURCE_ICONS[r.id] || '📦');
                 const label = (typeof currentLang === 'string' && currentLang === 'de') ? r.name_de : r.name;
                 const desc = (typeof currentLang === 'string' && currentLang === 'de' && r.description_de) ? r.description_de : (r.description || '');
                 const tooltip = desc ? `${label}: ${desc}` : label;
@@ -6904,7 +6904,6 @@ function renderResources() {
         body.innerHTML = `<div class="res-row"><span class="res-label">${t('error_loading')}</span></div>`;
     }
 }
-
 function renderSettlers() {
     const body = document.getElementById('settlers-body');
     if (!body) return;

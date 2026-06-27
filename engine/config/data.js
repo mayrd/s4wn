@@ -2018,6 +2018,14 @@ window.S4WN_CONFIG = {
         16: "🪵", 17: "🔧", 18: "⚔️", 20: "🍞", 22: "🌾",
         23: "🔩", 27: "🍺", 28: "🍷"
     };
+    // Map UI config resource IDs → Rust ResourceType discriminants
+    // Used to bridge config-driven resource panels with engine data
+    window.RESOURCE_DISCRIMINANT_BY_CONFIG_ID = {
+        "WoodLog": 0, "Stone": 1, "IronOre": 2, "CoalOre": 3, "GoldOre": 4,
+        "SulfurOre": 5, "Fish": 6, "Grain": 7, "Meat": 8, "Water": 9,
+        "Honey": 12, "PlankWood": 16, "Flour": 22, "Bread": 20,
+        "IronBar": 23, "Mead": 27, "Wine": 28
+    };
     window.RESOURCE_ORDER = C.resources.map(r => r.id);
     window.TERRAIN_BY_ID = {};
     C.terrain.forEach(t => { window.TERRAIN_BY_ID[t.id] = t; });
