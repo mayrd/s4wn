@@ -89,29 +89,44 @@ impl ResourceType {
         (self as u8) >= 16
     }
 
-    /// Display name for the resource
+    /// Display names for all resource types, indexed by discriminant.
+    /// Gaps (invalid discriminants) contain empty strings.
+    pub const RESOURCE_NAMES: [&'static str; Self::COUNT] = [
+        "Wood",      // 0
+        "Stone",     // 1
+        "IronOre",   // 2
+        "Coal",      // 3
+        "Gold",      // 4
+        "Sulfur",    // 5
+        "Fish",      // 6
+        "Grain",     // 7
+        "Meat",      // 8
+        "Water",     // 9
+        "",          // 10 (gap)
+        "",          // 11 (gap)
+        "Honey",     // 12
+        "",          // 13 (gap)
+        "",          // 14 (gap)
+        "",          // 15 (gap)
+        "Planks",    // 16
+        "Tools",     // 17
+        "Weapons",   // 18
+        "",          // 19 (gap)
+        "Bread",     // 20
+        "",          // 21 (gap)
+        "Flour",     // 22
+        "IronIngots",// 23
+        "",          // 24 (gap)
+        "",          // 25 (gap)
+        "",          // 26 (gap)
+        "Mead",      // 27
+        "Wine",      // 28
+    ];
+
+    /// Display name for the resource (const array lookup).
+    #[inline]
     pub fn name(self) -> &'static str {
-        match self {
-            ResourceType::Wood => "Wood",
-            ResourceType::Stone => "Stone",
-            ResourceType::IronOre => "IronOre",
-            ResourceType::Coal => "Coal",
-            ResourceType::Gold => "Gold",
-            ResourceType::Sulfur => "Sulfur",
-            ResourceType::Fish => "Fish",
-            ResourceType::Grain => "Grain",
-            ResourceType::Meat => "Meat",
-            ResourceType::Water => "Water",
-            ResourceType::Honey => "Honey",
-            ResourceType::Planks => "Planks",
-            ResourceType::Tools => "Tools",
-            ResourceType::Weapons => "Weapons",
-            ResourceType::Bread => "Bread",
-            ResourceType::Flour => "Flour",
-            ResourceType::IronIngots => "IronIngots",
-            ResourceType::Mead => "Mead",
-            ResourceType::Wine => "Wine",
-        }
+        Self::RESOURCE_NAMES[self.discriminant() as usize]
     }
 
     /// Convert from map Resource to economy ResourceType
