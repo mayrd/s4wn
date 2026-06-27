@@ -37,16 +37,14 @@ impl NationType {
         NationType::DarkTribe,
     ];
 
-    /// Display name for this nation.
-    pub fn name(self) -> &'static str {
-        match self {
-            NationType::Roman => "Romans",
-            NationType::Viking => "Vikings",
-            NationType::Maya => "Maya",
-            NationType::Trojan => "Trojans",
-            NationType::DarkTribe => "Dark Tribe",
-        }
-    }
+    /// Display names for all nations, indexed by discriminant.
+    pub const NAMES: [&'static str; 5] = [
+        "Romans",
+        "Vikings",
+        "Maya",
+        "Trojans",
+        "Dark Tribe",
+    ];
 
     /// Short description of the nation's playstyle.
     pub fn description(self) -> &'static str {
@@ -830,11 +828,27 @@ mod tests {
 
     #[test]
     fn test_nation_type_names() {
-        assert_eq!(NationType::Roman.name(), "Romans");
-        assert_eq!(NationType::Viking.name(), "Vikings");
-        assert_eq!(NationType::Maya.name(), "Maya");
-        assert_eq!(NationType::Trojan.name(), "Trojans");
-        assert_eq!(NationType::DarkTribe.name(), "Dark Tribe");
+        assert_eq!(NationType::NAMES[NationType::Roman.discriminant() as usize], "Romans");
+        assert_eq!(NationType::NAMES[NationType::Viking.discriminant() as usize], "Vikings");
+        assert_eq!(NationType::NAMES[NationType::Maya.discriminant() as usize], "Maya");
+        assert_eq!(NationType::NAMES[NationType::Trojan.discriminant() as usize], "Trojans");
+        assert_eq!(NationType::NAMES[NationType::DarkTribe.discriminant() as usize], "Dark Tribe");
+    }
+
+    /// Verify NATION_NAMES const array: counts, discriminants, and name values.
+    #[test]
+    fn test_nation_names_const() {
+        assert_eq!(NationType::NAMES.len(), 5);
+        // Every discriminant maps to its name
+        for disc in 0..5u8 {
+            let nt = NationType::from_discriminant(disc).unwrap();
+            let name = NationType::NAMES[nt.discriminant() as usize];
+            // Verify name is non-empty
+            assert!(!name.is_empty(), "NAMES[{}] is empty", disc);
+            // Verify it round-trips through from_name
+            assert_eq!(NationType::from_name(name), Some(nt),
+                "NAMES[{}]='{}' does not round-trip via from_name", disc, name);
+        }
     }
 
     /// Verify every NationType discriminant round-trips through FNV-1a hash lookup.
@@ -844,7 +858,7 @@ mod tests {
         const VALID_DISCS: &[u8] = &[0, 1, 2, 3, 4];
         for &disc in VALID_DISCS {
             let nt: NationType = unsafe { core::mem::transmute::<u8, NationType>(disc) };
-            let name = nt.name();
+            let name = NationType::NAMES[nt.discriminant() as usize];
             let result = NationType::from_name(name);
             let expected = Some(nt);
             assert_eq!(
@@ -901,7 +915,7 @@ mod tests {
     fn test_discriminant_name_consistency() {
         for disc in 0..5u8 {
             let nt = NationType::from_discriminant(disc).unwrap();
-            let name = nt.name();
+            let name = NationType::NAMES[nt.discriminant() as usize];
             // Verify it round-trips back to the same discriminant
             assert_eq!(NationType::from_name(name), Some(nt));
         }

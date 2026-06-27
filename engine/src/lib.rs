@@ -3663,12 +3663,13 @@ pub fn set_player_nation(nation_name: &str) -> bool {
 /// Returns empty string if no nation is set.
 #[wasm_bindgen]
 pub fn get_player_nation() -> String {
+    use crate::nation::NationType;
     unsafe {
         if let Some(ref app) = APP {
             if let Some(nation) = app.game_loop.state.player_nation {
                 return format!(
                     "{{\"name\":\"{}\",\"name_id\":{},\"color\":\"{}\",\"emoji\":\"{}\",\"description\":\"{}\"}}",
-                    nation.name(),
+                    NationType::NAMES[nation.discriminant() as usize],
                     nation.discriminant(),
                     nation.color_hex(),
                     nation.emoji(),

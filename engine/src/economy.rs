@@ -4281,7 +4281,7 @@ mod tests {
             }
         }
         BalanceResult {
-            nation_name: nation.name(), settlers, soldiers, bowmen,
+            nation_name: NationType::NAMES[nation.discriminant() as usize], settlers, soldiers, bowmen,
             total_resources, unique_resources, resource_amounts,
         }
     }
