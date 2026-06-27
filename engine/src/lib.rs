@@ -4085,6 +4085,23 @@ pub fn get_build_cost(kind_name: &str) -> String {
     format!("{{{}}}", parts.join(","))
 }
 
+/// Get build cost by BuildingType integer discriminant (JSON with integer keys).
+#[wasm_bindgen]
+pub fn get_build_cost_by_id(discriminant: u8) -> String {
+    use crate::economy::BuildingType;
+    let kind = match BuildingType::from_discriminant(discriminant) {
+        Some(k) => k,
+        None => return format!(r#"{{"error":"Invalid building discriminant: {}"}}"#, discriminant),
+    };
+    let cost = kind.build_cost();
+    let mut parts = Vec::new();
+    for &(rt, amt) in cost.iter() {
+        parts.push(format!(r#""{}":{}"#, rt.discriminant(), amt));
+    }
+    format!("{{{}}}", parts.join(","))
+}
+
+
 // ── WebSocket Client API ─────────────────────────────────────────────────────
 /// Receive pending network messages as JSON strings.
 /// Set the game speed multiplier (1.0 = normal, 2.0 = double, 4.0 = quadruple).
@@ -7197,6 +7214,28 @@ mod export_regression_tests {
     }
 
     /// Resource types count — data.js RESOURCE_ICONS must match.
+    /// Verify get_build_cost_by_id returns valid JSON with integer keys
+    /// for every valid BuildingType discriminant.
+    #[test]
+    fn test_get_build_cost_by_id_all_discriminants() {
+        use crate::economy::BuildingType;
+        for &d in BuildingType::VALID_DISCRIMINANTS.iter() {
+            let json = super::get_build_cost_by_id(d);
+            assert!(!json.contains("error"), "discriminant {} should be valid, got: {}", d, json);
+            assert!(json.starts_with('{'), "should start with {{, got: {}", json);
+            assert!(json.ends_with('}'), "should end with }}, got: {}", json);
+        }
+    }
+
+    /// Verify get_build_cost_by_id rejects invalid discriminants.
+    #[test]
+    fn test_get_build_cost_by_id_rejects_invalid() {
+        for invalid in [255u8, 6u8, 17u8] {
+            let json = super::get_build_cost_by_id(invalid);
+            assert!(json.contains("error"), "should reject invalid discriminant {}, got: {}", invalid, json);
+        }
+    }
+
     #[test]
     fn test_resource_types_complete() {
         let resources = [

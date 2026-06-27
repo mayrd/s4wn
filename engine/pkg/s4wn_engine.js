@@ -138,6 +138,24 @@ export function get_build_cost(kind_name) {
 }
 
 /**
+ * Get build cost by BuildingType integer discriminant (JSON with integer keys).
+ * @param {number} discriminant
+ * @returns {string}
+ */
+export function get_build_cost_by_id(discriminant) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_build_cost_by_id(discriminant);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Returns the remaining HP, or 0 if the building doesn't exist.
  * Get the max HP of a building at the given index. Returns 0 if not found.
  * Get building info at a tile position. Returns JSON or "null" if no building.

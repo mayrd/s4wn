@@ -50,6 +50,11 @@ export function generate_map(map_type: string, width: number, height: number): s
 export function get_build_cost(kind_name: string): string;
 
 /**
+ * Get build cost by BuildingType integer discriminant (JSON with integer keys).
+ */
+export function get_build_cost_by_id(discriminant: number): string;
+
+/**
  * Returns the remaining HP, or 0 if the building doesn't exist.
  * Get the max HP of a building at the given index. Returns 0 if not found.
  * Get building info at a tile position. Returns JSON or "null" if no building.
@@ -348,6 +353,7 @@ export interface InitOutput {
     readonly formation_move: (a: number, b: number, c: number, d: number) => number;
     readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
     readonly get_build_cost: (a: number, b: number) => [number, number];
+    readonly get_build_cost_by_id: (a: number) => [number, number];
     readonly get_building_at_tile: (a: number, b: number) => [number, number];
     readonly get_building_garrison_json: (a: number) => [number, number];
     readonly get_building_info: (a: number) => [number, number];

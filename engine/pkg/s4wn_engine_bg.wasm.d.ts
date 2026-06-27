@@ -8,6 +8,7 @@ export const export_map_json: () => [number, number];
 export const formation_move: (a: number, b: number, c: number, d: number) => number;
 export const generate_map: (a: number, b: number, c: number, d: number) => [number, number];
 export const get_build_cost: (a: number, b: number) => [number, number];
+export const get_build_cost_by_id: (a: number) => [number, number];
 export const get_building_at_tile: (a: number, b: number) => [number, number];
 export const get_building_garrison_json: (a: number) => [number, number];
 export const get_building_info: (a: number) => [number, number];

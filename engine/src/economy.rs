@@ -5679,7 +5679,7 @@ mod squad_leader_aura_tests {
     #[test]
     fn test_resource_from_discriminant_consistent_with_u8() {
         for &disc in &ResourceType::VALID_RESOURCE_DISCRIMINANTS {
-            let rt: ResourceType = unsafe { core::mem::transmute::<u8, ResourceType>(disc) };
+            let _rt: ResourceType = unsafe { core::mem::transmute::<u8, ResourceType>(disc) };
             let by_u8 = ResourceType::from_u8(disc);
             let by_disc = ResourceType::from_discriminant(disc);
             assert_eq!(by_disc, by_u8,

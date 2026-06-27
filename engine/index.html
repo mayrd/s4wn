@@ -1653,6 +1653,7 @@ import init, {
     is_paused,
     try_place_building,
     get_build_cost,
+    get_build_cost_by_id,
     get_tool_counts,
     generate_map,
     add_starting_resources,
@@ -1684,7 +1685,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=61';
+} from './pkg/s4wn_engine.js?v=62';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -7177,6 +7178,7 @@ window.__s4wn_debug = {
   get_player_nation,
   get_nation_buildings,
   get_build_cost,
+    get_build_cost_by_id,
   toggle_pause,
   is_paused,
   get_stats,
