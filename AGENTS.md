@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S246 · 765 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Replaced ResourceType.name() with .discriminant() in get_game_state(), get_building_info(), get_build_cost() JSON output. Added ResourceType::discriminant() + get_resource_counts_by_id() WASM export + RESOURCE_ICONS_BY_ID (19 entries). restore_game_state() now handles both integer-key and name-key formats. get_resource_counts() preserved with old format for backward compat. Next: migrate JS consumers (HUD, building placement) to get_resource_counts_by_id() + RESOURCE_ICONS_BY_ID, then remove ResourceType.name() for ~8KB WASM savings.**
+**Status:** S247 · 765 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrated all JS resource consumers (canAffordAll, updateResourceBar, renderResources) to get_resource_counts_by_id() + integer discriminants + RESOURCE_ICONS_BY_ID + RESOURCE_DISCRIMINANT_BY_CONFIG_ID mapping. Next: remove ResourceType.name() for ~8KB WASM savings.**
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 247 | 2026-06-27 | Migrate JS resource consumers to get_resource_counts_by_id(): Fixed canAffordAll() (was broken — get_build_cost() returns integer keys since S246), migrated updateResourceBar() (uses RESOURCE_ICONS_BY_ID + ELEMENTARY_DISCS), migrated renderResources() (uses RESOURCE_DISCRIMINANT_BY_CONFIG_ID mapping). Added RESOURCE_DISCRIMINANT_BY_CONFIG_ID (17 entries) in data.js bridging UI config resource IDs → Rust ResourceType discriminants. 765 tests pass. -- 765 tests |
 | 246 | 2026-06-27 | Replace ResourceType.name() with .discriminant() in get_game_state()/get_building_info()/get_build_cost() JSON output — all resource keys now integers. Added ResourceType::discriminant() method + test (765 tests). Added get_resource_counts_by_id() WASM export (integer keys, validated discriminants only) + RESOURCE_ICONS_BY_ID (19 entries, u8→emoji). restore_game_state() backward-compat: tries integer keys first, falls back to name keys; building kind parsing handles both formats. get_resource_counts() preserved with old format. Clippy clean. 765 tests pass. -- 765 tests |
 | 245 | 2026-06-27 | Add ResourceType::from_discriminant() following the BuildingType/NationType binary_search + transmute pattern. 3 new tests: round-trip all 19 discriminants, gap rejection (13 gaps), consistency check with from_u8(). 761→764 tests. Clippy clean. No WASM rebuild needed (pure Rust). -- 764 tests |
 | 244 | 2026-06-27 | Add ResourceType::VALID_RESOURCE_DISCRIMINANTS (19 sorted discriminants) + 4 new tests: count validation, round-trip through from_u8, gap rejection (13 gaps), name uniqueness/consistency. Add RESOURCE_NAMES_BY_ID mapping (19 entries, u8→string) in engine/config/data.js for JS-side discriminant→name lookup. Foundation for ResourceType.name()→discriminant() migration in get_resource_counts() JSON output. 757→761 tests, clippy clean. No WASM rebuild needed (pure Rust + JS data). -- 761 tests |
@@ -291,6 +292,6 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 265. Investigate 7KB WASM size variance (307.3KB after cargo clean vs 300.1KB reported). Run checksum on wasm binaries from both builds to identify the source of growth. [SHOULD]
 266. Re-baseline WASM size target: 300KB. At 307.3KB we are 7.3KB over. Need 7.3KB savings from from_name() conversion + any remaining low-hanging fruit. [MUST]
 
-Next session priorities: (1) Migrate JS consumers to get_resource_counts_by_id(): update HUD resource bar, canAffordAll(), minimap resource display, and all other get_resource_counts() callers to use RESOURCE_NAMES_BY_ID + RESOURCE_ICONS_BY_ID for integer-key lookups. (2) Once all JS consumers use discriminants, remove ResourceType.name() for ~8KB WASM savings. (3) Replace BuildingType.name() with .discriminant() in try_place_building() error messages. (4) Add BUILDING_ICONS_BY_ID map alongside BUILDING_NAMES_BY_ID for emoji lookup by discriminant. (5) After all JS consumers use discriminants, remove name() methods from ResourceType + BuildingType + NationType for ~19.4KB WASM savings.
+Next session priorities: (1) Remove ResourceType.name() now that all JS consumers use get_resource_counts_by_id() — est. ~8KB WASM savings. (2) Replace BuildingType.name() with .discriminant() in try_place_building() error messages. (3) Add BUILDING_ICONS_BY_ID map alongside BUILDING_NAMES_BY_ID for emoji lookup by discriminant. (4) Migrate building-related JS consumers to use BUILDING_NAMES_BY_ID + BUILDING_ICONS_BY_ID for integer key lookups. (5) After all JS consumers use discriminants, remove name() methods from BuildingType + NationType for ~11KB additional WASM savings.
 
 *All building data must match BASE.md. Never modify BASE.md.*
