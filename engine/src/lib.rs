@@ -3659,17 +3659,15 @@ pub fn set_player_nation(nation_name: &str) -> bool {
     }
     false
 }
-/// Get the player's nation as a JSON string {name, color, emoji, description}
+/// Get the player's nation as a JSON string {name_id, color, emoji, description}
 /// Returns empty string if no nation is set.
 #[wasm_bindgen]
 pub fn get_player_nation() -> String {
-    use crate::nation::NationType;
     unsafe {
         if let Some(ref app) = APP {
             if let Some(nation) = app.game_loop.state.player_nation {
                 return format!(
-                    "{{\"name\":\"{}\",\"name_id\":{},\"color\":\"{}\",\"emoji\":\"{}\",\"description\":\"{}\"}}",
-                    NationType::NAMES[nation.discriminant() as usize],
+                    "{{\"name_id\":{},\"color\":\"{}\",\"emoji\":\"{}\",\"description\":\"{}\"}}",
                     nation.discriminant(),
                     nation.color_hex(),
                     nation.emoji(),
@@ -4004,71 +4002,6 @@ pub fn get_unit_stance(unit_id: u32) -> u8 {
     }
     0
 }
-/// Try to place a building on the map.
-/// Takes building type name (e.g. "Farm"), tile x, tile y.
-/// Returns JSON: {"ok":true,"idx":0} or {"error":"message"}
-#[wasm_bindgen]
-pub fn try_place_building(kind_name: &str, x: usize, y: usize) -> String {
-    use crate::economy::BuildingType;
-    unsafe {
-        if let Some(ref mut app) = APP {
-            // Parse building type name
-            let kind = match BuildingType::from_name(kind_name) {
-                Some(k) => k,
-                None => return format!(r#"{{"error":"Unknown building type: {}"}}"#, kind_name),
-            };
-
-            // Validate tile is within map bounds
-            if x >= app.map.width || y >= app.map.height {
-                return format!(r#"{{"error":"Tile ({},{}) out of bounds"}}"#, x, y);
-            }
-
-            // Validate terrain is buildable (not water, deep water, or mountain)
-            let tile = app.map.get(x, y).unwrap();
-            let buildable = !matches!(tile.terrain, Terrain::Water | Terrain::DeepWater | Terrain::Mountain);
-            if !buildable {
-                return format!(
-                    r#"{{"error":"Cannot build on {} terrain at ({},{})"}}"#,
-                    match tile.terrain {
-                        Terrain::Water => "water",
-                        Terrain::DeepWater => "deep water",
-                        Terrain::Mountain => "mountain",
-                        _ => "unbuildable",
-                    },
-                    x,
-                    y
-                );
-            }
-
-            // Validate tile isn't already occupied by another building
-            let occupied = app
-                .game_loop
-                .state
-                .economy
-                .buildings
-                .iter()
-                .any(|b| b.x == x && b.y == y);
-            if occupied {
-                return format!(r#"{{"error":"Tile ({},{}) already has a building"}}"#, x, y);
-            }
-
-            // Try to place the building
-            match app.game_loop.state.economy.try_place_building(kind, x, y) {
-                Some(idx) => {
-                    app.overlay_dirty = true;
-                    return format!(r#"{{"ok":true,"idx":{},"kind":{}"}}"#, idx, kind.discriminant());
-                }
-                None => {
-                    return format!(
-                        r#"{{"error":"Cannot afford {} — insufficient resources"}}"#,
-                        crate::economy::BuildingType::BUILDING_NAMES[kind.discriminant() as usize]
-                    );
-                }
-            }
-        }
-    }
-    r#"{"error":"Engine not initialized"}"#.to_string()
-}
 
 /// Try to place a building by BuildingType integer discriminant.
 /// Returns JSON: {"ok":true,"idx":0,"kind":5} or {"error":"message"}
@@ -4124,8 +4057,8 @@ pub fn try_place_building_by_id(discriminant: u8, x: usize, y: usize) -> String 
                 }
                 None => {
                     return format!(
-                        r#"{{"error":"Cannot afford {} — insufficient resources"}}"#,
-                        crate::economy::BuildingType::BUILDING_NAMES[kind.discriminant() as usize]
+                        r#"{{"error":"Cannot afford building {} — insufficient resources"}}"#,
+                        kind.discriminant()
                     );
                 }
             }

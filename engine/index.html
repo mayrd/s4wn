@@ -1651,7 +1651,6 @@ import init, {
     set_game_speed,
     toggle_pause,
     is_paused,
-    try_place_building,
     try_place_building_by_id,
     get_build_cost_by_id,
     get_tool_counts,
@@ -5322,9 +5321,10 @@ function updateNationHUD() {
         const nationJson = get_player_nation ? get_player_nation() : null;
         if (!nationJson) { hud.textContent = ''; return; }
         const nation = JSON.parse(nationJson);
-        const flags = { Roman: '🏛️', Viking: '🪓', Maya: '🗿' };
-        const flag = flags[nation.name] || '🏳️';
-        hud.textContent = `${flag} ${nation.name}`;
+        const nationName = (window.NATION_NAMES_BY_ID && window.NATION_NAMES_BY_ID[nation.name_id]) || 'Unknown';
+        const flags = { Roman: '🏛️', Viking: '🪓', Maya: '🗿', Trojan: '🏰', 'Dark Tribe': '👿' };
+        const flag = flags[nationName] || '🏳️';
+        hud.textContent = `${flag} ${nationName}`;
     } catch(e) {
         hud.textContent = '';
     }
@@ -6088,7 +6088,7 @@ async function main() {
                 let nationStr = '';
                 try {
                     const nj = get_player_nation ? get_player_nation() : null;
-                    if (nj) { const n = JSON.parse(nj); const flags = { Roman: '🏛️', Viking: '🪓', Maya: '🗿' }; nationStr = `${flags[n.name] || '🏳️'} ${n.name}`; }
+                    if (nj) { const n = JSON.parse(nj); const nName = (window.NATION_NAMES_BY_ID && window.NATION_NAMES_BY_ID[n.name_id]) || ''; const flags = { Roman: '🏛️', Viking: '🪓', Maya: '🗿', Trojan: '🏰', 'Dark Tribe': '👿' }; nationStr = nName ? `${flags[nName] || '🏳️'} ${nName}` : ''; }
                 } catch(e) {}
                 hudStats.textContent = `⏱ ${formatGameTime(d.game_time)} | 🔍 ${d.zoom}× | 📍 (${cx}, ${cy}) | 👤 ${pname} | 🎯 ${level}` + (nationStr ? ` | ${nationStr}` : '');
 
@@ -6738,7 +6738,8 @@ function populateConstructionPanel() {
     if (typeof get_player_nation === 'function') {
         try {
             const nationJson = get_player_nation();
-            nationName = nationJson ? JSON.parse(nationJson).name : null;
+            var nObj = nationJson ? JSON.parse(nationJson) : null;
+            nationName = (nObj && window.NATION_NAMES_BY_ID) ? window.NATION_NAMES_BY_ID[nObj.name_id] : null;
         } catch(e) {}
     }
 
@@ -7168,7 +7169,6 @@ console.error = function (...args) {
 window.__s4wn_debug = {
   get_building_summary,
   get_unit_summary,
-  try_place_building,
   try_place_building_by_id,
   add_starting_resources,
   set_game_speed,

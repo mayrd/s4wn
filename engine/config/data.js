@@ -1585,7 +1585,7 @@ window.S4WN_CONFIG = {
       "class": "Heavy Industry",
       "name": "Weapon Foundry",
       "name_de": "Waffengießer",
-      "nation": "Trojans"
+      "nation": "Trojan"
     },
     {
       "id": "Farmer",
@@ -1662,7 +1662,7 @@ window.S4WN_CONFIG = {
       "class": "Sacrificial Wine",
       "name": "Vintner",
       "name_de": "Winzer",
-      "nation": "Romans"
+      "nation": "Roman"
     },
     {
       "id": "AgaveFarmer",
@@ -1683,28 +1683,28 @@ window.S4WN_CONFIG = {
       "class": "Sacrificial Mead",
       "name": "Beekeeper",
       "name_de": "Imker",
-      "nation": "Vikings"
+      "nation": "Viking"
     },
     {
       "id": "MeadBrewer",
       "class": "Sacrificial Mead",
       "name": "Mead Brewer",
       "name_de": "Metbrauer",
-      "nation": "Vikings"
+      "nation": "Viking"
     },
     {
       "id": "SunflowerFarmer",
       "class": "Sacrificial Oil",
       "name": "Sunflower Farmer",
       "name_de": "Sonnenblumenbauer",
-      "nation": "Trojans"
+      "nation": "Trojan"
     },
     {
       "id": "OilMiller",
       "class": "Sacrificial Oil",
       "name": "Oil Miller",
       "name_de": "Ölmüller",
-      "nation": "Trojans"
+      "nation": "Trojan"
     },
     {
       "id": "PowderMaker",
@@ -1746,7 +1746,7 @@ window.S4WN_CONFIG = {
       "class": "Military (Special)",
       "name": "Medic",
       "name_de": "Sanitäter",
-      "nation": "Romans"
+      "nation": "Roman"
     },
     {
       "id": "BlowgunWarrior",
@@ -1760,14 +1760,14 @@ window.S4WN_CONFIG = {
       "class": "Military (Special)",
       "name": "Axe Warrior",
       "name_de": "Streitaxtkämpfer",
-      "nation": "Vikings"
+      "nation": "Viking"
     },
     {
       "id": "BackpackCatapultist",
       "class": "Military (Special)",
       "name": "Backpack Catapultist",
       "name_de": "Rucksack-Katapultierer",
-      "nation": "Trojans"
+      "nation": "Trojan"
     },
     {
       "id": "DarkDigger",
@@ -2065,6 +2065,9 @@ window.S4WN_CONFIG = {
         "SulfurOre": 5, "Fish": 6, "Grain": 7, "Meat": 8, "Water": 9,
         "Honey": 12, "PlankWood": 16, "Flour": 22, "Bread": 20,
         "IronBar": 23, "Mead": 27, "Wine": 28
+    };
+    window.NATION_NAMES_BY_ID = {
+        0: "Roman", 1: "Viking", 2: "Maya", 3: "Trojan", 4: "Dark Tribe"
     };
     window.RESOURCE_ORDER = C.resources.map(r => r.id);
     window.TERRAIN_BY_ID = {};
