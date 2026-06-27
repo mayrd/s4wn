@@ -3620,6 +3620,25 @@ pub fn get_resource_counts() -> String {
     }
     String::new()
 }
+/// Get resource counts with integer discriminant keys (new format).
+/// Returns: {"0":100,"1":50,"2":0,...} — keys are ResourceType discriminants.
+/// Use RESOURCE_NAMES_BY_ID (data.js) for JS-side name lookup.
+#[wasm_bindgen]
+pub fn get_resource_counts_by_id() -> String {
+    unsafe {
+        if let Some(ref app) = APP {
+            let storage = &app.game_loop.state.economy.storage;
+            use crate::economy::ResourceType;
+            let mut parts = Vec::new();
+            for &disc in &ResourceType::VALID_RESOURCE_DISCRIMINANTS {
+                let rt = ResourceType::from_discriminant(disc).unwrap();
+                parts.push(format!("\"{}\":{}", disc, storage.get(rt)));
+            }
+            return format!("{{{}}}", parts.join(","));
+        }
+    }
+    String::new()
+}
 /// Get tool counts as a JSON string for the HUD.
 /// Returns: {"Hammer":3,"Pickaxe":0,"Axe":2,...} — all 11 tool types.
 #[wasm_bindgen]
@@ -3856,12 +3875,12 @@ pub fn get_building_info(idx: usize) -> String {
                 let inputs: Vec<String> = kind
                     .inputs()
                     .iter()
-                    .map(|(rt, amt)| format!(r#""{}",{}"#, rt.name(), amt))
+                    .map(|(rt, amt)| format!(r#""{}",{}"#, rt.discriminant(), amt))
                     .collect();
                 let outputs: Vec<String> = kind
                     .outputs()
                     .iter()
-                    .map(|(rt, amt)| format!(r#""{}",{}"#, rt.name(), amt))
+                    .map(|(rt, amt)| format!(r#""{}",{}"#, rt.discriminant(), amt))
                     .collect();
                 let construction_pct = b.construction; // duplicate for JS clarity
 
@@ -3871,7 +3890,7 @@ pub fn get_building_info(idx: usize) -> String {
                     let val = b.output_buffer[i];
                     if val > 0 {
                         let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
-                        obuf_parts.push(format!(r#""{}":{}"#, rt.name(), val));
+                        obuf_parts.push(format!(r#""{}":{}"#, rt.discriminant(), val));
                     }
                 }
             // Toolsmith: report currently-producing tool
@@ -4078,7 +4097,7 @@ pub fn get_build_cost(kind_name: &str) -> String {
     let cost = kind.build_cost();
     let mut parts = Vec::new();
     for &(rt, amt) in cost.iter() {
-        parts.push(format!(r#""{}":{}"#, rt.name(), amt));
+        parts.push(format!(r#""{}":{}"#, rt.discriminant(), amt));
     }
     format!("{{{}}}", parts.join(","))
 }
@@ -4297,7 +4316,7 @@ pub fn get_game_state() -> String {
             let mut res_parts = Vec::new();
             for i in 0..ResourceType::COUNT {
                 let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
-                res_parts.push(format!("\"{}\":{}", rt.name(), eco.storage.get(rt)));
+                res_parts.push(format!("\"{}\":{}", rt.discriminant(), eco.storage.get(rt)));
             }
 
             // Buildings
@@ -4309,14 +4328,14 @@ pub fn get_game_state() -> String {
                 for i in 0..ResourceType::COUNT {
                     if b.input_buffer[i] > 0 {
                         let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
-                        inbuf_parts.push(format!("\"{}\":{}", rt.name(), b.input_buffer[i]));
+                        inbuf_parts.push(format!("\"{}\":{}", rt.discriminant(), b.input_buffer[i]));
                     }
                 }
                 let mut outbuf_parts = Vec::new();
                 for i in 0..ResourceType::COUNT {
                     if b.output_buffer[i] > 0 {
                         let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
-                        outbuf_parts.push(format!("\"{}\":{}", rt.name(), b.output_buffer[i]));
+                        outbuf_parts.push(format!("\"{}\":{}", rt.discriminant(), b.output_buffer[i]));
                     }
                 }
                 bldg_parts.push(format!(
@@ -4441,16 +4460,32 @@ pub fn restore_game_state(json: &str) -> String {
             };
             for i in 0..ResourceType::COUNT {
                 let rt: ResourceType = std::mem::transmute(i as u8);
-                let name = rt.name();
-                // Find "{name}":number in resources string
-                let search = format!("\"{}\":", name);
-                if let Some(pos) = resources_str.find(&search) {
-                    let after = &resources_str[pos + search.len()..];
+                // Try new integer key format first (e.g. "0":100)
+                let int_key = i.to_string();
+                let int_search = format!("\"{}\":", int_key);
+                let mut found = false;
+                if let Some(pos) = resources_str.find(&int_search) {
+                    let after = &resources_str[pos + int_search.len()..];
                     let end = after
                         .find([',', '}'])
                         .unwrap_or(after.len());
                     if let Ok(val) = after[..end].trim().parse::<u32>() {
                         new_eco.storage.set(rt, val);
+                        found = true;
+                    }
+                }
+                // Fall back to old name-based key format (e.g. "Wood":100)
+                if !found {
+                    let name = rt.name();
+                    let name_search = format!("\"{}\":", name);
+                    if let Some(pos) = resources_str.find(&name_search) {
+                        let after = &resources_str[pos + name_search.len()..];
+                        let end = after
+                            .find([',', '}'])
+                            .unwrap_or(after.len());
+                        if let Ok(val) = after[..end].trim().parse::<u32>() {
+                            new_eco.storage.set(rt, val);
+                        }
                     }
                 }
             }
@@ -4500,7 +4535,11 @@ pub fn restore_game_state(json: &str) -> String {
                         .and_then(|v| v.parse::<u32>().ok())
                         .unwrap_or(0);
 
-                    if let Some(kind) = BuildingType::from_name(kind_name) {
+                    // Try integer discriminant first, then name lookup for backward compat
+                    let kind = kind_name.parse::<u8>().ok()
+                        .and_then(BuildingType::from_discriminant)
+                        .or_else(|| BuildingType::from_name(kind_name));
+                    if let Some(kind) = kind {
                         let mut b = Building::new(kind, x, y);
                         b.construction = construction;
                         b.active = active;

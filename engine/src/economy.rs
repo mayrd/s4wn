@@ -66,6 +66,13 @@ impl ResourceType {
     /// Total number of distinct resource types
     pub const COUNT: usize = 29; // max discriminant (Wine=28) + 1
 
+    /// Returns the numeric discriminant (0–28) for this resource type.
+    /// This is the efficient integer representation for JSON/JS communication.
+    #[inline]
+    pub fn discriminant(self) -> u8 {
+        self as u8
+    }
+
     /// All valid ResourceType discriminants (sorted).
     /// Covers 0-9 (raw), 12 (Honey), 16-18 (processed), 20 (Bread), 22-23 (Flour/IronIngots), 27-28 (Mead/Wine).
     pub const VALID_RESOURCE_DISCRIMINANTS: [u8; 19] = [
@@ -5560,6 +5567,15 @@ mod squad_leader_aura_tests {
     #[test]
     fn test_valid_resource_discriminants_count() {
         assert_eq!(ResourceType::VALID_RESOURCE_DISCRIMINANTS.len(), 19);
+    }
+
+    /// Verify discriminant() returns correct u8 for all 19 resource types.
+    #[test]
+    fn test_resource_discriminant_method() {
+        for &disc in &ResourceType::VALID_RESOURCE_DISCRIMINANTS {
+            let rt = ResourceType::from_discriminant(disc).unwrap();
+            assert_eq!(rt.discriminant(), disc);
+        }
     }
 
     /// Verify each valid discriminant round-trips through from_u8.

@@ -2012,6 +2012,12 @@ window.S4WN_CONFIG = {
         16: "Planks", 17: "Tools", 18: "Weapons", 20: "Bread", 22: "Flour",
         23: "IronIngots", 27: "Mead", 28: "Wine"
     };
+    window.RESOURCE_ICONS_BY_ID = {
+        0: "🪵", 1: "🪨", 2: "⛏️", 3: "🪨", 4: "✨", 5: "🟡",
+        6: "🐟", 7: "🌾", 8: "🍖", 9: "💧", 12: "🍯",
+        16: "🪵", 17: "🔧", 18: "⚔️", 20: "🍞", 22: "🌾",
+        23: "🔩", 27: "🍺", 28: "🍷"
+    };
     window.RESOURCE_ORDER = C.resources.map(r => r.id);
     window.TERRAIN_BY_ID = {};
     C.terrain.forEach(t => { window.TERRAIN_BY_ID[t.id] = t; });
