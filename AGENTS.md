@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-**Status:** S244 · 761 tests · WASM 300.1KB — Clippy: 0 errors, 0 warnings. 0 open issues. Added ResourceType::VALID_RESOURCE_DISCRIMINANTS (19 entries) + 4 discriminant tests (count, round-trip, gap rejection, name consistency). Added RESOURCE_NAMES_BY_ID mapping in data.js for JS-side discriminant lookup. Next: add from_discriminant() to ResourceType, replace ResourceType.name() in get_resource_counts() JSON output with discriminant().**
+**Status:** S245 · 764 tests · WASM 300.1KB — Clippy: 0 errors, 0 warnings. 0 open issues. Added ResourceType::from_discriminant() + 3 new tests (round-trip, gap rejection, consistency with from_u8). Foundation done for discriminant-based resource JSON output. Next: replace ResourceType.name() with .discriminant() in get_resource_counts()/get_building_info()/get_build_cost()/get_game_state() JSON output, add RESOURCE_ICONS_BY_ID to data.js, add get_resource_counts_by_id() WASM export.**
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ### Session Log (recent)
 
+| 245 | 2026-06-27 | Add ResourceType::from_discriminant() following the BuildingType/NationType binary_search + transmute pattern. 3 new tests: round-trip all 19 discriminants, gap rejection (13 gaps), consistency check with from_u8(). 761→764 tests. Clippy clean. No WASM rebuild needed (pure Rust). -- 764 tests |
 | 244 | 2026-06-27 | Add ResourceType::VALID_RESOURCE_DISCRIMINANTS (19 sorted discriminants) + 4 new tests: count validation, round-trip through from_u8, gap rejection (13 gaps), name uniqueness/consistency. Add RESOURCE_NAMES_BY_ID mapping (19 entries, u8→string) in engine/config/data.js for JS-side discriminant→name lookup. Foundation for ResourceType.name()→discriminant() migration in get_resource_counts() JSON output. 757→761 tests, clippy clean. No WASM rebuild needed (pure Rust + JS data). -- 761 tests |
 | 241 | 2026-06-26 | Add BuildingType::discriminant() + from_discriminant() + VALID_DISCRIMINANTS (77 sorted discriminants) — integer accessor foundation for WASM name-string removal. Refactored test to use shared const. 3 new discriminant tests: full round-trip (77), gap rejection (12 gaps), name consistency. 739→742 tests. Clippy clean. WASM 300.1KB. -- 742 tests |
 | 242 | 2026-06-26 | Add NationType::discriminant() + from_discriminant() (5 variants, no gaps). 3 new tests: round-trip, reject invalid (5/255), name consistency. Added name_id field to get_player_nation() JSON for JS migration path. Added BUILDING_NAMES_BY_ID mapping (77 entries, u8→string) in engine/config/data.js — JS-side lookup table for integer discriminant consumption. 742→745 tests, clippy clean, WASM 300.1KB. -- 745 tests |
