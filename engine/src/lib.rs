@@ -1894,6 +1894,24 @@ impl App {
 
         }
 
+        // Moths: spawn near complete buildings at night (attracted to torchlight)
+        if self.particle_system.alive_count() < 64 {
+            let moth_tick = self.game_loop.state.game_time as u32;
+            if moth_tick.is_multiple_of(10) {
+                let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
+                if !(0.2..=0.8).contains(&day_phase) {
+                    let mut moth_count = 0u32;
+                    for b in self.game_loop.state.economy.buildings.iter() {
+                        if b.is_complete() && moth_count < 2 {
+                            particle::spawn_moth_particle(&mut self.particle_system, b.x as f32, b.y as f32);
+                            moth_count += 1;
+                        }
+                        if moth_count >= 2 { break; }
+                    }
+                }
+            }
+        }
+
         // Smooth camera
         self.camera.update(0.016); // ~60fps
 

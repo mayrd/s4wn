@@ -607,6 +607,45 @@ pub fn spawn_butterfly_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, ma
     spawned
 }
 
+/// Spawn a single moth particle — small dusty-brown insect attracted to building lights at night.
+pub fn spawn_moth_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 9.1 + y * 14.3;
+    let z = 1.0 + (seed * 1.7).sin().abs() * 1.5;
+    let vx = (seed * 2.9).cos() * 0.06;
+    let vy = (seed * 3.7).sin() * 0.05;
+    let vz = 0.01 + (seed * 4.3).sin().abs() * 0.03;
+    let life = 4.0 + (seed * 5.9).sin().abs() * 3.0;
+    // Dusty brown/tan color palette
+    let r = 0.55 + (seed * 7.1).sin().abs() * 0.2;
+    let g = 0.45 + (seed * 8.3).cos().abs() * 0.15;
+    let b = 0.30 + (seed * 9.7).sin().abs() * 0.1;
+    let _ = ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r, g, b, size: 1.8 });
+}
+
+/// Spawn a burst of moth particles around a building.
+pub fn spawn_moth_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 11.7 + 4.3).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 16.9 + 8.1).sin() * 0.5 + 0.5) * sy;
+        let seed = x * 9.1 + y * 14.3;
+        let z = 1.0 + (seed * 1.7).sin().abs() * 1.5;
+        let vx = (seed * 2.9).cos() * 0.06;
+        let vy = (seed * 3.7).sin() * 0.05;
+        let vz = 0.01 + (seed * 4.3).sin().abs() * 0.03;
+        let life = 4.0 + (seed * 5.9).sin().abs() * 3.0;
+        if ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r: 0.6, g: 0.48, b: 0.32, size: 1.8 }) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1504,5 +1543,54 @@ fn test_butterfly_burst_bounds_and_capacity() {
     for p in ps.particles.iter().filter(|p| p.alive) {
         assert!(p.x >= 10.0 && p.x <= 14.0, "butterfly x={} out of bounds [10,14]", p.x);
         assert!(p.y >= 20.0 && p.y <= 24.0, "butterfly y={} out of bounds [20,24]", p.y);
+    }
+}
+
+#[test]
+fn test_moth_particle_spawns_with_dusty_color() {
+    let mut ps = ParticleSystem::new();
+    spawn_moth_particle(&mut ps, 5.0, 3.0);
+    assert_eq!(ps.alive_count(), 1);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    // Dusty brown: r > g > b
+    assert!(p.r > p.g, "moth r should exceed g, got r={} g={}", p.r, p.g);
+    assert!(p.g > p.b, "moth g should exceed b, got g={} b={}", p.g, p.b);
+    assert!(p.r > 0.5, "moth should be warm-toned (r > 0.5), got r={}", p.r);
+}
+
+#[test]
+fn test_moth_flies_gently() {
+    let mut ps = ParticleSystem::new();
+    spawn_moth_particle(&mut ps, 4.0, 8.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.vx.abs() < 0.2, "moth vx should be gentle, got {}", p.vx);
+    assert!(p.vy.abs() < 0.2, "moth vy should be gentle, got {}", p.vy);
+}
+
+#[test]
+fn test_moth_hovers_near_building_height() {
+    let mut ps = ParticleSystem::new();
+    spawn_moth_particle(&mut ps, 6.0, 2.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.z > 0.5, "moth should hover above ground (z > 0.5), got z={}", p.z);
+    assert!(p.z < 3.0, "moth should not fly too high (z < 3.0), got z={}", p.z);
+}
+
+#[test]
+fn test_moth_has_long_lifetime() {
+    let mut ps = ParticleSystem::new();
+    spawn_moth_particle(&mut ps, 3.0, 9.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.life >= 3.5 && p.life <= 7.5, "moth life should be 3.5-7.5s, got {}", p.life);
+}
+
+#[test]
+fn test_moth_burst_bounds_and_capacity() {
+    let mut ps = ParticleSystem::new();
+    let spawned = spawn_moth_burst(&mut ps, 10.0, 20.0, 14.0, 24.0, 4);
+    assert!(spawned <= 4, "burst should spawn at most 4 particles, got {}", spawned);
+    for p in ps.particles.iter().filter(|p| p.alive) {
+        assert!(p.x >= 10.0 && p.x <= 14.0, "moth x={} out of bounds [10,14]", p.x);
+        assert!(p.y >= 20.0 && p.y <= 24.0, "moth y={} out of bounds [20,24]", p.y);
     }
 }
