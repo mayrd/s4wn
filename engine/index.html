@@ -3395,8 +3395,9 @@ function toRustName(configId) {
 }
 
 function showBuildCostTooltip(kindName) {
-    const rustName = toRustName(kindName);
-    const cost = get_build_cost(rustName);
+    const disc = BUILDING_DISCRIMINANT_BY_CONFIG_ID[kindName];
+    if (disc === undefined) return '';
+    const cost = get_build_cost_by_id(disc);
     if (cost && !cost.includes('error')) {
         const c = JSON.parse(cost);
         const parts = Object.entries(c).map(([k,v]) => `${tResource(k)}:${v}`).join(', ');
@@ -3448,8 +3449,9 @@ function refreshBuildingAffordability() {
     placementButtons.forEach(btn => {
         const name = btn._buildingName;
         if (!name) return;
-        const rustName = toRustName(name);
-        const costJson = get_build_cost(rustName);
+        const disc = BUILDING_DISCRIMINANT_BY_CONFIG_ID[name];
+        if (disc === undefined) return;
+        const costJson = get_build_cost_by_id(disc);
         let cost;
         try { cost = JSON.parse(costJson); } catch(e) { cost = null; }
         const affordable = cost && !cost.error && canAffordAll(cost);
@@ -3459,7 +3461,7 @@ function refreshBuildingAffordability() {
         } else {
             btn.classList.remove('affordable');
             // Cancel placement if current building becomes unaffordable
-            if (placementMode === rustName) {
+            if (placementMode === name) {
                 cancelPlacement();
             }
         }

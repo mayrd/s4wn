@@ -2017,6 +2017,23 @@ window.S4WN_CONFIG = {
         82: "🏠", 83: "🏘️", 84: "🏢", 85: "⛪", 86: "🛕"
     };
 
+    // BUILDING_DISCRIMINANT_BY_CONFIG_ID — config ID → BuildingType discriminant
+    // 45 of 69 config buildings mapped; 24 decorative (Zierobjekte) not in Rust enum
+    window.BUILDING_DISCRIMINANT_BY_CONFIG_ID = {
+        "AgaveFarm": 41, "ApiaryImker": 27, "Bakery": 7, "Barracks": 16,
+        "BigTower": 19, "Castle": 0, "CoalMine": 62, "DonkeyRanch": 76,
+        "FishermansHut": 11, "ForestersHut": 71, "GoatRanch": 73, "GoldMine": 61,
+        "GoldSmelter": 65, "GooseRanch": 75, "GrainFarm": 10, "GrainMill": 9,
+        "HealersHut": 72, "IronOreMine": 63, "IronSmelter": 66, "LandingDock": 79,
+        "LargeResidence": 84, "LargeTemple": 86, "Marketplace": 78, "MeadBrewery": 28,
+        "MediumResidence": 83, "OilPress": 68, "PigRanch": 74, "PowderMill": 69,
+        "RoundWell": 14, "Sawmill": 1, "Shipyard": 21, "Slaughterhouse": 67,
+        "SmallResidence": 82, "SmallTemple": 85, "SmallTower": 18,
+        "StonecuttersHut": 2, "StorageYard": 81, "SulfurMine": 64, "Toolsmith": 4,
+        "TrojanFarm": 77, "Vineyard": 80, "Waterworks": 14, "WeaponFoundry": 70,
+        "Weaponsmith": 5, "WoodcuttersHut": 12
+    };
+
     window.RESOURCE_ICONS = {};
     C.resources.forEach(r => { window.RESOURCE_ICONS[r.id] = r.icon; });
     // Use SVG icons from resource-icons.js if available
