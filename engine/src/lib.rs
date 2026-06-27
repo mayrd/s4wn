@@ -4458,7 +4458,7 @@ pub fn restore_game_state(json: &str) -> String {
                 }
                 // Fall back to old name-based key format (e.g. "Wood":100)
                 if !found {
-                    let name = rt.name();
+                    let name = ResourceType::RESOURCE_NAMES[rt.discriminant() as usize];
                     let name_search = format!("\"{}\":", name);
                     if let Some(pos) = resources_str.find(&name_search) {
                         let after = &resources_str[pos + name_search.len()..];
@@ -4544,7 +4544,7 @@ pub fn restore_game_state(json: &str) -> String {
                         if let Some(inbuf_str) = find_json_value(bjson, "input_buffer") {
                             for i in 0..ResourceType::COUNT {
                                 let rt: ResourceType = std::mem::transmute(i as u8);
-                                let search = format!("\"{}\":", rt.name());
+                                let search = format!("\"{}\":", ResourceType::RESOURCE_NAMES[rt.discriminant() as usize]);
                                 if let Some(pos) = inbuf_str.find(&search) {
                                     let after = &inbuf_str[pos + search.len()..];
                                     let end = after
@@ -4560,7 +4560,7 @@ pub fn restore_game_state(json: &str) -> String {
                         if let Some(outbuf_str) = find_json_value(bjson, "output_buffer") {
                             for i in 0..ResourceType::COUNT {
                                 let rt: ResourceType = std::mem::transmute(i as u8);
-                                let search = format!("\"{}\":", rt.name());
+                                let search = format!("\"{}\":", ResourceType::RESOURCE_NAMES[rt.discriminant() as usize]);
                                 if let Some(pos) = outbuf_str.find(&search) {
                                     let after = &outbuf_str[pos + search.len()..];
                                     let end = after

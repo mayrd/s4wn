@@ -123,11 +123,6 @@ impl ResourceType {
         "Wine",      // 28
     ];
 
-    /// Display name for the resource (const array lookup).
-    #[inline]
-    pub fn name(self) -> &'static str {
-        Self::RESOURCE_NAMES[self.discriminant() as usize]
-    }
 
     /// Convert from map Resource to economy ResourceType
     pub fn from_map_resource(r: Resource) -> Option<ResourceType> {
@@ -2252,9 +2247,9 @@ mod tests {
 
     #[test]
     fn test_resource_type_name() {
-        assert_eq!(ResourceType::Wood.name(), "Wood");
-        assert_eq!(ResourceType::Planks.name(), "Planks");
-        assert_eq!(ResourceType::Weapons.name(), "Weapons");
+        assert_eq!(ResourceType::RESOURCE_NAMES[ResourceType::Wood.discriminant() as usize], "Wood");
+        assert_eq!(ResourceType::RESOURCE_NAMES[ResourceType::Planks.discriminant() as usize], "Planks");
+        assert_eq!(ResourceType::RESOURCE_NAMES[ResourceType::Weapons.discriminant() as usize], "Weapons");
     }
 
     #[test]
@@ -2639,8 +2634,8 @@ mod tests {
 
     #[test]
     fn test_new_resource_types() {
-        assert_eq!(ResourceType::Water.name(), "Water");
-        assert_eq!(ResourceType::IronIngots.name(), "IronIngots");
+        assert_eq!(ResourceType::RESOURCE_NAMES[ResourceType::Water.discriminant() as usize], "Water");
+        assert_eq!(ResourceType::RESOURCE_NAMES[ResourceType::IronIngots.discriminant() as usize], "IronIngots");
         assert!(ResourceType::Water.is_raw());
         assert!(ResourceType::IronIngots.is_processed());
     }
@@ -5620,7 +5615,7 @@ mod squad_leader_aura_tests {
         let mut names = std::collections::HashSet::new();
         for &disc in &ResourceType::VALID_RESOURCE_DISCRIMINANTS {
             let rt = ResourceType::from_u8(disc).unwrap();
-            let name = rt.name();
+            let name = ResourceType::RESOURCE_NAMES[rt.discriminant() as usize];
             assert!(!name.is_empty(), "name() should not be empty for disc={}", disc);
             assert!(names.insert(name), "duplicate name '{}' for disc={}", name, disc);
             assert_eq!(rt as u8, disc, "discriminant mismatch for {}", name);
