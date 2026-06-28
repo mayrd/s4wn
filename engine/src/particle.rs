@@ -737,6 +737,55 @@ pub fn spawn_mine_spark_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, m
     spawned
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+/// Spawn a single water sparkle particle — tiny bright flash on water surface.
+/// Represents sunlight glinting off gentle ripples. Sparkles appear like
+/// brief specular highlights: very short life, bright white/silver, minimal movement.
+pub fn spawn_water_sparkle_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 23.7 + y * 17.1;
+    let z = 0.05 + (seed * 1.9).sin().abs() * 0.08;   // at water surface level
+    let vx = (seed * 0.7).cos() * 0.04;                 // tiny drift
+    let vy = (seed * 1.3).sin() * 0.03;
+    let vz = 0.01 + (seed * 1.5).sin().abs() * 0.02;    // nearly stationary
+    let life = 0.12 + (seed * 3.3).sin().abs() * 0.20;   // quick flash 0.12-0.32s
+    // Bright white-silver (sunlight reflection on water)
+    let r = 0.92 + (seed * 5.7).sin().abs() * 0.08;
+    let g = 0.93 + (seed * 6.1).cos().abs() * 0.07;
+    let b = 0.95 + (seed * 7.3).sin().abs() * 0.05;
+    let _ = ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r, g, b, size: 1.2 });
+}
+
+/// Spawn a burst of water sparkle particles across a rectangular water area.
+pub fn spawn_water_sparkle_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 15.7 + 5.3).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 21.1 + 9.7).sin() * 0.5 + 0.5) * sy;
+        let seed = x * 23.7 + y * 17.1;
+        let z = 0.05 + (seed * 1.9).sin().abs() * 0.08;
+        if ps.spawn(&ParticleConfig {
+            x, y, z,
+            vx: (seed * 0.7).cos() * 0.04,
+            vy: (seed * 1.3).sin() * 0.03,
+            vz: 0.01 + (seed * 1.5).sin().abs() * 0.02,
+            life: 0.12 + (seed * 3.3).sin().abs() * 0.20,
+            r: 0.92 + (seed * 5.7).sin().abs() * 0.08,
+            g: 0.93 + (seed * 6.1).cos().abs() * 0.07,
+            b: 0.95 + (seed * 7.3).sin().abs() * 0.05,
+            size: 1.2,
+        }) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1784,4 +1833,55 @@ fn test_mine_spark_burst_bounds_and_capacity() {
         assert!(p.x >= 10.0 && p.x <= 14.0, "spark x={} out of bounds [10,14]", p.x);
         assert!(p.y >= 20.0 && p.y <= 24.0, "spark y={} out of bounds [20,24]", p.y);
     }
+}
+
+// ── Water sparkle tests ──────────────────────────────────────────────────────
+#[test]
+fn test_water_sparkle_particle_spawns_with_bright_white_color() {
+    let mut ps = ParticleSystem::new();
+    spawn_water_sparkle_particle(&mut ps, 5.0, 5.0);
+    assert_eq!(ps.alive_count(), 1);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    // Bright white/silver — all channels high
+    assert!(p.r > 0.88, "sparkle should be bright (r > 0.88), got r={}", p.r);
+    assert!(p.g > 0.88, "sparkle should be bright (g > 0.88), got g={}", p.g);
+    assert!(p.b > 0.90, "sparkle should be bright white (b > 0.90), got b={}", p.b);
+}
+
+#[test]
+fn test_water_sparkle_stays_at_surface_level() {
+    let mut ps = ParticleSystem::new();
+    spawn_water_sparkle_particle(&mut ps, 10.0, 3.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.z >= 0.04 && p.z <= 0.15, "sparkle z should be at water surface (0.04-0.15), got z={}", p.z);
+}
+
+#[test]
+fn test_water_sparkle_has_very_short_lifetime() {
+    let mut ps = ParticleSystem::new();
+    spawn_water_sparkle_particle(&mut ps, 7.0, 9.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.life >= 0.08 && p.life <= 0.40, "sparkle life should be very short (0.08-0.40s), got {}", p.life);
+}
+
+#[test]
+fn test_water_sparkle_burst_bounds() {
+    let mut ps = ParticleSystem::new();
+    let spawned = spawn_water_sparkle_burst(&mut ps, 10.0, 20.0, 15.0, 25.0, 5);
+    assert!(spawned <= 5, "burst should spawn at most 5 particles, got {}", spawned);
+    for p in ps.particles.iter().filter(|p| p.alive) {
+        assert!(p.x >= 10.0 && p.x <= 15.0, "sparkle x={} out of bounds [10,15]", p.x);
+        assert!(p.y >= 20.0 && p.y <= 25.0, "sparkle y={} out of bounds [20,25]", p.y);
+    }
+}
+
+#[test]
+fn test_water_sparkle_burst_capacity() {
+    let mut ps = ParticleSystem::new();
+    for i in 0..MAX_PARTICLES {
+        ps.spawn(&ParticleConfig { x: i as f32, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 10.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
+    }
+    assert_eq!(ps.alive_count(), MAX_PARTICLES);
+    let n = spawn_water_sparkle_burst(&mut ps, 0.0, 0.0, 10.0, 10.0, 20);
+    assert_eq!(n, 0, "sparkle burst should spawn 0 when system full");
 }

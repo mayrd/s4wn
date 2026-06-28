@@ -1819,6 +1819,33 @@ impl App {
                     }
                 }
             }
+            // Water sparkle particles: bright specular glints on water surface
+            // Tiny bright flashes that appear and disappear quickly — sunlight
+            // reflecting off gentle ripples. Daytime only (sparkles need sun).
+            if tick.is_multiple_of(3) {
+                let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
+                if (0.2..=0.8).contains(&day_phase) {
+                    let map = &self.game_loop.state.map;
+                    let cx = self.camera.center_x as usize;
+                    let cy = self.camera.center_y as usize;
+                    let range = 14usize;
+                    let mut sparkle_count = 0u32;
+                    for dy in 0..range {
+                        for dx in 0..range {
+                            let tx = cx.saturating_sub(range/2) + dx;
+                            let ty = cy.saturating_sub(range/2) + dy;
+                            if let Some(tile) = map.get(tx, ty) {
+                                if tile.terrain == crate::map::Terrain::Water && sparkle_count < 5 {
+                                    particle::spawn_water_sparkle_particle(&mut self.particle_system, tx as f32, ty as f32);
+                                    sparkle_count += 1;
+                                }
+                            }
+                            if sparkle_count >= 5 { break; }
+                        }
+                        if sparkle_count >= 5 { break; }
+                    }
+                }
+            }
             // Ember/spark particles: spawn near Iron/Gold Smelter buildings
             // Embers rise from furnace chimneys with orange-red-yellow color
             if tick.is_multiple_of(7) {
