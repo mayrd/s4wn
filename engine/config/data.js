@@ -1153,7 +1153,9 @@ window.S4WN_CONFIG = {
       "id": "Water",
       "category": "Food & Crops",
       "name": "Water",
-      "name_de": "Wasser",
+      "name_de": "Wasser",,,
+      "spriteFile": "terrain_water.png"
+      "spriteFile": "terrain_water.png"
       "icon": "💧",
       "description": "Fresh water for baking, brewing, and breeding",
       "description_de": "Frischwasser zum Backen, Brauen und Züchten"
@@ -1836,42 +1838,50 @@ window.S4WN_CONFIG = {
     {
       "id": 0,
       "name": "Grass",
-      "name_de": "Gras"
+      "name_de": "Gras",
+      "spriteFile": "terrain_grass.png"
     },
     {
       "id": 1,
       "name": "Forest",
-      "name_de": "Wald"
+      "name_de": "Wald",
+      "spriteFile": "terrain_forest.png"
     },
     {
       "id": 2,
       "name": "Mountain",
-      "name_de": "Berg"
+      "name_de": "Berg",
+      "spriteFile": "terrain_mountain.png"
     },
     {
       "id": 3,
       "name": "Water",
-      "name_de": "Wasser"
+      "name_de": "Wasser",
+      "spriteFile": "terrain_water.png"
     },
     {
       "id": 4,
       "name": "DeepWater",
-      "name_de": "Tiefes Wasser"
+      "name_de": "Tiefes Wasser",
+      "spriteFile": "terrain_deepwater.png"
     },
     {
       "id": 5,
       "name": "Desert",
-      "name_de": "Wüste"
+      "name_de": "Wüste",
+      "spriteFile": "terrain_desert.png"
     },
     {
       "id": 6,
       "name": "Swamp",
-      "name_de": "Sumpf"
+      "name_de": "Sumpf",
+      "spriteFile": "terrain_swamp.png"
     },
     {
       "id": 7,
       "name": "Snow",
-      "name_de": "Schnee"
+      "name_de": "Schnee",
+      "spriteFile": "terrain_snow.png"
     }
   ],
   "categories": {
