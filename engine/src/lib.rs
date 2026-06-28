@@ -201,8 +201,11 @@ n_w = normalize(n_w + nm.x * t * 0.6 + nm.y * b * 0.6);
 view_dir = normalize(vec3(0.0, 1.0, 0.0) - nm.z * n_w * 0.3);
 }
 vec3 h = normalize(l_w + view_dir);
-float spec = pow(max(dot(n_w, h), 0.0), 64.0);
-float specular_strength = spec * (0.4 + day_light * 0.6);
+float spec_sharp = pow(max(dot(n_w, h), 0.0), 128.0);
+float spec_broad = pow(max(dot(n_w, h), 0.0), 8.0);
+float sun_angle = 1.0 - abs(day_light - 0.5) * 1.8;
+sun_angle = clamp(sun_angle, 0.05, 1.0);
+float specular_strength = (spec_sharp * 0.7 + spec_broad * 0.3) * (0.4 + day_light * 0.6) * sun_angle;
 float fresnel = pow(1.0 - max(dot(n_w, view_dir), 0.0), 3.0);
 fresnel = mix(0.04, 1.0, fresnel);
 vec3 shallow_color = vec3(0.1, 0.45, 0.55);
@@ -216,7 +219,13 @@ screen_uv.y = 1.0 - screen_uv.y;
 screen_uv.y = min(screen_uv.y, u_reflection_horizon_y);
 vec3 reflection = texture(u_reflection_tex, screen_uv).rgb;
 vec3 water_surface = water_color * light;
-water_surface += vec3(1.0, 0.95, 0.8) * specular_strength * 0.6;
+water_surface += vec3(1.0, 0.92, 0.75) * specular_strength * 0.65;
+vec2 caustic_uv = v_uv * 8.0 + vec2(u_water_time * 0.12, u_water_time * 0.09);
+vec3 caustic_nm = texture(u_water_normal, caustic_uv).rgb * 2.0 - 1.0;
+float caustic = length(caustic_nm.xy);
+caustic = smoothstep(0.25, 0.7, caustic) * 0.25;
+float caustic_light = caustic * day_light * 0.35;
+water_surface += vec3(0.9, 0.95, 1.0) * caustic_light;
 vec3 reflected = mix(water_surface, reflection, fresnel);
 lit = mix(reflected, lit * vec3(0.3, 0.5, 0.6), 0.25);
 float alpha_sim = mix(0.85, 1.0, fresnel);
@@ -5955,8 +5964,12 @@ mod tests {
             "fragment shader missing specular_strength"
         );
         assert!(
-            FRAGMENT_SHADER.contains("pow(max(dot(n_w, h), 0.0), 64.0)"),
-            "fragment shader missing Blinn-Phong specular computation"
+            FRAGMENT_SHADER.contains("pow(max(dot(n_w, h), 0.0), 128.0)"),
+            "fragment shader missing Blinn-Phong sharp specular computation"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("pow(max(dot(n_w, h), 0.0), 8.0)"),
+            "fragment shader missing Blinn-Phong broad specular computation"
         );
     }
     #[test]
@@ -6017,6 +6030,49 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_fragment_shader_water_caustics() {
+        assert!(
+            FRAGMENT_SHADER.contains("caustic_uv"),
+            "fragment shader missing caustic_uv"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("caustic_nm"),
+            "fragment shader missing caustic normal map sample"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("smoothstep(0.25, 0.7, caustic)"),
+            "fragment shader missing caustic smoothstep"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("caustic_light"),
+            "fragment shader missing caustic_light variable"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("day_light * 0.35"),
+            "fragment shader missing day-light gating on caustics"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_water_sun_angle_specular() {
+        assert!(
+            FRAGMENT_SHADER.contains("sun_angle"),
+            "fragment shader missing sun_angle modulation"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("spec_sharp"),
+            "fragment shader missing spec_sharp dual-lobe"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("spec_broad"),
+            "fragment shader missing spec_broad dual-lobe"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("sun_angle = clamp"),
+            "fragment shader missing sun_angle clamping"
+        );
+    }
     // ── Model 3D Rendering Tests ──────────────────────────────────────────
 
     #[test]
