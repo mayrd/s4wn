@@ -118,26 +118,6 @@ export function generate_map(map_type, width, height) {
 }
 
 /**
- * Get build cost for a building type. Returns JSON: {"Wood":3} or {"error":"..."}
- * @param {string} kind_name
- * @returns {string}
- */
-export function get_build_cost(kind_name) {
-    let deferred2_0;
-    let deferred2_1;
-    try {
-        const ptr0 = passStringToWasm0(kind_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.get_build_cost(ptr0, len0);
-        deferred2_0 = ret[0];
-        deferred2_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-    }
-}
-
-/**
  * Get build cost by BuildingType integer discriminant (JSON with integer keys).
  * @param {number} discriminant
  * @returns {string}
@@ -331,7 +311,7 @@ export function get_particles_json() {
 }
 
 /**
- * Get the player's nation as a JSON string {name, color, emoji, description}
+ * Get the player's nation as a JSON string {name_id, color, emoji, description}
  * Returns empty string if no nation is set.
  * @returns {string}
  */
@@ -836,30 +816,6 @@ export function toggle_editor_grid() {
 export function toggle_pause() {
     const ret = wasm.toggle_pause();
     return ret !== 0;
-}
-
-/**
- * Try to place a building on the map.
- * Takes building type name (e.g. "Farm"), tile x, tile y.
- * Returns JSON: {"ok":true,"idx":0} or {"error":"message"}
- * @param {string} kind_name
- * @param {number} x
- * @param {number} y
- * @returns {string}
- */
-export function try_place_building(kind_name, x, y) {
-    let deferred2_0;
-    let deferred2_1;
-    try {
-        const ptr0 = passStringToWasm0(kind_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.try_place_building(ptr0, len0, x, y);
-        deferred2_0 = ret[0];
-        deferred2_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-    }
 }
 
 /**

@@ -45,11 +45,6 @@ export function formation_move(unit_ids_json: string, target_x: number, target_y
 export function generate_map(map_type: string, width: number, height: number): string;
 
 /**
- * Get build cost for a building type. Returns JSON: {"Wood":3} or {"error":"..."}
- */
-export function get_build_cost(kind_name: string): string;
-
-/**
  * Get build cost by BuildingType integer discriminant (JSON with integer keys).
  */
 export function get_build_cost_by_id(discriminant: number): string;
@@ -115,7 +110,7 @@ export function get_nation_buildings(nation_name: string): string;
 export function get_particles_json(): string;
 
 /**
- * Get the player's nation as a JSON string {name, color, emoji, description}
+ * Get the player's nation as a JSON string {name_id, color, emoji, description}
  * Returns empty string if no nation is set.
  */
 export function get_player_nation(): string;
@@ -328,13 +323,6 @@ export function toggle_editor_grid(): boolean;
 export function toggle_pause(): boolean;
 
 /**
- * Try to place a building on the map.
- * Takes building type name (e.g. "Farm"), tile x, tile y.
- * Returns JSON: {"ok":true,"idx":0} or {"error":"message"}
- */
-export function try_place_building(kind_name: string, x: number, y: number): string;
-
-/**
  * Try to place a building by BuildingType integer discriminant.
  * Returns JSON: {"ok":true,"idx":0,"kind":5} or {"error":"message"}
  */
@@ -358,7 +346,6 @@ export interface InitOutput {
     readonly export_map_json: () => [number, number];
     readonly formation_move: (a: number, b: number, c: number, d: number) => number;
     readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
-    readonly get_build_cost: (a: number, b: number) => [number, number];
     readonly get_build_cost_by_id: (a: number) => [number, number];
     readonly get_building_at_tile: (a: number, b: number) => [number, number];
     readonly get_building_garrison_json: (a: number) => [number, number];
@@ -406,7 +393,6 @@ export interface InitOutput {
     readonly tick_building_destructions: (a: number) => [number, number];
     readonly toggle_editor_grid: () => number;
     readonly toggle_pause: () => number;
-    readonly try_place_building: (a: number, b: number, c: number, d: number) => [number, number];
     readonly try_place_building_by_id: (a: number, b: number, c: number) => [number, number];
     readonly wasm_garrison_unit: (a: number, b: number) => number;
     readonly wasm_ungarrison_unit: (a: number, b: number) => number;

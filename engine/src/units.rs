@@ -79,6 +79,7 @@ pub enum UnitKind {
 }
 
 /// Names for UnitKind discriminants (48 slots, indexed by discriminant).
+#[cfg(test)]
 pub const UNIT_KIND_NAMES: [&str; 48] = [
     "Settler",          // 0
     "Swordsman",        // 1
@@ -242,6 +243,7 @@ pub enum UnitState {
 }
 
 /// Names for UnitState discriminants (8 slots, indexed by discriminant).
+#[cfg(test)]
 pub const UNIT_STATE_NAMES: [&str; 8] = [
     "Idle",          // 0
     "Moving",        // 1
@@ -811,6 +813,7 @@ impl UnitManager {
 
     /// Get IDs and positions of military units (Swordsman, Bowman) within a world-coordinate rectangle.
     /// Returns vector of (id, kind_name, x, y, hp, state_name) tuples.
+    #[cfg(test)]
     pub fn military_in_rect(&self, min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> Vec<(u32, &str, f32, f32, u32, &str)> {
         self.units
             .iter()
