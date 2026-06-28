@@ -1912,6 +1912,28 @@ impl App {
             }
         }
 
+        // Magic sparkle particles: divine energy rising from temples during daytime
+        if self.particle_system.alive_count() < 64 {
+            let sparkle_tick = self.game_loop.state.game_time as u32;
+            if sparkle_tick.is_multiple_of(8) {
+                let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
+                if (0.2..=0.8).contains(&day_phase) {
+                    let mut sparkle_count = 0u32;
+                    for b in self.game_loop.state.economy.buildings.iter() {
+                        if b.is_complete() && b.active {
+                            let is_temple = b.kind == crate::economy::BuildingType::SmallTemple
+                                || b.kind == crate::economy::BuildingType::LargeTemple;
+                            if is_temple && sparkle_count < 2 {
+                                particle::spawn_magic_sparkle_particle(&mut self.particle_system, b.x as f32, b.y as f32);
+                                sparkle_count += 1;
+                            }
+                        }
+                        if sparkle_count >= 2 { break; }
+                    }
+                }
+            }
+        }
+
         // Smooth camera
         self.camera.update(0.016); // ~60fps
 
@@ -3679,7 +3701,7 @@ pub fn get_player_nation() -> String {
     String::new()
 }
 /// Get unique building names for a nation by discriminant as JSON array.
-#[wasm_bindgen]
+#[cfg(test)]
 pub fn get_nation_buildings_by_id(discriminant: u8) -> String {
     use crate::nation::{self, NationType};
     let nation = match NationType::from_discriminant(discriminant) {

@@ -646,6 +646,52 @@ pub fn spawn_moth_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: 
     spawned
 }
 
+/// Spawn a single magic sparkle particle — divine energy rising from temple buildings.
+/// Represents mana/spiritual energy emanating from Small Temple and Large Temple.
+pub fn spawn_magic_sparkle_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 11.3 + y * 17.7;
+    let z = 2.0 + (seed * 1.3).sin().abs() * 3.0;  // rises from building height
+    let vx = (seed * 2.9).cos() * 0.08;              // gentle horizontal scatter
+    let vy = (seed * 3.7).sin() * 0.06;
+    let vz = 0.4 + (seed * 4.1).sin().abs() * 0.6;   // gentle upward rise
+    let life = 2.0 + (seed * 5.9).sin().abs() * 2.5;
+    // Ethereal blue-white-gold color (divine energy)
+    let r = 0.85 + (seed * 7.3).sin().abs() * 0.15;  // bright white with golden tint
+    let g = 0.88 + (seed * 8.1).cos().abs() * 0.12;
+    let b = 0.95 + (seed * 9.7).sin().abs() * 0.05;  // dominant blue-white
+    let _ = ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r, g, b, size: 2.2 });
+}
+
+/// Spawn a burst of magic sparkle particles around a temple building.
+pub fn spawn_magic_sparkle_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 13.1 + 3.7).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 19.3 + 6.9).sin() * 0.5 + 0.5) * sy;
+        let seed = x * 11.3 + y * 17.7;
+        let z = 2.0 + (seed * 1.3).sin().abs() * 3.0;
+        if ps.spawn(&ParticleConfig {
+            x, y, z,
+            vx: (seed * 2.9).cos() * 0.08,
+            vy: (seed * 3.7).sin() * 0.06,
+            vz: 0.4 + (seed * 4.1).sin().abs() * 0.6,
+            life: 2.0 + (seed * 5.9).sin().abs() * 2.5,
+            r: 0.85 + (seed * 7.3).sin().abs() * 0.15,
+            g: 0.88 + (seed * 8.1).cos().abs() * 0.12,
+            b: 0.95 + (seed * 9.7).sin().abs() * 0.05,
+            size: 2.2,
+        }) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1592,5 +1638,55 @@ fn test_moth_burst_bounds_and_capacity() {
     for p in ps.particles.iter().filter(|p| p.alive) {
         assert!(p.x >= 10.0 && p.x <= 14.0, "moth x={} out of bounds [10,14]", p.x);
         assert!(p.y >= 20.0 && p.y <= 24.0, "moth y={} out of bounds [20,24]", p.y);
+    }
+}
+
+// ── Magic sparkle tests ───────────────────────────────────────────────────────
+#[test]
+fn test_magic_sparkle_particle_spawns_with_ethereal_color() {
+    let mut ps = ParticleSystem::new();
+    spawn_magic_sparkle_particle(&mut ps, 5.0, 3.0);
+    assert_eq!(ps.alive_count(), 1);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    // Ethereal blue-white: high blue, high green, slightly lower red
+    assert!(p.b > 0.8, "sparkle should be blue-dominant (b > 0.8), got b={}", p.b);
+    assert!(p.r > 0.8, "sparkle should be bright (r > 0.8), got r={}", p.r);
+    assert!(p.r >= p.g, "sparkle white balance: r >= g, got r={} g={}", p.r, p.g);
+}
+
+#[test]
+fn test_magic_sparkle_rises_from_temple_height() {
+    let mut ps = ParticleSystem::new();
+    spawn_magic_sparkle_particle(&mut ps, 4.0, 8.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.z > 1.5, "sparkle should start above building height (z > 1.5), got z={}", p.z);
+    assert!(p.z < 5.5, "sparkle should not start too high (z < 5.5), got z={}", p.z);
+}
+
+#[test]
+fn test_magic_sparkle_rises_upward() {
+    let mut ps = ParticleSystem::new();
+    spawn_magic_sparkle_particle(&mut ps, 6.0, 2.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.vz > 0.0, "sparkle should rise (vz > 0), got vz={}", p.vz);
+    assert!(p.vz < 1.5, "sparkle rise should be gentle (vz < 1.5), got vz={}", p.vz);
+}
+
+#[test]
+fn test_magic_sparkle_has_medium_lifetime() {
+    let mut ps = ParticleSystem::new();
+    spawn_magic_sparkle_particle(&mut ps, 3.0, 9.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.life >= 1.5 && p.life <= 5.0, "sparkle life should be 1.5-5.0s, got {}", p.life);
+}
+
+#[test]
+fn test_magic_sparkle_burst_bounds_and_capacity() {
+    let mut ps = ParticleSystem::new();
+    let spawned = spawn_magic_sparkle_burst(&mut ps, 10.0, 20.0, 14.0, 24.0, 6);
+    assert!(spawned <= 6, "burst should spawn at most 6 particles, got {}", spawned);
+    for p in ps.particles.iter().filter(|p| p.alive) {
+        assert!(p.x >= 10.0 && p.x <= 14.0, "sparkle x={} out of bounds [10,14]", p.x);
+        assert!(p.y >= 20.0 && p.y <= 24.0, "sparkle y={} out of bounds [20,24]", p.y);
     }
 }
