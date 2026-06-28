@@ -2076,6 +2076,9 @@ window.S4WN_CONFIG = {
         "Honey": 12, "PlankWood": 16, "Flour": 22, "Bread": 20,
         "IronBar": 23, "Mead": 27, "Wine": 28
     };
+    window.NATION_DISCRIMINANT_BY_ID = {
+        "roman": 0, "viking": 1, "mayan": 2, "trojan": 3, "dark": 4
+    };
     window.NATION_NAMES_BY_ID = {
         0: "Roman", 1: "Viking", 2: "Maya", 3: "Trojan", 4: "Dark Tribe"
     };

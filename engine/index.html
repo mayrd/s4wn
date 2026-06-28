@@ -1504,11 +1504,11 @@
     <div class="ng-row">
       <label data-i18n="nation_label">Nation</label>
       <select id="ng-nation">
-        <option value="roman" selected>🏛️ Romans — Balanced Builder</option>
-        <option value="viking">🪓 Vikings — Aggressive Rusher</option>
-        <option value="mayan">🌿 Mayans — Defensive Expander</option>
-        <option value="trojan">🏺 Trojans — Trade & Quality</option>
-        <option value="dark">🌑 Dark Tribe — Terraforming Swarm</option>
+        <option value="0" selected>🏛️ Romans — Balanced Builder</option>
+        <option value="1">🪓 Vikings — Aggressive Rusher</option>
+        <option value="2">🌿 Mayans — Defensive Expander</option>
+        <option value="3">🏺 Trojans — Trade & Quality</option>
+        <option value="4">🌑 Dark Tribe — Terraforming Swarm</option>
       </select>
     </div>
     <div class="ng-actions">
@@ -1662,9 +1662,9 @@ import init, {
     decompress_sav_chunk,
     set_textures_ready,
     set_water_normal_ready,
-    set_player_nation,
+    set_player_nation_by_id,
     get_player_nation,
-    get_nation_buildings,
+    get_nation_buildings_by_id,
     load_model_json,
     add_model_instance,
     get_camera_state,
@@ -5465,8 +5465,8 @@ async function startNewGame() {
         }
 
         // Set player nation
-        if (typeof set_player_nation === 'function') {
-            const nationSet = set_player_nation(nation);
+        if (typeof set_player_nation_by_id === 'function') {
+            const nationSet = set_player_nation_by_id(parseInt(nation, 10) || 0);
             console.log(`Nation set: ${nation} → ${nationSet}`);
             updateNationHUD();
         }
@@ -7189,9 +7189,9 @@ window.__s4wn_debug = {
   get_game_state,
   restore_game_state,
   get_tool_counts,
-  set_player_nation,
+  set_player_nation_by_id,
   get_player_nation,
-  get_nation_buildings,
+  get_nation_buildings_by_id,
     get_build_cost_by_id,
   toggle_pause,
   is_paused,

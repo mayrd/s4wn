@@ -744,11 +744,20 @@ impl UniqueBuildingType {
 }
 
 /// Get the names of unique buildings for a nation (by name string).
+/// Keep as helper for tests.
 pub fn get_nation_buildings(nation_name: &str) -> Vec<String> {
     let nation = match NationType::from_name(nation_name) {
         Some(n) => n,
         None => return Vec::new(),
     };
+    UniqueBuildingType::for_nation(nation)
+        .iter()
+        .map(|ub| UNIQUE_BUILDING_NAMES[*ub as usize].to_string())
+        .collect()
+}
+
+/// Get unique building names for a nation by discriminant (direct lookup).
+pub fn get_nation_buildings_by_disc(nation: NationType) -> Vec<String> {
     UniqueBuildingType::for_nation(nation)
         .iter()
         .map(|ub| UNIQUE_BUILDING_NAMES[*ub as usize].to_string())

@@ -3639,12 +3639,12 @@ pub fn get_tool_counts() -> String {
     }
     String::new()
 }
-/// Set the player's nation for the current game.
-/// Returns true if the nation name was recognized and applied.
+/// Set the player's nation by discriminant integer for the current game.
+/// Returns true if the discriminant was recognized and applied.
 #[wasm_bindgen]
-pub fn set_player_nation(nation_name: &str) -> bool {
+pub fn set_player_nation_by_id(discriminant: u8) -> bool {
     use crate::nation::{NationType, Nation};
-    if let Some(nation_type) = NationType::from_name(nation_name) {
+    if let Some(nation_type) = NationType::from_discriminant(discriminant) {
         let nation = Nation::new(nation_type);
         unsafe {
             if let Some(ref mut app) = APP {
@@ -3678,11 +3678,15 @@ pub fn get_player_nation() -> String {
     }
     String::new()
 }
-/// Get unique building names for a nation as JSON array.
+/// Get unique building names for a nation by discriminant as JSON array.
 #[wasm_bindgen]
-pub fn get_nation_buildings(nation_name: &str) -> String {
-    use crate::nation;
-    let names = nation::get_nation_buildings(nation_name);
+pub fn get_nation_buildings_by_id(discriminant: u8) -> String {
+    use crate::nation::{self, NationType};
+    let nation = match NationType::from_discriminant(discriminant) {
+        Some(n) => n,
+        None => return String::from("[]"),
+    };
+    let names = nation::get_nation_buildings_by_disc(nation);
     let quoted: Vec<String> = names.iter().map(|n| format!("\"{}\"", n)).collect();
     format!("[{}]", quoted.join(","))
 }
@@ -7233,6 +7237,37 @@ mod export_regression_tests {
         for &d in BuildingType::VALID_DISCRIMINANTS.iter().take(3) {
             let json = super::try_place_building_by_id(d, 5, 5);
             assert!(json.contains("Engine not initialized"), "got: {}", json);
+        }
+    }
+
+    // -- Nation discriminant migration tests --------------------------------
+
+    /// Verify set_player_nation_by_id rejects invalid discriminants (>= 5).
+    #[test]
+    fn test_set_player_nation_by_id_rejects_invalid() {
+        for disc in [5u8, 10, 50, 255] {
+            let result = super::set_player_nation_by_id(disc);
+            assert!(!result, "invalid discriminant {} should be rejected", disc);
+        }
+    }
+
+    /// Verify get_nation_buildings_by_id returns buildings for all valid discriminants.
+    #[test]
+    fn test_get_nation_buildings_by_id_all_discriminants() {
+        for disc in 0..5u8 {
+            let json = super::get_nation_buildings_by_id(disc);
+            assert!(json.starts_with('['), "disc {} should return JSON array, got: {}", disc, json);
+            assert!(json.ends_with(']'), "disc {} should return JSON array, got: {}", disc, json);
+            assert!(json.len() > 2, "disc {} should have buildings, got: {}", disc, json);
+        }
+    }
+
+    /// Verify get_nation_buildings_by_id rejects invalid discriminants.
+    #[test]
+    fn test_get_nation_buildings_by_id_rejects_invalid() {
+        for disc in [5u8, 99, 255] {
+            let json = super::get_nation_buildings_by_id(disc);
+            assert_eq!(json, "[]", "invalid disc {} should return empty array, got: {}", disc, json);
         }
     }
 }
