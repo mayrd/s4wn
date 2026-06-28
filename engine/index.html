@@ -2662,21 +2662,23 @@ function parseBinaryMap(buffer) {
             }
         }
 
-        const terrain = TERRAIN_BY_ID[terrainId]?.name || 'Grass';
-        const elevation = (elevRaw / 255) * 2 - 1;
+        const t = (terrainId <= 7) ? terrainId : 0;
+        const e = parseFloat(((elevRaw / 255) * 2 - 1).toFixed(3));
 
         if (elevRaw < elevMin) elevMin = elevRaw;
         if (elevRaw > elevMax) elevMax = elevRaw;
 
-        terrainCounts[terrain] = (terrainCounts[terrain] || 0) + 1;
+        const terrainName = TERRAIN_BY_ID[t]?.name || 'Grass';
+        terrainCounts[terrainName] = (terrainCounts[terrainName] || 0) + 1;
 
-        let resource = null;
-        if (resourceId > 0 && resourceId < RESOURCE_NAMES.length) {
-            resource = RESOURCE_NAMES[resourceId];
-            resourceCounts[resource] = (resourceCounts[resource] || 0) + 1;
+        let r = null;
+        if (resourceId > 0 && resourceId <= 8) {
+            r = S4_SAV_RESOURCE_TO_MAP_DISC[resourceId];
+            const resName = resourceId < RESOURCE_NAMES.length ? RESOURCE_NAMES[resourceId] : null;
+            if (resName) resourceCounts[resName] = (resourceCounts[resName] || 0) + 1;
         }
 
-        tiles.push({ terrain, elevation, resource });
+        tiles.push({ t, e, r });
     }
 
     if (tiles.length !== width * height) {
@@ -3133,15 +3135,11 @@ function confirmMapLoad() {
                 const resourceId = decompressed[i + 3];
                 // micro-x, micro-y ignored for now
 
-                const terrainName = TERRAIN_BY_ID[terrainId] ? TERRAIN_BY_ID[terrainId].name : 'Grass';
-                const elevation = (rawElev / 255.0) * 2.0 - 1.0; // normalize 0-255 → -1.0 to 1.0
-                const resourceName = RESOURCE_NAMES[resourceId] || null;
+                const t = (terrainId <= 7) ? terrainId : 0;
+                const e = parseFloat(((rawElev / 255.0) * 2.0 - 1.0).toFixed(3));
+                const r = (resourceId > 0 && resourceId <= 8) ? S4_SAV_RESOURCE_TO_MAP_DISC[resourceId] : null;
 
-                tiles.push({
-                    terrain: terrainName,
-                    elevation: parseFloat(elevation.toFixed(3)),
-                    resource: resourceName,
-                });
+                tiles.push({ t, e, r });
             }
 
             // ── Parse additional chunks for full state restoration ──
@@ -3273,14 +3271,14 @@ function confirmMapLoad() {
     }
 
     try {
-        // Build JSON in WASM-compatible verbose format
+        // Build JSON in WASM-compatible integer-key format {t, e, r}
         const jsonData = {
             width: pendingMapData.width,
             height: pendingMapData.height,
             tiles: pendingMapData.tiles.map(t => ({
-                terrain: t.terrain,
-                elevation: t.elevation ?? 0,
-                resource: t.resource ?? null,
+                t: t.t !== undefined ? t.t : (t.terrain !== undefined ? t.terrain : 0),
+                e: t.e !== undefined ? t.e : (t.elevation ?? 0),
+                r: t.r !== undefined ? t.r : null,
             })),
         };
 
@@ -3327,6 +3325,11 @@ document.addEventListener('drop', (e) => {
 
 // ── Building Placement ──────────────────────────────────────────────────
 const placementStatus = document.getElementById('placement-status');
+// Map S4 binary/sav resource byte IDs (1-8) to map::Resource discriminants (0-7)
+// S4: 1=Iron, 2=Coal, 3=Gold, 4=Stone, 5=Sulfur, 6=Fish, 7=Game, 8=Grain
+// map::Resource: 0=Iron, 1=Coal, 2=Gold, 3=Stone, 4=Sulfur, 5=Fish, 6=Game, 7=Grain
+const S4_SAV_RESOURCE_TO_MAP_DISC = [null, 0, 1, 2, 3, 4, 5, 6, 7];
+
 // Config loaded from ../config/data.js — destructure for module access
 const {
     BUILDING_ICONS, BUILDING_NAMES_DE,
