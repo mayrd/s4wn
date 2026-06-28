@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S273 · 786 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM baseline: 302.8KB (cargo clean build). All 10 name arrays are #[cfg(test)]-only. Next: (1) Phase 7: water surface sparkle particle effect. (2) Phase 7: water surface shader improvement. (3) Migrate data[3] S4 building names from sav-parser to JS-side lookup tables (est. ~3-5KB savings). (4) Consider alternative to serde_json remaining data segments (data[66]=8.8KB encoding tables).
+Status: S274 · 791 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM baseline: 302.8KB (cargo clean build). All 10 name arrays are #[cfg(test)]-only. Next: (1) Phase 7: water surface shader improvement (specular highlight tuning, caustics). (2) Migrate data[3] S4 building names from sav-parser to JS-side lookup tables (est. ~3-5KB savings). (3) Consider alternative to serde_json remaining data segments (data[66]=8.8KB encoding tables). (4) Phase 8: sound effects system (ambient water, weather, building sounds).
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Status: S273 · 786 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM b
 
 ### Session Log (recent)
 
+| 274 | 2026-06-28 | Phase 7: Water surface sparkle particle effect. Added spawn_water_sparkle_particle() + spawn_water_sparkle_burst() in particle.rs — tiny bright white/silver flashes on water surface (0.12-0.32s life), near-stationary at surface level, daytime-only gating. Wired into game loop: spawns near Water tiles every 3 ticks, max 5/tick (much higher rate than water splash). 5 new tests (bright white color, surface level, short lifetime, burst bounds/capacity). 786 → 791 tests. Clippy clean. Pure Rust — no WASM rebuild. -- 791 tests |
 | 273 | 2026-06-28 | Investigated data[3] (15.7KB, 5.18% of WASM): Largest data segment. Content: shader source (~9KB from FRAGMENT_SHADER via concat! + other shaders) + S4 building name strings from sav-parser in ara_crypt.rs/decompress.rs. Shader source is minified (scripts/minify_shaders.py done in S212) — remaining 9KB is essential GLSL code. S4 building names in sav-parser are ~77 string literals mapping original game building IDs → our internal names. These are ONLY used during .sav file loading (init/restore), not during gameplay. Migration path: replace Rust-side S4 name strings with integer discriminant mapping in JS (data.js), eliminate raw name strings from WASM. Estimated savings: 3-5KB from sav-parser names. Pure analysis, no code changes. 786 tests pass, clippy clean. -- 786 tests |
 
 | 272 | 2026-06-28 | Twiggy dominators analysis: Full retain-tree for top 5 WASM code/data items. render() retains 49.9KB (16.49%) — verified unavoidable draw-call orchestration. init() retains 15.8KB (5.20%), load_model_json() 12.5KB (4.13%), restore_game_state() 9.4KB (3.11%). Top data: data[3]=15.7KB (shader source + S4 building names — sav-parser migration candidates), data[66]=8.8KB (serde_json encoding table), data[0]=6.1KB (JSON format strings). data[57]+data[90]=10.1KB model vertex duplicates. No code changes — pure analysis. 786 tests pass, clippy clean. -- 786 tests |
