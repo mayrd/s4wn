@@ -1153,9 +1153,8 @@ window.S4WN_CONFIG = {
       "id": "Water",
       "category": "Food & Crops",
       "name": "Water",
-      "name_de": "Wasser",,,
-      "spriteFile": "terrain_water.png"
-      "spriteFile": "terrain_water.png"
+      "name_de": "Wasser",
+      "spriteFile": "terrain_water.png",
       "icon": "💧",
       "description": "Fresh water for baking, brewing, and breeding",
       "description_de": "Frischwasser zum Backen, Brauen und Züchten"
