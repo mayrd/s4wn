@@ -274,26 +274,6 @@ export function get_map_data() {
 }
 
 /**
- * Get unique building names for a nation as JSON array.
- * @param {string} nation_name
- * @returns {string}
- */
-export function get_nation_buildings(nation_name) {
-    let deferred2_0;
-    let deferred2_1;
-    try {
-        const ptr0 = passStringToWasm0(nation_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.get_nation_buildings(ptr0, len0);
-        deferred2_0 = ret[0];
-        deferred2_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-    }
-}
-
-/**
  * Get particles as JSON for JS-side rendering fallback.
  * @returns {string}
  */
@@ -680,15 +660,13 @@ export function set_game_speed(multiplier) {
 }
 
 /**
- * Set the player's nation for the current game.
- * Returns true if the nation name was recognized and applied.
- * @param {string} nation_name
+ * Set the player's nation by discriminant integer for the current game.
+ * Returns true if the discriminant was recognized and applied.
+ * @param {number} discriminant
  * @returns {boolean}
  */
-export function set_player_nation(nation_name) {
-    const ptr0 = passStringToWasm0(nation_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.set_player_nation(ptr0, len0);
+export function set_player_nation_by_id(discriminant) {
+    const ret = wasm.set_player_nation_by_id(discriminant);
     return ret !== 0;
 }
 

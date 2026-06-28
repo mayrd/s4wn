@@ -100,11 +100,6 @@ export function get_game_state(): string;
 export function get_map_data(): Uint8Array;
 
 /**
- * Get unique building names for a nation as JSON array.
- */
-export function get_nation_buildings(nation_name: string): string;
-
-/**
  * Get particles as JSON for JS-side rendering fallback.
  */
 export function get_particles_json(): string;
@@ -254,10 +249,10 @@ export function restore_game_state(json: string): string;
 export function set_game_speed(multiplier: number): void;
 
 /**
- * Set the player's nation for the current game.
- * Returns true if the nation name was recognized and applied.
+ * Set the player's nation by discriminant integer for the current game.
+ * Returns true if the discriminant was recognized and applied.
  */
-export function set_player_nation(nation_name: string): boolean;
+export function set_player_nation_by_id(discriminant: number): boolean;
 
 /**
  * Called from JS after terrain textures are fully loaded into the shared WebGL context.
@@ -355,7 +350,6 @@ export interface InitOutput {
     readonly get_draw_calls: () => number;
     readonly get_game_state: () => [number, number];
     readonly get_map_data: () => [number, number];
-    readonly get_nation_buildings: (a: number, b: number) => [number, number];
     readonly get_particles_json: () => [number, number];
     readonly get_player_nation: () => [number, number];
     readonly get_resource_counts_by_id: () => [number, number];
@@ -382,7 +376,7 @@ export interface InitOutput {
     readonly resize: () => void;
     readonly restore_game_state: (a: number, b: number) => [number, number];
     readonly set_game_speed: (a: number) => void;
-    readonly set_player_nation: (a: number, b: number) => number;
+    readonly set_player_nation_by_id: (a: number) => number;
     readonly set_textures_ready: () => void;
     readonly set_tile_terrain: (a: number, b: number, c: number) => number;
     readonly set_units_stance: (a: number, b: number, c: number) => number;
