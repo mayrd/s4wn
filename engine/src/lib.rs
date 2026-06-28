@@ -1934,6 +1934,26 @@ impl App {
             }
         }
 
+        // Mine spark particles: forge sparks from ore mines (Gold/Coal/IronOre)
+        if self.particle_system.alive_count() < 64 {
+            let mine_tick = self.game_loop.state.game_time as u32;
+            if mine_tick.is_multiple_of(6) {
+                let mut mine_count = 0u32;
+                for b in self.game_loop.state.economy.buildings.iter() {
+                    if b.is_complete() && b.active {
+                        let is_mine = b.kind == crate::economy::BuildingType::GoldMine
+                            || b.kind == crate::economy::BuildingType::CoalMine
+                            || b.kind == crate::economy::BuildingType::IronOreMine;
+                        if is_mine && mine_count < 2 {
+                            particle::spawn_mine_spark_particle(&mut self.particle_system, b.x as f32, b.y as f32);
+                            mine_count += 1;
+                        }
+                    }
+                    if mine_count >= 2 { break; }
+                }
+            }
+        }
+
         // Smooth camera
         self.camera.update(0.016); // ~60fps
 

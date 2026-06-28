@@ -692,6 +692,51 @@ pub fn spawn_magic_sparkle_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32
     spawned
 }
 
+/// Spawn a single mine spark particle (from ore mine forge work).
+pub fn spawn_mine_spark_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 9.1 + y * 14.3;
+    let z = 0.8 + (seed * 1.9).sin().abs() * 1.2;  // low (mine entrance height)
+    let vx = (seed * 2.7).cos() * 0.2;              // moderate scatter
+    let vy = (seed * 3.3).sin() * 0.18;
+    let vz = 0.6 + (seed * 4.7).sin().abs() * 1.4;   // rising sparks
+    let life = 0.4 + (seed * 5.1).sin().abs() * 0.8; // short burnout
+    // Hot orange-yellow color (forge sparks)
+    let r = 0.95 + (seed * 6.3).sin().abs() * 0.05;  // near-max red-orange
+    let g = 0.55 + (seed * 7.9).cos().abs() * 0.35;  // medium green (yellow-orange tint)
+    let b = 0.05 + (seed * 8.7).sin().abs() * 0.1;   // very low blue
+    let _ = ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r, g, b, size: 2.5 });
+}
+
+/// Spawn a burst of mine spark particles around a mine building.
+pub fn spawn_mine_spark_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 11.7 + 4.3).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 16.1 + 8.9).sin() * 0.5 + 0.5) * sy;
+        let seed = x * 9.1 + y * 14.3;
+        let z = 0.8 + (seed * 1.9).sin().abs() * 1.2;
+        if ps.spawn(&ParticleConfig {
+            x, y, z,
+            vx: (seed * 2.7).cos() * 0.2,
+            vy: (seed * 3.3).sin() * 0.18,
+            vz: 0.6 + (seed * 4.7).sin().abs() * 1.4,
+            life: 0.4 + (seed * 5.1).sin().abs() * 0.8,
+            r: 0.95 + (seed * 6.3).sin().abs() * 0.05,
+            g: 0.55 + (seed * 7.9).cos().abs() * 0.35,
+            b: 0.05 + (seed * 8.7).sin().abs() * 0.1,
+            size: 2.5,
+        }) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1688,5 +1733,55 @@ fn test_magic_sparkle_burst_bounds_and_capacity() {
     for p in ps.particles.iter().filter(|p| p.alive) {
         assert!(p.x >= 10.0 && p.x <= 14.0, "sparkle x={} out of bounds [10,14]", p.x);
         assert!(p.y >= 20.0 && p.y <= 24.0, "sparkle y={} out of bounds [20,24]", p.y);
+    }
+}
+
+// ── Mine spark tests ─────────────────────────────────────────────────────────
+#[test]
+fn test_mine_spark_particle_spawns_with_hot_color() {
+    let mut ps = ParticleSystem::new();
+    spawn_mine_spark_particle(&mut ps, 5.0, 3.0);
+    assert_eq!(ps.alive_count(), 1);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    // Hot orange-yellow: high red, medium green, very low blue
+    assert!(p.r > 0.9, "spark should be bright red-orange (r > 0.9), got r={}", p.r);
+    assert!(p.b < 0.2, "spark should have very low blue (b < 0.2), got b={}", p.b);
+    assert!(p.r > p.g, "spark should be red-dominant (r > g), got r={} g={}", p.r, p.g);
+}
+
+#[test]
+fn test_mine_spark_rises_from_mine_entrance_height() {
+    let mut ps = ParticleSystem::new();
+    spawn_mine_spark_particle(&mut ps, 4.0, 8.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.z > 0.5, "spark should start near ground level (z > 0.5), got z={}", p.z);
+    assert!(p.z < 2.5, "spark should not start too high (z < 2.5), got z={}", p.z);
+}
+
+#[test]
+fn test_mine_spark_rises_upward() {
+    let mut ps = ParticleSystem::new();
+    spawn_mine_spark_particle(&mut ps, 6.0, 2.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.vz > 0.0, "spark should rise (vz > 0), got vz={}", p.vz);
+    assert!(p.vz < 2.5, "spark rise should be moderate (vz < 2.5), got vz={}", p.vz);
+}
+
+#[test]
+fn test_mine_spark_has_short_lifetime() {
+    let mut ps = ParticleSystem::new();
+    spawn_mine_spark_particle(&mut ps, 3.0, 9.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.life >= 0.3 && p.life <= 1.5, "spark life should be 0.3-1.5s, got {}", p.life);
+}
+
+#[test]
+fn test_mine_spark_burst_bounds_and_capacity() {
+    let mut ps = ParticleSystem::new();
+    let spawned = spawn_mine_spark_burst(&mut ps, 10.0, 20.0, 14.0, 24.0, 6);
+    assert!(spawned <= 6, "burst should spawn at most 6 particles, got {}", spawned);
+    for p in ps.particles.iter().filter(|p| p.alive) {
+        assert!(p.x >= 10.0 && p.x <= 14.0, "spark x={} out of bounds [10,14]", p.x);
+        assert!(p.y >= 20.0 && p.y <= 24.0, "spark y={} out of bounds [20,24]", p.y);
     }
 }

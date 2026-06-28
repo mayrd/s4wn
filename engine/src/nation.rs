@@ -628,6 +628,7 @@ pub enum UniqueBuildingType {
 }
 
 /// Names for UniqueBuildingType discriminants (48 slots, indexed by discriminant).
+#[cfg(test)]
 pub const UNIQUE_BUILDING_NAMES: [&str; 48] = [
     // Romans (0-5)
     "Temple of Bacchus",          // 0
@@ -744,20 +745,8 @@ impl UniqueBuildingType {
     }
 }
 
-/// Get the names of unique buildings for a nation (by name string).
-/// Keep as helper for tests.
-pub fn get_nation_buildings(nation_name: &str) -> Vec<String> {
-    let nation = match NationType::from_name(nation_name) {
-        Some(n) => n,
-        None => return Vec::new(),
-    };
-    UniqueBuildingType::for_nation(nation)
-        .iter()
-        .map(|ub| UNIQUE_BUILDING_NAMES[*ub as usize].to_string())
-        .collect()
-}
-
 /// Get unique building names for a nation by discriminant (direct lookup).
+#[cfg(test)]
 pub fn get_nation_buildings_by_disc(nation: NationType) -> Vec<String> {
     UniqueBuildingType::for_nation(nation)
         .iter()
