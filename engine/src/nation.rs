@@ -225,6 +225,7 @@ pub enum UnitSpecial {
 }
 
 /// Names for UnitSpecial discriminants (indexed by discriminant).
+#[cfg(test)]
 pub const UNIT_SPECIAL_NAMES: [&str; 5] = [
     "Formation Bonus", // 0 - FormationBonus
     "Berserk",         // 1 - Berserk
@@ -780,6 +781,7 @@ pub enum SpecialistType {
 }
 
 /// Names for SpecialistType discriminants (indexed by discriminant).
+#[cfg(test)]
 pub const SPECIALIST_NAMES: [&str; 6] = [
     "Pioneer",   // 0
     "Geologist", // 1
@@ -833,6 +835,7 @@ pub enum ToolType {
 }
 
 /// Names for ToolType discriminants (indexed by discriminant).
+#[cfg(test)]
 pub const TOOL_NAMES: [&str; 11] = [
     "Hammer",       // 0
     "Pickaxe",      // 1

@@ -91,6 +91,7 @@ impl ResourceType {
 
     /// Display names for all resource types, indexed by discriminant.
     /// Gaps (invalid discriminants) contain empty strings.
+    #[cfg(test)]
     pub const RESOURCE_NAMES: [&'static str; Self::COUNT] = [
         "Wood",      // 0
         "Stone",     // 1
@@ -349,6 +350,7 @@ impl BuildingType {
 
     /// Display names for all building types, indexed by discriminant.
     /// Gaps (invalid discriminants) contain empty strings.
+    #[cfg(test)]
     pub const BUILDING_NAMES: [&'static str; Self::COUNT] = [
         "Castle",                     // 0
         "Sawmill",                    // 1
