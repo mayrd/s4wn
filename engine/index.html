@@ -2046,6 +2046,16 @@ const S4_BUILDING_ID_TO_NAME = {
     82: null, // BUILDING_SUNFLOWERFARMERHUT
 };
 
+    // S4_BUILDING_NAME_TO_DISC: maps S4_BUILDING_ID_TO_NAME output strings → Rust BuildingType discriminant
+    // Used by parseSavBuildings to produce integer-kind buildings for restore_game_state
+    window.S4_BUILDING_NAME_TO_DISC = {
+        'Woodcutter': 12, 'Sawmill': 1, 'Stonecutter': 2, 'Fisherman': 11,
+        'Butcher': 67, 'Bakery': 7, 'Farm': 10, 'Toolsmith': 4,
+        'Weaponsmith': 5, 'Storehouse': 81, 'Brewery': 28, 'Castle': 0,
+        // Mine types are ambiguous in S4 binary format — default to CoalMine
+        'Mine': 62
+    };
+
 // ── S4 Settler ID → S4WN UnitKind mapping ───────────────────────────────
 // Based on S4Forge.RE Settlers.h enum (SETTLER_* constants, IDs 0-66).
 // Military settlers (IDs 29+) map to Swordsman or Bowman; workers map to Settler.
@@ -2269,7 +2279,7 @@ function parseSavBuildings(decompressed, mapWidth, mapHeight) {
             const construction = Math.min(1.0, constructionRaw / 255.0);
 
             candidates.push({
-                kind: bName,
+                kind: (window.S4_BUILDING_NAME_TO_DISC[bName] !== undefined ? window.S4_BUILDING_NAME_TO_DISC[bName] : 0),
                 x: Math.floor(bx / 2), // Convert from S4 coords to tile coords
                 y: Math.floor(by / 2),
                 construction: parseFloat(construction.toFixed(3)),
@@ -2358,16 +2368,19 @@ function parseSavResources(decompressed) {
     const dv = new DataView(decompressed.buffer, decompressed.byteOffset, decompressed.length);
     const resources = {};
 
-    // S4 resource data is typically an array of (resource_id, count) pairs
-    // or a fixed-size array indexed by resource ID.
-    // Try fixed-array approach first: 9 resource types × 4 bytes (u32 LE) = 36 bytes
-    const RESOURCE_NAMES = ['Wood', 'Stone', 'Iron', 'Coal', 'Gold', 'Grain', 'Fish', 'Game', 'Sulfur'];
+    // S4 resource data: fixed-size array indexed by resource ID (9 types x 4 bytes u32 LE)
+    // Index order: Wood, Stone, Iron, Coal, Gold, Grain, Fish, Game, Sulfur
+    const SAV_INDEX_TO_DISC = [0, 1, 2, 3, 4, 7, 6, 8, 5];
+    // Maps S4 sav byte offset index → engine ResourceType discriminant:
+    // 0:Wood→0, 1:Stone→1, 2:Iron→2, 3:Coal→3, 4:Gold→4,
+    // 5:Grain→7, 6:Fish→6, 7:Game→8(Meat), 8:Sulfur→5
 
     if (decompressed.length >= 36) {
         for (let i = 0; i < 9; i++) {
             const val = dv.getUint32(i * 4, true);
             if (val > 0 && val < 1000000) { // Sanity check
-                resources[RESOURCE_NAMES[i]] = val;
+                const disc = SAV_INDEX_TO_DISC[i];
+                resources[disc] = val;
             }
         }
     }
@@ -3205,14 +3218,14 @@ function confirmMapLoad() {
             // ── Build full state JSON and restore via restore_game_state ──
             if (restore_game_state && (savBuildings.length > 0 || savUnits.length > 0 || Object.keys(savResources).length > 0)) {
                 try {
-                    // Build resources object
+                    // Build resources object (keys are ResourceType discriminants from parseSavResources)
                     const resParts = [];
-                    for (const [name, count] of Object.entries(savResources)) {
-                        if (count > 0) resParts.push(`"${name}":${count}`);
+                    for (const [disc, count] of Object.entries(savResources)) {
+                        if (count > 0) resParts.push(`"${disc}":${count}`);
                     }
-                    // Default resources if none parsed
+                    // Default resources if none parsed (integer discriminants: Wood=0, Stone=1, IronOre=2, Coal=3, Gold=4)
                     if (resParts.length === 0) {
-                        resParts.push('"Wood":500', '"Stone":300', '"Iron":100', '"Coal":100', '"Gold":50');
+                        resParts.push('"0":500', '"1":300', '"2":100', '"3":100', '"4":50');
                     }
 
                     // Build buildings array

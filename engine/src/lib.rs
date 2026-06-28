@@ -4443,10 +4443,8 @@ pub fn restore_game_state(json: &str) -> String {
             };
             for i in 0..ResourceType::COUNT {
                 let rt: ResourceType = std::mem::transmute(i as u8);
-                // Try new integer key format first (e.g. "0":100)
                 let int_key = i.to_string();
                 let int_search = format!("\"{}\":", int_key);
-                let mut found = false;
                 if let Some(pos) = resources_str.find(&int_search) {
                     let after = &resources_str[pos + int_search.len()..];
                     let end = after
@@ -4454,21 +4452,6 @@ pub fn restore_game_state(json: &str) -> String {
                         .unwrap_or(after.len());
                     if let Ok(val) = after[..end].trim().parse::<u32>() {
                         new_eco.storage.set(rt, val);
-                        found = true;
-                    }
-                }
-                // Fall back to old name-based key format (e.g. "Wood":100)
-                if !found {
-                    let name = ResourceType::RESOURCE_NAMES[rt.discriminant() as usize];
-                    let name_search = format!("\"{}\":", name);
-                    if let Some(pos) = resources_str.find(&name_search) {
-                        let after = &resources_str[pos + name_search.len()..];
-                        let end = after
-                            .find([',', '}'])
-                            .unwrap_or(after.len());
-                        if let Ok(val) = after[..end].trim().parse::<u32>() {
-                            new_eco.storage.set(rt, val);
-                        }
                     }
                 }
             }
@@ -4518,10 +4501,9 @@ pub fn restore_game_state(json: &str) -> String {
                         .and_then(|v| v.parse::<u32>().ok())
                         .unwrap_or(0);
 
-                    // Try integer discriminant first, then name lookup for backward compat
+                    // Integer discriminant only (get_game_state always writes discriminants)
                     let kind = kind_name.parse::<u8>().ok()
-                        .and_then(BuildingType::from_discriminant)
-                        .or_else(|| BuildingType::from_name(kind_name));
+                        .and_then(BuildingType::from_discriminant);
                     if let Some(kind) = kind {
                         let mut b = Building::new(kind, x, y);
                         b.construction = construction;
@@ -4544,10 +4526,10 @@ pub fn restore_game_state(json: &str) -> String {
                         // Restore input buffer
                         if let Some(inbuf_str) = find_json_value(bjson, "input_buffer") {
                             for i in 0..ResourceType::COUNT {
-                                let rt: ResourceType = std::mem::transmute(i as u8);
-                                let search = format!("\"{}\":", ResourceType::RESOURCE_NAMES[rt.discriminant() as usize]);
-                                if let Some(pos) = inbuf_str.find(&search) {
-                                    let after = &inbuf_str[pos + search.len()..];
+                                let int_key = i.to_string();
+                                let int_search = format!("\"{}\":", int_key);
+                                if let Some(pos) = inbuf_str.find(&int_search) {
+                                    let after = &inbuf_str[pos + int_search.len()..];
                                     let end = after
                                         .find([',', '}'])
                                         .unwrap_or(after.len());
@@ -4560,10 +4542,10 @@ pub fn restore_game_state(json: &str) -> String {
                         // Restore output buffer
                         if let Some(outbuf_str) = find_json_value(bjson, "output_buffer") {
                             for i in 0..ResourceType::COUNT {
-                                let rt: ResourceType = std::mem::transmute(i as u8);
-                                let search = format!("\"{}\":", ResourceType::RESOURCE_NAMES[rt.discriminant() as usize]);
-                                if let Some(pos) = outbuf_str.find(&search) {
-                                    let after = &outbuf_str[pos + search.len()..];
+                                let int_key = i.to_string();
+                                let int_search = format!("\"{}\":", int_key);
+                                if let Some(pos) = outbuf_str.find(&int_search) {
+                                    let after = &outbuf_str[pos + int_search.len()..];
                                     let end = after
                                         .find([',', '}'])
                                         .unwrap_or(after.len());

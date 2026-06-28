@@ -2052,6 +2052,16 @@ window.S4WN_CONFIG = {
         16: "Planks", 17: "Tools", 18: "Weapons", 20: "Bread", 22: "Flour",
         23: "IronIngots", 27: "Mead", 28: "Wine"
     };
+    // Reverse: S4 resource name strings (from .sav parsing / old save formats) → ResourceType discriminant
+    window.RESOURCE_NAME_TO_DISC = {
+        "Wood": 0, "Stone": 1, "IronOre": 2, "Coal": 3, "Gold": 4, "Sulfur": 5,
+        "Fish": 6, "Grain": 7, "Meat": 8, "Water": 9, "Honey": 12,
+        "Planks": 16, "Tools": 17, "Weapons": 18, "Bread": 20, "Flour": 22,
+        "IronIngots": 23, "Mead": 27, "Wine": 28,
+        // S4 legacy aliases (from .sav binary format)
+        "Iron": 2, "CoalOre": 3, "GoldOre": 4, "SulfurOre": 5, "IronBar": 23,
+        "Game": 8  // huntable game → maps to Meat
+    };
     window.RESOURCE_ICONS_BY_ID = {
         0: "🪵", 1: "🪨", 2: "⛏️", 3: "🪨", 4: "✨", 5: "🟡",
         6: "🐟", 7: "🌾", 8: "🍖", 9: "💧", 12: "🍯",
