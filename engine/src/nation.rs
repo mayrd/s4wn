@@ -38,6 +38,7 @@ impl NationType {
     ];
 
     /// Display names for all nations, indexed by discriminant.
+    #[cfg(test)]
     pub const NAMES: [&'static str; 5] = [
         "Romans",
         "Vikings",
@@ -80,6 +81,7 @@ impl NationType {
     }
 
     /// Parse a nation type from its name string (FNV-1a hash → discriminant lookup).
+    #[cfg(test)]
     pub fn from_name(name: &str) -> Option<Self> {
         const fn fnv1a_64(s: &[u8]) -> u64 {
             let mut h: u64 = 0xcbf29ce484222325;

@@ -4210,7 +4210,7 @@ mod tests {
     #[derive(Debug)]
     #[allow(dead_code)]
     struct BalanceResult {
-        nation_name: &'static str,
+        nation: NationType,
         settlers: usize,
         soldiers: usize,
         bowmen: usize,
@@ -4283,7 +4283,7 @@ mod tests {
             }
         }
         BalanceResult {
-            nation_name: NationType::NAMES[nation.discriminant() as usize], settlers, soldiers, bowmen,
+            nation, settlers, soldiers, bowmen,
             total_resources, unique_resources, resource_amounts,
         }
     }
@@ -4293,7 +4293,7 @@ mod tests {
         for nation in NationType::ALL {
             let result = simulate_nation(nation);
             assert!(result.settlers >= 10,
-                "{} only reached {} settlers (need >=10)", result.nation_name, result.settlers);
+                "{:?} only reached {} settlers (need >=10)", result.nation, result.settlers);
         }
     }
 
@@ -4302,8 +4302,8 @@ mod tests {
         for nation in NationType::ALL {
             let result = simulate_nation(nation);
             assert!(result.unique_resources >= 3,
-                "{} only produced {} unique resource types (need >=3)",
-                result.nation_name, result.unique_resources);
+                "{:?} only produced {} unique resource types (need >=3)",
+                result.nation, result.unique_resources);
         }
     }
 
@@ -4318,8 +4318,8 @@ mod tests {
                 (r.total_resources as f64 / median as f64) * 100.0
             } else { 0.0 };
             assert!(pct <= 200.0,
-                "{} total resources ({}) is {:.1}% of median ({}), exceeds 200%",
-                r.nation_name, r.total_resources, pct, median);
+                "{:?} total resources ({}) is {:.1}% of median ({}), exceeds 200%",
+                r.nation, r.total_resources, pct, median);
         }
     }
 
