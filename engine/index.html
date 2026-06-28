@@ -6271,7 +6271,7 @@ function _buildDetailCache() {
                 icon: item.icon || '', description: item.description || '',
                 modelFile: cat === 'buildings' ? (_BUILDING_MODEL_FILE[item.id] || null) : null,
                 spriteFile: cat === 'buildings' ? (_BUILDING_SPRITE[item.id] || null)
-                          : cat === 'terrain' ? (_TERRAIN_SPRITE[item.name] || null) : null
+                          : cat === 'terrain' ? (item.spriteFile || _TERRAIN_SPRITE[item.name] || null) : null
             };
         });
     });
