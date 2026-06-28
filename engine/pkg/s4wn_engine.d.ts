@@ -178,8 +178,8 @@ export function is_paused(): boolean;
 
 /**
  * Load a map from JSON string (same format as exported by to_json()).
- * Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":null},...]}
- * Also accepts verbose format: {"width":64,"height":64,"tiles":[{"terrain":"Grass","elevation":0.0,"resource":"Iron"},...]}
+ * Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":0},...]}
+ * t=terrain id (0-7), e=elevation, r=map::Resource discriminant (0-7) or null
  * Returns "ok" on success or an error message.
  */
 export function load_map_json(json: string): string;
