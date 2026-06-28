@@ -6514,7 +6514,7 @@ function showObjectDetail(category, itemId) {
     html += '<h4>' + (data.category === 'terrain' ? 'Terrain Tile' : 'Sprite') + '</h4>';
     html += '<div class="obj-detail-sprite-wrap">';
     if (data.spriteFile) {
-        var spriteDir = data.category === 'terrain' ? 'assets/textures/' : 'assets/buildings/';
+        var spriteDir = data.category === 'terrain' ? '/assets/textures/' : '/assets/buildings/';
         var animClass = data.category === 'terrain' ? (' obj-terrain-tile obj-terrain-' + data.name.toLowerCase()) : ' obj-detail-sprite';
         html += '<img class="' + animClass + '" src="' + spriteDir + data.spriteFile + '" alt="' + data.name + '" onerror="this.parentNode.innerHTML=\'<span style=color:#556;font-size:11px>No sprite available</span>\'">';
     } else {
@@ -6554,7 +6554,7 @@ function showObjectDetail(category, itemId) {
     panel.innerHTML = html;
     // Async load model JSON
     if (data.modelFile) {
-        var modelUrl = 'assets/models/json/' + data.modelFile;
+        var modelUrl = '/assets/models/json/' + data.modelFile;
         fetch(modelUrl)
             .then(function(r) { return r.json(); })
             .then(function(model) {
