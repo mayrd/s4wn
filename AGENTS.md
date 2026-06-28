@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S270 · 786 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Clean WASM baseline (cargo clean + wasm-pack build): 295.7KB — under 300KB target for first time. Twiggy top shows render() code[265]=40KB (largest single item), data[3]=15.7KB, code[375]=13.1KB. All 10 name arrays are #[cfg(test)]-only — the gating plus serde_json flt2dec dedup (S236) achieved the 300KB goal. Next: (1) Phase 7: shadow map blur pass. (2) Phase 7: water surface shader improvement. (3) Use twiggy dominators for detailed call-tree of top 5 code items. (4) Consider alternative to serde_json remaining data segments.
+Status: S271 · 786 tests · Clippy: 0 errors, 0 warnings. 0 open issues (Fixes #77 pushed). Clean WASM baseline (cargo clean + wasm-pack build): 295.7KB — under 300KB target. All 10 name arrays are #[cfg(test)]-only. Next: (1) Phase 7: shadow map blur pass. (2) Phase 7: water surface shader improvement. (3) Use twiggy dominators for detailed call-tree of top 5 code items. (4) Consider alternative to serde_json remaining data segments.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Status: S270 · 786 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Clean 
 
 ### Session Log (recent)
 
+| 271 | 2026-06-28 | Fix #77 (for real): Object Explorer terrain sprites still showing "No sprite available" after S268 fix. Root cause: relative asset paths (assets/textures/, assets/models/json/) resolved relative to /engine/ HTML page, producing /engine/assets/... which does not exist. Assets live at server root /assets/. Fix: changed spriteDir and modelUrl to root-relative paths (/assets/textures/, /assets/models/json/). Also fixed 3D model fetch URL with same issue. Pure JS path change, no WASM rebuild. 786 tests pass, clippy clean. -- 786 tests |
 
 | 270 | 2026-06-28 | Re-baseline WASM after all 10 name arrays gated: cargo clean + wasm-pack build = 295.7KB — UNDER 300KB target for first time. Twiggy top confirms render() code[265] at 40KB (largest single item), data[3]=15.7KB, code[375]=13.1KB, data[66]=8.8KB. All name strings eliminated from WASM production path. Clippy clean, 786 tests pass, 0 open issues. No code changes — WASM baseline measurement + AGENTS.md update only. -- 786 tests |
 | 269 | 2026-06-28 | Gate NationType::NAMES + from_name behind #[cfg(test)]: Both only used in test code — BalanceResult simulation in economy.rs tests and nation.rs tests. Converted BalanceResult.nation_name: &'static str → nation: NationType for direct integer discriminant access (no string lookup). Removes 5 nation name strings + 9-entry FNV-1a hash LOOKUP table from WASM. All 10 production name arrays now #[cfg(test)]-gated. 786 tests pass, clippy clean. Pure Rust — no WASM rebuild needed. -- 786 tests |
