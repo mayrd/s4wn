@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S294 · 826 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Fix #80 (ReferenceError d in hudStats — get_stats() returns typed StatsInfo bound to var s, not d). Next: (5) Migrate remaining JSON-string WASM exports (get_building_garrison_json, get_unit_morale_json). (6) Phase 8: sound effects system.
+Status: S295 · 827 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Fix #81 (BigInt JSON.stringify in DebugSnapshot — StatsInfo.ticks u64→u32) + Migrate get_building_garrison_json to typed GarrisonInfo struct. Next: (5) Migrate get_unit_morale_json to typed struct. (6) Phase 8: sound effects system.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Status: S294 · 826 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Fix #8
 
 ### Session Log (recent)
 
+| 295 | 2026-06-29 | Fix #81: BigInt serialization in DebugSnapshot — StatsInfo.ticks u64→u32 prevents BigInt in JSON.stringify (wasm-bindgen u64 becomes JS BigInt). Migrate get_building_garrison_json to typed GarrisonInfo struct with manual getters (Vec<u32> field). Eliminates JSON.parse() in showBuildingInfo() render path. Added test_garrison_info_struct_fields. Cache v75→v76. 826→827 tests, clippy clean. -- 827 tests |
 | 294 | 2026-06-29 | Fix #80: ReferenceError d is not defined in hudStats — get_stats() migrated from JSON to typed StatsInfo in S289; variable bound to s on line 6049 but template referenced d.game_time/d.zoom on line 6076. Fixed to s.game_time/s.zoom. JS syntax verified via node --check. No Rust changes. 826 tests, clippy clean. -- 826 tests |
 | 293 | 2026-06-29 | Migrate get_building_info
 | 292 | 2026-06-29 | Migrate get_unit_info from JSON String to typed UnitDetailInfo struct: New #[wasm_bindgen] UnitDetailInfo {id, kind, x, y, hp, max_hp, state, stance, dying_progress, assigned_building, target, carried_tool} with integer discriminants + sentinel 0 for Option fields (assigned_building offset +1, target raw ID since IDs start at 1). get_unit_info(id) returns Option<UnitDetailInfo> — wasm-bindgen converts to JS object or undefined. Eliminates JSON.parse() + tool_code_to_name() at the showUnitInfo() render path. JS: Added UNIT_STATE_NAMES_BY_ID array (8 entries), updated showUnitInfo for integer discriminants (state name, tool name, assigned_building/target >0 checks), removed try/catch wrapper. 3 new tests (struct fields, sentinel values, None guard). Cache v72→v73. 822→825 tests, clippy clean. -- 825 tests |
