@@ -4083,42 +4083,36 @@ pub fn get_unit_summary() -> Vec<UnitInfo> {
     Vec::new()
 }
 /// Get military units within a world-coordinate rectangle.
-/// Returns JSON array of unit IDs for Swordsman and Bowman within [min_x, max_x] x [min_y, max_y].
+/// Returns typed Vec<UnitInfo> for Swordsman and Bowman within [min_x, max_x] x [min_y, max_y].
 /// Used for Shift+drag marquee selection in the UI.
-/// Returns: [{"id":1,"kind":"Swordsman","x":3.5,"y":4.0,"hp":100,"state":"Idle"},...]
+/// Fields are integer discriminants — use JS-side lookup tables for names.
 #[wasm_bindgen]
-pub fn get_units_in_rect(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> String {
+pub fn get_units_in_rect(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> Vec<UnitInfo> {
     unsafe {
         if let Some(ref app) = APP {
-            let mut parts = Vec::new();
-            for u in app.game_loop.state.economy.units.alive_units() {
-                // Only select military units (not settlers)
-                if !u.kind.can_fight() {
-                    continue;
-                }
-                if u.x >= min_x && u.x <= max_x && u.y >= min_y && u.y <= max_y {
-                    let stance_name = u.stance.as_str();
-                let state_name = match u.state {
-                        crate::units::UnitState::Idle => "Idle",
-                        crate::units::UnitState::Moving => "Moving",
-                        crate::units::UnitState::Working => "Working",
-                        crate::units::UnitState::Fighting => "Fighting",
-                        crate::units::UnitState::Patrolling => "Patrolling",
-                    crate::units::UnitState::FormationMove => "FormationMove",
-                        crate::units::UnitState::Dying => "Dying",
-                        crate::units::UnitState::Dead => "Dead",
-                    };
-                    parts.push(format!(
-                        r#"{{"id":{},"kind":{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","stance":"{}"}}"#,
-                        u.id, u.kind.discriminant(), u.x, u.y, u.hp,
-                    u.max_hp, state_name, stance_name
-                    ));
-                }
-            }
-            return format!("[{}]", parts.join(","));
+            return app
+                .game_loop
+                .state
+                .economy
+                .units
+                .alive_units()
+                .filter(|u| u.kind.can_fight())
+                .filter(|u| u.x >= min_x && u.x <= max_x && u.y >= min_y && u.y <= max_y)
+                .map(|u| UnitInfo {
+                    id: u.id,
+                    kind: u.kind.discriminant(),
+                    x: u.x,
+                    y: u.y,
+                    hp: u.hp,
+                    max_hp: u.max_hp,
+                    state: u.state as u8,
+                    stance: u.stance as u8,
+                    carried_tool: u.carried_tool.unwrap_or(255),
+                })
+                .collect();
         }
     }
-    "[]".to_string()
+    Vec::new()
 }
 /// Order selected units to patrol between their current position and a target tile.
 /// unit_ids: array of unit IDs (JS number[] auto-converts to Vec<u32>).

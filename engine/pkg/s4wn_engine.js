@@ -1599,26 +1599,20 @@ export function get_unit_summary() {
 
 /**
  * Get military units within a world-coordinate rectangle.
- * Returns JSON array of unit IDs for Swordsman and Bowman within [min_x, max_x] x [min_y, max_y].
+ * Returns typed Vec<UnitInfo> for Swordsman and Bowman within [min_x, max_x] x [min_y, max_y].
  * Used for Shift+drag marquee selection in the UI.
- * Returns: [{"id":1,"kind":"Swordsman","x":3.5,"y":4.0,"hp":100,"state":"Idle"},...]
+ * Fields are integer discriminants — use JS-side lookup tables for names.
  * @param {number} min_x
  * @param {number} min_y
  * @param {number} max_x
  * @param {number} max_y
- * @returns {string}
+ * @returns {UnitInfo[]}
  */
 export function get_units_in_rect(min_x, min_y, max_x, max_y) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_units_in_rect(min_x, min_y, max_x, max_y);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_units_in_rect(min_x, min_y, max_x, max_y);
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
 }
 
 /**
