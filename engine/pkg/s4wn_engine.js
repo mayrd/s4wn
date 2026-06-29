@@ -513,6 +513,187 @@ export class TileInfo {
 if (Symbol.dispose) TileInfo.prototype[Symbol.dispose] = TileInfo.prototype.free;
 
 /**
+ * Detailed unit info for a single unit by ID.
+ * sentinel 0 for None: assigned_building offset +1 (actual index+1), target raw ID (IDs start at 1).
+ * dying_progress is 0.0 when not dying.
+ */
+export class UnitDetailInfo {
+    static __wrap(ptr) {
+        const obj = Object.create(UnitDetailInfo.prototype);
+        obj.__wbg_ptr = ptr;
+        UnitDetailInfoFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        UnitDetailInfoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_unitdetailinfo_free(ptr, 0);
+    }
+    /**
+     * @returns {number}
+     */
+    get assigned_building() {
+        const ret = wasm.__wbg_get_unitdetailinfo_assigned_building(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get carried_tool() {
+        const ret = wasm.__wbg_get_unitdetailinfo_carried_tool(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get dying_progress() {
+        const ret = wasm.__wbg_get_unitdetailinfo_dying_progress(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get hp() {
+        const ret = wasm.__wbg_get_unitdetailinfo_hp(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get id() {
+        const ret = wasm.__wbg_get_unitdetailinfo_id(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get kind() {
+        const ret = wasm.__wbg_get_unitdetailinfo_kind(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get max_hp() {
+        const ret = wasm.__wbg_get_unitdetailinfo_max_hp(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get stance() {
+        const ret = wasm.__wbg_get_unitdetailinfo_stance(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get state() {
+        const ret = wasm.__wbg_get_unitdetailinfo_state(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get target() {
+        const ret = wasm.__wbg_get_unitdetailinfo_target(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get x() {
+        const ret = wasm.__wbg_get_unitdetailinfo_x(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get y() {
+        const ret = wasm.__wbg_get_unitdetailinfo_y(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {number} arg0
+     */
+    set assigned_building(arg0) {
+        wasm.__wbg_set_unitdetailinfo_assigned_building(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set carried_tool(arg0) {
+        wasm.__wbg_set_unitdetailinfo_carried_tool(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set dying_progress(arg0) {
+        wasm.__wbg_set_unitdetailinfo_dying_progress(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set hp(arg0) {
+        wasm.__wbg_set_unitdetailinfo_hp(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set id(arg0) {
+        wasm.__wbg_set_unitdetailinfo_id(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set kind(arg0) {
+        wasm.__wbg_set_unitdetailinfo_kind(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set max_hp(arg0) {
+        wasm.__wbg_set_unitdetailinfo_max_hp(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set stance(arg0) {
+        wasm.__wbg_set_unitdetailinfo_stance(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set state(arg0) {
+        wasm.__wbg_set_unitdetailinfo_state(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set target(arg0) {
+        wasm.__wbg_set_unitdetailinfo_target(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set x(arg0) {
+        wasm.__wbg_set_unitdetailinfo_x(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set y(arg0) {
+        wasm.__wbg_set_unitdetailinfo_y(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) UnitDetailInfo.prototype[Symbol.dispose] = UnitDetailInfo.prototype.free;
+
+/**
  * Unit information struct — replaces JSON string from get_unit_summary.
  * `kind` is the UnitKind discriminant (use UNIT_NAMES_BY_ID in JS).
  * `state` discriminant: 0=Idle, 1=Moving, 2=Working, 3=Fighting, 4=Patrolling, 5=FormationMove, 6=Dying, 7=Dead.
@@ -989,23 +1170,15 @@ export function get_tool_counts() {
 
 /**
  * Get detailed unit info by ID.
- * Returns JSON: {"id":1,"kind":"Settler","x":5.5,"y":3.0,"hp":50,"max_hp":50,
- *   "state":"Working","assigned_building":2,"target":null}
- * or {"error":"Unit not found"}
+ * Returns Option<UnitDetailInfo> — wasm-bindgen converts to JS object or undefined.
+ * Uses integer discriminants for state/stance/kind/carried_tool (see JS lookup arrays).
+ * assigned_building is building_index + 1 (0 = None). target is raw unit ID (0 = None, IDs start at 1).
  * @param {number} id
- * @returns {string}
+ * @returns {UnitDetailInfo | undefined}
  */
 export function get_unit_info(id) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_unit_info(id);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_unit_info(id);
+    return ret === 0 ? undefined : UnitDetailInfo.__wrap(ret);
 }
 
 /**
@@ -1792,6 +1965,9 @@ const StatsInfoFinalization = (typeof FinalizationRegistry === 'undefined')
 const TileInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_tileinfo_free(ptr, 1));
+const UnitDetailInfoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_unitdetailinfo_free(ptr, 1));
 const UnitInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_unitinfo_free(ptr, 1));

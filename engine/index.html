@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=72';
+} from './pkg/s4wn_engine.js?v=73';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3932,19 +3932,18 @@ function showBuildingInfo(idx, cx, cy) {
 
 function showUnitInfo(id, cx, cy) {
     if (!get_unit_info) return;
-    const raw = get_unit_info(id);
-    if (!raw) return;
-    try {
-        const u = JSON.parse(raw);
-        if (u.error) { hideSelection(); return; }
-        selectedUnit = id;
-        selectedBuilding = null;
+    const u = get_unit_info(id);
+    if (!u) { hideSelection(); return; }
+    selectedUnit = id;
+    selectedBuilding = null;
 
-        const hpPct = Math.round(u.hp / u.max_hp * 100);
-        const hpBar = hpPct > 80 ? '🟢' : hpPct > 40 ? '🟡' : '🔴';
-        const bldg = u.assigned_building !== null ? `🏠 Bldg #${u.assigned_building}` : '';
-        const tgt = u.target !== null ? `🎯 Target #${u.target}` : '';
-        const tool = u.carried_tool ? `🔧 ${u.carried_tool}` : '';
+    const stateName = (window.UNIT_STATE_NAMES_BY_ID && window.UNIT_STATE_NAMES_BY_ID[u.state]) || 'Unknown';
+    const hpPct = Math.round(u.hp / u.max_hp * 100);
+    const hpBar = hpPct > 80 ? '🟢' : hpPct > 40 ? '🟡' : '🔴';
+    const bldg = u.assigned_building > 0 ? `🏠 Bldg #${u.assigned_building - 1}` : '';
+    const tgt = u.target > 0 ? `🎯 Target #${u.target}` : '';
+    const tool = u.carried_tool !== 255 && window.TOOL_NAMES_BY_ID
+        ? `🔧 ${window.TOOL_NAMES_BY_ID[u.carried_tool] || 'Tool #'+u.carried_tool}` : '';
 
         // Morale indicator
         let moraleLine = '';
@@ -3966,16 +3965,14 @@ function showUnitInfo(id, cx, cy) {
         selInfo.innerHTML = `
             <div class="sel-title">${tUnit(unitName(u.kind))} #${u.id}</div>
             <div class="sel-stat">HP: <span>${hpBar} ${u.hp}/${u.max_hp} (${hpPct}%)</span></div>
-            <div class="sel-stat">State: <span>${u.state}</span></div>
+            <div class="sel-stat">State: <span>${stateName}</span></div>
             ${tool ? `<div class="sel-stat">${tool}</div>` : ''}
             ${bldg ? `<div class="sel-stat">${bldg}</div>` : ''}
             ${tgt ? `<div class="sel-stat">${tgt}</div>` : ''}
             ${moraleLine}
         `;
         positionSelInfo(cx, cy);
-    } catch(_) { hideSelection(); }
 }
-
 function positionSelInfo(cx, cy) {
     selInfo.classList.add('visible');
     // Position near cursor, keeping within viewport

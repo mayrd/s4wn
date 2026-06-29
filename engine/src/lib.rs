@@ -4038,6 +4038,26 @@ pub struct UnitInfo {
     pub carried_tool: u8,
 }
 
+/// Detailed unit info for a single unit by ID.
+/// sentinel 0 for None: assigned_building offset +1 (actual index+1), target raw ID (IDs start at 1).
+/// dying_progress is 0.0 when not dying.
+#[wasm_bindgen]
+#[derive(Copy, Clone)]
+pub struct UnitDetailInfo {
+    pub id: u32,
+    pub kind: u8,
+    pub x: f32,
+    pub y: f32,
+    pub hp: u32,
+    pub max_hp: u32,
+    pub state: u8,
+    pub stance: u8,
+    pub dying_progress: f32,
+    pub assigned_building: u32, // building_index + 1; 0 = None
+    pub target: u32,            // unit ID; 0 = None (unit IDs start at 1)
+    pub carried_tool: u8,
+}
+
 /// Returns unit data as a typed Vec<UnitInfo> — no JSON parse needed in JS.
 /// Use UNIT_NAMES_BY_ID[info.kind] for the unit name.
 #[wasm_bindgen]
@@ -4215,62 +4235,41 @@ pub fn get_building_info(idx: usize) -> String {
     format!(r#"{{"error":"Building at index {} not found"}}"#, idx)
 }
 /// Get detailed unit info by ID.
-/// Returns JSON: {"id":1,"kind":"Settler","x":5.5,"y":3.0,"hp":50,"max_hp":50,
-///   "state":"Working","assigned_building":2,"target":null}
-/// or {"error":"Unit not found"}
+/// Returns Option<UnitDetailInfo> — wasm-bindgen converts to JS object or undefined.
+/// Uses integer discriminants for state/stance/kind/carried_tool (see JS lookup arrays).
+/// assigned_building is building_index + 1 (0 = None). target is raw unit ID (0 = None, IDs start at 1).
 #[wasm_bindgen]
-pub fn get_unit_info(id: u32) -> String {
+pub fn get_unit_info(id: u32) -> Option<UnitDetailInfo> {
     unsafe {
         if let Some(ref app) = APP {
             let units = &app.game_loop.state.economy.units;
             if let Some(u) = units.get(id) {
                 if u.state == crate::units::UnitState::Dead {
-                    return format!(r#"{{"error":"Unit {} is dead"}}"#, id);
+                    return None;
                 }
-                let stance_name = u.stance.as_str();
-                let state_name = match u.state {
-                    crate::units::UnitState::Idle => "Idle",
-                    crate::units::UnitState::Moving => "Moving",
-                    crate::units::UnitState::Working => "Working",
-                    crate::units::UnitState::Fighting => "Fighting",
-                    crate::units::UnitState::Patrolling => "Patrolling",
-                    crate::units::UnitState::FormationMove => "FormationMove",
-                    crate::units::UnitState::Dying => "Dying",
-                    crate::units::UnitState::Dead => "Dead",
-                };
-                let ab = match u.assigned_building {
-                    Some(bi) => bi.to_string(),
-                    None => "null".to_string(),
-                };
-                let target = match u.target {
-                    Some(tid) => tid.to_string(),
-                    None => "null".to_string(),
-                };
-                let tool_name = u.carried_tool
-                    .map(crate::economy::tool_code_to_name)
-                    .unwrap_or("");
-                let dying_progress = u.death_animation_progress()
-                    .map(|p| format!("{:.2}", p))
-                    .unwrap_or_else(|| "null".to_string());
-                return format!(
-                    r#"{{"id":{},"kind":{}","x":{:.1},"y":{:.1},"hp":{},"max_hp":{},"state":"{}","stance":"{}","dying_progress":{},"assigned_building":{},"target":{},"carried_tool":"{}"}}"#,
-                    u.id,
-                    u.kind.discriminant(),
-                    u.x,
-                    u.y,
-                    u.hp,
-                    u.max_hp,
-                    state_name,
-                    stance_name,
-                    dying_progress,
-                    ab,
-                    target,
-                    tool_name,
-                );
+                let ab = u.assigned_building
+                    .map(|bi| (bi + 1) as u32)
+                    .unwrap_or(0);
+                let tgt = u.target.unwrap_or(0);
+                let dying = u.death_animation_progress().unwrap_or(0.0);
+                return Some(UnitDetailInfo {
+                    id: u.id,
+                    kind: u.kind.discriminant(),
+                    x: u.x,
+                    y: u.y,
+                    hp: u.hp,
+                    max_hp: u.max_hp,
+                    state: u.state as u8,
+                    stance: u.stance as u8,
+                    dying_progress: dying,
+                    assigned_building: ab,
+                    target: tgt,
+                    carried_tool: u.carried_tool.unwrap_or(255),
+                });
             }
         }
     }
-    format!(r#"{{"error":"Unit {} not found"}}"#, id)
+    None
 }
 /// Set stance for selected units.
 /// unit_ids: array of unit IDs (JS number[] auto-converts to Vec<u32>).
@@ -7956,4 +7955,61 @@ mod parse_map_json_tests {
         assert!(counts.is_empty());
     }
 
+    #[test]
+    fn test_unit_detail_info_struct_fields() {
+        let info = UnitDetailInfo {
+            id: 99,
+            kind: 2, // Bowman
+            x: 12.5,
+            y: 8.0,
+            hp: 70,
+            max_hp: 100,
+            state: 1, // Moving
+            stance: 2, // Passive
+            dying_progress: 0.0,
+            assigned_building: 5, // building index 4, offset +1
+            target: 42,
+            carried_tool: 255, // None
+        };
+        assert_eq!(info.id, 99);
+        assert_eq!(info.kind, 2);
+        assert!((info.x - 12.5).abs() < 0.001);
+        assert!((info.y - 8.0).abs() < 0.001);
+        assert_eq!(info.hp, 70);
+        assert_eq!(info.max_hp, 100);
+        assert_eq!(info.state, 1);
+        assert_eq!(info.stance, 2);
+        assert!((info.dying_progress - 0.0).abs() < 0.001);
+        assert_eq!(info.assigned_building, 5);
+        assert_eq!(info.target, 42);
+        assert_eq!(info.carried_tool, 255);
+    }
+
+    #[test]
+    fn test_unit_detail_info_sentinels() {
+        // assigned_building=0 means None, target=0 means None, dying_progress=0.0 means not dying
+        let info = UnitDetailInfo {
+            id: 1,
+            kind: 0, // Settler
+            x: 0.0,
+            y: 0.0,
+            hp: 50,
+            max_hp: 50,
+            state: 0,
+            stance: 0,
+            dying_progress: 0.0,
+            assigned_building: 0,
+            target: 0,
+            carried_tool: 255,
+        };
+        assert_eq!(info.assigned_building, 0);
+        assert_eq!(info.target, 0);
+        assert!((info.dying_progress - 0.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_get_unit_info_not_found() {
+        // When APP is not initialized, get_unit_info returns None
+        assert!(get_unit_info(999).is_none());
+    }
 }

@@ -105,6 +105,29 @@ export class TileInfo {
 }
 
 /**
+ * Detailed unit info for a single unit by ID.
+ * sentinel 0 for None: assigned_building offset +1 (actual index+1), target raw ID (IDs start at 1).
+ * dying_progress is 0.0 when not dying.
+ */
+export class UnitDetailInfo {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    assigned_building: number;
+    carried_tool: number;
+    dying_progress: number;
+    hp: number;
+    id: number;
+    kind: number;
+    max_hp: number;
+    stance: number;
+    state: number;
+    target: number;
+    x: number;
+    y: number;
+}
+
+/**
  * Unit information struct — replaces JSON string from get_unit_summary.
  * `kind` is the UnitKind discriminant (use UNIT_NAMES_BY_ID in JS).
  * `state` discriminant: 0=Idle, 1=Moving, 2=Working, 3=Fighting, 4=Patrolling, 5=FormationMove, 6=Dying, 7=Dead.
@@ -258,11 +281,11 @@ export function get_tool_counts(): Uint32Array;
 
 /**
  * Get detailed unit info by ID.
- * Returns JSON: {"id":1,"kind":"Settler","x":5.5,"y":3.0,"hp":50,"max_hp":50,
- *   "state":"Working","assigned_building":2,"target":null}
- * or {"error":"Unit not found"}
+ * Returns Option<UnitDetailInfo> — wasm-bindgen converts to JS object or undefined.
+ * Uses integer discriminants for state/stance/kind/carried_tool (see JS lookup arrays).
+ * assigned_building is building_index + 1 (0 = None). target is raw unit ID (0 = None, IDs start at 1).
  */
-export function get_unit_info(id: number): string;
+export function get_unit_info(id: number): UnitDetailInfo | undefined;
 
 /**
  * Get morale bonus for a unit by ID.
@@ -486,10 +509,17 @@ export interface InitOutput {
     readonly __wbg_get_tileinfo_terrain: (a: number) => number;
     readonly __wbg_get_tileinfo_x: (a: number) => number;
     readonly __wbg_get_tileinfo_y: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_assigned_building: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_carried_tool: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_dying_progress: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_kind: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_stance: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_state: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_target: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_x: (a: number) => number;
     readonly __wbg_get_unitinfo_carried_tool: (a: number) => number;
     readonly __wbg_get_unitinfo_stance: (a: number) => number;
     readonly __wbg_get_unitinfo_state: (a: number) => number;
-    readonly __wbg_get_unitinfo_x: (a: number) => number;
     readonly __wbg_nationinfo_free: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_complete: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_garrison: (a: number, b: number) => void;
@@ -510,12 +540,20 @@ export interface InitOutput {
     readonly __wbg_set_statsinfo_zoom: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_terrain: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_assigned_building: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_carried_tool: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_dying_progress: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_kind: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_stance: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_state: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_target: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_carried_tool: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_stance: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_state: (a: number, b: number) => void;
-    readonly __wbg_set_unitinfo_x: (a: number, b: number) => void;
     readonly __wbg_statsinfo_free: (a: number, b: number) => void;
     readonly __wbg_tileinfo_free: (a: number, b: number) => void;
+    readonly __wbg_unitdetailinfo_free: (a: number, b: number) => void;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
@@ -537,7 +575,7 @@ export interface InitOutput {
     readonly get_stats: () => number;
     readonly get_tile_at: (a: number, b: number) => number;
     readonly get_tool_counts: () => [number, number];
-    readonly get_unit_info: (a: number) => [number, number];
+    readonly get_unit_info: (a: number) => number;
     readonly get_unit_morale_json: (a: number) => [number, number];
     readonly get_unit_stance: (a: number) => number;
     readonly get_unit_summary: () => [number, number];
@@ -577,8 +615,12 @@ export interface InitOutput {
     readonly wasm_ungarrison_unit: (a: number, b: number) => number;
     readonly __wbg_set_buildingtileinfo_index: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_x: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_id: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_id: (a: number, b: number) => void;
+    readonly __wbg_get_unitdetailinfo_id: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_index: (a: number) => number;
+    readonly __wbg_get_unitinfo_y: (a: number) => number;
+    readonly __wbg_get_unitinfo_x: (a: number) => number;
     readonly __wbg_get_unitinfo_id: (a: number) => number;
     readonly __wbg_set_unitinfo_max_hp: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_hp: (a: number, b: number) => void;
@@ -588,9 +630,15 @@ export interface InitOutput {
     readonly __wbg_set_buildingtileinfo_y: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_kind: (a: number, b: number) => void;
-    readonly __wbg_get_unitinfo_y: (a: number) => number;
-    readonly __wbg_get_unitinfo_hp: (a: number) => number;
+    readonly __wbg_set_unitdetailinfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_x: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_max_hp: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_hp: (a: number, b: number) => void;
     readonly __wbg_get_unitinfo_max_hp: (a: number) => number;
+    readonly __wbg_get_unitinfo_hp: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_y: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_hp: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_max_hp: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_y: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_x: (a: number) => number;
     readonly __wbg_get_unitinfo_kind: (a: number) => number;

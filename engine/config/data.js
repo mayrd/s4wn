@@ -2111,6 +2111,12 @@ window.S4WN_CONFIG = {
         45: "Cultist",        46: "Shaman",        47: "ShadowSoldier"
     };
 
+    // Unit state names indexed by u8 discriminant (0=Idle..7=Dead)
+    window.UNIT_STATE_NAMES_BY_ID = [
+        "Idle", "Moving", "Working", "Fighting",
+        "Patrolling", "FormationMove", "Dying", "Dead"
+    ];
+
     C.units.forEach(u => { window.UNIT_NAMES_DE[u.id] = u.name_de; });
     window.BUILDING_CATEGORIES = C.categories;
     window.UNIT_STATS = {};
