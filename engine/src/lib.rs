@@ -155,14 +155,10 @@ out vec4 out_color;
 void main() {
 vec3 base_color;
 if (u_use_textures == 1) {
-vec2 atlas_uv_grass = vec2((0.0 + v_uv.x) / 4.0, v_uv.y);
-vec2 atlas_uv_rock = vec2((1.0 + v_uv.x) / 4.0, v_uv.y);
-vec2 atlas_uv_sand = vec2((2.0 + v_uv.x) / 4.0, v_uv.y);
-vec2 atlas_uv_snow = vec2((3.0 + v_uv.x) / 4.0, v_uv.y);
-vec3 tex_grass = texture(u_terrain_textures, vec3(atlas_uv_grass, 0.0)).rgb;
-vec3 tex_rock = texture(u_terrain_textures, vec3(atlas_uv_rock, 0.0)).rgb;
-vec3 tex_sand = texture(u_terrain_textures, vec3(atlas_uv_sand, 0.0)).rgb;
-vec3 tex_snow = texture(u_terrain_textures, vec3(atlas_uv_snow, 0.0)).rgb;
+vec3 tex_grass = texture(u_terrain_textures, vec3(v_uv, 0.0)).rgb;
+vec3 tex_rock = texture(u_terrain_textures, vec3(v_uv, 2.0)).rgb;
+vec3 tex_sand = texture(u_terrain_textures, vec3(v_uv, 5.0)).rgb;
+vec3 tex_snow = texture(u_terrain_textures, vec3(v_uv, 7.0)).rgb;
 float w = dot(v_splat, vec4(1.0));
 if (w < 0.001) w = 1.0;
 base_color = (tex_grass * v_splat.r + tex_rock * v_splat.g
@@ -6171,10 +6167,14 @@ mod tests {
     }
     #[test]
     fn test_fragment_shader_splat_blending() {
-        // Fragment shader must contain splat-based atlas sampling
+        // Fragment shader must contain layer-based texture sampling with splat blending
         assert!(
-            FRAGMENT_SHADER.contains("atlas_uv_grass"),
-            "fragment shader missing grass atlas UV computation"
+            FRAGMENT_SHADER.contains("tex_grass"),
+            "fragment shader missing tex_grass variable"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("tex_rock"),
+            "fragment shader missing tex_rock variable"
         );
         assert!(
             FRAGMENT_SHADER.contains("v_splat.r"),
@@ -6187,10 +6187,14 @@ mod tests {
     }
     #[test]
     fn test_fragment_shader_splat_atlas_uv_remap() {
-        // Verify the UV remapping divides by 4.0 (4 horizontal slices)
+        // Verify texture sampling uses layer indices from TEXTURE_2D_ARRAY
         assert!(
-            FRAGMENT_SHADER.contains("/ 4.0"),
-            "fragment shader missing / 4.0 atlas UV remap"
+            FRAGMENT_SHADER.contains("vec3(v_uv, 0.0)"),
+            "fragment shader missing layer 0 (grass) texture sample"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("vec3(v_uv, 2.0)"),
+            "fragment shader missing layer 2 (mountain) texture sample"
         );
     }
 

@@ -5863,18 +5863,16 @@ async function main() {
                     set_textures_ready();
                 }
             }).catch(e => {
+                console.warn('Terrain textures not loaded — using flat colors:', e.message);
+            });
 
-        // Load water normal map for animated water surface (Phase 7.1)
-        if (gl) {
+            // Load water normal map for animated water surface (Phase 7.1)
             loadWaterNormalMap(gl).then(() => {
                 if (typeof set_water_normal_ready === "function") {
                     set_water_normal_ready();
                 }
             }).catch(e => {
                 console.warn("Water normal map not loaded:", e.message);
-            });
-        }
-                console.warn('Terrain textures not loaded — using flat colors:', e.message);
             });
         } else {
             console.warn('No WebGL2 context — skipping terrain textures');
