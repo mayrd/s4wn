@@ -1637,6 +1637,7 @@
 <script src="config/data.js"></script>
 <script src="config/resource-icons.js"></script>
 <script type="module">
+
 import init, {
     init as engineInit,
     render,
@@ -3781,7 +3782,6 @@ canvas.addEventListener('click', (e) => {
         garrisonMoveMode = false;
         canvas.classList.remove('garrison');
         return;
-    }
 
     // ── Patrol-move mode ──
     if (patrolMoveMode && selectedUnitIds.length > 0) {
@@ -3831,7 +3831,6 @@ canvas.addEventListener('click', (e) => {
                 showUnitInfo(nearest.id, e.clientX, e.clientY);
                 return;
             }
-        }
     } catch(_) {}
 
     // Map editor: Ctrl+Click to paint terrain
@@ -4444,7 +4443,6 @@ function renderMinimap() {
                     }
                 }
             }
-        }
     } catch(e) { /* ignore minimap unit dot errors */ }
 
     // Draw building dots on minimap
@@ -4465,7 +4463,6 @@ function renderMinimap() {
                     }
                 }
             }
-        }
     } catch(e) { /* ignore minimap building dot errors */ }
 }
 
@@ -7394,6 +7391,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 window.DebugSnapshot = DebugSnapshot;
+
 </script>
 
 
