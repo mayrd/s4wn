@@ -4168,71 +4168,129 @@ pub fn formation_move(unit_ids: Vec<u32>, target_x: usize, target_y: usize) -> u
 ///   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
 /// or {"error":"Building not found"}
 #[wasm_bindgen]
-pub fn get_building_info(idx: usize) -> String {
-    use crate::economy::ResourceType;
+/// Detailed building info for a single building by index.
+/// `kind` is the BuildingType discriminant (use BUILDING_NAMES_BY_ID in JS).
+/// `workers` is a Vec<u32> of settler IDs.
+/// `inputs`/`outputs` are flattened [discriminant, amount] pairs (use in steps of 2).
+/// `output_buffer` is indexed by ResourceType discriminant (dense Vec<u32>).
+/// `producing_tool` is the tool code discriminant (0=Hammer..10=Bow), 255 for none/not-toolsmith.
+#[wasm_bindgen]
+pub struct BuildingDetailInfo {
+    pub(crate) kind: u8,
+    pub(crate) x: u32,
+    pub(crate) y: u32,
+    pub(crate) construction: f32,
+    pub(crate) complete: bool,
+    pub(crate) active: bool,
+    pub(crate) workers: Vec<u32>,
+    pub(crate) max_workers: u32,
+    pub(crate) build_ticks: u32,
+    pub(crate) production_interval: u32,
+    pub(crate) inputs: Vec<u32>,
+    pub(crate) outputs: Vec<u32>,
+    pub(crate) output_buffer: Vec<u32>,
+    pub(crate) destruction_progress: f32,
+    pub(crate) garrison: u32,
+    pub(crate) max_garrison: u32,
+    pub(crate) producing_tool: u8,
+}
+
+#[wasm_bindgen]
+impl BuildingDetailInfo {
+    #[wasm_bindgen(getter)]
+    pub fn kind(&self) -> u8 { self.kind }
+    #[wasm_bindgen(getter)]
+    pub fn x(&self) -> u32 { self.x }
+    #[wasm_bindgen(getter)]
+    pub fn y(&self) -> u32 { self.y }
+    #[wasm_bindgen(getter)]
+    pub fn construction(&self) -> f32 { self.construction }
+    #[wasm_bindgen(getter)]
+    pub fn complete(&self) -> bool { self.complete }
+    #[wasm_bindgen(getter)]
+    pub fn active(&self) -> bool { self.active }
+    #[wasm_bindgen(getter)]
+    pub fn workers(&self) -> Vec<u32> { self.workers.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn max_workers(&self) -> u32 { self.max_workers }
+    #[wasm_bindgen(getter)]
+    pub fn build_ticks(&self) -> u32 { self.build_ticks }
+    #[wasm_bindgen(getter)]
+    pub fn production_interval(&self) -> u32 { self.production_interval }
+    #[wasm_bindgen(getter)]
+    pub fn inputs(&self) -> Vec<u32> { self.inputs.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn outputs(&self) -> Vec<u32> { self.outputs.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn output_buffer(&self) -> Vec<u32> { self.output_buffer.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn destruction_progress(&self) -> f32 { self.destruction_progress }
+    #[wasm_bindgen(getter)]
+    pub fn garrison(&self) -> u32 { self.garrison }
+    #[wasm_bindgen(getter)]
+    pub fn max_garrison(&self) -> u32 { self.max_garrison }
+    #[wasm_bindgen(getter)]
+    pub fn producing_tool(&self) -> u8 { self.producing_tool }
+}
+
+/// Get detailed building info by index.
+/// Returns Some(BuildingDetailInfo) or None if index is out of bounds.
+/// Eliminates JSON.parse() at showBuildingInfo() call sites.
+#[wasm_bindgen]
+pub fn get_building_info(idx: usize) -> Option<BuildingDetailInfo> {
     unsafe {
         if let Some(ref app) = APP {
             let economy = &app.game_loop.state.economy;
             if let Some(b) = economy.buildings.get(idx) {
                 let kind = b.kind;
-                let settler_ids: Vec<String> =
-                    b.assigned_settlers.iter().map(|w| w.to_string()).collect();
-                let inputs: Vec<String> = kind
+
+                let workers: Vec<u32> = b.assigned_settlers.to_vec();
+
+                let inputs: Vec<u32> = kind
                     .inputs()
                     .iter()
-                    .map(|(rt, amt)| format!(r#""{}",{}"#, rt.discriminant(), amt))
+                    .flat_map(|(rt, amt)| [rt.discriminant() as u32, *amt])
                     .collect();
-                let outputs: Vec<String> = kind
+
+                let outputs: Vec<u32> = kind
                     .outputs()
                     .iter()
-                    .map(|(rt, amt)| format!(r#""{}",{}"#, rt.discriminant(), amt))
+                    .flat_map(|(rt, amt)| [rt.discriminant() as u32, *amt])
                     .collect();
-                let construction_pct = b.construction; // duplicate for JS clarity
 
-                // Output buffer summary (non-zero entries only)
-                let mut obuf_parts = Vec::new();
-                for i in 0..ResourceType::COUNT {
-                    let val = b.output_buffer[i];
-                    if val > 0 {
-                        let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
-                        obuf_parts.push(format!(r#""{}":{}"#, rt.discriminant(), val));
-                    }
-                }
-            // Toolsmith: report currently-producing tool
-            use crate::economy::{tool_code_to_name, BuildingType};
-            let producing_tool: Option<String> =
-                if kind == BuildingType::Toolsmith && b.is_complete() {
-                    let tool_code = economy.most_needed_tool().unwrap_or(0);
-                    Some(format!(r##","producing_tool":"{}""##, tool_code_to_name(tool_code)))
-                } else {
-                    None
-                };
+                let output_buffer = b.output_buffer.to_vec();
 
-                return format!(
-                    r#"{{"kind":{},"x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"workers":[{}],"max_workers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}},"destruction_progress":{},"garrison":{},"max_garrison":{}{}}}"#,
-                    kind.discriminant(),
-                    b.x,
-                    b.y,
-                    b.construction,
-                    construction_pct,
-                    b.is_complete(),
-                    b.active,
-                    settler_ids.join(","),
-                    b.max_settlers,
-                    kind.build_time(),
-                    kind.production_interval(),
-                    inputs.join(","),
-                    outputs.join(","),
-                    obuf_parts.join(","),
-                    b.destruction_progress().unwrap_or(-1.0),
-                    b.garrison.len(),
-                    b.max_garrison,
-                    producing_tool.unwrap_or_default(),
-                );
+                use crate::economy::BuildingType;
+                let producing_tool: u8 =
+                    if kind == BuildingType::Toolsmith && b.is_complete() {
+                        economy.most_needed_tool().unwrap_or(255)
+                    } else {
+                        255
+                    };
+
+                return Some(BuildingDetailInfo {
+                    kind: kind.discriminant(),
+                    x: b.x as u32,
+                    y: b.y as u32,
+                    construction: b.construction,
+                    complete: b.is_complete(),
+                    active: b.active,
+                    workers,
+                    max_workers: b.max_settlers,
+                    build_ticks: kind.build_time(),
+                    production_interval: kind.production_interval(),
+                    inputs,
+                    outputs,
+                    output_buffer,
+                    destruction_progress: b.destruction_progress().unwrap_or(-1.0),
+                    garrison: b.garrison.len() as u32,
+                    max_garrison: b.max_garrison,
+                    producing_tool,
+                });
             }
         }
     }
-    format!(r#"{{"error":"Building at index {} not found"}}"#, idx)
+    None
 }
 /// Get detailed unit info by ID.
 /// Returns Option<UnitDetailInfo> — wasm-bindgen converts to JS object or undefined.
@@ -7504,28 +7562,52 @@ mod export_regression_tests {
     /// Regression test: ensure the building info JSON template has all
     /// fields expected by the JS side in engine/index.html.
     #[test]
-    fn test_building_info_template_keys() {
-        let template = r#"{"kind":{},"x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"workers":[{}],"max_workers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}},"destruction_progress":{},"garrison":{},"max_garrison":{}{}}}}"#;
-        assert!(template.contains("\"kind\""), "missing kind field");
-        assert!(template.contains("\"x\""), "missing x field");
-        assert!(template.contains("\"y\""), "missing y field");
-        assert!(template.contains("\"construction\""), "missing construction field");
-        assert!(template.contains("\"constructed_pct\""), "missing constructed_pct field");
-        assert!(template.contains("\"complete\""), "missing complete field");
-        assert!(template.contains("\"active\""), "missing active field");
-        assert!(template.contains("\"workers\""), "missing workers field");
-        assert!(template.contains("\"max_workers\""), "missing max_workers field");
-        assert!(template.contains("\"build_ticks\""), "missing build_ticks field");
-        assert!(template.contains("\"production_interval\""), "missing production_interval field");
-        assert!(template.contains("\"inputs\""), "missing inputs field");
-        assert!(template.contains("\"outputs\""), "missing outputs field");
-        assert!(template.contains("\"output_buffer\""), "missing output_buffer field");
-        assert!(template.contains("\"destruction_progress\""), "missing destruction_progress field");
-        assert!(template.contains("\"garrison\""), "missing garrison field");
-        assert!(template.contains("\"max_garrison\""), "missing max_garrison field");
-        // producing_tool is conditionally appended via separate format! call
+    fn test_building_detail_info_struct_fields() {
+        use super::BuildingDetailInfo;
+        let info = BuildingDetailInfo {
+            kind: 5, // Sawmill
+            x: 10,
+            y: 20,
+            construction: 0.75,
+            complete: true,
+            active: true,
+            workers: vec![1, 2],
+            max_workers: 4,
+            build_ticks: 50,
+            production_interval: 30,
+            inputs: vec![0, 1],   // resource 0, amount 1
+            outputs: vec![17, 1], // resource 17, amount 1
+            output_buffer: vec![0u32; 29],
+            destruction_progress: -1.0,
+            garrison: 3,
+            max_garrison: 6,
+            producing_tool: 255, // none
+        };
+        assert_eq!(info.kind(), 5);
+        assert_eq!(info.x(), 10);
+        assert_eq!(info.y(), 20);
+        assert!((info.construction() - 0.75).abs() < 0.001);
+        assert!(info.complete());
+        assert!(info.active());
+        assert_eq!(info.workers(), vec![1, 2]);
+        assert_eq!(info.max_workers(), 4);
+        assert_eq!(info.build_ticks(), 50);
+        assert_eq!(info.production_interval(), 30);
+        assert_eq!(info.inputs(), vec![0, 1]);
+        assert_eq!(info.outputs(), vec![17, 1]);
+        assert_eq!(info.output_buffer().len(), 29);
+        assert!((info.destruction_progress() + 1.0).abs() < 0.001);
+        assert_eq!(info.garrison(), 3);
+        assert_eq!(info.max_garrison(), 6);
+        assert_eq!(info.producing_tool(), 255);
     }
-    
+
+    /// Verify get_building_info returns None for out-of-bounds index.
+    #[test]
+    fn test_get_building_info_returns_none_for_oob() {
+        assert!(super::get_building_info(999999).is_none());
+    }
+
     /// Ensure the unit info template fields match JS expectations.
     #[test]
     fn test_unit_info_template_keys() {

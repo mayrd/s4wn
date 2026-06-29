@@ -1,6 +1,167 @@
 /* @ts-self-types="./s4wn_engine.d.ts" */
 
 /**
+ * Get detailed building info by index.
+ * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
+ *   "active":true,"settlers":[1],"max_settlers":1,
+ *   "build_ticks":20,"production_interval":20,"inputs":[["Wood",2]],
+ *   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
+ * or {"error":"Building not found"}
+ * Detailed building info for a single building by index.
+ * `kind` is the BuildingType discriminant (use BUILDING_NAMES_BY_ID in JS).
+ * `workers` is a Vec<u32> of settler IDs.
+ * `inputs`/`outputs` are flattened [discriminant, amount] pairs (use in steps of 2).
+ * `output_buffer` is indexed by ResourceType discriminant (dense Vec<u32>).
+ * `producing_tool` is the tool code discriminant (0=Hammer..10=Bow), 255 for none/not-toolsmith.
+ */
+export class BuildingDetailInfo {
+    static __wrap(ptr) {
+        const obj = Object.create(BuildingDetailInfo.prototype);
+        obj.__wbg_ptr = ptr;
+        BuildingDetailInfoFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        BuildingDetailInfoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_buildingdetailinfo_free(ptr, 0);
+    }
+    /**
+     * @returns {boolean}
+     */
+    get active() {
+        const ret = wasm.buildingdetailinfo_active(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get build_ticks() {
+        const ret = wasm.buildingdetailinfo_build_ticks(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {boolean}
+     */
+    get complete() {
+        const ret = wasm.buildingdetailinfo_complete(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get construction() {
+        const ret = wasm.buildingdetailinfo_construction(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get destruction_progress() {
+        const ret = wasm.buildingdetailinfo_destruction_progress(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get garrison() {
+        const ret = wasm.buildingdetailinfo_garrison(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    get inputs() {
+        const ret = wasm.buildingdetailinfo_inputs(this.__wbg_ptr);
+        var v1 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {number}
+     */
+    get kind() {
+        const ret = wasm.buildingdetailinfo_kind(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get max_garrison() {
+        const ret = wasm.buildingdetailinfo_max_garrison(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get max_workers() {
+        const ret = wasm.buildingdetailinfo_max_workers(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    get output_buffer() {
+        const ret = wasm.buildingdetailinfo_output_buffer(this.__wbg_ptr);
+        var v1 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    get outputs() {
+        const ret = wasm.buildingdetailinfo_outputs(this.__wbg_ptr);
+        var v1 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {number}
+     */
+    get producing_tool() {
+        const ret = wasm.buildingdetailinfo_producing_tool(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get production_interval() {
+        const ret = wasm.buildingdetailinfo_production_interval(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    get workers() {
+        const ret = wasm.buildingdetailinfo_workers(this.__wbg_ptr);
+        var v1 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {number}
+     */
+    get x() {
+        const ret = wasm.buildingdetailinfo_x(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get y() {
+        const ret = wasm.buildingdetailinfo_y(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+}
+if (Symbol.dispose) BuildingDetailInfo.prototype[Symbol.dispose] = BuildingDetailInfo.prototype.free;
+
+/**
  * Building information struct — replaces JSON string from get_building_summary.
  * `index` is the position in the buildings array (used for garrison/destruction).
  * `kind` is the BuildingType discriminant (use BUILDING_NAMES_BY_ID in JS).
@@ -1005,25 +1166,14 @@ export function get_building_garrison_json(building_index) {
 
 /**
  * Get detailed building info by index.
- * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
- *   "active":true,"settlers":[1],"max_settlers":1,
- *   "build_ticks":20,"production_interval":20,"inputs":[["Wood",2]],
- *   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
- * or {"error":"Building not found"}
+ * Returns Some(BuildingDetailInfo) or None if index is out of bounds.
+ * Eliminates JSON.parse() at showBuildingInfo() call sites.
  * @param {number} idx
- * @returns {string}
+ * @returns {BuildingDetailInfo | undefined}
  */
 export function get_building_info(idx) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_building_info(idx);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_building_info(idx);
+    return ret === 0 ? undefined : BuildingDetailInfo.__wrap(ret);
 }
 
 /**
@@ -1950,6 +2100,9 @@ function __wbg_get_imports() {
     };
 }
 
+const BuildingDetailInfoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_buildingdetailinfo_free(ptr, 1));
 const BuildingInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_buildinginfo_free(ptr, 1));

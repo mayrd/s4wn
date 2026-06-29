@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=73';
+} from './pkg/s4wn_engine.js?v=74';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3861,11 +3861,9 @@ if (typeof populateTerrainPalette === 'function') populateTerrainPalette();
 // ── Selection info display ─────────────────────────────────────────────
 function showBuildingInfo(idx, cx, cy) {
     if (!get_building_info) return;
-    const raw = get_building_info(idx);
-    if (!raw) return;
+    const b = get_building_info(idx);
+    if (!b) return;
     try {
-        const b = JSON.parse(raw);
-        if (b.error) { hideSelection(); return; }
         selectedBuilding = idx;
         selectedUnit = null;
 
@@ -3875,14 +3873,21 @@ function showBuildingInfo(idx, cx, cy) {
         const prod = b.production_interval > 0
             ? `⚙️ Every ${(b.production_interval/10).toFixed(1)}s` : '';
 
+        // output_buffer is now a dense Vec<u32> indexed by ResourceType discriminant
         let obuf = '';
-        try {
-            const ob = JSON.parse(JSON.stringify(b.output_buffer));
-            const keys = Object.keys(ob);
-            if (keys.length > 0) {
-                obuf = '📤 ' + keys.map(k => `${k}:${ob[k]}`).join(', ');
+        const ob = b.output_buffer;
+        if (ob && ob.length > 0) {
+            const parts = [];
+            for (let disc = 0; disc < ob.length; disc++) {
+                if (ob[disc] > 0) {
+                    const name = (window.RESOURCE_NAMES_BY_ID && window.RESOURCE_NAMES_BY_ID[disc]) || disc;
+                    parts.push(name + ':' + ob[disc]);
+                }
             }
-        } catch(_) {}
+            if (parts.length > 0) {
+                obuf = '📤 ' + parts.join(', ');
+            }
+        }
 
         // Build garrison section for military buildings
         let garrisonHtml = '';
@@ -3916,12 +3921,17 @@ function showBuildingInfo(idx, cx, cy) {
             </div>`;
         }
 
+        // producing_tool is now u8 tool code (255 = none)
+        const toolDisplay = b.producing_tool !== 255 && window.TOOL_NAMES_BY_ID
+            ? `<div class="sel-stat">Producing: <span>&#x1F527; ${window.TOOL_NAMES_BY_ID[b.producing_tool] || 'Tool #'+b.producing_tool}</span></div>`
+            : '';
+
         selInfo.innerHTML = `
             <div class="sel-title">${tBuilding(buildingName(b.kind))}</div>
             <div class="sel-stat">Status: <span>${statusIcon}</span></div>
             <div class="sel-stat">Pos: <span>(${b.x}, ${b.y})</span></div>
             <div class="sel-stat">Workers: <span>${workers}</span></div>
-            ${b.producing_tool ? `<div class="sel-stat">Producing: <span>&#x1F527; ${b.producing_tool}</span></div>` : ''}
+            ${toolDisplay}
             ${prod ? `<div class="sel-stat">Production: <span>${prod}</span></div>` : ''}
             ${obuf ? `<div class="sel-stat">${obuf}</div>` : ''}
             ${garrisonHtml}
@@ -3994,13 +4004,10 @@ function handleUngarrison(buildingIndex, unitId) {
             showToast('Unit #' + unitId + ' left the building');
             // Refresh the building info panel
             if (typeof selectedBuilding === 'number' && selectedBuilding === buildingIndex) {
-                const raw = get_building_info ? get_building_info(buildingIndex) : null;
-                if (raw) {
-                    const b = JSON.parse(raw);
-                    if (!b.error) {
-                        // Re-show with updated garrison
-                        showBuildingInfo(buildingIndex, parseInt(selInfo.style.left), parseInt(selInfo.style.top));
-                    }
+                const b = get_building_info ? get_building_info(buildingIndex) : null;
+                if (b) {
+                    // Re-show with updated garrison
+                    showBuildingInfo(buildingIndex, parseInt(selInfo.style.left), parseInt(selInfo.style.top));
                 }
             }
         } else {
@@ -4022,12 +4029,9 @@ function handleGarrisonSelectedUnit(buildingIndex) {
         if (ok) {
             showToast('Unit #' + selectedUnit + ' garrisoned');
             // Refresh building info
-            const raw = get_building_info ? get_building_info(buildingIndex) : null;
-            if (raw) {
-                const b = JSON.parse(raw);
-                if (!b.error) {
-                    showBuildingInfo(buildingIndex, parseInt(selInfo.style.left), parseInt(selInfo.style.top));
-                }
+            const b = get_building_info ? get_building_info(buildingIndex) : null;
+            if (b) {
+                showBuildingInfo(buildingIndex, parseInt(selInfo.style.left), parseInt(selInfo.style.top));
             }
         } else {
             showToast('Could not garrison unit (must be a combat unit near the building)');

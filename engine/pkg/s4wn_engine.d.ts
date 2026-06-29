@@ -2,6 +2,43 @@
 /* eslint-disable */
 
 /**
+ * Get detailed building info by index.
+ * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
+ *   "active":true,"settlers":[1],"max_settlers":1,
+ *   "build_ticks":20,"production_interval":20,"inputs":[["Wood",2]],
+ *   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
+ * or {"error":"Building not found"}
+ * Detailed building info for a single building by index.
+ * `kind` is the BuildingType discriminant (use BUILDING_NAMES_BY_ID in JS).
+ * `workers` is a Vec<u32> of settler IDs.
+ * `inputs`/`outputs` are flattened [discriminant, amount] pairs (use in steps of 2).
+ * `output_buffer` is indexed by ResourceType discriminant (dense Vec<u32>).
+ * `producing_tool` is the tool code discriminant (0=Hammer..10=Bow), 255 for none/not-toolsmith.
+ */
+export class BuildingDetailInfo {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    readonly active: boolean;
+    readonly build_ticks: number;
+    readonly complete: boolean;
+    readonly construction: number;
+    readonly destruction_progress: number;
+    readonly garrison: number;
+    readonly inputs: Uint32Array;
+    readonly kind: number;
+    readonly max_garrison: number;
+    readonly max_workers: number;
+    readonly output_buffer: Uint32Array;
+    readonly outputs: Uint32Array;
+    readonly producing_tool: number;
+    readonly production_interval: number;
+    readonly workers: Uint32Array;
+    readonly x: number;
+    readonly y: number;
+}
+
+/**
  * Building information struct — replaces JSON string from get_building_summary.
  * `index` is the position in the buildings array (used for garrison/destruction).
  * `kind` is the BuildingType discriminant (use BUILDING_NAMES_BY_ID in JS).
@@ -211,13 +248,10 @@ export function get_building_garrison_json(building_index: number): string;
 
 /**
  * Get detailed building info by index.
- * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
- *   "active":true,"settlers":[1],"max_settlers":1,
- *   "build_ticks":20,"production_interval":20,"inputs":[["Wood",2]],
- *   "outputs":[["Planks",1]],"output_buffer":{"Planks":5}}
- * or {"error":"Building not found"}
+ * Returns Some(BuildingDetailInfo) or None if index is out of bounds.
+ * Eliminates JSON.parse() at showBuildingInfo() call sites.
  */
-export function get_building_info(idx: number): string;
+export function get_building_info(idx: number): BuildingDetailInfo | undefined;
 
 /**
  * Returns building data as a typed Vec<BuildingInfo> — no JSON parse needed in JS.
@@ -485,6 +519,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly __wbg_buildingdetailinfo_free: (a: number, b: number) => void;
     readonly __wbg_buildinginfo_free: (a: number, b: number) => void;
     readonly __wbg_buildingtileinfo_free: (a: number, b: number) => void;
     readonly __wbg_get_buildinginfo_complete: (a: number) => number;
@@ -556,6 +591,23 @@ export interface InitOutput {
     readonly __wbg_unitdetailinfo_free: (a: number, b: number) => void;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
+    readonly buildingdetailinfo_active: (a: number) => number;
+    readonly buildingdetailinfo_build_ticks: (a: number) => number;
+    readonly buildingdetailinfo_complete: (a: number) => number;
+    readonly buildingdetailinfo_construction: (a: number) => number;
+    readonly buildingdetailinfo_destruction_progress: (a: number) => number;
+    readonly buildingdetailinfo_garrison: (a: number) => number;
+    readonly buildingdetailinfo_inputs: (a: number) => [number, number];
+    readonly buildingdetailinfo_kind: (a: number) => number;
+    readonly buildingdetailinfo_max_garrison: (a: number) => number;
+    readonly buildingdetailinfo_max_workers: (a: number) => number;
+    readonly buildingdetailinfo_output_buffer: (a: number) => [number, number];
+    readonly buildingdetailinfo_outputs: (a: number) => [number, number];
+    readonly buildingdetailinfo_producing_tool: (a: number) => number;
+    readonly buildingdetailinfo_production_interval: (a: number) => number;
+    readonly buildingdetailinfo_workers: (a: number) => [number, number];
+    readonly buildingdetailinfo_x: (a: number) => number;
+    readonly buildingdetailinfo_y: (a: number) => number;
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
     readonly export_map_json: () => [number, number];
     readonly formation_move: (a: number, b: number, c: number, d: number) => number;
@@ -563,7 +615,7 @@ export interface InitOutput {
     readonly get_build_cost_by_id: (a: number) => [number, number];
     readonly get_building_at_tile: (a: number, b: number) => number;
     readonly get_building_garrison_json: (a: number) => [number, number];
-    readonly get_building_info: (a: number) => [number, number];
+    readonly get_building_info: (a: number) => number;
     readonly get_building_summary: () => [number, number];
     readonly get_camera_state: () => [number, number];
     readonly get_draw_calls: () => number;
@@ -617,6 +669,7 @@ export interface InitOutput {
     readonly __wbg_set_tileinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_id: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_id: (a: number, b: number) => void;
+    readonly __wbg_get_unitdetailinfo_y: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_id: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_index: (a: number) => number;
     readonly __wbg_get_unitinfo_y: (a: number) => number;
@@ -636,7 +689,6 @@ export interface InitOutput {
     readonly __wbg_set_unitdetailinfo_hp: (a: number, b: number) => void;
     readonly __wbg_get_unitinfo_max_hp: (a: number) => number;
     readonly __wbg_get_unitinfo_hp: (a: number) => number;
-    readonly __wbg_get_unitdetailinfo_y: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_hp: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_max_hp: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_y: (a: number) => number;
