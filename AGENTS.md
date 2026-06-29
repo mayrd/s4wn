@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S295 · 827 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Fix #81 (BigInt JSON.stringify in DebugSnapshot — StatsInfo.ticks u64→u32) + Migrate get_building_garrison_json to typed GarrisonInfo struct. Next: (5) Migrate get_unit_morale_json to typed struct. (6) Phase 8: sound effects system.
+Status: S296 · 828 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrated get_unit_morale_json to typed MoraleInfo struct. Next: (1) Migrate get_particles_json to typed struct. (2) Phase 8: sound effects system. (3) Audit remaining JSON-returning wasm_bindgen exports.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Status: S295 · 827 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Fix #8
 
 ### Session Log (recent)
 
+| 296 | 2026-06-29 | Migrate get_unit_morale_json to typed MoraleInfo struct: New #[wasm_bindgen] MoraleInfo {morale_bonus, morale_percent} with Copy+Clone — both fields are Copy so no manual getters needed. get_unit_morale(id) returns Option<MoraleInfo>. Eliminates JSON.parse() in showUnitInfo() morale render path. JS: typed field access (mInfo.morale_bonus, mInfo.morale_percent), removed JSON.parse(mRaw). Cache v76→v77. 827→828 tests, clippy clean. -- 828 tests |
 | 295 | 2026-06-29 | Fix #81: BigInt serialization in DebugSnapshot — StatsInfo.ticks u64→u32 prevents BigInt in JSON.stringify (wasm-bindgen u64 becomes JS BigInt). Migrate get_building_garrison_json to typed GarrisonInfo struct with manual getters (Vec<u32> field). Eliminates JSON.parse() in showBuildingInfo() render path. Added test_garrison_info_struct_fields. Cache v75→v76. 826→827 tests, clippy clean. -- 827 tests |
 | 294 | 2026-06-29 | Fix #80: ReferenceError d is not defined in hudStats — get_stats() migrated from JSON to typed StatsInfo in S289; variable bound to s on line 6049 but template referenced d.game_time/d.zoom on line 6076. Fixed to s.game_time/s.zoom. JS syntax verified via node --check. No Rust changes. 826 tests, clippy clean. -- 826 tests |
 | 293 | 2026-06-29 | Migrate get_building_info
