@@ -5265,23 +5265,44 @@ pub fn tick_building_destructions(dt: f32) -> String {
 }
 /// Returns the remaining HP, or 0 if the building doesn't exist.
 /// Get the max HP of a building at the given index. Returns 0 if not found.
-/// Get building info at a tile position. Returns JSON or "null" if no building.
+/// Building-at-tile information struct — replaces JSON string from get_building_at_tile.
+/// `index` is the position in the buildings array (used for garrison/destruction).
+/// `kind` is the BuildingType discriminant (use BUILDING_NAMES_BY_ID in JS).
+/// `construction` is 0.0..1.0 build progress. `active` is whether the building is producing.
+/// `destruction_progress` is -1.0 when not being destroyed, otherwise 0.0..1.0.
 #[wasm_bindgen]
-pub fn get_building_at_tile(tile_x: usize, tile_y: usize) -> String {
+#[derive(Copy, Clone)]
+pub struct BuildingTileInfo {
+    pub index: u32,
+    pub kind: u8,
+    pub x: u32,
+    pub y: u32,
+    pub construction: f32,
+    pub active: bool,
+    pub destruction_progress: f32,
+}
+
+/// Get building info at a tile position. Returns Some(BuildingTileInfo) or None.
+#[wasm_bindgen]
+pub fn get_building_at_tile(tile_x: usize, tile_y: usize) -> Option<BuildingTileInfo> {
     unsafe {
         if let Some(ref app) = APP {
             for (i, b) in app.game_loop.state.economy.buildings.iter().enumerate() {
                 if b.x == tile_x && b.y == tile_y {
-                    let progress = b.destruction_progress().unwrap_or(-1.0);
-                    return format!(
-                        r#"{{"index":{},"kind":{}","x":{},"y":{},"construction":{},"active":{},"destruction_progress":{}}}"#,
-                        i, b.kind.discriminant(), b.x, b.y, b.construction, b.active, progress
-                    );
+                    return Some(BuildingTileInfo {
+                        index: i as u32,
+                        kind: b.kind.discriminant(),
+                        x: b.x as u32,
+                        y: b.y as u32,
+                        construction: b.construction,
+                        active: b.active,
+                        destruction_progress: b.destruction_progress().unwrap_or(-1.0),
+                    });
                 }
             }
-            String::from("null")
+            None
         } else {
-            String::from("null")
+            None
         }
     }
 }
@@ -7794,4 +7815,40 @@ mod parse_map_json_tests {
         assert_eq!(crate::units::UnitStance::StandGround as u8, 1);
         assert_eq!(crate::units::UnitStance::Passive as u8, 2);
     }
+
+    #[test]
+    fn test_building_tile_info_struct_fields() {
+        let info = BuildingTileInfo {
+            index: 7,
+            kind: 3, // Stonecutter
+            x: 15,
+            y: 25,
+            construction: 0.75,
+            active: true,
+            destruction_progress: -1.0,
+        };
+        assert_eq!(info.index, 7);
+        assert_eq!(info.kind, 3);
+        assert_eq!(info.x, 15);
+        assert_eq!(info.y, 25);
+        assert!((info.construction - 0.75).abs() < 0.001);
+        assert!(info.active);
+        assert!((info.destruction_progress - (-1.0)).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_building_tile_info_destruction_progress() {
+        let info = BuildingTileInfo {
+            index: 0,
+            kind: 0,
+            x: 0,
+            y: 0,
+            construction: 1.0,
+            active: false,
+            destruction_progress: 0.5,
+        };
+        assert!((info.destruction_progress - 0.5).abs() < 0.001);
+        assert!(!info.active);
+    }
+
 }

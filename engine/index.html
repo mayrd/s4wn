@@ -3745,15 +3745,12 @@ canvas.addEventListener('click', (e) => {
     // ── Demolition mode ──
     if (demolitionMode) {
         if (typeof get_building_at_tile === 'function') {
-            const bInfo = get_building_at_tile(e.offsetX, e.offsetY);
-            if (bInfo) {
-                const b = JSON.parse(bInfo);
-                if (b.index !== undefined && typeof start_building_destruction === 'function') {
-                    const started = start_building_destruction(b.index, 1.5);
-                    if (started) {
-                        console.log(`Demolition started for building ${b.index} (${buildingName(b.kind)}) at (${b.x},${b.y})`);
-                        try { Sfx.playError(); } catch(e) {}
-                    }
+            const b = get_building_at_tile(e.offsetX, e.offsetY);
+            if (b && typeof start_building_destruction === 'function') {
+                const started = start_building_destruction(b.index, 1.5);
+                if (started) {
+                    console.log(`Demolition started for building ${b.index} (${buildingName(b.kind)}) at (${b.x},${b.y})`);
+                    try { Sfx.playError(); } catch(e) {}
                 }
             }
         }
@@ -4212,17 +4209,13 @@ function showTileInspector(cx, cy, source) {
 
     // Look up building at this tile
     let buildingInfo = null;
-    try {
-        if (typeof get_building_at_tile === 'function') {
-            const bRaw = get_building_at_tile(info.x, info.y);
-            if (bRaw && bRaw !== 'null') {
-                buildingInfo = JSON.parse(bRaw);
-                console.log('TileInspector [' + source + '] building at (' + info.x + ',' + info.y + '):',
-                    buildingInfo.kind, buildingInfo);
-            }
+    if (typeof get_building_at_tile === 'function') {
+        const bRaw = get_building_at_tile(info.x, info.y);
+        if (bRaw) {
+            buildingInfo = bRaw;
+            console.log('TileInspector [' + source + '] building at (' + info.x + ',' + info.y + '):',
+                buildingInfo.kind, buildingInfo);
         }
-    } catch (e) {
-        console.warn('TileInspector: building lookup failed', e);
     }
 
     let ti = document.getElementById('tile-inspector');
