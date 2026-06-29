@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S293 · 826 tests · Clippy: 0 errors, 0 warnings. 0 open issues. get_building_info migrated from JSON String to typed BuildingDetailInfo struct (17 fields + getters, Vec<u32> for workers/inputs/outputs/output_buffer, u8 producing_tool). Next: (5) Migrate remaining JSON-string WASM exports (get_building_garrison_json, get_unit_morale_json). (6) Phase 8: sound effects system.
+Status: S294 · 826 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Fix #80 (ReferenceError d in hudStats — get_stats() returns typed StatsInfo bound to var s, not d). Next: (5) Migrate remaining JSON-string WASM exports (get_building_garrison_json, get_unit_morale_json). (6) Phase 8: sound effects system.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,8 @@ Status: S293 · 826 tests · Clippy: 0 errors, 0 warnings. 0 open issues. get_bu
 
 ### Session Log (recent)
 
+| 294 | 2026-06-29 | Fix #80: ReferenceError d is not defined in hudStats — get_stats() migrated from JSON to typed StatsInfo in S289; variable bound to s on line 6049 but template referenced d.game_time/d.zoom on line 6076. Fixed to s.game_time/s.zoom. JS syntax verified via node --check. No Rust changes. 826 tests, clippy clean. -- 826 tests |
+| 293 | 2026-06-29 | Migrate get_building_info
 | 292 | 2026-06-29 | Migrate get_unit_info from JSON String to typed UnitDetailInfo struct: New #[wasm_bindgen] UnitDetailInfo {id, kind, x, y, hp, max_hp, state, stance, dying_progress, assigned_building, target, carried_tool} with integer discriminants + sentinel 0 for Option fields (assigned_building offset +1, target raw ID since IDs start at 1). get_unit_info(id) returns Option<UnitDetailInfo> — wasm-bindgen converts to JS object or undefined. Eliminates JSON.parse() + tool_code_to_name() at the showUnitInfo() render path. JS: Added UNIT_STATE_NAMES_BY_ID array (8 entries), updated showUnitInfo for integer discriminants (state name, tool name, assigned_building/target >0 checks), removed try/catch wrapper. 3 new tests (struct fields, sentinel values, None guard). Cache v72→v73. 822→825 tests, clippy clean. -- 825 tests |
 | 291 | 2026-06-29 | Migrate get_player_nation from JSON String to typed NationInfo struct: New #[wasm_bindgen] NationInfo {name_id, color, emoji, description} with JS getters for non-Copy String fields. get_player_nation() returns Option<NationInfo> — wasm-bindgen converts to JS object or undefined. Eliminates JSON.parse() at 3 JS call sites (updateNationHUD, hudStats render loop, building constructor filter). 3 new tests (fields for all 5 discrims, uninitialized None guard, getter consistency). Cache v71→v72. 819→822 tests, clippy clean. -- 822 tests |
 | 290 | 2026-06-29 | Migrate get_tool_counts from JSON String to Vec<u32>: Returns 11-element Vec<u32> indexed by ToolType discriminant (0=Hammer..10=Bow). Eliminates JSON.parse() in updateToolBar() render path and removes tool_code_to_name() call from WASM production path. JS: Added TOOL_ICONS_BY_ID + TOOL_NAMES_BY_ID arrays, updated updateToolBar() to iterate vec directly, fixed TOOL_ICONS object→array for carried_tool. Cache buster v70→v71. 818→819 tests, clippy clean. -- 819 tests |
