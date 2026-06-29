@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S292 · 825 tests · Clippy: 0 errors, 0 warnings. 0 open issues. get_unit_info migrated from JSON String to typed UnitDetailInfo struct — JSON.parse() eliminated from showUnitInfo(). Next: (5) Migrate get_building_info from JSON to typed struct. (6) Phase 8: sound effects system (ambient water, weather, building sounds).
+Status: S293 · 826 tests · Clippy: 0 errors, 0 warnings. 0 open issues. get_building_info migrated from JSON String to typed BuildingDetailInfo struct (17 fields + getters, Vec<u32> for workers/inputs/outputs/output_buffer, u8 producing_tool). Next: (5) Migrate remaining JSON-string WASM exports (get_building_garrison_json, get_unit_morale_json). (6) Phase 8: sound effects system.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
