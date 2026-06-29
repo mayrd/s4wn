@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S298 · 831 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Refactored required_tool() to return u8 and gated string-name functions behind cfg(test). Next: (1) Migrate export_map_json to typed struct — largest remaining JSON export. (2) Phase 8: sound effects system. (3) WASM size: 273.1KB baseline — investigate remaining 0KB gap to 300KB target (already under). Continue Phase 7 rendering improvements.
+Status: S299 · 831 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrated get_units_in_rect from JSON String to typed Vec<UnitInfo> — eliminates JSON.parse() in marquee-selection render path. WASM: 273.4KB (under 300KB target). Next: (1) Migrate tick_building_destructions JSON return to typed struct. (2) Migrate remaining JSON-string WASM exports to typed structs. (3) Phase 8: sound effects system. (4) Continue Phase 7 rendering improvements.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,8 @@ Status: S298 · 831 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Refact
 
 ### Session Log (recent)
 
+| 299 | 2026-06-29 | Migrate get_units_in_rect from JSON String to typed Vec<UnitInfo>: Returns Vec<UnitInfo> (same struct as get_unit_summary) — wasm-bindgen converts to JS array of typed objects with integer discriminants. Eliminates JSON.parse() in marquee-selection render path. JS: removed const raw + JSON.parse(raw), direct assignment from WASM. Cache v78→v79. 831 tests, clippy clean. No WASM size regress: 273.4KB (+0.3KB). — 831 tests |
+| 298 | 2026-06-29 | Refactored required_tool() to return u8 and gated string-name functions behind cfg(test). Next: (1) Migrate export_map_json to typed struct — largest remaining JSON export. (2) Phase 8: sound effects system. (3) WASM size: 273.1KB baseline — investigate remaining 0KB gap to 300KB target (already under). Continue Phase 7 rendering improvements.
 | 297 | 2026-06-29 | Migrate get_particles_json to typed ParticleInfo struct: New #[wasm_bindgen] ParticleInfo {x, y, z, r, g, b, size, life, max_life} with Copy+Clone — all f32. get_particles() returns Vec<ParticleInfo>. Eliminates JSON.parse() in drawParticles() render path (hot per-frame path). JS: removed try/catch + JSON.parse(raw), typed field access. Cache v77→v78. 3 new tests (struct fields, empty vec, populated vec). 828→831 tests, clippy clean. -- 831 tests |
 | 296 | 2026-06-29 | Migrate get_unit_morale_json to typed MoraleInfo struct: New #[wasm_bindgen] MoraleInfo {morale_bonus, morale_percent} with Copy+Clone — both fields are Copy so no manual getters needed. get_unit_morale(id) returns Option<MoraleInfo>. Eliminates JSON.parse() in showUnitInfo() morale render path. JS: typed field access (mInfo.morale_bonus, mInfo.morale_percent), removed JSON.parse(mRaw). Cache v76→v77. 827→828 tests, clippy clean. -- 828 tests |
 || 298 | 2026-06-29 | Refactor required_tool() to return u8 directly (Option<&str> → Option<u8>). Gated BuildingType::from_name(), tool_code_from_name(), tool_code_to_name() behind #[cfg(test)]. Removes FNV-1a LOOKUP table (~60 hash+discrim pairs) and tool-name string matching from WASM binary. Building::new() now uses u8 tool codes directly without string conversion. Updated test_building_required_tool to use integer assertions. WASM: 273.6→273.1KB (-0.5KB). 831 tests, clippy clean. — 831 tests |
@@ -345,6 +347,6 @@ Status: S298 · 831 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Refact
 265. Investigate 7KB WASM size variance (307.3KB after cargo clean vs 300.1KB reported). Run checksum on wasm binaries from both builds to identify the source of growth. [SHOULD]
 266. Re-baseline WASM size target: 300KB. At 307.3KB we are 7.3KB over. Need 7.3KB savings from from_name() conversion + any remaining low-hanging fruit. [MUST]
 
-Next session priorities: (1) Rebuild WASM and measure size savings from BUILDING_NAMES + NAMES removal (~5-6KB expected). (2) Eliminate RESOURCE_NAMES (29 strings) from restore_game_state backward-compat fallback — convert input/output buffer parsing to integer keys. (3) Eliminate UNIT_KIND_NAMES (48 strings) from military_in_rect() — return integer discriminants or gate behind cfg(test). (4) Re-baseline WASM size after all name-string removals. (5) Continue Phase 7 rendering quality improvements.
+Next session priorities: (1) Migrate tick_building_destructions JSON return to typed struct — eliminate format!() JSON building in WASM. (2) Migrate remaining JSON-string WASM exports (get_camera_state, get_build_cost_by_id return, get_nation_buildings_by_id, try_place_building_by_id result, add_starting_resources result, setup_starter_base result) to typed structs. (3) Phase 8: sound effects system — audio playback infrastructure. (4) Continue Phase 7 rendering quality improvements — visual verification of reflection/water/shadow fidelity.
 
 *All building data must match BASE.md. Never modify BASE.md.*
