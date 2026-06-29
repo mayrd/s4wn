@@ -4146,7 +4146,7 @@ pub fn get_building_info(idx: usize) -> String {
                 };
 
                 return format!(
-                    r#"{{"kind":{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"settlers":[{}],"max_settlers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}},"destruction_progress":{}{}"#,
+                    r#"{{"kind":{},"x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"workers":[{}],"max_workers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}},"destruction_progress":{},"garrison":{},"max_garrison":{}{}}}"#,
                     kind.discriminant(),
                     b.x,
                     b.y,
@@ -4162,6 +4162,8 @@ pub fn get_building_info(idx: usize) -> String {
                     outputs.join(","),
                     obuf_parts.join(","),
                     b.destruction_progress().unwrap_or(-1.0),
+                    b.garrison.len(),
+                    b.max_garrison,
                     producing_tool.unwrap_or_default(),
                 );
             }
@@ -7459,14 +7461,9 @@ mod horizon_tests {
 mod export_regression_tests {
     /// Regression test: ensure the building info JSON template has all
     /// fields expected by the JS side in engine/index.html.
-    /// If this fails, either the Rust template changed or JS expects a new field.
     #[test]
     fn test_building_info_template_keys() {
-        // These keys appear in the format!() template in get_building_info.
-        // JS side in engine/index.html reads: b.kind, b.x, b.y, b.construction,
-        // b.active, b.max_settlers, b.build_ticks, b.production_interval,
-        // b.inputs, b.outputs, b.output_buffer, b.destruction_progress, b.producing_tool
-        let template = r#"{"kind":"{}","x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"settlers":[{}],"max_settlers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{},"destruction_progress":{}"#;
+        let template = r#"{"kind":{},"x":{},"y":{},"construction":{},"constructed_pct":{},"complete":{},"active":{},"workers":[{}],"max_workers":{},"build_ticks":{},"production_interval":{},"inputs":[{}],"outputs":[{}],"output_buffer":{{{}}},"destruction_progress":{},"garrison":{},"max_garrison":{}{}}}}"#;
         assert!(template.contains("\"kind\""), "missing kind field");
         assert!(template.contains("\"x\""), "missing x field");
         assert!(template.contains("\"y\""), "missing y field");
@@ -7474,17 +7471,19 @@ mod export_regression_tests {
         assert!(template.contains("\"constructed_pct\""), "missing constructed_pct field");
         assert!(template.contains("\"complete\""), "missing complete field");
         assert!(template.contains("\"active\""), "missing active field");
-        assert!(template.contains("\"settlers\""), "missing settlers field");
-        assert!(template.contains("\"max_settlers\""), "missing max_settlers field");
+        assert!(template.contains("\"workers\""), "missing workers field");
+        assert!(template.contains("\"max_workers\""), "missing max_workers field");
         assert!(template.contains("\"build_ticks\""), "missing build_ticks field");
         assert!(template.contains("\"production_interval\""), "missing production_interval field");
         assert!(template.contains("\"inputs\""), "missing inputs field");
         assert!(template.contains("\"outputs\""), "missing outputs field");
         assert!(template.contains("\"output_buffer\""), "missing output_buffer field");
         assert!(template.contains("\"destruction_progress\""), "missing destruction_progress field");
+        assert!(template.contains("\"garrison\""), "missing garrison field");
+        assert!(template.contains("\"max_garrison\""), "missing max_garrison field");
         // producing_tool is conditionally appended via separate format! call
     }
-
+    
     /// Ensure the unit info template fields match JS expectations.
     #[test]
     fn test_unit_info_template_keys() {
