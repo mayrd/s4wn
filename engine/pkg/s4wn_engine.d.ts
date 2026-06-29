@@ -2,6 +2,49 @@
 /* eslint-disable */
 
 /**
+ * Building information struct — replaces JSON string from get_building_summary.
+ * `index` is the position in the buildings array (used for garrison/destruction).
+ * `kind` is the BuildingType discriminant (use BUILDING_NAMES_BY_ID in JS).
+ * `settlers` is the count of assigned workers. `garrison` is count of garrisoned soldiers.
+ */
+export class BuildingInfo {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    complete: boolean;
+    garrison: number;
+    index: number;
+    kind: number;
+    max_garrison: number;
+    owner_id: number;
+    settlers: number;
+    x: number;
+    y: number;
+}
+
+/**
+ * Returns the remaining HP, or 0 if the building doesn't exist.
+ * Get the max HP of a building at the given index. Returns 0 if not found.
+ * Building-at-tile information struct — replaces JSON string from get_building_at_tile.
+ * `index` is the position in the buildings array (used for garrison/destruction).
+ * `kind` is the BuildingType discriminant (use BUILDING_NAMES_BY_ID in JS).
+ * `construction` is 0.0..1.0 build progress. `active` is whether the building is producing.
+ * `destruction_progress` is -1.0 when not being destroyed, otherwise 0.0..1.0.
+ */
+export class BuildingTileInfo {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    active: boolean;
+    construction: number;
+    destruction_progress: number;
+    index: number;
+    kind: number;
+    x: number;
+    y: number;
+}
+
+/**
  * Tile information returned by `get_tile_at` — replaces JSON string with typed struct.
  * `resource` is -1 when no resource is present on the tile.
  */
@@ -15,6 +58,28 @@ export class TileInfo {
      */
     resource: number;
     terrain: number;
+    x: number;
+    y: number;
+}
+
+/**
+ * Unit information struct — replaces JSON string from get_unit_summary.
+ * `kind` is the UnitKind discriminant (use UNIT_NAMES_BY_ID in JS).
+ * `state` discriminant: 0=Idle, 1=Moving, 2=Working, 3=Fighting, 4=Patrolling, 5=FormationMove, 6=Dying, 7=Dead.
+ * `stance` discriminant: 0=Aggressive, 1=StandGround, 2=Passive.
+ * `carried_tool` is the tool code discriminant, or 255 if none.
+ */
+export class UnitInfo {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    carried_tool: number;
+    hp: number;
+    id: number;
+    kind: number;
+    max_hp: number;
+    stance: number;
+    state: number;
     x: number;
     y: number;
 }
@@ -68,11 +133,9 @@ export function generate_map(map_type: string, width: number, height: number): s
 export function get_build_cost_by_id(discriminant: number): string;
 
 /**
- * Returns the remaining HP, or 0 if the building doesn't exist.
- * Get the max HP of a building at the given index. Returns 0 if not found.
- * Get building info at a tile position. Returns JSON or "null" if no building.
+ * Get building info at a tile position. Returns Some(BuildingTileInfo) or None.
  */
-export function get_building_at_tile(tile_x: number, tile_y: number): string;
+export function get_building_at_tile(tile_x: number, tile_y: number): BuildingTileInfo | undefined;
 
 /**
  * Get garrison info for a building at the given index.
@@ -92,9 +155,10 @@ export function get_building_garrison_json(building_index: number): string;
 export function get_building_info(idx: number): string;
 
 /**
- * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1,"owner_id":0,"garrison":0,"max_garrison":0},...]
+ * Returns building data as a typed Vec<BuildingInfo> — no JSON parse needed in JS.
+ * Use BUILDING_NAMES_BY_ID[info.kind] for the building name.
  */
-export function get_building_summary(): string;
+export function get_building_summary(): BuildingInfo[];
 
 /**
  * Get camera state for minimap viewport calculation.
@@ -129,11 +193,12 @@ export function get_particles_json(): string;
 export function get_player_nation(): string;
 
 /**
- * Get resource counts with integer discriminant keys (new format).
- * Returns: {"0":100,"1":50,"2":0,...} — keys are ResourceType discriminants.
+ * Get resource counts as a dense Vec<u32> indexed by ResourceType discriminant.
+ * Returns a Vec with max_discriminant+1 elements; invalid/gap indices are 0.
+ * JS callers can index directly: counts[disc] — no JSON.parse() needed.
  * Use RESOURCE_NAMES_BY_ID (data.js) for JS-side name lookup.
  */
-export function get_resource_counts_by_id(): string;
+export function get_resource_counts_by_id(): Uint32Array;
 
 /**
  * Get engine stats as a JSON string (FPS, tick count, game time).
@@ -170,10 +235,10 @@ export function get_unit_morale_json(unit_id: number): string;
 export function get_unit_stance(unit_id: number): number;
 
 /**
- * Get unit summary as a JSON string for the HUD.
- * Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"max_hp":50,"state":"Working"},...]
+ * Returns unit data as a typed Vec<UnitInfo> — no JSON parse needed in JS.
+ * Use UNIT_NAMES_BY_ID[info.kind] for the unit name.
  */
-export function get_unit_summary(): string;
+export function get_unit_summary(): UnitInfo[];
 
 /**
  * Get military units within a world-coordinate rectangle.
@@ -354,16 +419,49 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly __wbg_buildinginfo_free: (a: number, b: number) => void;
+    readonly __wbg_buildingtileinfo_free: (a: number, b: number) => void;
+    readonly __wbg_get_buildinginfo_complete: (a: number) => number;
+    readonly __wbg_get_buildinginfo_garrison: (a: number) => number;
+    readonly __wbg_get_buildinginfo_index: (a: number) => number;
+    readonly __wbg_get_buildinginfo_kind: (a: number) => number;
+    readonly __wbg_get_buildinginfo_max_garrison: (a: number) => number;
+    readonly __wbg_get_buildinginfo_owner_id: (a: number) => number;
+    readonly __wbg_get_buildinginfo_settlers: (a: number) => number;
+    readonly __wbg_get_buildinginfo_x: (a: number) => number;
+    readonly __wbg_get_buildinginfo_y: (a: number) => number;
+    readonly __wbg_get_buildingtileinfo_active: (a: number) => number;
+    readonly __wbg_get_buildingtileinfo_construction: (a: number) => number;
+    readonly __wbg_get_buildingtileinfo_destruction_progress: (a: number) => number;
+    readonly __wbg_get_buildingtileinfo_kind: (a: number) => number;
     readonly __wbg_get_tileinfo_elevation: (a: number) => number;
     readonly __wbg_get_tileinfo_resource: (a: number) => number;
     readonly __wbg_get_tileinfo_terrain: (a: number) => number;
     readonly __wbg_get_tileinfo_x: (a: number) => number;
     readonly __wbg_get_tileinfo_y: (a: number) => number;
+    readonly __wbg_get_unitinfo_carried_tool: (a: number) => number;
+    readonly __wbg_get_unitinfo_stance: (a: number) => number;
+    readonly __wbg_get_unitinfo_state: (a: number) => number;
+    readonly __wbg_get_unitinfo_x: (a: number) => number;
+    readonly __wbg_set_buildinginfo_complete: (a: number, b: number) => void;
+    readonly __wbg_set_buildinginfo_garrison: (a: number, b: number) => void;
+    readonly __wbg_set_buildinginfo_index: (a: number, b: number) => void;
+    readonly __wbg_set_buildinginfo_kind: (a: number, b: number) => void;
+    readonly __wbg_set_buildinginfo_max_garrison: (a: number, b: number) => void;
+    readonly __wbg_set_buildinginfo_owner_id: (a: number, b: number) => void;
+    readonly __wbg_set_buildinginfo_settlers: (a: number, b: number) => void;
+    readonly __wbg_set_buildinginfo_x: (a: number, b: number) => void;
+    readonly __wbg_set_buildinginfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_buildingtileinfo_active: (a: number, b: number) => void;
+    readonly __wbg_set_buildingtileinfo_construction: (a: number, b: number) => void;
+    readonly __wbg_set_buildingtileinfo_destruction_progress: (a: number, b: number) => void;
+    readonly __wbg_set_buildingtileinfo_kind: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
-    readonly __wbg_set_tileinfo_resource: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_terrain: (a: number, b: number) => void;
-    readonly __wbg_set_tileinfo_x: (a: number, b: number) => void;
-    readonly __wbg_set_tileinfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_carried_tool: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_stance: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_state: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_x: (a: number, b: number) => void;
     readonly __wbg_tileinfo_free: (a: number, b: number) => void;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
@@ -372,7 +470,7 @@ export interface InitOutput {
     readonly formation_move: (a: number, b: number, c: number, d: number) => number;
     readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
     readonly get_build_cost_by_id: (a: number) => [number, number];
-    readonly get_building_at_tile: (a: number, b: number) => [number, number];
+    readonly get_building_at_tile: (a: number, b: number) => number;
     readonly get_building_garrison_json: (a: number) => [number, number];
     readonly get_building_info: (a: number) => [number, number];
     readonly get_building_summary: () => [number, number];
@@ -420,12 +518,33 @@ export interface InitOutput {
     readonly try_place_building_by_id: (a: number, b: number, c: number) => [number, number];
     readonly wasm_garrison_unit: (a: number, b: number) => number;
     readonly wasm_ungarrison_unit: (a: number, b: number) => number;
+    readonly __wbg_set_buildingtileinfo_index: (a: number, b: number) => void;
+    readonly __wbg_set_tileinfo_x: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_id: (a: number, b: number) => void;
+    readonly __wbg_get_buildingtileinfo_index: (a: number) => number;
+    readonly __wbg_get_unitinfo_id: (a: number) => number;
+    readonly __wbg_set_unitinfo_hp: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_tileinfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_kind: (a: number, b: number) => void;
+    readonly __wbg_get_unitinfo_y: (a: number) => number;
+    readonly __wbg_set_buildingtileinfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_buildingtileinfo_x: (a: number, b: number) => void;
+    readonly __wbg_set_tileinfo_resource: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_max_hp: (a: number, b: number) => void;
+    readonly __wbg_get_unitinfo_hp: (a: number) => number;
+    readonly __wbg_get_unitinfo_max_hp: (a: number) => number;
+    readonly __wbg_get_buildingtileinfo_y: (a: number) => number;
+    readonly __wbg_get_buildingtileinfo_x: (a: number) => number;
+    readonly __wbg_get_unitinfo_kind: (a: number) => number;
+    readonly __wbg_unitinfo_free: (a: number, b: number) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __externref_table_alloc: () => number;
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_exn_store: (a: number) => void;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
+    readonly __externref_drop_slice: (a: number, b: number) => void;
     readonly __externref_table_dealloc: (a: number) => void;
     readonly __wbindgen_start: () => void;
 }

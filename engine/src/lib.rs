@@ -3832,24 +3832,31 @@ pub fn get_tile_at(x: f32, y: f32) -> Option<TileInfo> {
     }
     None
 }
-/// Get resource counts with integer discriminant keys (new format).
-/// Returns: {"0":100,"1":50,"2":0,...} — keys are ResourceType discriminants.
+/// Get resource counts as a dense Vec<u32> indexed by ResourceType discriminant.
+/// Returns a Vec with max_discriminant+1 elements; invalid/gap indices are 0.
+/// JS callers can index directly: counts[disc] — no JSON.parse() needed.
 /// Use RESOURCE_NAMES_BY_ID (data.js) for JS-side name lookup.
 #[wasm_bindgen]
-pub fn get_resource_counts_by_id() -> String {
+pub fn get_resource_counts_by_id() -> Vec<u32> {
     unsafe {
         if let Some(ref app) = APP {
             let storage = &app.game_loop.state.economy.storage;
             use crate::economy::ResourceType;
-            let mut parts = Vec::new();
+            // Find max discriminant to size the array
+            let max_disc = ResourceType::VALID_RESOURCE_DISCRIMINANTS
+                .iter()
+                .copied()
+                .max()
+                .unwrap_or(0);
+            let mut counts = vec![0u32; max_disc as usize + 1];
             for &disc in &ResourceType::VALID_RESOURCE_DISCRIMINANTS {
                 let rt = ResourceType::from_discriminant(disc).unwrap();
-                parts.push(format!("\"{}\":{}", disc, storage.get(rt)));
+                counts[disc as usize] = storage.get(rt);
             }
-            return format!("{{{}}}", parts.join(","));
+            return counts;
         }
     }
-    String::new()
+    Vec::new()
 }
 /// Get tool counts as a JSON string for the HUD.
 /// Returns: {"Hammer":3,"Pickaxe":0,"Axe":2,...} — all 11 tool types.

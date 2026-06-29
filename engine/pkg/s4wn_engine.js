@@ -1,6 +1,269 @@
 /* @ts-self-types="./s4wn_engine.d.ts" */
 
 /**
+ * Building information struct — replaces JSON string from get_building_summary.
+ * `index` is the position in the buildings array (used for garrison/destruction).
+ * `kind` is the BuildingType discriminant (use BUILDING_NAMES_BY_ID in JS).
+ * `settlers` is the count of assigned workers. `garrison` is count of garrisoned soldiers.
+ */
+export class BuildingInfo {
+    static __wrap(ptr) {
+        const obj = Object.create(BuildingInfo.prototype);
+        obj.__wbg_ptr = ptr;
+        BuildingInfoFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        BuildingInfoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_buildinginfo_free(ptr, 0);
+    }
+    /**
+     * @returns {boolean}
+     */
+    get complete() {
+        const ret = wasm.__wbg_get_buildinginfo_complete(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get garrison() {
+        const ret = wasm.__wbg_get_buildinginfo_garrison(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get index() {
+        const ret = wasm.__wbg_get_buildinginfo_index(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get kind() {
+        const ret = wasm.__wbg_get_buildinginfo_kind(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get max_garrison() {
+        const ret = wasm.__wbg_get_buildinginfo_max_garrison(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get owner_id() {
+        const ret = wasm.__wbg_get_buildinginfo_owner_id(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get settlers() {
+        const ret = wasm.__wbg_get_buildinginfo_settlers(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get x() {
+        const ret = wasm.__wbg_get_buildinginfo_x(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get y() {
+        const ret = wasm.__wbg_get_buildinginfo_y(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @param {boolean} arg0
+     */
+    set complete(arg0) {
+        wasm.__wbg_set_buildinginfo_complete(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set garrison(arg0) {
+        wasm.__wbg_set_buildinginfo_garrison(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set index(arg0) {
+        wasm.__wbg_set_buildinginfo_index(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set kind(arg0) {
+        wasm.__wbg_set_buildinginfo_kind(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set max_garrison(arg0) {
+        wasm.__wbg_set_buildinginfo_max_garrison(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set owner_id(arg0) {
+        wasm.__wbg_set_buildinginfo_owner_id(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set settlers(arg0) {
+        wasm.__wbg_set_buildinginfo_settlers(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set x(arg0) {
+        wasm.__wbg_set_buildinginfo_x(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set y(arg0) {
+        wasm.__wbg_set_buildinginfo_y(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) BuildingInfo.prototype[Symbol.dispose] = BuildingInfo.prototype.free;
+
+/**
+ * Returns the remaining HP, or 0 if the building doesn't exist.
+ * Get the max HP of a building at the given index. Returns 0 if not found.
+ * Building-at-tile information struct — replaces JSON string from get_building_at_tile.
+ * `index` is the position in the buildings array (used for garrison/destruction).
+ * `kind` is the BuildingType discriminant (use BUILDING_NAMES_BY_ID in JS).
+ * `construction` is 0.0..1.0 build progress. `active` is whether the building is producing.
+ * `destruction_progress` is -1.0 when not being destroyed, otherwise 0.0..1.0.
+ */
+export class BuildingTileInfo {
+    static __wrap(ptr) {
+        const obj = Object.create(BuildingTileInfo.prototype);
+        obj.__wbg_ptr = ptr;
+        BuildingTileInfoFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        BuildingTileInfoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_buildingtileinfo_free(ptr, 0);
+    }
+    /**
+     * @returns {boolean}
+     */
+    get active() {
+        const ret = wasm.__wbg_get_buildingtileinfo_active(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get construction() {
+        const ret = wasm.__wbg_get_buildingtileinfo_construction(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get destruction_progress() {
+        const ret = wasm.__wbg_get_buildingtileinfo_destruction_progress(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get index() {
+        const ret = wasm.__wbg_get_buildingtileinfo_index(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get kind() {
+        const ret = wasm.__wbg_get_buildingtileinfo_kind(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get x() {
+        const ret = wasm.__wbg_get_buildingtileinfo_x(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get y() {
+        const ret = wasm.__wbg_get_buildingtileinfo_y(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @param {boolean} arg0
+     */
+    set active(arg0) {
+        wasm.__wbg_set_buildingtileinfo_active(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set construction(arg0) {
+        wasm.__wbg_set_buildingtileinfo_construction(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set destruction_progress(arg0) {
+        wasm.__wbg_set_buildingtileinfo_destruction_progress(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set index(arg0) {
+        wasm.__wbg_set_buildingtileinfo_index(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set kind(arg0) {
+        wasm.__wbg_set_buildingtileinfo_kind(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set x(arg0) {
+        wasm.__wbg_set_buildingtileinfo_x(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set y(arg0) {
+        wasm.__wbg_set_buildingtileinfo_y(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) BuildingTileInfo.prototype[Symbol.dispose] = BuildingTileInfo.prototype.free;
+
+/**
  * Tile information returned by `get_tile_at` — replaces JSON string with typed struct.
  * `resource` is -1 when no resource is present on the tile.
  */
@@ -90,6 +353,150 @@ export class TileInfo {
     }
 }
 if (Symbol.dispose) TileInfo.prototype[Symbol.dispose] = TileInfo.prototype.free;
+
+/**
+ * Unit information struct — replaces JSON string from get_unit_summary.
+ * `kind` is the UnitKind discriminant (use UNIT_NAMES_BY_ID in JS).
+ * `state` discriminant: 0=Idle, 1=Moving, 2=Working, 3=Fighting, 4=Patrolling, 5=FormationMove, 6=Dying, 7=Dead.
+ * `stance` discriminant: 0=Aggressive, 1=StandGround, 2=Passive.
+ * `carried_tool` is the tool code discriminant, or 255 if none.
+ */
+export class UnitInfo {
+    static __wrap(ptr) {
+        const obj = Object.create(UnitInfo.prototype);
+        obj.__wbg_ptr = ptr;
+        UnitInfoFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        UnitInfoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_unitinfo_free(ptr, 0);
+    }
+    /**
+     * @returns {number}
+     */
+    get carried_tool() {
+        const ret = wasm.__wbg_get_unitinfo_carried_tool(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get hp() {
+        const ret = wasm.__wbg_get_unitinfo_hp(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get id() {
+        const ret = wasm.__wbg_get_unitinfo_id(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get kind() {
+        const ret = wasm.__wbg_get_unitinfo_kind(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get max_hp() {
+        const ret = wasm.__wbg_get_unitinfo_max_hp(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get stance() {
+        const ret = wasm.__wbg_get_unitinfo_stance(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get state() {
+        const ret = wasm.__wbg_get_unitinfo_state(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get x() {
+        const ret = wasm.__wbg_get_unitinfo_x(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get y() {
+        const ret = wasm.__wbg_get_unitinfo_y(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {number} arg0
+     */
+    set carried_tool(arg0) {
+        wasm.__wbg_set_unitinfo_carried_tool(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set hp(arg0) {
+        wasm.__wbg_set_unitinfo_hp(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set id(arg0) {
+        wasm.__wbg_set_unitinfo_id(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set kind(arg0) {
+        wasm.__wbg_set_unitinfo_kind(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set max_hp(arg0) {
+        wasm.__wbg_set_unitinfo_max_hp(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set stance(arg0) {
+        wasm.__wbg_set_unitinfo_stance(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set state(arg0) {
+        wasm.__wbg_set_unitinfo_state(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set x(arg0) {
+        wasm.__wbg_set_unitinfo_x(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set y(arg0) {
+        wasm.__wbg_set_unitinfo_y(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) UnitInfo.prototype[Symbol.dispose] = UnitInfo.prototype.free;
 
 /**
  * Add a model instance to the render list for this frame.
@@ -227,24 +634,14 @@ export function get_build_cost_by_id(discriminant) {
 }
 
 /**
- * Returns the remaining HP, or 0 if the building doesn't exist.
- * Get the max HP of a building at the given index. Returns 0 if not found.
- * Get building info at a tile position. Returns JSON or "null" if no building.
+ * Get building info at a tile position. Returns Some(BuildingTileInfo) or None.
  * @param {number} tile_x
  * @param {number} tile_y
- * @returns {string}
+ * @returns {BuildingTileInfo | undefined}
  */
 export function get_building_at_tile(tile_x, tile_y) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_building_at_tile(tile_x, tile_y);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_building_at_tile(tile_x, tile_y);
+    return ret === 0 ? undefined : BuildingTileInfo.__wrap(ret);
 }
 
 /**
@@ -291,20 +688,15 @@ export function get_building_info(idx) {
 }
 
 /**
- * Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1,"owner_id":0,"garrison":0,"max_garrison":0},...]
- * @returns {string}
+ * Returns building data as a typed Vec<BuildingInfo> — no JSON parse needed in JS.
+ * Use BUILDING_NAMES_BY_ID[info.kind] for the building name.
+ * @returns {BuildingInfo[]}
  */
 export function get_building_summary() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_building_summary();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_building_summary();
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
 }
 
 /**
@@ -400,22 +792,17 @@ export function get_player_nation() {
 }
 
 /**
- * Get resource counts with integer discriminant keys (new format).
- * Returns: {"0":100,"1":50,"2":0,...} — keys are ResourceType discriminants.
+ * Get resource counts as a dense Vec<u32> indexed by ResourceType discriminant.
+ * Returns a Vec with max_discriminant+1 elements; invalid/gap indices are 0.
+ * JS callers can index directly: counts[disc] — no JSON.parse() needed.
  * Use RESOURCE_NAMES_BY_ID (data.js) for JS-side name lookup.
- * @returns {string}
+ * @returns {Uint32Array}
  */
 export function get_resource_counts_by_id() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_resource_counts_by_id();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_resource_counts_by_id();
+    var v1 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
 }
 
 /**
@@ -516,21 +903,15 @@ export function get_unit_stance(unit_id) {
 }
 
 /**
- * Get unit summary as a JSON string for the HUD.
- * Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"max_hp":50,"state":"Working"},...]
- * @returns {string}
+ * Returns unit data as a typed Vec<UnitInfo> — no JSON parse needed in JS.
+ * Use UNIT_NAMES_BY_ID[info.kind] for the unit name.
+ * @returns {UnitInfo[]}
  */
 export function get_unit_summary() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_unit_summary();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_unit_summary();
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
 }
 
 /**
@@ -977,6 +1358,10 @@ function __wbg_get_imports() {
         __wbg_bufferData_90ef588bac2be2f5: function(arg0, arg1, arg2, arg3) {
             arg0.bufferData(arg1 >>> 0, arg2, arg3 >>> 0);
         },
+        __wbg_buildinginfo_new: function(arg0) {
+            const ret = BuildingInfo.__wrap(arg0);
+            return ret;
+        },
         __wbg_canvas_43a747ae656569f8: function(arg0) {
             const ret = arg0.canvas;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
@@ -1204,6 +1589,10 @@ function __wbg_get_imports() {
         __wbg_uniformMatrix4fv_423b958042692150: function(arg0, arg1, arg2, arg3, arg4) {
             arg0.uniformMatrix4fv(arg1, arg2 !== 0, getArrayF32FromWasm0(arg3, arg4));
         },
+        __wbg_unitinfo_new: function(arg0) {
+            const ret = UnitInfo.__wrap(arg0);
+            return ret;
+        },
         __wbg_useProgram_49495850b446fa56: function(arg0, arg1) {
             arg0.useProgram(arg1);
         },
@@ -1251,9 +1640,18 @@ function __wbg_get_imports() {
     };
 }
 
+const BuildingInfoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_buildinginfo_free(ptr, 1));
+const BuildingTileInfoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_buildingtileinfo_free(ptr, 1));
 const TileInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_tileinfo_free(ptr, 1));
+const UnitInfoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_unitinfo_free(ptr, 1));
 
 function addToExternrefTable0(obj) {
     const idx = wasm.__externref_table_alloc();
@@ -1331,9 +1729,25 @@ function getArrayF32FromWasm0(ptr, len) {
     return getFloat32ArrayMemory0().subarray(ptr / 4, ptr / 4 + len);
 }
 
+function getArrayJsValueFromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    const mem = getDataViewMemory0();
+    const result = [];
+    for (let i = ptr; i < ptr + 4 * len; i += 4) {
+        result.push(wasm.__wbindgen_externrefs.get(mem.getUint32(i, true)));
+    }
+    wasm.__externref_drop_slice(ptr, len);
+    return result;
+}
+
 function getArrayU16FromWasm0(ptr, len) {
     ptr = ptr >>> 0;
     return getUint16ArrayMemory0().subarray(ptr / 2, ptr / 2 + len);
+}
+
+function getArrayU32FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getUint32ArrayMemory0().subarray(ptr / 4, ptr / 4 + len);
 }
 
 function getArrayU8FromWasm0(ptr, len) {

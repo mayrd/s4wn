@@ -1683,7 +1683,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=68';
+} from './pkg/s4wn_engine.js?v=69';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3443,9 +3443,8 @@ function canAffordAll(needed) {
     // needed: {0:5,1:2} — integer discriminant keys from get_build_cost()
     if (!needed || typeof needed === 'string' || needed.error) return false;
     try {
-        const raw = get_resource_counts_by_id();
-        if (!raw) return false;
-        const resources = JSON.parse(raw);
+        const resources = get_resource_counts_by_id();
+        if (!resources || resources.length === 0) return false;
         for (const [disc, amount] of Object.entries(needed)) {
             if ((resources[disc] || 0) < amount) return false;
         }
@@ -5160,9 +5159,8 @@ function updateResourceBar() {
     lastResourceUpdate = now;
 
     try {
-        const raw = get_resource_counts_by_id();
-        if (!raw) { lastResourceUpdate = 0; return; }
-        const counts = JSON.parse(raw);
+        const counts = get_resource_counts_by_id();
+        if (!counts || counts.length === 0) { lastResourceUpdate = 0; return; }
         let html = '';
         // Elementary resource discriminants: Wood=0, Stone=1, Tools=17, Planks=16
         const ELEMENTARY_DISCS = [0, 1, 17, 16];
@@ -6849,7 +6847,7 @@ function renderResources() {
     if (!body) return;
     const C = window.S4WN_CONFIG;
     try {
-        const countsById = JSON.parse(get_resource_counts_by_id());
+        const countsById = get_resource_counts_by_id();
         let html = '';
         // Show resources grouped by category from config
         const catMap = {};
@@ -7124,14 +7122,35 @@ window.addEventListener('unhandledrejection', function (event) {
 const _origConsoleError = console.error;
 console.error = function (...args) {
   _origConsoleError.apply(console, args);
-  // If the first arg is an Error object, offer a GitHub link
-  if (args[0] instanceof Error) {
-    const info = ErrorHandler._formatError(args[0]);
-    const title = `[Bug] ${info.name}: ${info.message.substring(0, 80)}`;
+
+  // Find an Error object anywhere in the arguments (not just first arg)
+  let err = null;
+  for (const arg of args) {
+    if (arg instanceof Error) {
+      err = arg;
+      break;
+    }
+  }
+
+  // If no Error object found, build a synthetic one from string args
+  if (!err) {
+    const msg = args.map(a => typeof a === 'string' ? a : String(a)).join(' ');
+    if (msg) {
+      err = new Error(msg);
+      err.name = 'ConsoleError';
+    }
+  }
+
+  if (err) {
+    const info = ErrorHandler._formatError(err);
+    const title = '[Bug] ' + info.name + ': ' + info.message.substring(0, 80);
     const body = ErrorHandler._truncateBody(ErrorHandler._buildIssueBody({ ...info, context: 'console.error', timestamp: new Date().toISOString() }));
     const ghUrl = ErrorHandler._buildGitHubUrl(title, body);
-    console.log('%c🐛 Create GitHub issue for this error:', 'color:#ff6b6b;font-weight:bold');
-    console.log('%c' + ghUrl, 'color:#58a6ff;text-decoration:underline;word-break:break-all');
+
+    console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color:#ff6b6b');
+    console.log('%c🐛  JavaScript Error — Report on GitHub ↓', 'color:#ff6b6b;font-weight:bold;font-size:14px');
+    console.log('%c' + ghUrl, 'color:#58a6ff;text-decoration:underline;word-break:break-word');
+    console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color:#ff6b6b');
   }
 };
 
