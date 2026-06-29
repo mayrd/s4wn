@@ -1683,7 +1683,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=64';
+} from './pkg/s4wn_engine.js?v=65';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3329,6 +3329,8 @@ const placementStatus = document.getElementById('placement-status');
 // S4: 1=Iron, 2=Coal, 3=Gold, 4=Stone, 5=Sulfur, 6=Fish, 7=Game, 8=Grain
 // map::Resource: 0=Iron, 1=Coal, 2=Gold, 3=Stone, 4=Sulfur, 5=Fish, 6=Game, 7=Grain
 const S4_SAV_RESOURCE_TO_MAP_DISC = [null, 0, 1, 2, 3, 4, 5, 6, 7];
+// map::Resource discriminants -> display names
+const MAP_RESOURCE_NAMES = ['Iron', 'Coal', 'Gold', 'Stone', 'Sulfur', 'Fish', 'Game', 'Grain'];
 
 // Config loaded from ../config/data.js — destructure for module access
 const {
@@ -4159,8 +4161,8 @@ canvas.addEventListener('mousemove', (e) => {
         const info = get_tile_at(e.offsetX, e.offsetY);
         if (info) {
             const t = JSON.parse(info);
-            const res = t.resource !== 'null' ? ` · ${t.resource}` : '';
-            tileTip.textContent = `${t.terrain}${res} · elev ${t.elevation} · (${t.x},${t.y})`;
+            const res = t.resource != null ? ` · ${MAP_RESOURCE_NAMES[t.resource] || t.resource}` : '';
+            tileTip.textContent = `${TERRAIN_NAMES[t.terrain] || t.terrain}${res} · elev ${t.elevation} · (${t.x},${t.y})`;
             tileTip.style.opacity = '1';
             tileTip.style.left = (e.clientX + 16) + 'px';
             tileTip.style.top = (e.clientY - 8) + 'px';
@@ -4225,13 +4227,13 @@ function showTileInspector(cx, cy, source) {
         console.error('TileInspector: get_tile_at parse error', e, 'screen coords:', cx, cy);
         return;
     }
-    if (!info || !info.terrain) { console.warn('TileInspector: no terrain data for screen (' + cx + ',' + cy + ')', info); return; }
+    if (!info || info.terrain == null) { console.warn('TileInspector: no terrain data for screen (' + cx + ',' + cy + ')', info); return; }
 
     // Log full tile data to console for debugging
     console.log('TileInspector [' + source + '] tile(' + info.x + ',' + info.y + '):', {
         terrain: info.terrain,
         elevation: info.elevation,
-        resource: info.resource !== 'null' ? info.resource : null,
+        resource: info.resource != null ? MAP_RESOURCE_NAMES[info.resource] || info.resource : null,
         screenX: cx, screenY: cy
     });
 
@@ -4256,11 +4258,11 @@ function showTileInspector(cx, cy, source) {
         ti.id = 'tile-inspector';
         document.body.appendChild(ti);
     }
-    const rn = info.resource !== 'null' ? '<span class="ti-resource">' + info.resource + '</span>' : '—';
+    const rn = info.resource != null ? '<span class="ti-resource">' + (MAP_RESOURCE_NAMES[info.resource] || info.resource) + '</span>' : '—';
     const translateName = (typeof currentLang === 'string' && currentLang === 'de');
     let html =
         '<div class="ti-row"><span class="ti-label">Position</span><span class="ti-value">(' + info.x + ', ' + info.y + ')</span></div>' +
-        '<div class="ti-row"><span class="ti-label">Terrain</span><span class="ti-terrain">' + info.terrain + '</span></div>' +
+        '<div class="ti-row"><span class="ti-label">Terrain</span><span class="ti-terrain">' + (TERRAIN_NAMES[info.terrain] || info.terrain) + '</span></div>' +
         '<div class="ti-row"><span class="ti-label">Elevation</span><span class="ti-value">' + info.elevation.toFixed(2) + '</span></div>' +
         '<div class="ti-row"><span class="ti-label">Resource</span>' + rn + '</div>';
     if (buildingInfo) {

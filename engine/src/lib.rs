@@ -3624,30 +3624,14 @@ pub fn get_tile_at(x: f32, y: f32) -> String {
             if tx >= 0 && ty >= 0 && (tx as usize) < app.map.width && (ty as usize) < app.map.height
             {
                 let tile = app.map.get(tx as usize, ty as usize).unwrap();
-                let terrain_name = match tile.terrain {
-                    Terrain::Grass => "Grass",
-                    Terrain::Forest => "Forest",
-                    Terrain::Mountain => "Mountain",
-                    Terrain::Water => "Water",
-                    Terrain::DeepWater => "Deep Water",
-                    Terrain::Desert => "Desert",
-                    Terrain::Swamp => "Swamp",
-                    Terrain::Snow => "Snow",
-                };
-                let resource = match tile.resource {
-                    Some(map::Resource::Iron) => "\"Iron\"",
-                    Some(map::Resource::Coal) => "\"Coal\"",
-                    Some(map::Resource::Gold) => "\"Gold\"",
-                    Some(map::Resource::Stone) => "\"Stone\"",
-                    Some(map::Resource::Sulfur) => "\"Sulfur\"",
-                    Some(map::Resource::Fish) => "\"Fish\"",
-                    Some(map::Resource::Game) => "\"Game\"",
-                    Some(map::Resource::Grain) => "\"Grain\"",
-                    None => "null",
+                let terrain_disc = tile.terrain as u8;
+                let resource_str = match tile.resource {
+                    Some(ref r) => format!("{}", *r as u8),
+                    None => "null".to_string(),
                 };
                 return format!(
-                    "{{\"x\":{},\"y\":{},\"terrain\":\"{}\",\"elevation\":{:.2},\"resource\":{}}}",
-                    tx, ty, terrain_name, tile.elevation, resource
+                    "{{\"x\":{},\"y\":{},\"terrain\":{},\"elevation\":{:.2},\"resource\":{}}}",
+                    tx, ty, terrain_disc, tile.elevation, resource_str
                 );
             }
         }
