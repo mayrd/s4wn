@@ -169,15 +169,15 @@ export function export_map_json() {
 /**
  * Order a set of units to move in formation to a target tile.
  * Each unit maintains its relative offset from the group center.
- * unit_ids_json: JSON array of unit IDs, e.g. [1,2,3]
+ * unit_ids: array of unit IDs (JS number[] auto-converts to Vec<u32>).
  * Returns the number of units successfully ordered to move.
- * @param {string} unit_ids_json
+ * @param {Uint32Array} unit_ids
  * @param {number} target_x
  * @param {number} target_y
  * @returns {number}
  */
-export function formation_move(unit_ids_json, target_x, target_y) {
-    const ptr0 = passStringToWasm0(unit_ids_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+export function formation_move(unit_ids, target_x, target_y) {
+    const ptr0 = passArray32ToWasm0(unit_ids, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     const ret = wasm.formation_move(ptr0, len0, target_x, target_y);
     return ret >>> 0;
@@ -663,16 +663,16 @@ export function on_wheel(delta_y) {
 }
 
 /**
- * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
- * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
- * Returns: number of units successfully ordered to patrol
- * @param {string} unit_ids_json
+ * Order selected units to patrol between their current position and a target tile.
+ * unit_ids: array of unit IDs (JS number[] auto-converts to Vec<u32>).
+ * Returns: number of units successfully ordered to patrol.
+ * @param {Uint32Array} unit_ids
  * @param {number} target_x
  * @param {number} target_y
  * @returns {number}
  */
-export function order_patrol(unit_ids_json, target_x, target_y) {
-    const ptr0 = passStringToWasm0(unit_ids_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+export function order_patrol(unit_ids, target_x, target_y) {
+    const ptr0 = passArray32ToWasm0(unit_ids, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     const ret = wasm.order_patrol(ptr0, len0, target_x, target_y);
     return ret >>> 0;
@@ -775,14 +775,15 @@ export function set_tile_terrain(x, y, terrain_id) {
 }
 
 /**
- * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
+ * Set stance for selected units.
+ * unit_ids: array of unit IDs (JS number[] auto-converts to Vec<u32>).
  * Returns the number of units whose stance was successfully set.
- * @param {string} unit_ids_json
+ * @param {Uint32Array} unit_ids
  * @param {number} stance
  * @returns {number}
  */
-export function set_units_stance(unit_ids_json, stance) {
-    const ptr0 = passStringToWasm0(unit_ids_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+export function set_units_stance(unit_ids, stance) {
+    const ptr0 = passArray32ToWasm0(unit_ids, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     const ret = wasm.set_units_stance(ptr0, len0, stance);
     return ret >>> 0;
@@ -1368,6 +1369,14 @@ function getUint16ArrayMemory0() {
     return cachedUint16ArrayMemory0;
 }
 
+let cachedUint32ArrayMemory0 = null;
+function getUint32ArrayMemory0() {
+    if (cachedUint32ArrayMemory0 === null || cachedUint32ArrayMemory0.byteLength === 0) {
+        cachedUint32ArrayMemory0 = new Uint32Array(wasm.memory.buffer);
+    }
+    return cachedUint32ArrayMemory0;
+}
+
 let cachedUint8ArrayMemory0 = null;
 function getUint8ArrayMemory0() {
     if (cachedUint8ArrayMemory0 === null || cachedUint8ArrayMemory0.byteLength === 0) {
@@ -1387,6 +1396,13 @@ function handleError(f, args) {
 
 function isLikeNone(x) {
     return x === undefined || x === null;
+}
+
+function passArray32ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 4, 4) >>> 0;
+    getUint32ArrayMemory0().set(arg, ptr / 4);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
 }
 
 function passArray8ToWasm0(arg, malloc) {
@@ -1476,6 +1492,7 @@ function __wbg_finalize_init(instance, module) {
     cachedDataViewMemory0 = null;
     cachedFloat32ArrayMemory0 = null;
     cachedUint16ArrayMemory0 = null;
+    cachedUint32ArrayMemory0 = null;
     cachedUint8ArrayMemory0 = null;
     wasm.__wbindgen_start();
     return wasm;

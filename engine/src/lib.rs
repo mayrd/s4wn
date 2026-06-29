@@ -3849,14 +3849,13 @@ pub fn get_units_in_rect(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> Stri
     }
     "[]".to_string()
 }
-/// unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
-/// unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
-/// Returns: number of units successfully ordered to patrol
+/// Order selected units to patrol between their current position and a target tile.
+/// unit_ids: array of unit IDs (JS number[] auto-converts to Vec<u32>).
+/// Returns: number of units successfully ordered to patrol.
 #[wasm_bindgen]
-pub fn order_patrol(unit_ids_json: &str, target_x: usize, target_y: usize) -> u32 {
+pub fn order_patrol(unit_ids: Vec<u32>, target_x: usize, target_y: usize) -> u32 {
     unsafe {
         if let Some(ref mut app) = APP {
-            let unit_ids: Vec<u32> = serde_json::from_str(unit_ids_json).unwrap_or_default();
             app.game_loop.state.economy.units.order_patrol(
                 &unit_ids,
                 target_x,
@@ -3870,13 +3869,12 @@ pub fn order_patrol(unit_ids_json: &str, target_x: usize, target_y: usize) -> u3
 }
 /// Order a set of units to move in formation to a target tile.
 /// Each unit maintains its relative offset from the group center.
-/// unit_ids_json: JSON array of unit IDs, e.g. [1,2,3]
+/// unit_ids: array of unit IDs (JS number[] auto-converts to Vec<u32>).
 /// Returns the number of units successfully ordered to move.
 #[wasm_bindgen]
-pub fn formation_move(unit_ids_json: &str, target_x: usize, target_y: usize) -> u32 {
+pub fn formation_move(unit_ids: Vec<u32>, target_x: usize, target_y: usize) -> u32 {
     unsafe {
         if let Some(ref mut app) = APP {
-            let unit_ids: Vec<u32> = serde_json::from_str(unit_ids_json).unwrap_or_default();
             app.game_loop.state.economy.units.formation_move(
                 &unit_ids,
                 target_x,
@@ -4017,14 +4015,14 @@ pub fn get_unit_info(id: u32) -> String {
     }
     format!(r#"{{"error":"Unit {} not found"}}"#, id)
 }
-/// unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
+/// Set stance for selected units.
+/// unit_ids: array of unit IDs (JS number[] auto-converts to Vec<u32>).
 /// Returns the number of units whose stance was successfully set.
 #[wasm_bindgen]
-pub fn set_units_stance(unit_ids_json: &str, stance: u8) -> u32 {
+pub fn set_units_stance(unit_ids: Vec<u32>, stance: u8) -> u32 {
     use crate::units::UnitStance;
     unsafe {
         if let Some(ref mut app) = APP {
-            let unit_ids: Vec<u32> = serde_json::from_str(unit_ids_json).unwrap_or_default();
             let st = UnitStance::from_u8(stance);
             let mut count = 0u32;
             for &id in &unit_ids {

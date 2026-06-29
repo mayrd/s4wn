@@ -1683,7 +1683,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=66';
+} from './pkg/s4wn_engine.js?v=67';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3572,8 +3572,7 @@ const STANCE_ICONS = ['⚔', '⛰', '⚑']; // swords, mountain, flag
 function applyStanceToSelected(stance) {
     if (!engineReady || selectedUnitIds.length === 0) return;
     try {
-        const idsJson = JSON.stringify(selectedUnitIds);
-        const count = set_units_stance(idsJson, stance);
+        const count = set_units_stance(selectedUnitIds, stance);
         if (count > 0) {
             console.log('Stance set to ' + STANCE_NAMES[stance] + ' for ' + count + ' unit(s)');
         }
@@ -3674,8 +3673,7 @@ canvas.addEventListener('contextmenu', (e) => {
         showTileInspector(e.clientX, e.clientY, 'right-click');
         return;
     }
-    const idsJson = JSON.stringify(selectedUnitIds);
-    const moved = formation_move(idsJson, info.x, info.y);
+    const moved = formation_move(selectedUnitIds, info.x, info.y);
     if (moved > 0) {
         console.log('Ordered ' + moved + ' unit(s) to (' + info.x + ', ' + info.y + ')');
         try { Sfx.playUIClick(); } catch(e) {}
@@ -3733,8 +3731,7 @@ canvas.addEventListener('click', (e) => {
     if (attackMoveMode && selectedUnitIds.length > 0) {
         const aInfo = get_tile_at(e.offsetX, e.offsetY);
         if (aInfo) {
-            const idsJson = JSON.stringify(selectedUnitIds);
-            const moved = formation_move(idsJson, aInfo.x, aInfo.y);
+            const moved = formation_move(selectedUnitIds, aInfo.x, aInfo.y);
             if (moved > 0) {
                 console.log('Attack-moving ' + moved + ' unit(s) to (' + aInfo.x + ', ' + aInfo.y + ')');
                 try { Sfx.playUIClick(); } catch(e) {}
@@ -3796,9 +3793,8 @@ canvas.addEventListener('click', (e) => {
     if (patrolMoveMode && selectedUnitIds.length > 0) {
         const pInfo = get_tile_at(e.offsetX, e.offsetY);
         if (pInfo) {
-            const idsJson = JSON.stringify(selectedUnitIds);
             if (typeof order_patrol === 'function') {
-                const ordered = order_patrol(idsJson, pInfo.x, pInfo.y);
+                const ordered = order_patrol(selectedUnitIds, pInfo.x, pInfo.y);
                 if (ordered > 0) {
                     console.log('Patrol-ordering ' + ordered + ' unit(s) to (' + pInfo.x + ', ' + pInfo.y + ')');
                     try { Sfx.playUIClick(); } catch(e) {}

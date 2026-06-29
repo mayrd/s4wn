@@ -49,10 +49,10 @@ export function export_map_json(): string;
 /**
  * Order a set of units to move in formation to a target tile.
  * Each unit maintains its relative offset from the group center.
- * unit_ids_json: JSON array of unit IDs, e.g. [1,2,3]
+ * unit_ids: array of unit IDs (JS number[] auto-converts to Vec<u32>).
  * Returns the number of units successfully ordered to move.
  */
-export function formation_move(unit_ids_json: string, target_x: number, target_y: number): number;
+export function formation_move(unit_ids: Uint32Array, target_x: number, target_y: number): number;
 
 /**
  * Generate a procedural map and return it as a JSON string.
@@ -229,11 +229,11 @@ export function on_mouse_up(): void;
 export function on_wheel(delta_y: number): void;
 
 /**
- * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
- * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
- * Returns: number of units successfully ordered to patrol
+ * Order selected units to patrol between their current position and a target tile.
+ * unit_ids: array of unit IDs (JS number[] auto-converts to Vec<u32>).
+ * Returns: number of units successfully ordered to patrol.
  */
-export function order_patrol(unit_ids_json: string, target_x: number, target_y: number): number;
+export function order_patrol(unit_ids: Uint32Array, target_x: number, target_y: number): number;
 
 /**
  * Get number of combat hits since last call (drains each frame).
@@ -285,10 +285,11 @@ export function set_textures_ready(): void;
 export function set_tile_terrain(x: number, y: number, terrain_id: number): boolean;
 
 /**
- * unit_ids_json: JSON array of unit IDs, e.g. "[1,2,3]"
+ * Set stance for selected units.
+ * unit_ids: array of unit IDs (JS number[] auto-converts to Vec<u32>).
  * Returns the number of units whose stance was successfully set.
  */
-export function set_units_stance(unit_ids_json: string, stance: number): number;
+export function set_units_stance(unit_ids: Uint32Array, stance: number): number;
 
 /**
  * Called from JS after water normal map is loaded into TEXTURE1.
