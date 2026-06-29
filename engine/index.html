@@ -6979,13 +6979,13 @@ const ErrorHandler = {
     const info = this._formatError(err);
     this._lastError = { ...info, context, timestamp: new Date().toISOString() };
 
-    // Log to console with GitHub deeplink
-    console.error(`[S4WN Error] ${info.name}: ${info.message}`);
+    // Log to console (use raw _origConsoleError to avoid wrapper re-entrancy)
+    _origConsoleError('[S4WN Error] ' + info.name + ': ' + info.message);
     if (info.loc.file !== 'unknown') {
-      console.error(`  at ${info.loc.file}:${info.loc.line}:${info.loc.column}`);
+      _origConsoleError('  at ' + info.loc.file + ':' + info.loc.line + ':' + info.loc.column);
     }
     if (info.stack) {
-      console.error('Stack trace:\n' + info.stack);
+      _origConsoleError('Stack trace:\n' + info.stack);
     }
 
     // Build and log GitHub issue URL
