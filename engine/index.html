@@ -1683,8 +1683,8 @@ import init, {
     get_unit_morale,
     wasm_garrison_unit,
     wasm_ungarrison_unit,
-    get_particles_json,
-} from './pkg/s4wn_engine.js?v=77';
+    get_particles,
+} from './pkg/s4wn_engine.js?v=78';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -5979,13 +5979,9 @@ async function main() {
         // ── Particle rendering ─────────────────────────────────────────
         function drawParticles() {
             if (!selCtx || !selOverlay) return;
-            if (typeof get_particles_json !== 'function') return;
-            let particles = [];
-            try {
-                const raw = get_particles_json();
-                if (raw && raw.length > 2) particles = JSON.parse(raw);
-            } catch(e) { return; }
-            if (particles.length === 0) return;
+            if (typeof get_particles !== 'function') return;
+            const particles = get_particles();
+            if (!particles || particles.length === 0) return;
 
             const cam = get_camera_state();
             const camData = cam ? JSON.parse(cam) : null;

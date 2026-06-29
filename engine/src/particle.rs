@@ -11,6 +11,8 @@
 //! - The existing overlay shader (point sprites with soft circle) is reused
 //! - Max 256 particles to keep CPU/GPU cost predictable
 
+use wasm_bindgen::prelude::*;
+
 /// Maximum number of simultaneous particles.
 pub const MAX_PARTICLES: usize = 256;
 
@@ -30,6 +32,21 @@ pub struct Particle {
     pub b: f32,
     pub size: f32,
     pub alive: bool,
+}
+
+/// Lightweight particle info exposed to JS (avoids JSON serialization).
+#[wasm_bindgen]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ParticleInfo {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub size: f32,
+    pub life: f32,
+    pub max_life: f32,
 }
 
 /// Configuration for spawning a single particle.
@@ -179,6 +196,19 @@ impl ParticleSystem {
             sizes.push(p.size + p.z * 2.0);
         }
         (positions, colors, sizes)
+    }
+
+    /// Collect alive particles into a Vec of ParticleInfo for JS consumption.
+    pub fn to_info_vec(&self) -> Vec<ParticleInfo> {
+        self.particles.iter()
+            .filter(|p| p.alive)
+            .map(|p| ParticleInfo {
+                x: p.x, y: p.y, z: p.z,
+                r: p.r, g: p.g, b: p.b,
+                size: p.size,
+                life: p.life, max_life: p.max_life,
+            })
+            .collect()
     }
 
     pub fn to_json(&self) -> String {

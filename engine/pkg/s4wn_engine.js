@@ -612,6 +612,146 @@ export class NationInfo {
 if (Symbol.dispose) NationInfo.prototype[Symbol.dispose] = NationInfo.prototype.free;
 
 /**
+ * Lightweight particle info exposed to JS (avoids JSON serialization).
+ */
+export class ParticleInfo {
+    static __wrap(ptr) {
+        const obj = Object.create(ParticleInfo.prototype);
+        obj.__wbg_ptr = ptr;
+        ParticleInfoFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        ParticleInfoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_particleinfo_free(ptr, 0);
+    }
+    /**
+     * @returns {number}
+     */
+    get b() {
+        const ret = wasm.__wbg_get_particleinfo_b(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get g() {
+        const ret = wasm.__wbg_get_particleinfo_g(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get life() {
+        const ret = wasm.__wbg_get_particleinfo_life(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get max_life() {
+        const ret = wasm.__wbg_get_particleinfo_max_life(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get r() {
+        const ret = wasm.__wbg_get_particleinfo_r(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get size() {
+        const ret = wasm.__wbg_get_particleinfo_size(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get x() {
+        const ret = wasm.__wbg_get_particleinfo_x(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get y() {
+        const ret = wasm.__wbg_get_particleinfo_y(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get z() {
+        const ret = wasm.__wbg_get_particleinfo_z(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {number} arg0
+     */
+    set b(arg0) {
+        wasm.__wbg_set_particleinfo_b(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set g(arg0) {
+        wasm.__wbg_set_particleinfo_g(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set life(arg0) {
+        wasm.__wbg_set_particleinfo_life(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set max_life(arg0) {
+        wasm.__wbg_set_particleinfo_max_life(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set r(arg0) {
+        wasm.__wbg_set_particleinfo_r(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set size(arg0) {
+        wasm.__wbg_set_particleinfo_size(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set x(arg0) {
+        wasm.__wbg_set_particleinfo_x(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set y(arg0) {
+        wasm.__wbg_set_particleinfo_y(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set z(arg0) {
+        wasm.__wbg_set_particleinfo_z(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) ParticleInfo.prototype[Symbol.dispose] = ParticleInfo.prototype.free;
+
+/**
  * Engine stats returned by `get_stats` — replaces JSON string with typed struct.
  * `fps` is the currently displayed FPS. `ticks` is the game tick counter.
  * `game_time` is the elapsed game time in seconds. `zoom` is the camera zoom factor.
@@ -1343,20 +1483,15 @@ export function get_map_data() {
 }
 
 /**
- * Get particles as JSON for JS-side rendering fallback.
- * @returns {string}
+ * Get alive particles as typed structs for JS-side rendering.
+ * Returns an empty Vec if the app is not initialized.
+ * @returns {ParticleInfo[]}
  */
-export function get_particles_json() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_particles_json();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+export function get_particles() {
+    const ret = wasm.get_particles();
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
 }
 
 /**
@@ -2078,6 +2213,10 @@ function __wbg_get_imports() {
             const ret = arg0.now();
             return ret;
         },
+        __wbg_particleinfo_new: function(arg0) {
+            const ret = ParticleInfo.__wrap(arg0);
+            return ret;
+        },
         __wbg_performance_3ef602e13d6c3b56: function(arg0) {
             const ret = arg0.performance;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
@@ -2206,6 +2345,9 @@ const MoraleInfoFinalization = (typeof FinalizationRegistry === 'undefined')
 const NationInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_nationinfo_free(ptr, 1));
+const ParticleInfoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_particleinfo_free(ptr, 1));
 const StatsInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_statsinfo_free(ptr, 1));

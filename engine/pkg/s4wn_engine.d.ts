@@ -137,6 +137,24 @@ export class NationInfo {
 }
 
 /**
+ * Lightweight particle info exposed to JS (avoids JSON serialization).
+ */
+export class ParticleInfo {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    b: number;
+    g: number;
+    life: number;
+    max_life: number;
+    r: number;
+    size: number;
+    x: number;
+    y: number;
+    z: number;
+}
+
+/**
  * Engine stats returned by `get_stats` — replaces JSON string with typed struct.
  * `fps` is the currently displayed FPS. `ticks` is the game tick counter.
  * `game_time` is the elapsed game time in seconds. `zoom` is the camera zoom factor.
@@ -308,9 +326,10 @@ export function get_game_state(): string;
 export function get_map_data(): Uint8Array;
 
 /**
- * Get particles as JSON for JS-side rendering fallback.
+ * Get alive particles as typed structs for JS-side rendering.
+ * Returns an empty Vec if the app is not initialized.
  */
-export function get_particles_json(): string;
+export function get_particles(): ParticleInfo[];
 
 /**
  * Get the player's nation as a typed NationInfo struct.
@@ -564,23 +583,27 @@ export interface InitOutput {
     readonly __wbg_get_buildingtileinfo_kind: (a: number) => number;
     readonly __wbg_get_moraleinfo_morale_bonus: (a: number) => number;
     readonly __wbg_get_moraleinfo_morale_percent: (a: number) => number;
-    readonly __wbg_get_statsinfo_game_time: (a: number) => number;
+    readonly __wbg_get_particleinfo_b: (a: number) => number;
+    readonly __wbg_get_particleinfo_life: (a: number) => number;
+    readonly __wbg_get_particleinfo_max_life: (a: number) => number;
+    readonly __wbg_get_particleinfo_size: (a: number) => number;
+    readonly __wbg_get_particleinfo_y: (a: number) => number;
+    readonly __wbg_get_particleinfo_z: (a: number) => number;
     readonly __wbg_get_tileinfo_resource: (a: number) => number;
     readonly __wbg_get_tileinfo_terrain: (a: number) => number;
     readonly __wbg_get_tileinfo_x: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_assigned_building: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_carried_tool: (a: number) => number;
-    readonly __wbg_get_unitdetailinfo_dying_progress: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_kind: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_stance: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_state: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_target: (a: number) => number;
-    readonly __wbg_get_unitdetailinfo_x: (a: number) => number;
     readonly __wbg_get_unitinfo_carried_tool: (a: number) => number;
     readonly __wbg_get_unitinfo_stance: (a: number) => number;
     readonly __wbg_get_unitinfo_state: (a: number) => number;
     readonly __wbg_moraleinfo_free: (a: number, b: number) => void;
     readonly __wbg_nationinfo_free: (a: number, b: number) => void;
+    readonly __wbg_particleinfo_free: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_complete: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_garrison: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_index: (a: number, b: number) => void;
@@ -595,22 +618,24 @@ export interface InitOutput {
     readonly __wbg_set_buildingtileinfo_destruction_progress: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_kind: (a: number, b: number) => void;
     readonly __wbg_set_moraleinfo_morale_bonus: (a: number, b: number) => void;
-    readonly __wbg_set_statsinfo_game_time: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_b: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_life: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_max_life: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_size: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_z: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_terrain: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_assigned_building: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_carried_tool: (a: number, b: number) => void;
-    readonly __wbg_set_unitdetailinfo_dying_progress: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_kind: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_stance: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_state: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_target: (a: number, b: number) => void;
-    readonly __wbg_set_unitdetailinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_carried_tool: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_stance: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_state: (a: number, b: number) => void;
     readonly __wbg_statsinfo_free: (a: number, b: number) => void;
     readonly __wbg_tileinfo_free: (a: number, b: number) => void;
-    readonly __wbg_unitdetailinfo_free: (a: number, b: number) => void;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
     readonly buildingdetailinfo_active: (a: number) => number;
@@ -647,7 +672,7 @@ export interface InitOutput {
     readonly get_draw_calls: () => number;
     readonly get_game_state: () => [number, number];
     readonly get_map_data: () => [number, number];
-    readonly get_particles_json: () => [number, number];
+    readonly get_particles: () => [number, number];
     readonly get_player_nation: () => number;
     readonly get_resource_counts_by_id: () => [number, number];
     readonly get_stats: () => number;
@@ -692,6 +717,7 @@ export interface InitOutput {
     readonly wasm_garrison_unit: (a: number, b: number) => number;
     readonly wasm_ungarrison_unit: (a: number, b: number) => number;
     readonly __wbg_set_buildingtileinfo_index: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_statsinfo_fps: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_id: (a: number, b: number) => void;
@@ -710,19 +736,30 @@ export interface InitOutput {
     readonly __wbg_set_tileinfo_y: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_resource: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_moraleinfo_morale_percent: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_y: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_kind: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_g: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_r: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_y: (a: number, b: number) => void;
-    readonly __wbg_set_unitinfo_x: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_max_hp: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_hp: (a: number, b: number) => void;
+    readonly __wbg_set_unitdetailinfo_dying_progress: (a: number, b: number) => void;
     readonly __wbg_set_statsinfo_zoom: (a: number, b: number) => void;
     readonly __wbg_set_statsinfo_ticks: (a: number, b: number) => void;
-    readonly __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
+    readonly __wbg_set_statsinfo_game_time: (a: number, b: number) => void;
     readonly __wbg_get_unitinfo_max_hp: (a: number) => number;
     readonly __wbg_get_unitinfo_hp: (a: number) => number;
+    readonly __wbg_get_statsinfo_game_time: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_x: (a: number) => number;
+    readonly __wbg_get_particleinfo_r: (a: number) => number;
+    readonly __wbg_get_particleinfo_g: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_dying_progress: (a: number) => number;
+    readonly __wbg_get_particleinfo_x: (a: number) => number;
     readonly __wbg_get_tileinfo_y: (a: number) => number;
     readonly __wbg_get_statsinfo_ticks: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_hp: (a: number) => number;
@@ -731,6 +768,7 @@ export interface InitOutput {
     readonly __wbg_get_buildingtileinfo_x: (a: number) => number;
     readonly __wbg_get_unitinfo_kind: (a: number) => number;
     readonly __wbg_unitinfo_free: (a: number, b: number) => void;
+    readonly __wbg_unitdetailinfo_free: (a: number, b: number) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __externref_table_alloc: () => number;

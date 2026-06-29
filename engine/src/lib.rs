@@ -5236,14 +5236,15 @@ pub fn spawn_build_effect(tile_x: f32, tile_y: f32) {
 
 
 
-/// Get particles as JSON for JS-side rendering fallback.
+/// Get alive particles as typed structs for JS-side rendering.
+/// Returns an empty Vec if the app is not initialized.
 #[wasm_bindgen]
-pub fn get_particles_json() -> String {
+pub fn get_particles() -> Vec<particle::ParticleInfo> {
     unsafe {
         if let Some(app) = (*std::ptr::addr_of!(APP)).as_ref() {
-            app.particle_system.to_json()
+            app.particle_system.to_info_vec()
         } else {
-            String::from("[]")
+            Vec::new()
         }
     }
 }
@@ -6740,6 +6741,41 @@ mod tests {
         let json = ps.to_json();
         assert!(json.contains("\"x\":1.00"), "json: {}", json);
     }
+    #[test]
+    fn test_particle_info_struct_fields() {
+        let info = particle::ParticleInfo { x: 1.0, y: 2.0, z: 3.0, r: 0.5, g: 0.6, b: 0.7, size: 8.0, life: 0.5, max_life: 1.0 };
+        assert_eq!(info.x, 1.0);
+        assert_eq!(info.y, 2.0);
+        assert_eq!(info.z, 3.0);
+        assert_eq!(info.r, 0.5);
+        assert_eq!(info.g, 0.6);
+        assert_eq!(info.b, 0.7);
+        assert_eq!(info.size, 8.0);
+        assert_eq!(info.life, 0.5);
+        assert_eq!(info.max_life, 1.0);
+    }
+    #[test]
+    fn test_particle_system_to_info_empty() {
+        let ps = particle::ParticleSystem::new();
+        let infos = ps.to_info_vec();
+        assert!(infos.is_empty());
+    }
+    #[test]
+    fn test_particle_system_to_info_vec() {
+        let mut ps = particle::ParticleSystem::new();
+        ps.spawn(&ParticleConfig { x: 1.0, y: 2.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 1.0, r: 1.0, g: 0.5, b: 0.2, size: 8.0 });
+        ps.spawn(&ParticleConfig { x: 5.0, y: 3.0, z: 1.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 2.0, r: 0.0, g: 1.0, b: 0.0, size: 6.0 });
+        let infos = ps.to_info_vec();
+        assert_eq!(infos.len(), 2);
+        assert_eq!(infos[0].x, 1.0);
+        assert_eq!(infos[0].y, 2.0);
+        assert_eq!(infos[1].x, 5.0);
+        assert_eq!(infos[1].g, 1.0);
+        // Verify Copy trait works
+        let _copy = infos[0];
+        assert_eq!(infos[0].x, 1.0); // still accessible
+    }
+
     #[test]
     fn test_build_effect() {
         let mut ps = particle::ParticleSystem::new();
