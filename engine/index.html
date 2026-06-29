@@ -6073,7 +6073,7 @@ async function main() {
                     const n = get_player_nation ? get_player_nation() : null;
                     if (n) { const nName = (window.NATION_NAMES_BY_ID && window.NATION_NAMES_BY_ID[n.name_id]) || ''; const flags = { Roman: '🏛️', Viking: '🪓', Maya: '🗿', Trojan: '🏰', 'Dark Tribe': '👿' }; nationStr = nName ? `${flags[nName] || '🏳️'} ${nName}` : ''; }
                 } catch(e) {}
-                hudStats.textContent = `⏱ ${formatGameTime(d.game_time)} | 🔍 ${d.zoom}× | 📍 (${cx}, ${cy}) | 👤 ${pname} | 🎯 ${level}` + (nationStr ? ` | ${nationStr}` : '');
+                hudStats.textContent = `⏱ ${formatGameTime(s.game_time)} | 🔍 ${s.zoom}× | 📍 (${cx}, ${cy}) | 👤 ${pname} | 🎯 ${level}` + (nationStr ? ` | ${nationStr}` : '');
 
                 // Nation HUD update (every frame, cheap)
                 updateNationHUD();
