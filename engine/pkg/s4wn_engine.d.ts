@@ -82,6 +82,21 @@ export class BuildingTileInfo {
 }
 
 /**
+ * Garrison info for a building — replaces JSON string from get_building_garrison_json.
+ * `unit_ids` are the raw unit IDs of garrisoned soldiers.
+ * Uses manual getters because wasm-bindgen requires Copy for public fields and Vec is not Copy.
+ */
+export class GarrisonInfo {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    readonly capacity: number;
+    readonly count: number;
+    readonly garrisoned: boolean;
+    readonly unit_ids: Uint32Array;
+}
+
+/**
  * Nation information returned by `get_player_nation` — replaces JSON string with typed struct.
  * `name_id` is the NationType discriminant (0=Roman..4=DarkTribe).
  * Fields are accessed via JS getters (no JSON.parse needed).
@@ -241,10 +256,9 @@ export function get_building_at_tile(tile_x: number, tile_y: number): BuildingTi
 
 /**
  * Get garrison info for a building at the given index.
- * Returns JSON: {"count":2,"capacity":6,"unit_ids":[1,2],"garrisoned":true}
- * or {"count":0,"capacity":0,"unit_ids":[],"garrisoned":false} if building not found.
+ * Returns None if building not found or game not initialized.
  */
-export function get_building_garrison_json(building_index: number): string;
+export function get_building_garrison(building_index: number): GarrisonInfo | undefined;
 
 /**
  * Get detailed building info by index.
@@ -522,6 +536,7 @@ export interface InitOutput {
     readonly __wbg_buildingdetailinfo_free: (a: number, b: number) => void;
     readonly __wbg_buildinginfo_free: (a: number, b: number) => void;
     readonly __wbg_buildingtileinfo_free: (a: number, b: number) => void;
+    readonly __wbg_garrisoninfo_free: (a: number, b: number) => void;
     readonly __wbg_get_buildinginfo_complete: (a: number) => number;
     readonly __wbg_get_buildinginfo_garrison: (a: number) => number;
     readonly __wbg_get_buildinginfo_index: (a: number) => number;
@@ -603,10 +618,14 @@ export interface InitOutput {
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
     readonly export_map_json: () => [number, number];
     readonly formation_move: (a: number, b: number, c: number, d: number) => number;
+    readonly garrisoninfo_capacity: (a: number) => number;
+    readonly garrisoninfo_count: (a: number) => number;
+    readonly garrisoninfo_garrisoned: (a: number) => number;
+    readonly garrisoninfo_unit_ids: (a: number) => [number, number];
     readonly generate_map: (a: number, b: number, c: number, d: number) => [number, number];
     readonly get_build_cost_by_id: (a: number) => [number, number];
     readonly get_building_at_tile: (a: number, b: number) => number;
-    readonly get_building_garrison_json: (a: number) => [number, number];
+    readonly get_building_garrison: (a: number) => number;
     readonly get_building_info: (a: number) => number;
     readonly get_building_summary: () => [number, number];
     readonly get_camera_state: () => [number, number];

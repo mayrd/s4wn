@@ -425,6 +425,61 @@ export class BuildingTileInfo {
 if (Symbol.dispose) BuildingTileInfo.prototype[Symbol.dispose] = BuildingTileInfo.prototype.free;
 
 /**
+ * Garrison info for a building — replaces JSON string from get_building_garrison_json.
+ * `unit_ids` are the raw unit IDs of garrisoned soldiers.
+ * Uses manual getters because wasm-bindgen requires Copy for public fields and Vec is not Copy.
+ */
+export class GarrisonInfo {
+    static __wrap(ptr) {
+        const obj = Object.create(GarrisonInfo.prototype);
+        obj.__wbg_ptr = ptr;
+        GarrisonInfoFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        GarrisonInfoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_garrisoninfo_free(ptr, 0);
+    }
+    /**
+     * @returns {number}
+     */
+    get capacity() {
+        const ret = wasm.garrisoninfo_capacity(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get count() {
+        const ret = wasm.garrisoninfo_count(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {boolean}
+     */
+    get garrisoned() {
+        const ret = wasm.garrisoninfo_garrisoned(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    get unit_ids() {
+        const ret = wasm.garrisoninfo_unit_ids(this.__wbg_ptr);
+        var v1 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+}
+if (Symbol.dispose) GarrisonInfo.prototype[Symbol.dispose] = GarrisonInfo.prototype.free;
+
+/**
  * Nation information returned by `get_player_nation` — replaces JSON string with typed struct.
  * `name_id` is the NationType discriminant (0=Roman..4=DarkTribe).
  * Fields are accessed via JS getters (no JSON.parse needed).
@@ -1146,22 +1201,13 @@ export function get_building_at_tile(tile_x, tile_y) {
 
 /**
  * Get garrison info for a building at the given index.
- * Returns JSON: {"count":2,"capacity":6,"unit_ids":[1,2],"garrisoned":true}
- * or {"count":0,"capacity":0,"unit_ids":[],"garrisoned":false} if building not found.
+ * Returns None if building not found or game not initialized.
  * @param {number} building_index
- * @returns {string}
+ * @returns {GarrisonInfo | undefined}
  */
-export function get_building_garrison_json(building_index) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_building_garrison_json(building_index);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+export function get_building_garrison(building_index) {
+    const ret = wasm.get_building_garrison(building_index);
+    return ret === 0 ? undefined : GarrisonInfo.__wrap(ret);
 }
 
 /**
@@ -2109,6 +2155,9 @@ const BuildingInfoFinalization = (typeof FinalizationRegistry === 'undefined')
 const BuildingTileInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_buildingtileinfo_free(ptr, 1));
+const GarrisonInfoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_garrisoninfo_free(ptr, 1));
 const NationInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_nationinfo_free(ptr, 1));

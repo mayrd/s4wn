@@ -1679,12 +1679,12 @@ import init, {
     get_unit_stance,
     start_building_destruction,
     tick_building_destructions,
-    get_building_garrison_json,
+    get_building_garrison,
     get_unit_morale_json,
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=75';
+} from './pkg/s4wn_engine.js?v=76';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3895,11 +3895,10 @@ function showBuildingInfo(idx, cx, cy) {
         if (maxGarrison > 0) {
             const garrisonCount = b.garrison || 0;
             let garrisonRows = '';
-            if (typeof get_building_garrison_json === 'function') {
+            if (typeof get_building_garrison === 'function') {
                 try {
-                    const gRaw = get_building_garrison_json(idx);
-                    if (gRaw) {
-                        const gInfo = JSON.parse(gRaw);
+                    const gInfo = get_building_garrison(idx);
+                    if (gInfo) {
                         if (gInfo.unit_ids && gInfo.unit_ids.length > 0) {
                             for (const uid of gInfo.unit_ids) {
                                 garrisonRows += `<div class="sel-garrison-row">

@@ -5407,27 +5407,62 @@ pub fn get_building_at_tile(tile_x: usize, tile_y: usize) -> Option<BuildingTile
 
 // ── Garrison & Morale API ─────────────────────────────────────────────────────
 
-/// Get garrison info for a building at the given index.
-/// Returns JSON: {"count":2,"capacity":6,"unit_ids":[1,2],"garrisoned":true}
-/// or {"count":0,"capacity":0,"unit_ids":[],"garrisoned":false} if building not found.
+/// Garrison info for a building — replaces JSON string from get_building_garrison_json.
+/// `unit_ids` are the raw unit IDs of garrisoned soldiers.
+/// Uses manual getters because wasm-bindgen requires Copy for public fields and Vec is not Copy.
 #[wasm_bindgen]
-pub fn get_building_garrison_json(building_index: usize) -> String {
+pub struct GarrisonInfo {
+    count: u32,
+    capacity: u32,
+    unit_ids: Vec<u32>,
+    garrisoned: bool,
+}
+
+#[wasm_bindgen]
+impl GarrisonInfo {
+    #[wasm_bindgen(getter)]
+    pub fn count(&self) -> u32 { self.count }
+    #[wasm_bindgen(getter)]
+    pub fn capacity(&self) -> u32 { self.capacity }
+    #[wasm_bindgen(getter)]
+    pub fn unit_ids(&self) -> Vec<u32> { self.unit_ids.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn garrisoned(&self) -> bool { self.garrisoned }
+}
+
+/// Get garrison info for a building at the given index.
+/// Returns None if building not found or game not initialized.
+#[wasm_bindgen]
+pub fn get_building_garrison(building_index: usize) -> Option<GarrisonInfo> {
     unsafe {
         if let Some(ref app) = APP {
             if let Some(b) = app.game_loop.state.economy.buildings.get(building_index) {
-                let ids: Vec<String> = b.garrison.iter().map(|id| id.to_string()).collect();
-                return format!(
-                    r#"{{"count":{},"capacity":{},"unit_ids":[{}],"garrisoned":{}}}"#,
-                    b.garrison.len(),
-                    b.max_garrison,
-                    ids.join(","),
-                    b.is_garrisoned()
-                );
+                return Some(GarrisonInfo {
+                    count: b.garrison.len() as u32,
+                    capacity: b.max_garrison,
+                    unit_ids: b.garrison.to_vec(),
+                    garrisoned: b.is_garrisoned(),
+                });
             }
         }
     }
-    String::from(r#"{{"count":0,"capacity":0,"unit_ids":[],"garrisoned":false}}"#)
+    None
 }
+
+    #[test]
+    fn test_garrison_info_struct_fields() {
+        let info = GarrisonInfo {
+            count: 3,
+            capacity: 6,
+            unit_ids: vec![1, 2, 3],
+            garrisoned: true,
+        };
+        assert_eq!(info.count(), 3);
+        assert_eq!(info.capacity(), 6);
+        assert_eq!(info.unit_ids(), vec![1, 2, 3]);
+        assert!(info.garrisoned());
+    }
+
 /// Get morale bonus for a unit by ID.
 /// Returns JSON: {"morale_bonus":0.15,"morale_percent":"15%"}
 /// or {"morale_bonus":0.0,"morale_percent":"0%"} if unit not found.
