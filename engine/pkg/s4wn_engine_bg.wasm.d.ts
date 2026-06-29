@@ -1,6 +1,17 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export const __wbg_get_tileinfo_elevation: (a: number) => number;
+export const __wbg_get_tileinfo_resource: (a: number) => number;
+export const __wbg_get_tileinfo_terrain: (a: number) => number;
+export const __wbg_get_tileinfo_x: (a: number) => number;
+export const __wbg_get_tileinfo_y: (a: number) => number;
+export const __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
+export const __wbg_set_tileinfo_resource: (a: number, b: number) => void;
+export const __wbg_set_tileinfo_terrain: (a: number, b: number) => void;
+export const __wbg_set_tileinfo_x: (a: number, b: number) => void;
+export const __wbg_set_tileinfo_y: (a: number, b: number) => void;
+export const __wbg_tileinfo_free: (a: number, b: number) => void;
 export const add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
 export const add_starting_resources: (a: number, b: number) => [number, number];
 export const decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
@@ -20,7 +31,7 @@ export const get_particles_json: () => [number, number];
 export const get_player_nation: () => [number, number];
 export const get_resource_counts_by_id: () => [number, number];
 export const get_stats: () => [number, number];
-export const get_tile_at: (a: number, b: number) => [number, number];
+export const get_tile_at: (a: number, b: number) => number;
 export const get_tool_counts: () => [number, number];
 export const get_unit_info: (a: number) => [number, number];
 export const get_unit_morale_json: (a: number) => [number, number];

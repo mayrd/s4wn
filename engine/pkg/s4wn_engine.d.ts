@@ -2,6 +2,24 @@
 /* eslint-disable */
 
 /**
+ * Tile information returned by `get_tile_at` — replaces JSON string with typed struct.
+ * `resource` is -1 when no resource is present on the tile.
+ */
+export class TileInfo {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    elevation: number;
+    /**
+     * Resource discriminant, or -1 if none.
+     */
+    resource: number;
+    terrain: number;
+    x: number;
+    y: number;
+}
+
+/**
  * Add a model instance to the render list for this frame.
  * Called from JS each frame for every building/unit to render.
  */
@@ -122,7 +140,7 @@ export function get_resource_counts_by_id(): string;
  */
 export function get_stats(): string;
 
-export function get_tile_at(x: number, y: number): string;
+export function get_tile_at(x: number, y: number): TileInfo | undefined;
 
 /**
  * Get tool counts as a JSON string for the HUD.
@@ -335,6 +353,17 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly __wbg_get_tileinfo_elevation: (a: number) => number;
+    readonly __wbg_get_tileinfo_resource: (a: number) => number;
+    readonly __wbg_get_tileinfo_terrain: (a: number) => number;
+    readonly __wbg_get_tileinfo_x: (a: number) => number;
+    readonly __wbg_get_tileinfo_y: (a: number) => number;
+    readonly __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
+    readonly __wbg_set_tileinfo_resource: (a: number, b: number) => void;
+    readonly __wbg_set_tileinfo_terrain: (a: number, b: number) => void;
+    readonly __wbg_set_tileinfo_x: (a: number, b: number) => void;
+    readonly __wbg_set_tileinfo_y: (a: number, b: number) => void;
+    readonly __wbg_tileinfo_free: (a: number, b: number) => void;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
@@ -354,7 +383,7 @@ export interface InitOutput {
     readonly get_player_nation: () => [number, number];
     readonly get_resource_counts_by_id: () => [number, number];
     readonly get_stats: () => [number, number];
-    readonly get_tile_at: (a: number, b: number) => [number, number];
+    readonly get_tile_at: (a: number, b: number) => number;
     readonly get_tool_counts: () => [number, number];
     readonly get_unit_info: (a: number) => [number, number];
     readonly get_unit_morale_json: (a: number) => [number, number];

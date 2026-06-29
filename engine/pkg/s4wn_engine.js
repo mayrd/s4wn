@@ -1,6 +1,97 @@
 /* @ts-self-types="./s4wn_engine.d.ts" */
 
 /**
+ * Tile information returned by `get_tile_at` — replaces JSON string with typed struct.
+ * `resource` is -1 when no resource is present on the tile.
+ */
+export class TileInfo {
+    static __wrap(ptr) {
+        const obj = Object.create(TileInfo.prototype);
+        obj.__wbg_ptr = ptr;
+        TileInfoFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        TileInfoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_tileinfo_free(ptr, 0);
+    }
+    /**
+     * @returns {number}
+     */
+    get elevation() {
+        const ret = wasm.__wbg_get_tileinfo_elevation(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * Resource discriminant, or -1 if none.
+     * @returns {number}
+     */
+    get resource() {
+        const ret = wasm.__wbg_get_tileinfo_resource(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get terrain() {
+        const ret = wasm.__wbg_get_tileinfo_terrain(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get x() {
+        const ret = wasm.__wbg_get_tileinfo_x(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get y() {
+        const ret = wasm.__wbg_get_tileinfo_y(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {number} arg0
+     */
+    set elevation(arg0) {
+        wasm.__wbg_set_tileinfo_elevation(this.__wbg_ptr, arg0);
+    }
+    /**
+     * Resource discriminant, or -1 if none.
+     * @param {number} arg0
+     */
+    set resource(arg0) {
+        wasm.__wbg_set_tileinfo_resource(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set terrain(arg0) {
+        wasm.__wbg_set_tileinfo_terrain(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set x(arg0) {
+        wasm.__wbg_set_tileinfo_x(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set y(arg0) {
+        wasm.__wbg_set_tileinfo_y(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) TileInfo.prototype[Symbol.dispose] = TileInfo.prototype.free;
+
+/**
  * Add a model instance to the render list for this frame.
  * Called from JS each frame for every building/unit to render.
  * @param {string} model_id
@@ -347,19 +438,11 @@ export function get_stats() {
 /**
  * @param {number} x
  * @param {number} y
- * @returns {string}
+ * @returns {TileInfo | undefined}
  */
 export function get_tile_at(x, y) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_tile_at(x, y);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_tile_at(x, y);
+    return ret === 0 ? undefined : TileInfo.__wrap(ret);
 }
 
 /**
@@ -1166,6 +1249,10 @@ function __wbg_get_imports() {
         "./s4wn_engine_bg.js": import0,
     };
 }
+
+const TileInfoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_tileinfo_free(ptr, 1));
 
 function addToExternrefTable0(obj) {
     const idx = wasm.__externref_table_alloc();

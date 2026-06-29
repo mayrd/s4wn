@@ -3613,8 +3613,21 @@ fn parse_map_json(json: &str) -> Result<Map, String> {
 
     Ok(map)
 }
+/// Tile information returned by `get_tile_at` — replaces JSON string with typed struct.
+/// `resource` is -1 when no resource is present on the tile.
 #[wasm_bindgen]
-pub fn get_tile_at(x: f32, y: f32) -> String {
+#[derive(Copy, Clone)]
+pub struct TileInfo {
+    pub x: i32,
+    pub y: i32,
+    pub terrain: u8,
+    pub elevation: f32,
+    /// Resource discriminant, or -1 if none.
+    pub resource: i32,
+}
+
+#[wasm_bindgen]
+pub fn get_tile_at(x: f32, y: f32) -> Option<TileInfo> {
     unsafe {
         if let Some(ref app) = APP {
             let (wx, wy) = app.camera.screen_to_world(x, y);
@@ -3624,19 +3637,17 @@ pub fn get_tile_at(x: f32, y: f32) -> String {
             if tx >= 0 && ty >= 0 && (tx as usize) < app.map.width && (ty as usize) < app.map.height
             {
                 let tile = app.map.get(tx as usize, ty as usize).unwrap();
-                let terrain_disc = tile.terrain as u8;
-                let resource_str = match tile.resource {
-                    Some(ref r) => format!("{}", *r as u8),
-                    None => "null".to_string(),
-                };
-                return format!(
-                    "{{\"x\":{},\"y\":{},\"terrain\":{},\"elevation\":{:.2},\"resource\":{}}}",
-                    tx, ty, terrain_disc, tile.elevation, resource_str
-                );
+                return Some(TileInfo {
+                    x: tx as i32,
+                    y: ty as i32,
+                    terrain: tile.terrain as u8,
+                    elevation: tile.elevation,
+                    resource: tile.resource.map(|r| r as i32).unwrap_or(-1),
+                });
             }
         }
     }
-    String::new()
+    None
 }
 /// Get resource counts with integer discriminant keys (new format).
 /// Returns: {"0":100,"1":50,"2":0,...} — keys are ResourceType discriminants.

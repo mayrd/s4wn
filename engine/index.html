@@ -1683,7 +1683,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=65';
+} from './pkg/s4wn_engine.js?v=66';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3611,12 +3611,10 @@ function selectUnitsInMarquee() {
     const info1 = get_tile_at(marqueeStartX, marqueeStartY);
     const info2 = get_tile_at(marqueeEndX, marqueeEndY);
     if (!info1 || !info2) return;
-    const t1 = JSON.parse(info1);
-    const t2 = JSON.parse(info2);
-    const minX = Math.min(t1.x, t2.x);
-    const maxX = Math.max(t1.x + 1, t2.x + 1);
-    const minY = Math.min(t1.y, t2.y);
-    const maxY = Math.max(t1.y + 1, t2.y + 1);
+    const minX = Math.min(info1.x, info2.x);
+    const maxX = Math.max(info1.x + 1, info2.x + 1);
+    const minY = Math.min(info1.y, info2.y);
+    const maxY = Math.max(info1.y + 1, info2.y + 1);
 
     let units = [];
     try {
@@ -3676,11 +3674,10 @@ canvas.addEventListener('contextmenu', (e) => {
         showTileInspector(e.clientX, e.clientY, 'right-click');
         return;
     }
-    const t = JSON.parse(info);
     const idsJson = JSON.stringify(selectedUnitIds);
-    const moved = formation_move(idsJson, t.x, t.y);
+    const moved = formation_move(idsJson, info.x, info.y);
     if (moved > 0) {
-        console.log('Ordered ' + moved + ' unit(s) to (' + t.x + ', ' + t.y + ')');
+        console.log('Ordered ' + moved + ' unit(s) to (' + info.x + ', ' + info.y + ')');
         try { Sfx.playUIClick(); } catch(e) {}
     }
 });
@@ -3704,20 +3701,19 @@ canvas.addEventListener('click', (e) => {
         // ── Placement mode ──
         const info = get_tile_at(e.offsetX, e.offsetY);
         if (!info) return;
-        const t = JSON.parse(info);
-        const result = try_place_building_by_id(placementMode, t.x, t.y);
+        const result = try_place_building_by_id(placementMode, info.x, info.y);
         const r = JSON.parse(result);
         showPlacementPulse(e.clientX, e.clientY, r.ok);
         if (r.ok) {
-            placementStatus.textContent = `✅ ${buildingName(r.kind)} placed at (${t.x},${t.y})`;
+            placementStatus.textContent = `✅ ${buildingName(r.kind)} placed at (${info.x},${info.y})`;
             // Spawn 3D model instance for the newly placed building
             if (typeof add_model_instance === 'function') {
                 const mid = modelIdForBuildingKindId(r.kind);
-                add_model_instance(mid, t.x + 0.5, t.y + 0.5, 0.7, 0.0);
+                add_model_instance(mid, info.x + 0.5, info.y + 0.5, 0.7, 0.0);
             }
             // Spawn particle effect for building placement (green sparkles)
             if (typeof spawn_build_effect === 'function') {
-                spawn_build_effect(t.x + 0.5, t.y + 0.5);
+                spawn_build_effect(info.x + 0.5, info.y + 0.5);
             }
             // Sound effect for successful building placement
             try { Sfx.playBuild(); } catch(e) {}
@@ -3737,11 +3733,10 @@ canvas.addEventListener('click', (e) => {
     if (attackMoveMode && selectedUnitIds.length > 0) {
         const aInfo = get_tile_at(e.offsetX, e.offsetY);
         if (aInfo) {
-            const at = JSON.parse(aInfo);
             const idsJson = JSON.stringify(selectedUnitIds);
-            const moved = formation_move(idsJson, at.x, at.y);
+            const moved = formation_move(idsJson, aInfo.x, aInfo.y);
             if (moved > 0) {
-                console.log('Attack-moving ' + moved + ' unit(s) to (' + at.x + ', ' + at.y + ')');
+                console.log('Attack-moving ' + moved + ' unit(s) to (' + aInfo.x + ', ' + aInfo.y + ')');
                 try { Sfx.playUIClick(); } catch(e) {}
             }
             attackMoveMode = false;
@@ -3774,11 +3769,10 @@ canvas.addEventListener('click', (e) => {
     if (garrisonMoveMode && selectedUnitIds.length > 0) {
         const gInfo = get_tile_at(e.offsetX, e.offsetY);
         if (gInfo) {
-            const gt = JSON.parse(gInfo);
             const bRaw = get_building_summary();
             if (bRaw) {
                 const buildings = JSON.parse(bRaw);
-                const bldg = buildings.find(b => b.x === gt.x && b.y === gt.y);
+                const bldg = buildings.find(b => b.x === gInfo.x && b.y === gInfo.y);
                 if (bldg && bldg.max_garrison > 0 && typeof wasm_garrison_unit === 'function') {
                     let garrisoned = 0;
                     for (const uid of selectedUnitIds) {
@@ -3787,7 +3781,7 @@ canvas.addEventListener('click', (e) => {
                         }
                     }
                     if (garrisoned > 0) {
-                        console.log('Garrisoned ' + garrisoned + ' unit(s) into ' + buildingName(bldg.kind) + ' at (' + gt.x + ',' + gt.y + ')');
+                        console.log('Garrisoned ' + garrisoned + ' unit(s) into ' + buildingName(bldg.kind) + ' at (' + gInfo.x + ',' + gInfo.y + ')');
                         try { Sfx.playUIClick(); } catch(e) {}
                     }
                 }
@@ -3802,12 +3796,11 @@ canvas.addEventListener('click', (e) => {
     if (patrolMoveMode && selectedUnitIds.length > 0) {
         const pInfo = get_tile_at(e.offsetX, e.offsetY);
         if (pInfo) {
-            const pt = JSON.parse(pInfo);
             const idsJson = JSON.stringify(selectedUnitIds);
             if (typeof order_patrol === 'function') {
-                const ordered = order_patrol(idsJson, pt.x, pt.y);
+                const ordered = order_patrol(idsJson, pInfo.x, pInfo.y);
                 if (ordered > 0) {
-                    console.log('Patrol-ordering ' + ordered + ' unit(s) to (' + pt.x + ', ' + pt.y + ')');
+                    console.log('Patrol-ordering ' + ordered + ' unit(s) to (' + pInfo.x + ', ' + pInfo.y + ')');
                     try { Sfx.playUIClick(); } catch(e) {}
                 }
             }
@@ -3820,7 +3813,6 @@ canvas.addEventListener('click', (e) => {
     // ── Selection mode (not in placement) ──
     const info = get_tile_at(e.offsetX, e.offsetY);
     if (!info) { hideSelection(); return; }
-    const t = JSON.parse(info);
 
     // Check if any building is at this tile
     try {
@@ -3830,7 +3822,7 @@ canvas.addEventListener('click', (e) => {
         const buildings = JSON.parse(bRaw);
 
         // Find building at this tile
-        const bldgIdx = buildings.findIndex(b => b.x === t.x && b.y === t.y);
+        const bldgIdx = buildings.findIndex(b => b.x === info.x && b.y === info.y);
         if (bldgIdx >= 0) {
             showBuildingInfo(bldgIdx, e.clientX, e.clientY);
             return;
@@ -3841,7 +3833,7 @@ canvas.addEventListener('click', (e) => {
             const units = JSON.parse(unitsRaw);
             let nearest = null, nearestDist = 1.5;
             for (const u of units) {
-                const dx = u.x - t.x, dy = u.y - t.y;
+                const dx = u.x - info.x, dy = u.y - info.y;
                 const dist = Math.sqrt(dx*dx + dy*dy);
                 if (dist < nearestDist) {
                     nearestDist = dist;
@@ -3859,9 +3851,8 @@ canvas.addEventListener('click', (e) => {
     if (e.ctrlKey && typeof set_tile_terrain === 'function') {
         const info = get_tile_at(e.offsetX, e.offsetY);
         if (info) {
-            const t = JSON.parse(info);
             const terrainId = (window._editorTerrain || 0);
-            const ok = set_tile_terrain(t.x, t.y, terrainId);
+            const ok = set_tile_terrain(info.x, info.y, terrainId);
             if (ok) {
                 showPlacementPulse(e.clientX, e.clientY, true);
             }
@@ -4160,9 +4151,8 @@ canvas.addEventListener('mousemove', (e) => {
     if (engineReady) {
         const info = get_tile_at(e.offsetX, e.offsetY);
         if (info) {
-            const t = JSON.parse(info);
-            const res = t.resource != null ? ` · ${MAP_RESOURCE_NAMES[t.resource] || t.resource}` : '';
-            tileTip.textContent = `${TERRAIN_NAMES[t.terrain] || t.terrain}${res} · elev ${t.elevation} · (${t.x},${t.y})`;
+            const res = info.resource >= 0 ? ` · ${MAP_RESOURCE_NAMES[info.resource] || info.resource}` : '';
+            tileTip.textContent = `${TERRAIN_NAMES[info.terrain] || info.terrain}${res} · elev ${info.elevation} · (${info.x},${info.y})`;
             tileTip.style.opacity = '1';
             tileTip.style.left = (e.clientX + 16) + 'px';
             tileTip.style.top = (e.clientY - 8) + 'px';
@@ -4218,22 +4208,14 @@ function closeTileInspector() {
 function showTileInspector(cx, cy, source) {
     source = source || 'unknown';
     if (!engineReady) { console.warn('TileInspector: engine not ready, aborting'); return; }
-    let info;
-    try {
-        const raw = get_tile_at(cx, cy);
-        if (!raw) { console.warn('TileInspector: get_tile_at returned empty for screen (' + cx + ',' + cy + ')'); return; }
-        info = JSON.parse(raw);
-    } catch (e) {
-        console.error('TileInspector: get_tile_at parse error', e, 'screen coords:', cx, cy);
-        return;
-    }
-    if (!info || info.terrain == null) { console.warn('TileInspector: no terrain data for screen (' + cx + ',' + cy + ')', info); return; }
+    const info = get_tile_at(cx, cy);
+    if (!info) { console.warn('TileInspector: get_tile_at returned null for screen (' + cx + ',' + cy + ')'); return; }
 
     // Log full tile data to console for debugging
     console.log('TileInspector [' + source + '] tile(' + info.x + ',' + info.y + '):', {
         terrain: info.terrain,
         elevation: info.elevation,
-        resource: info.resource != null ? MAP_RESOURCE_NAMES[info.resource] || info.resource : null,
+        resource: info.resource >= 0 ? MAP_RESOURCE_NAMES[info.resource] || info.resource : null,
         screenX: cx, screenY: cy
     });
 
@@ -4258,7 +4240,7 @@ function showTileInspector(cx, cy, source) {
         ti.id = 'tile-inspector';
         document.body.appendChild(ti);
     }
-    const rn = info.resource != null ? '<span class="ti-resource">' + (MAP_RESOURCE_NAMES[info.resource] || info.resource) + '</span>' : '—';
+    const rn = info.resource >= 0 ? '<span class="ti-resource">' + (MAP_RESOURCE_NAMES[info.resource] || info.resource) + '</span>' : '—';
     const translateName = (typeof currentLang === 'string' && currentLang === 'de');
     let html =
         '<div class="ti-row"><span class="ti-label">Position</span><span class="ti-value">(' + info.x + ', ' + info.y + ')</span></div>' +
