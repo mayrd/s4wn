@@ -1680,11 +1680,11 @@ import init, {
     start_building_destruction,
     tick_building_destructions,
     get_building_garrison,
-    get_unit_morale_json,
+    get_unit_morale,
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=76';
+} from './pkg/s4wn_engine.js?v=77';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3954,18 +3954,18 @@ function showUnitInfo(id, cx, cy) {
     const tool = u.carried_tool !== 255 && window.TOOL_NAMES_BY_ID
         ? `🔧 ${window.TOOL_NAMES_BY_ID[u.carried_tool] || 'Tool #'+u.carried_tool}` : '';
 
-        // Morale indicator
+        // Morale indicator (typed struct — no JSON.parse)
         let moraleLine = '';
-        if (typeof get_unit_morale_json === 'function') {
+        if (typeof get_unit_morale === 'function') {
             try {
-                const mRaw = get_unit_morale_json(u.id);
-                if (mRaw) {
-                    const mInfo = JSON.parse(mRaw);
+                const mInfo = get_unit_morale(u.id);
+                if (mInfo) {
                     const bonus = mInfo.morale_bonus || 0;
+                    const pct = mInfo.morale_percent || 0;
                     if (bonus > 0) {
-                        moraleLine = `<div class="sel-stat sel-morale">Morale: <span>+${mInfo.morale_percent} &#x1F4AA;</span></div>`;
+                        moraleLine = `<div class="sel-stat sel-morale">Morale: <span>+${pct}% &#x1F4AA;</span></div>`;
                     } else if (bonus < 0) {
-                        moraleLine = `<div class="sel-stat sel-morale negative">Morale: <span>${mInfo.morale_percent} &#x1F4A9;</span></div>`;
+                        moraleLine = `<div class="sel-stat sel-morale negative">Morale: <span>${pct}% &#x1F4A9;</span></div>`;
                     }
                 }
             } catch(_) {}

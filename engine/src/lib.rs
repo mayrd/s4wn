@@ -5463,23 +5463,49 @@ pub fn get_building_garrison(building_index: usize) -> Option<GarrisonInfo> {
         assert!(info.garrisoned());
     }
 
-/// Get morale bonus for a unit by ID.
-/// Returns JSON: {"morale_bonus":0.15,"morale_percent":"15%"}
-/// or {"morale_bonus":0.0,"morale_percent":"0%"} if unit not found.
+    #[test]
+    fn test_morale_info_struct_fields() {
+        let info = MoraleInfo {
+            morale_bonus: 0.15,
+            morale_percent: 15,
+        };
+        assert_eq!(info.morale_bonus, 0.15);
+        assert_eq!(info.morale_percent, 15);
+
+        let zero_info = MoraleInfo {
+            morale_bonus: 0.0,
+            morale_percent: 0,
+        };
+        assert_eq!(zero_info.morale_bonus, 0.0);
+        assert_eq!(zero_info.morale_percent, 0);
+    }
+
+/// Morale info for a unit — replaces JSON string from get_unit_morale_json.
+/// `morale_bonus` is the raw multiplier (0.0 = no bonus).
+/// `morale_percent` is the percentage as integer (e.g. 15 for +15%).
 #[wasm_bindgen]
-pub fn get_unit_morale_json(unit_id: u32) -> String {
+#[derive(Copy, Clone)]
+pub struct MoraleInfo {
+    pub morale_bonus: f32,
+    pub morale_percent: i32,
+}
+
+/// Get morale info for a unit by ID.
+/// Returns None if unit not found or game not initialized.
+#[wasm_bindgen]
+pub fn get_unit_morale(unit_id: u32) -> Option<MoraleInfo> {
     unsafe {
         if let Some(ref app) = APP {
             if let Some(u) = app.game_loop.state.economy.units.get(unit_id) {
                 let pct = (u.morale_bonus * 100.0).round() as i32;
-                return format!(
-                    r#"{{"morale_bonus":{:.2},"morale_percent":"{}%"}}"#,
-                    u.morale_bonus, pct
-                );
+                return Some(MoraleInfo {
+                    morale_bonus: u.morale_bonus,
+                    morale_percent: pct,
+                });
             }
         }
     }
-    String::from(r#"{{"morale_bonus":0.0,"morale_percent":"0%"}}"#)
+    None
 }
 /// Garrison a unit into a building. Returns true if successful.
 /// The unit must be a combat unit and adjacent to the building.

@@ -480,6 +480,57 @@ export class GarrisonInfo {
 if (Symbol.dispose) GarrisonInfo.prototype[Symbol.dispose] = GarrisonInfo.prototype.free;
 
 /**
+ * Morale info for a unit — replaces JSON string from get_unit_morale_json.
+ * `morale_bonus` is the raw multiplier (0.0 = no bonus).
+ * `morale_percent` is the percentage as integer (e.g. 15 for +15%).
+ */
+export class MoraleInfo {
+    static __wrap(ptr) {
+        const obj = Object.create(MoraleInfo.prototype);
+        obj.__wbg_ptr = ptr;
+        MoraleInfoFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        MoraleInfoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_moraleinfo_free(ptr, 0);
+    }
+    /**
+     * @returns {number}
+     */
+    get morale_bonus() {
+        const ret = wasm.__wbg_get_moraleinfo_morale_bonus(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get morale_percent() {
+        const ret = wasm.__wbg_get_moraleinfo_morale_percent(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {number} arg0
+     */
+    set morale_bonus(arg0) {
+        wasm.__wbg_set_moraleinfo_morale_bonus(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set morale_percent(arg0) {
+        wasm.__wbg_set_moraleinfo_morale_percent(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) MoraleInfo.prototype[Symbol.dispose] = MoraleInfo.prototype.free;
+
+/**
  * Nation information returned by `get_player_nation` — replaces JSON string with typed struct.
  * `name_id` is the NationType discriminant (0=Roman..4=DarkTribe).
  * Fields are accessed via JS getters (no JSON.parse needed).
@@ -1378,23 +1429,14 @@ export function get_unit_info(id) {
 }
 
 /**
- * Get morale bonus for a unit by ID.
- * Returns JSON: {"morale_bonus":0.15,"morale_percent":"15%"}
- * or {"morale_bonus":0.0,"morale_percent":"0%"} if unit not found.
+ * Get morale info for a unit by ID.
+ * Returns None if unit not found or game not initialized.
  * @param {number} unit_id
- * @returns {string}
+ * @returns {MoraleInfo | undefined}
  */
-export function get_unit_morale_json(unit_id) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_unit_morale_json(unit_id);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+export function get_unit_morale(unit_id) {
+    const ret = wasm.get_unit_morale(unit_id);
+    return ret === 0 ? undefined : MoraleInfo.__wrap(ret);
 }
 
 /**
@@ -2158,6 +2200,9 @@ const BuildingTileInfoFinalization = (typeof FinalizationRegistry === 'undefined
 const GarrisonInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_garrisoninfo_free(ptr, 1));
+const MoraleInfoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_moraleinfo_free(ptr, 1));
 const NationInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_nationinfo_free(ptr, 1));

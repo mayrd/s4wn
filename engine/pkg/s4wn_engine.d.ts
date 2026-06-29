@@ -97,6 +97,19 @@ export class GarrisonInfo {
 }
 
 /**
+ * Morale info for a unit — replaces JSON string from get_unit_morale_json.
+ * `morale_bonus` is the raw multiplier (0.0 = no bonus).
+ * `morale_percent` is the percentage as integer (e.g. 15 for +15%).
+ */
+export class MoraleInfo {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    morale_bonus: number;
+    morale_percent: number;
+}
+
+/**
  * Nation information returned by `get_player_nation` — replaces JSON string with typed struct.
  * `name_id` is the NationType discriminant (0=Roman..4=DarkTribe).
  * Fields are accessed via JS getters (no JSON.parse needed).
@@ -336,11 +349,10 @@ export function get_tool_counts(): Uint32Array;
 export function get_unit_info(id: number): UnitDetailInfo | undefined;
 
 /**
- * Get morale bonus for a unit by ID.
- * Returns JSON: {"morale_bonus":0.15,"morale_percent":"15%"}
- * or {"morale_bonus":0.0,"morale_percent":"0%"} if unit not found.
+ * Get morale info for a unit by ID.
+ * Returns None if unit not found or game not initialized.
  */
-export function get_unit_morale_json(unit_id: number): string;
+export function get_unit_morale(unit_id: number): MoraleInfo | undefined;
 
 /**
  * Get the current stance of a unit.
@@ -550,11 +562,12 @@ export interface InitOutput {
     readonly __wbg_get_buildingtileinfo_construction: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_destruction_progress: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_kind: (a: number) => number;
+    readonly __wbg_get_moraleinfo_morale_bonus: (a: number) => number;
+    readonly __wbg_get_moraleinfo_morale_percent: (a: number) => number;
     readonly __wbg_get_statsinfo_game_time: (a: number) => number;
     readonly __wbg_get_tileinfo_resource: (a: number) => number;
     readonly __wbg_get_tileinfo_terrain: (a: number) => number;
     readonly __wbg_get_tileinfo_x: (a: number) => number;
-    readonly __wbg_get_tileinfo_y: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_assigned_building: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_carried_tool: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_dying_progress: (a: number) => number;
@@ -566,6 +579,7 @@ export interface InitOutput {
     readonly __wbg_get_unitinfo_carried_tool: (a: number) => number;
     readonly __wbg_get_unitinfo_stance: (a: number) => number;
     readonly __wbg_get_unitinfo_state: (a: number) => number;
+    readonly __wbg_moraleinfo_free: (a: number, b: number) => void;
     readonly __wbg_nationinfo_free: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_complete: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_garrison: (a: number, b: number) => void;
@@ -580,6 +594,7 @@ export interface InitOutput {
     readonly __wbg_set_buildingtileinfo_construction: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_destruction_progress: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_kind: (a: number, b: number) => void;
+    readonly __wbg_set_moraleinfo_morale_bonus: (a: number, b: number) => void;
     readonly __wbg_set_statsinfo_game_time: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_terrain: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_assigned_building: (a: number, b: number) => void;
@@ -639,7 +654,7 @@ export interface InitOutput {
     readonly get_tile_at: (a: number, b: number) => number;
     readonly get_tool_counts: () => [number, number];
     readonly get_unit_info: (a: number) => number;
-    readonly get_unit_morale_json: (a: number) => [number, number];
+    readonly get_unit_morale: (a: number) => number;
     readonly get_unit_stance: (a: number) => number;
     readonly get_unit_summary: () => [number, number];
     readonly get_units_in_rect: (a: number, b: number, c: number, d: number) => [number, number];
@@ -695,6 +710,7 @@ export interface InitOutput {
     readonly __wbg_set_tileinfo_y: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_resource: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_moraleinfo_morale_percent: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_y: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_kind: (a: number, b: number) => void;
@@ -707,6 +723,7 @@ export interface InitOutput {
     readonly __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
     readonly __wbg_get_unitinfo_max_hp: (a: number) => number;
     readonly __wbg_get_unitinfo_hp: (a: number) => number;
+    readonly __wbg_get_tileinfo_y: (a: number) => number;
     readonly __wbg_get_statsinfo_ticks: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_hp: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_max_hp: (a: number) => number;
