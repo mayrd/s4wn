@@ -902,21 +902,16 @@ export function get_tile_at(x, y) {
 }
 
 /**
- * Get tool counts as a JSON string for the HUD.
- * Returns: {"Hammer":3,"Pickaxe":0,"Axe":2,...} — all 11 tool types.
- * @returns {string}
+ * Get tool counts as a Vec<u32> indexed by ToolType discriminant (0=Hammer through 10=Bow).
+ * Returns 11-element array. JS callers iterate with index, no JSON.parse() needed.
+ * Use TOOL_ICONS_BY_ID / TOOL_NAMES_BY_ID (in index.html) for JS-side name/icon lookup.
+ * @returns {Uint32Array}
  */
 export function get_tool_counts() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_tool_counts();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_tool_counts();
+    var v1 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
 }
 
 /**

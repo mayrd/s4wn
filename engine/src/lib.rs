@@ -3866,23 +3866,22 @@ pub fn get_resource_counts_by_id() -> Vec<u32> {
     }
     Vec::new()
 }
-/// Get tool counts as a JSON string for the HUD.
-/// Returns: {"Hammer":3,"Pickaxe":0,"Axe":2,...} — all 11 tool types.
+/// Get tool counts as a Vec<u32> indexed by ToolType discriminant (0=Hammer through 10=Bow).
+/// Returns 11-element array. JS callers iterate with index, no JSON.parse() needed.
+/// Use TOOL_ICONS_BY_ID / TOOL_NAMES_BY_ID (in index.html) for JS-side name/icon lookup.
 #[wasm_bindgen]
-pub fn get_tool_counts() -> String {
+pub fn get_tool_counts() -> Vec<u32> {
     unsafe {
-        if let Some(ref app) = APP {
+        if let Some(app) = (*(std::ptr::addr_of!(APP))).as_ref() {
             let economy = &app.game_loop.state.economy;
-            let mut parts = Vec::new();
+            let mut counts = vec![0u32; 11];
             for code in 0..=10u8 {
-                let count = economy.get_tool_count(code);
-                let name = crate::economy::tool_code_to_name(code);
-                parts.push(format!("\"{}\":{}", name, count));
+                counts[code as usize] = economy.get_tool_count(code);
             }
-            return format!("{{{}}}", parts.join(","));
+            return counts;
         }
     }
-    String::new()
+    Vec::new()
 }
 /// Set the player's nation by discriminant integer for the current game.
 /// Returns true if the discriminant was recognized and applied.
@@ -7878,6 +7877,13 @@ mod parse_map_json_tests {
         assert_eq!(stats.ticks, 12345);
         assert!((stats.game_time - 45.6).abs() < 0.001);
         assert!((stats.zoom - 1.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_get_tool_counts_empty_when_uninitialized() {
+        // When APP is not initialized, get_tool_counts returns empty Vec
+        let counts = get_tool_counts();
+        assert!(counts.is_empty());
     }
 
 }

@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=70';
+} from './pkg/s4wn_engine.js?v=71';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -5178,11 +5178,26 @@ function updateResourceBar() {
 }
 
 // ── Tool Bar ────────────────────────────────────────────────────────────
-const TOOL_ICONS = {
-    'Hammer': '🔨', 'Pickaxe': '⛏️', 'Axe': '🪓', 'Saw': '🪚',
-    'Fishing Rod': '🎣', 'Rolling Pin': '🫓', 'Cleaver': '🔪',
-    'Bucket': '🪣', 'Dagger': '🗡️', 'Shovel': '🪏', 'Bow': '🏹'
-};
+// Tool icons indexed by ToolType discriminant (0=Hammer .. 10=Bow)
+const TOOL_ICONS_BY_ID = [
+    '🔨',   // 0: Hammer
+    '⛏️',  // 1: Pickaxe
+    '🪓',    // 2: Axe
+    '🪚',    // 3: Saw
+    '🎣',    // 4: Fishing Rod
+    '🫓',    // 5: Rolling Pin
+    '🔪',    // 6: Cleaver
+    '🪣',    // 7: Bucket
+    '🗡️', // 8: Dagger
+    '🪏',    // 9: Shovel
+    '🏹',    // 10: Bow
+];
+
+// Tool names indexed by ToolType discriminant
+const TOOL_NAMES_BY_ID = [
+    'Hammer', 'Pickaxe', 'Axe', 'Saw', 'Fishing Rod',
+    'Rolling Pin', 'Cleaver', 'Bucket', 'Dagger', 'Shovel', 'Bow'
+];
 
 let lastToolUpdate = 0;
 function updateToolBar() {
@@ -5192,16 +5207,17 @@ function updateToolBar() {
     lastToolUpdate = now;
 
     try {
-        const raw = get_tool_counts();
-        if (!raw) { lastToolUpdate = 0; return; }
-        const counts = JSON.parse(raw);
+        const counts = get_tool_counts();
+        if (!counts || counts.length === 0) { lastToolUpdate = 0; return; }
         let html = '';
         let totalTools = 0;
-        for (const [name, count] of Object.entries(counts)) {
+        for (let disc = 0; disc < counts.length; disc++) {
+            const count = counts[disc];
+            if (count === 0) continue;
             totalTools += count;
-            const icon = TOOL_ICONS[name] || '🔧';
-            const cssClass = count > 0 ? '' : ' empty';
-            html += `<div class="tool-item${cssClass}" title="${name}: ${count}"><span class="tool-icon">${icon}</span><span class="tool-count">${count}</span></div>`;
+            const name = TOOL_NAMES_BY_ID[disc] || 'Unknown';
+            const icon = TOOL_ICONS_BY_ID[disc] || '🔧';
+            html += `<div class="tool-item" title="${name}: ${count}"><span class="tool-icon">${icon}</span><span class="tool-count">${count}</span></div>`;
         }
         if (totalTools === 0) {
             html = '';
@@ -5245,7 +5261,7 @@ function trackToolPickups() {
                 currentToolSettlers.add(u.id);
                 if (!_knownToolSettlers.has(u.id)) {
                     // New tool pickup detected!
-                    const toolIcon = TOOL_ICONS[u.carried_tool] || '🔧';
+                    const toolIcon = TOOL_ICONS_BY_ID[u.carried_tool] || '🔧';
                     showToast(`${toolIcon} Settler #${u.id} picked up ${u.carried_tool}`);
                 }
             }
