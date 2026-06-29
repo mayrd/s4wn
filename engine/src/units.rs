@@ -223,6 +223,7 @@ impl UnitKind {
 
 /// Current state of a unit
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
 pub enum UnitState {
     /// Idle — doing nothing
     Idle,

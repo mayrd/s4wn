@@ -3929,70 +3929,99 @@ pub fn get_draw_calls() -> u32 {
     }
     0
 }
-/// Returns: [{"type":"Farm","x":3,"y":3,"complete":true,"settlers":1,"owner_id":0,"garrison":0,"max_garrison":0},...]
+/// Building information struct — replaces JSON string from get_building_summary.
+/// `index` is the position in the buildings array (used for garrison/destruction).
+/// `kind` is the BuildingType discriminant (use BUILDING_NAMES_BY_ID in JS).
+/// `settlers` is the count of assigned workers. `garrison` is count of garrisoned soldiers.
 #[wasm_bindgen]
-pub fn get_building_summary() -> String {
-    unsafe {
-        if let Some(ref app) = APP {
-            let mut parts = Vec::new();
-            for b in app.game_loop.state.economy.buildings.iter() {
-                parts.push(format!(
-                    "{{\"type\":{},\"x\":{},\"y\":{},\"complete\":{},\"settlers\":{},\"owner_id\":{},\"garrison\":{},\"max_garrison\":{}}}",
-                    b.kind.discriminant(),
-                    b.x,
-                    b.y,
-                    b.is_complete(),
-                    b.assigned_settlers.len(),
-                    b.owner_id,
-                    b.garrison.len(),
-                    b.max_garrison
-                ));
-            }
-            return format!("[{}]", parts.join(","));
-        }
-    }
-    String::new()
+#[derive(Copy, Clone)]
+pub struct BuildingInfo {
+    pub index: u32,
+    pub kind: u8,
+    pub x: u32,
+    pub y: u32,
+    pub complete: bool,
+    pub settlers: u32,
+    pub owner_id: u8,
+    pub garrison: u32,
+    pub max_garrison: u32,
 }
-/// Get unit summary as a JSON string for the HUD.
-/// Returns: [{"id":1,"kind":"Settler","x":3.5,"y":3.5,"hp":50,"max_hp":50,"state":"Working"},...]
+
+/// Returns building data as a typed Vec<BuildingInfo> — no JSON parse needed in JS.
+/// Use BUILDING_NAMES_BY_ID[info.kind] for the building name.
 #[wasm_bindgen]
-pub fn get_unit_summary() -> String {
+pub fn get_building_summary() -> Vec<BuildingInfo> {
     unsafe {
         if let Some(ref app) = APP {
-            let mut parts = Vec::new();
-            for u in app.game_loop.state.economy.units.alive_units() {
-                let stance_name = u.stance.as_str();
-                let state_name = match u.state {
-                    crate::units::UnitState::Idle => "Idle",
-                    crate::units::UnitState::Moving => "Moving",
-                    crate::units::UnitState::Working => "Working",
-                    crate::units::UnitState::Fighting => "Fighting",
-                    crate::units::UnitState::Patrolling => "Patrolling",
-                    crate::units::UnitState::FormationMove => "FormationMove",
-                    crate::units::UnitState::Dying => "Dying",
-                    crate::units::UnitState::Dead => "Dead",
-                };
-                let tool_code = u.carried_tool.map(|tc| {
-                    use crate::economy::tool_code_to_name;
-                    tool_code_to_name(tc)
-                }).unwrap_or("");
-                parts.push(format!(
-                    "{{\"id\":{},\"kind\":{},\"x\":{:.1},\"y\":{:.1},\"hp\":{},\"max_hp\":{},\"state\":\"{}\",\"stance\":\"{}\",\"carried_tool\":\"{}\"}}",
-                    u.id,
-                    u.kind.discriminant(),
-                    u.x,
-                    u.y,
-                    u.hp,
-                    u.max_hp,
-                    state_name,
-                    stance_name,
-                    tool_code
-                ));
-            }
-            return format!("[{}]", parts.join(","));
+            return app
+                .game_loop
+                .state
+                .economy
+                .buildings
+                .iter()
+                .enumerate()
+                .map(|(i, b)| BuildingInfo {
+                    index: i as u32,
+                    kind: b.kind.discriminant(),
+                    x: b.x as u32,
+                    y: b.y as u32,
+                    complete: b.is_complete(),
+                    settlers: b.assigned_settlers.len() as u32,
+                    owner_id: b.owner_id,
+                    garrison: b.garrison.len() as u32,
+                    max_garrison: b.max_garrison,
+                })
+                .collect();
         }
     }
-    String::new()
+    Vec::new()
+}
+/// Unit information struct — replaces JSON string from get_unit_summary.
+/// `kind` is the UnitKind discriminant (use UNIT_NAMES_BY_ID in JS).
+/// `state` discriminant: 0=Idle, 1=Moving, 2=Working, 3=Fighting, 4=Patrolling, 5=FormationMove, 6=Dying, 7=Dead.
+/// `stance` discriminant: 0=Aggressive, 1=StandGround, 2=Passive.
+/// `carried_tool` is the tool code discriminant, or 255 if none.
+#[wasm_bindgen]
+#[derive(Copy, Clone)]
+pub struct UnitInfo {
+    pub id: u32,
+    pub kind: u8,
+    pub x: f32,
+    pub y: f32,
+    pub hp: u32,
+    pub max_hp: u32,
+    pub state: u8,
+    pub stance: u8,
+    pub carried_tool: u8,
+}
+
+/// Returns unit data as a typed Vec<UnitInfo> — no JSON parse needed in JS.
+/// Use UNIT_NAMES_BY_ID[info.kind] for the unit name.
+#[wasm_bindgen]
+pub fn get_unit_summary() -> Vec<UnitInfo> {
+    unsafe {
+        if let Some(ref app) = APP {
+            return app
+                .game_loop
+                .state
+                .economy
+                .units
+                .alive_units()
+                .map(|u| UnitInfo {
+                    id: u.id,
+                    kind: u.kind.discriminant(),
+                    x: u.x,
+                    y: u.y,
+                    hp: u.hp,
+                    max_hp: u.max_hp,
+                    state: u.state as u8,
+                    stance: u.stance as u8,
+                    carried_tool: u.carried_tool.unwrap_or(255),
+                })
+                .collect();
+        }
+    }
+    Vec::new()
 }
 /// Get military units within a world-coordinate rectangle.
 /// Returns JSON array of unit IDs for Swordsman and Bowman within [min_x, max_x] x [min_y, max_y].
@@ -7694,5 +7723,75 @@ mod parse_map_json_tests {
         assert_eq!(parts.len(), 2);
         assert!(parts[0].contains("\"t\":0"));
         assert!(parts[1].contains("\"t\":1"));
+    }
+
+    // ── Typed struct tests (session 285) ─────────────────────────────────
+
+    #[test]
+    fn test_building_info_struct_fields() {
+        let info = BuildingInfo {
+            index: 3,
+            kind: 5, // Sawmill
+            x: 10,
+            y: 20,
+            complete: true,
+            settlers: 1,
+            owner_id: 0,
+            garrison: 0,
+            max_garrison: 0,
+        };
+        assert_eq!(info.index, 3);
+        assert_eq!(info.kind, 5);
+        assert_eq!(info.x, 10);
+        assert_eq!(info.y, 20);
+        assert!(info.complete);
+        assert_eq!(info.settlers, 1);
+        assert_eq!(info.owner_id, 0);
+        assert_eq!(info.garrison, 0);
+        assert_eq!(info.max_garrison, 0);
+    }
+
+    #[test]
+    fn test_unit_info_struct_fields() {
+        let info = UnitInfo {
+            id: 42,
+            kind: 1, // Swordsman
+            x: 3.5,
+            y: 4.5,
+            hp: 80,
+            max_hp: 100,
+            state: 3, // Fighting
+            stance: 0, // Aggressive
+            carried_tool: 255, // None
+        };
+        assert_eq!(info.id, 42);
+        assert_eq!(info.kind, 1);
+        assert!((info.x - 3.5).abs() < 0.001);
+        assert!((info.y - 4.5).abs() < 0.001);
+        assert_eq!(info.hp, 80);
+        assert_eq!(info.max_hp, 100);
+        assert_eq!(info.state, 3);
+        assert_eq!(info.stance, 0);
+        assert_eq!(info.carried_tool, 255);
+    }
+
+    #[test]
+    fn test_unit_state_discriminants() {
+        // Verify UnitState discriminants match the documented values
+        assert_eq!(crate::units::UnitState::Idle as u8, 0);
+        assert_eq!(crate::units::UnitState::Moving as u8, 1);
+        assert_eq!(crate::units::UnitState::Working as u8, 2);
+        assert_eq!(crate::units::UnitState::Fighting as u8, 3);
+        assert_eq!(crate::units::UnitState::Patrolling as u8, 4);
+        assert_eq!(crate::units::UnitState::FormationMove as u8, 5);
+        assert_eq!(crate::units::UnitState::Dying as u8, 6);
+        assert_eq!(crate::units::UnitState::Dead as u8, 7);
+    }
+
+    #[test]
+    fn test_unit_stance_discriminants() {
+        assert_eq!(crate::units::UnitStance::Aggressive as u8, 0);
+        assert_eq!(crate::units::UnitStance::StandGround as u8, 1);
+        assert_eq!(crate::units::UnitStance::Passive as u8, 2);
     }
 }

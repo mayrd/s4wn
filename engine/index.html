@@ -3621,7 +3621,7 @@ function selectUnitsInMarquee() {
             const raw = get_units_in_rect(minX, minY, maxX, maxY);
             units = JSON.parse(raw);
         } else {
-            const summary = JSON.parse(get_unit_summary());
+            const summary = get_unit_summary();
             const milKinds = [1, 2]; // Swordsman=1, Bowman=2
             units = summary.filter(u => milKinds.includes(u.kind) &&
                 u.x >= minX && u.x <= maxX && u.y >= minY && u.y <= maxY);
@@ -3766,9 +3766,7 @@ canvas.addEventListener('click', (e) => {
     if (garrisonMoveMode && selectedUnitIds.length > 0) {
         const gInfo = get_tile_at(e.offsetX, e.offsetY);
         if (gInfo) {
-            const bRaw = get_building_summary();
-            if (bRaw) {
-                const buildings = JSON.parse(bRaw);
+            const buildings = get_building_summary();
                 const bldg = buildings.find(b => b.x === gInfo.x && b.y === gInfo.y);
                 if (bldg && bldg.max_garrison > 0 && typeof wasm_garrison_unit === 'function') {
                     let garrisoned = 0;
@@ -3812,10 +3810,8 @@ canvas.addEventListener('click', (e) => {
 
     // Check if any building is at this tile
     try {
-        const bRaw = get_building_summary();
-        const unitsRaw = get_unit_summary();
-        if (!bRaw) { hideSelection(); return; }
-        const buildings = JSON.parse(bRaw);
+        const buildings = get_building_summary();
+        if (buildings.length === 0) { hideSelection(); return; }
 
         // Find building at this tile
         const bldgIdx = buildings.findIndex(b => b.x === info.x && b.y === info.y);
@@ -3825,8 +3821,7 @@ canvas.addEventListener('click', (e) => {
         }
 
         // Find nearest unit within 1 tile
-        if (unitsRaw) {
-            const units = JSON.parse(unitsRaw);
+        const units = get_unit_summary();
             let nearest = null, nearestDist = 1.5;
             for (const u of units) {
                 const dx = u.x - info.x, dy = u.y - info.y;
@@ -4438,9 +4433,7 @@ function renderMinimap() {
     // ── Draw unit dots on minimap ──────────────────────────────────
     try {
         if (typeof get_unit_summary === 'function') {
-            const unitRaw = get_unit_summary();
-            if (unitRaw) {
-                const units = JSON.parse(unitRaw);
+            const units = get_unit_summary();
                 for (const unit of units) {
                     const mx = Math.round(unit.x);
                     const my = Math.round(unit.y);
@@ -4465,9 +4458,7 @@ function renderMinimap() {
     // Draw building dots on minimap
     try {
         if (typeof get_building_summary === 'function') {
-            const bldgRaw = get_building_summary();
-            if (bldgRaw) {
-                const buildings = JSON.parse(bldgRaw);
+            const buildings = get_building_summary();
                 for (const b of buildings) {
                     const bx = Math.round(b.x);
                     const by = Math.round(b.y);
@@ -5259,9 +5250,7 @@ function trackToolPickups() {
     if (now - _lastToolCheck < 3000) return;
     _lastToolCheck = now;
     try {
-        const uRaw = get_unit_summary();
-        if (!uRaw) return;
-        const units = JSON.parse(uRaw);
+        const units = get_unit_summary();
         const currentToolSettlers = new Set();
         for (const u of units) {
             if (u.kind === 0 && u.carried_tool) {
@@ -5286,11 +5275,8 @@ function updatePopulationSummary() {
     lastPopUpdate = now;
 
     try {
-        const bRaw = get_building_summary();
-        const uRaw = get_unit_summary();
-        if (!bRaw || !uRaw) { lastPopUpdate = 0; return; }
-        const buildings = JSON.parse(bRaw);
-        const units = JSON.parse(uRaw);
+        const buildings = get_building_summary();
+        const units = get_unit_summary();
 
         const completeBldgs = buildings.filter(b => b.complete).length;
         const constructingBldgs = buildings.length - completeBldgs;
@@ -5930,8 +5916,7 @@ async function main() {
             // Get current unit positions
             let units = [];
             try {
-                const raw = get_unit_summary();
-                if (raw) units = JSON.parse(raw);
+                const units = get_unit_summary();
             } catch(e) { return; }
 
             if (units.length === 0) return;
@@ -6070,7 +6055,7 @@ async function main() {
                 if (dbgTime) dbgTime.textContent = new Date().toLocaleTimeString();
                 if (dbgTicks) dbgTicks.textContent = `T${d.ticks}`;
                 if (dbgTiles) { try { const md = get_map_data(); if (md && md.length >= 4) { const mw = md[0] | (md[1] << 8); const mh = md[2] | (md[3] << 8); dbgTiles.textContent = mw + '×' + mh; } } catch(e) {} }
-                if (dbgBldgs) { try { const bs = get_building_summary(); if (dbgBldgs) dbgBldgs.textContent = JSON.parse(bs).length + ' bldgs'; } catch(e) {} }
+                if (dbgBldgs) { try { const bs = get_building_summary(); dbgBldgs.textContent = bs.length + ' bldgs'; } catch(e) {} }
                 // Camera center for HUD display
                 let cx = '?', cy = '?';
                 try {
@@ -6759,12 +6744,9 @@ function populateConstructionPanel() {
     let bldgCounts = {};
     try {
         if (typeof get_building_summary === 'function') {
-            const raw = get_building_summary();
-            if (raw) {
-                JSON.parse(raw).forEach(b => {
-                    bldgCounts[b.type] = (bldgCounts[b.type] || 0) + 1;
-                });
-            }
+            get_building_summary().forEach(b => {
+                    bldgCounts[b.kind] = (bldgCounts[b.kind] || 0) + 1;
+            });
         }
     } catch(e) {}
     let html = '';
@@ -6906,7 +6888,7 @@ function renderSettlers() {
     if (!body) return;
     const C = window.S4WN_CONFIG;
     try {
-        const units = JSON.parse(get_unit_summary());
+        const units = get_unit_summary();
         
         // Count units by kind
         const counts = {};
@@ -7183,16 +7165,16 @@ window.__s4wn_debug = {
   // Tutorial.snapshotBuildings() expects {buildings: [...]}
   get_buildings() {
     try {
-      const arr = JSON.parse(get_building_summary());
+      const arr = get_building_summary();
       return JSON.stringify({ buildings: arr.map(b => ({
-        type: b.type, owner_id: 0
+        type: b.kind, owner_id: 0
       }))});
     } catch(e) { return '{"buildings":[]}'; }
   },
   // Tutorial.snapshotUnits() expects {units: [...]}
   get_units() {
     try {
-      const arr = JSON.parse(get_unit_summary());
+      const arr = get_unit_summary();
       return JSON.stringify({ units: arr.map(u => ({
         type: u.kind, owner: u.owner_id || 0
       }))});
@@ -7271,8 +7253,8 @@ const DebugSnapshot = {
       }
     } catch(e) { info.map_error = e.message; }
 
-    try { const bs = JSON.parse(get_building_summary()); info.buildings = bs.length; } catch(e) {}
-    try { const us = JSON.parse(get_unit_summary()); info.units = us.length; } catch(e) {}
+    try { info.buildings = get_building_summary().length; } catch(e) {}
+    try { info.units = get_unit_summary().length; } catch(e) {}
     try {
       const cam = JSON.parse(get_camera_state());
       info.camera_offset = `(${cam.center_x?.toFixed(1)}, ${cam.center_y?.toFixed(1)})`;
