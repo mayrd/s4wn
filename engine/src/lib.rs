@@ -3541,26 +3541,198 @@ pub fn load_map_json(json: &str) -> String {
     }
 }
 
-fn parse_map_json(json: &str) -> Result<Map, String> {
-    use serde_json::Value;
-    // Trim whitespace and strip BOM; use Deserializer for trailing-data tolerance
-    let trimmed = json.trim().trim_start_matches('\u{feff}');
-    let mut de = serde_json::Deserializer::from_str(trimmed);
-    let v: Value = serde::Deserialize::deserialize(&mut de)
-        .map_err(|e| format!("JSON parse error: {}", e))?;
+/// Find a top-level JSON object field by key, return its raw value string.
+/// Handles: {"key": value, ...} — value can be number, string, array, object, null, bool.
+/// Tolerates whitespace between key and colon.
+fn extract_json_field<'a>(json: &'a str, key: &str) -> Option<&'a str> {
+    let bytes = json.as_bytes();
+    let key_pat = format!("\"{}\"", key);  // just the quoted key
+    let key_bytes = key_pat.as_bytes();
+    let mut i = 0;
+    while i + key_bytes.len() <= bytes.len() {
+        if bytes[i..].starts_with(key_bytes) {
+            // Found the key, now skip whitespace and find the colon
+            let mut j = i + key_bytes.len();
+            while j < bytes.len() && (bytes[j] == b' ' || bytes[j] == b'\t'
+                || bytes[j] == b'\n' || bytes[j] == b'\r') {
+                j += 1;
+            }
+            if j >= bytes.len() || bytes[j] != b':' { continue; }
+            j += 1;  // skip the colon
+            while j < bytes.len() && (bytes[j] == b' ' || bytes[j] == b'\t'
+                || bytes[j] == b'\n' || bytes[j] == b'\r') {
+                j += 1;
+            }
+            if j >= bytes.len() { return None; }
+            // Determine value extent
+            let val_start = j;
+            match bytes[j] {
+                b'"' => {
+                    // String: find closing quote (skip escapes)
+                    j += 1;
+                    while j < bytes.len() {
+                        if bytes[j] == b'\\' { j += 2; continue; }
+                        if bytes[j] == b'"' { return Some(&json[val_start..=j]); }
+                        j += 1;
+                    }
+                    return None;
+                }
+                b'[' | b'{' => {
+                    // Array or object: track nesting
+                    let open = bytes[j];
+                    let close = if open == b'[' { b']' } else { b'}' };
+                    let mut depth = 1;
+                    let mut in_string = false;
+                    j += 1;
+                    while j < bytes.len() && depth > 0 {
+                        if in_string {
+                            if bytes[j] == b'\\' { j += 2; continue; }
+                            if bytes[j] == b'"' { in_string = false; }
+                        } else {
+                            match bytes[j] {
+                                b'"' => in_string = true,
+                                c if c == open => depth += 1,
+                                c if c == close => depth -= 1,
+                                _ => {}
+                            }
+                        }
+                        j += 1;
+                    }
+                    return Some(&json[val_start..j]);
+                }
+                b't' | b'f' | b'n' => {
+                    // true, false, null — read until delimiter
+                    while j < bytes.len() && bytes[j] != b',' && bytes[j] != b'}' {
+                        j += 1;
+                    }
+                    return Some(&json[val_start..j]);
+                }
+                _ => {
+                    // Number: read until delimiter
+                    while j < bytes.len() && bytes[j] != b',' && bytes[j] != b'}'
+                        && bytes[j] != b' ' && bytes[j] != b'\t'
+                        && bytes[j] != b'\n' && bytes[j] != b'\r' {
+                        j += 1;
+                    }
+                    return Some(&json[val_start..j]);
+                }
+            }
+        }
+        i += 1;
+    }
+    None
+}
 
-    let width = v["width"].as_u64().ok_or("missing width")? as usize;
-    let height = v["height"].as_u64().ok_or("missing height")? as usize;
+/// Extract a numeric value from a tile sub-object string like `{"t":0,"e":1.5,"r":2}`.
+/// Returns the raw value string for the given key, trimmed.
+fn extract_tile_field(tile_str: &str, key: &str) -> Option<String> {
+    let pat = format!("\"{}\"", key);  // just the quoted key
+    let bytes = tile_str.as_bytes();
+    let pat_bytes = pat.as_bytes();
+    let mut i = 0;
+    while i + pat_bytes.len() <= bytes.len() {
+        if bytes[i..].starts_with(pat_bytes) {
+            // Skip whitespace and find colon
+            let mut j = i + pat_bytes.len();
+            while j < bytes.len() && (bytes[j] == b' ' || bytes[j] == b'\t'
+                || bytes[j] == b'\n' || bytes[j] == b'\r') {
+                j += 1;
+            }
+            if j >= bytes.len() || bytes[j] != b':' { continue; }
+            j += 1;  // skip colon
+            // Skip whitespace after colon
+            while j < bytes.len() && (bytes[j] == b' ' || bytes[j] == b'\t') {
+                j += 1;
+            }
+            if j >= bytes.len() { return None; }
+            let val_start = j;
+            // Read until , or }
+            while j < bytes.len() && bytes[j] != b',' && bytes[j] != b'}' {
+                j += 1;
+            }
+            let val = tile_str[val_start..j].trim();
+            return Some(val.to_string());
+        }
+        i += 1;
+    }
+    None
+}
+
+/// Split a JSON array string `[a,b,c]` into individual element strings.
+fn split_json_array(arr_str: &str) -> Vec<&str> {
+    let bytes = arr_str.as_bytes();
+    let mut elements = Vec::new();
+    if bytes.is_empty() || bytes[0] != b'[' { return elements; }
+    let mut i = 1; // skip opening [
+    let mut elem_start = None;
+    let mut depth = 0;
+    let mut in_string = false;
+    while i < bytes.len() {
+        let c = bytes[i];
+        if elem_start.is_none() && c != b' ' && c != b'\t' && c != b'\n' && c != b'\r' && c != b',' {
+            elem_start = Some(i);
+        }
+        if in_string {
+            if c == b'\\' { i += 1; }
+            else if c == b'"' { in_string = false; }
+        } else {
+            match c {
+                b'"' => in_string = true,
+                b'[' | b'{' => depth += 1,
+                b']' | b'}' => {
+                    if depth == 0 {
+                        if c == b']' {
+                            if let Some(s) = elem_start {
+                                if s < i { elements.push(&arr_str[s..i]); }
+                            }
+                            return elements;
+                        }
+                        depth -= 1;
+                    } else {
+                        depth -= 1;
+                    }
+                }
+                b',' if depth == 0 => {
+                    if let Some(s) = elem_start {
+                        elements.push(&arr_str[s..i]);
+                        elem_start = None;
+                    }
+                }
+                _ => {}
+            }
+        }
+        i += 1;
+    }
+    elements
+}
+
+fn parse_map_json(json: &str) -> Result<Map, String> {
+    // Trim whitespace and strip BOM
+    let trimmed = json.trim().trim_start_matches('\u{feff}');
+
+    // Extract width and height using manual field extraction
+    let width_str = extract_json_field(trimmed, "width")
+        .ok_or("missing width")?;
+    let width: usize = width_str.trim().parse()
+        .map_err(|_| format!("invalid width: {}", width_str))?;
+
+    let height_str = extract_json_field(trimmed, "height")
+        .ok_or("missing height")?;
+    let height: usize = height_str.trim().parse()
+        .map_err(|_| format!("invalid height: {}", height_str))?;
 
     if width == 0 || width > 1024 || height == 0 || height > 1024 {
         return Err(format!("invalid dimensions: {}×{}", width, height));
     }
 
-    let tiles_arr = v["tiles"].as_array().ok_or("missing tiles array")?;
+    let tiles_arr_str = extract_json_field(trimmed, "tiles")
+        .ok_or("missing tiles array")?;
+
+    let tile_strs = split_json_array(tiles_arr_str);
 
     let mut map = Map::new(width, height);
 
-    for (i, tile_val) in tiles_arr.iter().enumerate() {
+    for (i, tile_str) in tile_strs.iter().enumerate() {
         if i >= width * height {
             break;
         }
@@ -3568,8 +3740,9 @@ fn parse_map_json(json: &str) -> Result<Map, String> {
         let y = i / width;
 
         // Integer-key format: {t: ter_id, e: elev, r: res_id|null}
-        // All JS senders now use integer IDs — no string-name parsing needed.
-        let terrain: Terrain = if let Some(t) = tile_val["t"].as_u64() {
+        let terrain: Terrain = if let Some(t_str) = extract_tile_field(tile_str, "t") {
+            let t: u64 = t_str.parse()
+                .map_err(|_| format!("invalid terrain id '{}' at ({},{})''", t_str, x, y))?;
             match t {
                 0 => Terrain::Grass,
                 1 => Terrain::Forest,
@@ -3579,25 +3752,34 @@ fn parse_map_json(json: &str) -> Result<Map, String> {
                 5 => Terrain::Desert,
                 6 => Terrain::Swamp,
                 7 => Terrain::Snow,
-                _ => return Err(format!("invalid terrain id {} at ({},{})", t, x, y)),
+                _ => return Err(format!("invalid terrain id {} at ({},{})''", t, x, y)),
             }
         } else {
             return Err(format!("tile at ({},{}) has no terrain", x, y));
         };
 
-        let elevation = tile_val["e"].as_f64().unwrap_or(0.0) as f32;
+        let elevation = if let Some(e_str) = extract_tile_field(tile_str, "e") {
+            e_str.trim().parse::<f64>().unwrap_or(0.0) as f32
+        } else {
+            0.0
+        };
 
-        let resource = if let Some(r) = tile_val["r"].as_u64() {
-            match r {
-                0 => Some(map::Resource::Iron),
-                1 => Some(map::Resource::Coal),
-                2 => Some(map::Resource::Gold),
-                3 => Some(map::Resource::Stone),
-                4 => Some(map::Resource::Sulfur),
-                5 => Some(map::Resource::Fish),
-                6 => Some(map::Resource::Game),
-                7 => Some(map::Resource::Grain),
-                _ => None,
+        let resource = if let Some(r_str) = extract_tile_field(tile_str, "r") {
+            let r_str = r_str.trim();
+            if r_str == "null" || r_str.is_empty() {
+                None
+            } else {
+                match r_str.parse::<u64>() {
+                    Ok(0) => Some(map::Resource::Iron),
+                    Ok(1) => Some(map::Resource::Coal),
+                    Ok(2) => Some(map::Resource::Gold),
+                    Ok(3) => Some(map::Resource::Stone),
+                    Ok(4) => Some(map::Resource::Sulfur),
+                    Ok(5) => Some(map::Resource::Fish),
+                    Ok(6) => Some(map::Resource::Game),
+                    Ok(7) => Some(map::Resource::Grain),
+                    _ => None,
+                }
             }
         } else {
             None
@@ -3605,7 +3787,7 @@ fn parse_map_json(json: &str) -> Result<Map, String> {
 
         let tile = map
             .get_mut(x, y)
-            .ok_or(format!("out of bounds: ({},{})", x, y))?;
+            .ok_or(format!("out of bounds: ({},{})''", x, y))?;
         tile.terrain = terrain;
         tile.elevation = elevation;
         tile.resource = resource;
@@ -3613,6 +3795,7 @@ fn parse_map_json(json: &str) -> Result<Map, String> {
 
     Ok(map)
 }
+
 /// Tile information returned by `get_tile_at` — replaces JSON string with typed struct.
 /// `resource` is -1 when no resource is present on the tile.
 #[wasm_bindgen]
@@ -7361,5 +7544,155 @@ mod export_regression_tests {
             let json = super::get_nation_buildings_by_id(disc);
             assert_eq!(json, "[]", "invalid disc {} should return empty array, got: {}", disc, json);
         }
+    }
+}
+
+#[cfg(test)]
+mod parse_map_json_tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_map_json_basic() {
+        // 2x2 map with mixed terrain
+        let json = r#"{"width":2,"height":2,"tiles":[{"t":0,"e":0.0,"r":0},{"t":1,"e":1.5,"r":null},{"t":3,"e":-0.5,"r":5},{"t":7,"e":10.0,"r":3}]}"#;
+        let map = parse_map_json(json).expect("parse should succeed");
+        assert_eq!(map.width, 2);
+        assert_eq!(map.height, 2);
+        
+        let t00 = map.get(0, 0).unwrap();
+        assert_eq!(t00.terrain, Terrain::Grass);
+        assert_eq!(t00.elevation, 0.0);
+        assert!(matches!(t00.resource, Some(map::Resource::Iron)));
+        
+        let t10 = map.get(1, 0).unwrap();
+        assert_eq!(t10.terrain, Terrain::Forest);
+        assert_eq!(t10.elevation, 1.5);
+        assert!(t10.resource.is_none());
+        
+        let t01 = map.get(0, 1).unwrap();
+        assert_eq!(t01.terrain, Terrain::Water);
+        assert_eq!(t01.elevation, -0.5);
+        assert!(matches!(t01.resource, Some(map::Resource::Fish)));
+        
+        let t11 = map.get(1, 1).unwrap();
+        assert_eq!(t11.terrain, Terrain::Snow);
+        assert_eq!(t11.elevation, 10.0);
+        assert!(matches!(t11.resource, Some(map::Resource::Stone)));
+    }
+
+    #[test]
+    fn test_parse_map_json_all_terrain_types() {
+        // Test all 8 terrain types in a 4x2 map
+        let json = r#"{"width":4,"height":2,"tiles":[
+            {"t":0,"e":0,"r":null},{"t":1,"e":0,"r":null},{"t":2,"e":0,"r":null},{"t":3,"e":0,"r":null},
+            {"t":4,"e":0,"r":null},{"t":5,"e":0,"r":null},{"t":6,"e":0,"r":null},{"t":7,"e":0,"r":null}
+        ]}"#;
+        let map = parse_map_json(json).expect("parse should succeed");
+        assert_eq!(map.get(0,0).unwrap().terrain, Terrain::Grass);
+        assert_eq!(map.get(1,0).unwrap().terrain, Terrain::Forest);
+        assert_eq!(map.get(2,0).unwrap().terrain, Terrain::Mountain);
+        assert_eq!(map.get(3,0).unwrap().terrain, Terrain::Water);
+        assert_eq!(map.get(0,1).unwrap().terrain, Terrain::DeepWater);
+        assert_eq!(map.get(1,1).unwrap().terrain, Terrain::Desert);
+        assert_eq!(map.get(2,1).unwrap().terrain, Terrain::Swamp);
+        assert_eq!(map.get(3,1).unwrap().terrain, Terrain::Snow);
+    }
+
+    #[test]
+    fn test_parse_map_json_all_resources() {
+        // Test all 8 resource types
+        let json = r#"{"width":8,"height":1,"tiles":[
+            {"t":0,"e":0,"r":0},{"t":0,"e":0,"r":1},{"t":0,"e":0,"r":2},{"t":0,"e":0,"r":3},
+            {"t":0,"e":0,"r":4},{"t":0,"e":0,"r":5},{"t":0,"e":0,"r":6},{"t":0,"e":0,"r":7}
+        ]}"#;
+        let map = parse_map_json(json).expect("parse should succeed");
+        let expected = [
+            map::Resource::Iron, map::Resource::Coal, map::Resource::Gold, map::Resource::Stone,
+            map::Resource::Sulfur, map::Resource::Fish, map::Resource::Game, map::Resource::Grain,
+        ];
+        for (i, exp) in expected.iter().enumerate() {
+            let tile = map.get(i, 0).unwrap();
+            assert!(matches!(tile.resource, Some(ref r) if std::mem::discriminant(r) == std::mem::discriminant(exp)),
+                "tile ({},0) resource mismatch: got {:?}", i, tile.resource);
+        }
+    }
+
+    #[test]
+    fn test_parse_map_json_empty_resources() {
+        // All null resources
+        let json = r#"{"width":2,"height":1,"tiles":[{"t":0,"e":0,"r":null},{"t":1,"e":1,"r":null}]}"#;
+        let map = parse_map_json(json).expect("parse should succeed");
+        assert!(map.get(0,0).unwrap().resource.is_none());
+        assert!(map.get(1,0).unwrap().resource.is_none());
+    }
+
+    #[test]
+    fn test_parse_map_json_missing_width() {
+        let json = r#"{"height":2,"tiles":[]}"#;
+        let result = parse_map_json(json);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("missing width"));
+    }
+
+    #[test]
+    fn test_parse_map_json_missing_tiles() {
+        let json = r#"{"width":2,"height":2}"#;
+        let result = parse_map_json(json);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("missing tiles"));
+    }
+
+    #[test]
+    fn test_parse_map_json_invalid_dimensions() {
+        let json = r#"{"width":0,"height":0,"tiles":[]}"#;
+        let result = parse_map_json(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_map_json_bom_tolerance() {
+        let json = "\u{feff}".to_owned() + r#"{"width":1,"height":1,"tiles":[{"t":5,"e":3.14,"r":2}]}"#;
+        let map = parse_map_json(&json).expect("parse should succeed");
+        assert_eq!(map.get(0,0).unwrap().terrain, Terrain::Desert);
+        assert_eq!(map.get(0,0).unwrap().elevation, 3.14);
+        assert!(matches!(map.get(0,0).unwrap().resource, Some(map::Resource::Gold)));
+    }
+
+    #[test]
+    fn test_parse_map_json_whitespace_tolerance() {
+        let json = r#"  {  "width"  :  1  ,  "height"  :  1  ,  "tiles"  :  [  {  "t"  :  3  ,  "e"  :  0  ,  "r"  :  null  }  ]  }  "#;
+        let map = parse_map_json(json).expect("parse should succeed");
+        assert_eq!(map.get(0,0).unwrap().terrain, Terrain::Water);
+    }
+
+    #[test]
+    fn test_extract_json_field_string() {
+        let json = r#"{"name":"test_map","count":42}"#;
+        assert_eq!(extract_json_field(json, "name"), Some("\"test_map\""));
+        assert_eq!(extract_json_field(json, "count"), Some("42"));
+    }
+
+    #[test]
+    fn test_extract_json_field_array() {
+        let json = r#"{"tiles":[1,2,3],"count":3}"#;
+        assert_eq!(extract_json_field(json, "tiles"), Some("[1,2,3]"));
+    }
+
+    #[test]
+    fn test_split_json_array_basic() {
+        let arr = r#"[1,2,3,4]"#;
+        let parts = split_json_array(arr);
+        assert_eq!(parts.len(), 4);
+        assert_eq!(parts[0], "1");
+        assert_eq!(parts[3], "4");
+    }
+
+    #[test]
+    fn test_split_json_array_objects() {
+        let arr = r#"[{"t":0,"e":0,"r":null},{"t":1,"e":1,"r":2}]"#;
+        let parts = split_json_array(arr);
+        assert_eq!(parts.len(), 2);
+        assert!(parts[0].contains("\"t\":0"));
+        assert!(parts[1].contains("\"t\":1"));
     }
 }
