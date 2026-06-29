@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S296 · 828 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrated get_unit_morale_json to typed MoraleInfo struct. Next: (1) Migrate get_particles_json to typed struct. (2) Phase 8: sound effects system. (3) Audit remaining JSON-returning wasm_bindgen exports.
+Status: S297 · 831 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrated get_particles_json to typed ParticleInfo struct. Next: (1) Phase 8: sound effects system. (2) Audit remaining JSON-returning wasm_bindgen exports (export_map_json, load_map_json, load_model_json). (3) Migrate export_map_json to typed struct.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Status: S296 · 828 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrat
 
 ### Session Log (recent)
 
+| 297 | 2026-06-29 | Migrate get_particles_json to typed ParticleInfo struct: New #[wasm_bindgen] ParticleInfo {x, y, z, r, g, b, size, life, max_life} with Copy+Clone — all f32. get_particles() returns Vec<ParticleInfo>. Eliminates JSON.parse() in drawParticles() render path (hot per-frame path). JS: removed try/catch + JSON.parse(raw), typed field access. Cache v77→v78. 3 new tests (struct fields, empty vec, populated vec). 828→831 tests, clippy clean. -- 831 tests |
 | 296 | 2026-06-29 | Migrate get_unit_morale_json to typed MoraleInfo struct: New #[wasm_bindgen] MoraleInfo {morale_bonus, morale_percent} with Copy+Clone — both fields are Copy so no manual getters needed. get_unit_morale(id) returns Option<MoraleInfo>. Eliminates JSON.parse() in showUnitInfo() morale render path. JS: typed field access (mInfo.morale_bonus, mInfo.morale_percent), removed JSON.parse(mRaw). Cache v76→v77. 827→828 tests, clippy clean. -- 828 tests |
 | 295 | 2026-06-29 | Fix #81: BigInt serialization in DebugSnapshot — StatsInfo.ticks u64→u32 prevents BigInt in JSON.stringify (wasm-bindgen u64 becomes JS BigInt). Migrate get_building_garrison_json to typed GarrisonInfo struct with manual getters (Vec<u32> field). Eliminates JSON.parse() in showBuildingInfo() render path. Added test_garrison_info_struct_fields. Cache v75→v76. 826→827 tests, clippy clean. -- 827 tests |
 | 294 | 2026-06-29 | Fix #80: ReferenceError d is not defined in hudStats — get_stats() migrated from JSON to typed StatsInfo in S289; variable bound to s on line 6049 but template referenced d.game_time/d.zoom on line 6076. Fixed to s.game_time/s.zoom. JS syntax verified via node --check. No Rust changes. 826 tests, clippy clean. -- 826 tests |
