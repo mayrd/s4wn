@@ -461,6 +461,7 @@ impl BuildingType {
     }
 
     /// Look up a building type by name (FNV-1a hash → discriminant lookup).
+    #[cfg(test)]
     pub fn from_name(name: &str) -> Option<Self> {
         const fn fnv1a_64(s: &[u8]) -> u64 {
             let mut h: u64 = 0xcbf29ce484222325;
@@ -811,32 +812,33 @@ impl BuildingType {
 
     /// The tool a settler must carry to work at this building.
     /// Returns None for buildings that don't require a tool.
-    pub fn required_tool(self) -> Option<&'static str> {
+    /// The tool code a settler must work with at this building.
+    /// Returns None for buildings that don't require a tool.
+    /// Tool codes: 0=Hammer, 1=Pickaxe, 2=Axe, 3=Saw, 4=Fishing Rod, 5=Rolling Pin, 6=Cleaver, 7=Bucket, 8=Dagger, 9=Shovel, 10=Bow
+    pub fn required_tool(self) -> Option<u8> {
         match self {
-            BuildingType::Stonecutter | BuildingType::Mine => Some("Pickaxe"),
-            BuildingType::Sawmill => Some("Saw"),
-            BuildingType::Toolsmith | BuildingType::Weaponsmith => Some("Hammer"),
-            BuildingType::Bakery | BuildingType::Mill => {
-                Some("Rolling Pin")
-            }
-            BuildingType::Butcher => Some("Cleaver"),
-            BuildingType::Fisherman => Some("Fishing Rod"),
-            BuildingType::Woodcutter => Some("Axe"),
-            BuildingType::Waterworks => Some("Bucket"),
-            BuildingType::Smelter => Some("Hammer"),
-            BuildingType::GuardTower => Some("Hammer"),
-            BuildingType::Fortress => Some("Hammer"),
-            BuildingType::SiegeWorkshop => Some("Hammer"),
-            BuildingType::Shipyard => Some("Saw"),
+            BuildingType::Stonecutter | BuildingType::Mine => Some(1), // Pickaxe
+            BuildingType::Sawmill => Some(3), // Saw
+            BuildingType::Toolsmith | BuildingType::Weaponsmith => Some(0), // Hammer
+            BuildingType::Bakery | BuildingType::Mill => Some(5), // Rolling Pin
+            BuildingType::Butcher => Some(6), // Cleaver
+            BuildingType::Fisherman => Some(4), // Fishing Rod
+            BuildingType::Woodcutter => Some(2), // Axe
+            BuildingType::Waterworks => Some(7), // Bucket
+            BuildingType::Smelter => Some(0), // Hammer
+            BuildingType::GuardTower => Some(0), // Hammer
+            BuildingType::Fortress => Some(0), // Hammer
+            BuildingType::SiegeWorkshop => Some(0), // Hammer
+            BuildingType::Shipyard => Some(3), // Saw
             BuildingType::RoadLayer => None,
-            BuildingType::TempleOfChac => Some("Bucket"), // Water gathering
-            BuildingType::AgaveFarm => Some("Shovel"),          // Agave planting
-            BuildingType::Distillery => Some("Bucket"),         // Fermentation vessel
-            BuildingType::DarkTemple => Some("Bucket"),             // Ritual vessel (DarkTribe)
-            BuildingType::DarkGarden => Some("Shovel"),             // Dark garden planting (DarkTribe)
-            BuildingType::MushroomFarm => Some("Shovel"),           // Mushroom planting (DarkTribe)
-            BuildingType::DarkFortress => Some("Hammer"),           // Construction (DarkTribe)
-            BuildingType::DemonGate => Some("Hammer"),              // Construction (DarkTribe)
+            BuildingType::TempleOfChac => Some(7), // Bucket — Water gathering
+            BuildingType::AgaveFarm => Some(9),          // Shovel — Agave planting
+            BuildingType::Distillery => Some(7),         // Bucket — Fermentation vessel
+            BuildingType::DarkTemple => Some(7),             // Bucket — Ritual vessel (DarkTribe)
+            BuildingType::DarkGarden => Some(9),             // Shovel — Dark garden planting (DarkTribe)
+            BuildingType::MushroomFarm => Some(9),           // Shovel — Mushroom planting (DarkTribe)
+            BuildingType::DarkFortress => Some(0),           // Hammer — Construction (DarkTribe)
+            BuildingType::DemonGate => Some(0),              // Hammer — Construction (DarkTribe)
             _ => None, // Castle, Storehouse, Farm, Barracks — no tool needed
         }
     }
@@ -991,6 +993,7 @@ impl BuildingType {
 
 /// Convert a tool name string to its ToolType discriminant (u8).
 /// None if the name doesn't map to a known tool.
+#[cfg(test)]
 pub fn tool_code_from_name(name: &str) -> Option<u8> {
     match name {
         "Hammer" => Some(0),
@@ -1010,6 +1013,7 @@ pub fn tool_code_from_name(name: &str) -> Option<u8> {
 
 /// Convert a tool code (u8 discriminant) to its name string.
 /// Returns "Unknown" for codes outside 0..=10.
+#[cfg(test)]
 pub fn tool_code_to_name(code: u8) -> &'static str {
     match code {
         0 => "Hammer",
@@ -1079,7 +1083,7 @@ impl Building {
     /// Create a new building at the given position
     pub fn new(kind: BuildingType, x: usize, y: usize) -> Self {
         let max_settlers = if kind.requires_settler() { 1 } else { 0 };
-        let required_tool = kind.required_tool().and_then(tool_code_from_name);
+        let required_tool = kind.required_tool();
         // Buildings with 0 build time start immediately complete (Castle, Storehouse)
         let start_construction = if kind.build_time() == 0 { 1.0 } else { 0.0 };
         let max_hp = kind.max_hp();
@@ -2648,18 +2652,19 @@ mod tests {
 
     #[test]
     fn test_building_required_tool() {
-        assert_eq!(BuildingType::Stonecutter.required_tool(), Some("Pickaxe"));
-        assert_eq!(BuildingType::Mine.required_tool(), Some("Pickaxe"));
-        assert_eq!(BuildingType::Sawmill.required_tool(), Some("Saw"));
-        assert_eq!(BuildingType::Toolsmith.required_tool(), Some("Hammer"));
-        assert_eq!(BuildingType::Weaponsmith.required_tool(), Some("Hammer"));
-        assert_eq!(BuildingType::Woodcutter.required_tool(), Some("Axe"));
-        assert_eq!(BuildingType::Fisherman.required_tool(), Some("Fishing Rod"));
-        assert_eq!(BuildingType::Waterworks.required_tool(), Some("Bucket"));
-        assert_eq!(BuildingType::Smelter.required_tool(), Some("Hammer"));
-        assert_eq!(BuildingType::Butcher.required_tool(), Some("Cleaver"));
-        assert_eq!(BuildingType::Bakery.required_tool(), Some("Rolling Pin"));
-        assert_eq!(BuildingType::Mill.required_tool(), Some("Rolling Pin"));
+        // Tool codes: 0=Hammer, 1=Pickaxe, 2=Axe, 3=Saw, 4=Fishing Rod, 5=Rolling Pin, 6=Cleaver, 7=Bucket, 8=Dagger, 9=Shovel, 10=Bow
+        assert_eq!(BuildingType::Stonecutter.required_tool(), Some(1)); // Pickaxe
+        assert_eq!(BuildingType::Mine.required_tool(), Some(1)); // Pickaxe
+        assert_eq!(BuildingType::Sawmill.required_tool(), Some(3)); // Saw
+        assert_eq!(BuildingType::Toolsmith.required_tool(), Some(0)); // Hammer
+        assert_eq!(BuildingType::Weaponsmith.required_tool(), Some(0)); // Hammer
+        assert_eq!(BuildingType::Woodcutter.required_tool(), Some(2)); // Axe
+        assert_eq!(BuildingType::Fisherman.required_tool(), Some(4)); // Fishing Rod
+        assert_eq!(BuildingType::Waterworks.required_tool(), Some(7)); // Bucket
+        assert_eq!(BuildingType::Smelter.required_tool(), Some(0)); // Hammer
+        assert_eq!(BuildingType::Butcher.required_tool(), Some(6)); // Cleaver
+        assert_eq!(BuildingType::Bakery.required_tool(), Some(5)); // Rolling Pin
+        assert_eq!(BuildingType::Mill.required_tool(), Some(5)); // Rolling Pin
         // Buildings without tool requirements
         assert_eq!(BuildingType::Castle.required_tool(), None);
         assert_eq!(BuildingType::Farm.required_tool(), None);
