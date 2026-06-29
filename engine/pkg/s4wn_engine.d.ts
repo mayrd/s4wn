@@ -45,6 +45,21 @@ export class BuildingTileInfo {
 }
 
 /**
+ * Engine stats returned by `get_stats` — replaces JSON string with typed struct.
+ * `fps` is the currently displayed FPS. `ticks` is the game tick counter.
+ * `game_time` is the elapsed game time in seconds. `zoom` is the camera zoom factor.
+ */
+export class StatsInfo {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    fps: number;
+    game_time: number;
+    ticks: bigint;
+    zoom: number;
+}
+
+/**
  * Tile information returned by `get_tile_at` — replaces JSON string with typed struct.
  * `resource` is -1 when no resource is present on the tile.
  */
@@ -201,9 +216,9 @@ export function get_player_nation(): string;
 export function get_resource_counts_by_id(): Uint32Array;
 
 /**
- * Get engine stats as a JSON string (FPS, tick count, game time).
+ * Get engine stats as a typed struct (replaces JSON string, eliminating JSON.parse()).
  */
-export function get_stats(): string;
+export function get_stats(): StatsInfo | undefined;
 
 export function get_tile_at(x: number, y: number): TileInfo | undefined;
 
@@ -434,6 +449,10 @@ export interface InitOutput {
     readonly __wbg_get_buildingtileinfo_construction: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_destruction_progress: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_kind: (a: number) => number;
+    readonly __wbg_get_statsinfo_fps: (a: number) => number;
+    readonly __wbg_get_statsinfo_game_time: (a: number) => number;
+    readonly __wbg_get_statsinfo_ticks: (a: number) => bigint;
+    readonly __wbg_get_statsinfo_zoom: (a: number) => number;
     readonly __wbg_get_tileinfo_elevation: (a: number) => number;
     readonly __wbg_get_tileinfo_resource: (a: number) => number;
     readonly __wbg_get_tileinfo_terrain: (a: number) => number;
@@ -456,12 +475,17 @@ export interface InitOutput {
     readonly __wbg_set_buildingtileinfo_construction: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_destruction_progress: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_kind: (a: number, b: number) => void;
+    readonly __wbg_set_statsinfo_fps: (a: number, b: number) => void;
+    readonly __wbg_set_statsinfo_game_time: (a: number, b: number) => void;
+    readonly __wbg_set_statsinfo_ticks: (a: number, b: bigint) => void;
+    readonly __wbg_set_statsinfo_zoom: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_terrain: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_carried_tool: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_stance: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_state: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_x: (a: number, b: number) => void;
+    readonly __wbg_statsinfo_free: (a: number, b: number) => void;
     readonly __wbg_tileinfo_free: (a: number, b: number) => void;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
@@ -481,7 +505,7 @@ export interface InitOutput {
     readonly get_particles_json: () => [number, number];
     readonly get_player_nation: () => [number, number];
     readonly get_resource_counts_by_id: () => [number, number];
-    readonly get_stats: () => [number, number];
+    readonly get_stats: () => number;
     readonly get_tile_at: (a: number, b: number) => number;
     readonly get_tool_counts: () => [number, number];
     readonly get_unit_info: (a: number) => [number, number];

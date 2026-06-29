@@ -1683,7 +1683,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=69';
+} from './pkg/s4wn_engine.js?v=70';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -6018,8 +6018,8 @@ async function main() {
             frameCount++;
             if (frameCount === 1) {
                 console.log('First render call completed');
-                const s = get_stats();
-                console.log('Stats:', s);
+                const stats = get_stats();
+                console.log('Stats:', stats);
                 const md = get_map_data();
                 console.log('Map data length:', md ? md.length : 'null');
             }
@@ -6035,7 +6035,6 @@ async function main() {
             // Stats
             const s = get_stats();
             if (s) {
-                const d = JSON.parse(s);
                 const dc = get_draw_calls ? get_draw_calls() : 0;
                 fpsEl.textContent = currentFps + ' FPS · ' + dc + ' DC';
                 // Update extra debug info
@@ -6044,7 +6043,7 @@ async function main() {
                 const dbgTiles = document.getElementById('debug-tiles');
                 const dbgBldgs = document.getElementById('debug-buildings');
                 if (dbgTime) dbgTime.textContent = new Date().toLocaleTimeString();
-                if (dbgTicks) dbgTicks.textContent = `T${d.ticks}`;
+                if (dbgTicks) dbgTicks.textContent = `T${s.ticks}`;
                 if (dbgTiles) { try { const md = get_map_data(); if (md && md.length >= 4) { const mw = md[0] | (md[1] << 8); const mh = md[2] | (md[3] << 8); dbgTiles.textContent = mw + '×' + mh; } } catch(e) {} }
                 if (dbgBldgs) { try { const bs = get_building_summary(); dbgBldgs.textContent = bs.length + ' bldgs'; } catch(e) {} }
                 // Camera center for HUD display
@@ -7245,10 +7244,10 @@ const DebugSnapshot = {
 
     // ── WASM engine state ──
     try {
-      const s = JSON.parse(get_stats());
-      info.engine_ticks = s.ticks;
-      info.engine_game_time = s.game_time;
-      info.engine_zoom = s.zoom;
+      const s = get_stats();
+      info.engine_ticks = s?.ticks ?? 0;
+      info.engine_game_time = s?.game_time ?? 0;
+      info.engine_zoom = s?.zoom ?? 0;
     } catch(e) { info.engine_error = e.message; }
 
     try {

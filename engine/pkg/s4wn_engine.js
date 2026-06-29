@@ -264,6 +264,83 @@ export class BuildingTileInfo {
 if (Symbol.dispose) BuildingTileInfo.prototype[Symbol.dispose] = BuildingTileInfo.prototype.free;
 
 /**
+ * Engine stats returned by `get_stats` — replaces JSON string with typed struct.
+ * `fps` is the currently displayed FPS. `ticks` is the game tick counter.
+ * `game_time` is the elapsed game time in seconds. `zoom` is the camera zoom factor.
+ */
+export class StatsInfo {
+    static __wrap(ptr) {
+        const obj = Object.create(StatsInfo.prototype);
+        obj.__wbg_ptr = ptr;
+        StatsInfoFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        StatsInfoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_statsinfo_free(ptr, 0);
+    }
+    /**
+     * @returns {number}
+     */
+    get fps() {
+        const ret = wasm.__wbg_get_statsinfo_fps(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get game_time() {
+        const ret = wasm.__wbg_get_statsinfo_game_time(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {bigint}
+     */
+    get ticks() {
+        const ret = wasm.__wbg_get_statsinfo_ticks(this.__wbg_ptr);
+        return BigInt.asUintN(64, ret);
+    }
+    /**
+     * @returns {number}
+     */
+    get zoom() {
+        const ret = wasm.__wbg_get_statsinfo_zoom(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {number} arg0
+     */
+    set fps(arg0) {
+        wasm.__wbg_set_statsinfo_fps(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set game_time(arg0) {
+        wasm.__wbg_set_statsinfo_game_time(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {bigint} arg0
+     */
+    set ticks(arg0) {
+        wasm.__wbg_set_statsinfo_ticks(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set zoom(arg0) {
+        wasm.__wbg_set_statsinfo_zoom(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) StatsInfo.prototype[Symbol.dispose] = StatsInfo.prototype.free;
+
+/**
  * Tile information returned by `get_tile_at` — replaces JSON string with typed struct.
  * `resource` is -1 when no resource is present on the tile.
  */
@@ -806,20 +883,12 @@ export function get_resource_counts_by_id() {
 }
 
 /**
- * Get engine stats as a JSON string (FPS, tick count, game time).
- * @returns {string}
+ * Get engine stats as a typed struct (replaces JSON string, eliminating JSON.parse()).
+ * @returns {StatsInfo | undefined}
  */
 export function get_stats() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_stats();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_stats();
+    return ret === 0 ? undefined : StatsInfo.__wrap(ret);
 }
 
 /**
@@ -1646,6 +1715,9 @@ const BuildingInfoFinalization = (typeof FinalizationRegistry === 'undefined')
 const BuildingTileInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_buildingtileinfo_free(ptr, 1));
+const StatsInfoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_statsinfo_free(ptr, 1));
 const TileInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_tileinfo_free(ptr, 1));

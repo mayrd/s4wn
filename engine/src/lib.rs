@@ -3427,21 +3427,29 @@ pub fn on_wheel(delta_y: f32) {
         }
     }
 }
-/// Get engine stats as a JSON string (FPS, tick count, game time).
+/// Engine stats returned by `get_stats` — replaces JSON string with typed struct.
+/// `fps` is the currently displayed FPS. `ticks` is the game tick counter.
+/// `game_time` is the elapsed game time in seconds. `zoom` is the camera zoom factor.
 #[wasm_bindgen]
-pub fn get_stats() -> String {
+#[derive(Copy, Clone)]
+pub struct StatsInfo {
+    pub fps: u32,
+    pub ticks: u64,
+    pub game_time: f32,
+    pub zoom: f32,
+}
+
+/// Get engine stats as a typed struct (replaces JSON string, eliminating JSON.parse()).
+#[wasm_bindgen]
+pub fn get_stats() -> Option<StatsInfo> {
     unsafe {
-        if let Some(ref app) = APP {
-            return format!(
-                "{{\"fps\":{},\"ticks\":{},\"game_time\":{:.1},\"zoom\":{:.2}}}",
-                app.current_fps,
-                app.game_loop.state.tick_count,
-                app.game_loop.state.game_time,
-                app.camera.zoom
-            );
-        }
+        (*std::ptr::addr_of!(APP)).as_ref().map(|app| StatsInfo {
+            fps: app.current_fps,
+            ticks: app.game_loop.state.tick_count,
+            game_time: app.game_loop.state.game_time as f32,
+            zoom: app.camera.zoom,
+        })
     }
-    String::new()
 }
 /// Get the full map as a compact Vec<u8> for minimap rendering.
 /// Layout: [width_lo, width_hi, height_lo, height_hi, terrain_byte, terrain_byte, ...]
@@ -7855,6 +7863,21 @@ mod parse_map_json_tests {
         };
         assert!((info.destruction_progress - 0.5).abs() < 0.001);
         assert!(!info.active);
+    }
+
+
+    #[test]
+    fn test_stats_info_struct_fields() {
+        let stats = StatsInfo {
+            fps: 60,
+            ticks: 12345,
+            game_time: 45.6,
+            zoom: 1.5,
+        };
+        assert_eq!(stats.fps, 60);
+        assert_eq!(stats.ticks, 12345);
+        assert!((stats.game_time - 45.6).abs() < 0.001);
+        assert!((stats.zoom - 1.5).abs() < 0.001);
     }
 
 }
