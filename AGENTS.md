@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S288 · 817 tests · Clippy: 0 errors, 0 warnings. 0 open issues. get_resource_counts_by_id migrated from JSON String to Vec<u32> — 3 JSON.parse() eliminated. Next: (1) Migrate get_stats from JSON to typed StatsInfo struct. (2) Migrate get_tool_counts from JSON to Vec<u32>. (3) Migrate get_player_nation from JSON to typed NationInfo struct. (4) Migrate get_unit_info from JSON to typed UnitInfo struct. (5) Phase 8: sound effects system (ambient water, weather, building sounds).
+Status: S289 · 818 tests · Clippy: 0 errors, 0 warnings. 0 open issues. get_stats migrated from JSON String to typed StatsInfo struct — 2 JSON.parse() eliminated from render loop + 1 from debug snapshot. Next: (2) Migrate get_tool_counts from JSON to Vec<u32>. (3) Migrate get_player_nation from JSON to typed NationInfo struct. (4) Migrate get_unit_info from JSON to typed UnitInfo struct. (5) Phase 8: sound effects system (ambient water, weather, building sounds).
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Status: S288 · 817 tests · Clippy: 0 errors, 0 warnings. 0 open issues. get_re
 
 ### Session Log (recent)
 
+| 289 | 2026-06-29 | Migrate get_stats from JSON String to typed StatsInfo struct: New #[wasm_bindgen] StatsInfo {fps, ticks, game_time, zoom} struct. get_stats() returns Option<StatsInfo> — wasm-bindgen converts to JS object or null. Eliminates JSON.parse() at 2 hot render-loop call sites (FPS/debug display + debug snapshot). Uses std::ptr::addr_of!() for clippy-clean static access. Cache buster v69→v70. 817→818 tests, clippy clean. -- 818 tests |
 | 288 | 2026-06-29 | Migrate get_resource_counts_by_id from JSON String to Vec<u32> typed return: New dense Vec<u32> indexed by ResourceType discriminant (max_discriminant+1 elements, gaps are 0). Eliminates JSON.parse() at 3 JS call sites (canAffordAll, updateResourceBar, renderResources). Cache buster v68→v69. 817 tests, clippy clean. -- 817 tests |
 | 287 | 2026-06-29 | Fix get_building_info JSON format bugs: stray quote after kind discriminant ("kind":5"→"kind":5), missing closing JSON brace (added }}), field name alignment with JS (settlers→workers, max_settlers→max_workers), added garrison/max_garrison fields with len()/max_garrison format args. Updated test_building_info_template_keys with all 18 field assertions. 817 tests, clippy clean. -- 817 tests |
 | 286 | 2026-06-29 | Migrate get_building_at_tile from JSON string to typed BuildingTileInfo struct: New #[wasm_bindgen] BuildingTileInfo {index, kind, x, y, construction, active, destruction_progress}. Function returns Option<BuildingTileInfo> — wasm-bindgen converts to JS object or undefined. Fixes malformed JSON bug ("kind":{}" missing closing quote). Eliminates JSON.parse() at both call sites (demolition mode + tile inspector). 2 new tests (struct fields, destruction_progress). 815→817 tests, clippy clean. -- 817 tests
