@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles_json,
-} from './pkg/s4wn_engine.js?v=71';
+} from './pkg/s4wn_engine.js?v=72';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -5303,9 +5303,8 @@ function updateNationHUD() {
     const hud = document.getElementById('nation-hud');
     if (!hud) return;
     try {
-        const nationJson = get_player_nation ? get_player_nation() : null;
-        if (!nationJson) { hud.textContent = ''; return; }
-        const nation = JSON.parse(nationJson);
+        const nation = get_player_nation ? get_player_nation() : null;
+        if (!nation) { hud.textContent = ''; return; }
         const nationName = (window.NATION_NAMES_BY_ID && window.NATION_NAMES_BY_ID[nation.name_id]) || 'Unknown';
         const flags = { Roman: '🏛️', Viking: '🪓', Maya: '🗿', Trojan: '🏰', 'Dark Tribe': '👿' };
         const flag = flags[nationName] || '🏳️';
@@ -6070,8 +6069,8 @@ async function main() {
                 // Nation flag + name for HUD
                 let nationStr = '';
                 try {
-                    const nj = get_player_nation ? get_player_nation() : null;
-                    if (nj) { const n = JSON.parse(nj); const nName = (window.NATION_NAMES_BY_ID && window.NATION_NAMES_BY_ID[n.name_id]) || ''; const flags = { Roman: '🏛️', Viking: '🪓', Maya: '🗿', Trojan: '🏰', 'Dark Tribe': '👿' }; nationStr = nName ? `${flags[nName] || '🏳️'} ${nName}` : ''; }
+                    const n = get_player_nation ? get_player_nation() : null;
+                    if (n) { const nName = (window.NATION_NAMES_BY_ID && window.NATION_NAMES_BY_ID[n.name_id]) || ''; const flags = { Roman: '🏛️', Viking: '🪓', Maya: '🗿', Trojan: '🏰', 'Dark Tribe': '👿' }; nationStr = nName ? `${flags[nName] || '🏳️'} ${nName}` : ''; }
                 } catch(e) {}
                 hudStats.textContent = `⏱ ${formatGameTime(d.game_time)} | 🔍 ${d.zoom}× | 📍 (${cx}, ${cy}) | 👤 ${pname} | 🎯 ${level}` + (nationStr ? ` | ${nationStr}` : '');
 
@@ -6720,8 +6719,7 @@ function populateConstructionPanel() {
     let nationName = null;
     if (typeof get_player_nation === 'function') {
         try {
-            const nationJson = get_player_nation();
-            var nObj = nationJson ? JSON.parse(nationJson) : null;
+            const nObj = get_player_nation();
             nationName = (nObj && window.NATION_NAMES_BY_ID) ? window.NATION_NAMES_BY_ID[nObj.name_id] : null;
         } catch(e) {}
     }

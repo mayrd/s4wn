@@ -45,6 +45,33 @@ export class BuildingTileInfo {
 }
 
 /**
+ * Nation information returned by `get_player_nation` — replaces JSON string with typed struct.
+ * `name_id` is the NationType discriminant (0=Roman..4=DarkTribe).
+ * Fields are accessed via JS getters (no JSON.parse needed).
+ */
+export class NationInfo {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Color as a hex string (e.g., "#C83232").
+     */
+    readonly color: string;
+    /**
+     * Human-readable description of the nation's playstyle.
+     */
+    readonly description: string;
+    /**
+     * Emoji icon for HUD display.
+     */
+    readonly emoji: string;
+    /**
+     * The NationType discriminant (0=Roman..4=DarkTribe).
+     */
+    readonly name_id: number;
+}
+
+/**
  * Engine stats returned by `get_stats` — replaces JSON string with typed struct.
  * `fps` is the currently displayed FPS. `ticks` is the game tick counter.
  * `game_time` is the elapsed game time in seconds. `zoom` is the camera zoom factor.
@@ -202,10 +229,10 @@ export function get_map_data(): Uint8Array;
 export function get_particles_json(): string;
 
 /**
- * Get the player's nation as a JSON string {name_id, color, emoji, description}
- * Returns empty string if no nation is set.
+ * Get the player's nation as a typed NationInfo struct.
+ * Returns `None` if no nation is set.
  */
-export function get_player_nation(): string;
+export function get_player_nation(): NationInfo | undefined;
 
 /**
  * Get resource counts as a dense Vec<u32> indexed by ResourceType discriminant.
@@ -463,6 +490,7 @@ export interface InitOutput {
     readonly __wbg_get_unitinfo_stance: (a: number) => number;
     readonly __wbg_get_unitinfo_state: (a: number) => number;
     readonly __wbg_get_unitinfo_x: (a: number) => number;
+    readonly __wbg_nationinfo_free: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_complete: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_garrison: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_index: (a: number, b: number) => void;
@@ -504,7 +532,7 @@ export interface InitOutput {
     readonly get_game_state: () => [number, number];
     readonly get_map_data: () => [number, number];
     readonly get_particles_json: () => [number, number];
-    readonly get_player_nation: () => [number, number];
+    readonly get_player_nation: () => number;
     readonly get_resource_counts_by_id: () => [number, number];
     readonly get_stats: () => number;
     readonly get_tile_at: (a: number, b: number) => number;
@@ -518,6 +546,10 @@ export interface InitOutput {
     readonly is_paused: () => number;
     readonly load_map_json: (a: number, b: number) => [number, number];
     readonly load_model_json: (a: number, b: number, c: number, d: number) => [number, number];
+    readonly nationinfo_color: (a: number) => [number, number];
+    readonly nationinfo_description: (a: number) => [number, number];
+    readonly nationinfo_emoji: (a: number) => [number, number];
+    readonly nationinfo_name_id: (a: number) => number;
     readonly on_mouse_down: (a: number, b: number) => void;
     readonly on_mouse_move: (a: number, b: number) => void;
     readonly on_mouse_up: () => void;
@@ -548,15 +580,15 @@ export interface InitOutput {
     readonly __wbg_set_unitinfo_id: (a: number, b: number) => void;
     readonly __wbg_get_buildingtileinfo_index: (a: number) => number;
     readonly __wbg_get_unitinfo_id: (a: number) => number;
+    readonly __wbg_set_unitinfo_max_hp: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_hp: (a: number, b: number) => void;
-    readonly __wbg_set_unitinfo_y: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_y: (a: number, b: number) => void;
-    readonly __wbg_set_unitinfo_kind: (a: number, b: number) => void;
-    readonly __wbg_get_unitinfo_y: (a: number) => number;
+    readonly __wbg_set_tileinfo_resource: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_y: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_y: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_x: (a: number, b: number) => void;
-    readonly __wbg_set_tileinfo_resource: (a: number, b: number) => void;
-    readonly __wbg_set_unitinfo_max_hp: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_kind: (a: number, b: number) => void;
+    readonly __wbg_get_unitinfo_y: (a: number) => number;
     readonly __wbg_get_unitinfo_hp: (a: number) => number;
     readonly __wbg_get_unitinfo_max_hp: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_y: (a: number) => number;

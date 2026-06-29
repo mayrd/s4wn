@@ -264,6 +264,87 @@ export class BuildingTileInfo {
 if (Symbol.dispose) BuildingTileInfo.prototype[Symbol.dispose] = BuildingTileInfo.prototype.free;
 
 /**
+ * Nation information returned by `get_player_nation` — replaces JSON string with typed struct.
+ * `name_id` is the NationType discriminant (0=Roman..4=DarkTribe).
+ * Fields are accessed via JS getters (no JSON.parse needed).
+ */
+export class NationInfo {
+    static __wrap(ptr) {
+        const obj = Object.create(NationInfo.prototype);
+        obj.__wbg_ptr = ptr;
+        NationInfoFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        NationInfoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_nationinfo_free(ptr, 0);
+    }
+    /**
+     * Color as a hex string (e.g., "#C83232").
+     * @returns {string}
+     */
+    get color() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.nationinfo_color(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * Human-readable description of the nation's playstyle.
+     * @returns {string}
+     */
+    get description() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.nationinfo_description(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * Emoji icon for HUD display.
+     * @returns {string}
+     */
+    get emoji() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.nationinfo_emoji(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * The NationType discriminant (0=Roman..4=DarkTribe).
+     * @returns {number}
+     */
+    get name_id() {
+        const ret = wasm.nationinfo_name_id(this.__wbg_ptr);
+        return ret;
+    }
+}
+if (Symbol.dispose) NationInfo.prototype[Symbol.dispose] = NationInfo.prototype.free;
+
+/**
  * Engine stats returned by `get_stats` — replaces JSON string with typed struct.
  * `fps` is the currently displayed FPS. `ticks` is the game tick counter.
  * `game_time` is the elapsed game time in seconds. `zoom` is the camera zoom factor.
@@ -851,21 +932,13 @@ export function get_particles_json() {
 }
 
 /**
- * Get the player's nation as a JSON string {name_id, color, emoji, description}
- * Returns empty string if no nation is set.
- * @returns {string}
+ * Get the player's nation as a typed NationInfo struct.
+ * Returns `None` if no nation is set.
+ * @returns {NationInfo | undefined}
  */
 export function get_player_nation() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_player_nation();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_player_nation();
+    return ret === 0 ? undefined : NationInfo.__wrap(ret);
 }
 
 /**
@@ -1710,6 +1783,9 @@ const BuildingInfoFinalization = (typeof FinalizationRegistry === 'undefined')
 const BuildingTileInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_buildingtileinfo_free(ptr, 1));
+const NationInfoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_nationinfo_free(ptr, 1));
 const StatsInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_statsinfo_free(ptr, 1));

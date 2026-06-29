@@ -3903,24 +3903,53 @@ pub fn set_player_nation_by_id(discriminant: u8) -> bool {
     }
     false
 }
-/// Get the player's nation as a JSON string {name_id, color, emoji, description}
-/// Returns empty string if no nation is set.
+/// Nation information returned by `get_player_nation` — replaces JSON string with typed struct.
+/// `name_id` is the NationType discriminant (0=Roman..4=DarkTribe).
+/// Fields are accessed via JS getters (no JSON.parse needed).
 #[wasm_bindgen]
-pub fn get_player_nation() -> String {
+pub struct NationInfo {
+    name_id: u8,
+    color: String,
+    emoji: String,
+    description: String,
+}
+
+#[wasm_bindgen]
+impl NationInfo {
+    /// The NationType discriminant (0=Roman..4=DarkTribe).
+    #[wasm_bindgen(getter)]
+    pub fn name_id(&self) -> u8 { self.name_id }
+
+    /// Color as a hex string (e.g., "#C83232").
+    #[wasm_bindgen(getter)]
+    pub fn color(&self) -> String { self.color.clone() }
+
+    /// Emoji icon for HUD display.
+    #[wasm_bindgen(getter)]
+    pub fn emoji(&self) -> String { self.emoji.clone() }
+
+    /// Human-readable description of the nation's playstyle.
+    #[wasm_bindgen(getter)]
+    pub fn description(&self) -> String { self.description.clone() }
+}
+
+/// Get the player's nation as a typed NationInfo struct.
+/// Returns `None` if no nation is set.
+#[wasm_bindgen]
+pub fn get_player_nation() -> Option<NationInfo> {
     unsafe {
         if let Some(ref app) = APP {
             if let Some(nation) = app.game_loop.state.player_nation {
-                return format!(
-                    "{{\"name_id\":{},\"color\":\"{}\",\"emoji\":\"{}\",\"description\":\"{}\"}}",
-                    nation.discriminant(),
-                    nation.color_hex(),
-                    nation.emoji(),
-                    nation.description()
-                );
+                return Some(NationInfo {
+                    name_id: nation.discriminant(),
+                    color: nation.color_hex().to_string(),
+                    emoji: nation.emoji().to_string(),
+                    description: nation.description().to_string(),
+                });
             }
         }
     }
-    String::new()
+    None
 }
 /// Get unique building names for a nation by discriminant as JSON array.
 #[cfg(test)]
@@ -7607,6 +7636,47 @@ mod export_regression_tests {
             let json = super::get_nation_buildings_by_id(disc);
             assert_eq!(json, "[]", "invalid disc {} should return empty array, got: {}", disc, json);
         }
+    }
+
+    // -- NationInfo struct tests
+
+    #[test]
+    fn test_nation_info_fields_all_discriminants() {
+        use crate::nation::NationType;
+        for disc in 0..5u8 {
+            let nation = NationType::from_discriminant(disc).unwrap();
+            let info = super::NationInfo {
+                name_id: nation.discriminant(),
+                color: nation.color_hex().to_string(),
+                emoji: nation.emoji().to_string(),
+                description: nation.description().to_string(),
+            };
+            assert_eq!(info.name_id, disc);
+            assert_eq!(info.name_id(), info.name_id);
+            assert!(!info.color().is_empty());
+            assert!(!info.emoji().is_empty());
+            assert!(!info.description().is_empty());
+        }
+    }
+
+    #[test]
+    fn test_get_player_nation_returns_none_uninitialized() {
+        let result = super::get_player_nation();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_nation_info_getters() {
+        let info = super::NationInfo {
+            name_id: 0u8,
+            color: "#C83232".to_string(),
+            emoji: "R".to_string(),
+            description: "Roman test".to_string(),
+        };
+        assert_eq!(info.name_id(), 0);
+        assert_eq!(info.color(), "#C83232");
+        assert_eq!(info.emoji(), "R");
+        assert_eq!(info.description(), "Roman test");
     }
 }
 
