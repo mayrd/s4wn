@@ -3430,7 +3430,7 @@ pub fn on_wheel(delta_y: f32) {
 #[derive(Copy, Clone)]
 pub struct StatsInfo {
     pub fps: u32,
-    pub ticks: u64,
+    pub ticks: u32,
     pub game_time: f32,
     pub zoom: f32,
 }
@@ -3441,7 +3441,7 @@ pub fn get_stats() -> Option<StatsInfo> {
     unsafe {
         (*std::ptr::addr_of!(APP)).as_ref().map(|app| StatsInfo {
             fps: app.current_fps,
-            ticks: app.game_loop.state.tick_count,
+            ticks: app.game_loop.state.tick_count as u32,
             game_time: app.game_loop.state.game_time as f32,
             zoom: app.camera.zoom,
         })

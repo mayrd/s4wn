@@ -119,7 +119,7 @@ export class StatsInfo {
     [Symbol.dispose](): void;
     fps: number;
     game_time: number;
-    ticks: bigint;
+    ticks: number;
     zoom: number;
 }
 
@@ -535,11 +535,7 @@ export interface InitOutput {
     readonly __wbg_get_buildingtileinfo_construction: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_destruction_progress: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_kind: (a: number) => number;
-    readonly __wbg_get_statsinfo_fps: (a: number) => number;
     readonly __wbg_get_statsinfo_game_time: (a: number) => number;
-    readonly __wbg_get_statsinfo_ticks: (a: number) => bigint;
-    readonly __wbg_get_statsinfo_zoom: (a: number) => number;
-    readonly __wbg_get_tileinfo_elevation: (a: number) => number;
     readonly __wbg_get_tileinfo_resource: (a: number) => number;
     readonly __wbg_get_tileinfo_terrain: (a: number) => number;
     readonly __wbg_get_tileinfo_x: (a: number) => number;
@@ -569,11 +565,7 @@ export interface InitOutput {
     readonly __wbg_set_buildingtileinfo_construction: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_destruction_progress: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_kind: (a: number, b: number) => void;
-    readonly __wbg_set_statsinfo_fps: (a: number, b: number) => void;
     readonly __wbg_set_statsinfo_game_time: (a: number, b: number) => void;
-    readonly __wbg_set_statsinfo_ticks: (a: number, b: bigint) => void;
-    readonly __wbg_set_statsinfo_zoom: (a: number, b: number) => void;
-    readonly __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_terrain: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_assigned_building: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_carried_tool: (a: number, b: number) => void;
@@ -666,11 +658,15 @@ export interface InitOutput {
     readonly wasm_garrison_unit: (a: number, b: number) => number;
     readonly wasm_ungarrison_unit: (a: number, b: number) => number;
     readonly __wbg_set_buildingtileinfo_index: (a: number, b: number) => void;
+    readonly __wbg_set_statsinfo_fps: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_id: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_id: (a: number, b: number) => void;
+    readonly __wbg_get_tileinfo_elevation: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_y: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_id: (a: number) => number;
+    readonly __wbg_get_statsinfo_fps: (a: number) => number;
+    readonly __wbg_get_statsinfo_zoom: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_index: (a: number) => number;
     readonly __wbg_get_unitinfo_y: (a: number) => number;
     readonly __wbg_get_unitinfo_x: (a: number) => number;
@@ -687,8 +683,12 @@ export interface InitOutput {
     readonly __wbg_set_unitinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_max_hp: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_hp: (a: number, b: number) => void;
+    readonly __wbg_set_statsinfo_zoom: (a: number, b: number) => void;
+    readonly __wbg_set_statsinfo_ticks: (a: number, b: number) => void;
+    readonly __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
     readonly __wbg_get_unitinfo_max_hp: (a: number) => number;
     readonly __wbg_get_unitinfo_hp: (a: number) => number;
+    readonly __wbg_get_statsinfo_ticks: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_hp: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_max_hp: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_y: (a: number) => number;

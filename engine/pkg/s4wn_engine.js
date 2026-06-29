@@ -542,11 +542,11 @@ export class StatsInfo {
         return ret;
     }
     /**
-     * @returns {bigint}
+     * @returns {number}
      */
     get ticks() {
         const ret = wasm.__wbg_get_statsinfo_ticks(this.__wbg_ptr);
-        return BigInt.asUintN(64, ret);
+        return ret >>> 0;
     }
     /**
      * @returns {number}
@@ -568,7 +568,7 @@ export class StatsInfo {
         wasm.__wbg_set_statsinfo_game_time(this.__wbg_ptr, arg0);
     }
     /**
-     * @param {bigint} arg0
+     * @param {number} arg0
      */
     set ticks(arg0) {
         wasm.__wbg_set_statsinfo_ticks(this.__wbg_ptr, arg0);
