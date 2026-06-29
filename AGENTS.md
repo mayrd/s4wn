@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S280 · 793 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM baseline: 295.7KB (S280 get_tile_at integer migration). All 10 name arrays are #[cfg(test)]-only. Next: (1) Consider alternative to serde_json data[66]=8.8KB encoding tables. (2) Phase 8: sound effects system (ambient water, weather, building sounds). (3) Remove get_tile_at JSON format strings — terrain/resource names already migrated, format!() still builds JSON string in WASM. (4) Investigate remaining WASM data[3]=15.7KB (shader source + building name strings in sav-parser).
+Status: S281 · 793 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM baseline: 297.3KB (S281 get_tile_at typed struct). All 10 name arrays are #[cfg(test)]-only. Next: (1) Consider alternative to serde_json data[66]=8.8KB encoding tables. (2) Phase 8: sound effects system (ambient water, weather, building sounds). (3) Investigate remaining WASM data[3]=15.7KB (shader source + building name strings in sav-parser). (4) Migrate get_building_summary / get_unit_summary JSON to typed structs.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Status: S280 · 793 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM b
 
 ### Session Log (recent)
 
+| 281 | 2026-06-29 | Replace get_tile_at JSON strings with typed TileInfo struct: New #[wasm_bindgen] TileInfo struct (x, y, terrain, elevation, resource fields) replaces JSON String return. get_tile_at returns Option<TileInfo> — None for out-of-bounds. JS: 11 call sites updated, 10 JSON.parse() calls removed. Resource uses -1 sentinel instead of null. Eliminates JSON encode/decode overhead on every mouse move. WASM 302,888 → 304,405 bytes (+1.5KB struct glue). Cache buster v65→v66. 793 tests pass, clippy clean. -- 793 tests |
 | 276 | 2026-06-28 | Phase 7: Water shader caustics + dual-lobe specular highlights. Caustic light patterns on water surface using normal map data — bright undulating ripples from surface refraction, gated by day_light. Dual-lobe Blinn-Phong specular: spec_sharp (pow 128) for tight sun glints + spec_broad (pow 8) for broad highlight spread. Sun_angle modulation dims highlights near dawn/dusk, peaks at noon. Specular color shifted warm (1.0, 0.92, 0.75). 2 new regression tests: test_fragment_shader_water_caustics, test_fragment_shader_water_sun_angle_specular. Pure GLSL shader change — no WASM rebuild. 791 → 793 tests. -- 793 tests |
 | 280 | 2026-06-29 | Migrate get_tile_at terrain/resource from string names to integer discriminants: Replaced 8 terrain name match arms + 8 resource format strings in get_tile_at() with `as u8` casts. JS side: added MAP_RESOURCE_NAMES lookup array, updated 6 call sites (marquee tooltip, tile inspector, console log) to use TERRAIN_NAMES/MAP_RESOURCE_NAMES. Fixed null check for terrain=0 (Grass was falsy). WASM 302,976 → 302,888 bytes (-88). 793 tests pass, clippy clean. -- 793 tests |
 | 279 | 2026-06-28 | Re-baseline WASM after parse_map_json string removal: cargo clean + wasm-pack build. 303,894 → 302,976 bytes (-918, -0.30%). Savings from 24 terrain/resource string literals removed in S278. 295.9 KiB — under 300KB target. 793 tests pass, clippy clean. -- 793 tests |
