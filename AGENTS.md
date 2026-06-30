@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S309 · 866 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Implemented building-specific terrain/resource placement requirements: Waterworks requires adjacent water, Stonecutter requires adjacent Stone deposit, Fisherman requires adjacent Fish deposit, Woodcutter requires adjacent Forest, Mine requires resource on tile. Added Map::adjacent_tiles(), has_adjacent_terrain(), has_adjacent_water(), has_adjacent_resource(). 19 new tests (847→866). Next: (1) Expand sound effects system — add building construction complete + resource pickup sound triggers. (2) Continue Phase 7 rendering quality improvements. (3) Audit remaining JSON String exports for migration candidates. (4) Add more building-specific terrain/resource requirements (Forester near trees, Farm on grass-only).
+Status: S311 · 874 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Added building placement requirements for Forester (adjacent Forest) and Farm (Grass terrain only). 1 new test (873→874). Next: (1) Audit remaining JSON String exports for migration candidates. (2) Continue Phase 7 rendering quality improvements. (3) Investigate WASM size regression — re-baseline from current to identify remaining gap to 300KB target. (4) Add remaining building terrain/resource requirements (Sawmill/Marketplace validation).
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Status: S309 · 866 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Implem
 
 ### Session Log (recent)
 
+|| 311 | 2026-06-30 | Add building placement requirements: Forester requires adjacent Forest tiles (has_adjacent_terrain check, same as Woodcutter), Farm (Grain Farm) restricted to Grass terrain only — rejects Desert and Forest tiles. Replaced test_farm_places_anywhere_buildable_no_special_requirements with test_farm_requires_grass_terrain (3 assertions: Grass success, Desert reject, Forest reject) + test_forester_requires_adjacent_forest (success + no-forest rejection). 873→874 tests, clippy clean. — 874 tests |
 | 310 | 2026-06-30 | Expand sound effects system: added building construction complete + resource pickup sound triggers. Modified tick_construction() to return bool on completion, added Economy::construction_completions + resource_pickups per-tick counters, exposed WASM bindings recent_construction_complete_count() and recent_resource_pickup_count(), wired into render loop alongside existing death/combat sound counters. 7 new tests (866→873), clippy clean. — 873 tests |
 | 309 | 2026-06-30 | Implement building-specific terrain/resource placement requirements: Waterworks→adjacent water, Stonecutter→adjacent Stone, Fisherman→adjacent Fish, Woodcutter→adjacent Forest, Mine→resource on self tile. Added Map::adjacent_tiles(), has_adjacent_terrain(), has_adjacent_water(), has_adjacent_resource() helpers. 19 new tests (847→866), clippy clean. — 866 tests |
 | 307 | 2026-06-30 | Add map JSON round-trip regression test: 8×6 map with all 8 terrain types, all 8 resource types, varied elevations, null resources. to_json→parse_map_json asserts every field matches — catches future export/import format divergence. 841→842 tests, clippy clean. — 842 tests |
