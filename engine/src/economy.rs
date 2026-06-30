@@ -1724,6 +1724,10 @@ impl Economy {
         if map.get_territory(x, y) != Some(player_id) {
             return None;
         }
+        // Check tile isn't already occupied by another building
+        if self.buildings.iter().any(|b| b.x == x && b.y == y) {
+            return None;
+        }
         // Check nation gating: building must be available for player's nation
         if !self.is_building_available(kind) {
             return None;
@@ -5692,6 +5696,155 @@ mod squad_leader_aura_tests {
             assert_eq!(by_disc, by_u8,
                 "from_discriminant({}) and from_u8 mismatch", disc);
         }
+    }
+
+    #[test]
+    fn test_try_place_building_checked_collision_rejected() {
+        // Can't place a building on a tile that already has a building.
+        use crate::map::Map;
+
+        let mut map = Map::new(20, 20);
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Place first building at (12, 10) — within territory
+        let first = e.try_place_building_checked(BuildingType::Farm, 12, 10, 0, &map);
+        assert!(first.is_some(), "First placement should succeed");
+
+        // Try placing another building at same tile — should be rejected
+        let second = e.try_place_building_checked(BuildingType::Sawmill, 12, 10, 0, &map);
+        assert!(second.is_none(), "Should NOT place building on occupied tile");
+    }
+
+    #[test]
+    fn test_try_place_building_checked_collision_check_preserves_original() {
+        // Placing at a different tile should still work after collision rejection.
+        use crate::map::Map;
+
+        let mut map = Map::new(20, 20);
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Place at (12, 10)
+        let first = e.try_place_building_checked(BuildingType::Farm, 12, 10, 0, &map);
+        assert!(first.is_some());
+
+        // Same tile — rejected
+        let dup = e.try_place_building_checked(BuildingType::Farm, 12, 10, 0, &map);
+        assert!(dup.is_none());
+
+        // Different tile (12, 11) — should succeed
+        let diff = e.try_place_building_checked(BuildingType::Sawmill, 12, 11, 0, &map);
+        assert!(diff.is_some());
+    }
+
+    #[test]
+    fn test_try_place_building_checked_map_boundaries() {
+        // Buildings can be placed at map boundary coordinates (0,0) and (max-1, max-1).
+        use crate::map::Map;
+
+        let mut map = Map::new(30, 30);
+        // Build a castle near the corner to claim territory
+        let buildings = vec![(BuildingType::Castle, 3, 3, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // (0, 0) should be within Castle(3,3) radius 5
+        assert_eq!(map.get_territory(0, 0), Some(0));
+        let corner = e.try_place_building_checked(BuildingType::Farm, 0, 0, 0, &map);
+        assert!(corner.is_some(), "Should place building at map corner (0,0)");
+
+        // Test at boundary edge (29, 29) — requires territory near that corner
+        let buildings2 = vec![(BuildingType::Castle, 26, 26, 0, 0)];
+        map.compute_territory(&buildings);
+        let mut e2 = Economy::new();
+        e2.storage.add(ResourceType::Wood, 100);
+        e2.storage.add(ResourceType::Stone, 100);
+        let mut map2 = Map::new(30, 30);
+        map2.compute_territory(&buildings2);
+        assert_eq!(map2.get_territory(29, 29), Some(0));
+        let edge = e2.try_place_building_checked(BuildingType::Farm, 29, 29, 0, &map2);
+        assert!(edge.is_some(), "Should place building at map edge (29,29)");
+    }
+
+    #[test]
+    fn test_try_place_building_checked_sequential_placements() {
+        // Multiple sequential placements should yield distinct indices.
+        use crate::map::Map;
+
+        let mut map = Map::new(20, 20);
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        let mut indices = Vec::new();
+        // Place 3 buildings on different tiles
+        let tiles = [(12, 10), (13, 10), (11, 11)];
+        for &(x, y) in &tiles {
+            let result = e.try_place_building_checked(BuildingType::Farm, x, y, 0, &map);
+            assert!(result.is_some());
+            indices.push(result.unwrap());
+        }
+
+        // Indices should be distinct (0, 2, 4 since Castle=1?) 
+        // Actually place_building returns the index in the buildings vec
+        // Let's just check they're distinct and match building count
+        assert_eq!(indices.len(), 3);
+        assert!(indices[0] != indices[1], "Indices should be unique");
+        assert!(indices[1] != indices[2], "Indices should be unique");
+        assert!(indices[0] != indices[2], "Indices should be unique");
+
+        // Verify building count (Castle=1 not placed, +3 Farms = 3 buildings)
+        assert_eq!(e.buildings.len(), 3, "Should have 3 buildings");
+    }
+
+    #[test]
+    fn test_try_place_building_checked_same_type_multiple() {
+        // Multiple buildings of the same type can be placed on different tiles.
+        use crate::map::Map;
+
+        let mut map = Map::new(20, 20);
+        let buildings = vec![(BuildingType::Castle, 10, 10, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Place 3 Farms at different locations
+        let r1 = e.try_place_building_checked(BuildingType::Farm, 12, 10, 0, &map);
+        let r2 = e.try_place_building_checked(BuildingType::Farm, 13, 10, 0, &map);
+        let r3 = e.try_place_building_checked(BuildingType::Farm, 11, 11, 0, &map);
+
+        assert!(r1.is_some());
+        assert!(r2.is_some());
+        assert!(r3.is_some());
+
+        // All should be Farms
+        let b1 = &e.buildings[r1.unwrap()];
+        let b2 = &e.buildings[r2.unwrap()];
+        let b3 = &e.buildings[r3.unwrap()];
+        assert_eq!(b1.kind, BuildingType::Farm);
+        assert_eq!(b2.kind, BuildingType::Farm);
+        assert_eq!(b3.kind, BuildingType::Farm);
+
+        // They should be at different positions
+        assert_ne!((b1.x, b1.y), (b2.x, b2.y));
+        assert_ne!((b2.x, b2.y), (b3.x, b3.y));
     }
     }
 }
