@@ -3490,12 +3490,31 @@ pub fn get_map_data() -> Vec<u8> {
     }
     Vec::new()
 }
+/// Result struct for load_map_json — replaces JSON string status.
+/// `ok` is true on success, `error` contains the error message on failure.
+#[wasm_bindgen]
+pub struct LoadMapResult {
+    ok: bool,
+    error: String,
+}
+
+#[wasm_bindgen]
+impl LoadMapResult {
+    /// True if the map was loaded successfully.
+    #[wasm_bindgen(getter)]
+    pub fn ok(&self) -> bool { self.ok }
+
+    /// Error message if loading failed, empty string on success.
+    #[wasm_bindgen(getter)]
+    pub fn error(&self) -> String { self.error.clone() }
+}
+
 /// Load a map from JSON string (same format as exported by to_json()).
 /// Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":0},...]}
 /// t=terrain id (0-7), e=elevation, r=map::Resource discriminant (0-7) or null
-/// Returns "ok" on success or an error message.
+/// Returns a LoadMapResult with ok=true on success or ok=false with error message.
 #[wasm_bindgen]
-pub fn load_map_json(json: &str) -> String {
+pub fn load_map_json(json: &str) -> LoadMapResult {
     unsafe {
         if let Some(ref mut app) = APP {
             match parse_map_json(json) {
@@ -3527,7 +3546,7 @@ pub fn load_map_json(json: &str) -> String {
                         .map(|u| (u.kind, u.x, u.y))
                         .collect();
                     app.map.compute_visibility_from_entities(&buildings, &units);
-                    String::from("ok")
+                    LoadMapResult { ok: true, error: String::new() }
                 }
                 Err(e) => {
                     // On parse failure, show a water-filled map (not stale grass)
@@ -3545,11 +3564,11 @@ pub fn load_map_json(json: &str) -> String {
                     }
                     app.map = water_map;
                     app.mesh_dirty = true;
-                    format!("error: {}", e)
+                    LoadMapResult { ok: false, error: format!("parse error: {}", e) }
                 }
             }
         } else {
-            String::from("error: engine not initialized")
+            LoadMapResult { ok: false, error: String::from("engine not initialized") }
         }
     }
 }
@@ -4942,8 +4961,8 @@ pub fn restore_game_state(json: &str) -> String {
                 None => return String::from("error: missing map_json"),
             };
             let map_load = crate::load_map_json(map_json_val);
-            if map_load != "ok" {
-                return format!("error: map load failed: {}", map_load);
+            if !map_load.ok {
+                return format!("error: map load failed: {}", map_load.error());
             }
 
             // 2. Clear existing economy and rebuild
@@ -6857,6 +6876,15 @@ mod tests {
         assert_eq!(r2.tri_count(), 0);
         assert!(!r2.error().is_empty(), "error should not be empty on failure");
     }
+
+    #[test]
+    fn test_load_map_result_not_initialized() {
+        // load_map_json requires APP to be initialized — without it, returns error
+        let r = load_map_json(r#"{"width":4,"height":4,"tiles":[{"t":0,"e":0.0,"r":null},{"t":0,"e":0.0,"r":null},{"t":0,"e":0.0,"r":null},{"t":0,"e":0.0,"r":null}]}"#);
+        assert!(!r.ok(), "should fail when engine not initialized");
+        assert!(!r.error().is_empty(), "error should not be empty");
+    }
+
     #[test]
     fn test_model_id_for_unit_settler() {
         // Settler -> "worker" model

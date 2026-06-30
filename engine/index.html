@@ -3208,8 +3208,8 @@ function confirmMapLoad() {
             // ── Load terrain first, then restore full state ──
             const jsonData = { width, height, tiles };
             const mapResult = load_map_json(JSON.stringify(jsonData));
-            if (mapResult !== 'ok') {
-                alert('Map load error: ' + mapResult);
+            if (!mapResult.ok) {
+                alert('Map load error: ' + mapResult.error);
                 return;
             }
 
@@ -3284,7 +3284,7 @@ function confirmMapLoad() {
         };
 
         const result = load_map_json(JSON.stringify(jsonData));
-        if (result === 'ok') {
+        if (result.ok) {
             if (pendingMapFile) addToRecentFiles(pendingMapFile);
             cancelMapPreview();
             if (window._s4wn_load_for_editor) {
@@ -3295,7 +3295,7 @@ function confirmMapLoad() {
             }
             hudMap.textContent = `Map: ${pendingMapData.filename || pendingMapFile?.name} | Loaded`;
         } else {
-            alert('Map load error: ' + result);
+            alert('Map load error: ' + result.error);
         }
     } catch (err) {
         alert('Failed to load map: ' + err.message);
@@ -5419,8 +5419,8 @@ async function startNewGame() {
 
         // Load the map into the engine
         const result = load_map_json(mapJson);
-        if (result !== 'ok') {
-            throw new Error('Map load failed: ' + result);
+        if (!result.ok) {
+            throw new Error('Map load failed: ' + result.error);
         }
 
         updateLoadingProgress(80, t('preparing_resources'));
@@ -6616,7 +6616,7 @@ function startEditorNewMap() {
         var mapData = generate_map("grassland", w, h);
         var mapJson = mapExportDataToJson(mapData);
         var result = load_map_json(mapJson);
-        if (result !== 'ok') { alert('Map load failed: ' + result); hideLoading(); return; }
+        if (!result.ok) { alert('Map load failed: ' + result.error); hideLoading(); return; }
     } catch(e) { alert('Error: ' + e.message); hideLoading(); return; }
     hideLoading();
     // Now open the editor
