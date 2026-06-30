@@ -146,6 +146,34 @@ export class GarrisonInfo {
 }
 
 /**
+ * Result of load_model_json — replaces JSON String return (S313).
+ *  is true when the model was loaded successfully.
+ *  is the model name,  the triangle count.
+ *  contains the error message when  is false (empty on success).
+ */
+export class LoadModelResult {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Error message (empty on success).
+     */
+    readonly error: string;
+    /**
+     * Model name (e.g. "Castle").
+     */
+    readonly name: string;
+    /**
+     * True if the model was loaded successfully.
+     */
+    readonly ok: boolean;
+    /**
+     * Triangle count of the loaded mesh.
+     */
+    readonly tri_count: number;
+}
+
+/**
  * Morale info for a unit — replaces JSON string from get_unit_morale_json.
  * `morale_bonus` is the raw multiplier (0.0 = no bonus).
  * `morale_percent` is the percentage as integer (e.g. 15 for +15%).
@@ -262,6 +290,25 @@ export class StarterResult {
 }
 
 /**
+ * Result of add_starting_resources — replaces JSON String return.
+ * `ok` is true when resources were applied successfully.
+ * `error` contains the error message when `ok` is false (empty on success).
+ */
+export class StartingResourcesResult {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Error message (empty on success).
+     */
+    readonly error: string;
+    /**
+     * True if starting resources were applied successfully.
+     */
+    readonly ok: boolean;
+}
+
+/**
  * Engine stats returned by `get_stats` — replaces JSON string with typed struct.
  * `fps` is the currently displayed FPS. `ticks` is the game tick counter.
  * `game_time` is the elapsed game time in seconds. `zoom` is the camera zoom factor.
@@ -351,7 +398,7 @@ export function add_model_instance(model_id: string, x: number, y: number, scale
  * difficulty: "easy" (2× resources), "medium" (1×), "hard" (0.5×)
  * Returns "ok" on success or an error message.
  */
-export function add_starting_resources(difficulty: string): string;
+export function add_starting_resources(difficulty: string): StartingResourcesResult | undefined;
 
 /**
  * Decompress a .sav savegame chunk: ARA-decrypt then LZ+Huffman decompress.
@@ -525,7 +572,7 @@ export function load_map_json(json: string): string;
  * Load a model from a JSON mesh string, validate it, and upload to GPU buffers.
  * Returns "ok:{name}:{indices}tri" if successful, or "error:{message}" on failure.
  */
-export function load_model_json(name: string, json_str: string): string;
+export function load_model_json(name: string, json_str: string): LoadModelResult;
 
 /**
  * Handle mouse down for panning
@@ -561,10 +608,22 @@ export function order_patrol(unit_ids: Uint32Array, target_x: number, target_y: 
 export function recent_combat_count(): number;
 
 /**
+ * Get number of building construction completions since last call (drains each frame).
+ * Used by JS to trigger construction complete sound effects.
+ */
+export function recent_construction_complete_count(): number;
+
+/**
  * Get number of unit deaths since last call (drains each frame).
  * Used by JS to trigger death sound effects.
  */
 export function recent_death_count(): number;
+
+/**
+ * Get number of resource production events since last call (drains each frame).
+ * Used by JS to trigger resource pickup sound effects.
+ */
+export function recent_resource_pickup_count(): number;
 
 export function render(timestamp: number): void;
 
@@ -713,6 +772,7 @@ export interface InitOutput {
     readonly __wbg_get_unitinfo_carried_tool: (a: number) => number;
     readonly __wbg_get_unitinfo_stance: (a: number) => number;
     readonly __wbg_get_unitinfo_state: (a: number) => number;
+    readonly __wbg_loadmodelresult_free: (a: number, b: number) => void;
     readonly __wbg_moraleinfo_free: (a: number, b: number) => void;
     readonly __wbg_nationinfo_free: (a: number, b: number) => void;
     readonly __wbg_particleinfo_free: (a: number, b: number) => void;
@@ -748,9 +808,10 @@ export interface InitOutput {
     readonly __wbg_set_unitinfo_stance: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_state: (a: number, b: number) => void;
     readonly __wbg_starterresult_free: (a: number, b: number) => void;
+    readonly __wbg_startingresourcesresult_free: (a: number, b: number) => void;
     readonly __wbg_statsinfo_free: (a: number, b: number) => void;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
-    readonly add_starting_resources: (a: number, b: number) => [number, number];
+    readonly add_starting_resources: (a: number, b: number) => number;
     readonly buildcostitem_amount: (a: number) => number;
     readonly buildcostitem_resource_discriminant: (a: number) => number;
     readonly buildingdetailinfo_active: (a: number) => number;
@@ -801,7 +862,11 @@ export interface InitOutput {
     readonly init: (a: number, b: number) => [number, number, number];
     readonly is_paused: () => number;
     readonly load_map_json: (a: number, b: number) => [number, number];
-    readonly load_model_json: (a: number, b: number, c: number, d: number) => [number, number];
+    readonly load_model_json: (a: number, b: number, c: number, d: number) => number;
+    readonly loadmodelresult_error: (a: number) => [number, number];
+    readonly loadmodelresult_name: (a: number) => [number, number];
+    readonly loadmodelresult_ok: (a: number) => number;
+    readonly loadmodelresult_tri_count: (a: number) => number;
     readonly nationinfo_color: (a: number) => [number, number];
     readonly nationinfo_description: (a: number) => [number, number];
     readonly nationinfo_emoji: (a: number) => [number, number];
@@ -816,7 +881,9 @@ export interface InitOutput {
     readonly placebuildingresult_kind: (a: number) => number;
     readonly placebuildingresult_ok: (a: number) => number;
     readonly recent_combat_count: () => number;
+    readonly recent_construction_complete_count: () => number;
     readonly recent_death_count: () => number;
+    readonly recent_resource_pickup_count: () => number;
     readonly render: (a: number) => void;
     readonly resize: () => void;
     readonly restore_game_state: (a: number, b: number) => [number, number];
@@ -834,6 +901,8 @@ export interface InitOutput {
     readonly starterresult_hq_y: (a: number) => number;
     readonly starterresult_ok: (a: number) => number;
     readonly starterresult_settlers: (a: number) => number;
+    readonly startingresourcesresult_error: (a: number) => [number, number];
+    readonly startingresourcesresult_ok: (a: number) => number;
     readonly tick_building_destructions: (a: number) => [number, number];
     readonly toggle_editor_grid: () => number;
     readonly toggle_pause: () => number;

@@ -4542,6 +4542,38 @@ impl StartingResourcesResult {
     pub fn error(&self) -> String { self.error.clone() }
 }
 
+/// Result of load_model_json — replaces JSON String return (S313).
+///  is true when the model was loaded successfully.
+///  is the model name,  the triangle count.
+///  contains the error message when  is false (empty on success).
+#[wasm_bindgen]
+#[derive(Clone)]
+pub struct LoadModelResult {
+    ok: bool,
+    name: String,
+    tri_count: u32,
+    error: String,
+}
+
+#[wasm_bindgen]
+impl LoadModelResult {
+    /// True if the model was loaded successfully.
+    #[wasm_bindgen(getter)]
+    pub fn ok(&self) -> bool { self.ok }
+
+    /// Model name (e.g. "Castle").
+    #[wasm_bindgen(getter)]
+    pub fn name(&self) -> String { self.name.clone() }
+
+    /// Triangle count of the loaded mesh.
+    #[wasm_bindgen(getter)]
+    pub fn tri_count(&self) -> u32 { self.tri_count }
+
+    /// Error message (empty on success).
+    #[wasm_bindgen(getter)]
+    pub fn error(&self) -> String { self.error.clone() }
+}
+
 /// Toggle the game pause state. Returns the new state.
 #[wasm_bindgen]
 pub fn toggle_pause() -> bool {
@@ -5107,13 +5139,23 @@ pub fn restore_game_state(json: &str) -> String {
 /// Load a model from a JSON mesh string, validate it, and upload to GPU buffers.
 /// Returns "ok:{name}:{indices}tri" if successful, or "error:{message}" on failure.
 #[wasm_bindgen]
-pub fn load_model_json(name: &str, json_str: &str) -> String {
+pub fn load_model_json(name: &str, json_str: &str) -> LoadModelResult {
     let mesh = match model::parse_json_mesh(json_str) {
         Ok(m) => m,
-        Err(e) => return format!("error:{}", e),
+        Err(e) => return LoadModelResult {
+            ok: false,
+            name: name.to_string(),
+            tri_count: 0,
+            error: e,
+        },
     };
     if mesh.is_empty() {
-        return "error:empty mesh".to_string();
+        return LoadModelResult {
+            ok: false,
+            name: name.to_string(),
+            tri_count: 0,
+            error: String::from("empty mesh"),
+        };
     }
     let tri_count = mesh.triangle_count;
     unsafe {
@@ -5121,7 +5163,12 @@ pub fn load_model_json(name: &str, json_str: &str) -> String {
             app.upload_model_to_gpu(name, &mesh);
         }
     }
-    format!("ok:{}:{}tri", name, tri_count)
+    LoadModelResult {
+        ok: true,
+        name: name.to_string(),
+        tri_count: tri_count as u32,
+        error: String::new(),
+    }
 }
 
 
@@ -6687,18 +6734,22 @@ mod tests {
     fn test_load_model_json_valid() {
         let json = r#"{"version":1,"vertices":[[0,0,0],[1,0,0],[0,1,0]],"normals":[[0,1,0],[0,1,0],[0,1,0]],"uvs":[[0,0],[1,0],[0,1]],"indices":[0,1,2],"aabb":[0,0,0,1,1,0]}"#;
         let result = load_model_json("TestModel", json);
-        assert!(result.starts_with("ok:TestModel:"), "expected ok, got: {}", result);
+        assert!(result.ok(), "expected ok, got error: {}", result.error());
+        assert_eq!(result.name(), "TestModel");
+        assert_eq!(result.tri_count(), 1);
     }
     #[test]
     fn test_load_model_json_invalid_json() {
         let result = load_model_json("Bad", "not json");
-        assert!(result.starts_with("error:"), "expected error, got: {}", result);
+        assert!(!result.ok(), "expected error for invalid JSON");
+        assert!(!result.error().is_empty(), "error message should not be empty");
     }
     #[test]
     fn test_load_model_json_wrong_version() {
         let json = r#"{"version":99,"vertices":[[0,0,0],[1,0,0]],"normals":[[0,1,0],[0,1,0]],"uvs":[[0,0],[1,0]],"indices":[0,1,2],"aabb":[0,0,0,0,0,0]}"#;
         let result = load_model_json("BadVer", json);
-        assert!(result.starts_with("error:"), "expected error for wrong version, got: {}", result);
+        assert!(!result.ok(), "expected error for wrong version");
+        assert!(!result.error().is_empty(), "error message should not be empty");
     }
 
 
@@ -6712,13 +6763,30 @@ mod tests {
     fn test_load_model_json_empty_mesh() {
         let json = r#"{"version":1,"vertices":[],"normals":[],"uvs":[],"indices":[],"aabb":[0,0,0,0,0,0]}"#;
         let result = load_model_json("Empty", json);
-        assert!(result.starts_with("error:"), "expected error for empty mesh, got: {}", result);
+        assert!(!result.ok(), "expected error for empty mesh");
     }
     #[test]
     fn test_load_model_json_missing_fields() {
         let json = r#"{"version":1}"#;
         let result = load_model_json("Missing", json);
-        assert!(result.starts_with("error:"), "expected error for missing fields, got: {}", result);
+        assert!(!result.ok(), "expected error for missing fields");
+    }
+    #[test]
+    fn test_load_model_result_struct_fields() {
+        // Verify successful result fields
+        let json = r#"{"version":1,"vertices":[[0,0,0],[1,0,0],[0,1,0]],"normals":[[0,1,0],[0,1,0],[0,1,0]],"uvs":[[0,0],[1,0],[0,1]],"indices":[0,1,2],"aabb":[0,0,0,1,1,0]}"#;
+        let r = load_model_json("StructTest", json);
+        assert!(r.ok(), "should succeed");
+        assert_eq!(r.name(), "StructTest");
+        assert_eq!(r.tri_count(), 1);
+        assert!(r.error().is_empty(), "error should be empty on success");
+
+        // Verify error result fields
+        let r2 = load_model_json("ErrTest", "bad json");
+        assert!(!r2.ok(), "should fail");
+        assert_eq!(r2.name(), "ErrTest");
+        assert_eq!(r2.tri_count(), 0);
+        assert!(!r2.error().is_empty(), "error should not be empty on failure");
     }
     #[test]
     fn test_model_id_for_unit_settler() {

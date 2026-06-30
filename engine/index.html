@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles,
-} from './pkg/s4wn_engine.js?v=84';
+} from './pkg/s4wn_engine.js?v=85';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -5810,11 +5810,11 @@ async function loadGameModels() {
             }
             const jsonStr = await resp.text();
             const result = load_model_json(name, jsonStr);
-            if (result.startsWith('ok:')) {
+            if (result.ok) {
                 loadedModelCount++;
-                console.log('  Model loaded: ' + name + ' (' + result + ')');
+                console.log('  Model loaded: ' + name + ' (' + result.tri_count + ' tri)');
             } else {
-                console.warn('  Model ' + name + ' rejected: ' + result);
+                console.warn('  Model ' + name + ' rejected: ' + result.error);
             }
         } catch (e) {
             console.warn('  Model ' + name + ' error: ' + e.message);

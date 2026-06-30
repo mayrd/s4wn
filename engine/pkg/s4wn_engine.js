@@ -675,6 +675,80 @@ export class GarrisonInfo {
 if (Symbol.dispose) GarrisonInfo.prototype[Symbol.dispose] = GarrisonInfo.prototype.free;
 
 /**
+ * Result of load_model_json — replaces JSON String return (S313).
+ *  is true when the model was loaded successfully.
+ *  is the model name,  the triangle count.
+ *  contains the error message when  is false (empty on success).
+ */
+export class LoadModelResult {
+    static __wrap(ptr) {
+        const obj = Object.create(LoadModelResult.prototype);
+        obj.__wbg_ptr = ptr;
+        LoadModelResultFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        LoadModelResultFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_loadmodelresult_free(ptr, 0);
+    }
+    /**
+     * Error message (empty on success).
+     * @returns {string}
+     */
+    get error() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.loadmodelresult_error(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * Model name (e.g. "Castle").
+     * @returns {string}
+     */
+    get name() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.loadmodelresult_name(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * True if the model was loaded successfully.
+     * @returns {boolean}
+     */
+    get ok() {
+        const ret = wasm.loadmodelresult_ok(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * Triangle count of the loaded mesh.
+     * @returns {number}
+     */
+    get tri_count() {
+        const ret = wasm.loadmodelresult_tri_count(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+}
+if (Symbol.dispose) LoadModelResult.prototype[Symbol.dispose] = LoadModelResult.prototype.free;
+
+/**
  * Morale info for a unit — replaces JSON string from get_unit_morale_json.
  * `morale_bonus` is the raw multiplier (0.0 = no bonus).
  * `morale_percent` is the percentage as integer (e.g. 15 for +15%).
@@ -1083,6 +1157,55 @@ export class StarterResult {
     }
 }
 if (Symbol.dispose) StarterResult.prototype[Symbol.dispose] = StarterResult.prototype.free;
+
+/**
+ * Result of add_starting_resources — replaces JSON String return.
+ * `ok` is true when resources were applied successfully.
+ * `error` contains the error message when `ok` is false (empty on success).
+ */
+export class StartingResourcesResult {
+    static __wrap(ptr) {
+        const obj = Object.create(StartingResourcesResult.prototype);
+        obj.__wbg_ptr = ptr;
+        StartingResourcesResultFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        StartingResourcesResultFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_startingresourcesresult_free(ptr, 0);
+    }
+    /**
+     * Error message (empty on success).
+     * @returns {string}
+     */
+    get error() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.startingresourcesresult_error(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * True if starting resources were applied successfully.
+     * @returns {boolean}
+     */
+    get ok() {
+        const ret = wasm.startingresourcesresult_ok(this.__wbg_ptr);
+        return ret !== 0;
+    }
+}
+if (Symbol.dispose) StartingResourcesResult.prototype[Symbol.dispose] = StartingResourcesResult.prototype.free;
 
 /**
  * Engine stats returned by `get_stats` — replaces JSON string with typed struct.
@@ -1600,21 +1723,13 @@ export function add_model_instance(model_id, x, y, scale, rotation_y) {
  * difficulty: "easy" (2× resources), "medium" (1×), "hard" (0.5×)
  * Returns "ok" on success or an error message.
  * @param {string} difficulty
- * @returns {string}
+ * @returns {StartingResourcesResult | undefined}
  */
 export function add_starting_resources(difficulty) {
-    let deferred2_0;
-    let deferred2_1;
-    try {
-        const ptr0 = passStringToWasm0(difficulty, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.add_starting_resources(ptr0, len0);
-        deferred2_0 = ret[0];
-        deferred2_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-    }
+    const ptr0 = passStringToWasm0(difficulty, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.add_starting_resources(ptr0, len0);
+    return ret === 0 ? undefined : StartingResourcesResult.__wrap(ret);
 }
 
 /**
@@ -1989,23 +2104,15 @@ export function load_map_json(json) {
  * Returns "ok:{name}:{indices}tri" if successful, or "error:{message}" on failure.
  * @param {string} name
  * @param {string} json_str
- * @returns {string}
+ * @returns {LoadModelResult}
  */
 export function load_model_json(name, json_str) {
-    let deferred3_0;
-    let deferred3_1;
-    try {
-        const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passStringToWasm0(json_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len1 = WASM_VECTOR_LEN;
-        const ret = wasm.load_model_json(ptr0, len0, ptr1, len1);
-        deferred3_0 = ret[0];
-        deferred3_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
-    }
+    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passStringToWasm0(json_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.load_model_json(ptr0, len0, ptr1, len1);
+    return LoadModelResult.__wrap(ret);
 }
 
 /**
@@ -2068,12 +2175,32 @@ export function recent_combat_count() {
 }
 
 /**
+ * Get number of building construction completions since last call (drains each frame).
+ * Used by JS to trigger construction complete sound effects.
+ * @returns {number}
+ */
+export function recent_construction_complete_count() {
+    const ret = wasm.recent_construction_complete_count();
+    return ret;
+}
+
+/**
  * Get number of unit deaths since last call (drains each frame).
  * Used by JS to trigger death sound effects.
  * @returns {number}
  */
 export function recent_death_count() {
     const ret = wasm.recent_death_count();
+    return ret;
+}
+
+/**
+ * Get number of resource production events since last call (drains each frame).
+ * Used by JS to trigger resource pickup sound effects.
+ * @returns {number}
+ */
+export function recent_resource_pickup_count() {
+    const ret = wasm.recent_resource_pickup_count();
     return ret;
 }
 
@@ -2649,6 +2776,9 @@ const DestructionInfoFinalization = (typeof FinalizationRegistry === 'undefined'
 const GarrisonInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_garrisoninfo_free(ptr, 1));
+const LoadModelResultFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_loadmodelresult_free(ptr, 1));
 const MoraleInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_moraleinfo_free(ptr, 1));
@@ -2664,6 +2794,9 @@ const PlaceBuildingResultFinalization = (typeof FinalizationRegistry === 'undefi
 const StarterResultFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_starterresult_free(ptr, 1));
+const StartingResourcesResultFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_startingresourcesresult_free(ptr, 1));
 const StatsInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_statsinfo_free(ptr, 1));
