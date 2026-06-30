@@ -1732,6 +1732,29 @@ impl Economy {
         if !self.is_building_available(kind) {
             return None;
         }
+        // Check building-specific terrain/resource requirements
+        // Waterworks requires adjacent water (river/lake)
+        if kind == BuildingType::Waterworks && !map.has_adjacent_water(x, y) {
+            return None;
+        }
+        // Stonecutter requires adjacent Stone resource deposit
+        if kind == BuildingType::Stonecutter && !map.has_adjacent_resource(x, y, crate::map::Resource::Stone) {
+            return None;
+        }
+        // Fisherman requires adjacent Fish resource deposit
+        if kind == BuildingType::Fisherman && !map.has_adjacent_resource(x, y, crate::map::Resource::Fish) {
+            return None;
+        }
+        // Woodcutter requires adjacent Forest terrain
+        if kind == BuildingType::Woodcutter && !map.has_adjacent_terrain(x, y, crate::map::Terrain::Forest) {
+            return None;
+        }
+        // Mine requires any adjacent resource deposit (not just adjacent — can be the tile itself)
+        // Check self-tile for resource deposit
+        let has_self_resource = map.get(x, y).and_then(|t| t.resource).is_some();
+        if kind == BuildingType::Mine && !has_self_resource {
+            return None;
+        }
         // Check affordability
         self.try_place_building(kind, x, y)
     }
@@ -5845,6 +5868,189 @@ mod squad_leader_aura_tests {
         // They should be at different positions
         assert_ne!((b1.x, b1.y), (b2.x, b2.y));
         assert_ne!((b2.x, b2.y), (b3.x, b3.y));
+    }
+
+    // ── Building Terrain/Resource Requirement Tests ──────────────────────────
+
+    #[test]
+    fn test_waterworks_requires_adjacent_water() {
+        // Waterworks must be placed next to a Water or DeepWater tile.
+        use crate::map::{Map, Terrain};
+
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 5).unwrap().terrain = Terrain::Grass;
+        map.get_mut(5, 6).unwrap().terrain = Terrain::Water; // adjacent water below
+        let buildings = vec![(BuildingType::Castle, 5, 5, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Waterworks at (5,5) with Water at (5,6) — should succeed
+        let result = e.try_place_building_checked(BuildingType::Waterworks, 5, 5, 0, &map);
+        assert!(result.is_some(), "Waterworks should place next to water");
+
+        // Waterworks at (5,3) with no water adjacent — should fail
+        let result2 = e.try_place_building_checked(BuildingType::Waterworks, 5, 3, 0, &map);
+        assert!(result2.is_none(), "Waterworks should NOT place without adjacent water");
+    }
+
+    #[test]
+    fn test_stonecutter_requires_adjacent_stone() {
+        // Stonecutter must be placed next to a Stone resource deposit.
+        use crate::map::{Map, Resource, Terrain};
+
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 5).unwrap().terrain = Terrain::Grass;
+        map.get_mut(5, 6).unwrap().resource = Some(Resource::Stone); // stone below
+        let buildings = vec![(BuildingType::Castle, 5, 5, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Stonecutter at (5,5) with Stone at (5,6) — should succeed
+        let result = e.try_place_building_checked(BuildingType::Stonecutter, 5, 5, 0, &map);
+        assert!(result.is_some(), "Stonecutter should place next to stone deposit");
+
+        // Stonecutter at (5,3) with no stone adjacent — should fail
+        let result2 = e.try_place_building_checked(BuildingType::Stonecutter, 5, 3, 0, &map);
+        assert!(result2.is_none(), "Stonecutter should NOT place without adjacent stone");
+    }
+
+    #[test]
+    fn test_fisherman_requires_adjacent_fish() {
+        // Fisherman must be placed next to a Fish resource deposit.
+        use crate::map::{Map, Resource, Terrain};
+
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 5).unwrap().terrain = Terrain::Grass;
+        map.get_mut(5, 6).unwrap().resource = Some(Resource::Fish); // fish below
+        let buildings = vec![(BuildingType::Castle, 5, 5, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Fisherman at (5,5) with Fish at (5,6) — should succeed
+        let result = e.try_place_building_checked(BuildingType::Fisherman, 5, 5, 0, &map);
+        assert!(result.is_some(), "Fisherman should place next to fish");
+
+        // Fisherman at (5,3) with no fish adjacent — should fail
+        let result2 = e.try_place_building_checked(BuildingType::Fisherman, 5, 3, 0, &map);
+        assert!(result2.is_none(), "Fisherman should NOT place without adjacent fish");
+    }
+
+    #[test]
+    fn test_woodcutter_requires_adjacent_forest() {
+        // Woodcutter must be placed next to a Forest terrain tile.
+        use crate::map::{Map, Terrain};
+
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 5).unwrap().terrain = Terrain::Grass;
+        map.get_mut(5, 6).unwrap().terrain = Terrain::Forest; // forest below
+        let buildings = vec![(BuildingType::Castle, 5, 5, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Woodcutter at (5,5) with Forest at (5,6) — should succeed
+        let result = e.try_place_building_checked(BuildingType::Woodcutter, 5, 5, 0, &map);
+        assert!(result.is_some(), "Woodcutter should place next to forest");
+
+        // Woodcutter at (5,3) with no forest adjacent — should fail
+        let result2 = e.try_place_building_checked(BuildingType::Woodcutter, 5, 3, 0, &map);
+        assert!(result2.is_none(), "Woodcutter should NOT place without adjacent forest");
+    }
+
+    #[test]
+    fn test_mine_requires_resource_on_tile() {
+        // Mine must be placed on a tile with a resource deposit.
+        use crate::map::{Map, Resource, Terrain};
+
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 5).unwrap().terrain = Terrain::Grass;
+        map.get_mut(5, 5).unwrap().resource = Some(Resource::Iron);
+        let buildings = vec![(BuildingType::Castle, 5, 5, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+
+        // Mine at (5,5) with Iron resource on tile — should succeed
+        // But (5,5) already has castle territory, use a different spot
+        // Let's set up a new test with resource on a different tile
+        let mut map2 = Map::new(10, 10);
+        map2.get_mut(3, 3).unwrap().terrain = Terrain::Grass;
+        map2.get_mut(3, 3).unwrap().resource = Some(Resource::Coal);
+        let buildings2 = vec![(BuildingType::Castle, 3, 3, 0, 0)];
+        map2.compute_territory(&buildings2);
+
+        let mut e2 = Economy::new();
+        e2.storage.add(ResourceType::Wood, 100);
+
+        // Mine on tile with Coal resource — should succeed (resource check is on self tile)
+        // Note: Castle is at (3,3), so we need another tile in territory
+        let result = e2.try_place_building_checked(BuildingType::Mine, 3, 3, 0, &map2);
+        // (3,3) already has a building (Castle), so this fails for collision
+        // Let's use a tile within territory that has a resource
+        let mut map3 = Map::new(10, 10);
+        map3.get_mut(4, 4).unwrap().resource = Some(Resource::Gold);
+        let buildings3 = vec![(BuildingType::Castle, 5, 5, 0, 0)];
+        map3.compute_territory(&buildings3);
+
+        let mut e3 = Economy::new();
+        e3.storage.add(ResourceType::Wood, 100);
+        e3.storage.add(ResourceType::Stone, 100);
+
+        let result = e3.try_place_building_checked(BuildingType::Mine, 4, 4, 0, &map3);
+        assert!(result.is_some(), "Mine should place on tile with resource");
+
+        // Mine on tile without resource — should fail
+        let result2 = e3.try_place_building_checked(BuildingType::Mine, 6, 5, 0, &map3);
+        assert!(result2.is_none(), "Mine should NOT place on tile without resource");
+    }
+
+    #[test]
+    fn test_farm_places_anywhere_buildable_no_special_requirements() {
+        // Farms have no special terrain/resource requirements beyond buildability.
+        use crate::map::Map;
+
+        let mut map = Map::new(10, 10);
+        let buildings = vec![(BuildingType::Castle, 5, 5, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Farm on plain grass in territory — should succeed
+        let result = e.try_place_building_checked(BuildingType::Farm, 6, 5, 0, &map);
+        assert!(result.is_some(), "Farm should place on any buildable terrain in territory");
+    }
+
+    #[test]
+    fn test_waterworks_adjacent_deepwater_allowed() {
+        // Waterworks should accept DeepWater tiles as valid water adjacency.
+        use crate::map::{Map, Terrain};
+
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 5).unwrap().terrain = Terrain::Grass;
+        map.get_mut(5, 6).unwrap().terrain = Terrain::DeepWater; // deep water below
+        let buildings = vec![(BuildingType::Castle, 5, 5, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        let result = e.try_place_building_checked(BuildingType::Waterworks, 5, 5, 0, &map);
+        assert!(result.is_some(), "Waterworks should accept DeepWater adjacency");
     }
     }
 }

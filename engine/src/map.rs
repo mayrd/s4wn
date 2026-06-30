@@ -658,6 +658,46 @@ impl Map {
             tiles.join(",")
         )
     }
+
+    /// Get the 4-directional adjacent tile coordinates (up, down, left, right)
+    /// that are within map bounds. Returns a Vec of (x, y) coordinates.
+    pub fn adjacent_tiles(&self, x: usize, y: usize) -> Vec<(usize, usize)> {
+        neighbors(x as i32, y as i32, self.width, self.height)
+    }
+
+    /// Check if any adjacent tile (4-directional) has the given terrain type.
+    pub fn has_adjacent_terrain(&self, x: usize, y: usize, terrain: Terrain) -> bool {
+        self.adjacent_tiles(x, y)
+            .iter()
+            .any(|&(nx, ny)| {
+                self.get(nx, ny)
+                    .map(|t| t.terrain == terrain)
+                    .unwrap_or(false)
+            })
+    }
+
+    /// Check if any adjacent tile (4-directional) has a water-type terrain
+    /// (Water or DeepWater). Used for Waterworks placement validation.
+    pub fn has_adjacent_water(&self, x: usize, y: usize) -> bool {
+        self.adjacent_tiles(x, y)
+            .iter()
+            .any(|&(nx, ny)| {
+                self.get(nx, ny)
+                    .map(|t| matches!(t.terrain, Terrain::Water | Terrain::DeepWater))
+                    .unwrap_or(false)
+            })
+    }
+
+    /// Check if any adjacent tile (4-directional) has the given resource deposit.
+    pub fn has_adjacent_resource(&self, x: usize, y: usize, resource: Resource) -> bool {
+        self.adjacent_tiles(x, y)
+            .iter()
+            .any(|&(nx, ny)| {
+                self.get(nx, ny)
+                    .map(|t| t.resource == Some(resource))
+                    .unwrap_or(false)
+            })
+    }
 }
 
 /// Get valid neighbor coordinates (4-directional)
@@ -1475,5 +1515,99 @@ mod tests {
         let buildings2 = vec![(BuildingType::Castle, 15, 15, 0, 6)];
         map2.compute_territory(&buildings2);
         assert_eq!(map2.get_territory(20, 15), Some(0));
+    }
+
+    // ── Adjacent Tiles / Resource Proximity Tests ────────────────────────────
+
+    #[test]
+    fn test_adjacent_tiles_center() {
+        let map = Map::new(10, 10);
+        let adj = map.adjacent_tiles(5, 5);
+        assert_eq!(adj.len(), 4);
+        assert!(adj.contains(&(5, 4))); // up
+        assert!(adj.contains(&(6, 5))); // right
+        assert!(adj.contains(&(5, 6))); // down
+        assert!(adj.contains(&(4, 5))); // left
+    }
+
+    #[test]
+    fn test_adjacent_tiles_corner() {
+        let map = Map::new(10, 10);
+        let adj = map.adjacent_tiles(0, 0);
+        assert_eq!(adj.len(), 2); // only right and down
+        assert!(adj.contains(&(1, 0)));
+        assert!(adj.contains(&(0, 1)));
+    }
+
+    #[test]
+    fn test_adjacent_tiles_edge() {
+        let map = Map::new(10, 10);
+        let adj = map.adjacent_tiles(0, 5);
+        assert_eq!(adj.len(), 3); // up, right, down (left out of bounds)
+        assert!(adj.contains(&(0, 4)));
+        assert!(adj.contains(&(1, 5)));
+        assert!(adj.contains(&(0, 6)));
+    }
+
+    #[test]
+    fn test_has_adjacent_terrain_true() {
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 6).unwrap().terrain = Terrain::Forest;
+        assert!(map.has_adjacent_terrain(5, 5, Terrain::Forest));
+    }
+
+    #[test]
+    fn test_has_adjacent_terrain_false() {
+        let map = Map::new(10, 10);
+        assert!(!map.has_adjacent_terrain(5, 5, Terrain::Forest));
+        assert!(!map.has_adjacent_terrain(5, 5, Terrain::Water));
+    }
+
+    #[test]
+    fn test_has_adjacent_water_shallow() {
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 6).unwrap().terrain = Terrain::Water;
+        assert!(map.has_adjacent_water(5, 5));
+    }
+
+    #[test]
+    fn test_has_adjacent_water_deep() {
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 6).unwrap().terrain = Terrain::DeepWater;
+        assert!(map.has_adjacent_water(5, 5));
+    }
+
+    #[test]
+    fn test_has_adjacent_water_none() {
+        let map = Map::new(10, 10);
+        assert!(!map.has_adjacent_water(5, 5));
+    }
+
+    #[test]
+    fn test_has_adjacent_resource_true() {
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 6).unwrap().resource = Some(Resource::Stone);
+        assert!(map.has_adjacent_resource(5, 5, Resource::Stone));
+    }
+
+    #[test]
+    fn test_has_adjacent_resource_wrong_type() {
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 6).unwrap().resource = Some(Resource::Stone);
+        assert!(!map.has_adjacent_resource(5, 5, Resource::Fish));
+    }
+
+    #[test]
+    fn test_has_adjacent_resource_none() {
+        let map = Map::new(10, 10);
+        assert!(!map.has_adjacent_resource(5, 5, Resource::Stone));
+    }
+
+    #[test]
+    fn test_adjacent_tiles_self_not_included() {
+        // adjacent_tiles should NOT include the queried tile itself
+        let map = Map::new(10, 10);
+        let adj = map.adjacent_tiles(5, 5);
+        assert!(!adj.contains(&(5, 5)));
     }
 }
