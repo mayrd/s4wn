@@ -1764,6 +1764,16 @@ impl Economy {
         if kind == BuildingType::Mine && !has_self_resource {
             return None;
         }
+        // Forester requires adjacent Forest tiles (to plant/manage nearby woodlands)
+        if kind == BuildingType::Forester && !map.has_adjacent_terrain(x, y, crate::map::Terrain::Forest) {
+            return None;
+        }
+        // Farm (Grain Farm) requires Grass terrain — crops need fertile soil
+        if kind == BuildingType::Farm
+            && map.get(x, y).map(|t| t.terrain != crate::map::Terrain::Grass).unwrap_or(true)
+        {
+            return None;
+        }
         // Check affordability
         self.try_place_building(kind, x, y)
     }
@@ -6034,11 +6044,12 @@ mod squad_leader_aura_tests {
     }
 
     #[test]
-    fn test_farm_places_anywhere_buildable_no_special_requirements() {
-        // Farms have no special terrain/resource requirements beyond buildability.
-        use crate::map::Map;
+    fn test_farm_requires_grass_terrain() {
+        // Farm (Grain Farm) must be placed on Grass terrain — crops need fertile soil.
+        use crate::map::{Map, Terrain};
 
         let mut map = Map::new(10, 10);
+        map.get_mut(5, 5).unwrap().terrain = Terrain::Grass;
         let buildings = vec![(BuildingType::Castle, 5, 5, 0, 0)];
         map.compute_territory(&buildings);
 
@@ -6046,9 +6057,44 @@ mod squad_leader_aura_tests {
         e.storage.add(ResourceType::Wood, 100);
         e.storage.add(ResourceType::Stone, 100);
 
-        // Farm on plain grass in territory — should succeed
+        // Farm on Grass in territory — should succeed
         let result = e.try_place_building_checked(BuildingType::Farm, 6, 5, 0, &map);
-        assert!(result.is_some(), "Farm should place on any buildable terrain in territory");
+        assert!(result.is_some(), "Farm should place on Grass terrain");
+
+        // Farm on non-Grass buildable terrain (Desert) — should fail
+        map.get_mut(7, 5).unwrap().terrain = Terrain::Desert;
+        let result2 = e.try_place_building_checked(BuildingType::Farm, 7, 5, 0, &map);
+        assert!(result2.is_none(), "Farm should NOT place on Desert terrain");
+
+        // Farm on Forest — should fail (trees prevent farming)
+        map.get_mut(8, 5).unwrap().terrain = Terrain::Forest;
+        let result3 = e.try_place_building_checked(BuildingType::Farm, 8, 5, 0, &map);
+        assert!(result3.is_none(), "Farm should NOT place on Forest terrain");
+    }
+
+    #[test]
+    fn test_forester_requires_adjacent_forest() {
+        // Forester must be placed next to a Forest terrain tile
+        // (to plant and manage trees in nearby woodlands).
+        use crate::map::{Map, Terrain};
+
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 5).unwrap().terrain = Terrain::Grass;
+        map.get_mut(5, 6).unwrap().terrain = Terrain::Forest; // forest below
+        let buildings = vec![(BuildingType::Castle, 5, 5, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Forester at (5,5) with Forest at (5,6) — should succeed
+        let result = e.try_place_building_checked(BuildingType::Forester, 5, 5, 0, &map);
+        assert!(result.is_some(), "Forester should place next to forest");
+
+        // Forester at (5,3) with no forest adjacent — should fail
+        let result2 = e.try_place_building_checked(BuildingType::Forester, 5, 3, 0, &map);
+        assert!(result2.is_none(), "Forester should NOT place without adjacent forest");
     }
 
     #[test]
