@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S301 · 835 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrated get_camera_state from JSON String to typed CameraState struct — eliminates JSON.parse() at 4 JS call sites (minimap, selection overlay, particles, debug snapshot). WASM: 273.4KB (under 300KB target). Next: (1) Migrate remaining JSON-string WASM exports (get_build_cost_by_id, try_place_building_by_id, setup_starter_base, add_starting_resources, export_map_json). (2) Phase 8: sound effects system. (3) Continue Phase 7 rendering improvements.
+Status: S302 · 838 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrated setup_starter_base from JSON String to typed StarterResult struct — eliminates JSON.parse() in game init path. WASM: 273.4KB (under 300KB target). Next: (1) Migrate remaining JSON-string WASM exports (get_build_cost_by_id, try_place_building_by_id, add_starting_resources, export_map_json). (2) Phase 8: sound effects system. (3) Continue Phase 7 rendering improvements.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Status: S301 · 835 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrat
 
 ### Session Log (recent)
 
+| 302 | 2026-06-30 | Migrate setup_starter_base from JSON String to typed StarterResult struct: New #[wasm_bindgen] StarterResult {ok, hq_x, hq_y, settlers, error} with Clone — private fields with getter methods (String field prevents Copy derive). Returns Option<StarterResult> — wasm-bindgen converts to JS object or null. Eliminates JSON.parse() in game init path. Cache v81→v82. 3 new tests (struct fields, error variant, clone). 835→838 tests, clippy clean. — 838 tests |
 | 301 | 2026-06-30 | Migrate get_camera_state from JSON String to typed CameraState struct: New #[wasm_bindgen] CameraState {center_x, center_y, zoom, vp_w, vp_h} with Copy+Clone — all f32/u32 Copy fields, no manual getters. Returns Option<CameraState> — wasm-bindgen converts to JS object or null. Eliminates JSON.parse() at 4 JS call sites (minimap viewport, selection overlay, particle rendering, debug snapshot). Cache v80→v81. 2 new tests (struct fields, Copy trait). 833→835 tests, clippy clean. — 835 tests |
 | 300 | 2026-06-30 | Migrate tick_building_destructions from JSON String to typed Vec<DestructionInfo>: New #[wasm_bindgen] DestructionInfo {index, x, y} with Copy+Clone — all u32 Copy fields, no manual getters. Returns Vec<DestructionInfo> directly — wasm-bindgen converts to JS array of typed objects. Eliminates JSON.parse() in game loop render path (per-frame tick). JS: removed JSON.parse() call, direct iteration. Cache v79→v80. 2 new tests (struct fields, Copy trait). 831→833 tests, clippy clean. — 833 tests |
 | 299 | 2026-06-29 | Migrate get_units_in_rect from JSON String to typed Vec<UnitInfo>: Returns Vec<UnitInfo> (same struct as get_unit_summary) — wasm-bindgen converts to JS array of typed objects with integer discriminants. Eliminates JSON.parse() in marquee-selection render path. JS: removed const raw + JSON.parse(raw), direct assignment from WASM. Cache v78→v79. 831 tests, clippy clean. No WASM size regress: 273.4KB (+0.3KB). — 831 tests |
