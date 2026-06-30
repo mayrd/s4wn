@@ -1768,6 +1768,16 @@ impl Economy {
         if kind == BuildingType::Forester && !map.has_adjacent_terrain(x, y, crate::map::Terrain::Forest) {
             return None;
         }
+        // Sawmill requires adjacent Forest — processes logs from nearby woodlands
+        if kind == BuildingType::Sawmill && !map.has_adjacent_terrain(x, y, crate::map::Terrain::Forest) {
+            return None;
+        }
+        // Marketplace requires Grass terrain — flat, accessible land for trade caravans
+        if kind == BuildingType::Marketplace
+            && map.get(x, y).map(|t| t.terrain != crate::map::Terrain::Grass).unwrap_or(true)
+        {
+            return None;
+        }
         // Farm (Grain Farm) requires Grass terrain — crops need fertile soil
         if kind == BuildingType::Farm
             && map.get(x, y).map(|t| t.terrain != crate::map::Terrain::Grass).unwrap_or(true)
@@ -5766,7 +5776,7 @@ mod squad_leader_aura_tests {
         assert!(first.is_some(), "First placement should succeed");
 
         // Try placing another building at same tile — should be rejected
-        let second = e.try_place_building_checked(BuildingType::Sawmill, 12, 10, 0, &map);
+        let second = e.try_place_building_checked(BuildingType::StorageYard, 12, 10, 0, &map);
         assert!(second.is_none(), "Should NOT place building on occupied tile");
     }
 
@@ -5792,7 +5802,7 @@ mod squad_leader_aura_tests {
         assert!(dup.is_none());
 
         // Different tile (12, 11) — should succeed
-        let diff = e.try_place_building_checked(BuildingType::Sawmill, 12, 11, 0, &map);
+        let diff = e.try_place_building_checked(BuildingType::StorageYard, 12, 11, 0, &map);
         assert!(diff.is_some());
     }
 
@@ -6070,6 +6080,60 @@ mod squad_leader_aura_tests {
         map.get_mut(8, 5).unwrap().terrain = Terrain::Forest;
         let result3 = e.try_place_building_checked(BuildingType::Farm, 8, 5, 0, &map);
         assert!(result3.is_none(), "Farm should NOT place on Forest terrain");
+    }
+
+    #[test]
+    fn test_sawmill_requires_adjacent_forest() {
+        // Sawmill must be placed next to a Forest terrain tile
+        // (processes logs from nearby woodlands).
+        use crate::map::{Map, Terrain};
+
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 5).unwrap().terrain = Terrain::Grass;
+        map.get_mut(5, 6).unwrap().terrain = Terrain::Forest; // forest below
+        let buildings = vec![(BuildingType::Castle, 5, 5, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Sawmill at (5,5) with Forest at (5,6) — should succeed
+        let result = e.try_place_building_checked(BuildingType::Sawmill, 5, 5, 0, &map);
+        assert!(result.is_some(), "Sawmill should place next to forest");
+
+        // Sawmill at (5,3) with no forest adjacent — should fail
+        let result2 = e.try_place_building_checked(BuildingType::Sawmill, 5, 3, 0, &map);
+        assert!(result2.is_none(), "Sawmill should NOT place without adjacent forest");
+    }
+
+    #[test]
+    fn test_marketplace_requires_grass_terrain() {
+        // Marketplace must be placed on Grass terrain — flat land for trade caravans.
+        use crate::map::{Map, Terrain};
+
+        let mut map = Map::new(10, 10);
+        map.get_mut(5, 5).unwrap().terrain = Terrain::Grass;
+        let buildings = vec![(BuildingType::Castle, 5, 5, 0, 0)];
+        map.compute_territory(&buildings);
+
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+
+        // Marketplace on Grass in territory — should succeed
+        let result = e.try_place_building_checked(BuildingType::Marketplace, 6, 5, 0, &map);
+        assert!(result.is_some(), "Marketplace should place on Grass terrain");
+
+        // Marketplace on Desert — should fail
+        map.get_mut(7, 5).unwrap().terrain = Terrain::Desert;
+        let result2 = e.try_place_building_checked(BuildingType::Marketplace, 7, 5, 0, &map);
+        assert!(result2.is_none(), "Marketplace should NOT place on Desert terrain");
+
+        // Marketplace on Forest — should fail
+        map.get_mut(8, 5).unwrap().terrain = Terrain::Forest;
+        let result3 = e.try_place_building_checked(BuildingType::Marketplace, 8, 5, 0, &map);
+        assert!(result3.is_none(), "Marketplace should NOT place on Forest terrain");
     }
 
     #[test]
