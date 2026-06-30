@@ -5426,8 +5426,8 @@ async function startNewGame() {
 
         // Apply starting resources based on difficulty
         const resResult = add_starting_resources(difficulty);
-        if (resResult !== 'ok') {
-            console.warn('Starting resources warning:', resResult);
+        if (!resResult.ok) {
+            console.warn('Starting resources warning:', resResult.error);
         }
 
         // Set up starter base: HQ at center + idle workers

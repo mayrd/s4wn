@@ -4512,6 +4512,27 @@ impl StarterResult {
     pub fn error(&self) -> String { self.error.clone() }
 }
 
+/// Result of add_starting_resources — replaces JSON String return.
+/// `ok` is true when resources were applied successfully.
+/// `error` contains the error message when `ok` is false (empty on success).
+#[wasm_bindgen]
+#[derive(Clone)]
+pub struct StartingResourcesResult {
+    ok: bool,
+    error: String,
+}
+
+#[wasm_bindgen]
+impl StartingResourcesResult {
+    /// True if starting resources were applied successfully.
+    #[wasm_bindgen(getter)]
+    pub fn ok(&self) -> bool { self.ok }
+
+    /// Error message (empty on success).
+    #[wasm_bindgen(getter)]
+    pub fn error(&self) -> String { self.error.clone() }
+}
+
 /// Toggle the game pause state. Returns the new state.
 #[wasm_bindgen]
 pub fn toggle_pause() -> bool {
@@ -4558,7 +4579,7 @@ pub fn generate_map(map_type: &str, width: u32, height: u32) -> String {
 /// difficulty: "easy" (2× resources), "medium" (1×), "hard" (0.5×)
 /// Returns "ok" on success or an error message.
 #[wasm_bindgen]
-pub fn add_starting_resources(difficulty: &str) -> String {
+pub fn add_starting_resources(difficulty: &str) -> Option<StartingResourcesResult> {
     use crate::economy::ResourceType;
     unsafe {
         if let Some(ref mut app) = APP {
@@ -4580,9 +4601,9 @@ pub fn add_starting_resources(difficulty: &str) -> String {
             let mut economy = crate::economy::Economy::with_starting_resources(&resources);
             economy.set_map(app.map.clone());
             app.game_loop.state.economy = economy;
-            String::from("ok")
+            Some(StartingResourcesResult { ok: true, error: String::new() })
         } else {
-            String::from("error: engine not initialized")
+            Some(StartingResourcesResult { ok: false, error: String::from("error: engine not initialized") })
         }
     }
 }
@@ -8416,6 +8437,37 @@ mod parse_map_json_tests {
         assert_eq!(sr.hq_x, clone.hq_x);
         assert_eq!(sr.hq_y, clone.hq_y);
         assert_eq!(sr.settlers, clone.settlers);
+        assert_eq!(sr.error, clone.error);
+    }
+
+    #[test]
+    fn test_starting_resources_result_struct_fields() {
+        let sr = StartingResourcesResult {
+            ok: true,
+            error: String::new(),
+        };
+        assert!(sr.ok);
+        assert!(sr.error.is_empty());
+    }
+
+    #[test]
+    fn test_starting_resources_result_error_variant() {
+        let sr = StartingResourcesResult {
+            ok: false,
+            error: String::from("Engine not initialized"),
+        };
+        assert!(!sr.ok);
+        assert_eq!(sr.error, "Engine not initialized");
+    }
+
+    #[test]
+    fn test_starting_resources_result_clone() {
+        let sr = StartingResourcesResult {
+            ok: true,
+            error: String::new(),
+        };
+        let clone = sr.clone();
+        assert_eq!(sr.ok, clone.ok);
         assert_eq!(sr.error, clone.error);
     }
 }
