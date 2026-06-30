@@ -642,15 +642,8 @@ impl Map {
                 let terrain = tile.terrain as u8;
                 let elev = tile.elevation;
                 let resource = match tile.resource {
-                    Some(Resource::Iron) => "\"Iron\"",
-                    Some(Resource::Coal) => "\"Coal\"",
-                    Some(Resource::Gold) => "\"Gold\"",
-                    Some(Resource::Stone) => "\"Stone\"",
-                    Some(Resource::Sulfur) => "\"Sulfur\"",
-                    Some(Resource::Fish) => "\"Fish\"",
-                    Some(Resource::Game) => "\"Game\"",
-                    Some(Resource::Grain) => "\"Grain\"",
-                    None => "null",
+                    Some(r) => (r as u8).to_string(),
+                    None => String::from("null"),
                 };
                 tiles.push(format!(
                     "{{\"t\":{},\"e\":{:.3},\"r\":{}}}",

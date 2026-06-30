@@ -7184,8 +7184,8 @@ mod tests {
         assert!(json.contains("\"t\":1"), "missing forest");
         assert!(json.contains("\"t\":3"), "missing water");
         assert!(json.contains("\"t\":2"), "missing mountain");
-        assert!(json.contains("\"Iron\""), "missing Iron resource");
-        assert!(json.contains("\"Gold\""), "missing Gold resource");
+        assert!(json.contains("\"r\":0"), "missing Iron resource id=0");
+        assert!(json.contains("\"r\":2"), "missing Gold resource id=2");
         assert!(json.contains("\"r\":null"), "missing null resource");
         assert!(json.ends_with("]}"), "bad footer");
     }
