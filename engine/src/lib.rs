@@ -4479,6 +4479,43 @@ pub fn get_camera_state() -> Option<CameraState> {
         })
     }
 }
+/// Starter result struct — replaces JSON string from setup_starter_base.
+/// `ok` is true when the base was placed successfully.
+/// `error` contains the error message when `ok` is false (empty on success).
+/// Fields are accessed via JS getters (no JSON.parse needed).
+#[wasm_bindgen]
+#[derive(Clone)]
+pub struct StarterResult {
+    ok: bool,
+    hq_x: u32,
+    hq_y: u32,
+    settlers: u32,
+    error: String,
+}
+
+#[wasm_bindgen]
+impl StarterResult {
+    /// True if the starter base was placed successfully.
+    #[wasm_bindgen(getter)]
+    pub fn ok(&self) -> bool { self.ok }
+
+    /// X coordinate of the placed HQ (Castle).
+    #[wasm_bindgen(getter)]
+    pub fn hq_x(&self) -> u32 { self.hq_x }
+
+    /// Y coordinate of the placed HQ (Castle).
+    #[wasm_bindgen(getter)]
+    pub fn hq_y(&self) -> u32 { self.hq_y }
+
+    /// Number of settlers spawned.
+    #[wasm_bindgen(getter)]
+    pub fn settlers(&self) -> u32 { self.settlers }
+
+    /// Error message (empty on success).
+    #[wasm_bindgen(getter)]
+    pub fn error(&self) -> String { self.error.clone() }
+}
+
 /// Toggle the game pause state. Returns the new state.
 #[wasm_bindgen]
 pub fn toggle_pause() -> bool {
@@ -4556,9 +4593,9 @@ pub fn add_starting_resources(difficulty: &str) -> String {
 /// Place a free Castle near map center and spawn starter settlers.
 /// Called after load_map_json() + add_starting_resources() to set up the initial base.
 /// settler_count: number of idle settlers to spawn (clamped to 1..8).
-/// Returns JSON: {"ok":true,"hq_x":N,"hq_y":N,"settlers":N} or {"error":"..."}
+/// Returns typed StarterResult struct (replaces JSON string, eliminating JSON.parse()).
 #[wasm_bindgen]
-pub fn setup_starter_base(settler_count: u32) -> String {
+pub fn setup_starter_base(settler_count: u32) -> Option<StarterResult> {
     use crate::economy::BuildingType;
     use crate::units::UnitKind;
     unsafe {
@@ -4638,12 +4675,22 @@ pub fn setup_starter_base(settler_count: u32) -> String {
 
             app.overlay_dirty = true;
             app.mesh_dirty = true;
-            format!(
-                r#"{{"ok":true,"hq_x":{},"hq_y":{},"settlers":{}}}"#,
-                hq_x, hq_y, count
-            )
+
+            Some(StarterResult {
+                ok: true,
+                hq_x: hq_x as u32,
+                hq_y: hq_y as u32,
+                settlers: count as u32,
+                error: String::new(),
+            })
         } else {
-            String::from(r#"{"error":"Engine not initialized"}"#)
+            Some(StarterResult {
+                ok: false,
+                hq_x: 0,
+                hq_y: 0,
+                settlers: 0,
+                error: String::from("Engine not initialized"),
+            })
         }
     }
 }
@@ -8269,5 +8316,54 @@ mod parse_map_json_tests {
         assert_eq!(cs.zoom, copy.zoom);
         assert_eq!(cs.vp_w, copy.vp_w);
         assert_eq!(cs.vp_h, copy.vp_h);
+    }
+
+    #[test]
+    fn test_starter_result_struct_fields() {
+        let sr = StarterResult {
+            ok: true,
+            hq_x: 32,
+            hq_y: 16,
+            settlers: 4,
+            error: String::new(),
+        };
+        assert!(sr.ok);
+        assert_eq!(sr.hq_x, 32);
+        assert_eq!(sr.hq_y, 16);
+        assert_eq!(sr.settlers, 4);
+        assert!(sr.error.is_empty());
+    }
+
+    #[test]
+    fn test_starter_result_error_variant() {
+        let sr = StarterResult {
+            ok: false,
+            hq_x: 0,
+            hq_y: 0,
+            settlers: 0,
+            error: String::from("Engine not initialized"),
+        };
+        assert!(!sr.ok);
+        assert_eq!(sr.hq_x, 0);
+        assert_eq!(sr.hq_y, 0);
+        assert_eq!(sr.settlers, 0);
+        assert_eq!(sr.error, "Engine not initialized");
+    }
+
+    #[test]
+    fn test_starter_result_clone() {
+        let sr = StarterResult {
+            ok: true,
+            hq_x: 10,
+            hq_y: 20,
+            settlers: 3,
+            error: String::new(),
+        };
+        let clone = sr.clone();
+        assert_eq!(sr.ok, clone.ok);
+        assert_eq!(sr.hq_x, clone.hq_x);
+        assert_eq!(sr.hq_y, clone.hq_y);
+        assert_eq!(sr.settlers, clone.settlers);
+        assert_eq!(sr.error, clone.error);
     }
 }

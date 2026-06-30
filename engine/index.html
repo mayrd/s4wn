@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles,
-} from './pkg/s4wn_engine.js?v=81';
+} from './pkg/s4wn_engine.js?v=82';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -5426,11 +5426,11 @@ async function startNewGame() {
 
         // Set up starter base: HQ at center + idle workers
         const workerCount = difficulty === 'easy' ? 4 : (difficulty === 'hard' ? 2 : 3);
-        const baseResult = JSON.parse(setup_starter_base(workerCount));
+        const baseResult = setup_starter_base(workerCount);
         if (!baseResult.ok) {
             console.error('Starter base setup failed:', baseResult.error);
         } else {
-            console.log(`HQ placed at (${baseResult.hq_x},${baseResult.hq_y}), ${baseResult.workers} workers`);
+            console.log(`HQ placed at (${baseResult.hq_x},${baseResult.hq_y}), ${baseResult.settlers} workers`);
         }
 
         // Set player nation
