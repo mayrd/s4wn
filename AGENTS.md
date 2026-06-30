@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S311 · 874 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Added building placement requirements for Forester (adjacent Forest) and Farm (Grass terrain only). 1 new test (873→874). Next: (1) Audit remaining JSON String exports for migration candidates. (2) Continue Phase 7 rendering quality improvements. (3) Investigate WASM size regression — re-baseline from current to identify remaining gap to 300KB target. (4) Add remaining building terrain/resource requirements (Sawmill/Marketplace validation).
+Status: S312 · 876 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Added building placement requirements for Sawmill (adjacent Forest) and Marketplace (Grass terrain only); fixed collision tests (Sawmill→StorageYard). 2 new tests (874→876). Next: (1) Audit remaining JSON String exports for migration candidates. (2) Investigate WASM size regression — re-baseline to identify gap to 300KB. (3) Continue Phase 7 rendering quality improvements. (4) Verify reflection pass shader correctness.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Status: S311 · 874 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Added 
 
 ### Session Log (recent)
 
+|| 312 | 2026-06-30 | Add building placement requirements: Sawmill requires adjacent Forest tiles (same check as Woodcutter/Forester), Marketplace restricted to Grass terrain only (rejects Desert and Forest — same pattern as Farm). 2 new tests: test_sawmill_requires_adjacent_forest (success + no-forest rejection), test_marketplace_requires_grass_terrain (Grass success, Desert reject, Forest reject). Fixed collision tests: replaced Sawmill→StorageYard in test_try_place_building_checked_collision* to avoid false Forest-adjacency failure. 874→876 tests, clippy clean. — 876 tests |
 || 311 | 2026-06-30 | Add building placement requirements: Forester requires adjacent Forest tiles (has_adjacent_terrain check, same as Woodcutter), Farm (Grain Farm) restricted to Grass terrain only — rejects Desert and Forest tiles. Replaced test_farm_places_anywhere_buildable_no_special_requirements with test_farm_requires_grass_terrain (3 assertions: Grass success, Desert reject, Forest reject) + test_forester_requires_adjacent_forest (success + no-forest rejection). 873→874 tests, clippy clean. — 874 tests |
 | 310 | 2026-06-30 | Expand sound effects system: added building construction complete + resource pickup sound triggers. Modified tick_construction() to return bool on completion, added Economy::construction_completions + resource_pickups per-tick counters, exposed WASM bindings recent_construction_complete_count() and recent_resource_pickup_count(), wired into render loop alongside existing death/combat sound counters. 7 new tests (866→873), clippy clean. — 873 tests |
 | 309 | 2026-06-30 | Implement building-specific terrain/resource placement requirements: Waterworks→adjacent water, Stonecutter→adjacent Stone, Fisherman→adjacent Fish, Woodcutter→adjacent Forest, Mine→resource on self tile. Added Map::adjacent_tiles(), has_adjacent_terrain(), has_adjacent_water(), has_adjacent_resource() helpers. 19 new tests (847→866), clippy clean. — 866 tests |
@@ -359,6 +360,6 @@ Status: S311 · 874 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Added 
 265. Investigate 7KB WASM size variance (307.3KB after cargo clean vs 300.1KB reported). Run checksum on wasm binaries from both builds to identify the source of growth. [SHOULD]
 266. Re-baseline WASM size target: 300KB. At 307.3KB we are 7.3KB over. Need 7.3KB savings from from_name() conversion + any remaining low-hanging fruit. [MUST]
 
-Next session priorities: (1) Add more building-specific terrain/resource placement checks — Forester requires adjacent Forest tiles, Farm restricted to Grass-only tiles, Sawmill placement validation. (2) Investigate WASM size regression: re-baseline from current to identify remaining 7-12KB gap to 300KB target. (3) Phase 7 rendering improvements — visual verification of reflection/shadow fidelity. (4) Audit remaining JSON String exports for any remaining migration candidates. (5) Verify Fix #73 on mobile: request new render snapshot from Daniel to confirm tiles display on ANGLE/Mali-G710.
+Next session priorities: (1) Audit remaining JSON String exports for migration candidates — building name/terrain strings. (2) Investigate WASM size regression: re-baseline from current to identify remaining gap to 300KB target. (3) Phase 7 rendering improvements — verify reflection pass shader correctness visually. (4) Verify Fix #73 on mobile: request render snapshot from Daniel to confirm tiles display on ANGLE/Mali-G710. (5) WASM size optimization: consider gating more name arrays behind #[cfg(test)].
 
 *All building data must match BASE.md. Never modify BASE.md.*
