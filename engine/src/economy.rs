@@ -1253,16 +1253,19 @@ impl Building {
 
     /// Advance construction by one tick.
     /// `speed_mult` applies nation build speed modifiers (1.0 = normal).
-    pub fn tick_construction(&mut self, speed_mult: f32) {
+    /// Returns true if construction completed this tick.
+    pub fn tick_construction(&mut self, speed_mult: f32) -> bool {
         if !self.is_complete() {
             let build_ticks = self.kind.build_time();
             if build_ticks > 0 {
                 self.construction += speed_mult / build_ticks as f32;
                 if self.construction >= 1.0 {
                     self.construction = 1.0;
+                    return true;
                 }
             }
         }
+        false
     }
 
     /// Try to produce resources for this tick.
@@ -1443,6 +1446,10 @@ pub struct Economy {
     pub production_events: u64,
     /// Total resources collected (for statistics)
     pub resources_collected: u64,
+    /// Construction completions this tick (drained each frame for sound effects)
+    pub construction_completions: u32,
+    /// Resource production events this tick (drained each frame for sound effects)
+    pub resource_pickups: u32,
     /// Named tool storage — tracks how many of each ToolType are in the storehouse.
     /// Indexed by ToolType discriminant (0=Hammer, 1=Pickaxe, ..., 10=Scythe).
     pub tool_storage: [u32; 12],
@@ -1463,6 +1470,8 @@ impl Economy {
             units: UnitManager::new(),
             production_events: 0,
             resources_collected: 0,
+            construction_completions: 0,
+            resource_pickups: 0,
             tool_storage: [0u32; 12],
             nation_modifiers: None,
             player_nation: None,
@@ -1790,9 +1799,13 @@ impl Economy {
     pub fn update(&mut self) {
         // 1. Tick construction for all buildings (with nation build speed modifier)
         let build_speed = self.build_speed();
+        let mut completions: u32 = 0;
         for building in self.buildings.iter_mut() {
-            building.tick_construction(build_speed);
+            if building.tick_construction(build_speed) {
+                completions += 1;
+            }
         }
+        self.construction_completions = completions;
 
         // 1b. Castle recruitment — spawn idle settlers from completed Castles
         // Pre-collect spawn positions to avoid borrowing conflicts
@@ -1907,6 +1920,7 @@ impl Economy {
         let speeds: Vec<f32> = self.buildings.iter()
             .map(|b| self.production_speed_for(b.kind))
             .collect();
+        let prev_collected = self.resources_collected;
         for (i, building) in self.buildings.iter_mut().enumerate() {
             if can_produce[i]
                 && building.try_produce(&mut self.storage, speeds[i]) {
@@ -1920,6 +1934,9 @@ impl Economy {
             let collected = building.collect_output(&mut self.storage);
             self.resources_collected += collected.iter().sum::<u32>() as u64;
         }
+        // Count new resource pickups this tick (for sound triggers)
+        let newly_collected = (self.resources_collected - prev_collected) as u32;
+        self.resource_pickups = newly_collected;
 
         // 3b. Toolsmith named tool production — separate pass after output collection
         let toolsmith_count = self
@@ -6051,6 +6068,140 @@ mod squad_leader_aura_tests {
 
         let result = e.try_place_building_checked(BuildingType::Waterworks, 5, 5, 0, &map);
         assert!(result.is_some(), "Waterworks should accept DeepWater adjacency");
+    }
+
+    #[test]
+    fn test_tick_construction_returns_true_on_complete() {
+        // tick_construction returns true only on the exact tick it completes,
+        // false before and after.
+        let mut b = Building::new(BuildingType::Sawmill, 0, 0); // 30 tick build time
+        assert!(!b.is_complete());
+
+        // Tick 1-29: not yet complete
+        for i in 1..30 {
+            let result = b.tick_construction(1.0);
+            assert!(!result, "Tick {} should not return true", i);
+            if i < 29 {
+                assert!(!b.is_complete());
+            }
+        }
+
+        // Tick 30: construction completes
+        let result = b.tick_construction(1.0);
+        assert!(result, "Tick 30 should return true — construction completed");
+        assert!(b.is_complete());
+
+        // After completion: returns false
+        let result = b.tick_construction(1.0);
+        assert!(!result, "Should return false once already complete");
+    }
+
+    #[test]
+    fn test_tick_construction_zero_build_time() {
+        // Buildings with 0 build time (Castle, Storehouse) are immediately complete
+        let mut b = Building::new(BuildingType::Castle, 0, 0);
+        assert!(b.is_complete());
+        let result = b.tick_construction(1.0);
+        assert!(!result, "Castle starts complete, so tick returns false");
+    }
+
+    #[test]
+    fn test_economy_construction_completions_counter() {
+        use crate::map::Map;
+        let map = Map::new(10, 10);
+        let mut e = Economy::new();
+        e.map = Some(map.clone());
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+        e.storage.add(ResourceType::Gold, 100);
+
+        // Place a Woodcutter (build_time = 15)
+        e.try_place_building(BuildingType::Woodcutter, 5, 5).unwrap();
+        assert_eq!(e.construction_completions, 0);
+
+        // Run ticks until construction completes
+        let mut completed = false;
+        for _ in 0..20 {
+            e.update();
+            if e.construction_completions > 0 {
+                assert_eq!(e.construction_completions, 1);
+                assert!(e.buildings[0].is_complete());
+                completed = true;
+                break;
+            }
+        }
+        assert!(completed, "Woodcutter should complete construction within 20 ticks");
+
+        // Next tick — already complete, counter resets to 0
+        e.update();
+        assert_eq!(e.construction_completions, 0);
+    }
+
+    #[test]
+    fn test_economy_multiple_construction_completions() {
+        use crate::map::Map;
+        let map = Map::new(10, 10);
+        let mut e = Economy::new();
+        e.map = Some(map.clone());
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+        e.storage.add(ResourceType::Gold, 100);
+
+        // Place two Fisherman huts (build_time = 20 each)
+        e.try_place_building(BuildingType::Fisherman, 3, 3).unwrap();
+        e.try_place_building(BuildingType::Fisherman, 5, 5).unwrap();
+        assert_eq!(e.construction_completions, 0);
+
+        // Run 20 ticks — both complete on same tick
+        for _ in 0..20 {
+            e.update();
+        }
+        assert_eq!(e.construction_completions, 2);
+        assert!(e.buildings[0].is_complete());
+        assert!(e.buildings[1].is_complete());
+    }
+
+    #[test]
+    fn test_economy_resource_pickups_counter() {
+        // Farm produces Grain every 20 ticks once a settler is assigned.
+        // This verifies that resource_pickups correctly tracks collection events.
+        let mut e = Economy::with_starting_resources(&[(ResourceType::Wood, 100)]);
+
+        let farm_idx = e.place_building(BuildingType::Farm, 0, 0);
+
+        // Build the farm (20 ticks), then spawn a settler
+        for _ in 0..20 {
+            e.update();
+        }
+        e.spawn_settler_for(farm_idx);
+
+        // Reset pickup counter after construction
+        e.resource_pickups = 0;
+
+        // Run production - Farm produces every 20 ticks
+        for _ in 0..40 {
+            e.update();
+        }
+        assert!(e.resource_pickups > 0, "Farm should produce grain which is collected");
+    }
+
+    #[test]
+    fn test_economy_resource_pickups_zero_when_no_production() {
+        let mut e = Economy::new();
+        e.storage.add(ResourceType::Wood, 100);
+        e.storage.add(ResourceType::Stone, 100);
+        e.resource_pickups = 0;
+
+        // No buildings placed — no production
+        e.update();
+        assert_eq!(e.resource_pickups, 0);
+    }
+
+    #[test]
+    fn test_economy_new_counters_zero() {
+        let e = Economy::new();
+        assert_eq!(e.construction_completions, 0);
+        assert_eq!(e.resource_pickups, 0);
     }
     }
 }

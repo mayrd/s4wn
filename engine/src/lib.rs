@@ -765,6 +765,10 @@ struct App {
     /// Sound event counters — drained each frame by JS for audio playback
     recent_death_count: u32,
     recent_combat_count: u32,
+    /// Building construction completions this frame — drained by JS for sound playback
+    recent_construction_complete_count: u32,
+    /// Resource production events this frame — drained by JS for sound playback
+    recent_resource_pickup_count: u32,
     // ── Phase 7: Cloud layer rendering ─────────────────────────────────────
     cloud_program: Option<WebGlProgram>,
     cloud_vao: Option<WebGlVertexArrayObject>,
@@ -1536,6 +1540,8 @@ impl App {
             particle_system: particle::ParticleSystem::new(),
             recent_death_count: 0,
             recent_combat_count: 0,
+            recent_construction_complete_count: 0,
+            recent_resource_pickup_count: 0,
             lightning_flash: 0.0,
             lightning_timer: 30.0,
             lightning_loc,
@@ -1626,6 +1632,9 @@ impl App {
         let dead_positions = self.game_loop.state.economy.units.drain_recently_died();
         self.recent_death_count = dead_positions.len() as u32;
         self.recent_combat_count = self.game_loop.state.economy.units.drain_combat_hits();
+        // Drain building construction and resource pickup sound counters
+        self.recent_construction_complete_count = self.game_loop.state.economy.construction_completions;
+        self.recent_resource_pickup_count = self.game_loop.state.economy.resource_pickups;
         for (dx, dy) in &dead_positions {
             particle::spawn_combat_effect(&mut self.particle_system, *dx, *dy);
         }
@@ -5335,6 +5344,32 @@ pub fn recent_combat_count() -> i32 {
     unsafe {
         if let Some(app) = (*std::ptr::addr_of!(APP)).as_ref() {
             app.recent_combat_count as i32
+        } else {
+            0
+        }
+    }
+}
+
+/// Get number of building construction completions since last call (drains each frame).
+/// Used by JS to trigger construction complete sound effects.
+#[wasm_bindgen]
+pub fn recent_construction_complete_count() -> i32 {
+    unsafe {
+        if let Some(app) = (*std::ptr::addr_of!(APP)).as_ref() {
+            app.recent_construction_complete_count as i32
+        } else {
+            0
+        }
+    }
+}
+
+/// Get number of resource production events since last call (drains each frame).
+/// Used by JS to trigger resource pickup sound effects.
+#[wasm_bindgen]
+pub fn recent_resource_pickup_count() -> i32 {
+    unsafe {
+        if let Some(app) = (*std::ptr::addr_of!(APP)).as_ref() {
+            app.recent_resource_pickup_count as i32
         } else {
             0
         }
