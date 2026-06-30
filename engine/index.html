@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles,
-} from './pkg/s4wn_engine.js?v=87';
+} from './pkg/s4wn_engine.js?v=88';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -5480,24 +5480,79 @@ async function startNewGame() {
 const SAVE_KEY = 's4wn-autosave';
 const SAVE_META_KEY = 's4wn-autosave-meta';
 
+// Unit state/stance string names for JSON reconstruction (restore_game_state expects string names)
+const UNIT_STATE_NAMES = ['Idle','Moving','Working','Fighting','Patrolling','FormationMove','Dying','Dead'];
+const UNIT_STANCE_NAMES = ['Aggressive','StandGround','HoldFire','Retreat'];
+
 function saveGame() {
     if (!engineReady || !get_game_state) return false;
     try {
-        const stateJson = get_game_state();
-        if (!stateJson || stateJson.includes('"error"')) {
+        const state = get_game_state();
+        if (!state || state.game_time <= 0) {
             console.warn('saveGame: failed to get game state');
             return false;
         }
+
+        // Reconstruct JSON from typed fields for localStorage (restore_game_state expects this format)
+        const resources = {};
+        const resArr = state.resources;
+        for (let i = 0; i < resArr.length; i++) {
+            if (resArr[i] > 0) resources[i] = resArr[i];
+        }
+
+        const buildings = state.buildings.map(b => {
+            const inBuf = {};
+            const inArr = b.input_buffer;
+            for (let i = 0; i < inArr.length; i++) {
+                if (inArr[i] > 0) inBuf[i] = inArr[i];
+            }
+            const outBuf = {};
+            const outArr = b.output_buffer;
+            for (let i = 0; i < outArr.length; i++) {
+                if (outArr[i] > 0) outBuf[i] = outArr[i];
+            }
+            return {
+                kind: b.kind,
+                x: b.x,
+                y: b.y,
+                construction: b.construction,
+                active: b.active,
+                production_counter: b.production_counter,
+                assigned_settlers: Array.from(b.assigned_settlers),
+                max_settlers: b.max_settlers,
+                input_buffer: inBuf,
+                output_buffer: outBuf,
+            };
+        });
+
+        const units = state.units.map(u => ({
+            id: u.id,
+            kind: u.kind,
+            x: u.x,
+            y: u.y,
+            hp: u.hp,
+            max_hp: u.max_hp,
+            state: UNIT_STATE_NAMES[u.state] || 'Idle',
+            stance: UNIT_STANCE_NAMES[u.stance] || 'Aggressive',
+            assigned_building: u.assigned_building || null,
+            target: u.target || null,
+        }));
+
+        const stateObj = {
+            version: 1,
+            game_time: state.game_time,
+            map_json: JSON.parse(state.map_json),
+            resources: resources,
+            buildings: buildings,
+            units: units,
+        };
+        const stateJson = JSON.stringify(stateObj);
+
         localStorage.setItem(SAVE_KEY, stateJson);
         const meta = {
             savedAt: new Date().toISOString(),
-            gameTime: null,
+            gameTime: state.game_time,
         };
-        // Extract game_time from state for display
-        try {
-            const parsed = JSON.parse(stateJson);
-            meta.gameTime = parsed.game_time || 0;
-        } catch(_) {}
         localStorage.setItem(SAVE_META_KEY, JSON.stringify(meta));
         console.log('Game saved (auto-save) at', meta.savedAt);
         return true;

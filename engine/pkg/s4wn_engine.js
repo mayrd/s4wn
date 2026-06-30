@@ -345,6 +345,105 @@ export class BuildingInfo {
 if (Symbol.dispose) BuildingInfo.prototype[Symbol.dispose] = BuildingInfo.prototype.free;
 
 /**
+ * Building data in save game state.
+ */
+export class BuildingSaveData {
+    static __wrap(ptr) {
+        const obj = Object.create(BuildingSaveData.prototype);
+        obj.__wbg_ptr = ptr;
+        BuildingSaveDataFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        BuildingSaveDataFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_buildingsavedata_free(ptr, 0);
+    }
+    /**
+     * @returns {boolean}
+     */
+    get active() {
+        const ret = wasm.buildingsavedata_active(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    get assigned_settlers() {
+        const ret = wasm.buildingsavedata_assigned_settlers(this.__wbg_ptr);
+        var v1 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {number}
+     */
+    get construction() {
+        const ret = wasm.buildingsavedata_construction(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    get input_buffer() {
+        const ret = wasm.buildingsavedata_input_buffer(this.__wbg_ptr);
+        var v1 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {number}
+     */
+    get kind() {
+        const ret = wasm.buildingsavedata_kind(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get max_settlers() {
+        const ret = wasm.buildingsavedata_max_settlers(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    get output_buffer() {
+        const ret = wasm.buildingsavedata_output_buffer(this.__wbg_ptr);
+        var v1 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {number}
+     */
+    get production_counter() {
+        const ret = wasm.buildingsavedata_production_counter(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get x() {
+        const ret = wasm.buildingsavedata_x(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get y() {
+        const ret = wasm.buildingsavedata_y(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+}
+if (Symbol.dispose) BuildingSaveData.prototype[Symbol.dispose] = BuildingSaveData.prototype.free;
+
+/**
  * Returns the remaining HP, or 0 if the building doesn't exist.
  * Get the max HP of a building at the given index. Returns 0 if not found.
  * Building-at-tile information struct — replaces JSON string from get_building_at_tile.
@@ -620,6 +719,79 @@ export class DestructionInfo {
 if (Symbol.dispose) DestructionInfo.prototype[Symbol.dispose] = DestructionInfo.prototype.free;
 
 /**
+ * Complete game state returned by get_game_state — replaces JSON string with typed struct.
+ * JS side reconstructs JSON from typed fields for localStorage save/load compatibility.
+ */
+export class GameStateData {
+    static __wrap(ptr) {
+        const obj = Object.create(GameStateData.prototype);
+        obj.__wbg_ptr = ptr;
+        GameStateDataFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        GameStateDataFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_gamestatedata_free(ptr, 0);
+    }
+    /**
+     * @returns {BuildingSaveData[]}
+     */
+    get buildings() {
+        const ret = wasm.gamestatedata_buildings(this.__wbg_ptr);
+        var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {number}
+     */
+    get game_time() {
+        const ret = wasm.gamestatedata_game_time(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {string}
+     */
+    get map_json() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.gamestatedata_map_json(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * @returns {Uint32Array}
+     */
+    get resources() {
+        const ret = wasm.gamestatedata_resources(this.__wbg_ptr);
+        var v1 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {UnitSaveData[]}
+     */
+    get units() {
+        const ret = wasm.gamestatedata_units(this.__wbg_ptr);
+        var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+}
+if (Symbol.dispose) GameStateData.prototype[Symbol.dispose] = GameStateData.prototype.free;
+
+/**
  * Garrison info for a building — replaces JSON string from get_building_garrison_json.
  * `unit_ids` are the raw unit IDs of garrisoned soldiers.
  * Uses manual getters because wasm-bindgen requires Copy for public fields and Vec is not Copy.
@@ -673,6 +845,54 @@ export class GarrisonInfo {
     }
 }
 if (Symbol.dispose) GarrisonInfo.prototype[Symbol.dispose] = GarrisonInfo.prototype.free;
+
+/**
+ * Result struct for load_map_json — replaces JSON string status.
+ * `ok` is true on success, `error` contains the error message on failure.
+ */
+export class LoadMapResult {
+    static __wrap(ptr) {
+        const obj = Object.create(LoadMapResult.prototype);
+        obj.__wbg_ptr = ptr;
+        LoadMapResultFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        LoadMapResultFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_loadmapresult_free(ptr, 0);
+    }
+    /**
+     * Error message if loading failed, empty string on success.
+     * @returns {string}
+     */
+    get error() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.loadmapresult_error(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * True if the map was loaded successfully.
+     * @returns {boolean}
+     */
+    get ok() {
+        const ret = wasm.loadmapresult_ok(this.__wbg_ptr);
+        return ret !== 0;
+    }
+}
+if (Symbol.dispose) LoadMapResult.prototype[Symbol.dispose] = LoadMapResult.prototype.free;
 
 /**
  * Result of load_model_json — replaces JSON String return (S313).
@@ -1150,6 +1370,54 @@ export class PlaceBuildingResult {
     }
 }
 if (Symbol.dispose) PlaceBuildingResult.prototype[Symbol.dispose] = PlaceBuildingResult.prototype.free;
+
+/**
+ * Result struct for restore_game_state — replaces JSON string status.
+ * `ok` is true on success, `error` contains the error message on failure.
+ */
+export class RestoreStateResult {
+    static __wrap(ptr) {
+        const obj = Object.create(RestoreStateResult.prototype);
+        obj.__wbg_ptr = ptr;
+        RestoreStateResultFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        RestoreStateResultFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_restorestateresult_free(ptr, 0);
+    }
+    /**
+     * Error message if restore failed, empty string on success.
+     * @returns {string}
+     */
+    get error() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.restorestateresult_error(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * True if the game state was restored successfully.
+     * @returns {boolean}
+     */
+    get ok() {
+        const ret = wasm.restorestateresult_ok(this.__wbg_ptr);
+        return ret !== 0;
+    }
+}
+if (Symbol.dispose) RestoreStateResult.prototype[Symbol.dispose] = RestoreStateResult.prototype.free;
 
 /**
  * Starter result struct — replaces JSON string from setup_starter_base.
@@ -1768,6 +2036,99 @@ export class UnitInfo {
 if (Symbol.dispose) UnitInfo.prototype[Symbol.dispose] = UnitInfo.prototype.free;
 
 /**
+ * Unit data in save game state.
+ */
+export class UnitSaveData {
+    static __wrap(ptr) {
+        const obj = Object.create(UnitSaveData.prototype);
+        obj.__wbg_ptr = ptr;
+        UnitSaveDataFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        UnitSaveDataFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_unitsavedata_free(ptr, 0);
+    }
+    /**
+     * @returns {number}
+     */
+    get assigned_building() {
+        const ret = wasm.unitsavedata_assigned_building(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get hp() {
+        const ret = wasm.unitsavedata_hp(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get id() {
+        const ret = wasm.unitsavedata_id(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get kind() {
+        const ret = wasm.unitsavedata_kind(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get max_hp() {
+        const ret = wasm.unitsavedata_max_hp(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get stance() {
+        const ret = wasm.unitsavedata_stance(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get state() {
+        const ret = wasm.unitsavedata_state(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get target() {
+        const ret = wasm.unitsavedata_target(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get x() {
+        const ret = wasm.unitsavedata_x(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get y() {
+        const ret = wasm.unitsavedata_y(this.__wbg_ptr);
+        return ret;
+    }
+}
+if (Symbol.dispose) UnitSaveData.prototype[Symbol.dispose] = UnitSaveData.prototype.free;
+
+/**
  * Add a model instance to the render list for this frame.
  * Called from JS each frame for every building/unit to render.
  * @param {string} model_id
@@ -1940,21 +2301,13 @@ export function get_draw_calls() {
 }
 
 /**
- * Get the complete game state as a JSON string for save/load.
- * Returns JSON with: map_json, resources, buildings, units, game_time, player_name, difficulty, map_type
- * @returns {string}
+ * Get the complete game state as a typed struct for save/load.
+ * JS side reconstructs JSON from typed fields for localStorage compatibility.
+ * @returns {GameStateData}
  */
 export function get_game_state() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_game_state();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_game_state();
+    return GameStateData.__wrap(ret);
 }
 
 /**
@@ -2132,23 +2485,15 @@ export function is_paused() {
  * Load a map from JSON string (same format as exported by to_json()).
  * Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":0},...]}
  * t=terrain id (0-7), e=elevation, r=map::Resource discriminant (0-7) or null
- * Returns "ok" on success or an error message.
+ * Returns a LoadMapResult with ok=true on success or ok=false with error message.
  * @param {string} json
- * @returns {string}
+ * @returns {LoadMapResult}
  */
 export function load_map_json(json) {
-    let deferred2_0;
-    let deferred2_1;
-    try {
-        const ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.load_map_json(ptr0, len0);
-        deferred2_0 = ret[0];
-        deferred2_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-    }
+    const ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.load_map_json(ptr0, len0);
+    return LoadMapResult.__wrap(ret);
 }
 
 /**
@@ -2272,23 +2617,15 @@ export function resize() {
 
 /**
  * Restore game state from a JSON save string (produced by get_game_state).
- * Returns "ok" on success or an error message.
+ * Returns a RestoreStateResult with ok=true on success or ok=false with error message.
  * @param {string} json
- * @returns {string}
+ * @returns {RestoreStateResult}
  */
 export function restore_game_state(json) {
-    let deferred2_0;
-    let deferred2_1;
-    try {
-        const ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.restore_game_state(ptr0, len0);
-        deferred2_0 = ret[0];
-        deferred2_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-    }
+    const ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.restore_game_state(ptr0, len0);
+    return RestoreStateResult.__wrap(ret);
 }
 
 /**
@@ -2519,6 +2856,10 @@ function __wbg_get_imports() {
         },
         __wbg_buildinginfo_new: function(arg0) {
             const ret = BuildingInfo.__wrap(arg0);
+            return ret;
+        },
+        __wbg_buildingsavedata_new: function(arg0) {
+            const ret = BuildingSaveData.__wrap(arg0);
             return ret;
         },
         __wbg_canvas_43a747ae656569f8: function(arg0) {
@@ -2760,6 +3101,10 @@ function __wbg_get_imports() {
             const ret = UnitInfo.__wrap(arg0);
             return ret;
         },
+        __wbg_unitsavedata_new: function(arg0) {
+            const ret = UnitSaveData.__wrap(arg0);
+            return ret;
+        },
         __wbg_useProgram_49495850b446fa56: function(arg0, arg1) {
             arg0.useProgram(arg1);
         },
@@ -2816,6 +3161,9 @@ const BuildingDetailInfoFinalization = (typeof FinalizationRegistry === 'undefin
 const BuildingInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_buildinginfo_free(ptr, 1));
+const BuildingSaveDataFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_buildingsavedata_free(ptr, 1));
 const BuildingTileInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_buildingtileinfo_free(ptr, 1));
@@ -2825,9 +3173,15 @@ const CameraStateFinalization = (typeof FinalizationRegistry === 'undefined')
 const DestructionInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_destructioninfo_free(ptr, 1));
+const GameStateDataFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_gamestatedata_free(ptr, 1));
 const GarrisonInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_garrisoninfo_free(ptr, 1));
+const LoadMapResultFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_loadmapresult_free(ptr, 1));
 const LoadModelResultFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_loadmodelresult_free(ptr, 1));
@@ -2846,6 +3200,9 @@ const ParticleInfoFinalization = (typeof FinalizationRegistry === 'undefined')
 const PlaceBuildingResultFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_placebuildingresult_free(ptr, 1));
+const RestoreStateResultFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_restorestateresult_free(ptr, 1));
 const StarterResultFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_starterresult_free(ptr, 1));
@@ -2864,6 +3221,9 @@ const UnitDetailInfoFinalization = (typeof FinalizationRegistry === 'undefined')
 const UnitInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_unitinfo_free(ptr, 1));
+const UnitSaveDataFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_unitsavedata_free(ptr, 1));
 
 function addToExternrefTable0(obj) {
     const idx = wasm.__externref_table_alloc();

@@ -4816,10 +4816,115 @@ pub fn setup_starter_base(settler_count: u32) -> Option<StarterResult> {
         }
     }
 }
-/// Get the complete game state as a JSON string for save/load.
-/// Returns JSON with: map_json, resources, buildings, units, game_time, player_name, difficulty, map_type
+/// Complete game state returned by get_game_state — replaces JSON string with typed struct.
+/// JS side reconstructs JSON from typed fields for localStorage save/load compatibility.
 #[wasm_bindgen]
-pub fn get_game_state() -> String {
+pub struct GameStateData {
+    game_time: f64,
+    map_json: String,
+    resources: Vec<u32>,
+    buildings: Vec<BuildingSaveData>,
+    units: Vec<UnitSaveData>,
+}
+
+#[wasm_bindgen]
+impl GameStateData {
+    #[wasm_bindgen(getter)]
+    pub fn game_time(&self) -> f64 { self.game_time }
+    #[wasm_bindgen(getter)]
+    pub fn map_json(&self) -> String { self.map_json.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn resources(&self) -> Vec<u32> { self.resources.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn buildings(&self) -> Vec<BuildingSaveData> { self.buildings.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn units(&self) -> Vec<UnitSaveData> { self.units.clone() }
+}
+
+/// Building data in save game state.
+#[wasm_bindgen]
+#[derive(Clone)]
+pub struct BuildingSaveData {
+    kind: u8,
+    x: u32,
+    y: u32,
+    construction: f32,
+    active: bool,
+    production_counter: f32,
+    assigned_settlers: Vec<u32>,
+    max_settlers: u32,
+    input_buffer: Vec<u32>,
+    output_buffer: Vec<u32>,
+}
+
+#[wasm_bindgen]
+impl BuildingSaveData {
+    #[wasm_bindgen(getter)]
+    pub fn kind(&self) -> u8 { self.kind }
+    #[wasm_bindgen(getter)]
+    pub fn x(&self) -> u32 { self.x }
+    #[wasm_bindgen(getter)]
+    pub fn y(&self) -> u32 { self.y }
+    #[wasm_bindgen(getter)]
+    pub fn construction(&self) -> f32 { self.construction }
+    #[wasm_bindgen(getter)]
+    pub fn active(&self) -> bool { self.active }
+    #[wasm_bindgen(getter)]
+    pub fn production_counter(&self) -> f32 { self.production_counter }
+    #[wasm_bindgen(getter)]
+    pub fn assigned_settlers(&self) -> Vec<u32> { self.assigned_settlers.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn max_settlers(&self) -> u32 { self.max_settlers }
+    #[wasm_bindgen(getter)]
+    pub fn input_buffer(&self) -> Vec<u32> { self.input_buffer.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn output_buffer(&self) -> Vec<u32> { self.output_buffer.clone() }
+}
+
+/// Unit data in save game state.
+#[wasm_bindgen]
+#[derive(Clone)]
+pub struct UnitSaveData {
+    id: u32,
+    kind: u8,
+    x: f32,
+    y: f32,
+    hp: u32,
+    max_hp: u32,
+    state: u8,
+    stance: u8,
+    assigned_building: u32,
+    target: u32,
+}
+
+#[wasm_bindgen]
+impl UnitSaveData {
+    #[wasm_bindgen(getter)]
+    pub fn id(&self) -> u32 { self.id }
+    #[wasm_bindgen(getter)]
+    pub fn kind(&self) -> u8 { self.kind }
+    #[wasm_bindgen(getter)]
+    pub fn x(&self) -> f32 { self.x }
+    #[wasm_bindgen(getter)]
+    pub fn y(&self) -> f32 { self.y }
+    #[wasm_bindgen(getter)]
+    pub fn hp(&self) -> u32 { self.hp }
+    #[wasm_bindgen(getter)]
+    pub fn max_hp(&self) -> u32 { self.max_hp }
+    #[wasm_bindgen(getter)]
+    pub fn state(&self) -> u8 { self.state }
+    #[wasm_bindgen(getter)]
+    pub fn stance(&self) -> u8 { self.stance }
+    #[wasm_bindgen(getter)]
+    pub fn assigned_building(&self) -> u32 { self.assigned_building }
+    #[wasm_bindgen(getter)]
+    pub fn target(&self) -> u32 { self.target }
+}
+
+/// Get the complete game state as a typed struct for save/load.
+/// JS side reconstructs JSON from typed fields for localStorage compatibility.
+#[wasm_bindgen]
+pub fn get_game_state() -> GameStateData {
     use crate::economy::ResourceType;
     unsafe {
         if let Some(ref app) = APP {
@@ -4827,80 +4932,64 @@ pub fn get_game_state() -> String {
             let game_time = app.game_loop.state.game_time;
             let map_json = app.map.to_json();
 
-            // Resources
-            let mut res_parts = Vec::new();
-            for i in 0..ResourceType::COUNT {
-                let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
-                res_parts.push(format!("\"{}\":{}", rt.discriminant(), eco.storage.get(rt)));
+            // Resources: dense Vec<u32> indexed by ResourceType discriminant
+            let mut resources = vec![0u32; ResourceType::COUNT];
+            for (i, item) in resources.iter_mut().enumerate().take(ResourceType::COUNT) {
+                let rt: ResourceType = std::mem::transmute::<u8, ResourceType>(i as u8);
+                *item = eco.storage.get(rt) as u32;
             }
 
             // Buildings
-            let mut bldg_parts = Vec::new();
-            for b in eco.buildings.iter() {
-                let settler_ids: Vec<String> =
-                    b.assigned_settlers.iter().map(|w| w.to_string()).collect();
-                let mut inbuf_parts = Vec::new();
-                for i in 0..ResourceType::COUNT {
-                    if b.input_buffer[i] > 0 {
-                        let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
-                        inbuf_parts.push(format!("\"{}\":{}", rt.discriminant(), b.input_buffer[i]));
-                    }
+            let buildings: Vec<BuildingSaveData> = eco.buildings.iter().map(|b| {
+                let assigned_settlers: Vec<u32> = b.assigned_settlers.to_vec();
+                let input_buffer: Vec<u32> = (0..ResourceType::COUNT).map(|i| b.input_buffer[i]).collect();
+                let output_buffer: Vec<u32> = (0..ResourceType::COUNT).map(|i| b.output_buffer[i]).collect();
+                BuildingSaveData {
+                    kind: b.kind.discriminant(),
+                    x: b.x as u32,
+                    y: b.y as u32,
+                    construction: b.construction,
+                    active: b.active,
+                    production_counter: b.production_counter,
+                    assigned_settlers,
+                    max_settlers: b.max_settlers,
+                    input_buffer,
+                    output_buffer,
                 }
-                let mut outbuf_parts = Vec::new();
-                for i in 0..ResourceType::COUNT {
-                    if b.output_buffer[i] > 0 {
-                        let rt = std::mem::transmute::<u8, ResourceType>(i as u8);
-                        outbuf_parts.push(format!("\"{}\":{}", rt.discriminant(), b.output_buffer[i]));
-                    }
-                }
-                bldg_parts.push(format!(
-                    r#"{{"kind":{}","x":{},"y":{},"construction":{},"active":{},"production_counter":{},"assigned_settlers":[{}],"max_settlers":{},"input_buffer":{{{}}},"output_buffer":{{{}}}}}"#,
-                    b.kind.discriminant(), b.x, b.y, b.construction, b.active, b.production_counter,
-                    settler_ids.join(","), b.max_settlers,
-                    inbuf_parts.join(","), outbuf_parts.join(",")
-                ));
-            }
+            }).collect();
 
             // Units
-            let mut unit_parts = Vec::new();
-            for u in eco.units.alive_units() {
-                let stance_name = u.stance.as_str();
-                let state_name = match u.state {
-                    crate::units::UnitState::Idle => "Idle",
-                    crate::units::UnitState::Moving => "Moving",
-                    crate::units::UnitState::Working => "Working",
-                    crate::units::UnitState::Fighting => "Fighting",
-                        crate::units::UnitState::Patrolling => "Patrolling",
-                    crate::units::UnitState::FormationMove => "FormationMove",
-                    crate::units::UnitState::Dying => "Dying",
-                    crate::units::UnitState::Dead => "Dead",
-                };
-                let ab = match u.assigned_building {
-                    Some(bi) => bi.to_string(),
-                    None => "null".to_string(),
-                };
-                let tgt = match u.target {
-                    Some(tid) => tid.to_string(),
-                    None => "null".to_string(),
-                };
-                unit_parts.push(format!(
-                    r#"{{"id":{},"kind":{}","x":{},"y":{},"hp":{},"max_hp":{},"state":"{}","stance":"{}","assigned_building":{},"target":{}}}"#,
-                    u.id, u.kind.discriminant(), u.x, u.y, u.hp,
-                    u.max_hp, state_name, stance_name, ab, tgt
-                ));
-            }
+            let units: Vec<UnitSaveData> = eco.units.alive_units().map(|u| {
+                UnitSaveData {
+                    id: u.id,
+                    kind: u.kind.discriminant(),
+                    x: u.x,
+                    y: u.y,
+                    hp: u.hp,
+                    max_hp: u.max_hp,
+                    state: u.state as u8,
+                    stance: u.stance as u8,
+                    assigned_building: u.assigned_building.map(|bi| bi as u32).unwrap_or(0),
+                    target: u.target.unwrap_or(0),
+                }
+            }).collect();
 
-            return format!(
-                r#"{{"version":1,"game_time":{},"map_json":{},"resources":{{{}}},"buildings":[{}],"units":[{}]}}"#,
+            return GameStateData {
                 game_time,
                 map_json,
-                res_parts.join(","),
-                bldg_parts.join(","),
-                unit_parts.join(",")
-            );
+                resources,
+                buildings,
+                units,
+            };
         }
     }
-    String::from(r#"{"error":"engine not initialized"}"#)
+    GameStateData {
+        game_time: 0.0,
+        map_json: String::from(r#"{"error":"engine not initialized"}"#),
+        resources: Vec::new(),
+        buildings: Vec::new(),
+        units: Vec::new(),
+    }
 }
 /// Result struct for restore_game_state — replaces JSON string status.
 /// `ok` is true on success, `error` contains the error message on failure.
@@ -8788,5 +8877,17 @@ mod parse_map_json_tests {
                     "resource mismatch at ({},{}): {:?} vs {:?}", x, y, orig.resource, round.resource);
             }
         }
+    }
+
+    #[test]
+    fn test_get_game_state_not_initialized() {
+        // get_game_state requires APP to be initialized -- without it, returns empty struct
+        let state = get_game_state();
+        assert!((state.game_time() - 0.0f64).abs() < f64::EPSILON, "game_time should be 0");
+        assert!(state.resources().is_empty(), "resources should be empty");
+        assert!(state.buildings().is_empty(), "buildings should be empty");
+        assert!(state.units().is_empty(), "units should be empty");
+        // map_json should contain error message
+        assert!(state.map_json().contains("error"), "map_json should contain error");
     }
 }

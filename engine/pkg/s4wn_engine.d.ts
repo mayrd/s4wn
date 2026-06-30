@@ -78,6 +78,25 @@ export class BuildingInfo {
 }
 
 /**
+ * Building data in save game state.
+ */
+export class BuildingSaveData {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    readonly active: boolean;
+    readonly assigned_settlers: Uint32Array;
+    readonly construction: number;
+    readonly input_buffer: Uint32Array;
+    readonly kind: number;
+    readonly max_settlers: number;
+    readonly output_buffer: Uint32Array;
+    readonly production_counter: number;
+    readonly x: number;
+    readonly y: number;
+}
+
+/**
  * Returns the remaining HP, or 0 if the building doesn't exist.
  * Get the max HP of a building at the given index. Returns 0 if not found.
  * Building-at-tile information struct — replaces JSON string from get_building_at_tile.
@@ -131,6 +150,21 @@ export class DestructionInfo {
 }
 
 /**
+ * Complete game state returned by get_game_state — replaces JSON string with typed struct.
+ * JS side reconstructs JSON from typed fields for localStorage save/load compatibility.
+ */
+export class GameStateData {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    readonly buildings: BuildingSaveData[];
+    readonly game_time: number;
+    readonly map_json: string;
+    readonly resources: Uint32Array;
+    readonly units: UnitSaveData[];
+}
+
+/**
  * Garrison info for a building — replaces JSON string from get_building_garrison_json.
  * `unit_ids` are the raw unit IDs of garrisoned soldiers.
  * Uses manual getters because wasm-bindgen requires Copy for public fields and Vec is not Copy.
@@ -143,6 +177,24 @@ export class GarrisonInfo {
     readonly count: number;
     readonly garrisoned: boolean;
     readonly unit_ids: Uint32Array;
+}
+
+/**
+ * Result struct for load_map_json — replaces JSON string status.
+ * `ok` is true on success, `error` contains the error message on failure.
+ */
+export class LoadMapResult {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Error message if loading failed, empty string on success.
+     */
+    readonly error: string;
+    /**
+     * True if the map was loaded successfully.
+     */
+    readonly ok: boolean;
 }
 
 /**
@@ -270,6 +322,24 @@ export class PlaceBuildingResult {
     readonly kind: number;
     /**
      * Whether the building was successfully placed.
+     */
+    readonly ok: boolean;
+}
+
+/**
+ * Result struct for restore_game_state — replaces JSON string status.
+ * `ok` is true on success, `error` contains the error message on failure.
+ */
+export class RestoreStateResult {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Error message if restore failed, empty string on success.
+     */
+    readonly error: string;
+    /**
+     * True if the game state was restored successfully.
      */
     readonly ok: boolean;
 }
@@ -404,6 +474,25 @@ export class UnitInfo {
 }
 
 /**
+ * Unit data in save game state.
+ */
+export class UnitSaveData {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    readonly assigned_building: number;
+    readonly hp: number;
+    readonly id: number;
+    readonly kind: number;
+    readonly max_hp: number;
+    readonly stance: number;
+    readonly state: number;
+    readonly target: number;
+    readonly x: number;
+    readonly y: number;
+}
+
+/**
  * Add a model instance to the render list for this frame.
  * Called from JS each frame for every building/unit to render.
  */
@@ -487,10 +576,10 @@ export function get_camera_state(): CameraState | undefined;
 export function get_draw_calls(): number;
 
 /**
- * Get the complete game state as a JSON string for save/load.
- * Returns JSON with: map_json, resources, buildings, units, game_time, player_name, difficulty, map_type
+ * Get the complete game state as a typed struct for save/load.
+ * JS side reconstructs JSON from typed fields for localStorage compatibility.
  */
-export function get_game_state(): string;
+export function get_game_state(): GameStateData;
 
 /**
  * Get the full map as a compact Vec<u8> for minimap rendering.
@@ -582,9 +671,9 @@ export function is_paused(): boolean;
  * Load a map from JSON string (same format as exported by to_json()).
  * Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":0},...]}
  * t=terrain id (0-7), e=elevation, r=map::Resource discriminant (0-7) or null
- * Returns "ok" on success or an error message.
+ * Returns a LoadMapResult with ok=true on success or ok=false with error message.
  */
-export function load_map_json(json: string): string;
+export function load_map_json(json: string): LoadMapResult;
 
 /**
  * Load a model from a JSON mesh string, validate it, and upload to GPU buffers.
@@ -652,9 +741,9 @@ export function resize(): void;
 
 /**
  * Restore game state from a JSON save string (produced by get_game_state).
- * Returns "ok" on success or an error message.
+ * Returns a RestoreStateResult with ok=true on success or ok=false with error message.
  */
-export function restore_game_state(json: string): string;
+export function restore_game_state(json: string): RestoreStateResult;
 
 /**
  * Receive pending network messages as JSON strings.
@@ -753,9 +842,11 @@ export interface InitOutput {
     readonly __wbg_buildcostitem_free: (a: number, b: number) => void;
     readonly __wbg_buildingdetailinfo_free: (a: number, b: number) => void;
     readonly __wbg_buildinginfo_free: (a: number, b: number) => void;
+    readonly __wbg_buildingsavedata_free: (a: number, b: number) => void;
     readonly __wbg_buildingtileinfo_free: (a: number, b: number) => void;
     readonly __wbg_camerastate_free: (a: number, b: number) => void;
     readonly __wbg_destructioninfo_free: (a: number, b: number) => void;
+    readonly __wbg_gamestatedata_free: (a: number, b: number) => void;
     readonly __wbg_garrisoninfo_free: (a: number, b: number) => void;
     readonly __wbg_get_buildinginfo_complete: (a: number) => number;
     readonly __wbg_get_buildinginfo_garrison: (a: number) => number;
@@ -790,6 +881,7 @@ export interface InitOutput {
     readonly __wbg_get_unitinfo_carried_tool: (a: number) => number;
     readonly __wbg_get_unitinfo_stance: (a: number) => number;
     readonly __wbg_get_unitinfo_state: (a: number) => number;
+    readonly __wbg_loadmapresult_free: (a: number, b: number) => void;
     readonly __wbg_loadmodelresult_free: (a: number, b: number) => void;
     readonly __wbg_mapexportdata_free: (a: number, b: number) => void;
     readonly __wbg_moraleinfo_free: (a: number, b: number) => void;
@@ -827,8 +919,8 @@ export interface InitOutput {
     readonly __wbg_set_unitinfo_stance: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_state: (a: number, b: number) => void;
     readonly __wbg_starterresult_free: (a: number, b: number) => void;
-    readonly __wbg_startingresourcesresult_free: (a: number, b: number) => void;
     readonly __wbg_statsinfo_free: (a: number, b: number) => void;
+    readonly __wbg_unitsavedata_free: (a: number, b: number) => void;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => number;
     readonly buildcostitem_amount: (a: number) => number;
@@ -850,9 +942,24 @@ export interface InitOutput {
     readonly buildingdetailinfo_workers: (a: number) => [number, number];
     readonly buildingdetailinfo_x: (a: number) => number;
     readonly buildingdetailinfo_y: (a: number) => number;
+    readonly buildingsavedata_active: (a: number) => number;
+    readonly buildingsavedata_assigned_settlers: (a: number) => [number, number];
+    readonly buildingsavedata_construction: (a: number) => number;
+    readonly buildingsavedata_input_buffer: (a: number) => [number, number];
+    readonly buildingsavedata_kind: (a: number) => number;
+    readonly buildingsavedata_max_settlers: (a: number) => number;
+    readonly buildingsavedata_output_buffer: (a: number) => [number, number];
+    readonly buildingsavedata_production_counter: (a: number) => number;
+    readonly buildingsavedata_x: (a: number) => number;
+    readonly buildingsavedata_y: (a: number) => number;
     readonly decompress_sav_chunk: (a: number, b: number, c: number) => [number, number];
     readonly export_map_json: () => number;
     readonly formation_move: (a: number, b: number, c: number, d: number) => number;
+    readonly gamestatedata_buildings: (a: number) => [number, number];
+    readonly gamestatedata_game_time: (a: number) => number;
+    readonly gamestatedata_map_json: (a: number) => [number, number];
+    readonly gamestatedata_resources: (a: number) => [number, number];
+    readonly gamestatedata_units: (a: number) => [number, number];
     readonly garrisoninfo_capacity: (a: number) => number;
     readonly garrisoninfo_count: (a: number) => number;
     readonly garrisoninfo_garrisoned: (a: number) => number;
@@ -865,7 +972,7 @@ export interface InitOutput {
     readonly get_building_summary: () => [number, number];
     readonly get_camera_state: () => number;
     readonly get_draw_calls: () => number;
-    readonly get_game_state: () => [number, number];
+    readonly get_game_state: () => number;
     readonly get_map_data: () => [number, number];
     readonly get_particles: () => [number, number];
     readonly get_player_nation: () => number;
@@ -880,8 +987,10 @@ export interface InitOutput {
     readonly get_units_in_rect: (a: number, b: number, c: number, d: number) => [number, number];
     readonly init: (a: number, b: number) => [number, number, number];
     readonly is_paused: () => number;
-    readonly load_map_json: (a: number, b: number) => [number, number];
+    readonly load_map_json: (a: number, b: number) => number;
     readonly load_model_json: (a: number, b: number, c: number, d: number) => number;
+    readonly loadmapresult_error: (a: number) => [number, number];
+    readonly loadmapresult_ok: (a: number) => number;
     readonly loadmodelresult_error: (a: number) => [number, number];
     readonly loadmodelresult_name: (a: number) => [number, number];
     readonly loadmodelresult_ok: (a: number) => number;
@@ -910,7 +1019,7 @@ export interface InitOutput {
     readonly recent_resource_pickup_count: () => number;
     readonly render: (a: number) => void;
     readonly resize: () => void;
-    readonly restore_game_state: (a: number, b: number) => [number, number];
+    readonly restore_game_state: (a: number, b: number) => number;
     readonly set_game_speed: (a: number) => void;
     readonly set_player_nation_by_id: (a: number) => number;
     readonly set_textures_ready: () => void;
@@ -925,12 +1034,20 @@ export interface InitOutput {
     readonly starterresult_hq_y: (a: number) => number;
     readonly starterresult_ok: (a: number) => number;
     readonly starterresult_settlers: (a: number) => number;
-    readonly startingresourcesresult_error: (a: number) => [number, number];
-    readonly startingresourcesresult_ok: (a: number) => number;
     readonly tick_building_destructions: (a: number) => [number, number];
     readonly toggle_editor_grid: () => number;
     readonly toggle_pause: () => number;
     readonly try_place_building_by_id: (a: number, b: number, c: number) => number;
+    readonly unitsavedata_assigned_building: (a: number) => number;
+    readonly unitsavedata_hp: (a: number) => number;
+    readonly unitsavedata_id: (a: number) => number;
+    readonly unitsavedata_kind: (a: number) => number;
+    readonly unitsavedata_max_hp: (a: number) => number;
+    readonly unitsavedata_stance: (a: number) => number;
+    readonly unitsavedata_state: (a: number) => number;
+    readonly unitsavedata_target: (a: number) => number;
+    readonly unitsavedata_x: (a: number) => number;
+    readonly unitsavedata_y: (a: number) => number;
     readonly wasm_garrison_unit: (a: number, b: number) => number;
     readonly wasm_ungarrison_unit: (a: number, b: number) => number;
     readonly __wbg_set_buildingtileinfo_index: (a: number, b: number) => void;
@@ -1002,7 +1119,13 @@ export interface InitOutput {
     readonly __wbg_get_buildingtileinfo_x: (a: number) => number;
     readonly __wbg_get_unitinfo_kind: (a: number) => number;
     readonly __wbg_unitinfo_free: (a: number, b: number) => void;
+    readonly __wbg_restorestateresult_free: (a: number, b: number) => void;
     readonly __wbg_unitdetailinfo_free: (a: number, b: number) => void;
+    readonly __wbg_startingresourcesresult_free: (a: number, b: number) => void;
+    readonly startingresourcesresult_ok: (a: number) => number;
+    readonly restorestateresult_error: (a: number) => [number, number];
+    readonly startingresourcesresult_error: (a: number) => [number, number];
+    readonly restorestateresult_ok: (a: number) => number;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __externref_table_alloc: () => number;
