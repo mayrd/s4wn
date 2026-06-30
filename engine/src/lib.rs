@@ -5332,10 +5332,10 @@ pub fn start_building_destruction(building_index: usize, duration_secs: f32) -> 
     }
 }
 /// Tick destruction timers for all buildings by `dt` seconds.
-/// Returns JSON array of completed destructions: [{"index":N,"x":N,"y":N}, ...]
+/// Returns typed Vec<DestructionInfo> - no JSON.parse() needed in JS.
 /// JS should call this each frame and remove buildings from the model list.
 #[wasm_bindgen]
-pub fn tick_building_destructions(dt: f32) -> String {
+pub fn tick_building_destructions(dt: f32) -> Vec<DestructionInfo> {
     unsafe {
         if let Some(ref mut app) = APP {
             let completed = app.game_loop.state.economy.tick_destructions(dt);
@@ -5347,16 +5347,18 @@ pub fn tick_building_destructions(dt: f32) -> String {
                     by as f32 + 0.5,
                 );
             }
-            let parts: Vec<String> = completed.iter()
-                .map(|(idx, x, y)| format!(r#"{{"index":{},"x":{},"y":{}}}"#, idx, x, y))
-                .collect();
-            format!("[{}]", parts.join(","))
+            completed.iter()
+                .map(|(idx, x, y)| DestructionInfo {
+                    index: *idx as u32,
+                    x: *x as u32,
+                    y: *y as u32,
+                })
+                .collect()
         } else {
-            String::from("[]")
+            Vec::new()
         }
     }
-}
-/// Returns the remaining HP, or 0 if the building doesn't exist.
+}/// Returns the remaining HP, or 0 if the building doesn't exist.
 /// Get the max HP of a building at the given index. Returns 0 if not found.
 /// Building-at-tile information struct — replaces JSON string from get_building_at_tile.
 /// `index` is the position in the buildings array (used for garrison/destruction).
@@ -5373,6 +5375,17 @@ pub struct BuildingTileInfo {
     pub construction: f32,
     pub active: bool,
     pub destruction_progress: f32,
+}
+
+/// Destruction info for a building - replaces JSON string from tick_building_destructions.
+/// `index` is the position in the buildings array at time of destruction.
+/// `x` and `y` are tile coordinates.
+#[wasm_bindgen]
+#[derive(Copy, Clone)]
+pub struct DestructionInfo {
+    pub index: u32,
+    pub x: u32,
+    pub y: u32,
 }
 
 /// Get building info at a tile position. Returns Some(BuildingTileInfo) or None.
@@ -8188,5 +8201,30 @@ mod parse_map_json_tests {
     fn test_get_unit_info_not_found() {
         // When APP is not initialized, get_unit_info returns None
         assert!(get_unit_info(999).is_none());
+    }
+
+    #[test]
+    fn test_destruction_info_struct_fields() {
+        let info = DestructionInfo {
+            index: 5,
+            x: 10,
+            y: 20,
+        };
+        assert_eq!(info.index, 5);
+        assert_eq!(info.x, 10);
+        assert_eq!(info.y, 20);
+    }
+
+    #[test]
+    fn test_destruction_info_copy() {
+        let info = DestructionInfo {
+            index: 0,
+            x: 0,
+            y: 0,
+        };
+        let copy = info;
+        assert_eq!(info.index, copy.index);
+        assert_eq!(info.x, copy.x);
+        assert_eq!(info.y, copy.y);
     }
 }

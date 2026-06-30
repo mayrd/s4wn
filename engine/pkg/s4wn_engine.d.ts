@@ -82,6 +82,20 @@ export class BuildingTileInfo {
 }
 
 /**
+ * Destruction info for a building - replaces JSON string from tick_building_destructions.
+ * `index` is the position in the buildings array at time of destruction.
+ * `x` and `y` are tile coordinates.
+ */
+export class DestructionInfo {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    index: number;
+    x: number;
+    y: number;
+}
+
+/**
  * Garrison info for a building — replaces JSON string from get_building_garrison_json.
  * `unit_ids` are the raw unit IDs of garrisoned soldiers.
  * Uses manual getters because wasm-bindgen requires Copy for public fields and Vec is not Copy.
@@ -531,10 +545,10 @@ export function start_building_destruction(building_index: number, duration_secs
 
 /**
  * Tick destruction timers for all buildings by `dt` seconds.
- * Returns JSON array of completed destructions: [{"index":N,"x":N,"y":N}, ...]
+ * Returns typed Vec<DestructionInfo> - no JSON.parse() needed in JS.
  * JS should call this each frame and remove buildings from the model list.
  */
-export function tick_building_destructions(dt: number): string;
+export function tick_building_destructions(dt: number): DestructionInfo[];
 
 /**
  * Toggle map editor grid overlay on/off. Returns new state.
@@ -567,6 +581,7 @@ export interface InitOutput {
     readonly __wbg_buildingdetailinfo_free: (a: number, b: number) => void;
     readonly __wbg_buildinginfo_free: (a: number, b: number) => void;
     readonly __wbg_buildingtileinfo_free: (a: number, b: number) => void;
+    readonly __wbg_destructioninfo_free: (a: number, b: number) => void;
     readonly __wbg_garrisoninfo_free: (a: number, b: number) => void;
     readonly __wbg_get_buildinginfo_complete: (a: number) => number;
     readonly __wbg_get_buildinginfo_garrison: (a: number) => number;
@@ -717,6 +732,7 @@ export interface InitOutput {
     readonly wasm_garrison_unit: (a: number, b: number) => number;
     readonly wasm_ungarrison_unit: (a: number, b: number) => number;
     readonly __wbg_set_buildingtileinfo_index: (a: number, b: number) => void;
+    readonly __wbg_set_destructioninfo_index: (a: number, b: number) => void;
     readonly __wbg_set_particleinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_statsinfo_fps: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_x: (a: number, b: number) => void;
@@ -726,11 +742,14 @@ export interface InitOutput {
     readonly __wbg_get_unitdetailinfo_y: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_id: (a: number) => number;
     readonly __wbg_get_statsinfo_fps: (a: number) => number;
+    readonly __wbg_get_destructioninfo_index: (a: number) => number;
     readonly __wbg_get_statsinfo_zoom: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_index: (a: number) => number;
     readonly __wbg_get_unitinfo_y: (a: number) => number;
     readonly __wbg_get_unitinfo_x: (a: number) => number;
     readonly __wbg_get_unitinfo_id: (a: number) => number;
+    readonly __wbg_set_destructioninfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_destructioninfo_x: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_max_hp: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_hp: (a: number, b: number) => void;
     readonly __wbg_set_tileinfo_y: (a: number, b: number) => void;
@@ -759,9 +778,11 @@ export interface InitOutput {
     readonly __wbg_get_particleinfo_r: (a: number) => number;
     readonly __wbg_get_particleinfo_g: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_dying_progress: (a: number) => number;
+    readonly __wbg_get_statsinfo_ticks: (a: number) => number;
     readonly __wbg_get_particleinfo_x: (a: number) => number;
     readonly __wbg_get_tileinfo_y: (a: number) => number;
-    readonly __wbg_get_statsinfo_ticks: (a: number) => number;
+    readonly __wbg_get_destructioninfo_y: (a: number) => number;
+    readonly __wbg_get_destructioninfo_x: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_hp: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_max_hp: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_y: (a: number) => number;

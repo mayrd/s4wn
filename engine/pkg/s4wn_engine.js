@@ -425,6 +425,70 @@ export class BuildingTileInfo {
 if (Symbol.dispose) BuildingTileInfo.prototype[Symbol.dispose] = BuildingTileInfo.prototype.free;
 
 /**
+ * Destruction info for a building - replaces JSON string from tick_building_destructions.
+ * `index` is the position in the buildings array at time of destruction.
+ * `x` and `y` are tile coordinates.
+ */
+export class DestructionInfo {
+    static __wrap(ptr) {
+        const obj = Object.create(DestructionInfo.prototype);
+        obj.__wbg_ptr = ptr;
+        DestructionInfoFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        DestructionInfoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_destructioninfo_free(ptr, 0);
+    }
+    /**
+     * @returns {number}
+     */
+    get index() {
+        const ret = wasm.__wbg_get_destructioninfo_index(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get x() {
+        const ret = wasm.__wbg_get_destructioninfo_x(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get y() {
+        const ret = wasm.__wbg_get_destructioninfo_y(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @param {number} arg0
+     */
+    set index(arg0) {
+        wasm.__wbg_set_destructioninfo_index(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set x(arg0) {
+        wasm.__wbg_set_destructioninfo_x(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set y(arg0) {
+        wasm.__wbg_set_destructioninfo_y(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) DestructionInfo.prototype[Symbol.dispose] = DestructionInfo.prototype.free;
+
+/**
  * Garrison info for a building — replaces JSON string from get_building_garrison_json.
  * `unit_ids` are the raw unit IDs of garrisoned soldiers.
  * Uses manual getters because wasm-bindgen requires Copy for public fields and Vec is not Copy.
@@ -1902,22 +1966,16 @@ export function start_building_destruction(building_index, duration_secs) {
 
 /**
  * Tick destruction timers for all buildings by `dt` seconds.
- * Returns JSON array of completed destructions: [{"index":N,"x":N,"y":N}, ...]
+ * Returns typed Vec<DestructionInfo> - no JSON.parse() needed in JS.
  * JS should call this each frame and remove buildings from the model list.
  * @param {number} dt
- * @returns {string}
+ * @returns {DestructionInfo[]}
  */
 export function tick_building_destructions(dt) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.tick_building_destructions(dt);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.tick_building_destructions(dt);
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
 }
 
 /**
@@ -2085,6 +2143,10 @@ function __wbg_get_imports() {
         },
         __wbg_deleteShader_993edb4beb3c4d53: function(arg0, arg1) {
             arg0.deleteShader(arg1);
+        },
+        __wbg_destructioninfo_new: function(arg0) {
+            const ret = DestructionInfo.__wrap(arg0);
+            return ret;
         },
         __wbg_disable_1659d1b7d50c31e7: function(arg0, arg1) {
             arg0.disable(arg1 >>> 0);
@@ -2330,6 +2392,9 @@ const BuildingInfoFinalization = (typeof FinalizationRegistry === 'undefined')
 const BuildingTileInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_buildingtileinfo_free(ptr, 1));
+const DestructionInfoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_destructioninfo_free(ptr, 1));
 const GarrisonInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_garrisoninfo_free(ptr, 1));

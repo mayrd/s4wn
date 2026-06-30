@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles,
-} from './pkg/s4wn_engine.js?v=79';
+} from './pkg/s4wn_engine.js?v=80';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -6095,7 +6095,7 @@ async function main() {
             // Building destruction animation tick
             if (typeof tick_building_destructions === 'function') {
                 try {
-                    const destroyed = JSON.parse(tick_building_destructions(0.016));
+                    const destroyed = tick_building_destructions(0.016);
                     for (const d of destroyed) {
                         console.log(`Building ${d.index} destroyed at (${d.x},${d.y})`);
                     }
