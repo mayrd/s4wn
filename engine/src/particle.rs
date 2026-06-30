@@ -211,6 +211,7 @@ impl ParticleSystem {
             .collect()
     }
 
+    #[cfg(test)]
     pub fn to_json(&self) -> String {
         let alive: Vec<&Particle> = self.particles.iter().filter(|p| p.alive).collect();
         let mut parts = Vec::with_capacity(alive.len());
