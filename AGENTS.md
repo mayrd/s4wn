@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S303 · 838 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrated get_build_cost_by_id from JSON String to typed Vec<BuildCostItem> — eliminates JSON.parse() in tooltip + affordability refresh. WASM: ~273KB (under 300KB target). Next: (1) Migrate try_place_building_by_id to typed struct (ok/idx/kind or error). (2) Migrate add_starting_resources to typed bool/struct. (3) Migrate export_map_json to typed struct — largest remaining JSON export. (4) Phase 8: sound effects system.
+Status: S304 · 838 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrated try_place_building_by_id from JSON String to typed PlaceBuildingResult struct — eliminates JSON.parse() in canvas click placement handler. WASM: ~276KB (under 300KB target). Next: (1) Migrate add_starting_resources to typed bool/struct. (2) Migrate export_map_json to typed struct — largest remaining JSON export. (3) Phase 8: sound effects system. (4) Continue Phase 7 rendering improvements.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Status: S303 · 838 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrat
 
 ### Session Log (recent)
 
+| 304 | 2026-06-30 | Migrate try_place_building_by_id from JSON String to typed PlaceBuildingResult struct: New #[wasm_bindgen] PlaceBuildingResult {ok, idx, kind, error} with Clone — private fields with getter methods (String field prevents Copy derive). Returns PlaceBuildingResult directly — wasm-bindgen converts to JS object. Eliminates JSON.parse() in canvas click placement handler (per-frame interaction). JS: removed JSON.parse(result), direct r.ok/r.kind/r.error access. Cache v83→v84. Tests updated for typed return. 838 tests, clippy clean. WASM: 276.6KB. — 838 tests |
 | 303 | 2026-06-30 | Migrate get_build_cost_by_id from JSON String to typed Vec<BuildCostItem>: New #[wasm_bindgen] BuildCostItem {resource_discriminant, amount} with Copy+Clone — both u8/u32 Copy fields, no manual getters. Returns Vec<BuildCostItem> directly — wasm-bindgen converts to JS array of typed objects. Eliminates JSON.parse() in showBuildCostTooltip() + refreshBuildingAffordability() (2 JS call sites). Cache v82→v83. Tests updated for typed return. 838 tests, clippy clean. — 838 tests |
 | 302 | 2026-06-30 | Migrate setup_starter_base from JSON String to typed StarterResult struct: New #[wasm_bindgen] StarterResult {ok, hq_x, hq_y, settlers, error} with Clone — private fields with getter methods (String field prevents Copy derive). Returns Option<StarterResult> — wasm-bindgen converts to JS object or null. Eliminates JSON.parse() in game init path. Cache v81→v82. 3 new tests (struct fields, error variant, clone). 835→838 tests, clippy clean. — 838 tests |
 | 301 | 2026-06-30 | Migrate get_camera_state from JSON String to typed CameraState struct: New #[wasm_bindgen] CameraState {center_x, center_y, zoom, vp_w, vp_h} with Copy+Clone — all f32/u32 Copy fields, no manual getters. Returns Option<CameraState> — wasm-bindgen converts to JS object or null. Eliminates JSON.parse() at 4 JS call sites (minimap viewport, selection overlay, particle rendering, debug snapshot). Cache v80→v81. 2 new tests (struct fields, Copy trait). 833→835 tests, clippy clean. — 835 tests |
