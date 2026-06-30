@@ -425,6 +425,97 @@ export class BuildingTileInfo {
 if (Symbol.dispose) BuildingTileInfo.prototype[Symbol.dispose] = BuildingTileInfo.prototype.free;
 
 /**
+ * Camera state struct — replaces JSON string from get_camera_state.
+ * `center_x`/`center_y` are the camera center in world tile coords.
+ * `zoom` is the camera zoom factor.
+ * `vp_w`/`vp_h` are the viewport dimensions in pixels.
+ */
+export class CameraState {
+    static __wrap(ptr) {
+        const obj = Object.create(CameraState.prototype);
+        obj.__wbg_ptr = ptr;
+        CameraStateFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        CameraStateFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_camerastate_free(ptr, 0);
+    }
+    /**
+     * @returns {number}
+     */
+    get center_x() {
+        const ret = wasm.__wbg_get_camerastate_center_x(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get center_y() {
+        const ret = wasm.__wbg_get_camerastate_center_y(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get vp_h() {
+        const ret = wasm.__wbg_get_camerastate_vp_h(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get vp_w() {
+        const ret = wasm.__wbg_get_camerastate_vp_w(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get zoom() {
+        const ret = wasm.__wbg_get_camerastate_zoom(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {number} arg0
+     */
+    set center_x(arg0) {
+        wasm.__wbg_set_camerastate_center_x(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set center_y(arg0) {
+        wasm.__wbg_set_camerastate_center_y(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set vp_h(arg0) {
+        wasm.__wbg_set_camerastate_vp_h(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set vp_w(arg0) {
+        wasm.__wbg_set_camerastate_vp_w(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set zoom(arg0) {
+        wasm.__wbg_set_camerastate_zoom(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) CameraState.prototype[Symbol.dispose] = CameraState.prototype.free;
+
+/**
  * Destruction info for a building - replaces JSON string from tick_building_destructions.
  * `index` is the position in the buildings array at time of destruction.
  * `x` and `y` are tile coordinates.
@@ -1490,21 +1581,13 @@ export function get_building_summary() {
 }
 
 /**
- * Get camera state for minimap viewport calculation.
- * Returns JSON: {"center_x":10.5,"center_y":12.3,"zoom":1.0,"vp_w":1280,"vp_h":720}
- * @returns {string}
+ * Get camera state as a typed struct (replaces JSON string, eliminating JSON.parse()).
+ * Returns None if engine not initialized.
+ * @returns {CameraState | undefined}
  */
 export function get_camera_state() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_camera_state();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_camera_state();
+    return ret === 0 ? undefined : CameraState.__wrap(ret);
 }
 
 /**
@@ -2392,6 +2475,9 @@ const BuildingInfoFinalization = (typeof FinalizationRegistry === 'undefined')
 const BuildingTileInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_buildingtileinfo_free(ptr, 1));
+const CameraStateFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_camerastate_free(ptr, 1));
 const DestructionInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_destructioninfo_free(ptr, 1));

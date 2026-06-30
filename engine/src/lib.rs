@@ -4451,23 +4451,33 @@ pub fn set_game_speed(multiplier: f64) {
 }
 
 
-/// Get camera state for minimap viewport calculation.
-/// Returns JSON: {"center_x":10.5,"center_y":12.3,"zoom":1.0,"vp_w":1280,"vp_h":720}
+/// Camera state struct — replaces JSON string from get_camera_state.
+/// `center_x`/`center_y` are the camera center in world tile coords.
+/// `zoom` is the camera zoom factor.
+/// `vp_w`/`vp_h` are the viewport dimensions in pixels.
 #[wasm_bindgen]
-pub fn get_camera_state() -> String {
+#[derive(Copy, Clone)]
+pub struct CameraState {
+    pub center_x: f32,
+    pub center_y: f32,
+    pub zoom: f32,
+    pub vp_w: u32,
+    pub vp_h: u32,
+}
+
+/// Get camera state as a typed struct (replaces JSON string, eliminating JSON.parse()).
+/// Returns None if engine not initialized.
+#[wasm_bindgen]
+pub fn get_camera_state() -> Option<CameraState> {
     unsafe {
-        if let Some(ref app) = APP {
-            return format!(
-                r#"{{"center_x":{:.2},"center_y":{:.2},"zoom":{:.2},"vp_w":{},"vp_h":{}}}"#,
-                app.camera.center_x,
-                app.camera.center_y,
-                app.camera.zoom,
-                app.camera.viewport_width,
-                app.camera.viewport_height,
-            );
-        }
+        (*std::ptr::addr_of!(APP)).as_ref().map(|app| CameraState {
+            center_x: app.camera.center_x,
+            center_y: app.camera.center_y,
+            zoom: app.camera.zoom,
+            vp_w: app.camera.viewport_width,
+            vp_h: app.camera.viewport_height,
+        })
     }
-    String::new()
 }
 /// Toggle the game pause state. Returns the new state.
 #[wasm_bindgen]
@@ -8226,5 +8236,38 @@ mod parse_map_json_tests {
         assert_eq!(info.index, copy.index);
         assert_eq!(info.x, copy.x);
         assert_eq!(info.y, copy.y);
+    }
+
+    #[test]
+    fn test_camera_state_struct_fields() {
+        let cs = CameraState {
+            center_x: 10.5,
+            center_y: 12.3,
+            zoom: 1.0,
+            vp_w: 1280,
+            vp_h: 720,
+        };
+        assert_eq!(cs.center_x, 10.5);
+        assert_eq!(cs.center_y, 12.3);
+        assert_eq!(cs.zoom, 1.0);
+        assert_eq!(cs.vp_w, 1280);
+        assert_eq!(cs.vp_h, 720);
+    }
+
+    #[test]
+    fn test_camera_state_copy() {
+        let cs = CameraState {
+            center_x: 0.0,
+            center_y: 0.0,
+            zoom: 2.5,
+            vp_w: 1920,
+            vp_h: 1080,
+        };
+        let copy = cs;
+        assert_eq!(cs.center_x, copy.center_x);
+        assert_eq!(cs.center_y, copy.center_y);
+        assert_eq!(cs.zoom, copy.zoom);
+        assert_eq!(cs.vp_w, copy.vp_w);
+        assert_eq!(cs.vp_h, copy.vp_h);
     }
 }

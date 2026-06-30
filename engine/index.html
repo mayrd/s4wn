@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles,
-} from './pkg/s4wn_engine.js?v=80';
+} from './pkg/s4wn_engine.js?v=81';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -4383,9 +4383,8 @@ function renderMinimap() {
 
     // ── Draw viewport rectangle (red box) ──────────────────────────
     try {
-        const camJson = get_camera_state ? get_camera_state() : null;
-        if (camJson) {
-            const cam = JSON.parse(camJson);
+        const cam = get_camera_state ? get_camera_state() : null;
+        if (cam) {
             const iso_cos = 0.8660254;
             const iso_sin = 0.5;
             const base_tile = 48.0;
@@ -5926,8 +5925,7 @@ async function main() {
             // iso_x = (x - y) * 0.866 + screen_center_x
             // iso_y = (x + y) * 0.5 - elevation * 0.5 + screen_center_y
             const cam = get_camera_state();
-            const camData = cam ? JSON.parse(cam) : null;
-            const zoom = camData ? (camData.zoom || 1.0) : 1.0;
+            const zoom = cam ? cam.zoom : 1.0;
             const cx = selOverlay.width / 2;
             const cy = selOverlay.height / 2;
 
@@ -5983,8 +5981,7 @@ async function main() {
             if (!particles || particles.length === 0) return;
 
             const cam = get_camera_state();
-            const camData = cam ? JSON.parse(cam) : null;
-            const zoom = camData ? (camData.zoom || 1.0) : 1.0;
+            const zoom = cam ? cam.zoom : 1.0;
             const cx = selOverlay.width / 2;
             const cy = selOverlay.height / 2;
 
@@ -6054,8 +6051,8 @@ async function main() {
                 // Camera center for HUD display
                 let cx = '?', cy = '?';
                 try {
-                    const camJson = get_camera_state ? get_camera_state() : null;
-                    if (camJson) { const cam = JSON.parse(camJson); cx = cam.center_x?.toFixed(0); cy = cam.center_y?.toFixed(0); }
+                    const cam = get_camera_state ? get_camera_state() : null;
+                    if (cam) { cx = cam.center_x?.toFixed(0); cy = cam.center_y?.toFixed(0); }
                 } catch(e) {}
                 const pname = window._s4wn_player_name || '?';
                 const level = window._s4wn_difficulty || '?';
@@ -7271,10 +7268,12 @@ const DebugSnapshot = {
     try { info.buildings = get_building_summary().length; } catch(e) {}
     try { info.units = get_unit_summary().length; } catch(e) {}
     try {
-      const cam = JSON.parse(get_camera_state());
-      info.camera_offset = `(${cam.center_x?.toFixed(1)}, ${cam.center_y?.toFixed(1)})`;
-      info.camera_viewport = `${cam.vp_w?.toFixed(0)}×${cam.vp_h?.toFixed(0)}`;
-      info.camera_zoom = cam.zoom;
+      const cam = get_camera_state();
+      if (cam) {
+          info.camera_offset = `(${cam.center_x.toFixed(1)}, ${cam.center_y.toFixed(1)})`;
+          info.camera_viewport = `${cam.vp_w}×${cam.vp_h}`;
+          info.camera_zoom = cam.zoom;
+      }
     } catch(e) {}
 
     // ── CSS key elements ──
