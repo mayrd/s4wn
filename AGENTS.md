@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S306 · 841 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrated export_map_json to integer resource IDs — eliminates 8 resource name strings from export path, fixes export→import round-trip. WASM: ~276KB (under 300KB target). Next: (1) Phase 8: sound effects system — audio playback infrastructure. (2) Continue Phase 7 rendering improvements. (3) Audit remaining JSON String exports for migration candidates. (4) Add regression test for map export→import round-trip.
+Status: S307 · 842 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Added map JSON round-trip regression test — exports 8×6 map (all terrain types, all resources, varied elevations) through to_json→parse_map_json and asserts every field matches. Next: (1) Phase 8: sound effects system — audio playback infrastructure. (2) Continue Phase 7 rendering improvements. (3) Audit remaining JSON String exports for migration candidates. (4) Add building placement validation tests.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -101,6 +101,7 @@ Status: S306 · 841 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Migrat
 
 ### Session Log (recent)
 
+| 307 | 2026-06-30 | Add map JSON round-trip regression test: 8×6 map with all 8 terrain types, all 8 resource types, varied elevations, null resources. to_json→parse_map_json asserts every field matches — catches future export/import format divergence. 841→842 tests, clippy clean. — 842 tests |
 | 306 | 2026-06-30 | Migrate export_map_json to integer resource IDs: Replaced 8 string resource names ("Iron","Coal","Gold","Stone","Sulfur","Fish","Game","Grain") with integer discriminant IDs (0-7) in Map::to_json(). Eliminates resource name strings from export path. Fixes export→import round-trip — parser already accepted integers but exporter produced strings. Test updated for integer format. 841 tests, clippy clean. — 841 tests |
 | 305 | 2026-06-30 | Migrate add_starting_resources from JSON String to typed StartingResourcesResult struct: New #[wasm_bindgen] StartingResourcesResult {ok, error} with Clone — private fields with getter methods (String field prevents Copy derive). Returns Option<StartingResourcesResult> — wasm-bindgen converts to JS object or null. Eliminates string comparison in game init path. JS: removed !== 'ok' check, direct r.ok/r.error access. 3 new tests (struct fields, error variant, clone). 838→841 tests, clippy clean. — 841 tests |
 | 304 | 2026-06-30 | Migrate try_place_building_by_id from JSON String to typed PlaceBuildingResult struct: New #[wasm_bindgen] PlaceBuildingResult {ok, idx, kind, error} with Clone — private fields with getter methods (String field prevents Copy derive). Returns PlaceBuildingResult directly — wasm-bindgen converts to JS object. Eliminates JSON.parse() in canvas click placement handler (per-frame interaction). JS: removed JSON.parse(result), direct r.ok/r.kind/r.error access. Cache v83→v84. Tests updated for typed return. 838 tests, clippy clean. WASM: 276.6KB. — 838 tests |
