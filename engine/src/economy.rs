@@ -6033,7 +6033,7 @@ mod squad_leader_aura_tests {
 
         // Mine on tile with Coal resource — should succeed (resource check is on self tile)
         // Note: Castle is at (3,3), so we need another tile in territory
-        let result = e2.try_place_building_checked(BuildingType::Mine, 3, 3, 0, &map2);
+        let _result = e2.try_place_building_checked(BuildingType::Mine, 3, 3, 0, &map2);
         // (3,3) already has a building (Castle), so this fails for collision
         // Let's use a tile within territory that has a resource
         let mut map3 = Map::new(10, 10);

@@ -3809,6 +3809,28 @@ fn parse_map_json(json: &str) -> Result<Map, String> {
     Ok(map)
 }
 
+/// Map export data — typed replacement for JSON string from export_map_json().
+/// `terrain` is Terrain discriminant (u8), `elevation` is height value,
+/// `resource` is Resource discriminant (i32), -1 = no resource.
+/// Tiles are in row-major order (y * width + x).
+#[wasm_bindgen]
+pub struct MapExportData {
+    width: u32,
+    height: u32,
+    terrain: Vec<u8>,
+    elevation: Vec<f32>,
+    resource: Vec<i32>,
+}
+
+#[wasm_bindgen]
+impl MapExportData {
+    pub fn width(&self) -> u32 { self.width }
+    pub fn height(&self) -> u32 { self.height }
+    pub fn terrain(&self) -> Vec<u8> { self.terrain.clone() }
+    pub fn elevation(&self) -> Vec<f32> { self.elevation.clone() }
+    pub fn resource(&self) -> Vec<i32> { self.resource.clone() }
+}
+
 /// Tile information returned by `get_tile_at` — replaces JSON string with typed struct.
 /// `resource` is -1 when no resource is present on the tile.
 #[wasm_bindgen]
@@ -5464,14 +5486,38 @@ pub fn toggle_editor_grid() -> bool {
         }
     }
 }
-/// Export the current map as a JSON string (same format as load_map_json expects).
-/// Returns the JSON string on success, or an error string if no map is loaded.
+/// Export the current map as typed data (same format as load_map_json expects).
+/// Returns None if no map is loaded. JS reconstructs JSON for file download.
 #[wasm_bindgen]
-pub fn export_map_json() -> String {
+pub fn export_map_json() -> Option<MapExportData> {
     unsafe {
         (*std::ptr::addr_of!(APP)).as_ref()
-            .map(|app| app.game_loop.state.map.to_json())
-            .unwrap_or_else(|| String::from("error: no map loaded"))
+            .map(|app| {
+                let map = &app.game_loop.state.map;
+                let size = map.width * map.height;
+                let mut terrain = Vec::with_capacity(size);
+                let mut elevation = Vec::with_capacity(size);
+                let mut resource = Vec::with_capacity(size);
+                for y in 0..map.height {
+                    for x in 0..map.width {
+                        if let Some(tile) = map.get(x, y) {
+                            terrain.push(tile.terrain as u8);
+                            elevation.push(tile.elevation);
+                            resource.push(match tile.resource {
+                                Some(r) => r as i32,
+                                None => -1,
+                            });
+                        }
+                    }
+                }
+                MapExportData {
+                    width: map.width as u32,
+                    height: map.height as u32,
+                    terrain,
+                    elevation,
+                    resource,
+                }
+            })
     }
 }
 /// Start the destruction animation for a building at the given index.
@@ -7280,17 +7326,47 @@ mod tests {
         if let Some(tile) = map.get_mut(3, 0) {
             tile.resource = Some(Resource::Gold);
         }
-        let json = map.to_json();
-        // Verify JSON structure
-        assert!(json.starts_with("{\"width\":4,\"height\":4"), "bad header: {}", &json[..40]);
-        assert!(json.contains("\"t\":0"), "missing grass");
-        assert!(json.contains("\"t\":1"), "missing forest");
-        assert!(json.contains("\"t\":3"), "missing water");
-        assert!(json.contains("\"t\":2"), "missing mountain");
-        assert!(json.contains("\"r\":0"), "missing Iron resource id=0");
-        assert!(json.contains("\"r\":2"), "missing Gold resource id=2");
-        assert!(json.contains("\"r\":null"), "missing null resource");
-        assert!(json.ends_with("]}"), "bad footer");
+        // Build typed export data (same logic as export_map_json)
+        let size = (map.width * map.height) as usize;
+        let mut terrain = Vec::with_capacity(size);
+        let mut elevation = Vec::with_capacity(size);
+        let mut resource = Vec::with_capacity(size);
+        for y in 0..map.height {
+            for x in 0..map.width {
+                if let Some(tile) = map.get(x, y) {
+                    terrain.push(tile.terrain as u8);
+                    elevation.push(tile.elevation);
+                    resource.push(match tile.resource {
+                        Some(r) => r as i32,
+                        None => -1,
+                    });
+                }
+            }
+        }
+        // Verify dimensions
+        assert_eq!(terrain.len(), 16);
+        assert_eq!(elevation.len(), 16);
+        assert_eq!(resource.len(), 16);
+        // Verify terrain values (row 0)
+        assert_eq!(terrain[0], 0, "tile (0,0) should be Grass=0");
+        assert_eq!(terrain[1], 1, "tile (1,0) should be Forest=1");
+        assert_eq!(terrain[2], 3, "tile (2,0) should be Water=3");
+        assert_eq!(terrain[3], 2, "tile (3,0) should be Mountain=2");
+        // Verify resources
+        assert_eq!(resource[1], 0, "tile (1,0) should have Iron (discriminant 0)");
+        assert_eq!(resource[3], 2, "tile (3,0) should have Gold (discriminant 2)");
+        assert_eq!(resource[0], -1, "tile (0,0) should have no resource (-1)");
+        // Verify round-trip: reconstruct JSON and parse it back
+        let mut tiles_json = Vec::new();
+        for i in 0..size {
+            let r_str = if resource[i] == -1 { String::from("null") } else { resource[i].to_string() };
+            tiles_json.push(format!("{{\"t\":{},\"e\":{:.3},\"r\":{}}}", terrain[i], elevation[i], r_str));
+        }
+        let json = format!("{{\"width\":{},\"height\":{},\"tiles\":[{}]}}",
+            map.width, map.height, tiles_json.join(","));
+        let parsed = crate::parse_map_json(&json).expect("round-trip parse should succeed");
+        assert_eq!(parsed.width, 4);
+        assert_eq!(parsed.height, 4);
     }
     #[test]
     fn test_get_units_in_rect_wasm_finds_military() {

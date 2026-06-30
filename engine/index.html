@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles,
-} from './pkg/s4wn_engine.js?v=85';
+} from './pkg/s4wn_engine.js?v=86';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -6170,11 +6170,23 @@ function exportMapJson() {
             alert("export_map_json not available — WASM may not be loaded");
             return;
         }
-        var json = export_map_json();
-        if (json.startsWith("error:")) {
-            alert(json);
+        var data = export_map_json();
+        if (!data) {
+            alert("error: no map loaded");
             return;
         }
+        // Reconstruct JSON from typed arrays (row-major order)
+        var w = data.width(), h = data.height();
+        var terrain = data.terrain(), elevation = data.elevation(), resource = data.resource();
+        var tiles = [];
+        var n = w * h;
+        for (var i = 0; i < n; i++) {
+            var r = resource[i];
+            tiles.push('{"t":' + terrain[i] +
+                ',"e":' + elevation[i].toFixed(3) +
+                ',"r":' + (r === -1 ? "null" : r) + '}');
+        }
+        var json = '{"width":' + w + ',"height":' + h + ',"tiles":[' + tiles.join(",") + ']}';
         // Trigger file download
         var blob = new Blob([json], {type: "application/json"});
         var url = URL.createObjectURL(blob);
