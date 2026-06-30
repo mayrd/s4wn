@@ -4619,12 +4619,13 @@ pub fn is_paused() -> bool {
         }
     }
 }
-/// Generate a procedural map and return it as a JSON string.
+/// Generate a procedural map and return it as typed MapExportData.
 /// map_type: "demo" (currently only one type supported; future: "island", "continents", etc.)
 /// width/height: map dimensions (clamped to 16..1024)
-/// Returns JSON in the format expected by load_map_json().
+/// Returns MapExportData with typed arrays — eliminates JSON String construction in generate path.
+/// JS callers reconstruct JSON for load_map_json() from typed arrays.
 #[wasm_bindgen]
-pub fn generate_map(map_type: &str, width: u32, height: u32) -> String {
+pub fn generate_map(map_type: &str, width: u32, height: u32) -> MapExportData {
     let w = width.clamp(16, 1024) as usize;
     let h = height.clamp(16, 1024) as usize;
     let map = match map_type {
@@ -4635,7 +4636,29 @@ pub fn generate_map(map_type: &str, width: u32, height: u32) -> String {
         "tutorial" => Map::generate_tutorial(w, h),
         _ => Map::generate_demo(w, h),
     };
-    map.to_json()
+    let size = map.width * map.height;
+    let mut terrain = Vec::with_capacity(size);
+    let mut elevation = Vec::with_capacity(size);
+    let mut resource = Vec::with_capacity(size);
+    for y in 0..map.height {
+        for x in 0..map.width {
+            if let Some(tile) = map.get(x, y) {
+                terrain.push(tile.terrain as u8);
+                elevation.push(tile.elevation);
+                resource.push(match tile.resource {
+                    Some(r) => r as i32,
+                    None => -1,
+                });
+            }
+        }
+    }
+    MapExportData {
+        width: map.width as u32,
+        height: map.height as u32,
+        terrain,
+        elevation,
+        resource,
+    }
 }
 /// Apply starting resources based on difficulty level.
 /// Should be called AFTER load_map_json() to seed the new game state.

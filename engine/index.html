@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles,
-} from './pkg/s4wn_engine.js?v=86';
+} from './pkg/s4wn_engine.js?v=87';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -5412,7 +5412,8 @@ async function startNewGame() {
 
         // Generate the map (64×64 default, use smaller map for easier difficulty)
         const mapSize = difficulty === 'easy' ? 48 : 64;
-        const mapJson = generate_map(mapType, mapSize, mapSize);
+        const mapData = generate_map(mapType, mapSize, mapSize);
+        const mapJson = mapExportDataToJson(mapData);
 
         updateLoadingProgress(60, t('building_landscape'));
 
@@ -6164,6 +6165,21 @@ function selectEditorTerrain(id) {
     populateTerrainPalette();
 }
 
+// Reconstruct JSON string from typed MapExportData (used by generate_map + editor)
+function mapExportDataToJson(data) {
+    var w = data.width(), h = data.height();
+    var terrain = data.terrain(), elevation = data.elevation(), resource = data.resource();
+    var tiles = [];
+    var n = w * h;
+    for (var i = 0; i < n; i++) {
+        var r = resource[i];
+        tiles.push('{"t":' + terrain[i] +
+            ',"e":' + elevation[i].toFixed(3) +
+            ',"r":' + (r === -1 ? "null" : r) + '}');
+    }
+    return '{"width":' + w + ',"height":' + h + ',"tiles":[' + tiles.join(",") + ']}';
+}
+
 function exportMapJson() {
     try {
         if (typeof export_map_json !== "function") {
@@ -6597,7 +6613,8 @@ function startEditorNewMap() {
     closeEditorLaunch();
     showLoading("Generating " + w + "×" + h + " map...");
     try {
-        var mapJson = generate_map("grassland", w, h);
+        var mapData = generate_map("grassland", w, h);
+        var mapJson = mapExportDataToJson(mapData);
         var result = load_map_json(mapJson);
         if (result !== 'ok') { alert('Map load failed: ' + result); hideLoading(); return; }
     } catch(e) { alert('Error: ' + e.message); hideLoading(); return; }
