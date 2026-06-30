@@ -4902,10 +4902,29 @@ pub fn get_game_state() -> String {
     }
     String::from(r#"{"error":"engine not initialized"}"#)
 }
-/// Restore game state from a JSON save string (produced by get_game_state).
-/// Returns "ok" on success or an error message.
+/// Result struct for restore_game_state — replaces JSON string status.
+/// `ok` is true on success, `error` contains the error message on failure.
 #[wasm_bindgen]
-pub fn restore_game_state(json: &str) -> String {
+pub struct RestoreStateResult {
+    ok: bool,
+    error: String,
+}
+
+#[wasm_bindgen]
+impl RestoreStateResult {
+    /// True if the game state was restored successfully.
+    #[wasm_bindgen(getter)]
+    pub fn ok(&self) -> bool { self.ok }
+
+    /// Error message if restore failed, empty string on success.
+    #[wasm_bindgen(getter)]
+    pub fn error(&self) -> String { self.error.clone() }
+}
+
+/// Restore game state from a JSON save string (produced by get_game_state).
+/// Returns a RestoreStateResult with ok=true on success or ok=false with error message.
+#[wasm_bindgen]
+pub fn restore_game_state(json: &str) -> RestoreStateResult {
     use crate::economy::{Building, BuildingType, Economy, ResourceType};
     use crate::units::{Unit, UnitKind, UnitState};
     unsafe {
@@ -4958,11 +4977,11 @@ pub fn restore_game_state(json: &str) -> String {
             // 1. Load map
             let map_json_val = match find_json_value(json, "map_json") {
                 Some(v) => v,
-                None => return String::from("error: missing map_json"),
+                None => return RestoreStateResult { ok: false, error: String::from("missing map_json") },
             };
             let map_load = crate::load_map_json(map_json_val);
             if !map_load.ok {
-                return format!("error: map load failed: {}", map_load.error());
+                return RestoreStateResult { ok: false, error: format!("map load failed: {}", map_load.error()) };
             }
 
             // 2. Clear existing economy and rebuild
@@ -4971,7 +4990,7 @@ pub fn restore_game_state(json: &str) -> String {
             // 3. Restore resources
             let resources_str = match find_json_value(json, "resources") {
                 Some(v) => v,
-                None => return String::from("error: missing resources"),
+                None => return RestoreStateResult { ok: false, error: String::from("missing resources") },
             };
             for i in 0..ResourceType::COUNT {
                 let rt: ResourceType = std::mem::transmute(i as u8);
@@ -4991,7 +5010,7 @@ pub fn restore_game_state(json: &str) -> String {
             // 4. Restore buildings
             let buildings_str = match find_json_value(json, "buildings") {
                 Some(v) => v,
-                None => return String::from("error: missing buildings"),
+                None => return RestoreStateResult { ok: false, error: String::from("missing buildings") },
             };
             if buildings_str != "[]" {
                 // Parse each building object by splitting on "},{"
@@ -5096,7 +5115,7 @@ pub fn restore_game_state(json: &str) -> String {
             // 5. Restore units
             let units_str = match find_json_value(json, "units") {
                 Some(v) => v,
-                None => return String::from("error: missing units"),
+                None => return RestoreStateResult { ok: false, error: String::from("missing units") },
             };
             if units_str != "[]" {
                 let inner = &units_str[1..units_str.len() - 1];
@@ -5195,10 +5214,10 @@ pub fn restore_game_state(json: &str) -> String {
             app.overlay_dirty = true;
             app.mesh_dirty = true;
 
-            return String::from("ok");
+            return RestoreStateResult { ok: true, error: String::new() };
         }
     }
-    String::from("error: engine not initialized")
+    RestoreStateResult { ok: false, error: String::from("engine not initialized") }
 }
 /// Load a model from a JSON mesh string, validate it, and upload to GPU buffers.
 /// Returns "ok:{name}:{indices}tri" if successful, or "error:{message}" on failure.
@@ -6881,6 +6900,14 @@ mod tests {
     fn test_load_map_result_not_initialized() {
         // load_map_json requires APP to be initialized — without it, returns error
         let r = load_map_json(r#"{"width":4,"height":4,"tiles":[{"t":0,"e":0.0,"r":null},{"t":0,"e":0.0,"r":null},{"t":0,"e":0.0,"r":null},{"t":0,"e":0.0,"r":null}]}"#);
+        assert!(!r.ok(), "should fail when engine not initialized");
+        assert!(!r.error().is_empty(), "error should not be empty");
+    }
+
+    #[test]
+    fn test_restore_state_result_not_initialized() {
+        // restore_game_state requires APP to be initialized — without it, returns error
+        let r = restore_game_state(r#"{"map_json":"{}"}"#);
         assert!(!r.ok(), "should fail when engine not initialized");
         assert!(!r.error().is_empty(), "error should not be empty");
     }

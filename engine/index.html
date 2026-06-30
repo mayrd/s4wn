@@ -3242,10 +3242,10 @@ function confirmMapLoad() {
 
                     console.log('[s4wn] Restoring full game state...');
                     const restoreResult = restore_game_state(stateJson);
-                    if (restoreResult === 'ok') {
+                    if (restoreResult.ok) {
                         console.log('[s4wn] Full game state restored successfully');
                     } else {
-                        console.warn('[s4wn] restore_game_state returned:', restoreResult);
+                        console.warn('[s4wn] restore_game_state failed:', restoreResult.error);
                         // Non-fatal: terrain is still loaded
                     }
                 } catch (e) {
@@ -5530,7 +5530,7 @@ function loadSavedGame() {
     }
     try {
         const result = restore_game_state(stateJson);
-        if (result === 'ok') {
+        if (result.ok) {
             closeMenu();
             lastResourceUpdate = 0;
             lastPopUpdate = 0;
@@ -5538,7 +5538,7 @@ function loadSavedGame() {
             startAutoSave();
             console.log('Game restored from auto-save');
         } else {
-            alert(t('failed_restore') + result);
+            alert(t('failed_restore') + result.error);
         }
     } catch (err) {
         console.error('loadSavedGame failed:', err);
