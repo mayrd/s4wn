@@ -8470,4 +8470,66 @@ mod parse_map_json_tests {
         assert_eq!(sr.ok, clone.ok);
         assert_eq!(sr.error, clone.error);
     }
+
+    #[test]
+    fn test_map_json_roundtrip() {
+        // Regression test: export → import must preserve all fields
+        use crate::map::{Map, Terrain, Resource};
+        let mut map = Map::new(8, 6);
+        // Varied terrain
+        map.set_terrain(0, 0, Terrain::Grass);
+        map.set_terrain(1, 0, Terrain::Forest);
+        map.set_terrain(2, 0, Terrain::Mountain);
+        map.set_terrain(3, 0, Terrain::Water);
+        map.set_terrain(4, 0, Terrain::DeepWater);
+        map.set_terrain(5, 0, Terrain::Desert);
+        map.set_terrain(6, 0, Terrain::Swamp);
+        map.set_terrain(7, 0, Terrain::Snow);
+        // Set elevations
+        for x in 0..8 {
+            if let Some(tile) = map.get_mut(x, 0) {
+                tile.elevation = (x as f32) * 1.5 - 3.0;
+            }
+        }
+        // Set all 8 resource types across row 1
+        for (x, res) in [
+            (0, Resource::Iron), (1, Resource::Coal), (2, Resource::Gold), (3, Resource::Stone),
+            (4, Resource::Sulfur), (5, Resource::Fish), (6, Resource::Game), (7, Resource::Grain),
+        ] {
+            if let Some(tile) = map.get_mut(x, 1) {
+                tile.terrain = Terrain::Grass;
+                tile.resource = Some(res);
+            }
+        }
+        // Row 2: mix of null resources and varied terrain
+        map.set_terrain(0, 2, Terrain::Forest);
+        map.set_terrain(1, 2, Terrain::Mountain);
+        map.set_terrain(2, 2, Terrain::Water);
+        if let Some(tile) = map.get_mut(3, 2) {
+            tile.terrain = Terrain::Grass;
+            tile.resource = Some(Resource::Coal);
+        }
+
+        // Export → Import round-trip
+        let json = map.to_json();
+        let parsed = parse_map_json(&json).expect("round-trip parse should succeed");
+
+        // Verify dimensions
+        assert_eq!(parsed.width, 8);
+        assert_eq!(parsed.height, 6);
+
+        // Verify all terrain values preserved
+        for y in 0..6 {
+            for x in 0..8 {
+                let orig = map.get(x, y).unwrap();
+                let round = parsed.get(x, y).unwrap();
+                assert_eq!(orig.terrain, round.terrain,
+                    "terrain mismatch at ({},{}): {:?} vs {:?}", x, y, orig.terrain, round.terrain);
+                assert!((orig.elevation - round.elevation).abs() < 0.01,
+                    "elevation mismatch at ({},{}): {} vs {}", x, y, orig.elevation, round.elevation);
+                assert_eq!(orig.resource, round.resource,
+                    "resource mismatch at ({},{}): {:?} vs {:?}", x, y, orig.resource, round.resource);
+            }
+        }
+    }
 }
