@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles,
-} from './pkg/s4wn_engine.js?v=82';
+} from './pkg/s4wn_engine.js?v=83';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3414,11 +3414,13 @@ function toRustName(configId) {
 function showBuildCostTooltip(kindName) {
     const disc = BUILDING_DISCRIMINANT_BY_CONFIG_ID[kindName];
     if (disc === undefined) return '';
-    const cost = get_build_cost_by_id(disc);
-    if (cost && !cost.includes('error')) {
-        const c = JSON.parse(cost);
-        const parts = Object.entries(c).map(([k,v]) => `${tResource(k)}:${v}`).join(', ');
-        return `Cost: ${parts}`;
+    const items = get_build_cost_by_id(disc);
+    if (items && items.length > 0) {
+        const parts = [];
+        for (let i = 0; i < items.length; i++) {
+            parts.push(`${tResource(items[i].resource_discriminant)}:${items[i].amount}`);
+        }
+        return `Cost: ${parts.join(', ')}`;
     }
     return '';
 }
@@ -3441,7 +3443,7 @@ function cancelPlacement() {
 }
 
 function canAffordAll(needed) {
-    // needed: {0:5,1:2} — integer discriminant keys from get_build_cost()
+    // needed: {0:5,1:2} — integer discriminant keys from get_build_cost_by_id()
     if (!needed || typeof needed === 'string' || needed.error) return false;
     try {
         const resources = get_resource_counts_by_id();
@@ -3467,10 +3469,15 @@ function refreshBuildingAffordability() {
         if (!name) return;
         const disc = BUILDING_DISCRIMINANT_BY_CONFIG_ID[name];
         if (disc === undefined) return;
-        const costJson = get_build_cost_by_id(disc);
-        let cost;
-        try { cost = JSON.parse(costJson); } catch(e) { cost = null; }
-        const affordable = cost && !cost.error && canAffordAll(cost);
+        const items = get_build_cost_by_id(disc);
+        let cost = null;
+        if (items && items.length > 0) {
+            cost = {};
+            for (let i = 0; i < items.length; i++) {
+                cost[items[i].resource_discriminant] = items[i].amount;
+            }
+        }
+        const affordable = cost && canAffordAll(cost);
         btn.disabled = !affordable;
         if (affordable) {
             btn.classList.add('affordable');

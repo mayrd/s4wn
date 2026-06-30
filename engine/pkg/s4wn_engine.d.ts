@@ -2,6 +2,24 @@
 /* eslint-disable */
 
 /**
+ * Build cost item — one resource requirement for a building.
+ * Used by get_build_cost_by_id to return typed cost data (no JSON.parse needed).
+ */
+export class BuildCostItem {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Amount of this resource required.
+     */
+    readonly amount: number;
+    /**
+     * ResourceType discriminant (maps to ResourceType::from_discriminant).
+     */
+    readonly resource_discriminant: number;
+}
+
+/**
  * Get detailed building info by index.
  * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
  *   "active":true,"settlers":[1],"max_settlers":1,
@@ -186,6 +204,38 @@ export class ParticleInfo {
 }
 
 /**
+ * Starter result struct — replaces JSON string from setup_starter_base.
+ * `ok` is true when the base was placed successfully.
+ * `error` contains the error message when `ok` is false (empty on success).
+ * Fields are accessed via JS getters (no JSON.parse needed).
+ */
+export class StarterResult {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Error message (empty on success).
+     */
+    readonly error: string;
+    /**
+     * X coordinate of the placed HQ (Castle).
+     */
+    readonly hq_x: number;
+    /**
+     * Y coordinate of the placed HQ (Castle).
+     */
+    readonly hq_y: number;
+    /**
+     * True if the starter base was placed successfully.
+     */
+    readonly ok: boolean;
+    /**
+     * Number of settlers spawned.
+     */
+    readonly settlers: number;
+}
+
+/**
  * Engine stats returned by `get_stats` — replaces JSON string with typed struct.
  * `fps` is the currently displayed FPS. `ticks` is the game tick counter.
  * `game_time` is the elapsed game time in seconds. `zoom` is the camera zoom factor.
@@ -307,9 +357,11 @@ export function formation_move(unit_ids: Uint32Array, target_x: number, target_y
 export function generate_map(map_type: string, width: number, height: number): string;
 
 /**
- * Get build cost by BuildingType integer discriminant (JSON with integer keys).
+ * Get build cost by BuildingType integer discriminant as typed Vec<BuildCostItem>.
+ * Returns empty vec for invalid discriminants or buildings with no cost.
+ * JS callers iterate: cost[i].resource_discriminant, cost[i].amount — no JSON.parse needed.
  */
-export function get_build_cost_by_id(discriminant: number): string;
+export function get_build_cost_by_id(discriminant: number): BuildCostItem[];
 
 /**
  * Get building info at a tile position. Returns Some(BuildingTileInfo) or None.
@@ -541,9 +593,9 @@ export function set_water_normal_ready(): void;
  * Place a free Castle near map center and spawn starter settlers.
  * Called after load_map_json() + add_starting_resources() to set up the initial base.
  * settler_count: number of idle settlers to spawn (clamped to 1..8).
- * Returns JSON: {"ok":true,"hq_x":N,"hq_y":N,"settlers":N} or {"error":"..."}
+ * Returns typed StarterResult struct (replaces JSON string, eliminating JSON.parse()).
  */
-export function setup_starter_base(settler_count: number): string;
+export function setup_starter_base(settler_count: number): StarterResult | undefined;
 
 /**
  * Spawn a single particle.
@@ -595,6 +647,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly __wbg_buildcostitem_free: (a: number, b: number) => void;
     readonly __wbg_buildingdetailinfo_free: (a: number, b: number) => void;
     readonly __wbg_buildinginfo_free: (a: number, b: number) => void;
     readonly __wbg_buildingtileinfo_free: (a: number, b: number) => void;
@@ -667,9 +720,12 @@ export interface InitOutput {
     readonly __wbg_set_unitinfo_carried_tool: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_stance: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_state: (a: number, b: number) => void;
+    readonly __wbg_starterresult_free: (a: number, b: number) => void;
     readonly __wbg_statsinfo_free: (a: number, b: number) => void;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
     readonly add_starting_resources: (a: number, b: number) => [number, number];
+    readonly buildcostitem_amount: (a: number) => number;
+    readonly buildcostitem_resource_discriminant: (a: number) => number;
     readonly buildingdetailinfo_active: (a: number) => number;
     readonly buildingdetailinfo_build_ticks: (a: number) => number;
     readonly buildingdetailinfo_complete: (a: number) => number;
@@ -739,9 +795,14 @@ export interface InitOutput {
     readonly set_tile_terrain: (a: number, b: number, c: number) => number;
     readonly set_units_stance: (a: number, b: number, c: number) => number;
     readonly set_water_normal_ready: () => void;
-    readonly setup_starter_base: (a: number) => [number, number];
+    readonly setup_starter_base: (a: number) => number;
     readonly spawn_build_effect: (a: number, b: number) => void;
     readonly start_building_destruction: (a: number, b: number) => number;
+    readonly starterresult_error: (a: number) => [number, number];
+    readonly starterresult_hq_x: (a: number) => number;
+    readonly starterresult_hq_y: (a: number) => number;
+    readonly starterresult_ok: (a: number) => number;
+    readonly starterresult_settlers: (a: number) => number;
     readonly tick_building_destructions: (a: number) => [number, number];
     readonly toggle_editor_grid: () => number;
     readonly toggle_pause: () => number;

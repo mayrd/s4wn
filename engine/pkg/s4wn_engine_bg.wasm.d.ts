@@ -1,6 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export const __wbg_buildcostitem_free: (a: number, b: number) => void;
 export const __wbg_buildingdetailinfo_free: (a: number, b: number) => void;
 export const __wbg_buildinginfo_free: (a: number, b: number) => void;
 export const __wbg_buildingtileinfo_free: (a: number, b: number) => void;
@@ -73,9 +74,12 @@ export const __wbg_set_unitdetailinfo_target: (a: number, b: number) => void;
 export const __wbg_set_unitinfo_carried_tool: (a: number, b: number) => void;
 export const __wbg_set_unitinfo_stance: (a: number, b: number) => void;
 export const __wbg_set_unitinfo_state: (a: number, b: number) => void;
+export const __wbg_starterresult_free: (a: number, b: number) => void;
 export const __wbg_statsinfo_free: (a: number, b: number) => void;
 export const add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
 export const add_starting_resources: (a: number, b: number) => [number, number];
+export const buildcostitem_amount: (a: number) => number;
+export const buildcostitem_resource_discriminant: (a: number) => number;
 export const buildingdetailinfo_active: (a: number) => number;
 export const buildingdetailinfo_build_ticks: (a: number) => number;
 export const buildingdetailinfo_complete: (a: number) => number;
@@ -145,9 +149,14 @@ export const set_textures_ready: () => void;
 export const set_tile_terrain: (a: number, b: number, c: number) => number;
 export const set_units_stance: (a: number, b: number, c: number) => number;
 export const set_water_normal_ready: () => void;
-export const setup_starter_base: (a: number) => [number, number];
+export const setup_starter_base: (a: number) => number;
 export const spawn_build_effect: (a: number, b: number) => void;
 export const start_building_destruction: (a: number, b: number) => number;
+export const starterresult_error: (a: number) => [number, number];
+export const starterresult_hq_x: (a: number) => number;
+export const starterresult_hq_y: (a: number) => number;
+export const starterresult_ok: (a: number) => number;
+export const starterresult_settlers: (a: number) => number;
 export const tick_building_destructions: (a: number) => [number, number];
 export const toggle_editor_grid: () => number;
 export const toggle_pause: () => number;

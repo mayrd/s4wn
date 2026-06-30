@@ -1,6 +1,46 @@
 /* @ts-self-types="./s4wn_engine.d.ts" */
 
 /**
+ * Build cost item — one resource requirement for a building.
+ * Used by get_build_cost_by_id to return typed cost data (no JSON.parse needed).
+ */
+export class BuildCostItem {
+    static __wrap(ptr) {
+        const obj = Object.create(BuildCostItem.prototype);
+        obj.__wbg_ptr = ptr;
+        BuildCostItemFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        BuildCostItemFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_buildcostitem_free(ptr, 0);
+    }
+    /**
+     * Amount of this resource required.
+     * @returns {number}
+     */
+    get amount() {
+        const ret = wasm.buildcostitem_amount(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * ResourceType discriminant (maps to ResourceType::from_discriminant).
+     * @returns {number}
+     */
+    get resource_discriminant() {
+        const ret = wasm.buildcostitem_resource_discriminant(this.__wbg_ptr);
+        return ret;
+    }
+}
+if (Symbol.dispose) BuildCostItem.prototype[Symbol.dispose] = BuildCostItem.prototype.free;
+
+/**
  * Get detailed building info by index.
  * Returns JSON: {"kind":"Farm","x":3,"y":3,"construction":1.0,"complete":true,
  *   "active":true,"settlers":[1],"max_settlers":1,
@@ -907,6 +947,80 @@ export class ParticleInfo {
 if (Symbol.dispose) ParticleInfo.prototype[Symbol.dispose] = ParticleInfo.prototype.free;
 
 /**
+ * Starter result struct — replaces JSON string from setup_starter_base.
+ * `ok` is true when the base was placed successfully.
+ * `error` contains the error message when `ok` is false (empty on success).
+ * Fields are accessed via JS getters (no JSON.parse needed).
+ */
+export class StarterResult {
+    static __wrap(ptr) {
+        const obj = Object.create(StarterResult.prototype);
+        obj.__wbg_ptr = ptr;
+        StarterResultFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        StarterResultFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_starterresult_free(ptr, 0);
+    }
+    /**
+     * Error message (empty on success).
+     * @returns {string}
+     */
+    get error() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.starterresult_error(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * X coordinate of the placed HQ (Castle).
+     * @returns {number}
+     */
+    get hq_x() {
+        const ret = wasm.starterresult_hq_x(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Y coordinate of the placed HQ (Castle).
+     * @returns {number}
+     */
+    get hq_y() {
+        const ret = wasm.starterresult_hq_y(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * True if the starter base was placed successfully.
+     * @returns {boolean}
+     */
+    get ok() {
+        const ret = wasm.starterresult_ok(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * Number of settlers spawned.
+     * @returns {number}
+     */
+    get settlers() {
+        const ret = wasm.starterresult_settlers(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+}
+if (Symbol.dispose) StarterResult.prototype[Symbol.dispose] = StarterResult.prototype.free;
+
+/**
  * Engine stats returned by `get_stats` — replaces JSON string with typed struct.
  * `fps` is the currently displayed FPS. `ticks` is the game tick counter.
  * `game_time` is the elapsed game time in seconds. `zoom` is the camera zoom factor.
@@ -1517,21 +1631,17 @@ export function generate_map(map_type, width, height) {
 }
 
 /**
- * Get build cost by BuildingType integer discriminant (JSON with integer keys).
+ * Get build cost by BuildingType integer discriminant as typed Vec<BuildCostItem>.
+ * Returns empty vec for invalid discriminants or buildings with no cost.
+ * JS callers iterate: cost[i].resource_discriminant, cost[i].amount — no JSON.parse needed.
  * @param {number} discriminant
- * @returns {string}
+ * @returns {BuildCostItem[]}
  */
 export function get_build_cost_by_id(discriminant) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_build_cost_by_id(discriminant);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.get_build_cost_by_id(discriminant);
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
 }
 
 /**
@@ -2005,21 +2115,13 @@ export function set_water_normal_ready() {
  * Place a free Castle near map center and spawn starter settlers.
  * Called after load_map_json() + add_starting_resources() to set up the initial base.
  * settler_count: number of idle settlers to spawn (clamped to 1..8).
- * Returns JSON: {"ok":true,"hq_x":N,"hq_y":N,"settlers":N} or {"error":"..."}
+ * Returns typed StarterResult struct (replaces JSON string, eliminating JSON.parse()).
  * @param {number} settler_count
- * @returns {string}
+ * @returns {StarterResult | undefined}
  */
 export function setup_starter_base(settler_count) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.setup_starter_base(settler_count);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.setup_starter_base(settler_count);
+    return ret === 0 ? undefined : StarterResult.__wrap(ret);
 }
 
 /**
@@ -2175,6 +2277,10 @@ function __wbg_get_imports() {
         },
         __wbg_bufferData_90ef588bac2be2f5: function(arg0, arg1, arg2, arg3) {
             arg0.bufferData(arg1 >>> 0, arg2, arg3 >>> 0);
+        },
+        __wbg_buildcostitem_new: function(arg0) {
+            const ret = BuildCostItem.__wrap(arg0);
+            return ret;
         },
         __wbg_buildinginfo_new: function(arg0) {
             const ret = BuildingInfo.__wrap(arg0);
@@ -2466,6 +2572,9 @@ function __wbg_get_imports() {
     };
 }
 
+const BuildCostItemFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_buildcostitem_free(ptr, 1));
 const BuildingDetailInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_buildingdetailinfo_free(ptr, 1));
@@ -2493,6 +2602,9 @@ const NationInfoFinalization = (typeof FinalizationRegistry === 'undefined')
 const ParticleInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_particleinfo_free(ptr, 1));
+const StarterResultFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_starterresult_free(ptr, 1));
 const StatsInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_statsinfo_free(ptr, 1));

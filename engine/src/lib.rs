@@ -4421,20 +4421,23 @@ pub fn try_place_building_by_id(discriminant: u8, x: usize, y: usize) -> String 
 }
 
 
-/// Get build cost by BuildingType integer discriminant (JSON with integer keys).
+/// Get build cost by BuildingType integer discriminant as typed Vec<BuildCostItem>.
+/// Returns empty vec for invalid discriminants or buildings with no cost.
+/// JS callers iterate: cost[i].resource_discriminant, cost[i].amount — no JSON.parse needed.
 #[wasm_bindgen]
-pub fn get_build_cost_by_id(discriminant: u8) -> String {
+pub fn get_build_cost_by_id(discriminant: u8) -> Vec<BuildCostItem> {
     use crate::economy::BuildingType;
     let kind = match BuildingType::from_discriminant(discriminant) {
         Some(k) => k,
-        None => return format!(r#"{{"error":"Invalid building discriminant: {}"}}"#, discriminant),
+        None => return Vec::new(),
     };
-    let cost = kind.build_cost();
-    let mut parts = Vec::new();
-    for &(rt, amt) in cost.iter() {
-        parts.push(format!(r#""{}":{}"#, rt.discriminant(), amt));
-    }
-    format!("{{{}}}", parts.join(","))
+    kind.build_cost()
+        .iter()
+        .map(|&(rt, amt)| BuildCostItem {
+            resource_discriminant: rt.discriminant(),
+            amount: amt,
+        })
+        .collect()
 }
 
 
@@ -5606,6 +5609,26 @@ pub fn wasm_ungarrison_unit(building_index: usize, unit_id: u32) -> bool {
         }
         false
     }
+}
+
+/// Build cost item — one resource requirement for a building.
+/// Used by get_build_cost_by_id to return typed cost data (no JSON.parse needed).
+#[wasm_bindgen]
+#[derive(Copy, Clone)]
+pub struct BuildCostItem {
+    resource_discriminant: u8,
+    amount: u32,
+}
+
+#[wasm_bindgen]
+impl BuildCostItem {
+    /// ResourceType discriminant (maps to ResourceType::from_discriminant).
+    #[wasm_bindgen(getter)]
+    pub fn resource_discriminant(&self) -> u8 { self.resource_discriminant }
+
+    /// Amount of this resource required.
+    #[wasm_bindgen(getter)]
+    pub fn amount(&self) -> u32 { self.amount }
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
@@ -7796,25 +7819,29 @@ mod export_regression_tests {
     }
 
     /// Resource types count — data.js RESOURCE_ICONS must match.
-    /// Verify get_build_cost_by_id returns valid JSON with integer keys
-    /// for every valid BuildingType discriminant.
+    /// Verify get_build_cost_by_id returns typed Vec<BuildCostItem> with correct
+    /// resource_discriminant and amount for every valid BuildingType.
     #[test]
     fn test_get_build_cost_by_id_all_discriminants() {
         use crate::economy::BuildingType;
         for &d in BuildingType::VALID_DISCRIMINANTS.iter() {
-            let json = super::get_build_cost_by_id(d);
-            assert!(!json.contains("error"), "discriminant {} should be valid, got: {}", d, json);
-            assert!(json.starts_with('{'), "should start with {{, got: {}", json);
-            assert!(json.ends_with('}'), "should end with }}, got: {}", json);
+            let items = super::get_build_cost_by_id(d);
+            // Castle (disc 0) should cost Wood(10) + Stone(5)
+            if d == 0 {
+                assert!(items.len() >= 2, "Castle should have >=2 cost items, got {}", items.len());
+                let wood = items.iter().find(|i| i.resource_discriminant() == 0);
+                assert!(wood.is_some(), "Castle should cost Wood (disc 0)");
+                assert_eq!(wood.unwrap().amount(), 10);
+            }
         }
     }
 
-    /// Verify get_build_cost_by_id rejects invalid discriminants.
+    /// Verify get_build_cost_by_id returns empty vec for invalid discriminants.
     #[test]
     fn test_get_build_cost_by_id_rejects_invalid() {
         for invalid in [255u8, 6u8, 17u8] {
-            let json = super::get_build_cost_by_id(invalid);
-            assert!(json.contains("error"), "should reject invalid discriminant {}, got: {}", invalid, json);
+            let items = super::get_build_cost_by_id(invalid);
+            assert!(items.is_empty(), "should return empty vec for invalid discriminant {}", invalid);
         }
     }
 
