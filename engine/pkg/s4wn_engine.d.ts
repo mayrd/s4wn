@@ -204,6 +204,32 @@ export class ParticleInfo {
 }
 
 /**
+ * Result of try_place_building_by_id — typed struct replacing JSON string.
+ * Returns Ok(PlaceBuildingResult) on success, Err(PlaceBuildingResult) with error message on failure.
+ */
+export class PlaceBuildingResult {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    /**
+     * Error message (valid when ok=false).
+     */
+    readonly error: string;
+    /**
+     * Building index in the economy vector (valid when ok=true).
+     */
+    readonly idx: number;
+    /**
+     * BuildingType discriminant (valid when ok=true).
+     */
+    readonly kind: number;
+    /**
+     * Whether the building was successfully placed.
+     */
+    readonly ok: boolean;
+}
+
+/**
  * Starter result struct — replaces JSON string from setup_starter_base.
  * `ok` is true when the base was placed successfully.
  * `error` contains the error message when `ok` is false (empty on success).
@@ -631,9 +657,9 @@ export function toggle_pause(): boolean;
 
 /**
  * Try to place a building by BuildingType integer discriminant.
- * Returns JSON: {"ok":true,"idx":0,"kind":5} or {"error":"message"}
+ * Returns typed PlaceBuildingResult struct (ok, idx, kind) on success or error message on failure.
  */
-export function try_place_building_by_id(discriminant: number, x: number, y: number): string;
+export function try_place_building_by_id(discriminant: number, x: number, y: number): PlaceBuildingResult;
 
 /**
  * Garrison a unit into a building. Returns true if successful.
@@ -690,6 +716,7 @@ export interface InitOutput {
     readonly __wbg_moraleinfo_free: (a: number, b: number) => void;
     readonly __wbg_nationinfo_free: (a: number, b: number) => void;
     readonly __wbg_particleinfo_free: (a: number, b: number) => void;
+    readonly __wbg_placebuildingresult_free: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_complete: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_garrison: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_index: (a: number, b: number) => void;
@@ -784,6 +811,10 @@ export interface InitOutput {
     readonly on_mouse_up: () => void;
     readonly on_wheel: (a: number) => void;
     readonly order_patrol: (a: number, b: number, c: number, d: number) => number;
+    readonly placebuildingresult_error: (a: number) => [number, number];
+    readonly placebuildingresult_idx: (a: number) => number;
+    readonly placebuildingresult_kind: (a: number) => number;
+    readonly placebuildingresult_ok: (a: number) => number;
     readonly recent_combat_count: () => number;
     readonly recent_death_count: () => number;
     readonly render: (a: number) => void;
@@ -806,7 +837,7 @@ export interface InitOutput {
     readonly tick_building_destructions: (a: number) => [number, number];
     readonly toggle_editor_grid: () => number;
     readonly toggle_pause: () => number;
-    readonly try_place_building_by_id: (a: number, b: number, c: number) => [number, number];
+    readonly try_place_building_by_id: (a: number, b: number, c: number) => number;
     readonly wasm_garrison_unit: (a: number, b: number) => number;
     readonly wasm_ungarrison_unit: (a: number, b: number) => number;
     readonly __wbg_set_buildingtileinfo_index: (a: number, b: number) => void;
@@ -868,6 +899,7 @@ export interface InitOutput {
     readonly __wbg_get_unitdetailinfo_hp: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_max_hp: (a: number) => number;
     readonly __wbg_get_moraleinfo_morale_bonus: (a: number) => number;
+    readonly __wbg_tileinfo_free: (a: number, b: number) => void;
     readonly __wbg_get_tileinfo_y: (a: number) => number;
     readonly __wbg_get_destructioninfo_y: (a: number) => number;
     readonly __wbg_get_destructioninfo_x: (a: number) => number;
@@ -878,7 +910,6 @@ export interface InitOutput {
     readonly __wbg_get_unitinfo_kind: (a: number) => number;
     readonly __wbg_unitinfo_free: (a: number, b: number) => void;
     readonly __wbg_unitdetailinfo_free: (a: number, b: number) => void;
-    readonly __wbg_tileinfo_free: (a: number, b: number) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __externref_table_alloc: () => number;

@@ -947,6 +947,70 @@ export class ParticleInfo {
 if (Symbol.dispose) ParticleInfo.prototype[Symbol.dispose] = ParticleInfo.prototype.free;
 
 /**
+ * Result of try_place_building_by_id — typed struct replacing JSON string.
+ * Returns Ok(PlaceBuildingResult) on success, Err(PlaceBuildingResult) with error message on failure.
+ */
+export class PlaceBuildingResult {
+    static __wrap(ptr) {
+        const obj = Object.create(PlaceBuildingResult.prototype);
+        obj.__wbg_ptr = ptr;
+        PlaceBuildingResultFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        PlaceBuildingResultFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_placebuildingresult_free(ptr, 0);
+    }
+    /**
+     * Error message (valid when ok=false).
+     * @returns {string}
+     */
+    get error() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.placebuildingresult_error(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * Building index in the economy vector (valid when ok=true).
+     * @returns {number}
+     */
+    get idx() {
+        const ret = wasm.placebuildingresult_idx(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * BuildingType discriminant (valid when ok=true).
+     * @returns {number}
+     */
+    get kind() {
+        const ret = wasm.placebuildingresult_kind(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * Whether the building was successfully placed.
+     * @returns {boolean}
+     */
+    get ok() {
+        const ret = wasm.placebuildingresult_ok(this.__wbg_ptr);
+        return ret !== 0;
+    }
+}
+if (Symbol.dispose) PlaceBuildingResult.prototype[Symbol.dispose] = PlaceBuildingResult.prototype.free;
+
+/**
  * Starter result struct — replaces JSON string from setup_starter_base.
  * `ok` is true when the base was placed successfully.
  * `error` contains the error message when `ok` is false (empty on success).
@@ -2183,23 +2247,15 @@ export function toggle_pause() {
 
 /**
  * Try to place a building by BuildingType integer discriminant.
- * Returns JSON: {"ok":true,"idx":0,"kind":5} or {"error":"message"}
+ * Returns typed PlaceBuildingResult struct (ok, idx, kind) on success or error message on failure.
  * @param {number} discriminant
  * @param {number} x
  * @param {number} y
- * @returns {string}
+ * @returns {PlaceBuildingResult}
  */
 export function try_place_building_by_id(discriminant, x, y) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.try_place_building_by_id(discriminant, x, y);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+    const ret = wasm.try_place_building_by_id(discriminant, x, y);
+    return PlaceBuildingResult.__wrap(ret);
 }
 
 /**
@@ -2602,6 +2658,9 @@ const NationInfoFinalization = (typeof FinalizationRegistry === 'undefined')
 const ParticleInfoFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_particleinfo_free(ptr, 1));
+const PlaceBuildingResultFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_placebuildingresult_free(ptr, 1));
 const StarterResultFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_starterresult_free(ptr, 1));

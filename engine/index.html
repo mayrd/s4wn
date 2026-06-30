@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles,
-} from './pkg/s4wn_engine.js?v=83';
+} from './pkg/s4wn_engine.js?v=84';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -3705,8 +3705,7 @@ canvas.addEventListener('click', (e) => {
         // ── Placement mode ──
         const info = get_tile_at(e.offsetX, e.offsetY);
         if (!info) return;
-        const result = try_place_building_by_id(placementMode, info.x, info.y);
-        const r = JSON.parse(result);
+        const r = try_place_building_by_id(placementMode, info.x, info.y);
         showPlacementPulse(e.clientX, e.clientY, r.ok);
         if (r.ok) {
             placementStatus.textContent = `✅ ${buildingName(r.kind)} placed at (${info.x},${info.y})`;
