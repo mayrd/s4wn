@@ -1981,80 +1981,24 @@ function getChunkTypeInfo(typeId) {
 // ── S4 Building ID → S4WN BuildingType name mapping ─────────────────────
 // Based on S4Forge.RE Buildings.h enum (BUILDING_* constants, IDs 0-82).
 // Only building types that exist in our engine are mapped; others fall back to 'Unknown'.
-const S4_BUILDING_ID_TO_NAME = {
-    0:  null,                  // BUILDING_NO_BUILDING
-    1:  'Woodcutter',          // BUILDING_WOODCUTTERHUT
-    2:  'Woodcutter',          // BUILDING_FORESTERHUT → Woodcutter (closest match)
-    3:  'Sawmill',             // BUILDING_SAWMILL
-    4:  'Stonecutter',              // BUILDING_STONECUTTERHUT
-    5:  null,                  // BUILDING_WATERWORKHUT (no match)
-    6:  'Fisherman',             // BUILDING_FISHERHUT
-    7:  null,                  // BUILDING_HUNTERHUT (no match)
-    8:  'Butcher',             // BUILDING_SLAUGHTERHOUSE
-    9:  null,                  // BUILDING_MILL (no match)
-    10: 'Bakery',              // BUILDING_BAKERY
-    11: 'Farm',                // BUILDING_GRAINFARM
-    12: 'Farm',                // BUILDING_ANIMALRANCH → Farm
-    13: null,                  // BUILDING_DONKEYRANCH (no match)
-    14: 'Stonecutter',              // BUILDING_STONEMINE → Stonecutter
-    15: 'Mine',                // BUILDING_IRONMINE → Mine
-    16: 'Mine',                // BUILDING_GOLDMINE → Mine
-    17: 'Mine',                // BUILDING_COALMINE → Mine
-    18: 'Mine',                // BUILDING_SULFURMINE → Mine
-    19: null,                  // BUILDING_SMELTGOLD (no match)
-    20: 'Toolsmith',          // BUILDING_SMELTIRON → Toolsmith
-    21: null,                  // BUILDING_TOOLSMITH (no match — tools)
-    22: 'Weaponsmith',              // BUILDING_WEAPONSMITH → Weaponsmith
-    23: null,                  // BUILDING_VEHICLEHALL (no match)
-    24: null,                  // BUILDING_BARRACKS (military — no match yet)
-    25: null,                  // BUILDING_CHARCOALMAKER (no match)
-    26: null,                  // BUILDING_TRAININGCENTER (no match)
-    27: null,                  // BUILDING_HEALERHUT (no match)
-    28: null,                  // BUILDING_AMMOMAKERHUT (no match)
-    29: null,                  // BUILDING_GUNPOWDERMAKERHUT (no match)
-    30: null,                  // BUILDING_LANDSCAPEMAKERHUT (no match)
-    31: null,                  // BUILDING_SHIPYARD (no match)
-    32: null,                  // BUILDING_PORT (no match)
-    33: null,                  // BUILDING_MARKETPLACE (no match)
-    34: 'Storehouse',            // BUILDING_STORAGEAREA → Storehouse
-    35: null,                  // BUILDING_VINYARD (no match)
-    36: 'Farm',                // BUILDING_AGAVEFARMERHUT → Farm
-    37: null,                  // BUILDING_TEQUILAMAKERHUT (no match)
-    38: null,                  // BUILDING_BEEKEEPERHUT (no match)
-    39: 'Brewery',             // BUILDING_MEADMAKERHUT → Brewery
-    40: null,                  // BUILDING_RESIDENCESMALL (no match)
-    41: null,                  // BUILDING_RESIDENCEMEDIUM (no match)
-    42: null,                  // BUILDING_RESIDENCEBIG (no match)
-    43: null,                  // BUILDING_SMALLTEMPLE (no match)
-    44: null,                  // BUILDING_BIGTEMPLE (no match)
-    45: null,                  // BUILDING_LOOKOUTTOWER (no match)
-    46: null,                  // BUILDING_GUARDTOWERSMALL (no match)
-    47: null,                  // BUILDING_GUARDTOWERBIG (no match)
-    48: 'Castle',        // BUILDING_CASTLE → Castle
-    49: null,                  // BUILDING_MUSHROOMFARM (no match)
-    50: null,                  // BUILDING_DARKTEMPLE (no match)
-    51: null,                  // BUILDING_FORTRESS (no match)
-    // Ports 52-59, Shipyards 58-63 → no match
-    52: null, 53: null, 54: null, 55: null, 56: null, 57: null,
-    58: null, 59: null, 60: null, 61: null, 62: null, 63: null,
-    // Eyecatchers 64-75 → no match
-    64: null, 65: null, 66: null, 67: null, 68: null, 69: null,
-    70: null, 71: null, 72: null, 73: null, 74: null, 75: null,
-    76: null, 77: null, 78: null, 79: null, // ShipyardG/H, PortG/H
-    80: null, // BUILDING_MANACOPTERHALL
-    81: null, // BUILDING_SUNFLOWEROILMAKERHUT
-    82: null, // BUILDING_SUNFLOWERFARMERHUT
+// ── S4 Building ID → Rust BuildingType discriminant ────────────────────
+// Maps S4 binary building IDs (0-82) directly to Rust BuildingType discriminants.
+// Eliminates intermediate name-string lookup from old S4_BUILDING_ID_TO_NAME + S4_BUILDING_NAME_TO_DISC.
+const S4_BUILDING_ID_TO_DISC = {
+    1: 12, 2: 12,                             // WoodcutterHut / ForesterHut → Woodcutter
+    3: 1,                                       // Sawmill
+    4: 2, 14: 2,                               // StonecutterHut / StoneMine → Stonecutter
+    6: 11,                                      // FisherHut → Fisherman
+    8: 67,                                      // Slaughterhouse → Butcher
+    10: 7,                                      // Bakery
+    11: 10, 12: 10, 36: 10,                    // GrainFarm / AnimalRanch / AgaveFarmerHut → Farm
+    15: 62, 16: 62, 17: 62, 18: 62,            // IronMine / GoldMine / CoalMine / SulfurMine → CoalMine
+    20: 4,                                      // SmeltIron → Toolsmith
+    22: 5,                                      // Weaponsmith
+    34: 81,                                     // StorageArea → Storehouse
+    39: 28,                                     // MeadMakerHut → Brewery
+    48: 0,                                      // Castle → Headquarters
 };
-
-    // S4_BUILDING_NAME_TO_DISC: maps S4_BUILDING_ID_TO_NAME output strings → Rust BuildingType discriminant
-    // Used by parseSavBuildings to produce integer-kind buildings for restore_game_state
-    window.S4_BUILDING_NAME_TO_DISC = {
-        'Woodcutter': 12, 'Sawmill': 1, 'Stonecutter': 2, 'Fisherman': 11,
-        'Butcher': 67, 'Bakery': 7, 'Farm': 10, 'Toolsmith': 4,
-        'Weaponsmith': 5, 'Storehouse': 81, 'Brewery': 28, 'Castle': 0,
-        // Mine types are ambiguous in S4 binary format — default to CoalMine
-        'Mine': 62
-    };
 
 // ── S4 Settler ID → S4WN UnitKind mapping ───────────────────────────────
 // Based on S4Forge.RE Settlers.h enum (SETTLER_* constants, IDs 0-66).
@@ -2264,8 +2208,8 @@ function parseSavBuildings(decompressed, mapWidth, mapHeight) {
             const bType = dv.getUint8(off);
             if (bType > 82) continue; // Invalid building type
 
-            const bName = S4_BUILDING_ID_TO_NAME[bType];
-            if (!bName) continue; // Skip unknown building types
+            const kindDisc = S4_BUILDING_ID_TO_DISC[bType];
+            if (kindDisc === undefined) continue; // Skip unknown building types
 
             // Try reading position as u16 LE at offsets 2 and 4
             const bx = dv.getUint16(off + 2, true);
@@ -2279,7 +2223,7 @@ function parseSavBuildings(decompressed, mapWidth, mapHeight) {
             const construction = Math.min(1.0, constructionRaw / 255.0);
 
             candidates.push({
-                kind: (window.S4_BUILDING_NAME_TO_DISC[bName] !== undefined ? window.S4_BUILDING_NAME_TO_DISC[bName] : 0),
+                kind: kindDisc,
                 x: Math.floor(bx / 2), // Convert from S4 coords to tile coords
                 y: Math.floor(by / 2),
                 construction: parseFloat(construction.toFixed(3)),
