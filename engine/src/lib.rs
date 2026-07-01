@@ -261,6 +261,13 @@ float edge_factor = smoothstep(0.0, edge_zone, edge_dist);
 lit = mix(u_fog_color, lit, edge_factor);
 float vis = smoothstep(0.15, 0.6, v_visibility);
 lit = mix(u_fog_color, lit, vis);
+float fog_max_radius = max(u_resolution.x, u_resolution.y) * 0.5;
+float fog_screen_dist = length(gl_FragCoord.xy - u_resolution * 0.5);
+float fog_factor = smoothstep(fog_max_radius * 0.35, fog_max_radius * 0.78, fog_screen_dist);
+float fog_strength = mix(0.05, 0.35, fog_factor) * day_light;
+if (u_reflection_pass == 0) {
+    lit = mix(lit, u_fog_color, fog_strength);
+}
 lit = mix(lit * 0.7, lit, warmth);
 if (!is_water) {
 lit *= v_ao;
@@ -9211,6 +9218,91 @@ mod parse_map_json_tests {
             FRAGMENT_SHADER.contains("day_light"),
             "shadow factor must be modulated by day_light"
         );
+    }
+
+    // ── Phase 7: Distance Fog Tests ──────────────────────────────────────
+
+    /// Mirror of the GLSL distance fog computation for test validation.
+    #[allow(dead_code)]
+    fn compute_fog_factor(screen_x: f32, screen_y: f32, res_x: f32, res_y: f32, day_light: f32) -> f32 {
+        let max_radius = res_x.max(res_y) * 0.5;
+        let dx = screen_x - res_x * 0.5;
+        let dy = screen_y - res_y * 0.5;
+        let dist = (dx * dx + dy * dy).sqrt();
+        let t = ((dist - max_radius * 0.35) / (max_radius * 0.78 - max_radius * 0.35)).clamp(0.0, 1.0);
+        let fog_factor = t * t * (3.0 - 2.0 * t); // smoothstep
+        let fog_strength = (0.05 + fog_factor * 0.30) * day_light;
+        fog_strength.clamp(0.0, 1.0)
+    }
+
+    #[test]
+    fn test_distance_fog_shader_present() {
+        assert!(
+            FRAGMENT_SHADER.contains("fog_max_radius"),
+            "fragment shader must contain distance fog computation"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("fog_screen_dist"),
+            "fragment shader must compute fog_screen_dist"
+        );
+    }
+
+    #[test]
+    fn test_distance_fog_not_in_reflection_pass() {
+        // Distance fog should only be applied in the main pass, not reflection
+        assert!(
+            FRAGMENT_SHADER.contains("u_reflection_pass == 0"),
+            "distance fog should be skipped during reflection pass"
+        );
+    }
+
+    #[test]
+    fn test_distance_fog_uses_u_fog_color() {
+        assert!(
+            FRAGMENT_SHADER.contains("mix(lit, u_fog_color, fog_strength)"),
+            "distance fog must blend terrain with u_fog_color"
+        );
+    }
+
+    #[test]
+    fn test_fog_factor_zero_at_center() {
+        // At screen center, fog factor should be 0 (no fog)
+        let f = compute_fog_factor(960.0, 540.0, 1920.0, 1080.0, 1.0);
+        assert!(f < 0.06, "fog at center should be near 0.05 (base haze), got {}", f);
+    }
+
+    #[test]
+    fn test_fog_factor_full_at_corner() {
+        // At screen corner, fog factor should be strong
+        let f = compute_fog_factor(0.0, 0.0, 1920.0, 1080.0, 1.0);
+        assert!(f > 0.20, "fog at corner should be strong, got {}", f);
+        assert!(f <= 0.351, "fog at corner should not exceed 0.351, got {}", f);
+    }
+
+    #[test]
+    fn test_fog_factor_increases_with_distance() {
+        // Farther from center = more fog
+        let near = compute_fog_factor(1000.0, 540.0, 1920.0, 1080.0, 1.0);
+        let far = compute_fog_factor(1500.0, 540.0, 1920.0, 1080.0, 1.0);
+        assert!(far > near, "fog should increase with distance: near={}, far={}", near, far);
+    }
+
+    #[test]
+    fn test_fog_factor_scales_with_resolution() {
+        // Same relative position should produce same fog regardless of resolution
+        let f_hd = compute_fog_factor(960.0, 0.0, 1920.0, 1080.0, 1.0);
+        let f_4k = compute_fog_factor(1920.0, 0.0, 3840.0, 2160.0, 1.0);
+        assert!((f_hd - f_4k).abs() < 0.001,
+            "fog should be resolution-independent: hd={}, 4k={}", f_hd, f_4k);
+    }
+
+    #[test]
+    fn test_fog_factor_daylight_modulates() {
+        // Fog should be stronger during day, weaker at night
+        let day_fog = compute_fog_factor(1500.0, 540.0, 1920.0, 1080.0, 1.0);
+        let night_fog = compute_fog_factor(1500.0, 540.0, 1920.0, 1080.0, 0.1);
+        assert!(day_fog > night_fog * 2.0,
+            "day fog ({}) should be significantly stronger than night fog ({})", day_fog, night_fog);
     }
 
     #[test]
