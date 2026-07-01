@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S324 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 280KB (unchanged). Converted model_id_for_building from 47-arm string match to BUILDING_MODEL_IDS const array lookup indexed by BuildingType discriminant — all 87 slots populated. Next: (1) Verify reflection pass shader correctness visually — request render snapshot from Daniel. (2) Verify Fix #73 on mobile: request render snapshot from Daniel. (3) Create dedicated 3D model files for Healer, SmallResidence, MediumResidence, LargeResidence. (4) Investigate model_id string elimination by converting add_model_instance pathway to integer model types (est. 500-800B WASM savings). (5) Investigate remaining WASM size optimization paths.
+Status: S325 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 280KB (unchanged). All 87 BUILDING_MODEL_IDS slots populated with dedicated or reused models — zero "construction" fallbacks remain. Next: (1) Verify new models render correctly — request render snapshot from Daniel. (2) Investigate model_id string elimination by converting add_model_instance pathway to integer model types (est. 500-800B WASM savings). (3) Investigate remaining WASM size optimization paths. (4) Verify reflection pass shader correctness visually. (5) Verify Fix #73 on mobile.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -100,6 +100,8 @@ Status: S324 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 2
 | 7 — Rendering Overhaul | 🔄 | Redo rendering to match original S4 as closely as possible; regenerate all textures to closely match original art style |
 
 ### Session Log (recent)
+
+||| 325 | 2026-07-01 | Create dedicated 3D models for Healer + 3 Residences: Procedural low-poly JSON models for healer (hut+gable roof+red cross), small_residence (1-story house), medium_residence (2-story with intermediate roof), large_residence (3-story tower-like). Update BUILDING_MODEL_IDS array: 4 remaining "construction" slots (72, 82, 83, 84) now mapped to dedicated models. All 87 array slots populated — zero "construction" fallbacks remain in BUILDING_MODEL_IDS. 880 tests pass, clippy clean. Next: (1) Verify new models render correctly — request render snapshot from Daniel. (2) Investigate model_id string elimination by converting add_model_instance pathway to integer model types (est. 500-800B WASM savings). (3) Investigate remaining WASM size optimization paths. (4) Verify reflection pass shader correctness visually. (5) Verify Fix #73 on mobile. — 880 tests |
 
 ||| 324 | 2026-07-01 | Remap 20 BUILDING_MODEL_IDS from "construction" to existing dedicated models: Mines (61-64) → "mine", Smelters (65-66) → "smelter", Slaughterhouse (67) → "butcher", PowderMill (69) → "mill", WeaponFoundry (70) → "armory", Forester (71) → "lumberjack", Ranches (73-76) + TrojanFarm (77) → "farm", Marketplace (78) + StorageYard (81) → "storehouse", LandingDock (79) → "shipyard", Vineyard (80) → "vineyard", Small/LargeTemple (85-86) → "templeofbacchus". Only Healer + 3 Residences still use "construction". No WASM rebuild needed (asset-only change). 880 tests pass, clippy clean. — 880 tests |
 
