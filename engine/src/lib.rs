@@ -155,6 +155,21 @@ uniform int u_reflection_pass;
 uniform float u_reflection_horizon_y;
 uniform vec2 u_resolution;
 out vec4 out_color;
+float cloud_shadow(float wpos_x, float wpos_z) {
+    const float GRID = 6.0;
+    const float OFFSET = -3.0;
+    float cx = floor((wpos_x - OFFSET) / GRID) * GRID + OFFSET;
+    float cz = floor((wpos_z - OFFSET) / GRID) * GRID + OFFSET;
+    float h = fract(sin(cx * 127.1 + cz * 311.7 + 74.7) * 43758.547);
+    if (h < 0.4) return 1.0;
+    float h2 = fract(sin(cx * 269.5 + cz * 183.3 + 67.2) * 28374.123);
+    float h3 = fract(sin(cx * 419.2 + cz * 357.8 + 91.3) * 19283.568);
+    float cl_x = cx + h2 * GRID * 0.8;
+    float cl_z = cz + h3 * GRID * 0.8;
+    float cl_size = 2.0 + h * 3.0;
+    float dist = length(vec2(wpos_x - cl_x, wpos_z - cl_z));
+    return mix(0.72, 1.0, smoothstep(cl_size * 0.6, cl_size, dist));
+}
 void main() {
 vec3 base_color;
 if (u_use_textures == 1) {
@@ -174,22 +189,7 @@ float elev_shade = 1.0 + v_elevation * 0.1;
 float shade = slope_shade * elev_shade;
 "#,
 day_light_glsl_v!(),
-r#"float cloud_shadow(float wpos_x, float wpos_z) {
-    const float GRID = 6.0;
-    const float OFFSET = -3.0;
-    float cx = floor((wpos_x - OFFSET) / GRID) * GRID + OFFSET;
-    float cz = floor((wpos_z - OFFSET) / GRID) * GRID + OFFSET;
-    float h = fract(sin(cx * 127.1 + cz * 311.7 + 74.7) * 43758.547);
-    if (h < 0.4) return 1.0;
-    float h2 = fract(sin(cx * 269.5 + cz * 183.3 + 67.2) * 28374.123);
-    float h3 = fract(sin(cx * 419.2 + cz * 357.8 + 91.3) * 19283.568);
-    float cl_x = cx + h2 * GRID * 0.8;
-    float cl_z = cz + h3 * GRID * 0.8;
-    float cl_size = 2.0 + h * 3.0;
-    float dist = length(vec2(wpos_x - cl_x, wpos_z - cl_z));
-    return mix(0.72, 1.0, smoothstep(cl_size * 0.6, cl_size, dist));
-}
-float cs = cloud_shadow(v_world_xz.x, v_world_xz.y);
+r#"float cs = cloud_shadow(v_world_xz.x, v_world_xz.y);
 float warmth = 0.5 + day_light * 0.5;
 vec3 n = normalize(v_normal);
 vec3 l = normalize(u_light_direction);
