@@ -80,6 +80,7 @@ out float v_terrain_id;
 out vec3 v_normal;
 out vec4 v_splat;
 out float v_ao;
+out vec2 v_world_xz;
 void main() {
 float x = a_position.x;
 float y = a_position.y;
@@ -120,6 +121,7 @@ v_terrain_id = a_terrain_id;
 v_visibility = a_visibility;
 v_normal = a_normal;
 v_splat = a_splat;
+v_world_xz = a_position.xz;
 v_ao = a_ao;
 }
 "#;
@@ -139,6 +141,7 @@ in float v_terrain_id;
 in vec3 v_normal;
 in vec4 v_splat;
 in float v_ao;
+in vec2 v_world_xz;
 uniform highp sampler2DArray u_terrain_textures;
 uniform int u_use_textures;
 uniform vec3 u_fog_color;
@@ -171,7 +174,23 @@ float elev_shade = 1.0 + v_elevation * 0.1;
 float shade = slope_shade * elev_shade;
 "#,
 day_light_glsl_v!(),
-r#"float warmth = 0.5 + day_light * 0.5;
+r#"float cloud_shadow(float wpos_x, float wpos_z) {
+    const float GRID = 6.0;
+    const float OFFSET = -3.0;
+    float cx = floor((wpos_x - OFFSET) / GRID) * GRID + OFFSET;
+    float cz = floor((wpos_z - OFFSET) / GRID) * GRID + OFFSET;
+    float h = fract(sin(cx * 127.1 + cz * 311.7 + 74.7) * 43758.547);
+    if (h < 0.4) return 1.0;
+    float h2 = fract(sin(cx * 269.5 + cz * 183.3 + 67.2) * 28374.123);
+    float h3 = fract(sin(cx * 419.2 + cz * 357.8 + 91.3) * 19283.568);
+    float cl_x = cx + h2 * GRID * 0.8;
+    float cl_z = cz + h3 * GRID * 0.8;
+    float cl_size = 2.0 + h * 3.0;
+    float dist = length(vec2(wpos_x - cl_x, wpos_z - cl_z));
+    return mix(0.72, 1.0, smoothstep(cl_size * 0.6, cl_size, dist));
+}
+float cs = cloud_shadow(v_world_xz.x, v_world_xz.y);
+float warmth = 0.5 + day_light * 0.5;
 vec3 n = normalize(v_normal);
 vec3 l = normalize(u_light_direction);
 float diffuse = max(dot(n, l), 0.0);
@@ -231,6 +250,10 @@ if (v_has_resource > 0.5) {
 float pulse = 0.8 + 0.2 * sin((v_day_phase - 0.25) * 6.2831853 * 2.0);
 vec3 glow = vec3(0.9, 0.85, 0.3) * 0.15 * pulse;
 lit = lit + glow;
+}
+float shadow_factor = mix(1.0, cs, day_light * 0.45);
+if (!is_water && v_terrain_id < 2.5) {
+    lit *= shadow_factor;
 }
 float edge_dist = v_edge_dist;
 float edge_zone = 8.0;
@@ -9057,6 +9080,137 @@ mod parse_map_json_tests {
                     "resource mismatch at ({},{}): {:?} vs {:?}", x, y, orig.resource, round.resource);
             }
         }
+    }
+
+    // ── Phase 7: Cloud Shadow Tests ─────────────────────────────────────
+
+    /// Mirror of the GLSL cloud_shadow hash function for test validation.
+    #[allow(dead_code)]
+    fn cloud_shadow_rust(wpos_x: f32, wpos_z: f32) -> f32 {
+        const GRID: f32 = 6.0;
+        const OFFSET: f32 = -3.0;
+        let cx = ((wpos_x - OFFSET) / GRID).floor() * GRID + OFFSET;
+        let cz = ((wpos_z - OFFSET) / GRID).floor() * GRID + OFFSET;
+        let h = ((cx * 127.1 + cz * 311.7 + 74.7).sin() * 43_758.547).fract();
+        if h < 0.4 { return 1.0; }
+        let h2 = ((cx * 269.5 + cz * 183.3 + 67.2).sin() * 28_374.123).fract();
+        let h3 = ((cx * 419.2 + cz * 357.8 + 91.3).sin() * 19_283.568).fract();
+        let cl_x = cx + h2 * GRID * 0.8;
+        let cl_z = cz + h3 * GRID * 0.8;
+        let cl_size = 2.0 + h * 3.0;
+        let dist = ((wpos_x - cl_x).powi(2) + (wpos_z - cl_z).powi(2)).sqrt();
+        let t = ((dist - cl_size * 0.6) / (cl_size * 0.4)).clamp(0.0, 1.0);
+        0.72 + t * (1.0 - 0.72)
+    }
+
+    #[test]
+    fn test_vertex_shader_has_world_xz_varying() {
+        assert!(
+            VERTEX_SHADER.contains("v_world_xz"),
+            "vertex shader must output v_world_xz for cloud shadow computation"
+        );
+    }
+
+    #[test]
+    fn test_fragment_shader_has_cloud_shadow_function() {
+        assert!(
+            FRAGMENT_SHADER.contains("cloud_shadow"),
+            "fragment shader must have cloud_shadow function"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("v_world_xz"),
+            "fragment shader must receive v_world_xz from vertex shader"
+        );
+    }
+
+    #[test]
+    fn test_cloud_shadow_not_applied_to_water() {
+        // Cloud shadows should only affect land terrain (terrain_id < 2.5)
+        // Water tiles should not be shadowed by clouds
+        assert!(
+            FRAGMENT_SHADER.contains("!is_water && v_terrain_id < 2.5"),
+            "cloud shadow should only affect land terrain, not water"
+        );
+    }
+
+    #[test]
+    fn test_cloud_shadow_hash_produces_varying_values() {
+        // Different positions far apart should produce different shadow values
+        // Cells at grid spacing (6.0) are guaranteed to hash differently
+        let mut values = Vec::new();
+        for x in (0..60).step_by(6) {
+            for z in (0..60).step_by(6) {
+                values.push(cloud_shadow_rust(x as f32 + 3.0, z as f32 + 3.0));
+            }
+        }
+        // Check that not all values are identical — there should be both
+        // cloud-covered and cloud-free cells in a 10x10 grid
+        let min_v = values.iter().cloned().fold(f32::MAX, f32::min);
+        let max_v = values.iter().cloned().fold(f32::MIN, f32::max);
+        assert!(max_v - min_v > 0.001,
+            "cloud shadow should vary across grid: min={}, max={}", min_v, max_v);
+    }
+
+    #[test]
+    fn test_cloud_shadow_hash_in_range() {
+        // Shadow factor should always be between 0.72 and 1.0
+        for x in (0..50).step_by(3) {
+            for z in (0..50).step_by(3) {
+                let s = cloud_shadow_rust(x as f32, z as f32);
+                assert!(s >= 0.71 && s <= 1.01,
+                    "cloud shadow at ({},{}): {} out of [0.72, 1.0]", x, z, s);
+            }
+        }
+    }
+
+    #[test]
+    fn test_cloud_shadow_no_shadow_without_cloud() {
+        // At the center of a cell with h < 0.4, shadow should be 1.0 (no cloud)
+        // Cell (0,0) at position (0,0) — hash is deterministic
+        // We test that at least some positions return 1.0 (no shadow)
+        let mut found_no_shadow = false;
+        for x in (0..60).step_by(6) {
+            for z in (0..60).step_by(6) {
+                let s = cloud_shadow_rust(x as f32, z as f32);
+                if (s - 1.0).abs() < 0.001 {
+                    found_no_shadow = true;
+                    break;
+                }
+            }
+            if found_no_shadow { break; }
+        }
+        assert!(found_no_shadow, "some cells should have no cloud (shadow factor 1.0)");
+    }
+
+    #[test]
+    fn test_cloud_shadow_shadow_when_under_cloud() {
+        // Cells with h >= 0.4 should produce shadow < 1.0 when directly under cloud center
+        // Test at a known position where we computed the hash to be > 0.4
+        let mut found_shadow = false;
+        for x in (0..60).step_by(1) {
+            for z in (0..60).step_by(1) {
+                let s = cloud_shadow_rust(x as f32, z as f32);
+                if s < 0.95 {
+                    found_shadow = true;
+                    break;
+                }
+            }
+            if found_shadow { break; }
+        }
+        assert!(found_shadow, "some positions should be under cloud shadow (< 0.95)");
+    }
+
+    #[test]
+    fn test_cloud_shadow_daylight_modulation() {
+        // The shadow factor should be modulated by day_light
+        assert!(
+            FRAGMENT_SHADER.contains("shadow_factor"),
+            "fragment shader must compute shadow_factor"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("day_light"),
+            "shadow factor must be modulated by day_light"
+        );
     }
 
     #[test]
