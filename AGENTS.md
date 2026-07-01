@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S322 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 277KB. Gated Map::to_json() behind #[cfg(test)] — dead in production since S314/S315, eliminates 2 format!() calls from WASM binary path. Next: (1) Verify reflection pass shader correctness visually. (2) Verify Fix #73 on mobile: request render snapshot from Daniel. (3) Migrate S4 building name strings in sav-parser to integer-discriminant JS mapping (est. 3-5KB WASM savings).
+Status: S323 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 280KB. Converted model_id_for_building from 47-arm string match to BUILDING_MODEL_IDS const array lookup indexed by BuildingType discriminant — all 87 slots populated. Next: (1) Verify reflection pass shader correctness visually. (2) Verify Fix #73 on mobile: request render snapshot from Daniel. (3) Build dedicated 3D model files for currently-unrepresented building types (GoldMine, Smelter variants, Residences, Temples, Marketplace, etc.) currently falling through to "construction" model. (4) Investigate model_id string elimination by converting add_model_instance pathway to integer model types (est. 500-800B WASM savings).
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
