@@ -634,6 +634,8 @@ impl Map {
     /// Serialize the map to a JSON string for export/sharing.
     /// Format: {"width":64,"height":64,"tiles":[{"t":0,"e":0.0,"r":null},...]}
     /// t = terrain type (u8), e = elevation (f32), r = resource (string or null)
+    /// Gated behind #[cfg(test)] — production code uses typed MapExportData since S314/S315.
+    #[cfg(test)]
     pub fn to_json(&self) -> String {
         let mut tiles = Vec::with_capacity(self.width * self.height);
         for y in 0..self.height {
