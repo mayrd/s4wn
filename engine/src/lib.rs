@@ -389,7 +389,10 @@ vec3 ambient = base_albedo * mix(ground_ambient, sky_ambient, hemi_factor);
 float NdotH = max(dot(N, H), 0.0);
 float spec = pow(NdotH, 2.0 / (u_roughness * u_roughness + 0.001));
 vec3 specular = mix(vec3(0.04), base_albedo, u_metallic) * spec * 0.5;
-vec3 final_color = ambient + diffuse + specular;
+float rim = 1.0 - abs(dot(N, V));
+rim = pow(rim, 3.0);
+vec3 rim_color = mix(vec3(0.1, 0.15, 0.25), vec3(0.4, 0.35, 0.25), day_light) * 0.25;
+vec3 final_color = ambient + diffuse + specular + rim_color * rim;
 out_color = vec4(final_color, u_model_color.a);
 }
 "#,
@@ -7044,6 +7047,14 @@ mod tests {
         assert!(MODEL_FRAGMENT_SHADER.contains("detail_strength"), "model fragment shader missing detail_strength for normal perturbation");
         assert!(MODEL_FRAGMENT_SHADER.contains("normalize(N + detail_strength"), "model fragment shader missing normal perturbation code");
         assert!(MODEL_FRAGMENT_SHADER.contains("fract(sin(dot("), "model fragment shader missing hash function for detail normals");
+    }
+    #[test]
+    fn test_model_fragment_shader_has_rim_lighting() {
+        assert!(MODEL_FRAGMENT_SHADER.contains("rim = 1.0 - abs(dot(N, V))"), "model fragment shader missing rim lighting computation");
+        assert!(MODEL_FRAGMENT_SHADER.contains("rim = pow(rim, 3.0)"), "model fragment shader missing rim power falloff");
+        assert!(MODEL_FRAGMENT_SHADER.contains("rim_color"), "model fragment shader missing rim_color variable");
+        assert!(MODEL_FRAGMENT_SHADER.contains("rim_color * rim"), "model fragment shader missing rim contribution to final_color");
+        assert!(MODEL_FRAGMENT_SHADER.contains("final_color = ambient + diffuse + specular + rim_color"), "model fragment shader final_color not including rim term");
     }
 
     // ── Shadow shader tests (Phase 7) ─────────────────────────────────────

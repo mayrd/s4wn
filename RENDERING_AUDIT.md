@@ -60,6 +60,7 @@
 - [x] Building destruction animation (scale-to-zero)
 - [x] Construction particles with per-nation colors
 - [x] Procedural detail normals for building walls
+- [x] Rim lighting (Fresnel edge highlight) for building models
 - [ ] SHOULD: Verify models render correctly at all zoom/LOD levels
 - [ ] NICE: LOD for distant building models
 
