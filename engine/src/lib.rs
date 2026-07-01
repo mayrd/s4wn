@@ -5491,32 +5491,32 @@ impl App {
         "sanctuaryofpestilence",        // 58 SanctuaryOfPestilence
         "darkfortress",                 // 59 DarkFortress
         "demongate",                    // 60 DemonGate
-        "construction",                 // 61 GoldMine
-        "construction",                 // 62 CoalMine
-        "construction",                 // 63 IronOreMine
-        "construction",                 // 64 SulfurMine
-        "construction",                 // 65 GoldSmelter
-        "construction",                 // 66 IronSmelter
-        "construction",                 // 67 Slaughterhouse
+        "mine",                         // 61 GoldMine (reuses generic mine model)
+        "mine",                         // 62 CoalMine (reuses generic mine model)
+        "mine",                         // 63 IronOreMine (reuses generic mine model)
+        "mine",                         // 64 SulfurMine (reuses generic mine model)
+        "smelter",                      // 65 GoldSmelter (reuses generic smelter model)
+        "smelter",                      // 66 IronSmelter (reuses generic smelter model)
+        "butcher",                      // 67 Slaughterhouse (reuses butcher model)
         "oilpress",                     // 68 OilPress
-        "construction",                 // 69 PowderMill
-        "construction",                 // 70 WeaponFoundry
-        "construction",                 // 71 Forester
-        "construction",                 // 72 Healer
-        "construction",                 // 73 GoatRanch
-        "construction",                 // 74 PigRanch
-        "construction",                 // 75 GooseRanch
-        "construction",                 // 76 DonkeyRanch
-        "construction",                 // 77 TrojanFarm
-        "construction",                 // 78 Marketplace
-        "construction",                 // 79 LandingDock
-        "construction",                 // 80 Vineyard
-        "construction",                 // 81 StorageYard
-        "construction",                 // 82 SmallResidence
-        "construction",                 // 83 MediumResidence
-        "construction",                 // 84 LargeResidence
-        "construction",                 // 85 SmallTemple
-        "construction",                 // 86 LargeTemple
+        "mill",                         // 69 PowderMill (reuses mill model)
+        "armory",                       // 70 WeaponFoundry (reuses armory model)
+        "lumberjack",                   // 71 Forester (reuses lumberjack model)
+        "construction",                 // 72 Healer (no dedicated model yet)
+        "farm",                         // 73 GoatRanch (reuses farm model)
+        "farm",                         // 74 PigRanch (reuses farm model)
+        "farm",                         // 75 GooseRanch (reuses farm model)
+        "farm",                         // 76 DonkeyRanch (reuses farm model)
+        "farm",                         // 77 TrojanFarm (reuses farm model)
+        "storehouse",                   // 78 Marketplace (reuses storehouse model)
+        "shipyard",                     // 79 LandingDock (reuses shipyard model)
+        "vineyard",                     // 80 Vineyard
+        "storehouse",                   // 81 StorageYard (reuses storehouse model)
+        "construction",                 // 82 SmallResidence (no dedicated model yet)
+        "construction",                 // 83 MediumResidence (no dedicated model yet)
+        "construction",                 // 84 LargeResidence (no dedicated model yet)
+        "templeofbacchus",              // 85 SmallTemple (reuses temple model)
+        "templeofbacchus",              // 86 LargeTemple (reuses temple model)
     ];
 
     /// Map a building type to a 3D model ID via array lookup by discriminant.
