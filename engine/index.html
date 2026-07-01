@@ -2000,63 +2000,35 @@ const S4_BUILDING_ID_TO_DISC = {
     48: 0,                                      // Castle → Headquarters
 };
 
-// ── S4 Settler ID → S4WN UnitKind discriminant mapping ──────────────────
-// Based on S4Forge.RE Settlers.h enum (SETTLER_* constants, IDs 0-66).
-// Returns UnitKind discriminant (u8): Settler=0, Swordsman=1, Bowman=2.
-const S4_SETTLER_ID_TO_KIND = (() => {
-    const m = new Map();
-    // Settlers (IDs 0-28) → Settler (0)
-    for (let i = 0; i <= 28; i++) m.set(i, 0);
-    // Swordsmen (29-31) → Swordsman (1)
-    for (let i = 29; i <= 31; i++) m.set(i, 1);
-    // Bowmen (32-34) → Bowman (2)
-    for (let i = 32; i <= 34; i++) m.set(i, 2);
-    // Medics (35-37) → Settler (0)
-    for (let i = 35; i <= 37; i++) m.set(i, 0);
-    // Axe warriors (38-40) → Swordsman (1)
-    for (let i = 38; i <= 40; i++) m.set(i, 1);
-    // Blowgun warriors (41-43) → Bowman (2)
-    for (let i = 41; i <= 43; i++) m.set(i, 2);
-    // Squad leader (44) → Swordsman (1)
-    m.set(44, 1);
-    // Priest (45) → Settler (0)
-    m.set(45, 0);
-    // Saboteur (46) → Settler (0)
-    m.set(46, 0);
-    // Pioneer (47) → Settler (0)
-    m.set(47, 0);
-    // Thief (48) → Settler (0)
-    m.set(48, 0);
-    // Geologist (49) → Settler (0)
-    m.set(49, 0);
-    // Gardener (50) → Settler (0)
-    m.set(50, 0);
-    // Landscaper (51) → Settler (0)
-    m.set(51, 0);
-    // Dark gardener (52) → Settler (0)
-    m.set(52, 0);
-    // Mushroom farmer (53) → Settler (0)
-    m.set(53, 0);
-    // Shaman (54) → Settler (0)
-    m.set(54, 0);
-    // Slaved settler (55) → Settler (0)
-    m.set(55, 0);
-    // Temple servant (56) → Settler (0)
-    m.set(56, 0);
-    // Angels (57-59) → Swordsman (1)
-    for (let i = 57; i <= 59; i++) m.set(i, 1);
-    // Donkey (60) → Settler (0)
-    m.set(60, 0);
-    // Backpack catapultist (61-63) → Swordsman (1)
-    for (let i = 61; i <= 63; i++) m.set(i, 1);
-    // Sunflower farmer (64) → Settler (0)
-    m.set(64, 0);
-    // Sunflower oil maker (65) → Settler (0)
-    m.set(65, 0);
-    // Manacopter master (66) → Settler (0)
-    m.set(66, 0);
-    return m;
-})();
+// S4 Settler ID (0-66) → S4WN UnitKind discriminant (u8: 0=Settler, 1=Swordsman, 2=Bowman)
+// Sparse Uint8Array indexed by S4 ID — O(1) array access, no Map hash overhead.
+// Out-of-bounds IDs return undefined → || 0 fallback = Settler.
+const S4_SETTLER_ID_TO_KIND = new Uint8Array([
+    // 00-28: Settlers → 0
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    // 29-31: Swordsmen → 1
+    1,1,1,
+    // 32-34: Bowmen → 2
+    2,2,2,
+    // 35-37: Medics → 0
+    0,0,0,
+    // 38-40: Axe warriors → 1
+    1,1,1,
+    // 41-43: Blowgun warriors → 2
+    2,2,2,
+    // 44: Squad leader → 1
+    1,
+    // 45-56: Priests, pioneers, thieves, etc. → 0
+    0,0,0,0,0,0,0,0,0,0,0,0,
+    // 57-59: Angels → 1
+    1,1,1,
+    // 60: Donkey → 0
+    0,
+    // 61-63: Backpack catapultists → 1
+    1,1,1,
+    // 64-66: Sunflower farmers, oil makers, manacopter → 0
+    0,0,0,
+]);
 
 
 // ── Parse .sav General Information chunk (0x2712) ──────────────────────
@@ -2257,7 +2229,7 @@ function parseSavSettlers(decompressed, mapWidth, mapHeight) {
             const sType = dv.getUint8(off);
             if (sType > 66) continue; // Invalid settler type
 
-            const kind = S4_SETTLER_ID_TO_KIND.get(sType) || 0;
+            const kind = S4_SETTLER_ID_TO_KIND[sType] || 0;
 
             // Position as u16 LE at offsets 2 and 4
             const sx = dv.getUint16(off + 2, true);
