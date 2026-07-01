@@ -2505,14 +2505,35 @@ impl App {
         let lz = sun_angle.sin() * sun_elev.max(0.1);
         let len = (lx*lx + ly*ly + lz*lz).sqrt();
         gl.uniform3f(Some(light_dir_loc), lx/len, ly/len, lz/len);
-        gl.uniform1f(Some(penumbra_loc), 0.7);  // default penumbra softness
+
+        // Camera eye position for distance-based penumbra
+        let (ex, ey, ez) = self.camera.eye();
 
         // Draw one shadow quad per model instance
         for inst in &self.model_instances {
-            // Skip instances at ground level (no visible shadow)
-            let _height = inst.y; // Y is the tile's world-space Z — use scale as height proxy
-            // Use a minimum shadow size, scale with building/unit size
-            let shadow_size = inst.scale * 0.6;
+            // Compute distance from camera eye to instance world position
+            let dx = inst.x - ex;
+            let dy = 0.0 - ey;
+            let dz = inst.y - ez;
+            let cam_dist = (dx * dx + dy * dy + dz * dz).sqrt();
+
+            // Distance-based penumbra: closer = sharper, farther = softer
+            // At 0-6 units: penumbra 0.25 (sharp)
+            // At 6-30 units: linear ramp 0.25->1.0
+            // Beyond 30 units: penumbra 1.0 (very soft)
+            let penumbra = if cam_dist < 6.0 {
+                0.25
+            } else if cam_dist > 30.0 {
+                1.0
+            } else {
+                0.25 + (cam_dist - 6.0) / 24.0 * 0.75
+            };
+            gl.uniform1f(Some(penumbra_loc), penumbra);
+
+            // Sun-angle shadow stretch: low sun = longer shadows
+            // sun_elev ranges from ~0.2 (low) to ~1.0 (high noon)
+            let stretch = 1.0 / sun_elev.max(0.15);
+            let shadow_size = inst.scale * 0.6 * stretch;
 
             gl.uniform3f(Some(pos_loc), inst.x, 0.0, inst.y);
             gl.uniform1f(Some(size_loc), shadow_size);
@@ -9726,4 +9747,104 @@ mod parse_map_json_tests {
         assert!(dawn_dusk > 0.5,
             "god ray strength should peak at dawn, got {}", dawn_dusk);
     }
+
+    // ── Shadow distance-based penumbra tests (Session 339) ─────────────────
+
+    /// Mirror of the Rust shadow penumbra calculation for test validation.
+    /// Maps camera distance to penumbra softness: close=sharp, far=soft.
+    #[allow(dead_code)]
+    fn compute_shadow_penumbra_rust(cam_dist: f32) -> f32 {
+        if cam_dist < 6.0 {
+            0.25
+        } else if cam_dist > 30.0 {
+            1.0
+        } else {
+            0.25 + (cam_dist - 6.0) / 24.0 * 0.75
+        }
+    }
+
+    /// Mirror of the Rust shadow stretch calculation for test validation.
+    /// Low sun elevation yields larger stretch (longer shadows).
+    #[allow(dead_code)]
+    fn compute_shadow_stretch_rust(sun_elev: f32) -> f32 {
+        1.0 / sun_elev.max(0.15)
+    }
+
+    #[test]
+    fn test_shadow_penumbra_zero_distance_sharp() {
+        let p = compute_shadow_penumbra_rust(0.0);
+        assert_eq!(p, 0.25, "penumbra at zero distance should be sharp (0.25)");
+    }
+
+    #[test]
+    fn test_shadow_penumbra_close_range() {
+        let p0 = compute_shadow_penumbra_rust(0.0);
+        let p3 = compute_shadow_penumbra_rust(3.0);
+        let p5 = compute_shadow_penumbra_rust(5.9);
+        assert_eq!(p0, 0.25);
+        assert_eq!(p3, 0.25);
+        assert_eq!(p5, 0.25);
+    }
+
+    #[test]
+    fn test_shadow_penumbra_far_range() {
+        let p30 = compute_shadow_penumbra_rust(30.0);
+        let p40 = compute_shadow_penumbra_rust(40.0);
+        let p100 = compute_shadow_penumbra_rust(100.0);
+        assert_eq!(p30, 1.0);
+        assert_eq!(p40, 1.0);
+        assert_eq!(p100, 1.0);
+    }
+
+    #[test]
+    fn test_shadow_penumbra_mid_range() {
+        let p6 = compute_shadow_penumbra_rust(6.0);
+        let p12 = compute_shadow_penumbra_rust(12.0);
+        let p18 = compute_shadow_penumbra_rust(18.0);
+        let p24 = compute_shadow_penumbra_rust(24.0);
+        assert!((p6 - 0.25).abs() < 0.001, "at dist=6, got {}", p6);
+        assert!((p12 - 0.4375).abs() < 0.001, "at dist=12, got {}", p12);
+        assert!((p18 - 0.625).abs() < 0.001, "at dist=18, got {}", p18);
+        assert!((p24 - 0.8125).abs() < 0.001, "at dist=24, got {}", p24);
+    }
+
+    #[test]
+    fn test_shadow_penumbra_monotonic() {
+        let mut prev = compute_shadow_penumbra_rust(0.0);
+        for d in 1..=35 {
+            let cur = compute_shadow_penumbra_rust(d as f32);
+            assert!(cur >= prev, "penumbra decreased from {} to {} at dist={}", prev, cur, d);
+            prev = cur;
+        }
+    }
+
+    #[test]
+    fn test_shadow_stretch_high_sun() {
+        let s = compute_shadow_stretch_rust(1.0);
+        assert!((s - 1.0).abs() < 0.001, "noon stretch should be 1.0, got {}", s);
+    }
+
+    #[test]
+    fn test_shadow_stretch_low_sun() {
+        let s_low = compute_shadow_stretch_rust(0.25);
+        assert!((s_low - 4.0).abs() < 0.001, "low sun stretch should be 4.0, got {}", s_low);
+    }
+
+    #[test]
+    fn test_shadow_stretch_minimum_clamped() {
+        let s_0 = compute_shadow_stretch_rust(0.0);
+        let s_01 = compute_shadow_stretch_rust(0.1);
+        assert!((s_0 - 1.0/0.15).abs() < 0.001, "clamped stretch at 0.0, got {}", s_0);
+        assert!((s_01 - 1.0/0.15).abs() < 0.001, "clamped stretch at 0.1, got {}", s_01);
+    }
+
+    #[test]
+    fn test_shadow_stretch_decreases_with_elevation() {
+        let s_low = compute_shadow_stretch_rust(0.3);
+        let s_mid = compute_shadow_stretch_rust(0.6);
+        let s_high = compute_shadow_stretch_rust(0.9);
+        assert!(s_low > s_mid, "stretch should decrease: {} vs {}", s_low, s_mid);
+        assert!(s_mid > s_high, "stretch should decrease: {} vs {}", s_mid, s_high);
+    }
+
 }
