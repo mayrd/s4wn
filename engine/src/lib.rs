@@ -5502,7 +5502,7 @@ impl App {
         "mill",                         // 69 PowderMill (reuses mill model)
         "armory",                       // 70 WeaponFoundry (reuses armory model)
         "lumberjack",                   // 71 Forester (reuses lumberjack model)
-        "construction",                 // 72 Healer (no dedicated model yet)
+        "healer",                       // 72 Healer
         "farm",                         // 73 GoatRanch (reuses farm model)
         "farm",                         // 74 PigRanch (reuses farm model)
         "farm",                         // 75 GooseRanch (reuses farm model)
@@ -5512,9 +5512,9 @@ impl App {
         "shipyard",                     // 79 LandingDock (reuses shipyard model)
         "vineyard",                     // 80 Vineyard
         "storehouse",                   // 81 StorageYard (reuses storehouse model)
-        "construction",                 // 82 SmallResidence (no dedicated model yet)
-        "construction",                 // 83 MediumResidence (no dedicated model yet)
-        "construction",                 // 84 LargeResidence (no dedicated model yet)
+        "small_residence",              // 82 SmallResidence
+        "medium_residence",             // 83 MediumResidence
+        "large_residence",              // 84 LargeResidence
         "templeofbacchus",              // 85 SmallTemple (reuses temple model)
         "templeofbacchus",              // 86 LargeTemple (reuses temple model)
     ];
