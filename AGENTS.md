@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S325 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 280KB (unchanged). All 87 BUILDING_MODEL_IDS slots populated with dedicated or reused models — zero "construction" fallbacks remain. Next: (1) Verify new models render correctly — request render snapshot from Daniel. (2) Investigate model_id string elimination by converting add_model_instance pathway to integer model types (est. 500-800B WASM savings). (3) Investigate remaining WASM size optimization paths. (4) Verify reflection pass shader correctness visually. (5) Verify Fix #73 on mobile.
+Status: S326 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 275.6KB (-4.4KB). Model instance pipeline now uses u8 model type indices — zero per-frame String allocations, integer-based HashMap grouping in render_models. 62-entry MODEL_NAME_BY_ID lookup + 87-entry BUILDING_MODEL_IDS[u8] array. Next: (1) Verify new models render correctly — request render snapshot from Daniel. (2) Verify reflection pass shader correctness visually. (3) Verify Fix #73 on mobile. (4) Migrate remaining S4 building name strings in sav-parser to integer-discriminant JS mapping. (5) Investigate further WASM size optimization paths.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -100,6 +100,8 @@ Status: S325 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 2
 | 7 — Rendering Overhaul | 🔄 | Redo rendering to match original S4 as closely as possible; regenerate all textures to closely match original art style |
 
 ### Session Log (recent)
+
+||| 326 | 2026-07-01 | Eliminate per-instance String allocation in model instance pipeline: ModelInstance.model_id String→u8, ModelInstance::new() &str→u8 (no more .to_string()), BUILDING_MODEL_IDS [&str;87]→[u8;87], added MODEL_NAME_BY_ID[62] + model_name_for_id() for GPU model lookup, add_model_instance WASM export &str→u8, render_models HashMap<&str,..>→HashMap<u8,..> (integer grouping), JS MODEL_TYPE_ID_BY_BUILDING_KIND[87] array. WASM: 280KB→275.6KB (-4.4KB). 880 tests pass, clippy clean. — 880 tests |
 
 ||| 325 | 2026-07-01 | Create dedicated 3D models for Healer + 3 Residences: Procedural low-poly JSON models for healer (hut+gable roof+red cross), small_residence (1-story house), medium_residence (2-story with intermediate roof), large_residence (3-story tower-like). Update BUILDING_MODEL_IDS array: 4 remaining "construction" slots (72, 82, 83, 84) now mapped to dedicated models. All 87 array slots populated — zero "construction" fallbacks remain in BUILDING_MODEL_IDS. 880 tests pass, clippy clean. Next: (1) Verify new models render correctly — request render snapshot from Daniel. (2) Investigate model_id string elimination by converting add_model_instance pathway to integer model types (est. 500-800B WASM savings). (3) Investigate remaining WASM size optimization paths. (4) Verify reflection pass shader correctness visually. (5) Verify Fix #73 on mobile. — 880 tests |
 
@@ -374,6 +376,6 @@ Status: S325 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 2
 265. Investigate 7KB WASM size variance (307.3KB after cargo clean vs 300.1KB reported). Run checksum on wasm binaries from both builds to identify the source of growth. [SHOULD]
 266. Re-baseline WASM size target: 300KB. At 307.3KB we are 7.3KB over. Need 7.3KB savings from from_name() conversion + any remaining low-hanging fruit. [MUST]
 
-Next session priorities: (1) Verify reflection pass shader correctness visually — request render snapshot from Daniel to confirm water reflections work. (2) Verify Fix #73 on mobile: request render snapshot from Daniel to confirm tiles display on ANGLE/Mali-G710. (3) Migrate S4 building name strings in sav-parser to integer-discriminant JS mapping (est. 3-5KB WASM savings). (4) Consider gating Map::to_json() behind #[cfg(test)] — it's no longer used in get_game_state production path but may still be called from tests and export_map_json path. (5) The typed map-tile array migration is complete — all 7 remaining JSON String export candidates from S313 audit are now migrated.
+Next session priorities: (1) Verify new models render correctly — request render snapshot from Daniel. (2) Verify reflection pass shader correctness visually — request render snapshot from Daniel to confirm water reflections work. (3) Verify Fix #73 on mobile: request render snapshot from Daniel to confirm tiles display on ANGLE/Mali-G710. (4) Migrate remaining S4 building name strings in sav-parser to integer-discriminant JS mapping (✓ model_id strings done in S326, check if others remain). (5) Investigate further WASM size optimization paths (currently 275.6KB, well under 300KB target).
 
 *All building data must match BASE.md. Never modify BASE.md.*
