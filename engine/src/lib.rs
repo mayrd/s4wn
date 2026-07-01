@@ -5282,7 +5282,7 @@ pub fn restore_game_state(json: &str) -> RestoreStateResult {
                     let id = find_json_value(ujson, "id")
                         .and_then(|v| v.parse::<u32>().ok())
                         .unwrap_or(0);
-                    let kind_name = find_json_value(ujson, "kind").unwrap_or("Settler");
+                    let kind_raw = find_json_value(ujson, "kind").unwrap_or("0");
                     let ux = find_json_value(ujson, "x")
                         .and_then(|v| v.parse::<f32>().ok())
                         .unwrap_or(0.0);
@@ -5312,10 +5312,19 @@ pub fn restore_game_state(json: &str) -> RestoreStateResult {
                         }
                     });
 
-                    let kind = match kind_name {
-                        "Soldier" => UnitKind::Swordsman,
-                        "Archer" => UnitKind::Bowman,
-                        _ => UnitKind::Settler,
+                    // Parse kind as integer discriminant first (new format), fall back to string (old)
+                    let kind = if let Ok(d) = kind_raw.parse::<u8>() {
+                        match d {
+                            1 => UnitKind::Swordsman,
+                            2 => UnitKind::Bowman,
+                            _ => UnitKind::Settler,
+                        }
+                    } else {
+                        match kind_raw {
+                            "Soldier" => UnitKind::Swordsman,
+                            "Archer" => UnitKind::Bowman,
+                            _ => UnitKind::Settler,
+                        }
                     };
 
                     let state = match state_str {

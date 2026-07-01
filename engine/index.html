@@ -2000,77 +2000,64 @@ const S4_BUILDING_ID_TO_DISC = {
     48: 0,                                      // Castle → Headquarters
 };
 
-// ── S4 Settler ID → S4WN UnitKind mapping ───────────────────────────────
+// ── S4 Settler ID → S4WN UnitKind discriminant mapping ──────────────────
 // Based on S4Forge.RE Settlers.h enum (SETTLER_* constants, IDs 0-66).
-// Military settlers (IDs 29+) map to Swordsman or Bowman; workers map to Settler.
+// Returns UnitKind discriminant (u8): Settler=0, Swordsman=1, Bowman=2.
 const S4_SETTLER_ID_TO_KIND = (() => {
     const m = new Map();
-    // Settlers (IDs 0-28) → Settler (uses string "Worker" for .sav compat)
-    for (let i = 0; i <= 28; i++) m.set(i, 'Worker');
-    // Swordsmen (29-31) → Swordsman (uses string "Soldier" for .sav compat)
-    for (let i = 29; i <= 31; i++) m.set(i, 'Soldier');
-    // Bowmen (32-34) → Bowman (uses string "Archer" for .sav compat)
-    for (let i = 32; i <= 34; i++) m.set(i, 'Archer');
-    // Medics (35-37) → Settler (healer role)
-    for (let i = 35; i <= 37; i++) m.set(i, 'Worker');
-    // Axe warriors (38-40) → Swordsman
-    for (let i = 38; i <= 40; i++) m.set(i, 'Soldier');
-    // Blowgun warriors (41-43) → Bowman
-    for (let i = 41; i <= 43; i++) m.set(i, 'Archer');
-    // Squad leader (44) → Swordsman
-    m.set(44, 'Soldier');
-    // Priest (45) → Settler
-    m.set(45, 'Worker');
-    // Saboteur (46) → Settler
-    m.set(46, 'Worker');
-    // Pioneer (47) → Settler
-    m.set(47, 'Worker');
-    // Thief (48) → Settler
-    m.set(48, 'Worker');
-    // Geologist (49) → Settler
-    m.set(49, 'Worker');
-    // Gardener (50) → Settler
-    m.set(50, 'Worker');
-    // Landscaper (51) → Settler
-    m.set(51, 'Worker');
-    // Dark gardener (52) → Settler
-    m.set(52, 'Worker');
-    // Mushroom farmer (53) → Settler
-    m.set(53, 'Worker');
-    // Shaman (54) → Settler
-    m.set(54, 'Worker');
-    // Slaved settler (55) → Settler
-    m.set(55, 'Worker');
-    // Temple servant (56) → Settler
-    m.set(56, 'Worker');
-    // Angels (57-59) → Swordsman
-    for (let i = 57; i <= 59; i++) m.set(i, 'Soldier');
-    // Donkey (60) → Settler (pack animal)
-    m.set(60, 'Worker');
-    // Backpack catapultist (61-63) → Swordsman
-    for (let i = 61; i <= 63; i++) m.set(i, 'Soldier');
-    // Sunflower farmer (64) → Settler
-    m.set(64, 'Worker');
-    // Sunflower oil maker (65) → Settler
-    m.set(65, 'Worker');
-    // Manacopter master (66) → Settler
-    m.set(66, 'Worker');
+    // Settlers (IDs 0-28) → Settler (0)
+    for (let i = 0; i <= 28; i++) m.set(i, 0);
+    // Swordsmen (29-31) → Swordsman (1)
+    for (let i = 29; i <= 31; i++) m.set(i, 1);
+    // Bowmen (32-34) → Bowman (2)
+    for (let i = 32; i <= 34; i++) m.set(i, 2);
+    // Medics (35-37) → Settler (0)
+    for (let i = 35; i <= 37; i++) m.set(i, 0);
+    // Axe warriors (38-40) → Swordsman (1)
+    for (let i = 38; i <= 40; i++) m.set(i, 1);
+    // Blowgun warriors (41-43) → Bowman (2)
+    for (let i = 41; i <= 43; i++) m.set(i, 2);
+    // Squad leader (44) → Swordsman (1)
+    m.set(44, 1);
+    // Priest (45) → Settler (0)
+    m.set(45, 0);
+    // Saboteur (46) → Settler (0)
+    m.set(46, 0);
+    // Pioneer (47) → Settler (0)
+    m.set(47, 0);
+    // Thief (48) → Settler (0)
+    m.set(48, 0);
+    // Geologist (49) → Settler (0)
+    m.set(49, 0);
+    // Gardener (50) → Settler (0)
+    m.set(50, 0);
+    // Landscaper (51) → Settler (0)
+    m.set(51, 0);
+    // Dark gardener (52) → Settler (0)
+    m.set(52, 0);
+    // Mushroom farmer (53) → Settler (0)
+    m.set(53, 0);
+    // Shaman (54) → Settler (0)
+    m.set(54, 0);
+    // Slaved settler (55) → Settler (0)
+    m.set(55, 0);
+    // Temple servant (56) → Settler (0)
+    m.set(56, 0);
+    // Angels (57-59) → Swordsman (1)
+    for (let i = 57; i <= 59; i++) m.set(i, 1);
+    // Donkey (60) → Settler (0)
+    m.set(60, 0);
+    // Backpack catapultist (61-63) → Swordsman (1)
+    for (let i = 61; i <= 63; i++) m.set(i, 1);
+    // Sunflower farmer (64) → Settler (0)
+    m.set(64, 0);
+    // Sunflower oil maker (65) → Settler (0)
+    m.set(65, 0);
+    // Manacopter master (66) → Settler (0)
+    m.set(66, 0);
     return m;
 })();
 
-// ── S4 Resource ID → S4WN ResourceType name mapping ─────────────────────
-// Based on S4 map format resource IDs
-const S4_RESOURCE_ID_TO_NAME = {
-    0: null,           // None
-    1: 'Iron',         // Iron Ore
-    2: 'Coal',         // Coal
-    3: 'Gold',         // Gold Ore
-    4: 'Stone',        // Stone
-    5: 'Sulfur',       // Sulfur
-    6: 'Fish',         // Fish
-    7: 'Game',         // Game (hunting)
-    8: 'Grain',        // Grain
-};
 
 // ── Parse .sav General Information chunk (0x2712) ──────────────────────
 // CGameChunkGeneral struct layout (from S4Forge.RE decompilation):
@@ -2270,7 +2257,7 @@ function parseSavSettlers(decompressed, mapWidth, mapHeight) {
             const sType = dv.getUint8(off);
             if (sType > 66) continue; // Invalid settler type
 
-            const kind = S4_SETTLER_ID_TO_KIND.get(sType) || 'Worker';
+            const kind = S4_SETTLER_ID_TO_KIND.get(sType) || 0;
 
             // Position as u16 LE at offsets 2 and 4
             const sx = dv.getUint16(off + 2, true);
