@@ -187,6 +187,11 @@ float god_ray_factor(vec2 world_xz, vec3 sun_dir) {
     }
     return total / max(weight_sum, 0.001);
 }
+float heat_shimmer(vec2 world_xz, float time, float day_phase) {
+    float n1 = sin(world_xz.x * 4.7 + time * 2.3) * cos(world_xz.y * 3.9 - time * 1.7);
+    float n2 = sin(world_xz.x * 6.1 - time * 1.3) * cos(world_xz.y * 2.8 + time * 2.1);
+    return (n1 * 0.5 + n2 * 0.3) * day_phase;
+}
 void main() {
 vec3 base_color;
 if (u_use_textures == 1) {
@@ -292,6 +297,12 @@ if (u_reflection_pass == 0 && !is_water && u_god_ray_strength > 0.0) {
     float gr_brightness = (1.0 - gr) * u_god_ray_strength * day_light * 0.6;
     vec3 god_ray_color = vec3(1.0, 0.95, 0.8);
     lit += god_ray_color * gr_brightness * cs;
+}
+bool is_desert = !is_water && v_terrain_id > 4.5 && v_terrain_id < 5.5; // desert heat_shimmer
+if (is_desert) {
+    float hs = heat_shimmer(v_world_xz, u_water_time, day_light);
+    lit += lit * hs * 0.05;
+    lit.r += abs(hs) * 0.01;
 }
 lit = mix(lit * 0.7, lit, warmth);
 if (!is_water) {
@@ -9845,6 +9856,209 @@ mod parse_map_json_tests {
         let s_high = compute_shadow_stretch_rust(0.9);
         assert!(s_low > s_mid, "stretch should decrease: {} vs {}", s_low, s_mid);
         assert!(s_mid > s_high, "stretch should decrease: {} vs {}", s_mid, s_high);
+    }
+
+    // ── Phase 7: Heat Shimmer Tests ──────────────────────────────────────
+
+
+    /// Mirror of the GLSL heat_shimmer function for test validation.
+
+    #[allow(dead_code)]
+
+    fn compute_heat_shimmer_rust(wpos_x: f32, wpos_z: f32, time: f32, day_light: f32) -> f32 {
+
+        let n1 = (wpos_x * 4.7 + time * 2.3).sin() * (wpos_z * 3.9 - time * 1.7).cos();
+
+        let n2 = (wpos_x * 6.1 - time * 1.3).sin() * (wpos_z * 2.8 + time * 2.1).cos();
+
+        (n1 * 0.5 + n2 * 0.3) * day_light
+
+    }
+
+
+
+    #[test]
+
+    fn test_fragment_shader_has_heat_shimmer_function() {
+
+        assert!(
+
+            FRAGMENT_SHADER.contains("heat_shimmer"),
+
+            "fragment shader must have heat_shimmer function"
+
+        );
+
+    }
+
+
+
+    #[test]
+
+    fn test_heat_shimmer_desert_terrain_only() {
+
+        // Verify that the heat shimmer is conditional on desert terrain (v_terrain_id 4.5-5.5)
+
+        assert!(
+
+            FRAGMENT_SHADER.contains("is_desert"),
+
+            "fragment shader must declare is_desert"
+
+        );
+
+        assert!(
+
+            FRAGMENT_SHADER.contains("v_terrain_id > 4.5"),
+
+            "fragment shader must check v_terrain_id > 4.5 for desert"
+
+        );
+
+        assert!(
+
+            FRAGMENT_SHADER.contains("v_terrain_id < 5.5"),
+
+            "fragment shader must check v_terrain_id < 5.5 for desert"
+
+        );
+
+    }
+
+
+
+    #[test]
+
+    fn test_heat_shimmer_zero_at_night() {
+
+        // At night (day_light = 0), the shimmer should be zero
+
+        let result = compute_heat_shimmer_rust(10.0, 5.0, 2.0, 0.0);
+
+        assert!((result - 0.0).abs() < 0.0001, "heat shimmer should be 0 at night, got {}", result);
+
+    }
+
+
+
+    #[test]
+
+    fn test_heat_shimmer_active_during_day() {
+
+        // During day (day_light = 1.0), the shimmer should be non-zero
+
+        let result = compute_heat_shimmer_rust(10.0, 5.0, 2.0, 1.0);
+
+        assert!(result.abs() > 0.01, "heat shimmer should be active during day, got {}", result);
+
+    }
+
+
+
+    #[test]
+
+    fn test_heat_shimmer_output_range() {
+
+        // The shimmer output should be in [-0.8, 0.8] range (theoretical max: 0.5+0.3 = 0.8)
+
+        for x in 0..20 {
+
+            for z in 0..20 {
+
+                let s = compute_heat_shimmer_rust(x as f32, z as f32, 1.5, 1.0);
+
+                assert!(s >= -0.81 && s <= 0.81,
+
+                    "heat shimmer out of range at ({},{}): {}", x, z, s);
+
+            }
+
+        }
+
+    }
+
+
+
+    #[test]
+
+    fn test_heat_shimmer_time_variation() {
+
+        // Different times should produce different values
+
+        let t1 = compute_heat_shimmer_rust(5.0, 5.0, 0.0, 1.0);
+
+        let t2 = compute_heat_shimmer_rust(5.0, 5.0, 1.0, 1.0);
+
+        assert!((t1 - t2).abs() > 0.01,
+
+            "heat shimmer should vary with time: {} vs {}", t1, t2);
+
+    }
+
+
+
+    #[test]
+
+    fn test_heat_shimmer_world_position_dependence() {
+
+        // Different world positions should produce different values
+
+        let p1 = compute_heat_shimmer_rust(0.0, 0.0, 0.5, 0.8);
+
+        let p2 = compute_heat_shimmer_rust(5.0, 3.0, 0.5, 0.8);
+
+        assert!((p1 - p2).abs() > 0.01,
+
+            "heat shimmer should vary with position: {} vs {}", p1, p2);
+
+    }
+
+
+
+    #[test]
+
+    fn test_heat_shimmer_daylight_linear_scaling() {
+
+        // The output should scale linearly with day_light
+
+        let full = compute_heat_shimmer_rust(3.0, 7.0, 0.3, 1.0);
+
+        let half = compute_heat_shimmer_rust(3.0, 7.0, 0.3, 0.5);
+
+        assert!((full - half * 2.0).abs() < 0.0001,
+
+            "heat shimmer should scale linearly with day_light: full={}, half*2={}", full, half * 2.0);
+
+    }
+
+
+
+    #[test]
+
+    fn test_heat_shimmer_not_applied_to_water() {
+
+        // Ensure the heat shimmer condition excludes water
+
+        match FRAGMENT_SHADER.find("is_desert") {
+
+            Some(pos) => {
+
+                // is_desert should check !is_water before the desert range
+
+                let before = &FRAGMENT_SHADER[..pos];
+
+                // The last is_desert assignment should be near the check
+
+                assert!(FRAGMENT_SHADER.contains("!is_water && v_terrain_id"),
+
+                    "is_desert must exclude water with !is_water");
+
+            },
+
+            None => panic!("is_desert not found in fragment shader"),
+
+        }
+
     }
 
 }
