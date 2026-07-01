@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S323 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 280KB. Converted model_id_for_building from 47-arm string match to BUILDING_MODEL_IDS const array lookup indexed by BuildingType discriminant — all 87 slots populated. Next: (1) Verify reflection pass shader correctness visually. (2) Verify Fix #73 on mobile: request render snapshot from Daniel. (3) Build dedicated 3D model files for currently-unrepresented building types (GoldMine, Smelter variants, Residences, Temples, Marketplace, etc.) currently falling through to "construction" model. (4) Investigate model_id string elimination by converting add_model_instance pathway to integer model types (est. 500-800B WASM savings).
+Status: S324 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 280KB (unchanged). Converted model_id_for_building from 47-arm string match to BUILDING_MODEL_IDS const array lookup indexed by BuildingType discriminant — all 87 slots populated. Next: (1) Verify reflection pass shader correctness visually — request render snapshot from Daniel. (2) Verify Fix #73 on mobile: request render snapshot from Daniel. (3) Create dedicated 3D model files for Healer, SmallResidence, MediumResidence, LargeResidence. (4) Investigate model_id string elimination by converting add_model_instance pathway to integer model types (est. 500-800B WASM savings). (5) Investigate remaining WASM size optimization paths.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -100,6 +100,8 @@ Status: S323 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 2
 | 7 — Rendering Overhaul | 🔄 | Redo rendering to match original S4 as closely as possible; regenerate all textures to closely match original art style |
 
 ### Session Log (recent)
+
+||| 324 | 2026-07-01 | Remap 20 BUILDING_MODEL_IDS from "construction" to existing dedicated models: Mines (61-64) → "mine", Smelters (65-66) → "smelter", Slaughterhouse (67) → "butcher", PowderMill (69) → "mill", WeaponFoundry (70) → "armory", Forester (71) → "lumberjack", Ranches (73-76) + TrojanFarm (77) → "farm", Marketplace (78) + StorageYard (81) → "storehouse", LandingDock (79) → "shipyard", Vineyard (80) → "vineyard", Small/LargeTemple (85-86) → "templeofbacchus". Only Healer + 3 Residences still use "construction". No WASM rebuild needed (asset-only change). 880 tests pass, clippy clean. — 880 tests |
 
 ||| 322 | 2026-07-01 | Gate Map::to_json() behind #[cfg(test)]: Production code uses typed MapExportData since S314/S315 — map.to_json() was dead code in non-test builds. Added #[cfg(test)] gate to Map::to_json() in map.rs, eliminating 2 format!() calls from WASM binary compilation path. All callers (test_map_json_roundtrip, test_export_map_json) are test-only. cargo test: 880 passed. clippy: 0 errors, 0 warnings. — 880 tests |
 ||| 320 | 2026-07-01 | Fix clippy errors: unnecessary_cast + approx_constant. Removed unnecessary `as usize` cast on `map.width * map.height` (both already usize) in test_export_map_json. Replaced `3.14` literal with `std::f32::consts::PI` in test_parse_map_json_bom_tolerance — uses tolerance-based comparison `< 0.001` to handle floating-point precision. WASM rebuilt: 276.9KB (unchanged from S319). cargo test: 880 passed. clippy: 0 errors, 1 warning (needless_range_loop in particle.rs). — 880 tests |
