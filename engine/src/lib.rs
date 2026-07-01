@@ -728,7 +728,7 @@ struct App {
     // ── Phase 5 Step 8: Model 3D rendering ──────────────────────────
     model_program: Option<WebGlProgram>,
     /// Per-model GPU buffers (VAO + index buffer + index count), keyed by model_id
-    gpu_models: std::collections::HashMap<String, GpuModel>,
+    gpu_models: std::collections::HashMap<u8, GpuModel>,
     /// Shared vertex buffer for all models (positions/normals/UVs) — overwritten on each upload
     model_pos_buffer: Option<WebGlBuffer>,
     model_normal_buffer: Option<WebGlBuffer>,
@@ -2251,6 +2251,17 @@ impl App {
 
     // ── Phase 5 Step 8: Model 3D Rendering Pass ──────────────────────
 
+    /// Convert a model name to its integer type ID via linear scan.
+    /// Used during model loading (one-time cost per model, not per-frame).
+    fn model_id_for_name(name: &str) -> u8 {
+        for (id, model_name) in Self::MODEL_NAME_BY_ID.iter().enumerate() {
+            if *model_name == name {
+                return id as u8;
+            }
+        }
+        6 // fallback to construction
+    }
+
     /// Upload a model mesh to GPU buffers for rendering.
     /// Creates a per-model VAO + index buffer so that render_models can do
     /// correctly separated draw calls per model type.
@@ -2335,8 +2346,9 @@ impl App {
 
         // Store per-model GPU resources
         if let Some(buf) = idx_buf {
+            let model_id = Self::model_id_for_name(name);
             self.gpu_models.insert(
-                name.to_string(),
+                model_id,
                 GpuModel {
                     vao,
                     index_buffer: buf,
@@ -2736,9 +2748,8 @@ impl App {
 
         // Per-model instanced draw calls
         for (model_id, instances) in &groups {
-            let model_name = Self::model_name_for_id(*model_id);
-            // Look up this model's GPU buffers
-            let gpu_model = match self.gpu_models.get(model_name) {
+            // Look up this model's GPU buffers by integer model_id
+            let gpu_model = match self.gpu_models.get(model_id) {
                 Some(gm) => gm,
                 None => continue, // model not uploaded yet, skip
             };
@@ -5428,7 +5439,7 @@ impl App {
         }
     }
     /// Unique model name strings indexed by model type ID.
-    /// Used to look up GPU model buffers by integer model_id in render_models.
+    /// Used for name->id lookup during model upload (model_id_for_name).
     const MODEL_NAME_BY_ID: [&str; 62] = [
         "headquarters",
         "sawmill",
@@ -5494,6 +5505,7 @@ impl App {
         "archer",
     ];
 
+    #[cfg(test)]
     /// Look up a model name string from its integer type ID.
     fn model_name_for_id(id: u8) -> &'static str {
         Self::MODEL_NAME_BY_ID.get(id as usize).copied().unwrap_or("construction")
