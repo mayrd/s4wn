@@ -5774,38 +5774,111 @@ function modelIdForBuildingKindId(kindId) {
 
 // Map model names to their JSON asset files.
 // Models are loaded via load_model_json() after WebGL init.
-const MODEL_FILES = {
-    armory: '../assets/models/json/armory.json',
-    bakery: '../assets/models/json/bakery.json',
-    blacksmith: '../assets/models/json/blacksmith.json',
-    boat: '../assets/models/json/boat.json',
-    bridge: '../assets/models/json/bridge.json',
-    bush: '../assets/models/json/bush.json',
-    butcher: '../assets/models/json/butcher.json',
-    cactus: '../assets/models/json/cactus.json',
-    cart: '../assets/models/json/cart.json',
-    construction: '../assets/models/json/construction.json',
-    deposit_coal: '../assets/models/json/deposit_coal.json',
-    deposit_fish: '../assets/models/json/deposit_fish.json',
-    deposit_game: '../assets/models/json/deposit_game.json',
-    deposit_gold: '../assets/models/json/deposit_gold.json',
-    deposit_grain: '../assets/models/json/deposit_grain.json',
-    deposit_iron: '../assets/models/json/deposit_iron.json',
-    deposit_stone: '../assets/models/json/deposit_stone.json',
-    deposit_sulfur: '../assets/models/json/deposit_sulfur.json',
-    driftwood: '../assets/models/json/driftwood.json',
-    farm: '../assets/models/json/farm.json',
-    fishery: '../assets/models/json/fishery.json',
-    flag: '../assets/models/json/flag.json',
-    flowers: '../assets/models/json/flowers.json',
-    geyser: '../assets/models/json/geyser.json',
-    grain_field: '../assets/models/json/grain_field.json',
-    headquarters: '../assets/models/json/headquarters.json',
-    lumberjack: '../assets/models/json/lumberjack.json',
-    mine: '../assets/models/json/mine.json',
-    mushrooms: '../assets/models/json/mushrooms.json',
-    sawmill: '../assets/models/json/sawmill.json',
-};
+// Map model IDs to their JSON asset files + display names.
+// MODEL_FILE_BY_ID: index = model_id (0-61), value = asset path (undefined if no file)
+// MODEL_NAMES_BY_ID: index = model_id, value = display name for logging
+// Models to upload to GPU: [model_id, file_path, display_name].
+// model_id is the Rust-side integer type (0-61). Names not in MODEL_NAMES_BY_ID
+// fall back to 6 (construction). See Rust MODEL_NAME_BY_ID for the full list.
+const MODEL_TO_LOAD = [
+    [0, '../assets/models/json/headquarters.json', 'headquarters'],
+    [1, '../assets/models/json/sawmill.json', 'sawmill'],
+    [3, '../assets/models/json/mine.json', 'mine'],
+    [6, '../assets/models/json/blacksmith.json', 'blacksmith'],
+    [6, '../assets/models/json/boat.json', 'boat'],
+    [6, '../assets/models/json/bridge.json', 'bridge'],
+    [6, '../assets/models/json/bush.json', 'bush'],
+    [6, '../assets/models/json/cactus.json', 'cactus'],
+    [6, '../assets/models/json/cart.json', 'cart'],
+    [6, '../assets/models/json/construction.json', 'construction'],
+    [6, '../assets/models/json/deposit_coal.json', 'deposit_coal'],
+    [6, '../assets/models/json/deposit_fish.json', 'deposit_fish'],
+    [6, '../assets/models/json/deposit_game.json', 'deposit_game'],
+    [6, '../assets/models/json/deposit_gold.json', 'deposit_gold'],
+    [6, '../assets/models/json/deposit_grain.json', 'deposit_grain'],
+    [6, '../assets/models/json/deposit_iron.json', 'deposit_iron'],
+    [6, '../assets/models/json/deposit_stone.json', 'deposit_stone'],
+    [6, '../assets/models/json/deposit_sulfur.json', 'deposit_sulfur'],
+    [6, '../assets/models/json/driftwood.json', 'driftwood'],
+    [6, '../assets/models/json/flag.json', 'flag'],
+    [6, '../assets/models/json/flowers.json', 'flowers'],
+    [6, '../assets/models/json/geyser.json', 'geyser'],
+    [6, '../assets/models/json/grain_field.json', 'grain_field'],
+    [6, '../assets/models/json/mushrooms.json', 'mushrooms'],
+    [7, '../assets/models/json/bakery.json', 'bakery'],
+    [8, '../assets/models/json/butcher.json', 'butcher'],
+    [10, '../assets/models/json/farm.json', 'farm'],
+    [11, '../assets/models/json/fishery.json', 'fishery'],
+    [12, '../assets/models/json/lumberjack.json', 'lumberjack'],
+    [53, '../assets/models/json/armory.json', 'armory']
+];
+
+// Display names indexed by model_id for console logging.
+const MODEL_NAMES_BY_ID = [
+    'headquarters',
+    'sawmill',
+    'stonecutter',
+    'mine',
+    'toolsmith',
+    'weaponsmith',
+    'construction',
+    'bakery',
+    'butcher',
+    'mill',
+    'farm',
+    'fishery',
+    'lumberjack',
+    'storehouse',
+    'waterworks',
+    'smelter',
+    'barracks',
+    'guardtower',
+    'fortress',
+    'siegeworkshop',
+    'shipyard',
+    'roadlayer',
+    'apiary',
+    'meadmaker',
+    'templeofbacchus',
+    'colosseum',
+    'sanctuaryofminerva',
+    'sanctuaryofvulcan',
+    'meadhall',
+    'sanctuaryofodin',
+    'sanctuaryofthor',
+    'sanctuaryoffreya',
+    'runestone',
+    'templeofchac',
+    'agavefarm',
+    'distillery',
+    'sanctuaryofkukulkan',
+    'sanctuaryofquetzalcoatl',
+    'sanctuaryofhuitzilopochtli',
+    'observatory',
+    'oracleofapollo',
+    'sanctuaryofartemis',
+    'sanctuaryofposeidon',
+    'sanctuaryofapollo',
+    'amphitheater',
+    'darktemple',
+    'darkgarden',
+    'mushroomfarm',
+    'sanctuaryofmorbus',
+    'sanctuaryofpestilence',
+    'darkfortress',
+    'demongate',
+    'oilpress',
+    'armory',
+    'healer',
+    'vineyard',
+    'small_residence',
+    'medium_residence',
+    'large_residence',
+    'worker',
+    'soldier',
+    'archer'
+];
+
 let modelsLoaded = false;
 let loadedModelCount = 0;
 
@@ -5815,8 +5888,8 @@ async function loadGameModels() {
         console.warn('load_model_json not available — model loading skipped');
         return;
     }
-    console.log('Loading ' + Object.keys(MODEL_FILES).length + ' 3D models…');
-    for (const [name, path] of Object.entries(MODEL_FILES)) {
+    console.log('Loading ' + MODEL_TO_LOAD.length + ' 3D models…');
+    for (const [modelId, path, name] of MODEL_TO_LOAD) {
         try {
             const resp = await fetch(path);
             if (!resp.ok) {
@@ -5824,7 +5897,33 @@ async function loadGameModels() {
                 continue;
             }
             const jsonStr = await resp.text();
-            const result = load_model_json(name, jsonStr);
+            const result = load_model_json(modelId, jsonStr);
+            if (result.ok) {
+                loadedModelCount++;
+                console.log('  Model loaded: ' + name + ' (' + result.tri_count + ' tri)');
+            } else {
+                console.warn('  Model ' + name + ' rejected: ' + result.error);
+            }
+        } catch (e) {
+            console.warn('  Model ' + name + ' error: ' + e.message);
+        }
+    }
+    modelsLoaded = true;
+    console.log('Model loading complete: ' + loadedModelCount + '/' + MODEL_TO_LOAD.length + ' models on GPU');
+}
+    console.log('Loading ' + 10 + ' 3D models…');
+    for (let modelId = 0; modelId < MODEL_FILE_BY_ID.length; modelId++) {
+        const path = MODEL_FILE_BY_ID[modelId];
+        if (path === undefined) continue;
+        const name = MODEL_NAMES_BY_ID[modelId] || ('model_' + modelId);
+        try {
+            const resp = await fetch(path);
+            if (!resp.ok) {
+                console.warn('Model ' + name + ' fetch failed: ' + resp.status);
+                continue;
+            }
+            const jsonStr = await resp.text();
+            const result = load_model_json(modelId, jsonStr);
             if (result.ok) {
                 loadedModelCount++;
                 console.log('  Model loaded: ' + name + ' (' + result.tri_count + ' tri)');
