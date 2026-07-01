@@ -1159,11 +1159,12 @@ impl App {
             .dyn_into::<WebGl2RenderingContext>()?;
 
         // Compile shaders
-        let vert = compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, VERTEX_SHADER)?;
+        let vert = compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, VERTEX_SHADER, "terrain_vertex")?;
         let frag = compile_shader(
             &gl,
             WebGl2RenderingContext::FRAGMENT_SHADER,
             FRAGMENT_SHADER,
+            "terrain_fragment",
         )?;
         let program = link_program(&gl, &vert, &frag)?;
 
@@ -1246,12 +1247,14 @@ impl App {
             &gl,
             WebGl2RenderingContext::VERTEX_SHADER,
             MODEL_VERTEX_SHADER,
+            "model_vertex",
         )
         .and_then(|vert| {
             compile_shader(
                 &gl,
                 WebGl2RenderingContext::FRAGMENT_SHADER,
                 MODEL_FRAGMENT_SHADER,
+                "model_fragment",
             )
             .and_then(|frag| link_program(&gl, &vert, &frag))
         })
@@ -1301,9 +1304,9 @@ impl App {
         ];
         let (shadow_program, shadow_vao,
              shadow_vp_loc, shadow_light_dir_loc, shadow_instance_pos_loc, shadow_size_loc, _shadow_penumbra_loc) =
-            compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, SHADOW_VERTEX_SHADER)
+            compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, SHADOW_VERTEX_SHADER, "shadow_vertex")
             .and_then(|vert| {
-                compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, SHADOW_FRAGMENT_SHADER)
+                compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, SHADOW_FRAGMENT_SHADER, "shadow_fragment")
                 .and_then(|frag| link_program(&gl, &vert, &frag))
             })
             .map(|prog| {
@@ -1343,9 +1346,9 @@ impl App {
         // ── Phase 7: Cloud program ──────────────────────────────────────
         let (cloud_program, cloud_vao, cloud_pos_buffer, cloud_size_buffer, cloud_alpha_buffer,
               cloud_vp_loc, cloud_parallax_loc, cloud_day_phase_loc) =
-            compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, CLOUD_VERTEX_SHADER)
+            compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, CLOUD_VERTEX_SHADER, "cloud_vertex")
             .and_then(|vert| {
-                compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, CLOUD_FRAGMENT_SHADER)
+                compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, CLOUD_FRAGMENT_SHADER, "cloud_fragment")
                 .and_then(|frag| link_program(&gl, &vert, &frag))
             })
             .map(|prog| {
@@ -1397,9 +1400,9 @@ impl App {
         let (sun_moon_program, sun_moon_vao, sun_moon_day_phase_loc,
              sun_moon_is_moon_loc, sun_moon_screen_pos_loc,
              sun_moon_radius_loc) =
-            compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, SUN_MOON_VERTEX_SHADER)
+            compile_shader(&gl, WebGl2RenderingContext::VERTEX_SHADER, SUN_MOON_VERTEX_SHADER, "sun_moon_vertex")
             .and_then(|vert| {
-                compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, SUN_MOON_FRAGMENT_SHADER)
+                compile_shader(&gl, WebGl2RenderingContext::FRAGMENT_SHADER, SUN_MOON_FRAGMENT_SHADER, "sun_moon_fragment")
                 .and_then(|frag| link_program(&gl, &vert, &frag))
             })
             .map(|prog| {
@@ -1422,11 +1425,13 @@ impl App {
             &gl,
             WebGl2RenderingContext::VERTEX_SHADER,
             OVERLAY_VERTEX_SHADER,
+            "overlay_vertex",
         )?;
         let overlay_frag = compile_shader(
             &gl,
             WebGl2RenderingContext::FRAGMENT_SHADER,
             OVERLAY_FRAGMENT_SHADER,
+            "overlay_fragment",
         )?;
         let overlay_program = link_program(&gl, &overlay_vert, &overlay_frag)?;
 
@@ -3180,6 +3185,7 @@ fn compile_shader(
     gl: &WebGl2RenderingContext,
     shader_type: u32,
     source: &str,
+    label: &str,
 ) -> Result<WebGlShader, JsValue> {
     let shader = gl
         .create_shader(shader_type)
@@ -3196,7 +3202,7 @@ fn compile_shader(
             .get_shader_info_log(&shader)
             .unwrap_or_else(|| "Unknown error".into());
         gl.delete_shader(Some(&shader));
-        return Err(JsValue::from_str(&format!("Shader compile error: {}", log)));
+        return Err(JsValue::from_str(&format!("Shader compile error [{}]: {}", label, log)));
     }
 
     Ok(shader)
@@ -8051,6 +8057,142 @@ mod tests {
             }
         }
     }
+    #[test]
+    fn test_all_shaders_balanced_braces() {
+        let sources = [
+            ("VERTEX_SHADER", VERTEX_SHADER),
+            ("FRAGMENT_SHADER", FRAGMENT_SHADER),
+            ("OVERLAY_VERTEX_SHADER", OVERLAY_VERTEX_SHADER),
+            ("OVERLAY_FRAGMENT_SHADER", OVERLAY_FRAGMENT_SHADER),
+            ("MODEL_VERTEX_SHADER", MODEL_VERTEX_SHADER),
+            ("MODEL_FRAGMENT_SHADER", MODEL_FRAGMENT_SHADER),
+            ("SHADOW_VERTEX_SHADER", SHADOW_VERTEX_SHADER),
+            ("SHADOW_FRAGMENT_SHADER", SHADOW_FRAGMENT_SHADER),
+            ("CLOUD_VERTEX_SHADER", CLOUD_VERTEX_SHADER),
+            ("CLOUD_FRAGMENT_SHADER", CLOUD_FRAGMENT_SHADER),
+            ("SUN_MOON_VERTEX_SHADER", SUN_MOON_VERTEX_SHADER),
+            ("SUN_MOON_FRAGMENT_SHADER", SUN_MOON_FRAGMENT_SHADER),
+        ];
+        for (name, src) in &sources {
+            let opens = src.matches('{').count();
+            let closes = src.matches('}').count();
+            assert_eq!(
+                opens, closes,
+                "{} has unbalanced braces: {{={}, }}={}",
+                name, opens, closes
+            );
+        }
+    }
+
+    #[test]
+    fn test_all_shaders_version_is_first_line() {
+        let sources = [
+            ("VERTEX_SHADER", VERTEX_SHADER),
+            ("FRAGMENT_SHADER", FRAGMENT_SHADER),
+            ("OVERLAY_VERTEX_SHADER", OVERLAY_VERTEX_SHADER),
+            ("OVERLAY_FRAGMENT_SHADER", OVERLAY_FRAGMENT_SHADER),
+            ("MODEL_VERTEX_SHADER", MODEL_VERTEX_SHADER),
+            ("MODEL_FRAGMENT_SHADER", MODEL_FRAGMENT_SHADER),
+            ("SHADOW_VERTEX_SHADER", SHADOW_VERTEX_SHADER),
+            ("SHADOW_FRAGMENT_SHADER", SHADOW_FRAGMENT_SHADER),
+            ("CLOUD_VERTEX_SHADER", CLOUD_VERTEX_SHADER),
+            ("CLOUD_FRAGMENT_SHADER", CLOUD_FRAGMENT_SHADER),
+            ("SUN_MOON_VERTEX_SHADER", SUN_MOON_VERTEX_SHADER),
+            ("SUN_MOON_FRAGMENT_SHADER", SUN_MOON_FRAGMENT_SHADER),
+        ];
+        for (name, src) in &sources {
+            let first_line = src.lines().next().unwrap_or("");
+            assert!(
+                first_line.trim() == "#version 300 es",
+                "{} first line is {:?}, expected '#version 300 es' — wrong line may indicate macro expansion issue",
+                name, first_line
+            );
+        }
+    }
+
+    #[test]
+    fn test_all_shaders_have_precision() {
+        let sources = [
+            ("VERTEX_SHADER", VERTEX_SHADER),
+            ("FRAGMENT_SHADER", FRAGMENT_SHADER),
+            ("OVERLAY_VERTEX_SHADER", OVERLAY_VERTEX_SHADER),
+            ("OVERLAY_FRAGMENT_SHADER", OVERLAY_FRAGMENT_SHADER),
+            ("MODEL_VERTEX_SHADER", MODEL_VERTEX_SHADER),
+            ("MODEL_FRAGMENT_SHADER", MODEL_FRAGMENT_SHADER),
+            ("SHADOW_VERTEX_SHADER", SHADOW_VERTEX_SHADER),
+            ("SHADOW_FRAGMENT_SHADER", SHADOW_FRAGMENT_SHADER),
+            ("CLOUD_VERTEX_SHADER", CLOUD_VERTEX_SHADER),
+            ("CLOUD_FRAGMENT_SHADER", CLOUD_FRAGMENT_SHADER),
+            ("SUN_MOON_VERTEX_SHADER", SUN_MOON_VERTEX_SHADER),
+            ("SUN_MOON_FRAGMENT_SHADER", SUN_MOON_FRAGMENT_SHADER),
+        ];
+        for (name, src) in &sources {
+            let second_line = src.lines().nth(1).unwrap_or("");
+            assert!(
+                second_line.trim() == "precision highp float;",
+                "{} second line is {:?}, expected 'precision highp float;'",
+                name, second_line
+            );
+        }
+    }
+
+    #[test]
+    fn test_fragment_shaders_have_out_color() {
+        let sources = [
+            ("FRAGMENT_SHADER", FRAGMENT_SHADER),
+            ("OVERLAY_FRAGMENT_SHADER", OVERLAY_FRAGMENT_SHADER),
+            ("MODEL_FRAGMENT_SHADER", MODEL_FRAGMENT_SHADER),
+            ("SHADOW_FRAGMENT_SHADER", SHADOW_FRAGMENT_SHADER),
+            ("CLOUD_FRAGMENT_SHADER", CLOUD_FRAGMENT_SHADER),
+            ("SUN_MOON_FRAGMENT_SHADER", SUN_MOON_FRAGMENT_SHADER),
+        ];
+        for (name, src) in &sources {
+            assert!(
+                src.contains("out vec4 out_color;") || src.contains("out vec4 out_color"),
+                "{} must declare 'out vec4 out_color;'",
+                name
+            );
+        }
+    }
+
+        #[test]
+    fn test_terrain_vertex_fragment_varying_match() {
+        // All vertex shader 'out' variables should have matching 'in' in fragment shader
+        let required_varyings = [
+            "v_color",
+            "v_elevation",
+            "v_has_resource",
+            "v_day_phase",
+            "v_slope",
+            "v_edge_dist",
+            "v_visibility",
+            "v_uv",
+            "v_terrain_id",
+            "v_normal",
+            "v_splat",
+            "v_ao",
+            "v_world_xz",
+        ];
+        for var in &required_varyings {
+            let out_decl = format!("out vec3 {}", var); // approximate — exact types differ
+            let in_decl = format!("in {}", var);
+            // Just check the variable name appears in both shaders
+            assert!(
+                VERTEX_SHADER.contains(var),
+                "VERTEX_SHADER must output varying '{}'", var
+            );
+            // Some varyings use vec2/vec3/vec4/float — check just the name
+            let found_in_frag = FRAGMENT_SHADER.contains(&format!("in float {}", var))
+                || FRAGMENT_SHADER.contains(&format!("in vec2 {}", var))
+                || FRAGMENT_SHADER.contains(&format!("in vec3 {}", var))
+                || FRAGMENT_SHADER.contains(&format!("in vec4 {}", var));
+            assert!(
+                found_in_frag,
+                "FRAGMENT_SHADER must have 'in ... {}' to match VERTEX_SHADER 'out'", var
+            );
+        }
+    }
+
 }
     // ── Phase 7: Sky Color Ramp Regression Tests ──
 
