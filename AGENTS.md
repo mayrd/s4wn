@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S327 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 275.6KB. S4 sav-parser building name strings eliminated: S4_BUILDING_ID_TO_DISC direct integer map replaces S4_BUILDING_ID_TO_NAME + S4_BUILDING_NAME_TO_DISC two-step string lookup. index.html -56 lines (-3.2KB). Next: (1) Verify new models render correctly — request render snapshot from Daniel. (2) Verify reflection pass shader correctness visually. (3) Verify Fix #73 on mobile. (4) Convert gpu_models HashMap<String→u8> + eliminate MODEL_NAME_BY_ID string array (~500B WASM). (5) Audit remaining JS-side string mappings (S4_RESOURCE_ID_TO_NAME, S4_SETTLER_ID_TO_KIND) for similar direct-integer migrations.
+Status: S328 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 275.1KB. S4 sav-parser building name strings eliminated: S4_BUILDING_ID_TO_DISC direct integer map replaces S4_BUILDING_ID_TO_NAME + S4_BUILDING_NAME_TO_DISC two-step string lookup. index.html -56 lines (-3.2KB). Next: (1) Audit JS-side string mappings (S4_RESOURCE_ID_TO_NAME, S4_SETTLER_ID_TO_KIND) for direct-integer migration. (2) Eliminate MODEL_NAME_BY_ID from WASM by converting load_model_json to accept u8 model_id. (3) Verify new models render correctly — request render snapshot from Daniel. (4) Verify reflection pass shader correctness visually. (5) Verify Fix #73 on mobile.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -100,6 +100,8 @@ Status: S327 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 2
 | 7 — Rendering Overhaul | 🔄 | Redo rendering to match original S4 as closely as possible; regenerate all textures to closely match original art style |
 
 ### Session Log (recent)
+
+||| 328 | 2026-07-01 | Convert gpu_models HashMap<String→u8>: Changed gpu_models from HashMap<String, GpuModel> to HashMap<u8, GpuModel>. Added model_id_for_name() for one-time name→id lookup during model upload (via MODEL_NAME_BY_ID). render_models() now looks up GPU buffers by integer model_id directly — eliminates per-frame String hash and model_name_for_id() call on the hot rendering path. Gated model_name_for_id() with #[cfg(test)]. WASM: 275.6KB→275.1KB (-0.5KB). 880 tests pass, clippy clean. — 880 tests |
 
 ||| 326 | 2026-07-01 | Eliminate per-instance String allocation in model instance pipeline: ModelInstance.model_id String→u8, ModelInstance::new() &str→u8 (no more .to_string()), BUILDING_MODEL_IDS [&str;87]→[u8;87], added MODEL_NAME_BY_ID[62] + model_name_for_id() for GPU model lookup, add_model_instance WASM export &str→u8, render_models HashMap<&str,..>→HashMap<u8,..> (integer grouping), JS MODEL_TYPE_ID_BY_BUILDING_KIND[87] array. WASM: 280KB→275.6KB (-4.4KB). 880 tests pass, clippy clean. — 880 tests |
 
