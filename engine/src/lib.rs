@@ -2729,15 +2729,16 @@ impl App {
         };
 
         // Group instances by model_id
-        let mut groups: std::collections::HashMap<&str, Vec<&model::ModelInstance>> = std::collections::HashMap::new();
+        let mut groups: std::collections::HashMap<u8, Vec<&model::ModelInstance>> = std::collections::HashMap::new();
         for inst in &self.model_instances {
-            groups.entry(&inst.model_id).or_default().push(inst);
+            groups.entry(inst.model_id).or_default().push(inst);
         }
 
         // Per-model instanced draw calls
         for (model_id, instances) in &groups {
+            let model_name = Self::model_name_for_id(*model_id);
             // Look up this model's GPU buffers
-            let gpu_model = match self.gpu_models.get(*model_id) {
+            let gpu_model = match self.gpu_models.get(model_name) {
                 Some(gm) => gm,
                 None => continue, // model not uploaded yet, skip
             };
@@ -5400,10 +5401,10 @@ pub fn decompress_sav_chunk(data: &[u8], expected_length: usize) -> Vec<u8> {
 /// Add a model instance to the render list for this frame.
 /// Called from JS each frame for every building/unit to render.
 #[wasm_bindgen]
-pub fn add_model_instance(model_id: &str, x: f32, y: f32, scale: f32, rotation_y: f32) -> bool {
+pub fn add_model_instance(model_type_id: u8, x: f32, y: f32, scale: f32, rotation_y: f32) -> bool {
     unsafe {
         if let Some(ref mut app) = (*std::ptr::addr_of_mut!(APP)).as_mut() {
-            let inst = model::ModelInstance::new(model_id, x, y)
+            let inst = model::ModelInstance::new(model_type_id, x, y)
                 .with_scale(scale)
                 .with_rotation_y(rotation_y);
             app.model_instances.push(inst);
@@ -5418,109 +5419,181 @@ pub fn add_model_instance(model_id: &str, x: f32, y: f32, scale: f32, rotation_y
 
 impl App {
     /// Map a unit kind to a 3D model ID.
-    fn model_id_for_unit(kind: units::UnitKind) -> &'static str {
+    fn model_id_for_unit(kind: units::UnitKind) -> u8 {
         match kind {
-            units::UnitKind::Settler => "worker",
-            units::UnitKind::Swordsman => "soldier",
-            units::UnitKind::Bowman => "archer",
-            _ => "worker",
+            units::UnitKind::Settler => 59,  // worker
+            units::UnitKind::Swordsman => 60, // soldier
+            units::UnitKind::Bowman => 61,    // archer
+            _ => 59,                          // worker fallback
         }
     }
+    /// Unique model name strings indexed by model type ID.
+    /// Used to look up GPU model buffers by integer model_id in render_models.
+    const MODEL_NAME_BY_ID: [&str; 62] = [
+        "headquarters",
+        "sawmill",
+        "stonecutter",
+        "mine",
+        "toolsmith",
+        "weaponsmith",
+        "construction",
+        "bakery",
+        "butcher",
+        "mill",
+        "farm",
+        "fishery",
+        "lumberjack",
+        "storehouse",
+        "waterworks",
+        "smelter",
+        "barracks",
+        "guardtower",
+        "fortress",
+        "siegeworkshop",
+        "shipyard",
+        "roadlayer",
+        "apiary",
+        "meadmaker",
+        "templeofbacchus",
+        "colosseum",
+        "sanctuaryofminerva",
+        "sanctuaryofvulcan",
+        "meadhall",
+        "sanctuaryofodin",
+        "sanctuaryofthor",
+        "sanctuaryoffreya",
+        "runestone",
+        "templeofchac",
+        "agavefarm",
+        "distillery",
+        "sanctuaryofkukulkan",
+        "sanctuaryofquetzalcoatl",
+        "sanctuaryofhuitzilopochtli",
+        "observatory",
+        "oracleofapollo",
+        "sanctuaryofartemis",
+        "sanctuaryofposeidon",
+        "sanctuaryofapollo",
+        "amphitheater",
+        "darktemple",
+        "darkgarden",
+        "mushroomfarm",
+        "sanctuaryofmorbus",
+        "sanctuaryofpestilence",
+        "darkfortress",
+        "demongate",
+        "oilpress",
+        "armory",
+        "healer",
+        "vineyard",
+        "small_residence",
+        "medium_residence",
+        "large_residence",
+        "worker",
+        "soldier",
+        "archer",
+    ];
+
+    /// Look up a model name string from its integer type ID.
+    fn model_name_for_id(id: u8) -> &'static str {
+        Self::MODEL_NAME_BY_ID.get(id as usize).copied().unwrap_or("construction")
+    }
+
 /// Model ID strings for each BuildingType discriminant (87 slots = COUNT).
     /// Indexed by `kind.discriminant() as usize`. Gaps and types without
     /// dedicated 3D models fall back to "construction".
-    const BUILDING_MODEL_IDS: [&str; crate::economy::BuildingType::COUNT] = [
-        "headquarters",                 // 0  Castle
-        "sawmill",                      // 1  Sawmill
-        "stonecutter",                  // 2  Stonecutter
-        "mine",                         // 3  Mine
-        "toolsmith",                    // 4  Toolsmith
-        "weaponsmith",                  // 5  Weaponsmith
-        "construction",                 // 6  (gap)
-        "bakery",                       // 7  Bakery
-        "butcher",                      // 8  Butcher
-        "mill",                         // 9  Mill
-        "farm",                         // 10 Farm
-        "fishery",                      // 11 Fisherman
-        "lumberjack",                   // 12 Woodcutter
-        "storehouse",                   // 13 Storehouse
-        "waterworks",                   // 14 Waterworks
-        "smelter",                      // 15 Smelter
-        "barracks",                     // 16 Barracks
-        "construction",                 // 17 (gap)
-        "guardtower",                   // 18 GuardTower
-        "fortress",                     // 19 Fortress
-        "siegeworkshop",                // 20 SiegeWorkshop
-        "shipyard",                     // 21 Shipyard
-        "roadlayer",                    // 22 RoadLayer
-        "construction",                 // 23 (gap)
-        "construction",                 // 24 (gap)
-        "construction",                 // 25 (gap)
-        "construction",                 // 26 (gap)
-        "apiary",                       // 27 Apiary
-        "meadmaker",                    // 28 MeadMaker
-        "construction",                 // 29 (gap)
-        "construction",                 // 30 (gap)
-        "templeofbacchus",              // 31 TempleOfBacchus
-        "colosseum",                    // 32 Colosseum
-        "sanctuaryofminerva",           // 33 SanctuaryOfMinerva
-        "sanctuaryofvulcan",            // 34 SanctuaryOfVulcan
-        "meadhall",                     // 35 MeadHall
-        "sanctuaryofodin",              // 36 SanctuaryOfOdin
-        "sanctuaryofthor",              // 37 SanctuaryOfThor
-        "sanctuaryoffreya",             // 38 SanctuaryOfFreya
-        "runestone",                    // 39 Runestone
-        "templeofchac",                 // 40 TempleOfChac
-        "agavefarm",                    // 41 AgaveFarm
-        "distillery",                   // 42 Distillery
-        "sanctuaryofkukulkan",          // 43 SanctuaryOfKukulkan
-        "sanctuaryofquetzalcoatl",      // 44 SanctuaryOfQuetzalcoatl
-        "sanctuaryofhuitzilopochtli",   // 45 SanctuaryOfHuitzilopochtli
-        "observatory",                  // 46 Observatory
-        "oracleofapollo",               // 47 OracleOfApollo
-        "construction",                 // 48 (gap)
-        "construction",                 // 49 (gap)
-        "sanctuaryofartemis",           // 50 SanctuaryOfArtemis
-        "sanctuaryofposeidon",          // 51 SanctuaryOfPoseidon
-        "sanctuaryofapollo",            // 52 SanctuaryOfApollo
-        "amphitheater",                 // 53 Amphitheater
-        "darktemple",                   // 54 DarkTemple
-        "darkgarden",                   // 55 DarkGarden
-        "mushroomfarm",                 // 56 MushroomFarm
-        "sanctuaryofmorbus",            // 57 SanctuaryOfMorbus
-        "sanctuaryofpestilence",        // 58 SanctuaryOfPestilence
-        "darkfortress",                 // 59 DarkFortress
-        "demongate",                    // 60 DemonGate
-        "mine",                         // 61 GoldMine (reuses generic mine model)
-        "mine",                         // 62 CoalMine (reuses generic mine model)
-        "mine",                         // 63 IronOreMine (reuses generic mine model)
-        "mine",                         // 64 SulfurMine (reuses generic mine model)
-        "smelter",                      // 65 GoldSmelter (reuses generic smelter model)
-        "smelter",                      // 66 IronSmelter (reuses generic smelter model)
-        "butcher",                      // 67 Slaughterhouse (reuses butcher model)
-        "oilpress",                     // 68 OilPress
-        "mill",                         // 69 PowderMill (reuses mill model)
-        "armory",                       // 70 WeaponFoundry (reuses armory model)
-        "lumberjack",                   // 71 Forester (reuses lumberjack model)
-        "healer",                       // 72 Healer
-        "farm",                         // 73 GoatRanch (reuses farm model)
-        "farm",                         // 74 PigRanch (reuses farm model)
-        "farm",                         // 75 GooseRanch (reuses farm model)
-        "farm",                         // 76 DonkeyRanch (reuses farm model)
-        "farm",                         // 77 TrojanFarm (reuses farm model)
-        "storehouse",                   // 78 Marketplace (reuses storehouse model)
-        "shipyard",                     // 79 LandingDock (reuses shipyard model)
-        "vineyard",                     // 80 Vineyard
-        "storehouse",                   // 81 StorageYard (reuses storehouse model)
-        "small_residence",              // 82 SmallResidence
-        "medium_residence",             // 83 MediumResidence
-        "large_residence",              // 84 LargeResidence
-        "templeofbacchus",              // 85 SmallTemple (reuses temple model)
-        "templeofbacchus",              // 86 LargeTemple (reuses temple model)
+    const BUILDING_MODEL_IDS: [u8; crate::economy::BuildingType::COUNT] = [
+        0,                             // 0
+        1,                             // 1
+        2,                             // 2
+        3,                             // 3
+        4,                             // 4
+        5,                             // 5
+        6,                             // 6
+        7,                             // 7
+        8,                             // 8
+        9,                             // 9
+        10,                            // 10
+        11,                            // 11
+        12,                            // 12
+        13,                            // 13
+        14,                            // 14
+        15,                            // 15
+        16,                            // 16
+        6,                             // 17
+        17,                            // 18
+        18,                            // 19
+        19,                            // 20
+        20,                            // 21
+        21,                            // 22
+        6,                             // 23
+        6,                             // 24
+        6,                             // 25
+        6,                             // 26
+        22,                            // 27
+        23,                            // 28
+        6,                             // 29
+        6,                             // 30
+        24,                            // 31
+        25,                            // 32
+        26,                            // 33
+        27,                            // 34
+        28,                            // 35
+        29,                            // 36
+        30,                            // 37
+        31,                            // 38
+        32,                            // 39
+        33,                            // 40
+        34,                            // 41
+        35,                            // 42
+        36,                            // 43
+        37,                            // 44
+        38,                            // 45
+        39,                            // 46
+        40,                            // 47
+        6,                             // 48
+        6,                             // 49
+        41,                            // 50
+        42,                            // 51
+        43,                            // 52
+        44,                            // 53
+        45,                            // 54
+        46,                            // 55
+        47,                            // 56
+        48,                            // 57
+        49,                            // 58
+        50,                            // 59
+        51,                            // 60
+        3,                             // 61
+        3,                             // 62
+        3,                             // 63
+        3,                             // 64
+        15,                            // 65
+        15,                            // 66
+        8,                             // 67
+        52,                            // 68
+        9,                             // 69
+        53,                            // 70
+        12,                            // 71
+        54,                            // 72
+        10,                            // 73
+        10,                            // 74
+        10,                            // 75
+        10,                            // 76
+        10,                            // 77
+        13,                            // 78
+        20,                            // 79
+        55,                            // 80
+        13,                            // 81
+        56,                            // 82
+        57,                            // 83
+        58,                            // 84
+        24,                            // 85
+        24,                            // 86
     ];
 
     /// Map a building type to a 3D model ID via array lookup by discriminant.
-    fn model_id_for_building(kind: crate::economy::BuildingType) -> &'static str {
+    fn model_id_for_building(kind: crate::economy::BuildingType) -> u8 {
         Self::BUILDING_MODEL_IDS[kind.discriminant() as usize]
     }
 
@@ -7026,7 +7099,7 @@ mod tests {
     #[test]
     fn test_add_model_instance_no_app() {
         // add_model_instance should return false when APP is None
-        assert!(!add_model_instance("test", 1.0, 2.0, 1.0, 0.0));
+        assert!(!add_model_instance(0, 1.0, 2.0, 1.0, 0.0));
     }
     #[test]
     fn test_load_model_json_empty_mesh() {
@@ -7077,15 +7150,15 @@ mod tests {
     #[test]
     fn test_model_id_for_unit_settler() {
         // Settler -> "worker" model
-        assert_eq!(App::model_id_for_unit(units::UnitKind::Settler), "worker");
+        assert_eq!(App::model_id_for_unit(units::UnitKind::Settler), 59); // worker
     }
     #[test]
     fn test_model_id_for_unit_swordsman() {
-        assert_eq!(App::model_id_for_unit(units::UnitKind::Swordsman), "soldier");
+        assert_eq!(App::model_id_for_unit(units::UnitKind::Swordsman), 60); // soldier
     }
     #[test]
     fn test_model_id_for_unit_bowman() {
-        assert_eq!(App::model_id_for_unit(units::UnitKind::Bowman), "archer");
+        assert_eq!(App::model_id_for_unit(units::UnitKind::Bowman), 61); // archer
     }
     #[test]
     fn test_model_id_for_unit_all_variants_covered() {
@@ -7094,7 +7167,8 @@ mod tests {
         let kinds = [UnitKind::Settler, UnitKind::Swordsman, UnitKind::Bowman];
         for kind in kinds {
             let model_id = App::model_id_for_unit(kind);
-            assert!(!model_id.is_empty(), "{:?} should map to a model", kind);
+            let name = App::model_name_for_id(model_id);
+            assert!(!name.is_empty(), "{:?} should map to a model", kind);
         }
     }
     #[test]

@@ -502,7 +502,7 @@ export class UnitSaveData {
  * Add a model instance to the render list for this frame.
  * Called from JS each frame for every building/unit to render.
  */
-export function add_model_instance(model_id: string, x: number, y: number, scale: number, rotation_y: number): boolean;
+export function add_model_instance(model_type_id: number, x: number, y: number, scale: number, rotation_y: number): boolean;
 
 /**
  * Apply starting resources based on difficulty level.
@@ -929,7 +929,7 @@ export interface InitOutput {
     readonly __wbg_starterresult_free: (a: number, b: number) => void;
     readonly __wbg_statsinfo_free: (a: number, b: number) => void;
     readonly __wbg_unitsavedata_free: (a: number, b: number) => void;
-    readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
+    readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly add_starting_resources: (a: number, b: number) => number;
     readonly buildcostitem_amount: (a: number) => number;
     readonly buildcostitem_resource_discriminant: (a: number) => number;

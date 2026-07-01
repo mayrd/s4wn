@@ -2159,17 +2159,15 @@ if (Symbol.dispose) UnitSaveData.prototype[Symbol.dispose] = UnitSaveData.protot
 /**
  * Add a model instance to the render list for this frame.
  * Called from JS each frame for every building/unit to render.
- * @param {string} model_id
+ * @param {number} model_type_id
  * @param {number} x
  * @param {number} y
  * @param {number} scale
  * @param {number} rotation_y
  * @returns {boolean}
  */
-export function add_model_instance(model_id, x, y, scale, rotation_y) {
-    const ptr0 = passStringToWasm0(model_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.add_model_instance(ptr0, len0, x, y, scale, rotation_y);
+export function add_model_instance(model_type_id, x, y, scale, rotation_y) {
+    const ret = wasm.add_model_instance(model_type_id, x, y, scale, rotation_y);
     return ret !== 0;
 }
 

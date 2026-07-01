@@ -5818,9 +5818,12 @@ function unitName(kindId) {
     return (window.UNIT_NAMES_BY_ID && window.UNIT_NAMES_BY_ID[kindId])
         ? window.UNIT_NAMES_BY_ID[kindId] : 'Settler';
 }
+// Model type ID for each building kind discriminant (mirrors Rust BUILDING_MODEL_IDS).
+// Indexed by building kind discriminant (0=Caste, 1=Sawmill, ...).
+const MODEL_TYPE_ID_BY_BUILDING_KIND = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 6, 17, 18, 19, 20, 21, 6, 6, 6, 6, 22, 23, 6, 6, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 6, 6, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 3, 3, 3, 3, 15, 15, 8, 52, 9, 53, 12, 54, 10, 10, 10, 10, 10, 13, 20, 55, 13, 56, 57, 58, 24, 24];
+
 function modelIdForBuildingKindId(kindId) {
-    const name = buildingName(kindId);
-    return modelIdForBuilding(name);
+    return MODEL_TYPE_ID_BY_BUILDING_KIND[kindId] || 6; // fallback to construction (6)
 }
 
 // ── Model Loading ────────────────────────────────────────────────────────
