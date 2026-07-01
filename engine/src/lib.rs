@@ -4818,10 +4818,16 @@ pub fn setup_starter_base(settler_count: u32) -> Option<StarterResult> {
 }
 /// Complete game state returned by get_game_state — replaces JSON string with typed struct.
 /// JS side reconstructs JSON from typed fields for localStorage save/load compatibility.
+/// Map data is stored as typed arrays (terrain/elevation/resource) instead of JSON string
+/// to eliminate map.to_json() format!() calls from the production WASM export path.
 #[wasm_bindgen]
 pub struct GameStateData {
     game_time: f64,
-    map_json: String,
+    map_width: u32,
+    map_height: u32,
+    map_terrain: Vec<u8>,
+    map_elevation: Vec<f32>,
+    map_resource: Vec<i32>,
     resources: Vec<u32>,
     buildings: Vec<BuildingSaveData>,
     units: Vec<UnitSaveData>,
@@ -4832,7 +4838,15 @@ impl GameStateData {
     #[wasm_bindgen(getter)]
     pub fn game_time(&self) -> f64 { self.game_time }
     #[wasm_bindgen(getter)]
-    pub fn map_json(&self) -> String { self.map_json.clone() }
+    pub fn map_width(&self) -> u32 { self.map_width }
+    #[wasm_bindgen(getter)]
+    pub fn map_height(&self) -> u32 { self.map_height }
+    #[wasm_bindgen(getter)]
+    pub fn map_terrain(&self) -> Vec<u8> { self.map_terrain.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn map_elevation(&self) -> Vec<f32> { self.map_elevation.clone() }
+    #[wasm_bindgen(getter)]
+    pub fn map_resource(&self) -> Vec<i32> { self.map_resource.clone() }
     #[wasm_bindgen(getter)]
     pub fn resources(&self) -> Vec<u32> { self.resources.clone() }
     #[wasm_bindgen(getter)]
@@ -4923,6 +4937,8 @@ impl UnitSaveData {
 
 /// Get the complete game state as a typed struct for save/load.
 /// JS side reconstructs JSON from typed fields for localStorage compatibility.
+/// Map data is exported as typed arrays (terrain/elevation/resource) in row-major order
+/// instead of JSON string, eliminating map.to_json() format!() overhead.
 #[wasm_bindgen]
 pub fn get_game_state() -> GameStateData {
     use crate::economy::ResourceType;
@@ -4930,7 +4946,22 @@ pub fn get_game_state() -> GameStateData {
         if let Some(ref app) = APP {
             let eco = &app.game_loop.state.economy;
             let game_time = app.game_loop.state.game_time;
-            let map_json = app.map.to_json();
+
+            // Map: typed tile arrays in row-major order (y * width + x)
+            let map_w = app.map.width as u32;
+            let map_h = app.map.height as u32;
+            let tile_count = app.map.width * app.map.height;
+            let mut map_terrain = Vec::with_capacity(tile_count);
+            let mut map_elevation = Vec::with_capacity(tile_count);
+            let mut map_resource = Vec::with_capacity(tile_count);
+            for y in 0..app.map.height {
+                for x in 0..app.map.width {
+                    let tile = app.map.get(x, y).unwrap();
+                    map_terrain.push(tile.terrain as u8);
+                    map_elevation.push(tile.elevation);
+                    map_resource.push(tile.resource.map(|r| r as i32).unwrap_or(-1));
+                }
+            }
 
             // Resources: dense Vec<u32> indexed by ResourceType discriminant
             let mut resources = vec![0u32; ResourceType::COUNT];
@@ -4976,7 +5007,11 @@ pub fn get_game_state() -> GameStateData {
 
             return GameStateData {
                 game_time,
-                map_json,
+                map_width: map_w,
+                map_height: map_h,
+                map_terrain,
+                map_elevation,
+                map_resource,
                 resources,
                 buildings,
                 units,
@@ -4985,7 +5020,11 @@ pub fn get_game_state() -> GameStateData {
     }
     GameStateData {
         game_time: 0.0,
-        map_json: String::from(r#"{"error":"engine not initialized"}"#),
+        map_width: 0,
+        map_height: 0,
+        map_terrain: Vec::new(),
+        map_elevation: Vec::new(),
+        map_resource: Vec::new(),
         resources: Vec::new(),
         buildings: Vec::new(),
         units: Vec::new(),
@@ -8887,7 +8926,9 @@ mod parse_map_json_tests {
         assert!(state.resources().is_empty(), "resources should be empty");
         assert!(state.buildings().is_empty(), "buildings should be empty");
         assert!(state.units().is_empty(), "units should be empty");
-        // map_json should contain error message
-        assert!(state.map_json().contains("error"), "map_json should contain error");
+        // map arrays should be empty when engine not initialized
+        assert_eq!(state.map_width(), 0, "map_width should be 0");
+        assert_eq!(state.map_height(), 0, "map_height should be 0");
+        assert!(state.map_terrain().is_empty(), "map_terrain should be empty");
     }
 }

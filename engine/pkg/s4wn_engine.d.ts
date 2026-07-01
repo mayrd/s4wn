@@ -152,6 +152,8 @@ export class DestructionInfo {
 /**
  * Complete game state returned by get_game_state — replaces JSON string with typed struct.
  * JS side reconstructs JSON from typed fields for localStorage save/load compatibility.
+ * Map data is stored as typed arrays (terrain/elevation/resource) instead of JSON string
+ * to eliminate map.to_json() format!() calls from the production WASM export path.
  */
 export class GameStateData {
     private constructor();
@@ -159,7 +161,11 @@ export class GameStateData {
     [Symbol.dispose](): void;
     readonly buildings: BuildingSaveData[];
     readonly game_time: number;
-    readonly map_json: string;
+    readonly map_elevation: Float32Array;
+    readonly map_height: number;
+    readonly map_resource: Int32Array;
+    readonly map_terrain: Uint8Array;
+    readonly map_width: number;
     readonly resources: Uint32Array;
     readonly units: UnitSaveData[];
 }
@@ -578,6 +584,8 @@ export function get_draw_calls(): number;
 /**
  * Get the complete game state as a typed struct for save/load.
  * JS side reconstructs JSON from typed fields for localStorage compatibility.
+ * Map data is exported as typed arrays (terrain/elevation/resource) in row-major order
+ * instead of JSON string, eliminating map.to_json() format!() overhead.
  */
 export function get_game_state(): GameStateData;
 
@@ -957,7 +965,11 @@ export interface InitOutput {
     readonly formation_move: (a: number, b: number, c: number, d: number) => number;
     readonly gamestatedata_buildings: (a: number) => [number, number];
     readonly gamestatedata_game_time: (a: number) => number;
-    readonly gamestatedata_map_json: (a: number) => [number, number];
+    readonly gamestatedata_map_elevation: (a: number) => [number, number];
+    readonly gamestatedata_map_height: (a: number) => number;
+    readonly gamestatedata_map_resource: (a: number) => [number, number];
+    readonly gamestatedata_map_terrain: (a: number) => [number, number];
+    readonly gamestatedata_map_width: (a: number) => number;
     readonly gamestatedata_resources: (a: number) => [number, number];
     readonly gamestatedata_units: (a: number) => [number, number];
     readonly garrisoninfo_capacity: (a: number) => number;

@@ -721,6 +721,8 @@ if (Symbol.dispose) DestructionInfo.prototype[Symbol.dispose] = DestructionInfo.
 /**
  * Complete game state returned by get_game_state — replaces JSON string with typed struct.
  * JS side reconstructs JSON from typed fields for localStorage save/load compatibility.
+ * Map data is stored as typed arrays (terrain/elevation/resource) instead of JSON string
+ * to eliminate map.to_json() format!() calls from the production WASM export path.
  */
 export class GameStateData {
     static __wrap(ptr) {
@@ -756,19 +758,45 @@ export class GameStateData {
         return ret;
     }
     /**
-     * @returns {string}
+     * @returns {Float32Array}
      */
-    get map_json() {
-        let deferred1_0;
-        let deferred1_1;
-        try {
-            const ret = wasm.gamestatedata_map_json(this.__wbg_ptr);
-            deferred1_0 = ret[0];
-            deferred1_1 = ret[1];
-            return getStringFromWasm0(ret[0], ret[1]);
-        } finally {
-            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-        }
+    get map_elevation() {
+        const ret = wasm.gamestatedata_map_elevation(this.__wbg_ptr);
+        var v1 = getArrayF32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {number}
+     */
+    get map_height() {
+        const ret = wasm.gamestatedata_map_height(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {Int32Array}
+     */
+    get map_resource() {
+        const ret = wasm.gamestatedata_map_resource(this.__wbg_ptr);
+        var v1 = getArrayI32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {Uint8Array}
+     */
+    get map_terrain() {
+        const ret = wasm.gamestatedata_map_terrain(this.__wbg_ptr);
+        var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v1;
+    }
+    /**
+     * @returns {number}
+     */
+    get map_width() {
+        const ret = wasm.gamestatedata_map_width(this.__wbg_ptr);
+        return ret >>> 0;
     }
     /**
      * @returns {Uint32Array}
@@ -2303,6 +2331,8 @@ export function get_draw_calls() {
 /**
  * Get the complete game state as a typed struct for save/load.
  * JS side reconstructs JSON from typed fields for localStorage compatibility.
+ * Map data is exported as typed arrays (terrain/elevation/resource) in row-major order
+ * instead of JSON string, eliminating map.to_json() format!() overhead.
  * @returns {GameStateData}
  */
 export function get_game_state() {

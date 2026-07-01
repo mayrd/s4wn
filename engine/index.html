@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles,
-} from './pkg/s4wn_engine.js?v=88';
+} from './pkg/s4wn_engine.js?v=89';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -5541,7 +5541,19 @@ function saveGame() {
         const stateObj = {
             version: 1,
             game_time: state.game_time,
-            map_json: JSON.parse(state.map_json),
+            // Reconstruct map JSON from typed tile arrays (row-major: y * width + x)
+            map_json: (() => {
+                const w = state.map_width, h = state.map_height;
+                const terrain = state.map_terrain, elevation = state.map_elevation, resource = state.map_resource;
+                const tiles = [];
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const i = y * w + x;
+                        tiles.push({t: terrain[i], e: elevation[i], r: resource[i] >= 0 ? resource[i] : null});
+                    }
+                }
+                return {width: w, height: h, tiles: tiles};
+            })(),
             resources: resources,
             buildings: buildings,
             units: units,
