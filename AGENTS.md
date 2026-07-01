@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S320 · 880 tests · Clippy: 0 errors, 1 warning (needless_range_loop). 0 open issues (token expired, unverified). WASM 276.9KB. Fixed 2 clippy errors: unnecessary_cast in export test (map.width * map.height already usize), approx_constant in BOM test (3.14 → std::f32::consts::PI with tolerance). Next: (1) Phase 7 — embed typed map-tile arrays in GameStateData to eliminate map.to_json() from get_game_state. (2) Verify reflection pass shader correctness visually. (3) Verify Fix #73 on mobile. (4) Migrate S4 building name strings to integer discriminant JS mapping.
+Status: S321 · 880 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WASM 277KB. Embedded typed map-tile arrays in GameStateData to eliminate map.to_json() from get_game_state(). Next: (1) Verify reflection pass shader correctness visually. (2) Verify Fix #73 on mobile: request render snapshot from Daniel. (3) Migrate S4 building name strings in sav-parser to integer-discriminant JS mapping (est. 3-5KB WASM savings). (4) Consider gating Map::to_json behind #[cfg(test)].
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
@@ -369,6 +369,6 @@ Status: S320 · 880 tests · Clippy: 0 errors, 1 warning (needless_range_loop). 
 265. Investigate 7KB WASM size variance (307.3KB after cargo clean vs 300.1KB reported). Run checksum on wasm binaries from both builds to identify the source of growth. [SHOULD]
 266. Re-baseline WASM size target: 300KB. At 307.3KB we are 7.3KB over. Need 7.3KB savings from from_name() conversion + any remaining low-hanging fruit. [MUST]
 
-Next session priorities: (1) Phase 7 — extend GameStateData with embedded map-tile arrays (terrain/elevation/resource) to eliminate map.to_json() from get_game_state (last 2 format!() calls in production export path). (2) Re-measure WASM size after typed-map-data merge. (3) Verify reflection pass shader correctness visually. (4) Verify Fix #73 on mobile: request render snapshot from Daniel to confirm tiles display on ANGLE/Mali-G710. (5) Consider migrating S4 building name strings in sav-parser to integer-discriminant JS mapping (est. 3-5KB WASM savings).
+Next session priorities: (1) Verify reflection pass shader correctness visually — request render snapshot from Daniel to confirm water reflections work. (2) Verify Fix #73 on mobile: request render snapshot from Daniel to confirm tiles display on ANGLE/Mali-G710. (3) Migrate S4 building name strings in sav-parser to integer-discriminant JS mapping (est. 3-5KB WASM savings). (4) Consider gating Map::to_json() behind #[cfg(test)] — it's no longer used in get_game_state production path but may still be called from tests and export_map_json path. (5) The typed map-tile array migration is complete — all 7 remaining JSON String export candidates from S313 audit are now migrated.
 
 *All building data must match BASE.md. Never modify BASE.md.*
