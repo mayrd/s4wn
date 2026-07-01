@@ -962,20 +962,12 @@ export class LoadModelResult {
         }
     }
     /**
-     * Model name (e.g. "Castle").
-     * @returns {string}
+     * Integer model type ID (0-61).
+     * @returns {number}
      */
-    get name() {
-        let deferred1_0;
-        let deferred1_1;
-        try {
-            const ret = wasm.loadmodelresult_name(this.__wbg_ptr);
-            deferred1_0 = ret[0];
-            deferred1_1 = ret[1];
-            return getStringFromWasm0(ret[0], ret[1]);
-        } finally {
-            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-        }
+    get model_id() {
+        const ret = wasm.loadmodelresult_model_id(this.__wbg_ptr);
+        return ret;
     }
     /**
      * True if the model was loaded successfully.
@@ -2527,16 +2519,14 @@ export function load_map_json(json) {
 /**
  * Load a model from a JSON mesh string, validate it, and upload to GPU buffers.
  * Returns "ok:{name}:{indices}tri" if successful, or "error:{message}" on failure.
- * @param {string} name
+ * @param {number} model_id
  * @param {string} json_str
  * @returns {LoadModelResult}
  */
-export function load_model_json(name, json_str) {
-    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+export function load_model_json(model_id, json_str) {
+    const ptr0 = passStringToWasm0(json_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len0 = WASM_VECTOR_LEN;
-    const ptr1 = passStringToWasm0(json_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len1 = WASM_VECTOR_LEN;
-    const ret = wasm.load_model_json(ptr0, len0, ptr1, len1);
+    const ret = wasm.load_model_json(model_id, ptr0, len0);
     return LoadModelResult.__wrap(ret);
 }
 

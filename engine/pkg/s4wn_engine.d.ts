@@ -218,9 +218,9 @@ export class LoadModelResult {
      */
     readonly error: string;
     /**
-     * Model name (e.g. "Castle").
+     * Integer model type ID (0-61).
      */
-    readonly name: string;
+    readonly model_id: number;
     /**
      * True if the model was loaded successfully.
      */
@@ -687,7 +687,7 @@ export function load_map_json(json: string): LoadMapResult;
  * Load a model from a JSON mesh string, validate it, and upload to GPU buffers.
  * Returns "ok:{name}:{indices}tri" if successful, or "error:{message}" on failure.
  */
-export function load_model_json(name: string, json_str: string): LoadModelResult;
+export function load_model_json(model_id: number, json_str: string): LoadModelResult;
 
 /**
  * Handle mouse down for panning
@@ -895,7 +895,6 @@ export interface InitOutput {
     readonly __wbg_moraleinfo_free: (a: number, b: number) => void;
     readonly __wbg_nationinfo_free: (a: number, b: number) => void;
     readonly __wbg_particleinfo_free: (a: number, b: number) => void;
-    readonly __wbg_placebuildingresult_free: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_complete: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_garrison: (a: number, b: number) => void;
     readonly __wbg_set_buildinginfo_index: (a: number, b: number) => void;
@@ -1000,11 +999,11 @@ export interface InitOutput {
     readonly init: (a: number, b: number) => [number, number, number];
     readonly is_paused: () => number;
     readonly load_map_json: (a: number, b: number) => number;
-    readonly load_model_json: (a: number, b: number, c: number, d: number) => number;
+    readonly load_model_json: (a: number, b: number, c: number) => number;
     readonly loadmapresult_error: (a: number) => [number, number];
     readonly loadmapresult_ok: (a: number) => number;
     readonly loadmodelresult_error: (a: number) => [number, number];
-    readonly loadmodelresult_name: (a: number) => [number, number];
+    readonly loadmodelresult_model_id: (a: number) => number;
     readonly loadmodelresult_ok: (a: number) => number;
     readonly loadmodelresult_tri_count: (a: number) => number;
     readonly mapexportdata_elevation: (a: number) => [number, number];
@@ -1021,10 +1020,6 @@ export interface InitOutput {
     readonly on_mouse_up: () => void;
     readonly on_wheel: (a: number) => void;
     readonly order_patrol: (a: number, b: number, c: number, d: number) => number;
-    readonly placebuildingresult_error: (a: number) => [number, number];
-    readonly placebuildingresult_idx: (a: number) => number;
-    readonly placebuildingresult_kind: (a: number) => number;
-    readonly placebuildingresult_ok: (a: number) => number;
     readonly recent_combat_count: () => number;
     readonly recent_construction_complete_count: () => number;
     readonly recent_death_count: () => number;
@@ -1133,7 +1128,12 @@ export interface InitOutput {
     readonly __wbg_unitinfo_free: (a: number, b: number) => void;
     readonly __wbg_restorestateresult_free: (a: number, b: number) => void;
     readonly __wbg_unitdetailinfo_free: (a: number, b: number) => void;
+    readonly __wbg_placebuildingresult_free: (a: number, b: number) => void;
     readonly __wbg_startingresourcesresult_free: (a: number, b: number) => void;
+    readonly placebuildingresult_ok: (a: number) => number;
+    readonly placebuildingresult_idx: (a: number) => number;
+    readonly placebuildingresult_kind: (a: number) => number;
+    readonly placebuildingresult_error: (a: number) => [number, number];
     readonly startingresourcesresult_ok: (a: number) => number;
     readonly restorestateresult_error: (a: number) => [number, number];
     readonly startingresourcesresult_error: (a: number) => [number, number];
