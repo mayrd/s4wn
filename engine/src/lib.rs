@@ -5426,70 +5426,104 @@ impl App {
             _ => "worker",
         }
     }
-    /// Map a building type name to a 3D model ID.
+/// Model ID strings for each BuildingType discriminant (87 slots = COUNT).
+    /// Indexed by `kind.discriminant() as usize`. Gaps and types without
+    /// dedicated 3D models fall back to "construction".
+    const BUILDING_MODEL_IDS: [&str; crate::economy::BuildingType::COUNT] = [
+        "headquarters",                 // 0  Castle
+        "sawmill",                      // 1  Sawmill
+        "stonecutter",                  // 2  Stonecutter
+        "mine",                         // 3  Mine
+        "toolsmith",                    // 4  Toolsmith
+        "weaponsmith",                  // 5  Weaponsmith
+        "construction",                 // 6  (gap)
+        "bakery",                       // 7  Bakery
+        "butcher",                      // 8  Butcher
+        "mill",                         // 9  Mill
+        "farm",                         // 10 Farm
+        "fishery",                      // 11 Fisherman
+        "lumberjack",                   // 12 Woodcutter
+        "storehouse",                   // 13 Storehouse
+        "waterworks",                   // 14 Waterworks
+        "smelter",                      // 15 Smelter
+        "barracks",                     // 16 Barracks
+        "construction",                 // 17 (gap)
+        "guardtower",                   // 18 GuardTower
+        "fortress",                     // 19 Fortress
+        "siegeworkshop",                // 20 SiegeWorkshop
+        "shipyard",                     // 21 Shipyard
+        "roadlayer",                    // 22 RoadLayer
+        "construction",                 // 23 (gap)
+        "construction",                 // 24 (gap)
+        "construction",                 // 25 (gap)
+        "construction",                 // 26 (gap)
+        "apiary",                       // 27 Apiary
+        "meadmaker",                    // 28 MeadMaker
+        "construction",                 // 29 (gap)
+        "construction",                 // 30 (gap)
+        "templeofbacchus",              // 31 TempleOfBacchus
+        "colosseum",                    // 32 Colosseum
+        "sanctuaryofminerva",           // 33 SanctuaryOfMinerva
+        "sanctuaryofvulcan",            // 34 SanctuaryOfVulcan
+        "meadhall",                     // 35 MeadHall
+        "sanctuaryofodin",              // 36 SanctuaryOfOdin
+        "sanctuaryofthor",              // 37 SanctuaryOfThor
+        "sanctuaryoffreya",             // 38 SanctuaryOfFreya
+        "runestone",                    // 39 Runestone
+        "templeofchac",                 // 40 TempleOfChac
+        "agavefarm",                    // 41 AgaveFarm
+        "distillery",                   // 42 Distillery
+        "sanctuaryofkukulkan",          // 43 SanctuaryOfKukulkan
+        "sanctuaryofquetzalcoatl",      // 44 SanctuaryOfQuetzalcoatl
+        "sanctuaryofhuitzilopochtli",   // 45 SanctuaryOfHuitzilopochtli
+        "observatory",                  // 46 Observatory
+        "oracleofapollo",               // 47 OracleOfApollo
+        "construction",                 // 48 (gap)
+        "construction",                 // 49 (gap)
+        "sanctuaryofartemis",           // 50 SanctuaryOfArtemis
+        "sanctuaryofposeidon",          // 51 SanctuaryOfPoseidon
+        "sanctuaryofapollo",            // 52 SanctuaryOfApollo
+        "amphitheater",                 // 53 Amphitheater
+        "darktemple",                   // 54 DarkTemple
+        "darkgarden",                   // 55 DarkGarden
+        "mushroomfarm",                 // 56 MushroomFarm
+        "sanctuaryofmorbus",            // 57 SanctuaryOfMorbus
+        "sanctuaryofpestilence",        // 58 SanctuaryOfPestilence
+        "darkfortress",                 // 59 DarkFortress
+        "demongate",                    // 60 DemonGate
+        "construction",                 // 61 GoldMine
+        "construction",                 // 62 CoalMine
+        "construction",                 // 63 IronOreMine
+        "construction",                 // 64 SulfurMine
+        "construction",                 // 65 GoldSmelter
+        "construction",                 // 66 IronSmelter
+        "construction",                 // 67 Slaughterhouse
+        "oilpress",                     // 68 OilPress
+        "construction",                 // 69 PowderMill
+        "construction",                 // 70 WeaponFoundry
+        "construction",                 // 71 Forester
+        "construction",                 // 72 Healer
+        "construction",                 // 73 GoatRanch
+        "construction",                 // 74 PigRanch
+        "construction",                 // 75 GooseRanch
+        "construction",                 // 76 DonkeyRanch
+        "construction",                 // 77 TrojanFarm
+        "construction",                 // 78 Marketplace
+        "construction",                 // 79 LandingDock
+        "construction",                 // 80 Vineyard
+        "construction",                 // 81 StorageYard
+        "construction",                 // 82 SmallResidence
+        "construction",                 // 83 MediumResidence
+        "construction",                 // 84 LargeResidence
+        "construction",                 // 85 SmallTemple
+        "construction",                 // 86 LargeTemple
+    ];
+
+    /// Map a building type to a 3D model ID via array lookup by discriminant.
     fn model_id_for_building(kind: crate::economy::BuildingType) -> &'static str {
-        use crate::economy::BuildingType;
-        match kind {
-            BuildingType::Sawmill => "sawmill",
-            BuildingType::Mine => "mine",
-            BuildingType::Bakery => "bakery",
-            BuildingType::Butcher => "butcher",
-            BuildingType::Farm => "farm",
-            BuildingType::Fisherman => "fishery",
-            BuildingType::Woodcutter => "lumberjack",
-            BuildingType::Castle => "headquarters",
-            BuildingType::Mill => "mill",
-            BuildingType::Toolsmith => "toolsmith",
-            BuildingType::Weaponsmith => "weaponsmith",
-            BuildingType::Stonecutter => "stonecutter",
-            BuildingType::Storehouse => "storehouse",
-            BuildingType::Waterworks => "waterworks",
-            BuildingType::Smelter => "smelter",
-            BuildingType::Barracks => "barracks",
-            BuildingType::GuardTower => "guardtower",
-            BuildingType::Fortress => "fortress",
-            BuildingType::SiegeWorkshop => "siegeworkshop",
-            BuildingType::Shipyard => "shipyard",
-            BuildingType::RoadLayer => "roadlayer",
-            BuildingType::Apiary => "apiary",
-            BuildingType::MeadMaker => "meadmaker",
-            // Roman unique
-            BuildingType::TempleOfBacchus => "templeofbacchus",
-            BuildingType::Colosseum => "colosseum",
-            BuildingType::SanctuaryOfMinerva => "sanctuaryofminerva",
-            BuildingType::SanctuaryOfVulcan => "sanctuaryofvulcan",
-            // Viking unique
-            BuildingType::MeadHall => "meadhall",
-            BuildingType::SanctuaryOfOdin => "sanctuaryofodin",
-            BuildingType::SanctuaryOfThor => "sanctuaryofthor",
-            BuildingType::SanctuaryOfFreya => "sanctuaryoffreya",
-            BuildingType::Runestone => "runestone",
-            // Maya unique
-            BuildingType::TempleOfChac => "templeofchac",
-            BuildingType::AgaveFarm => "agavefarm",
-            BuildingType::Distillery => "distillery",
-            BuildingType::SanctuaryOfKukulkan => "sanctuaryofkukulkan",
-            BuildingType::SanctuaryOfQuetzalcoatl => "sanctuaryofquetzalcoatl",
-            BuildingType::SanctuaryOfHuitzilopochtli => "sanctuaryofhuitzilopochtli",
-            BuildingType::Observatory => "observatory",
-            // Trojan unique
-            BuildingType::OracleOfApollo => "oracleofapollo",
-            BuildingType::OilPress => "oilpress",
-            BuildingType::SanctuaryOfArtemis => "sanctuaryofartemis",
-            BuildingType::SanctuaryOfPoseidon => "sanctuaryofposeidon",
-            BuildingType::SanctuaryOfApollo => "sanctuaryofapollo",
-            BuildingType::Amphitheater => "amphitheater",
-            // Dark Tribe unique
-            BuildingType::DarkTemple => "darktemple",
-            BuildingType::DarkGarden => "darkgarden",
-            BuildingType::MushroomFarm => "mushroomfarm",
-            BuildingType::SanctuaryOfMorbus => "sanctuaryofmorbus",
-            BuildingType::SanctuaryOfPestilence => "sanctuaryofpestilence",
-            BuildingType::DarkFortress => "darkfortress",
-            BuildingType::DemonGate => "demongate",
-            _ => "construction",
-        }
+        Self::BUILDING_MODEL_IDS[kind.discriminant() as usize]
     }
+
     /// Compute a smooth scale factor from construction progress.
     /// Returns 0.3 at construction=0.0, easing up to 1.0 at construction=1.0.
     /// Uses ease-out curve (1 - (1-t)^2) for a natural "settling" feel.
