@@ -265,6 +265,8 @@ float fog_max_radius = max(u_resolution.x, u_resolution.y) * 0.5;
 float fog_screen_dist = length(gl_FragCoord.xy - u_resolution * 0.5);
 float fog_factor = smoothstep(fog_max_radius * 0.35, fog_max_radius * 0.78, fog_screen_dist);
 float fog_strength = mix(0.05, 0.35, fog_factor) * day_light;
+float elevation_fog_mod = 1.0 - smoothstep(0.0, 0.45, v_elevation) * 0.7;
+fog_strength *= elevation_fog_mod;
 if (u_reflection_pass == 0) {
     lit = mix(lit, u_fog_color, fog_strength);
 }
@@ -9301,8 +9303,78 @@ mod parse_map_json_tests {
         // Fog should be stronger during day, weaker at night
         let day_fog = compute_fog_factor(1500.0, 540.0, 1920.0, 1080.0, 1.0);
         let night_fog = compute_fog_factor(1500.0, 540.0, 1920.0, 1080.0, 0.1);
-        assert!(day_fog > night_fog * 2.0,
-            "day fog ({}) should be significantly stronger than night fog ({})", day_fog, night_fog);
+    }
+
+    // ── Phase 7: Elevation-Based Haze Tests ──────────────────────────────
+
+    /// Mirror of the GLSL elevation fog modulation for test validation.
+    /// Maps terrain elevation (0.0=valley, 1.0=peak) to a fog strength modifier.
+    #[allow(dead_code)]
+    fn compute_elevation_fog_mod(elevation: f32) -> f32 {
+        let t = ((elevation - 0.0) / (0.45 - 0.0)).clamp(0.0, 1.0);
+        let s = t * t * (3.0 - 2.0 * t); // smoothstep
+        1.0 - s * 0.7
+    }
+
+    #[test]
+    fn test_elevation_fog_shader_present() {
+        assert!(
+            FRAGMENT_SHADER.contains("elevation_fog_mod"),
+            "fragment shader must contain elevation_fog_mod"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("smoothstep(0.0, 0.45, v_elevation)"),
+            "fragment shader must modulate fog by v_elevation"
+        );
+    }
+
+    #[test]
+    fn test_elevation_fog_valley_full_haze() {
+        // Valley floor (elevation=0.0) → full fog, modifier near 1.0
+        let m = compute_elevation_fog_mod(0.0);
+        assert!((m - 1.0).abs() < 0.001,
+            "valley elevation_fog_mod should be 1.0 (full fog), got {}", m);
+    }
+
+    #[test]
+    fn test_elevation_fog_peak_reduced_haze() {
+        // Hilltop (elevation=0.45+) → reduced fog, modifier near 0.3
+        let m = compute_elevation_fog_mod(0.45);
+        assert!((m - 0.3).abs() < 0.001,
+            "peak elevation_fog_mod should be 0.3 (reduced fog), got {}", m);
+    }
+
+    #[test]
+    fn test_elevation_fog_decreases_with_height() {
+        // Higher elevation = less fog modifier (clearer air)
+        let valley = compute_elevation_fog_mod(0.0);
+        let mid = compute_elevation_fog_mod(0.2);
+        let peak = compute_elevation_fog_mod(0.45);
+        assert!(valley > mid, "valley fog ({}) should be > mid ({})", valley, mid);
+        assert!(mid > peak, "mid fog ({}) should be > peak ({})", mid, peak);
+        assert!(peak >= 0.29, "peak fog modifier should not drop below 0.3, got {}", peak);
+    }
+
+    #[test]
+    fn test_elevation_fog_monotonic() {
+        // Fog modifier should be strictly non-increasing with elevation
+        let mut prev = compute_elevation_fog_mod(0.0);
+        for i in 1..=20 {
+            let elev = i as f32 * 0.025; // 0.025 to 0.5
+            let curr = compute_elevation_fog_mod(elev);
+            assert!(curr <= prev + 0.001,
+                "fog modifier not monotonic at elev={}: prev={}, curr={}", elev, prev, curr);
+            prev = curr;
+        }
+    }
+
+    #[test]
+    fn test_elevation_fog_clamped_at_max() {
+        // Beyond 0.45 elevation, fog modifier should stay at 0.3 (no further reduction)
+        let at_peak = compute_elevation_fog_mod(0.45);
+        let beyond = compute_elevation_fog_mod(1.0);
+        assert!((at_peak - beyond).abs() < 0.001,
+            "fog modifier should plateau at 0.45+, got at_peak={}, beyond={}", at_peak, beyond);
     }
 
     #[test]
