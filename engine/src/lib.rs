@@ -7494,7 +7494,7 @@ mod tests {
             tile.resource = Some(Resource::Gold);
         }
         // Build typed export data (same logic as export_map_json)
-        let size = (map.width * map.height) as usize;
+        let size = map.width * map.height;
         let mut terrain = Vec::with_capacity(size);
         let mut elevation = Vec::with_capacity(size);
         let mut resource = Vec::with_capacity(size);
@@ -8449,10 +8449,10 @@ mod parse_map_json_tests {
 
     #[test]
     fn test_parse_map_json_bom_tolerance() {
-        let json = "\u{feff}".to_owned() + r#"{"width":1,"height":1,"tiles":[{"t":5,"e":3.14,"r":2}]}"#;
+        let json = "\u{feff}".to_owned() + &format!(r#"{{"width":1,"height":1,"tiles":[{{"t":5,"e":{:.3},"r":2}}]}}"#, std::f32::consts::PI);
         let map = parse_map_json(&json).expect("parse should succeed");
         assert_eq!(map.get(0,0).unwrap().terrain, Terrain::Desert);
-        assert_eq!(map.get(0,0).unwrap().elevation, 3.14);
+        assert!((map.get(0,0).unwrap().elevation - std::f32::consts::PI).abs() < 0.001);
         assert!(matches!(map.get(0,0).unwrap().resource, Some(map::Resource::Gold)));
     }
 
