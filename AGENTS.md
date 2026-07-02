@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S345 · 953 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Shoreline foam effect added at terrain-water boundaries using screen-space derivatives (dFdx/dFdy). 6 new tests. 947→953 tests. WASM: 280KB (v95, under 300KB). Next: (1) Building model LOD for distant buildings. (2) WebGL context loss recovery. (3) Visual verification of new shoreline foam by Daniel. (4) Verify all Phase 7 visual effects.
+Status: S346 · 961 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Building model LOD: distance-based culling (80 tile units) skips rendering distant model instances — reduces draw calls on large maps. model::MODEL_CULL_DISTANCE constant + is_model_culled() helper. 8 new tests. 953→961 tests. WASM: 280KB (under 300KB, no rebuild needed). Next: (1) WebGL context loss recovery. (2) Verify building culling visually — request render snapshot from Daniel. (3) Visual verification of shoreline foam by Daniel. (4) Verify all Phase 7 visual effects. (5) FPS/draw-call benchmarking.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
