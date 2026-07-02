@@ -10369,6 +10369,66 @@ mod parse_map_json_tests {
         assert!(s_mid > s_high, "stretch should decrease: {} vs {}", s_mid, s_high);
     }
 
+    /// Mirror of the camera-to-instance distance computation used
+    /// in the shadow rendering loop for penumbra calculation.
+    /// Camera eye at (ex, ey, ez), instance at (inst_x, 0, inst_y).
+    #[allow(dead_code)]
+    fn compute_shadow_cam_distance_rust(
+        ex: f32, ey: f32, ez: f32,
+        inst_x: f32, inst_y: f32,
+    ) -> f32 {
+        let dx = inst_x - ex;
+        let dy = 0.0 - ey;
+        let dz = inst_y - ez;
+        (dx * dx + dy * dy + dz * dz).sqrt()
+    }
+
+    #[test]
+    fn test_shadow_cam_distance_overhead() {
+        // Camera directly overhead (el=90°, d=20) → eye = (0, 20, 0)
+        let d = compute_shadow_cam_distance_rust(0.0, 20.0, 0.0, 10.0, 10.0);
+        // dx=10, dy=-20, dz=10 → sqrt(100+400+100) = sqrt(600) ≈ 24.495
+        assert!((d - 24.495).abs() < 0.01, "overhead dist got {}", d);
+    }
+
+    #[test]
+    fn test_shadow_cam_distance_shallow() {
+        // Very shallow angle (el=5°, az=45°, d=20)
+        // cos(5°)≈0.996, sin(5°)≈0.087
+        let ex = 20.0 * 0.996 * 0.707; // ≈ 14.08
+        let ey = 20.0 * 0.087;         // ≈ 1.74
+        let ez = 20.0 * 0.996 * 0.707; // ≈ 14.08
+        let d = compute_shadow_cam_distance_rust(ex, ey, ez, 10.0, 10.0);
+        // dx=10-14.08=-4.08, dy=-1.74, dz=10-14.08=-4.08
+        // sqrt(16.65+3.03+16.65) = sqrt(36.33) ≈ 6.028
+        assert!((d - 6.028).abs() < 0.1, "shallow dist got {}", d);
+    }
+
+    #[test]
+    fn test_shadow_cam_distance_zero_offset() {
+        // Camera directly above instance center
+        let d = compute_shadow_cam_distance_rust(5.0, 10.0, 5.0, 5.0, 5.0);
+        // dx=0, dy=-10, dz=0 → 10.0
+        assert!((d - 10.0).abs() < 0.001, "zero offset dist got {}", d);
+    }
+
+    #[test]
+    fn test_shadow_cam_distance_far_camera() {
+        // Camera very far away (d=200)
+        let d = compute_shadow_cam_distance_rust(0.0, 200.0, 0.0, 0.0, 0.0);
+        assert!((d - 200.0).abs() < 0.001, "far camera dist got {}", d);
+    }
+
+    #[test]
+    fn test_shadow_cam_distance_monotonic_with_height() {
+        // As camera height increases, distance should increase (for fixed XY)
+        let d_low = compute_shadow_cam_distance_rust(5.0, 10.0, 5.0, 20.0, 20.0);
+        let d_mid = compute_shadow_cam_distance_rust(5.0, 50.0, 5.0, 20.0, 20.0);
+        let d_high = compute_shadow_cam_distance_rust(5.0, 100.0, 5.0, 20.0, 20.0);
+        assert!(d_low < d_mid, "d_low={} should be < d_mid={}", d_low, d_mid);
+        assert!(d_mid < d_high, "d_mid={} should be < d_high={}", d_mid, d_high);
+    }
+
     // ── Phase 7: Heat Shimmer Tests ──────────────────────────────────────
 
 

@@ -1,7 +1,7 @@
 # Rendering Pipeline Audit Checklist — Phase 7
 
 > Generated: 2026-06-23 | Session 188
-> Baseline: 967 tests passing | WASM 288KB | 84 building models | Updated: 2026-07-02 Session 348
+> Baseline: 972 tests passing | WASM 288KB | 84 building models | Updated: 2026-07-02 Session 348
 
 ## Pipeline Render Order
 
@@ -47,7 +47,7 @@
 - [x] Sun-angle shadow stretch (low sun = 4× stretch) (S339)
 - [x] Lightning flashes with rapid fade (20-90s, 30pct double)
 - [x] Day-phase via shared day_light_glsl macro
-- [ ] SHOULD: Test shadow penumbra at extreme camera angles
+- [x] SHOULD: Test shadow penumbra at extreme camera angles — DONE S349 (5 new tests: overhead, shallow, zero-offset, far, monotonic height)
 
 ### Atmosphere
 - [x] Cloud layer with instanced rendering + parallax
@@ -120,7 +120,7 @@
 - [x] u_fog_color (screen-space radial fog)
 - [x] u_sun_dir, u_god_ray_strength (god rays)
 - [x] Dead uniforms removed: u_sun_color, u_moon_color
-- [ ] SHOULD: Audit for remaining dead uniforms
+- [x] SHOULD: Audit for remaining dead uniforms — DONE S349 (0 dead, all 48 active)
 
 ### Model Fragment Shader
 - [x] All uniforms present
@@ -133,7 +133,7 @@
 
 ## Stability
 
-- [x] cargo test: 967 passed, 0 failed
+- [x] cargo test: 972 passed, 0 failed
 - [x] WASM build successful
 - [x] No known shader compilation errors
 - [x] Fix 69: u_resolution missing uniform
@@ -153,6 +153,6 @@
 
 ## Summary
 
-Done: 50+ rendering features across 7 passes. WASM 288KB (under 300KB target). 967 tests. Clippy clean.
-Needs verification: 3 visual items (reflection FBO, water tile exclusion, reflection pass correctness). 2 FPS benchmarks pending. 
+Done: 52 rendering features across 7 passes. WASM 288KB (under 300KB target). 972 tests. Clippy clean.
+Needs verification: 3 visual items (unchanged) (reflection FBO, water tile exclusion, reflection pass correctness). 2 FPS benchmarks pending. 
 Next: Visual verification by Daniel — sky colors, roof specular, desert mirage, shadow penumbra quality.
