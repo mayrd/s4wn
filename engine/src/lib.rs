@@ -2542,6 +2542,9 @@ impl App {
             let fbo = gl.create_framebuffer();
             let tex = gl.create_texture();
             if let (Some(fbo), Some(tex)) = (fbo, tex) {
+                // Create reflection texture on TEXTURE2 to avoid type conflicts
+                // with terrain TEXTURE_2D_ARRAY on TEXTURE0
+                gl.active_texture(WebGl2RenderingContext::TEXTURE2);
                 gl.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&tex));
                 // Half-resolution: 50% saves 75% fill rate on water tiles
                 self.reflection_w = (canvas.width() / 2).max(1) as i32;
@@ -2589,6 +2592,7 @@ impl App {
                     self.reflection_depth = Some(depth_rb);
                 }
                 gl.bind_framebuffer(WebGl2RenderingContext::FRAMEBUFFER, None);
+                // Unbind reflection texture from TEXTURE2 — will be re-bound in render loop
                 gl.bind_texture(WebGl2RenderingContext::TEXTURE_2D, None);
                 self.reflection_fbo = Some(fbo);
                 self.reflection_tex = Some(tex);
