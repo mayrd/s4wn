@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S348 · 967 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Session log entries added for S346 (building model distance culling) and S347 (WebGL context loss recovery) — both were missing from the log table. RENDERING_AUDIT.md updated to mark building LOD and context loss recovery as DONE. Next: (1) FPS/draw-call benchmarking on real hardware — needs visual. (2) Verify building culling visually — request render snapshot from Daniel. (3) Visual verification of shoreline foam by Daniel. (4) Verify context loss recovery on mobile. (5) Audit remaining SHOULD/NICE items in RENDERING_AUDIT.md for completable cron tasks.
+Status: S349 · 972 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Shadow camera-distance tests at extreme angles: added compute_shadow_cam_distance_rust() mirror function + 5 tests (overhead el=90°, shallow el=5°, zero-offset, far-camera, monotonic height). Dead uniform audit clean — all 48 uniforms active. RENDERING_AUDIT.md updated: both SHOULD items marked DONE. Next: (1) FPS/draw-call benchmarking on real hardware — needs visual. (2) Verify building culling visually — request render snapshot from Daniel. (3) Visual verification of shoreline foam by Daniel. (4) Verify context loss recovery on mobile. (5) NICE item: ryu float formatting (~10KB WASM savings) — requires WASM rebuild.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
