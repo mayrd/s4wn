@@ -635,57 +635,96 @@ fn compute_day_light(day_phase: f64) -> f32 {
 
 /// Compute sky background color from day_phase (0.0–1.0 over a 300s day cycle).
 /// Returns (r, g, b) in 0.0–1.0 range.
-/// Phase 7: Dynamic sky color ramp — warm dawn → blue noon → orange dusk → dark night.
+/// Phase 7: Physically-based Rayleigh/Mie atmospheric scattering model.
+///
+/// Rayleigh scattering (~1/λ⁴): molecular scattering dominates blue sky at noon.
+/// Mie scattering (~constant): aerosol haze adds warm tones near the sun/horizon.
+/// Both depend on optical air mass (path length through atmosphere) which increases
+/// at low sun elevations, causing reddening at sunrise/sunset as blue light
+/// is scattered away.
 fn sky_color(day_phase: f64) -> (f32, f32, f32) {
-    let p = day_phase as f32;
-    // Sun rises at p≈0.20, peaks at p≈0.50, sets at p≈0.80
-    // Use smoothstep transitions for natural color blending
+    let dp = day_phase as f32;
+    let sun_angle = (dp - 0.25) * std::f32::consts::TAU;
+    let sun_elev = sun_angle.sin();
 
-    // Night segments: p < 0.10 and p > 0.90 → deep dark
-    // Dawn: p 0.10→0.25 → warm orange/pink
-    // Day: p 0.25→0.65 → blue sky
-    // Dusk: p 0.65→0.80 → warm orange/pink
-    // Evening: p 0.80→0.90 → dark blue fading to night
+    // Clamp near-zero sun elevation to avoid f32 sin(π) imprecision
+    // (sin(π) ≈ -8.7e-8 instead of exactly 0.0 in f32)
+    let sun_elev = if sun_elev.abs() < 1e-6 { 0.0 } else { sun_elev };
 
-    // Key color points (r, g, b) at specific day phases
-    let night = (0.03, 0.05, 0.12);       // deep midnight blue
-    let dawn_start = (0.08, 0.06, 0.22);  // pre-dawn purple
-    let dawn_peak = (0.65, 0.32, 0.18);   // warm orange sunrise
-    let day_morning = (0.28, 0.52, 0.85); // morning blue
-    let day_noon = (0.35, 0.62, 0.95);    // noon bright blue
-    let day_afternoon = (0.28, 0.52, 0.85); // afternoon blue
-    let dusk_peak = (0.68, 0.30, 0.15);   // sunset orange
-    let dusk_end = (0.08, 0.05, 0.25);    // post-dusk purple
-
-    fn lerp3(a: (f32, f32, f32), b: (f32, f32, f32), t: f32) -> (f32, f32, f32) {
-        (
-            a.0 + (b.0 - a.0) * t,
-            a.1 + (b.1 - a.1) * t,
-            a.2 + (b.2 - a.2) * t,
-        )
+    // Night: very dark blue, no direct sunlight
+    if sun_elev < -0.35 {
+        return (0.015, 0.025, 0.06);
     }
 
-    if p < 0.08 {
-        night
-    } else if p < 0.12 {
-        lerp3(night, dawn_start, (p - 0.08) / 0.04)
-    } else if p < 0.20 {
-        lerp3(dawn_start, dawn_peak, (p - 0.12) / 0.08)
-    } else if p < 0.40 {
-        lerp3(dawn_peak, day_morning, (p - 0.20) / 0.20)
-    } else if p < 0.55 {
-        lerp3(day_morning, day_noon, (p - 0.40) / 0.15)
-    } else if p < 0.68 {
-        lerp3(day_noon, day_afternoon, (p - 0.55) / 0.13)
-    } else if p < 0.76 {
-        lerp3(day_afternoon, dusk_peak, (p - 0.68) / 0.08)
-    } else if p < 0.84 {
-        lerp3(dusk_peak, dusk_end, (p - 0.76) / 0.08)
-    } else if p < 0.92 {
-        lerp3(dusk_end, night, (p - 0.84) / 0.08)
+    // Twilight: sun below horizon but upper atmosphere still illuminated.
+    // Gradual transition from dark night to dawn sky colors.
+    let twilight = if sun_elev < 0.0 {
+        // sun_elev in [-0.35, 0.0): atmosphere glow increases toward horizon.
+        // Clamped to [0.0, 1.0] for safe blending.
+        ((sun_elev + 0.35) / 0.35).clamp(0.0, 1.0)
     } else {
-        night
+        0.0
+    };
+
+    // Air mass: optical path length through atmosphere relative to zenith.
+    // Numerator softened to avoid division blow-up near horizon.
+    let effective_elev = if sun_elev > 0.0 { sun_elev } else { 0.0 };
+    let airmass = 1.0 / (effective_elev.max(0.02) + 0.08);
+
+    // Rayleigh optical depth per channel (artistic scaling for visible effect).
+    // τ ∝ 1/λ⁴: blue ≈ 5.5× red, green ≈ 2.3× red.
+    let tau_r: f32 = airmass * 0.6;
+    let tau_g: f32 = airmass * 1.4;
+    let tau_b: f32 = airmass * 3.3;
+
+    // Rayleigh single scattering: 1 - e^(-τ).
+    // At low airmass (noon): blue scatters strongly → blue sky.
+    // At high airmass: all channels approach saturation → grey/white at horizon.
+    let r_scatter = 1.0 - (-tau_r).exp();
+    let g_scatter = 1.0 - (-tau_g).exp();
+    let b_scatter = 1.0 - (-tau_b).exp();
+
+    // Sun illumination reaching the zenith atmosphere.
+    // At high sun: full illumination. At low sun: attenuated by long path.
+    let sun_path_ext = (-0.06 * airmass).exp();
+
+    // Mie scattering: wavelength-independent aerosol haze.
+    // Stronger at low sun angles (high airmass).
+    let mie_tau = airmass * 0.08;
+    let mie_scatter = 1.0 - (-mie_tau).exp();
+
+    // Compose: Rayleigh (blue sky) + Mie (warm haze)
+    // Modulated by how much sunlight reaches the scattering volume.
+    // Illumination reaching the scattering volume.
+    // Night baseline evens out the transition from hardcoded night return
+    // to twilight: at sun_elev=-0.35, twilight=0 → illum≈0.015 (≈night level).
+    let night_base: f32 = 0.020;
+    let illum = if twilight > 0.0 {
+        // Blend night base into full twilight glow
+        night_base + twilight * 0.10
+    } else {
+        night_base + sun_path_ext
+    };
+
+    let mut r = (r_scatter * illum * 0.85 + mie_scatter * illum * 0.28).min(1.0);
+    let mut g = (g_scatter * illum * 1.10 + mie_scatter * illum * 0.12).min(1.0);
+    let b = (b_scatter * illum * 1.30 + mie_scatter * illum * 0.05).min(1.0);
+
+    // Sunset/dawn glow: warm horizon boost when sun is near/below horizon
+    if sun_elev < 0.15 {
+        let horizon_t = if sun_elev > 0.0 {
+            1.0 - sun_elev / 0.15
+        } else if sun_elev > -0.08 {
+            1.0 + sun_elev / 0.08
+        } else {
+            0.0
+        };
+        let glow = horizon_t * horizon_t * (illum + twilight * 0.5) * 0.60;
+        r = (r + glow * 1.2).min(1.0);
+        g = (g + glow * 0.35).min(1.0);
     }
+
+    (r, g, b)
 }
 
 // ── Application State ─────────────────────────────────────────────────────────
@@ -8300,22 +8339,24 @@ mod tests {
 
     #[test]
     fn test_sky_color_dawn_is_warm() {
-        // p=0.20 is at the end of dawn_start->dawn_peak transition (peak warm orange)
-        let (r, _, b) = sky_color(0.20);
-        assert!(r > b, "dawn sky should be warmer than blue, r={} b={}", r, b);
-        assert!(r > 0.4, "dawn sky should be bright/warm, got {}", r);
-        // Verify: dawn_peak = (0.65, 0.32, 0.18) — red clearly dominates
-        assert!(r > 0.5, "dawn peak should be strongly red, got {}", r);
+        // p=0.25 is sunrise — sun at horizon, Rayleigh/Mie produces warm red-orange sky.
+        // Sun elevation = sin((0.25-0.25)*TAU) = 0.0 → airmass→max → red scattering dominates.
+        let (r, _, b) = sky_color(0.25);
+        assert!(r > b, "sunrise sky should be warmer than blue, r={} b={}", r, b);
+        assert!(r > 0.7, "sunrise sky red should be strong, got {}", r);
+        // Horizon glow should push red above 0.9
+        assert!(r > 0.85, "sunrise peak should be strongly red, got {}", r);
     }
 
     #[test]
     fn test_sky_color_dusk_is_warm() {
-        // p=0.76 is at the end of day_afternoon->dusk_peak transition (warm orange/red)
-        let (r, _, b) = sky_color(0.76);
-        assert!(r > b, "dusk sky should be warmer than blue, r={} b={}", r, b);
-        assert!(r > 0.4, "dusk sky red should be strong, got {}", r);
-        // Verify: dusk_peak = (0.68, 0.30, 0.15) — red clearly dominates
-        assert!(r > 0.5, "dusk peak should be strongly red, got {}", r);
+        // p=0.75 is sunset — sun at horizon, Rayleigh/Mie produces warm red-orange sky.
+        // Sun elevation = sin((0.75-0.25)*TAU) = 0.0 → same as sunrise (symmetric).
+        let (r, _, b) = sky_color(0.75);
+        assert!(r > b, "sunset sky should be warmer than blue, r={} b={}", r, b);
+        assert!(r > 0.7, "sunset sky red should be strong, got {}", r);
+        // Horizon glow should push red above 0.9
+        assert!(r > 0.85, "sunset peak should be strongly red, got {}", r);
     }
 
     #[test]
@@ -8343,6 +8384,64 @@ mod tests {
             "noon should be much brighter than night: noon={} night={}",
             lum_noon, lum_night
         );
+    }
+
+    // ── Phase 7: Rayleigh/Mie Atmospheric Scattering Regression Tests ──
+
+    #[test]
+    fn test_sky_color_rayleigh_blue_dominance() {
+        // At noon (p=0.5), Rayleigh scattering (∝ 1/λ⁴) means blue scatters
+        // significantly more than red and green. Blue must dominate both.
+        let (r, g, b) = sky_color(0.5);
+        assert!(b > r, "noon sky: blue must exceed red (Rayleigh 1/λ⁴), r={} b={}", r, b);
+        assert!(b > g, "noon sky: blue must exceed green, g={} b={}", g, b);
+        assert!(g > r, "noon sky: green scatters more than red, r={} g={}", r, g);
+    }
+
+    #[test]
+    fn test_sky_color_airmass_reddening() {
+        // As airmass increases (lower sun), red channel grows relative to blue.
+        // At low sun elevation, the longer optical path scatters away blue,
+        // leaving red to dominate — the classical sunset reddening effect.
+        let (r_high, _, b_high) = sky_color(0.5);  // noon: sun overhead, airmass≈1
+        let (r_low, _, b_low) = sky_color(0.28);    // morning: sun ~10°, airmass≈5
+
+        let ratio_high = r_high / b_high;
+        let ratio_low = r_low / b_low;
+        assert!(
+            ratio_low > ratio_high,
+            "red/blue ratio must increase as sun descends: noon={:.4} low_sun={:.4}",
+            ratio_high, ratio_low
+        );
+    }
+
+    #[test]
+    fn test_sky_color_twilight_ramp() {
+        // Twilight (sun below horizon but atmosphere still illuminated) should produce
+        // a smooth brightness ramp from night to dawn, with no discontinuities.
+        let mut prev_lum = sky_color(0.0).0 + sky_color(0.0).1 + sky_color(0.0).2;
+        let mut increasing = true;
+        for p in (1..21).map(|i| i as f64 * 0.01) {
+            let (r, g, b) = sky_color(p);
+            let lum = r + g + b;
+            if lum < prev_lum - 0.001 {
+                increasing = false;
+            }
+            prev_lum = lum;
+        }
+        assert!(increasing, "sky luminance must increase monotonically from night to p=0.20");
+    }
+
+    #[test]
+    fn test_sky_color_symmetry() {
+        // The sky model should be symmetric: dawn (approaching sunrise) and
+        // dusk (leaving sunset) should produce similar colors at equal angular
+        // distances from the horizon.
+        let dawn = sky_color(0.27);  // just after sunrise
+        let dusk = sky_color(0.73);  // just before sunset (symmetric)
+        assert!((dawn.0 - dusk.0).abs() < 0.05, "dawn/dusk red symmetry: dawn={:.4} dusk={:.4}", dawn.0, dusk.0);
+        assert!((dawn.1 - dusk.1).abs() < 0.05, "dawn/dusk green symmetry");
+        assert!((dawn.2 - dusk.2).abs() < 0.05, "dawn/dusk blue symmetry");
     }
 
     // ── Phase 7: Day-Light Uniform Regression Tests ──
