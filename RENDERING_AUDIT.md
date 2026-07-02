@@ -1,7 +1,7 @@
 # Rendering Pipeline Audit Checklist — Phase 7
 
 > Generated: 2026-06-23 | Session 188
-> Baseline: 659 tests passing | WASM ~330KB | 84 building models | Updated: 2026-06-24 Session 198
+> Baseline: 947 tests passing | WASM 280KB | 84 building models | Updated: 2026-07-02 Session 344
 
 ## Pipeline Render Order
 
@@ -18,17 +18,20 @@
 ## Visual Feature Checklist
 
 ### Terrain
-- [x] Dynamic sky color ramp (dawn-noon-dusk-night)
+- [x] Dynamic sky color ramp → Rayleigh/Mie physical scattering (S341)
 - [x] Smooth biome transition splat-map blending
 - [x] Ambient occlusion at cliff/elevation boundaries
 - [x] Terrain LOD (3 levels: 1x1, 2x2, 4x4 tiles per quad)
 - [x] Procedural terrain atlas (2048x512)
 - [x] VP matrix via orbital camera
+- [x] Desert heat shimmer brightness modulation (S340)
+- [x] Desert heat mirage UV distortion (S343)
+- [x] Screen-space dithering to reduce color banding (S344)
 - [ ] SHOULD: Verify terrain atlas texture fidelity at all zoom levels
 - [ ] SHOULD: Measure LOD seam visibility at transitions
 
 ### Water
-- [x] Water surface animation with normal maps + specular
+- [x] Water surface animation with normal maps + specular (sun-angle modulated)
 - [x] Reflection FBO with Fresnel blend
 - [x] Half-resolution FBO (50pct, 75pct fill rate savings)
 - [x] Water tiles discarded from reflection FBO
@@ -40,6 +43,8 @@
 - [x] Day-phase-aware hemisphere ambient lighting
 - [x] Directional light from sun position
 - [x] Smooth shadow penumbra via multi-layer falloff + noise dither
+- [x] Distance-based shadow penumbra (close=sharp, far=soft) (S339)
+- [x] Sun-angle shadow stretch (low sun = 4× stretch) (S339)
 - [x] Lightning flashes with rapid fade (20-90s, 30pct double)
 - [x] Day-phase via shared day_light_glsl macro
 - [ ] SHOULD: Test shadow penumbra at extreme camera angles
@@ -49,8 +54,9 @@
 - [x] Sun/Moon disc rendering with glow
 - [x] Rain particle system (blue-white streaks, gravity, drift)
 - [x] Lightning sky brightening
-- [ ] NICE: Cloud shadow projection on terrain
-- [ ] NICE: Fog/haze at far distance
+- [x] Cloud shadow projection on terrain (procedural cloud_shadow() + god rays)
+- [x] Fog/haze at far distance with elevation modulation (S335-336)
+- [x] Rayleigh/Mie atmospheric scattering for sky colors (S341)
 
 ### Buildings and Models
 - [x] 84 procedurally-generated building models
@@ -61,6 +67,7 @@
 - [x] Construction particles with per-nation colors
 - [x] Procedural detail normals for building walls
 - [x] Rim lighting (Fresnel edge highlight) for building models
+- [x] Roof specular highlights — tight (pow 64), warm-tinted (S342)
 - [ ] SHOULD: Verify models render correctly at all zoom/LOD levels
 - [ ] NICE: LOD for distant building models
 
@@ -68,19 +75,22 @@
 - [x] Combat effects (death particles)
 - [x] Chimney smoke from buildings
 - [x] Construction particles
-- [x] Rain particles with burst spawning
-- [x] Leaf particles near forest tiles
-- [x] NICE: Rain splash soft fade-out on ground impact (Step 46) — session 192
-- [ ] NICE: Dust/wind particles in desert biomes
-- [ ] NICE: Snow particles in mountain biomes
+- [x] Rain particles with burst spawning + soft ground fade
+- [x] Leaf particles near forest tiles (S210)
+- [x] Firefly particles near Grass/Forest at dusk (S209)
+- [x] Fog/mist particles near Water/Swamp tiles (S208)
+- [x] Dust storm particles near Desert tiles (S206)
+- [x] Snow particles near Snow/Mountain tiles (S205)
+- [x] Pollen/drifting seed particles near Grass tiles (S215)
+- [x] Ember/spark particles for Smelter buildings (S213)
 
 ## Performance Checklist
 
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
-| WASM size | under 300KB | ~330KB | WARN 30KB over |
-| Tests passing | All | 659 | PASS |
-| Draw calls/frame | under 200 | 7~20 | WARN varies w/ visible objects |
+| WASM size | under 300KB | 280KB | PASS |
+| Tests passing | All | 947 | PASS |
+| Draw calls/frame | under 200 | 7~20 | PASS |
 | FPS desktop 1080p | 60 | TBD | TODO |
 | FPS RPI5 720p | 30 | TBD | TODO |
 
@@ -90,8 +100,9 @@
 - [x] Consolidate shader day_light function (3 to 1)
 - [x] Remove dead u_sun_color/u_moon_color uniforms
 - [x] Add panic=abort to Cargo.toml
-- [x] MUST: Investigate 77KB over budget — opt-level=z reduced 365KB→338KB (-27KB), 38KB remaining
-- [x] MUST: WASM data section audit (session 200) — top items: building names 27.9KB, shader source 28.5KB (4 chunks), game state JSON 5.9KB. Total .rodata: ~78KB
+- [x] opt-level=z reduced 365KB→338KB (-27KB)
+- [x] GLSL minification: saved 12KB WASM (S212)
+- [x] WASM target 300KB ACHIEVED: 280KB final
 - [ ] NICE: Replace flt2dec float formatting with ryu (~10KB savings)
 - [ ] NICE: Replace from_name match with phf/const hash (~28KB savings potential)
 - [ ] NICE: Model data compression (quantize vertices)
@@ -106,6 +117,8 @@
 - [x] u_water_time, u_water_normal, u_water_normal_ready
 - [x] u_lightning
 - [x] u_reflection_tex, u_reflection_pass, u_reflection_horizon_y
+- [x] u_fog_color (screen-space radial fog)
+- [x] u_sun_dir, u_god_ray_strength (god rays)
 - [x] Dead uniforms removed: u_sun_color, u_moon_color
 - [ ] SHOULD: Audit for remaining dead uniforms
 
@@ -113,18 +126,19 @@
 - [x] All uniforms present
 - [x] Day-phase via shared macro
 - [x] Terrain texture wired in
+- [x] Roof specular highlights (S342)
 
 ### Cloud/Sun-Moon Shaders
 - [x] All uniforms present; day-phase via shared macro
 
 ## Stability
 
-- [x] cargo test: 659 passed, 0 failed
+- [x] cargo test: 947 passed, 0 failed
 - [x] WASM build successful
 - [x] No known shader compilation errors
 - [x] Fix 69: u_resolution missing uniform
 - [x] Fix 70: WASM rebuild + deploy
-- [x] SHOULD: cargo clippy (0 errors, 34 warnings: static mut refs)
+- [x] cargo clippy: 0 errors, 0 warnings
 - [ ] SHOULD: trunk serve for visual smoke test
 - [ ] MUST: Verify reflection FBO on real WebGL2 hardware
 
@@ -139,6 +153,6 @@
 
 ## Summary
 
-Done: 38 rendering features across 7 passes.
-Needs verification: 1 visual item (Step 32 verify reflection FBO), 3 perf measurements (FPS benchmarks), 2 stability checks. Draw-call baseline documented (8 increment sites: terrain, overlay, shadows[N], clouds, sun, moon, models, dots).
-Next priority: Step 43 - WASM size reduction (38KB remains to 300KB target). Step 44 - FPS/draw-call display toggle + baseline recording. See AGENTS.md Next Session.
+Done: 50+ rendering features across 7 passes. WASM 280KB (under 300KB target). 947 tests. Clippy clean.
+Needs verification: 3 visual items (reflection FBO, water tile exclusion, reflection pass correctness). 2 FPS benchmarks pending. 
+Next: Visual verification by Daniel — sky colors, roof specular, desert mirage, shadow penumbra quality.

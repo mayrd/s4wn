@@ -319,6 +319,8 @@ lit = mix(lit * 0.7, lit, warmth);
 if (!is_water) {
 lit *= v_ao;
 }
+float dither = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+lit += (dither - 0.5) / 255.0;
 out_color = vec4(lit, 1.0);
 }
 "#,
@@ -10282,5 +10284,26 @@ mod parse_map_json_tests {
             "fragment shader must use tex_uv for texture lookups"
         );
 
+    }
+
+    #[test]
+    fn test_fragment_shader_has_dithering() {
+        // Verify screen-space dither is applied to reduce color banding
+        assert!(
+            FRAGMENT_SHADER.contains("dither"),
+            "fragment shader must contain dither variable"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("gl_FragCoord"),
+            "fragment shader must use gl_FragCoord for screen-space dither"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("fract(sin(dot"),
+            "fragment shader must use hash-based dither noise"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("255.0"),
+            "fragment shader must dither at 1/255 precision"
+        );
     }
 }
