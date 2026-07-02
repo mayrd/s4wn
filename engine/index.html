@@ -5619,6 +5619,7 @@ function renderRecentFiles() {
  */
 async function loadWaterNormalMap(gl) {
     const url = "../assets/textures/water_normal.png";
+    console.log('[s4wn] Loading water normal map:', url);
     const img = await loadImage(url);
     const canvas = document.createElement("canvas");
     canvas.width = 256;
@@ -5636,10 +5637,11 @@ async function loadWaterNormalMap(gl) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
     gl.generateMipmap(gl.TEXTURE_2D);
-    console.log("Water normal map loaded (TEXTURE1, 256x256)");
+    console.log('[s4wn] Water normal map loaded (TEXTURE1, 256x256)');
 }
 
 async function loadTerrainTextures(gl) {
+    console.log('[s4wn] Loading terrain textures into TEXTURE_2D_ARRAY (8 layers)');
     const TERRAIN_NAMES = ['grass', 'forest', 'mountain', 'water', 'deepwater', 'desert', 'swamp', 'snow'];
     const BASE = '../assets/textures/';
 
@@ -5659,6 +5661,7 @@ async function loadTerrainTextures(gl) {
         const url = `${BASE}terrain_${name}.png`;
         try {
             const img = await loadImage(url);
+            console.log('[s4wn] Terrain texture downloaded:', url);
             // Draw image to temp canvas to get raw RGBA pixels
             const canvas = document.createElement('canvas');
             canvas.width = 1024;
@@ -5678,13 +5681,13 @@ async function loadTerrainTextures(gl) {
                 gl.UNSIGNED_BYTE,
                 imageData.data
             );
-            console.log(`Terrain texture loaded: ${name} (layer ${layer})`);
+            console.log(`[s4wn] Terrain texture loaded: ${name} (layer ${layer})`);
         } catch (e) {
-            console.warn(`Failed to load terrain texture: ${name} — ${e.message}`);
+            console.warn(`[s4wn] Failed to load terrain texture: ${name} — ${e.message}`);
             throw e;  // Abort — partial textures would look wrong
         }
     }
-    console.log('All 8 terrain textures loaded into TEXTURE_2D_ARRAY');
+    console.log('[s4wn] All 8 terrain textures loaded into TEXTURE_2D_ARRAY');
 }
 
 function loadImage(url) {
@@ -5918,16 +5921,18 @@ async function main() {
                 loadTerrainTextures(restoredGl).then(() => {
                     if (typeof set_textures_ready === 'function') {
                         set_textures_ready();
+                        console.log('[s4wn] set_textures_ready() invoked after restore');
                     }
                 }).catch(e => {
-                    console.warn('Terrain textures not restored:', e.message);
+                    console.warn('[s4wn] Terrain textures not restored:', e.message);
                 });
-                loadWaterNormalTexture(restoredGl).then(() => {
+                loadWaterNormalMap(restoredGl).then(() => {
                     if (typeof set_water_normal_ready === 'function') {
                         set_water_normal_ready();
+                        console.log('[s4wn] set_water_normal_ready() invoked after restore');
                     }
                 }).catch(e => {
-                    console.warn('Water normal not restored:', e.message);
+                    console.warn('[s4wn] Water normal not restored:', e.message);
                 });
                 // Re-load 3D models into GPU
                 if (typeof loadGameModels === 'function') {
@@ -5941,18 +5946,20 @@ async function main() {
             loadTerrainTextures(gl).then(() => {
                 if (typeof set_textures_ready === 'function') {
                     set_textures_ready();
+                    console.log('[s4wn] set_textures_ready() invoked');
                 }
             }).catch(e => {
-                console.warn('Terrain textures not loaded — using flat colors:', e.message);
+                console.warn('[s4wn] Terrain textures not loaded — using flat colors:', e.message);
             });
 
             // Load water normal map for animated water surface (Phase 7.1)
             loadWaterNormalMap(gl).then(() => {
                 if (typeof set_water_normal_ready === "function") {
                     set_water_normal_ready();
+                    console.log('[s4wn] set_water_normal_ready() invoked');
                 }
             }).catch(e => {
-                console.warn("Water normal map not loaded:", e.message);
+                console.warn("[s4wn] Water normal map not loaded:", e.message);
             });
         } else {
             console.warn('No WebGL2 context — skipping terrain textures');
