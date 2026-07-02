@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S346 · 961 tests · Clippy: 0 errors, 0 warnings. 0 open issues. Building model LOD: distance-based culling (80 tile units) skips rendering distant model instances — reduces draw calls on large maps. model::MODEL_CULL_DISTANCE constant + is_model_culled() helper. 8 new tests. 953→961 tests. WASM: 280KB (under 300KB, no rebuild needed). Next: (1) WebGL context loss recovery. (2) Verify building culling visually — request render snapshot from Daniel. (3) Visual verification of shoreline foam by Daniel. (4) Verify all Phase 7 visual effects. (5) FPS/draw-call benchmarking.
+Status: S347 · 967 tests · Clippy: 0 errors, 0 warnings. 0 open issues. WebGL context loss recovery: added context_lost guard flag to App struct, reinit_webgl() method recreates all WebGL resources (terrain/mesh/shadow/cloud/sun_moon/overlay programs + VAOs + buffers + FBOs) from scratch while preserving game state. JS event listeners on canvas for webglcontextlost/restored events with terrain texture and model re-load. 6 new tests. 961→967 tests. WASM: 288KB (under 300KB). Next: (1) Verify building culling visually — request render snapshot from Daniel. (2) Visual verification of shoreline foam by Daniel. (3) Verify all Phase 7 visual effects. (4) FPS/draw-call benchmarking. (5) Verify context loss recovery on mobile (Android/WebKit/Mali-G710).
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap

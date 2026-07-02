@@ -1684,7 +1684,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles,
-} from './pkg/s4wn_engine.js?v=95';
+} from './pkg/s4wn_engine.js?v=96';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -5897,6 +5897,44 @@ async function main() {
         } else {
             console.error('No WebGL2 context on canvas');
         }
+
+        // ── WebGL Context Loss Recovery ──────────────────────────────
+        canvas.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();  // Required for context restoration
+            console.warn('WebGL context lost — suspending rendering');
+            if (typeof on_webgl_context_lost === 'function') {
+                on_webgl_context_lost();
+            }
+        }, false);
+
+        canvas.addEventListener('webglcontextrestored', () => {
+            console.log('WebGL context restored — recreating resources');
+            if (typeof on_webgl_context_restored === 'function') {
+                on_webgl_context_restored();
+            }
+            // Re-load terrain textures after context restore
+            const restoredGl = canvas.getContext('webgl2');
+            if (restoredGl) {
+                loadTerrainTextures(restoredGl).then(() => {
+                    if (typeof set_textures_ready === 'function') {
+                        set_textures_ready();
+                    }
+                }).catch(e => {
+                    console.warn('Terrain textures not restored:', e.message);
+                });
+                loadWaterNormalTexture(restoredGl).then(() => {
+                    if (typeof set_water_normal_ready === 'function') {
+                        set_water_normal_ready();
+                    }
+                }).catch(e => {
+                    console.warn('Water normal not restored:', e.message);
+                });
+                // Re-load 3D models into GPU
+                if (typeof loadGameModels === 'function') {
+                    loadGameModels();
+                }
+            }
+        }, false);
 
         // Load high-res terrain textures (Nano Banana 2, 1024×1024)
         if (gl) {

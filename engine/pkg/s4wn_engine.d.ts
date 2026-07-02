@@ -705,6 +705,19 @@ export function on_mouse_move(x: number, y: number): void;
 export function on_mouse_up(): void;
 
 /**
+ * Called from JS when the WebGL context is lost (canvas webglcontextlost event).
+ * Sets a flag that suspends all rendering until context restoration.
+ */
+export function on_webgl_context_lost(): void;
+
+/**
+ * Called from JS when the WebGL context is restored (canvas webglcontextrestored event).
+ * Recreates all WebGL resources (shaders, buffers, programs, FBOs) from scratch
+ * while preserving game state (map, economy, units, particles).
+ */
+export function on_webgl_context_restored(): void;
+
+/**
  * Handle scroll wheel for zooming
  */
 export function on_wheel(delta_y: number): void;
@@ -1018,6 +1031,8 @@ export interface InitOutput {
     readonly on_mouse_down: (a: number, b: number) => void;
     readonly on_mouse_move: (a: number, b: number) => void;
     readonly on_mouse_up: () => void;
+    readonly on_webgl_context_lost: () => void;
+    readonly on_webgl_context_restored: () => void;
     readonly on_wheel: (a: number) => void;
     readonly order_patrol: (a: number, b: number, c: number, d: number) => number;
     readonly recent_combat_count: () => number;

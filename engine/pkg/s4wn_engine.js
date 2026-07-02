@@ -2556,6 +2556,23 @@ export function on_mouse_up() {
 }
 
 /**
+ * Called from JS when the WebGL context is lost (canvas webglcontextlost event).
+ * Sets a flag that suspends all rendering until context restoration.
+ */
+export function on_webgl_context_lost() {
+    wasm.on_webgl_context_lost();
+}
+
+/**
+ * Called from JS when the WebGL context is restored (canvas webglcontextrestored event).
+ * Recreates all WebGL resources (shaders, buffers, programs, FBOs) from scratch
+ * while preserving game state (map, economy, units, particles).
+ */
+export function on_webgl_context_restored() {
+    wasm.on_webgl_context_restored();
+}
+
+/**
  * Handle scroll wheel for zooming
  * @param {number} delta_y
  */
@@ -2956,6 +2973,9 @@ function __wbg_get_imports() {
         __wbg_enable_28bbeed576131d1f: function(arg0, arg1) {
             arg0.enable(arg1 >>> 0);
         },
+        __wbg_error_744744ff0c9861e6: function(arg0) {
+            console.error(arg0);
+        },
         __wbg_framebufferRenderbuffer_ba8bd5e008ee87eb: function(arg0, arg1, arg2, arg3, arg4) {
             arg0.framebufferRenderbuffer(arg1 >>> 0, arg2 >>> 0, arg3 >>> 0, arg4);
         },
@@ -3134,6 +3154,9 @@ function __wbg_get_imports() {
         },
         __wbg_viewport_affdf15c559df1e2: function(arg0, arg1, arg2, arg3, arg4) {
             arg0.viewport(arg1, arg2, arg3, arg4);
+        },
+        __wbg_warn_b1370d804fa3e259: function(arg0) {
+            console.warn(arg0);
         },
         __wbg_width_6d9315ecc7140ff6: function(arg0) {
             const ret = arg0.width;
