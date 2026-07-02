@@ -6339,7 +6339,7 @@ function _buildDetailCache() {
                 category: cat, id: item.id,
                 name: item.name || item.id, name_de: item.name_de || '',
                 icon: item.icon || '', description: item.description || '',
-                modelFile: cat === 'buildings' ? (_BUILDING_MODEL_FILE[item.id] || null) : null,
+                modelFile: cat === 'buildings' ? (_BUILDING_MODEL_FILE[BUILDING_RUST_NAME[item.id] || item.id] || null) : null,
                 spriteFile: cat === 'buildings' ? (_BUILDING_SPRITE[item.id] || null)
                           : cat === 'terrain' ? (item.spriteFile || _TERRAIN_SPRITE[item.name] || null) : null
             };

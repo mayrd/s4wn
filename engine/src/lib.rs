@@ -290,8 +290,10 @@ if (!is_water && v_terrain_id < 2.5) {
     lit *= shadow_factor;
 }
 if (!is_water && v_terrain_id < 2.5 && u_reflection_pass == 0) { // Shoreline foam
-    float terrain_grad = length(vec2(dFdx(v_terrain_id), dFdy(v_terrain_id)));
-    float near_water = smoothstep(0.04, 0.6, terrain_grad);
+    // Use constant blend factor instead of screen-space derivatives (dFdx/dFdy)
+    // for ANGLE compatibility. Water-adjacent tiles are identified via splat weights.
+    float water_proximity = v_splat.y * 0.3 + v_splat.z * 0.2 + v_splat.w * 0.5;
+    float near_water = smoothstep(0.02, 0.35, water_proximity);
     float foam_noise = sin(v_world_xz.x * 12.7 + v_world_xz.y * 17.3 + u_water_time * 2.5) * 0.5 + 0.5; // Animated foam edge
     float foam = near_water * (0.6 + foam_noise * 0.4) * day_light;
     vec3 foam_color = vec3(0.93, 0.95, 0.91);
@@ -303,8 +305,8 @@ float edge_factor = smoothstep(0.0, edge_zone, edge_dist);
 lit = mix(u_fog_color, lit, edge_factor);
 float vis = smoothstep(0.15, 0.6, v_visibility);
 lit = mix(u_fog_color, lit, vis);
-float fog_max_radius = max(u_resolution.x, u_resolution.y) * 0.5;
-float fog_screen_dist = length(gl_FragCoord.xy - u_resolution * 0.5);
+float fog_max_radius = max(u_resolution.x, u_resolution.y);
+float fog_screen_dist = length(gl_FragCoord.xy - u_resolution);
 float fog_factor = smoothstep(fog_max_radius * 0.35, fog_max_radius * 0.78, fog_screen_dist);
 float fog_strength = mix(0.05, 0.35, fog_factor) * day_light;
 float elevation_fog_mod = 1.0 - smoothstep(0.0, 0.45, v_elevation) * 0.7;
@@ -9963,10 +9965,10 @@ mod parse_map_json_tests {
 
     /// Mirror of the GLSL distance fog computation for test validation.
     #[allow(dead_code)]
-    fn compute_fog_factor(screen_x: f32, screen_y: f32, res_x: f32, res_y: f32, day_light: f32) -> f32 {
-        let max_radius = res_x.max(res_y) * 0.5;
-        let dx = screen_x - res_x * 0.5;
-        let dy = screen_y - res_y * 0.5;
+    fn compute_fog_factor(screen_x: f32, screen_y: f32, u_res_x: f32, u_res_y: f32, day_light: f32) -> f32 {
+        let max_radius = u_res_x.max(u_res_y);
+        let dx = screen_x - u_res_x;
+        let dy = screen_y - u_res_y;
         let dist = (dx * dx + dy * dy).sqrt();
         let t = ((dist - max_radius * 0.35) / (max_radius * 0.78 - max_radius * 0.35)).clamp(0.0, 1.0);
         let fog_factor = t * t * (3.0 - 2.0 * t); // smoothstep
@@ -10006,14 +10008,14 @@ mod parse_map_json_tests {
     #[test]
     fn test_fog_factor_zero_at_center() {
         // At screen center, fog factor should be 0 (no fog)
-        let f = compute_fog_factor(960.0, 540.0, 1920.0, 1080.0, 1.0);
+        let f = compute_fog_factor(960.0, 540.0, 960.0, 540.0, 1.0);
         assert!(f < 0.06, "fog at center should be near 0.05 (base haze), got {}", f);
     }
 
     #[test]
     fn test_fog_factor_full_at_corner() {
         // At screen corner, fog factor should be strong
-        let f = compute_fog_factor(0.0, 0.0, 1920.0, 1080.0, 1.0);
+        let f = compute_fog_factor(0.0, 0.0, 960.0, 540.0, 1.0);
         assert!(f > 0.20, "fog at corner should be strong, got {}", f);
         assert!(f <= 0.351, "fog at corner should not exceed 0.351, got {}", f);
     }
@@ -10021,16 +10023,16 @@ mod parse_map_json_tests {
     #[test]
     fn test_fog_factor_increases_with_distance() {
         // Farther from center = more fog
-        let near = compute_fog_factor(1000.0, 540.0, 1920.0, 1080.0, 1.0);
-        let far = compute_fog_factor(1500.0, 540.0, 1920.0, 1080.0, 1.0);
+        let near = compute_fog_factor(1000.0, 540.0, 960.0, 540.0, 1.0);
+        let far = compute_fog_factor(1500.0, 540.0, 960.0, 540.0, 1.0);
         assert!(far > near, "fog should increase with distance: near={}, far={}", near, far);
     }
 
     #[test]
     fn test_fog_factor_scales_with_resolution() {
         // Same relative position should produce same fog regardless of resolution
-        let f_hd = compute_fog_factor(960.0, 0.0, 1920.0, 1080.0, 1.0);
-        let f_4k = compute_fog_factor(1920.0, 0.0, 3840.0, 2160.0, 1.0);
+        let f_hd = compute_fog_factor(960.0, 0.0, 960.0, 540.0, 1.0);
+        let f_4k = compute_fog_factor(1920.0, 0.0, 1920.0, 1080.0, 1.0);
         assert!((f_hd - f_4k).abs() < 0.001,
             "fog should be resolution-independent: hd={}, 4k={}", f_hd, f_4k);
     }
@@ -10038,8 +10040,12 @@ mod parse_map_json_tests {
     #[test]
     fn test_fog_factor_daylight_modulates() {
         // Fog should be stronger during day, weaker at night
-        let day_fog = compute_fog_factor(1500.0, 540.0, 1920.0, 1080.0, 1.0);
-        let night_fog = compute_fog_factor(1500.0, 540.0, 1920.0, 1080.0, 0.1);
+        let day_fog = compute_fog_factor(1500.0, 540.0, 960.0, 540.0, 1.0);
+        let night_fog = compute_fog_factor(1500.0, 540.0, 960.0, 540.0, 0.1);
+        assert!(day_fog > night_fog,
+            "day fog ({}) should be stronger than night fog ({})", day_fog, night_fog);
+        assert!(night_fog < 0.06,
+            "night fog should be near-zero, got {}", night_fog);
     }
 
     // ── Phase 7: Elevation-Based Haze Tests ──────────────────────────────
@@ -10758,11 +10764,11 @@ mod parse_map_json_tests {
         );
     }
 /// Mirror of the GLSL shoreline foam computation for test validation.
-    /// Simulates the screen-space derivative of v_terrain_id at a terrain boundary.
+    /// Computes foam from water_proximity (derived from splat weights: v_splat.y*0.3 + v_splat.z*0.2 + v_splat.w*0.5).
     #[allow(dead_code)]
-    fn compute_shoreline_foam_rust(terrain_gradient: f32, day_light: f32) -> f32 {
-        // mirrors: smoothstep(0.04, 0.6, terrain_grad)
-        let t = ((terrain_gradient - 0.04) / (0.6 - 0.04)).clamp(0.0, 1.0);
+    fn compute_shoreline_foam_rust(water_proximity: f32, day_light: f32) -> f32 {
+        // mirrors: smoothstep(0.02, 0.35, water_proximity)
+        let t = ((water_proximity - 0.02) / (0.35 - 0.02)).clamp(0.0, 1.0);
         let near_water = t * t * (3.0 - 2.0 * t);
         near_water * day_light
     }
@@ -10774,16 +10780,16 @@ mod parse_map_json_tests {
             "fragment shader must contain shoreline foam code"
         );
         assert!(
-            FRAGMENT_SHADER.contains("dFdx(v_terrain_id)"),
-            "fragment shader must use dFdx for terrain boundary detection"
+            FRAGMENT_SHADER.contains("water_proximity"),
+            "fragment shader must compute water_proximity from splat weights"
         );
         assert!(
-            FRAGMENT_SHADER.contains("dFdy(v_terrain_id)"),
-            "fragment shader must use dFdy for terrain boundary detection"
+            FRAGMENT_SHADER.contains("v_splat.y * 0.3 + v_splat.z * 0.2 + v_splat.w * 0.5"),
+            "fragment shader must use splat weights for water proximity"
         );
         assert!(
-            FRAGMENT_SHADER.contains("smoothstep(0.04, 0.6, terrain_grad)"),
-            "fragment shader must smoothstep terrain gradient for shoreline"
+            FRAGMENT_SHADER.contains("smoothstep(0.02, 0.35, water_proximity)"),
+            "fragment shader must smoothstep water proximity for shoreline"
         );
         assert!(
             FRAGMENT_SHADER.contains("foam_color"),
