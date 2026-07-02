@@ -6306,7 +6306,7 @@ var _BUILDING_MODEL_FILE = {
     'SulfurMine': 'sulfurmine.json', 'IronSmelter': 'ironsmelter.json',
     'GoldSmelter': 'goldsmelter.json', 'Toolsmith': 'toolsmith.json',
     'Weaponsmith': 'weaponsmith.json', 'Barracks': 'barracks.json',
-    'GuardTower': 'guardtower.json', 'Castle': 'castle.json',
+    'GuardTower': 'guardtower.json', 'Castle': 'fortress.json',
     'Temple': 'temple.json', 'Sanctuary': 'sanctuary.json',
     'Vineyard': 'vineyard.json', 'Apiary': 'apiary.json',
     'Storage': 'storage.json', 'Marketplace': 'marketplace.json',
@@ -6388,7 +6388,7 @@ function ModelPreviewRenderer(canvas, modelJson) {
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idx, gl.STATIC_DRAW);
 
     // Orbit state
-    var rotY = 0.8, rotX = 0.5, zoom = 2.5;
+    var rotY = 0.8, rotX = 0.5, zoom;
     var autoRotate = true, dragging = false, lastX = 0, lastY = 0;
 
     canvas.addEventListener('mousedown', function(e) { dragging = true; autoRotate = false; lastX = e.clientX; lastY = e.clientY; e.preventDefault(); });
@@ -6434,6 +6434,9 @@ function ModelPreviewRenderer(canvas, modelJson) {
     function scaleMatrix(x,y,z) { return [x,0,0,0, 0,y,0,0, 0,0,z,0, 0,0,0,1]; }
 
     var aabb = model.aabb || [0,0,0,1,1,1];
+    var ex = aabb[3]-aabb[0], ey = aabb[4]-aabb[1], ez = aabb[5]-aabb[2];
+    var maxExtent = Math.max(ex, ey, ez);
+    zoom = Math.max(0.8, Math.min(8.0, maxExtent * 2.2));
     var cx = (aabb[0]+aabb[3])/2, cy = (aabb[1]+aabb[4])/2, cz = (aabb[2]+aabb[5])/2;
     var animStart = performance.now();
 
