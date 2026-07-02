@@ -290,8 +290,6 @@ if (!is_water && v_terrain_id < 2.5) {
     lit *= shadow_factor;
 }
 if (!is_water && v_terrain_id < 2.5 && u_reflection_pass == 0) { // Shoreline foam
-    // Use constant blend factor instead of screen-space derivatives (dFdx/dFdy)
-    // for ANGLE compatibility. Water-adjacent tiles are identified via splat weights.
     float water_proximity = v_splat.y * 0.3 + v_splat.z * 0.2 + v_splat.w * 0.5;
     float near_water = smoothstep(0.02, 0.35, water_proximity);
     float foam_noise = sin(v_world_xz.x * 12.7 + v_world_xz.y * 17.3 + u_water_time * 2.5) * 0.5 + 0.5; // Animated foam edge
