@@ -1,7 +1,7 @@
 # Rendering Pipeline Audit Checklist — Phase 7
 
 > Generated: 2026-06-23 | Session 188
-> Baseline: 947 tests passing | WASM 280KB | 84 building models | Updated: 2026-07-02 Session 344
+> Baseline: 967 tests passing | WASM 288KB | 84 building models | Updated: 2026-07-02 Session 348
 
 ## Pipeline Render Order
 
@@ -69,7 +69,7 @@
 - [x] Rim lighting (Fresnel edge highlight) for building models
 - [x] Roof specular highlights — tight (pow 64), warm-tinted (S342)
 - [ ] SHOULD: Verify models render correctly at all zoom/LOD levels
-- [ ] NICE: LOD for distant building models
+- [x] NICE: LOD for distant building models — DONE S346 (80-tile distance culling)
 
 ### Particles
 - [x] Combat effects (death particles)
@@ -89,7 +89,7 @@
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
 | WASM size | under 300KB | 280KB | PASS |
-| Tests passing | All | 947 | PASS |
+| Tests passing | All | 967 | PASS |
 | Draw calls/frame | under 200 | 7~20 | PASS |
 | FPS desktop 1080p | 60 | TBD | TODO |
 | FPS RPI5 720p | 30 | TBD | TODO |
@@ -133,7 +133,7 @@
 
 ## Stability
 
-- [x] cargo test: 947 passed, 0 failed
+- [x] cargo test: 967 passed, 0 failed
 - [x] WASM build successful
 - [x] No known shader compilation errors
 - [x] Fix 69: u_resolution missing uniform
@@ -148,11 +148,11 @@
 - [x] WASM export audit complete
 - [x] pkg/ via git add -f engine/pkg/
 - [x] Orphaned WebGL resources cleanup
-- [ ] SHOULD: WebGL context loss recovery
+- [x] SHOULD: WebGL context loss recovery — DONE S347
 - [ ] NICE: GPU object leak detection in test mode
 
 ## Summary
 
-Done: 50+ rendering features across 7 passes. WASM 280KB (under 300KB target). 947 tests. Clippy clean.
+Done: 50+ rendering features across 7 passes. WASM 288KB (under 300KB target). 967 tests. Clippy clean.
 Needs verification: 3 visual items (reflection FBO, water tile exclusion, reflection pass correctness). 2 FPS benchmarks pending. 
 Next: Visual verification by Daniel — sky colors, roof specular, desert mirage, shadow penumbra quality.
