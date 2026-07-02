@@ -289,6 +289,14 @@ float shadow_factor = mix(1.0, cs, day_light * 0.45);
 if (!is_water && v_terrain_id < 2.5) {
     lit *= shadow_factor;
 }
+if (!is_water && v_terrain_id < 2.5 && u_reflection_pass == 0) { // Shoreline foam
+    float terrain_grad = length(vec2(dFdx(v_terrain_id), dFdy(v_terrain_id)));
+    float near_water = smoothstep(0.04, 0.6, terrain_grad);
+    float foam_noise = sin(v_world_xz.x * 12.7 + v_world_xz.y * 17.3 + u_water_time * 2.5) * 0.5 + 0.5; // Animated foam edge
+    float foam = near_water * (0.6 + foam_noise * 0.4) * day_light;
+    vec3 foam_color = vec3(0.93, 0.95, 0.91);
+    lit = mix(lit, foam_color, foam * 0.55);
+}
 float edge_dist = v_edge_dist;
 float edge_zone = 8.0;
 float edge_factor = smoothstep(0.0, edge_zone, edge_dist);
@@ -10304,6 +10312,82 @@ mod parse_map_json_tests {
         assert!(
             FRAGMENT_SHADER.contains("255.0"),
             "fragment shader must dither at 1/255 precision"
+        );
+    }
+/// Mirror of the GLSL shoreline foam computation for test validation.
+    /// Simulates the screen-space derivative of v_terrain_id at a terrain boundary.
+    #[allow(dead_code)]
+    fn compute_shoreline_foam_rust(terrain_gradient: f32, day_light: f32) -> f32 {
+        // mirrors: smoothstep(0.04, 0.6, terrain_grad)
+        let t = ((terrain_gradient - 0.04) / (0.6 - 0.04)).clamp(0.0, 1.0);
+        let near_water = t * t * (3.0 - 2.0 * t);
+        near_water * day_light
+    }
+
+    #[test]
+    fn test_fragment_shader_has_shoreline_foam() {
+        assert!(
+            FRAGMENT_SHADER.contains("Shoreline foam"),
+            "fragment shader must contain shoreline foam code"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("dFdx(v_terrain_id)"),
+            "fragment shader must use dFdx for terrain boundary detection"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("dFdy(v_terrain_id)"),
+            "fragment shader must use dFdy for terrain boundary detection"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("smoothstep(0.04, 0.6, terrain_grad)"),
+            "fragment shader must smoothstep terrain gradient for shoreline"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("foam_color"),
+            "fragment shader must define foam_color for shoreline"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("u_reflection_pass == 0"),
+            "shoreline foam must be gated on reflection pass check"
+        );
+    }
+
+    #[test]
+    fn test_shoreline_foam_rust_zero_gradient() {
+        let foam = compute_shoreline_foam_rust(0.0, 0.8);
+        assert!(foam < 0.001, "zero gradient should produce no foam, got {}", foam);
+    }
+
+    #[test]
+    fn test_shoreline_foam_rust_large_gradient() {
+        let foam = compute_shoreline_foam_rust(1.0, 0.8);
+        assert!(foam > 0.5, "large gradient should produce strong foam, got {}", foam);
+    }
+
+    #[test]
+    fn test_shoreline_foam_rust_daylight_modulation() {
+        let foam_night = compute_shoreline_foam_rust(1.0, 0.05);
+        let foam_noon = compute_shoreline_foam_rust(1.0, 0.95);
+        assert!(foam_noon > foam_night * 5.0,
+            "daylight should strongly modulate foam: night={}, noon={}", foam_night, foam_noon);
+    }
+
+    #[test]
+    fn test_shoreline_foam_rust_output_range() {
+        for grad in [0.0, 0.1, 0.3, 0.6, 1.0, 2.0].iter() {
+            for dl in [0.0, 0.2, 0.5, 0.8, 1.0].iter() {
+                let foam = compute_shoreline_foam_rust(*grad, *dl);
+                assert!(foam >= 0.0 && foam <= 1.0,
+                    "foam out of [0,1]: grad={}, dl={}, foam={}", grad, dl, foam);
+            }
+        }
+    }
+
+    #[test]
+    fn test_shoreline_foam_shader_daylight_modulation() {
+        assert!(
+            FRAGMENT_SHADER.contains("near_water * (0.6 + foam_noise * 0.4) * day_light"),
+            "shoreline foam must include day_light modulation"
         );
     }
 }
