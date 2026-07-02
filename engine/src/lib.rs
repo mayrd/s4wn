@@ -2909,6 +2909,13 @@ impl App {
             gl.uniform1f(Some(loc), day_phase as f32);
         }
 
+        // Distance culling: skip building instances beyond MODEL_CULL_DISTANCE
+        // Camera world position (horizontal XZ plane maps to instance x,y)
+        let cam_x = ex;
+        let cam_z = ez;
+        let cull_dist_sq = model::MODEL_CULL_DISTANCE * model::MODEL_CULL_DISTANCE;
+        let mut _culled = 0u32;
+
         // Build model matrix helper
         let build_model_mat = |inst: &model::ModelInstance| -> [f32; 16] {
             let s = inst.scale;
@@ -2923,9 +2930,16 @@ impl App {
             ]
         };
 
-        // Group instances by model_id
+        // Group instances by model_id (with distance culling)
         let mut groups: std::collections::HashMap<u8, Vec<&model::ModelInstance>> = std::collections::HashMap::new();
         for inst in &self.model_instances {
+            let dx = inst.x - cam_x;
+            let dy = inst.y - cam_z;
+            let dist_sq = dx * dx + dy * dy;
+            if dist_sq > cull_dist_sq {
+                _culled += 1;
+                continue;
+            }
             groups.entry(inst.model_id).or_default().push(inst);
         }
 

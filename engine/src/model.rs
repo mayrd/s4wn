@@ -636,6 +636,20 @@ impl ModelInstance {
     }
 }
 
+/// Maximum distance (in tile units) from camera before building model instances are culled.
+/// Buildings beyond this distance are not rendered (performance optimization).
+pub const MODEL_CULL_DISTANCE: f32 = 80.0;
+
+/// Returns true if a model instance at (inst_x, inst_y) should be culled
+/// based on its distance from the camera at (cam_x, cam_z).
+/// Uses squared distance comparison for efficiency (avoids sqrt).
+pub fn is_model_culled(inst_x: f32, inst_y: f32, cam_x: f32, cam_z: f32) -> bool {
+    let dx = inst_x - cam_x;
+    let dy = inst_y - cam_z;
+    let dist_sq = dx * dx + dy * dy;
+    dist_sq > MODEL_CULL_DISTANCE * MODEL_CULL_DISTANCE
+}
+
 /// Compute a 4x4 model-view-projection matrix for a model instance.
 /// Returns column-major array of 16 floats.
 pub fn compute_mvp(
@@ -1353,4 +1367,56 @@ mod tests {
         let target_down = [0.0_f32, -3.0, 1.0];
         let h_down = compute_horizon_y(&eye, &target_down, 45.0);
         assert!((0.01..=0.99).contains(&h_down), "horizon_y (down) = {} (expected [0.01, 0.99])", h_down);
+    }
+
+    // ── Model instance distance culling tests ─────────────────────────────
+
+    #[test]
+    fn test_model_cull_zero_distance() {
+        // Instance at camera position — should never be culled
+        assert!(!is_model_culled(50.0, 50.0, 50.0, 50.0));
+    }
+
+    #[test]
+    fn test_model_cull_within_range() {
+        // 40 tiles away — well within 80-tile threshold
+        assert!(!is_model_culled(10.0, 10.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_model_cull_at_threshold() {
+        // Exactly 80 tiles on one axis — squared = 6400 = threshold
+        assert!(!is_model_culled(80.0, 0.0, 0.0, 0.0),
+            "Exactly at 80 should not be culled (equality)");
+    }
+
+    #[test]
+    fn test_model_cull_beyond_range() {
+        // 81 tiles away on one axis — beyond 80-tile threshold
+        assert!(is_model_culled(81.0, 0.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_model_cull_far_distance() {
+        // 200 tiles away — well beyond threshold
+        assert!(is_model_culled(200.0, 200.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_model_cull_diagonal() {
+        // Diagonal distance ~113 tiles > 80
+        assert!(is_model_culled(80.0, 80.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_model_cull_diagonal_within() {
+        // Diagonal distance ~70.7 tiles < 80
+        assert!(!is_model_culled(50.0, 50.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_model_cull_camera_offset() {
+        // Camera not at origin — relative distance matters
+        // Instance at (100,100), camera at (50,50) → distance ~70.7 < 80
+        assert!(!is_model_culled(100.0, 100.0, 50.0, 50.0));
     }
