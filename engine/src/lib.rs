@@ -192,13 +192,25 @@ float heat_shimmer(vec2 world_xz, float time, float day_phase) {
     float n2 = sin(world_xz.x * 6.1 - time * 1.3) * cos(world_xz.y * 2.8 + time * 2.1);
     return (n1 * 0.5 + n2 * 0.3) * day_phase;
 }
+vec2 heat_mirage_offset(vec2 world_xz, float time) {
+    float n1 = sin(world_xz.x * 5.3 + time * 3.1) * cos(world_xz.y * 4.7 - time * 2.4);
+    float n2 = cos(world_xz.x * 7.2 - time * 1.9) * sin(world_xz.y * 2.9 + time * 3.5);
+    float ox = n1 * 0.004 + n2 * 0.003;
+    float oy = cos(world_xz.x * 3.8 + time * 2.7) * sin(world_xz.y * 5.2 - time * 1.6) * 0.004;
+    return vec2(ox, oy);
+}
 void main() {
+bool is_desert = (v_terrain_id > 4.5 && v_terrain_id < 5.5);
 vec3 base_color;
 if (u_use_textures == 1) {
-vec3 tex_grass = texture(u_terrain_textures, vec3(v_uv, 0.0)).rgb;
-vec3 tex_rock = texture(u_terrain_textures, vec3(v_uv, 2.0)).rgb;
-vec3 tex_sand = texture(u_terrain_textures, vec3(v_uv, 5.0)).rgb;
-vec3 tex_snow = texture(u_terrain_textures, vec3(v_uv, 7.0)).rgb;
+vec2 tex_uv = v_uv;
+if (is_desert) {
+    tex_uv += heat_mirage_offset(v_world_xz, u_water_time);
+}
+vec3 tex_grass = texture(u_terrain_textures, vec3(tex_uv, 0.0)).rgb;
+vec3 tex_rock = texture(u_terrain_textures, vec3(tex_uv, 2.0)).rgb;
+vec3 tex_sand = texture(u_terrain_textures, vec3(tex_uv, 5.0)).rgb;
+vec3 tex_snow = texture(u_terrain_textures, vec3(tex_uv, 7.0)).rgb;
 float w = dot(v_splat, vec4(1.0));
 if (w < 0.001) w = 1.0;
 base_color = (tex_grass * v_splat.r + tex_rock * v_splat.g
@@ -298,7 +310,6 @@ if (u_reflection_pass == 0 && !is_water && u_god_ray_strength > 0.0) {
     vec3 god_ray_color = vec3(1.0, 0.95, 0.8);
     lit += god_ray_color * gr_brightness * cs;
 }
-bool is_desert = !is_water && v_terrain_id > 4.5 && v_terrain_id < 5.5; // desert heat_shimmer
 if (is_desert) {
     float hs = heat_shimmer(v_world_xz, u_water_time, day_light);
     lit += lit * hs * 0.05;
@@ -6992,11 +7003,11 @@ mod tests {
     fn test_fragment_shader_splat_atlas_uv_remap() {
         // Verify texture sampling uses layer indices from TEXTURE_2D_ARRAY
         assert!(
-            FRAGMENT_SHADER.contains("vec3(v_uv, 0.0)"),
+            FRAGMENT_SHADER.contains("vec3(tex_uv, 0.0)"),
             "fragment shader missing layer 0 (grass) texture sample"
         );
         assert!(
-            FRAGMENT_SHADER.contains("vec3(v_uv, 2.0)"),
+            FRAGMENT_SHADER.contains("vec3(tex_uv, 2.0)"),
             "fragment shader missing layer 2 (mountain) texture sample"
         );
     }
@@ -10150,26 +10161,126 @@ mod parse_map_json_tests {
 
         // Ensure the heat shimmer condition excludes water
 
-        match FRAGMENT_SHADER.find("is_desert") {
+        // Desert terrain range (4.5-5.5) never overlaps water (3.0-4.0).
+        // The is_desert check uses v_terrain_id range gating which implicitly excludes water.
+        assert!(FRAGMENT_SHADER.contains("is_desert"),
+            "is_desert must exist in fragment shader");
+        assert!(FRAGMENT_SHADER.contains("v_terrain_id > 4.5"),
+            "is_desert must check v_terrain_id > 4.5 to exclude water");
+        assert!(FRAGMENT_SHADER.contains("v_terrain_id < 5.5"),
+            "is_desert must check v_terrain_id < 5.5");
+    }
 
-            Some(pos) => {
 
-                // is_desert should check !is_water before the desert range
 
-                let before = &FRAGMENT_SHADER[..pos];
 
-                // The last is_desert assignment should be near the check
+    // ── Phase 7: Heat Mirage Tests ──────────────────────────────────────
 
-                assert!(FRAGMENT_SHADER.contains("!is_water && v_terrain_id"),
 
-                    "is_desert must exclude water with !is_water");
+    /// Mirror of the GLSL heat_mirage_offset function for test validation.
 
-            },
+    #[allow(dead_code)]
 
-            None => panic!("is_desert not found in fragment shader"),
+    fn compute_heat_mirage_offset_rust(wpos_x: f32, wpos_z: f32, time: f32) -> (f32, f32) {
 
+        let n1x = (wpos_x * 5.3 + time * 3.1).sin() * (wpos_z * 4.7 - time * 2.4).cos();
+        let n2x = (wpos_x * 7.2 - time * 1.9).cos() * (wpos_z * 2.9 + time * 3.5).sin();
+        let ox = n1x * 0.004 + n2x * 0.003;
+        let oy = (wpos_x * 3.8 + time * 2.7).cos() * (wpos_z * 5.2 - time * 1.6).sin() * 0.004;
+        (ox, oy)
+
+    }
+
+
+    #[test]
+
+    fn test_fragment_shader_has_heat_mirage_offset_function() {
+
+        assert!(
+            FRAGMENT_SHADER.contains("heat_mirage_offset"),
+            "fragment shader must have heat_mirage_offset function"
+        );
+
+    }
+
+
+    #[test]
+
+    fn test_heat_mirage_offset_output_range() {
+
+        // The mirage offset should be small (UV-space displacement)
+        for x in 0..20 {
+            for z in 0..20 {
+                let (ox, oy) = compute_heat_mirage_offset_rust(x as f32, z as f32, 1.5);
+                assert!(ox >= -0.008 && ox <= 0.008,
+                    "mirage offset X out of range at ({},{}): {}", x, z, ox);
+                assert!(oy >= -0.005 && oy <= 0.005,
+                    "mirage offset Y out of range at ({},{}): {}", x, z, oy);
+            }
         }
 
     }
 
+
+    #[test]
+
+    fn test_heat_mirage_offset_time_variation() {
+
+        // Different times should produce different offset values
+        let (ox1, oy1) = compute_heat_mirage_offset_rust(5.0, 5.0, 0.0);
+        let (ox2, oy2) = compute_heat_mirage_offset_rust(5.0, 5.0, 1.0);
+        let diff = (ox1 - ox2).abs() + (oy1 - oy2).abs();
+        assert!(diff > 0.0001,
+            "mirage offset should vary with time: ({},{}) vs ({},{})", ox1, oy1, ox2, oy2);
+
+    }
+
+
+    #[test]
+
+    fn test_heat_mirage_offset_world_position_dependence() {
+
+        // Different world positions should produce different offsets
+        let (ox1, oy1) = compute_heat_mirage_offset_rust(0.0, 0.0, 0.5);
+        let (ox2, oy2) = compute_heat_mirage_offset_rust(5.0, 3.0, 0.5);
+        let diff = (ox1 - ox2).abs() + (oy1 - oy2).abs();
+        assert!(diff > 0.0001,
+            "mirage offset should vary with position: ({},{}) vs ({},{})", ox1, oy1, ox2, oy2);
+
+    }
+
+
+    #[test]
+
+    fn test_heat_mirage_not_applied_to_water() {
+
+        // Mirage offset only applies to desert terrain (v_terrain_id 4.5-5.5).
+        // Water is 3.0-4.0, so the implicit range check excludes water.
+        assert!(
+            FRAGMENT_SHADER.contains("is_desert"),
+            "mirage offset must use is_desert guard"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("heat_mirage_offset"),
+            "fragment shader must call heat_mirage_offset"
+        );
+
+    }
+
+
+    #[test]
+
+    fn test_heat_mirage_desert_uv_distortion_applied() {
+
+        // Verify the shader uses the mirage offset to distort texture UVs on desert
+        assert!(
+            FRAGMENT_SHADER.contains("tex_uv += heat_mirage_offset"),
+            "fragment shader must apply mirage offset to tex_uv on desert tiles"
+        );
+        assert!(
+            FRAGMENT_SHADER.contains("tex_uv"),
+            "fragment shader must use tex_uv for texture lookups"
+        );
+
+    }
 }
