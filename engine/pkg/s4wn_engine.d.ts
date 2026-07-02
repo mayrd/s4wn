@@ -411,6 +411,7 @@ export class StatsInfo {
     free(): void;
     [Symbol.dispose](): void;
     fps: number;
+    frame_time_ms: number;
     game_time: number;
     ticks: number;
     zoom: number;
@@ -939,7 +940,6 @@ export interface InitOutput {
     readonly __wbg_set_unitinfo_stance: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_state: (a: number, b: number) => void;
     readonly __wbg_starterresult_free: (a: number, b: number) => void;
-    readonly __wbg_statsinfo_free: (a: number, b: number) => void;
     readonly __wbg_unitsavedata_free: (a: number, b: number) => void;
     readonly add_model_instance: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly add_starting_resources: (a: number, b: number) => number;
@@ -1087,11 +1087,14 @@ export interface InitOutput {
     readonly __wbg_get_unitdetailinfo_id: (a: number) => number;
     readonly __wbg_get_statsinfo_fps: (a: number) => number;
     readonly __wbg_get_destructioninfo_index: (a: number) => number;
+    readonly __wbg_get_statsinfo_frame_time_ms: (a: number) => number;
     readonly __wbg_get_statsinfo_zoom: (a: number) => number;
     readonly __wbg_get_buildingtileinfo_index: (a: number) => number;
     readonly __wbg_get_unitinfo_y: (a: number) => number;
     readonly __wbg_get_unitinfo_x: (a: number) => number;
     readonly __wbg_get_unitinfo_id: (a: number) => number;
+    readonly __wbg_set_statsinfo_ticks: (a: number, b: number) => void;
+    readonly __wbg_set_statsinfo_game_time: (a: number, b: number) => void;
     readonly __wbg_set_camerastate_vp_w: (a: number, b: number) => void;
     readonly __wbg_set_camerastate_vp_h: (a: number, b: number) => void;
     readonly __wbg_set_destructioninfo_y: (a: number, b: number) => void;
@@ -1105,6 +1108,8 @@ export interface InitOutput {
     readonly __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
     readonly __wbg_set_particleinfo_z: (a: number, b: number) => void;
     readonly __wbg_set_particleinfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_statsinfo_zoom: (a: number, b: number) => void;
+    readonly __wbg_set_statsinfo_frame_time_ms: (a: number, b: number) => void;
     readonly __wbg_set_moraleinfo_morale_percent: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_y: (a: number, b: number) => void;
     readonly __wbg_set_buildingtileinfo_x: (a: number, b: number) => void;
@@ -1116,9 +1121,6 @@ export interface InitOutput {
     readonly __wbg_set_unitdetailinfo_max_hp: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_hp: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_dying_progress: (a: number, b: number) => void;
-    readonly __wbg_set_statsinfo_zoom: (a: number, b: number) => void;
-    readonly __wbg_set_statsinfo_ticks: (a: number, b: number) => void;
-    readonly __wbg_set_statsinfo_game_time: (a: number, b: number) => void;
     readonly __wbg_get_unitinfo_max_hp: (a: number) => number;
     readonly __wbg_get_unitinfo_hp: (a: number) => number;
     readonly __wbg_get_particleinfo_z: (a: number) => number;
@@ -1126,7 +1128,6 @@ export interface InitOutput {
     readonly __wbg_get_particleinfo_r: (a: number) => number;
     readonly __wbg_get_particleinfo_g: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_dying_progress: (a: number) => number;
-    readonly __wbg_get_statsinfo_ticks: (a: number) => number;
     readonly __wbg_get_particleinfo_x: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_hp: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_max_hp: (a: number) => number;
@@ -1141,6 +1142,8 @@ export interface InitOutput {
     readonly __wbg_get_buildingtileinfo_x: (a: number) => number;
     readonly __wbg_get_unitinfo_kind: (a: number) => number;
     readonly __wbg_unitinfo_free: (a: number, b: number) => void;
+    readonly __wbg_statsinfo_free: (a: number, b: number) => void;
+    readonly __wbg_get_statsinfo_ticks: (a: number) => number;
     readonly __wbg_restorestateresult_free: (a: number, b: number) => void;
     readonly __wbg_unitdetailinfo_free: (a: number, b: number) => void;
     readonly __wbg_placebuildingresult_free: (a: number, b: number) => void;

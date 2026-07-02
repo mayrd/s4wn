@@ -1594,6 +1594,13 @@ export class StatsInfo {
     /**
      * @returns {number}
      */
+    get frame_time_ms() {
+        const ret = wasm.__wbg_get_statsinfo_frame_time_ms(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
     get game_time() {
         const ret = wasm.__wbg_get_statsinfo_game_time(this.__wbg_ptr);
         return ret;
@@ -1617,6 +1624,12 @@ export class StatsInfo {
      */
     set fps(arg0) {
         wasm.__wbg_set_statsinfo_fps(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set frame_time_ms(arg0) {
+        wasm.__wbg_set_statsinfo_frame_time_ms(this.__wbg_ptr, arg0);
     }
     /**
      * @param {number} arg0

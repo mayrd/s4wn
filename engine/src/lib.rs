@@ -809,6 +809,7 @@ struct App {
     fps_frame_count: u32,
     fps_last_time: f64,
     current_fps: u32,
+    last_frame_time_ms: f32,
     draw_call_count: u32,
 
     // Overlay (buildings + units) rendering
@@ -1596,6 +1597,7 @@ impl App {
             fps_frame_count: 0,
             fps_last_time: start_time,
             current_fps: 0,
+            last_frame_time_ms: 0.0,
             draw_call_count: 0,
             overlay_program,
             overlay_vao,
@@ -1977,8 +1979,6 @@ impl App {
             self.game_loop.reset_timing(elapsed);
         }
 
-        // Store frame time for overlay interpolation
-        self.last_frame_ms = now;
 
         // Process incoming network messages (feed GameStateSync into interpolator)
         let messages = self.network_manager.receive();
@@ -1997,6 +1997,7 @@ impl App {
         // Frame delta for frame-rate-independent fade
         let dt = (now - self.last_frame_ms) / 1000.0;
         self.last_frame_ms = now;
+        self.last_frame_time_ms = dt as f32;
         // Countdown to next lightning
         self.lightning_timer -= dt as f32;
         if self.lightning_timer <= 0.0 && self.lightning_flash <= 0.001 {
@@ -4017,6 +4018,7 @@ pub struct StatsInfo {
     pub ticks: u32,
     pub game_time: f32,
     pub zoom: f32,
+    pub frame_time_ms: f32,
 }
 
 /// Get engine stats as a typed struct (replaces JSON string, eliminating JSON.parse()).
@@ -4028,6 +4030,7 @@ pub fn get_stats() -> Option<StatsInfo> {
             ticks: app.game_loop.state.tick_count as u32,
             game_time: app.game_loop.state.game_time as f32,
             zoom: app.camera.zoom,
+            frame_time_ms: app.last_frame_time_ms,
         })
     }
 }
@@ -9552,6 +9555,7 @@ mod parse_map_json_tests {
             ticks: 12345,
             game_time: 45.6,
             zoom: 1.5,
+            frame_time_ms: 16.6,
         };
         assert_eq!(stats.fps, 60);
         assert_eq!(stats.ticks, 12345);
