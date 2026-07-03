@@ -640,6 +640,37 @@ impl ModelInstance {
 /// Buildings beyond this distance are not rendered (performance optimization).
 pub const MODEL_CULL_DISTANCE: f32 = 80.0;
 
+/// LOD tier distance thresholds (in tile units from camera).
+/// LOD 0 (near): 0 to LOD_NEAR     — full detail, render all instances.
+/// LOD 1 (mid):  LOD_NEAR to LOD_MID — medium detail.
+/// LOD 2 (far):  LOD_MID to MODEL_CULL_DISTANCE — low detail (skip some instances).
+pub const LOD_NEAR: f32 = 25.0;
+pub const LOD_MID: f32 = 50.0;
+
+/// Which LOD tier a model instance falls into based on squared distance from camera.
+/// 0 = near (full), 1 = mid, 2 = far (reduced). Values outside cull range return 2.
+pub fn compute_model_lod_level(dist_sq: f32) -> u8 {
+    if dist_sq <= LOD_NEAR * LOD_NEAR {
+        0 // near — full detail
+    } else if dist_sq <= LOD_MID * LOD_MID {
+        1 // mid
+    } else {
+        2 // far — reduced detail (or culled by caller)
+    }
+}
+
+/// Decide whether to skip (not render) an instance at far LOD distances
+/// based on its index within the model group. At LOD tier 2 (far),
+/// only every 3rd instance is rendered to reduce draw calls.
+/// Index 0 is always rendered so a single instance is never skipped.
+pub fn lod_skip_instance(dist_sq: f32, instance_index: usize) -> bool {
+    let level = compute_model_lod_level(dist_sq);
+    match level {
+        0 | 1 => false,                // near/mid — render all
+        _ => !instance_index.is_multiple_of(3),  // far — only every 3rd instance
+    }
+}
+
 /// Returns true if a model instance at (inst_x, inst_y) should be culled
 /// based on its distance from the camera at (cam_x, cam_z).
 /// Uses squared distance comparison for efficiency (avoids sqrt).
@@ -1419,4 +1450,103 @@ mod tests {
         // Camera not at origin — relative distance matters
         // Instance at (100,100), camera at (50,50) → distance ~70.7 < 80
         assert!(!is_model_culled(100.0, 100.0, 50.0, 50.0));
+    }
+
+    // ── Building model LOD tests ─────────────────────────────────────
+
+    #[test]
+    fn test_lod_near_renders_all() {
+        // Within LOD_NEAR (25 tiles): should not skip any instance
+        let dist_sq = 10.0 * 10.0 + 10.0 * 10.0; // ~14 tiles
+        assert!(!lod_skip_instance(dist_sq, 0));
+        assert!(!lod_skip_instance(dist_sq, 1));
+        assert!(!lod_skip_instance(dist_sq, 2));
+        assert!(!lod_skip_instance(dist_sq, 3));
+        assert!(!lod_skip_instance(dist_sq, 99));
+    }
+
+    #[test]
+    fn test_lod_mid_renders_all() {
+        // Between LOD_NEAR (25) and LOD_MID (50): should not skip any instance
+        let dist_sq = 40.0 * 40.0; // 40 tiles
+        assert!(!lod_skip_instance(dist_sq, 0));
+        assert!(!lod_skip_instance(dist_sq, 1));
+        assert!(!lod_skip_instance(dist_sq, 2));
+        assert!(!lod_skip_instance(dist_sq, 99));
+    }
+
+    #[test]
+    fn test_lod_far_skips_most() {
+        // Beyond LOD_MID (50 tiles): only every 3rd instance rendered
+        let dist_sq = 60.0 * 60.0; // 60 tiles
+        assert!(!lod_skip_instance(dist_sq, 0)); // index 0 always rendered
+        assert!(lod_skip_instance(dist_sq, 1));  // skip index 1
+        assert!(lod_skip_instance(dist_sq, 2));  // skip index 2
+        assert!(!lod_skip_instance(dist_sq, 3)); // render index 3
+        assert!(lod_skip_instance(dist_sq, 4));  // skip index 4
+        assert!(lod_skip_instance(dist_sq, 5));  // skip index 5
+        assert!(!lod_skip_instance(dist_sq, 6)); // render index 6
+    }
+
+    #[test]
+    fn test_lod_far_renders_index_zero_always() {
+        // A single far building should always be visible
+        let dist_sq = 75.0 * 75.0;
+        assert!(!lod_skip_instance(dist_sq, 0));
+    }
+
+    #[test]
+    fn test_lod_level_zero_for_zero_distance() {
+        assert_eq!(compute_model_lod_level(0.0), 0);
+    }
+
+    #[test]
+    fn test_lod_level_zero_at_near_edge() {
+        // Exactly at LOD_NEAR squared → still near
+        let dist_sq = LOD_NEAR * LOD_NEAR;
+        assert_eq!(compute_model_lod_level(dist_sq), 0);
+    }
+
+    #[test]
+    fn test_lod_level_one_just_beyond_near() {
+        // Just beyond LOD_NEAR → mid
+        let dist_sq = LOD_NEAR * LOD_NEAR + 0.01;
+        assert_eq!(compute_model_lod_level(dist_sq), 1);
+    }
+
+    #[test]
+    fn test_lod_level_one_at_mid_edge() {
+        // Exactly at LOD_MID squared → still mid
+        let dist_sq = LOD_MID * LOD_MID;
+        assert_eq!(compute_model_lod_level(dist_sq), 1);
+    }
+
+    #[test]
+    fn test_lod_level_two_just_beyond_mid() {
+        // Just beyond LOD_MID → far
+        let dist_sq = LOD_MID * LOD_MID + 0.01;
+        assert_eq!(compute_model_lod_level(dist_sq), 2);
+    }
+
+    #[test]
+    fn test_lod_level_two_at_cull_edge() {
+        // At MODEL_CULL_DISTANCE → still far (not yet culled, that's caller's job)
+        let dist_sq = MODEL_CULL_DISTANCE * MODEL_CULL_DISTANCE;
+        assert_eq!(compute_model_lod_level(dist_sq), 2);
+    }
+
+    #[test]
+    fn test_lod_level_two_beyond_cull() {
+        // Beyond MODEL_CULL_DISTANCE → still returns 2 (caller will cull)
+        let dist_sq = 100.0 * 100.0;
+        assert_eq!(compute_model_lod_level(dist_sq), 2);
+    }
+
+    #[test]
+    fn test_lod_near_no_skip_all_indices() {
+        // At camera position (zero distance): all indices should render
+        let dist_sq = 0.0;
+        for i in 0..100 {
+            assert!(!lod_skip_instance(dist_sq, i), "index {} should not be skipped at near", i);
+        }
     }

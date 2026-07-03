@@ -3196,8 +3196,8 @@ impl App {
             ]
         };
 
-        // Group instances by model_id (with distance culling)
-        let mut groups: std::collections::HashMap<u8, Vec<&model::ModelInstance>> = std::collections::HashMap::new();
+        // Group instances by model_id (with distance culling + LOD skipping)
+        let mut groups: std::collections::HashMap<u8, Vec<(f32, &model::ModelInstance)>> = std::collections::HashMap::new();
         for inst in &self.model_instances {
             let dx = inst.x - cam_x;
             let dy = inst.y - cam_z;
@@ -3206,7 +3206,7 @@ impl App {
                 _culled += 1;
                 continue;
             }
-            groups.entry(inst.model_id).or_default().push(inst);
+            groups.entry(inst.model_id).or_default().push((dist_sq, inst));
         }
 
         // Per-model instanced draw calls
@@ -3232,11 +3232,16 @@ impl App {
             // Bind this model's VAO (which has its own index buffer)
             gl.bind_vertex_array(Some(&gpu_model.vao));
 
-            // Build instance data arrays for this model group
+            // Build instance data arrays for this model group (with LOD skipping)
             let mut model_mats: Vec<f32> = Vec::new();
             let mut offsets: Vec<f32> = Vec::new();
             let mut anim_phases: Vec<f32> = Vec::new();
-            for inst in instances {
+            let mut lod_skipped = 0u32;
+            for (idx, (dist_sq, inst)) in instances.iter().enumerate() {
+                if model::lod_skip_instance(*dist_sq, idx) {
+                    lod_skipped += 1;
+                    continue;
+                }
                 let mat = build_model_mat(inst);
                 model_mats.extend_from_slice(&mat);
                 offsets.extend_from_slice(&[0.0f32, 0.0, 0.0]);
@@ -3297,15 +3302,19 @@ impl App {
                 gl.vertex_attrib_divisor(8, 1);
             }
 
-            // Instanced draw call for this model group
-            let instance_count = instances.len() as i32;
+            // Instanced draw call for this model group (skip if all LOD-skipped)
+            let rendered_count = (instances.len() as u32).saturating_sub(lod_skipped) as i32;
+            if rendered_count == 0 {
+                gl.bind_vertex_array(None);
+                continue;
+            }
             self.draw_call_count += 1;
             gl.draw_elements_instanced_with_i32(
                 WebGl2RenderingContext::TRIANGLES,
                 gpu_model.index_count,
                 WebGl2RenderingContext::UNSIGNED_SHORT,
                 0,
-                instance_count,
+                rendered_count,
             );
 
             // Reset instanced divisor for next group
