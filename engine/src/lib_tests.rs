@@ -2920,6 +2920,37 @@ mod parse_map_json_tests {
     }
 
     #[test]
+    fn test_compute_frametime_histogram_empty() {
+        let result = compute_frametime_histogram(&[]);
+        assert_eq!(result, vec![0u32; 8]);
+    }
+
+    #[test]
+    fn test_compute_frametime_histogram_all_zeros_skipped() {
+        let times = [0.0f32; 128];
+        let result = compute_frametime_histogram(&times);
+        assert_eq!(result, vec![0u32; 8]);
+    }
+
+    #[test]
+    fn test_compute_frametime_histogram_distribution() {
+        // Distribution across buckets: 8ms->1 (>= 8.0), 10ms->1, 14ms->2, 18ms->3,
+        // 22ms->4, 30ms->5, 40ms->6, 60ms->7 (bucket 0 has no values)
+        let times = [0.008, 0.010, 0.014, 0.018, 0.022, 0.030, 0.040, 0.060];
+        let result = compute_frametime_histogram(&times);
+        assert_eq!(result, vec![0, 2, 1, 1, 1, 1, 1, 1]);
+    }
+
+    #[test]
+    fn test_compute_frametime_histogram_boundaries() {
+        // Exact cutoff boundaries: 7.999ms->0, 8ms->1 (>= 8.0), 12ms->2 (>= 12.0),
+        // 33ms->6 (>= 33.0), 49.999ms->6, 50ms->7 (>= 50.0), 100ms->7
+        let times = [0.007999, 0.008, 0.012, 0.033, 0.049999, 0.05, 0.10];
+        let result = compute_frametime_histogram(&times);
+        assert_eq!(result, vec![1, 1, 1, 0, 0, 0, 2, 2]);
+    }
+
+    #[test]
     fn test_first_frame_diag_flag_structural() {
         // Verify first_frame_diag_done field exists on App struct and is a bool.
         // This flag gates the RENDER_DIAG console.log per init/context-restore cycle.

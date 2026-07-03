@@ -211,6 +211,9 @@ struct App {
     fps_accum: f64,
     fps_sample_count: u64,
     fps_visible: bool,
+    // Frametime ring buffer for histogram display
+    frame_times: Vec<f32>,
+    frame_time_write_idx: usize,
     // Overlay (buildings + units) rendering
     overlay_program: WebGlProgram,
     overlay_vao: WebGlVertexArrayObject,
@@ -233,6 +236,8 @@ struct App {
     speed_multiplier: f64,
     // Pause state
     paused: bool,
+    // Day/night cycle override (None = use game time, Some(0.0-1.0) = fixed phase)
+    day_phase_override: Option<f64>,
     // Terrain texture support (texture created + managed by JS)
     terrain_tex_loc: Option<web_sys::WebGlUniformLocation>,
     use_textures_loc: Option<web_sys::WebGlUniformLocation>,
@@ -1011,6 +1016,8 @@ impl App {
             fps_accum: 0.0,
             fps_sample_count: 0,
             fps_visible: true,
+            frame_times: vec![0.0f32; 128],
+            frame_time_write_idx: 0,
             overlay_program,
             overlay_vao,
             overlay_pos_buffer,
@@ -1027,6 +1034,7 @@ impl App {
             last_frame_ms: 0.0,
             speed_multiplier: 1.0,
             paused: false,
+            day_phase_override: None,
             terrain_tex_loc,
             use_textures_loc,
             uvs_buffer: Some(uvs_buffer),
@@ -1416,7 +1424,7 @@ impl App {
 
         // Compute day_phase from game time: cycle ~ 5 minutes of real-time per day
         // Day cycle = 300 seconds / 10 TPS = 3000 ticks per day
-        let day_phase = (self.game_loop.state.game_time / 300.0) % 1.0;
+        let day_phase = match self.day_phase_override { Some(dp) => dp, None => (self.game_loop.state.game_time / 300.0) % 1.0, };
         let (mut sky_r, mut sky_g, mut sky_b) = sky_color(day_phase);
 
         // ── Phase 7: Lightning flashes ──────────────────────────────────────
@@ -1424,6 +1432,10 @@ impl App {
         let dt = (now - self.last_frame_ms) / 1000.0;
         self.last_frame_ms = now;
         self.last_frame_time_ms = dt as f32;
+        // Store frametime into ring buffer for histogram
+        let idx = self.frame_time_write_idx % 128;
+        self.frame_times[idx] = dt as f32;
+        self.frame_time_write_idx += 1;
         // Countdown to next lightning
         self.lightning_timer -= dt as f32;
         if self.lightning_timer <= 0.0 && self.lightning_flash <= 0.001 {
@@ -3411,7 +3423,41 @@ pub struct StatsInfo {
 }
 
 /// Get engine stats as a typed struct (replaces JSON string, eliminating JSON.parse()).
+// (wasm_bindgen removed - not needed for private fn)
+/// Compute frametime histogram from a ring buffer of frame times (in seconds).
+/// Returns 8 buckets representing frame time ranges in milliseconds.
+/// Buckets: <8ms, 8-12ms, 12-16ms, 16-20ms, 20-25ms, 25-33ms, 33-50ms, >50ms
+#[allow(dead_code)]
+pub(crate) fn compute_frametime_histogram(times: &[f32]) -> Vec<u32> {
+    let mut buckets = [0u32; 8];
+    for &t in times {
+        if t <= 0.0 { continue; }
+        let ms = t * 1000.0;
+        let bucket = if ms < 8.0 { 0 }
+        else if ms < 12.0 { 1 }
+        else if ms < 16.0 { 2 }
+        else if ms < 20.0 { 3 }
+        else if ms < 25.0 { 4 }
+        else if ms < 33.0 { 5 }
+        else if ms < 50.0 { 6 }
+        else { 7 };
+        buckets[bucket] += 1;
+    }
+    buckets.to_vec()
+}
+
 #[wasm_bindgen]
+pub fn get_frametime_histogram() -> Vec<u32> {
+    unsafe {
+        if let Some(ref app) = APP {
+            compute_frametime_histogram(&app.frame_times)
+        } else {
+            vec![0u32; 8]
+        }
+    }
+}
+
+/// Engine stats exported as structured type (avoids JSON.parse overhead).
 pub fn get_stats() -> Option<StatsInfo> {
     unsafe {
         (*std::ptr::addr_of!(APP)).as_ref().map(|app| StatsInfo {
@@ -4490,6 +4536,17 @@ pub fn set_game_speed(multiplier: f64) {
     unsafe {
         if let Some(ref mut app) = APP {
             app.speed_multiplier = multiplier.clamp(0.25, 8.0);
+        }
+    }
+}
+
+/// Override the day/night cycle phase. Pass 0.0 (midnight) to 1.0 (next midnight).
+/// Pass a negative value to clear the override and resume the game-time cycle.
+#[wasm_bindgen]
+pub fn set_day_phase(phase: f64) {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.day_phase_override = if phase < 0.0 { None } else { Some(phase.clamp(0.0, 1.0)) };
         }
     }
 }

@@ -587,6 +587,8 @@ export function get_camera_state(): CameraState | undefined;
 
 export function get_draw_calls(): number;
 
+export function get_frametime_histogram(): Uint32Array;
+
 /**
  * Get the complete game state as a typed struct for save/load.
  * JS side reconstructs JSON from typed fields for localStorage compatibility.
@@ -621,11 +623,6 @@ export function get_player_nation(): NationInfo | undefined;
  * Use RESOURCE_NAMES_BY_ID (data.js) for JS-side name lookup.
  */
 export function get_resource_counts_by_id(): Uint32Array;
-
-/**
- * Get engine stats as a typed struct (replaces JSON string, eliminating JSON.parse()).
- */
-export function get_stats(): StatsInfo | undefined;
 
 export function get_tile_at(x: number, y: number): TileInfo | undefined;
 
@@ -789,6 +786,12 @@ export function rotate_camera_azimuth(delta_deg: number): void;
  * Used by minimap click-to-center feature.
  */
 export function set_camera_center(x: number, y: number): void;
+
+/**
+ * Override the day/night cycle phase. Pass 0.0 (midnight) to 1.0 (next midnight).
+ * Pass a negative value to clear the override and resume the game-time cycle.
+ */
+export function set_day_phase(phase: number): void;
 
 /**
  * Receive pending network messages as JSON strings.
@@ -1035,12 +1038,12 @@ export interface InitOutput {
     readonly get_building_summary: () => [number, number];
     readonly get_camera_state: () => number;
     readonly get_draw_calls: () => number;
+    readonly get_frametime_histogram: () => [number, number];
     readonly get_game_state: () => number;
     readonly get_map_data: () => [number, number];
     readonly get_particles: () => [number, number];
     readonly get_player_nation: () => number;
     readonly get_resource_counts_by_id: () => [number, number];
-    readonly get_stats: () => number;
     readonly get_tile_at: (a: number, b: number) => number;
     readonly get_tool_counts: () => [number, number];
     readonly get_unit_info: (a: number) => number;
@@ -1084,6 +1087,7 @@ export interface InitOutput {
     readonly restore_game_state: (a: number, b: number) => number;
     readonly rotate_camera_azimuth: (a: number) => void;
     readonly set_camera_center: (a: number, b: number) => void;
+    readonly set_day_phase: (a: number) => void;
     readonly set_game_speed: (a: number) => void;
     readonly set_player_nation_by_id: (a: number) => number;
     readonly set_show_full_map: (a: number) => void;
@@ -1125,86 +1129,86 @@ export interface InitOutput {
     readonly __wbg_set_unitdetailinfo_id: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_id: (a: number, b: number) => void;
     readonly __wbg_get_tileinfo_elevation: (a: number) => number;
-    readonly __wbg_get_particleinfo_r: (a: number) => number;
-    readonly __wbg_get_particleinfo_g: (a: number) => number;
-    readonly __wbg_get_buildingtileinfo_index: (a: number) => number;
-    readonly __wbg_get_statsinfo_zoom: (a: number) => number;
-    readonly __wbg_get_statsinfo_game_time: (a: number) => number;
-    readonly __wbg_get_statsinfo_frame_time_ms: (a: number) => number;
-    readonly __wbg_get_statsinfo_fps_avg: (a: number) => number;
-    readonly __wbg_get_statsinfo_fps: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_y: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_x: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_id: (a: number) => number;
-    readonly __wbg_get_unitdetailinfo_dying_progress: (a: number) => number;
-    readonly __wbg_get_particleinfo_z: (a: number) => number;
-    readonly __wbg_get_particleinfo_y: (a: number) => number;
+    readonly __wbg_get_statsinfo_game_time: (a: number) => number;
+    readonly __wbg_get_statsinfo_fps: (a: number) => number;
+    readonly __wbg_get_destructioninfo_index: (a: number) => number;
+    readonly __wbg_get_statsinfo_frame_time_ms: (a: number) => number;
+    readonly __wbg_get_statsinfo_zoom: (a: number) => number;
+    readonly __wbg_get_buildingtileinfo_index: (a: number) => number;
     readonly __wbg_get_unitinfo_y: (a: number) => number;
     readonly __wbg_get_unitinfo_x: (a: number) => number;
     readonly __wbg_get_unitinfo_id: (a: number) => number;
-    readonly __wbg_get_destructioninfo_index: (a: number) => number;
-    readonly __wbg_set_unitinfo_hp: (a: number, b: number) => void;
-    readonly __wbg_set_unitinfo_max_hp: (a: number, b: number) => void;
+    readonly __wbg_set_camerastate_vp_w: (a: number, b: number) => void;
+    readonly __wbg_set_camerastate_vp_h: (a: number, b: number) => void;
     readonly __wbg_set_statsinfo_ticks: (a: number, b: number) => void;
-    readonly __wbg_set_unitinfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_statsinfo_game_time: (a: number, b: number) => void;
     readonly __wbg_set_statsinfo_fps_min: (a: number, b: number) => void;
     readonly __wbg_set_destructioninfo_y: (a: number, b: number) => void;
     readonly __wbg_set_destructioninfo_x: (a: number, b: number) => void;
-    readonly __wbg_set_statsinfo_game_time: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_y: (a: number, b: number) => void;
     readonly __wbg_set_unitinfo_x: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_max_hp: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_hp: (a: number, b: number) => void;
+    readonly __wbg_set_tileinfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_tileinfo_resource: (a: number, b: number) => void;
+    readonly __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_z: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_y: (a: number, b: number) => void;
     readonly __wbg_set_statsinfo_zoom: (a: number, b: number) => void;
     readonly __wbg_set_statsinfo_fps_avg: (a: number, b: number) => void;
     readonly __wbg_set_statsinfo_frame_time_ms: (a: number, b: number) => void;
+    readonly __wbg_set_moraleinfo_morale_percent: (a: number, b: number) => void;
+    readonly __wbg_set_buildingtileinfo_y: (a: number, b: number) => void;
+    readonly __wbg_set_buildingtileinfo_x: (a: number, b: number) => void;
+    readonly __wbg_set_unitinfo_kind: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_g: (a: number, b: number) => void;
+    readonly __wbg_set_particleinfo_r: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_y: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_x: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_max_hp: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_hp: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_dying_progress: (a: number, b: number) => void;
     readonly __wbg_set_unitdetailinfo_assigned_building: (a: number, b: number) => void;
-    readonly __wbg_set_moraleinfo_morale_percent: (a: number, b: number) => void;
-    readonly __wbg_set_particleinfo_z: (a: number, b: number) => void;
-    readonly __wbg_set_camerastate_vp_w: (a: number, b: number) => void;
-    readonly __wbg_set_camerastate_vp_h: (a: number, b: number) => void;
-    readonly __wbg_set_particleinfo_y: (a: number, b: number) => void;
-    readonly __wbg_set_buildingtileinfo_y: (a: number, b: number) => void;
-    readonly __wbg_set_buildingtileinfo_x: (a: number, b: number) => void;
-    readonly __wbg_set_unitinfo_kind: (a: number, b: number) => void;
-    readonly __wbg_set_particleinfo_g: (a: number, b: number) => void;
-    readonly __wbg_set_particleinfo_r: (a: number, b: number) => void;
-    readonly __wbg_set_tileinfo_y: (a: number, b: number) => void;
-    readonly __wbg_set_tileinfo_resource: (a: number, b: number) => void;
-    readonly __wbg_set_tileinfo_elevation: (a: number, b: number) => void;
-    readonly __wbg_get_buildingtileinfo_y: (a: number) => number;
-    readonly __wbg_get_buildingtileinfo_x: (a: number) => number;
-    readonly __wbg_get_camerastate_vp_w: (a: number) => number;
-    readonly __wbg_get_camerastate_vp_h: (a: number) => number;
     readonly __wbg_get_unitinfo_max_hp: (a: number) => number;
-    readonly __wbg_get_unitinfo_kind: (a: number) => number;
     readonly __wbg_get_unitinfo_hp: (a: number) => number;
-    readonly __wbg_get_unitdetailinfo_max_hp: (a: number) => number;
+    readonly __wbg_get_particleinfo_z: (a: number) => number;
+    readonly __wbg_get_particleinfo_y: (a: number) => number;
+    readonly __wbg_get_particleinfo_r: (a: number) => number;
+    readonly __wbg_get_statsinfo_fps_avg: (a: number) => number;
+    readonly __wbg_get_particleinfo_g: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_dying_progress: (a: number) => number;
+    readonly __wbg_get_statsinfo_ticks: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_assigned_building: (a: number) => number;
+    readonly __wbg_get_particleinfo_x: (a: number) => number;
     readonly __wbg_get_unitdetailinfo_hp: (a: number) => number;
+    readonly __wbg_get_unitdetailinfo_max_hp: (a: number) => number;
+    readonly __wbg_get_moraleinfo_morale_bonus: (a: number) => number;
+    readonly __wbg_tileinfo_free: (a: number, b: number) => void;
+    readonly __wbg_get_tileinfo_y: (a: number) => number;
     readonly __wbg_get_destructioninfo_y: (a: number) => number;
     readonly __wbg_get_destructioninfo_x: (a: number) => number;
-    readonly __wbg_tileinfo_free: (a: number, b: number) => void;
-    readonly __wbg_unitdetailinfo_free: (a: number, b: number) => void;
-    readonly __wbg_get_particleinfo_x: (a: number) => number;
-    readonly __wbg_get_tileinfo_y: (a: number) => number;
-    readonly __wbg_get_moraleinfo_morale_bonus: (a: number) => number;
-    readonly __wbg_get_statsinfo_ticks: (a: number) => number;
+    readonly __wbg_get_camerastate_vp_w: (a: number) => number;
     readonly __wbg_get_statsinfo_fps_min: (a: number) => number;
-    readonly __wbg_get_unitdetailinfo_assigned_building: (a: number) => number;
-    readonly __wbg_startingresourcesresult_free: (a: number, b: number) => void;
+    readonly __wbg_get_camerastate_vp_h: (a: number) => number;
+    readonly __wbg_get_buildingtileinfo_y: (a: number) => number;
+    readonly __wbg_get_buildingtileinfo_x: (a: number) => number;
+    readonly __wbg_get_unitinfo_kind: (a: number) => number;
     readonly __wbg_unitinfo_free: (a: number, b: number) => void;
     readonly __wbg_restorestateresult_free: (a: number, b: number) => void;
+    readonly __wbg_unitdetailinfo_free: (a: number, b: number) => void;
     readonly __wbg_placebuildingresult_free: (a: number, b: number) => void;
-    readonly startingresourcesresult_ok: (a: number) => number;
-    readonly restorestateresult_error: (a: number) => [number, number];
-    readonly restorestateresult_ok: (a: number) => number;
-    readonly startingresourcesresult_error: (a: number) => [number, number];
-    readonly placebuildingresult_kind: (a: number) => number;
+    readonly __wbg_startingresourcesresult_free: (a: number, b: number) => void;
     readonly placebuildingresult_ok: (a: number) => number;
     readonly placebuildingresult_idx: (a: number) => number;
+    readonly placebuildingresult_kind: (a: number) => number;
     readonly placebuildingresult_error: (a: number) => [number, number];
+    readonly startingresourcesresult_ok: (a: number) => number;
+    readonly restorestateresult_error: (a: number) => [number, number];
+    readonly startingresourcesresult_error: (a: number) => [number, number];
+    readonly restorestateresult_ok: (a: number) => number;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __externref_table_alloc: () => number;

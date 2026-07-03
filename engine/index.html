@@ -1604,6 +1604,7 @@
     <br><label style="display:block;margin-top:4px;cursor:pointer;color:#8af;font-size:10px"><input type="checkbox" id="dbg-fullmap" onchange="toggleFullMap(this.checked)"> Show Full Map</label>
     <label style="display:block;margin-top:2px;cursor:pointer;color:#8af;font-size:10px"><input type="checkbox" id="dbg-resources" onchange="toggleResources(this.checked)"> Show Resources</label>
     <label style="display:block;margin-top:2px;cursor:pointer;color:#8af;font-size:10px"><input type="checkbox" id="dbg-buildings" onchange="toggleBuildingDebug(this.checked)"> Show Building Debug</label>
+    <br><label style="display:block;margin-top:4px;cursor:pointer;color:#8af;font-size:10px"><span>Time of Day</span> <input type="range" id="dbg-dayphase" min="0" max="100" value="25" step="1" style="width:80px;vertical-align:middle;margin-left:4px" oninput="setDayPhase(this.value/100)"><button id="dbg-dayphase-reset" style="margin-left:4px;padding:0 4px;font-size:9px;background:none;border:1px solid #8af;border-radius:2px;color:#8af;cursor:pointer" title="Reset to game cycle">reset</button></label>
   </div>
 </div>
 
@@ -1694,6 +1695,7 @@ import init, {
     rotate_camera_azimuth,
     set_show_full_map,
     get_draw_calls,
+    get_frametime_histogram,
     toggle_fps_visible,
     reset_fps_stats,
     load_map_json,
@@ -1711,7 +1713,7 @@ import init, {
     wasm_garrison_unit,
     wasm_ungarrison_unit,
     get_particles,
-} from './pkg/s4wn_engine.js?v=101';
+} from './pkg/s4wn_engine.js?v=102';
 
 // ── Debug System (#48) ────────────────────────────────────────────────
 // Log levels: 0=OFF, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
@@ -2359,6 +2361,26 @@ window.toggleResources = function(on) {
 window.toggleBuildingDebug = function(on) {
     window._s4wn_show_building_debug = on;
 };
+/// Time-of-day debug slider: calls Rust set_day_phase().
+/// Pass 0.0-1.0 to lock phase or -1 to resume game-time cycle.
+window.setDayPhase = function(phase) {
+    if (typeof set_day_phase === "function") {
+        set_day_phase(phase);
+        if (phase < 0) {
+            document.getElementById("dbg-dayphase").value = 25;
+        }
+    }
+};
+// Reset button handler
+document.addEventListener("DOMContentLoaded", function() {
+    const resetBtn = document.getElementById("dbg-dayphase-reset");
+    if (resetBtn) {
+        resetBtn.addEventListener("click", function() {
+            document.getElementById("dbg-dayphase").value = 25;
+            window.setDayPhase(-1);
+        });
+    }
+});
 document.addEventListener('DOMContentLoaded', () => {
     const fpsEl = document.getElementById('fps');
     if (fpsEl) {
@@ -6171,6 +6193,21 @@ async function main() {
                 const dbgFps = document.getElementById('debug-fps-stats');
                 if (dbgFps && s.fps_sample_count > 0) {
                     dbgFps.textContent = 'FPS min:' + s.fps_min + ' max:' + s.fps_max + ' avg:' + s.fps_avg.toFixed(1) + ' (samples:' + s.fps_sample_count + ')';
+                // Frametime histogram (computed from ring buffer in WASM)
+                try {
+                    const hist = get_frametime_histogram();
+                    if (hist && hist.length === 8) {
+                        const labels = ['<8ms', '8–12', '12–16', '16–20', '20–25', '25–33', '33–50', '>50ms'];
+                        const total = hist.reduce((a,b) => a+b, 0);
+                        const maxH = Math.max(1, ...hist);
+                        const barWidth = 12;
+                        const hBlocks = hist.map(v => {
+                            const h = Math.max(1, Math.round((v / maxH) * 30));
+                            return '<span title="' + labels[hist.indexOf(v)] + ': ' + v + '/' + total + '" style="display:inline-block;width:' + barWidth + 'px;height:' + h + 'px;background:' + (v > 0 ? '#8af' : '#333') + ';vertical-align:bottom;margin:0 1px;border-radius:1px 1px 0 0;"></span>';
+                        }).join('');
+                        dbgFps.innerHTML += '<br><span style="font-size:10px;color:#7af;">Frame times: ' + hBlocks + '</span>';
+                    }
+                } catch(e) {}
                 }
                 // Update extra debug info
                 const dbgTime = document.getElementById('debug-time');
