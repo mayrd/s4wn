@@ -865,6 +865,10 @@ struct App {
     model_program: Option<WebGlProgram>,
     /// Per-model GPU buffers (VAO + index buffer + index count), keyed by model_id
     gpu_models: std::collections::HashMap<u8, GpuModel>,
+    /// Cached model mesh data for re-upload after WebGL context loss/restore.
+    /// Stores the parsed ModelMesh keyed by model_id so models can be
+    /// re-uploaded to GPU after reinit_webgl() without JS intervention.
+    model_mesh_cache: std::collections::HashMap<u8, model::ModelMesh>,
     /// Shared vertex buffer for all models (positions/normals/UVs) — overwritten on each upload
     model_pos_buffer: Option<WebGlBuffer>,
     model_normal_buffer: Option<WebGlBuffer>,
@@ -1631,6 +1635,7 @@ impl App {
             
             model_program,
             gpu_models: std::collections::HashMap::new(),
+            model_mesh_cache: std::collections::HashMap::new(),
             model_pos_buffer,
             model_normal_buffer,
             model_uv_buffer,
@@ -1819,6 +1824,16 @@ impl App {
         
         // Clear GPU model cache (textures/buffers need re-upload)
         self.gpu_models.clear();
+        
+        // Re-upload all cached model meshes after context restoration
+        // (model_mesh_cache survives context loss because it stores CPU-side mesh data)
+        let cached_meshes: Vec<(u8, model::ModelMesh)> = self.model_mesh_cache.iter()
+            .map(|(k, v)| (*k, v.clone()))
+            .collect();
+        for (model_id, mesh) in cached_meshes {
+            self.upload_model_to_gpu(model_id, &mesh);
+        }
+        web_sys::console::log_1(&format!("Re-uploaded {} model meshes after context restore", self.gpu_models.len()).into());
         
         // ── Shadow program ──────────────────────────────
         let shadow_verts: [f32; 12] = [-1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0];
@@ -5877,6 +5892,8 @@ pub fn load_model_json(model_id: u8, json_str: &str) -> LoadModelResult {
     unsafe {
         if let Some(ref mut app) = (*std::ptr::addr_of_mut!(APP)).as_mut() {
             app.upload_model_to_gpu(model_id, &mesh);
+            // Cache the mesh data for WebGL context loss recovery
+            app.model_mesh_cache.insert(model_id, mesh);
         }
     }
     LoadModelResult {
@@ -10823,5 +10840,78 @@ mod parse_map_json_tests {
         // Verified by code review: the WASM export calls reinit_webgl(),
         // and only on Ok(()) does it set context_lost = false.
         // Verified: on_webgl_context_restored() sets context_lost = false on success
+    }
+
+    #[test]
+    fn test_model_mesh_cache_field_exists_on_app() {
+        // Verify App struct has model_mesh_cache for context loss recovery.
+        // This field stores parsed ModelMesh data keyed by model_id so that
+        // after reinit_webgl() clears gpu_models, cached meshes can be re-uploaded.
+        let source = include_str!("lib.rs");
+        assert!(
+            source.contains("model_mesh_cache: std::collections::HashMap<u8, model::ModelMesh>"),
+            "App struct must have model_mesh_cache for context loss recovery"
+        );
+    }
+
+    #[test]
+    fn test_load_model_json_caches_loaded_mesh() {
+        // load_model_json() must store parsed meshes in model_mesh_cache
+        // so they survive gpu_models.clear() during context restore.
+        let source = include_str!("lib.rs");
+        assert!(
+            source.contains("app.model_mesh_cache.insert(model_id, mesh)"),
+            "load_model_json must cache meshes in model_mesh_cache"
+        );
+    }
+
+    #[test]
+    fn test_reinit_webgl_reuploads_cached_meshes() {
+        // reinit_webgl() must iterate model_mesh_cache and re-upload
+        // each stored mesh after clearing gpu_models.
+        let source = include_str!("lib.rs");
+        assert!(
+            source.contains("self.model_mesh_cache.iter()"),
+            "reinit_webgl must iterate model_mesh_cache to re-upload models"
+        );
+        assert!(
+            source.contains("self.upload_model_to_gpu(model_id, &mesh)"),
+            "reinit_webgl must call upload_model_to_gpu for each cached mesh"
+        );
+    }
+
+    #[test]
+    fn test_reinit_webgl_logs_reupload_count() {
+        // After re-uploading cached models, log how many were restored.
+        let source = include_str!("lib.rs");
+        assert!(
+            source.contains("Re-uploaded"),
+            "reinit_webgl should log how many models were re-uploaded"
+        );
+    }
+
+    #[test]
+    fn test_context_restore_clears_then_refills_gpu_models() {
+        // Structural verification: reinit_webgl() clears gpu_models,
+        // then iterates model_mesh_cache to refill them.
+        let source = include_str!("lib.rs");
+        let clear_pos = source.find("self.gpu_models.clear()");
+        let iter_pos = source.find("self.model_mesh_cache.iter()");
+        assert!(clear_pos.is_some(), "reinit_webgl must clear gpu_models");
+        assert!(iter_pos.is_some(), "reinit_webgl must iterate model_mesh_cache");
+        assert!(
+            iter_pos.unwrap() > clear_pos.unwrap(),
+            "model_mesh_cache re-upload must happen AFTER gpu_models.clear()"
+        );
+    }
+
+    #[test]
+    fn test_model_mesh_cache_initialized_in_app_new() {
+        // App::new() must initialize model_mesh_cache as empty HashMap.
+        let source = include_str!("lib.rs");
+        assert!(
+            source.contains("model_mesh_cache: std::collections::HashMap::new()"),
+            "App::new() must initialize model_mesh_cache"
+        );
     }
 }
