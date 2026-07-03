@@ -976,6 +976,28 @@ window.S4WN_CONFIG = {
       "icon": "🏹",
       "name_de": "Jägerhütte",
       "status": "planned"
+    },
+    {
+      "id": "Brickworks",
+      "category": "Processing",
+      "cost": {
+        "Stone": 4,
+        "Planks": 6
+      },
+      "inputs": [
+        "Stone",
+        "Water"
+      ],
+      "outputs": [
+        "Bricks"
+      ],
+      "interval": 30,
+      "build_time": 30,
+      "tool": "Hammer",
+      "workers": 1,
+      "icon": "🧱",
+      "name_de": "Ziegelei",
+      "status": "planned"
     }
   ],
   "resources": [
@@ -1463,7 +1485,8 @@ window.S4WN_CONFIG = {
     "Processing": [
       "Toolsmith",
       "Weaponsmith",
-      "Ropemaker"
+      "Ropemaker",
+      "Brickworks"
     ],
     "Military": [
       "Barracks",

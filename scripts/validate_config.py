@@ -24,6 +24,22 @@ Checks:
 import json
 import sys
 from pathlib import Path
+import builtins
+
+# Safe print wrapper for cross-platform console encoding compatibility
+def print(*args, **kwargs):
+    new_args = []
+    for arg in args:
+        if isinstance(arg, str):
+            s = arg.replace("❌", "[FAIL]")
+            s = s.replace("✅", "[OK]")
+            s = s.replace("🔍", "[INFO]")
+            s = s.replace("\U0001f50d", "[INFO]")
+            s = s.replace("⚠️", "[WARN]")
+            new_args.append(s)
+        else:
+            new_args.append(arg)
+    builtins.print(*new_args, **kwargs)
 
 def load_config(config_dir):
     config = {}

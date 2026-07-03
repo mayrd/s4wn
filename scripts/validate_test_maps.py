@@ -149,18 +149,18 @@ def main():
         filepath = os.path.join(directory, mapfile)
         ok, errors, summary = validate_map(filepath)
 
-        status = "✅ PASS" if ok else "❌ FAIL"
+        status = "[OK] PASS" if ok else "[FAIL] FAIL"
         print(f"  {status}  {mapfile}")
-        print(f"         {summary['width']}×{summary['height']}, "
+        print(f"         {summary['width']}x{summary['height']}, "
               f"{summary['total_tiles']} tiles, "
               f"{summary['size_bytes']} bytes")
         print(f"         Terrain: {summary['terrain_counts']}")
         print(f"         Resources: {summary['resource_counts']}")
-        print(f"         Elevation: {summary['elevation_range'][0]}–{summary['elevation_range'][1]}")
+        print(f"         Elevation: {summary['elevation_range'][0]}-{summary['elevation_range'][1]}")
 
         if errors:
             for err in errors[:10]:  # Show first 10 errors
-                print(f"         ⚠️  {err}")
+                print(f"         [WARN]  {err}")
             if len(errors) > 10:
                 print(f"         ... and {len(errors) - 10} more errors")
         print()
@@ -169,9 +169,9 @@ def main():
             all_ok = False
 
     if all_ok:
-        print(f"All {len(map_files)} .map files validated successfully! ✅")
+        print(f"All {len(map_files)} .map files validated successfully! [OK]")
     else:
-        print("Some .map files have validation errors ❌")
+        print("Some .map files have validation errors [FAIL]")
         sys.exit(1)
 
 
