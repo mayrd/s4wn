@@ -1822,6 +1822,23 @@ impl App {
                     if mine_count >= 2 { break; }
                 }
             }
+
+            // Forge sparks: hot yellow-white sparks from Toolsmith/Weaponsmith buildings
+            let forge_tick = self.game_loop.state.game_time as u32;
+            if forge_tick.is_multiple_of(7) {
+                let mut forge_count = 0u32;
+                for b in self.game_loop.state.economy.buildings.iter() {
+                    if b.is_complete() && b.active {
+                        let is_forge = b.kind == crate::economy::BuildingType::Toolsmith
+                            || b.kind == crate::economy::BuildingType::Weaponsmith;
+                        if is_forge && forge_count < 2 {
+                            particle::spawn_forge_spark_particle(&mut self.particle_system, b.x as f32, b.y as f32);
+                            forge_count += 1;
+                        }
+                    }
+                    if forge_count >= 2 { break; }
+                }
+            }
         }
 
         // Smooth camera

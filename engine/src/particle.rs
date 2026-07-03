@@ -817,6 +817,55 @@ pub fn spawn_water_sparkle_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32
 }
 
 
+// ── Forge spark particles ────────────────────────────────────────────────────
+
+/// Spawn a forge spark particle: bright yellow-white spark from Toolsmith/Weaponsmith buildings.
+/// Hot forging sparks fly upward with a yellow-hot glow and short burnout.
+pub fn spawn_forge_spark_particle(ps: &mut ParticleSystem, x: f32, y: f32) {
+    let seed = x * 11.7 + y * 17.3;
+    let z = 1.0 + (seed * 2.3).sin().abs() * 1.5;
+    let vx = (seed * 1.9).cos() * 0.12;
+    let vy = (seed * 2.7).sin() * 0.10;
+    let vz = 0.5 + (seed * 3.7).sin().abs() * 2.0;
+    let life = 0.4 + (seed * 4.1).sin().abs() * 0.8;
+    // Hot yellow-white: high red+green, medium blue
+    let r = 0.95 + (seed * 5.3).sin().abs() * 0.05;
+    let g = 0.85 + (seed * 7.1).cos().abs() * 0.15;
+    let b = 0.40 + (seed * 9.7).sin().abs() * 0.30;
+    let _ = ps.spawn(&ParticleConfig { x, y, z, vx, vy, vz, life, r, g, b, size: 2.5 });
+}
+
+/// Spawn a burst of forge spark particles across a rectangular area.
+pub fn spawn_forge_spark_burst(ps: &mut ParticleSystem, min_x: f32, min_y: f32, max_x: f32, max_y: f32, count: u32) -> u32 {
+    let mut spawned = 0u32;
+    let sx = max_x - min_x;
+    let sy = max_y - min_y;
+    for i in 0..count {
+        let fi = i as f32;
+        let x = min_x + ((fi * 13.7 + 5.3).sin() * 0.5 + 0.5) * sx;
+        let y = min_y + ((fi * 19.1 + 7.9).sin() * 0.5 + 0.5) * sy;
+        let seed = x * 11.7 + y * 17.3;
+        let z = 1.0 + (seed * 2.3).sin().abs() * 1.5;
+        if ps.spawn(&ParticleConfig {
+            x, y, z,
+            vx: (seed * 1.9).cos() * 0.12,
+            vy: (seed * 2.7).sin() * 0.10,
+            vz: 0.5 + (seed * 3.7).sin().abs() * 2.0,
+            life: 0.4 + (seed * 4.1).sin().abs() * 0.8,
+            r: 0.95 + (seed * 5.3).sin().abs() * 0.05,
+            g: 0.85 + (seed * 7.1).cos().abs() * 0.15,
+            b: 0.40 + (seed * 9.7).sin().abs() * 0.30,
+            size: 2.5,
+        }) {
+            spawned += 1;
+        } else {
+            break;
+        }
+    }
+    spawned
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1915,4 +1964,65 @@ fn test_water_sparkle_burst_capacity() {
     assert_eq!(ps.alive_count(), MAX_PARTICLES);
     let n = spawn_water_sparkle_burst(&mut ps, 0.0, 0.0, 10.0, 10.0, 20);
     assert_eq!(n, 0, "sparkle burst should spawn 0 when system full");
+}
+
+// ── Forge spark tests ────────────────────────────────────────────────────────
+#[test]
+fn test_forge_spark_particle_spawns_with_hot_yellow_color() {
+    let mut ps = ParticleSystem::new();
+    spawn_forge_spark_particle(&mut ps, 5.0, 3.0);
+    assert_eq!(ps.alive_count(), 1);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    // Hot yellow-white: very bright, low blue
+    assert!(p.r > 0.90, "forge spark should be very bright (r > 0.90), got r={}", p.r);
+    assert!(p.g > 0.80, "forge spark should have high green (g > 0.80), got g={}", p.g);
+    assert!(p.r > p.b, "forge spark should be warm: r > b, got r={} b={}", p.r, p.b);
+}
+
+#[test]
+fn test_forge_spark_rises_from_forge_height() {
+    let mut ps = ParticleSystem::new();
+    spawn_forge_spark_particle(&mut ps, 4.0, 8.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.z > 0.8, "forge spark should start above building base (z > 0.8), got z={}", p.z);
+    assert!(p.z < 2.8, "forge spark should not start too high (z < 2.8), got z={}", p.z);
+}
+
+#[test]
+fn test_forge_spark_rises_upward() {
+    let mut ps = ParticleSystem::new();
+    spawn_forge_spark_particle(&mut ps, 6.0, 2.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.vz > 0.0, "forge spark should rise (vz > 0), got vz={}", p.vz);
+    assert!(p.vz < 2.8, "forge spark rise should be moderate (vz < 2.8), got vz={}", p.vz);
+}
+
+#[test]
+fn test_forge_spark_has_short_lifetime() {
+    let mut ps = ParticleSystem::new();
+    spawn_forge_spark_particle(&mut ps, 3.0, 9.0);
+    let p = ps.particles.iter().find(|p| p.alive).unwrap();
+    assert!(p.life >= 0.3 && p.life <= 1.3, "forge spark life should be 0.3-1.3s, got {}", p.life);
+}
+
+#[test]
+fn test_forge_spark_burst_bounds_and_capacity() {
+    let mut ps = ParticleSystem::new();
+    let spawned = spawn_forge_spark_burst(&mut ps, 10.0, 20.0, 14.0, 24.0, 6);
+    assert!(spawned <= 6, "burst should spawn at most 6 particles, got {}", spawned);
+    for p in ps.particles.iter().filter(|p| p.alive) {
+        assert!(p.x >= 10.0 && p.x <= 14.0, "forge spark x={} out of bounds [10,14]", p.x);
+        assert!(p.y >= 20.0 && p.y <= 24.0, "forge spark y={} out of bounds [20,24]", p.y);
+    }
+}
+
+#[test]
+fn test_forge_spark_burst_limited_by_max() {
+    let mut ps = ParticleSystem::new();
+    for i in 0..MAX_PARTICLES {
+        ps.spawn(&ParticleConfig { x: i as f32, y: 0.0, z: 0.0, vx: 0.0, vy: 0.0, vz: 0.0, life: 10.0, r: 1.0, g: 1.0, b: 1.0, size: 8.0 });
+    }
+    assert_eq!(ps.alive_count(), MAX_PARTICLES);
+    let n = spawn_forge_spark_burst(&mut ps, 0.0, 0.0, 10.0, 10.0, 20);
+    assert_eq!(n, 0, "forge spark burst should spawn 0 when system full");
 }
