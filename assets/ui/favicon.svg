@@ -35,7 +35,7 @@
   <polygon points="256,100 360,160 360,280 256,340 152,280 152,160"
            fill="none" stroke="rgb(212, 168, 67)" stroke-width="1.5" opacity="0.4"/>
 
-  <!-- Settlement icons (small houses) -->
+  <!-- Settlement icons -->
   <!-- Left house -->
   <rect x="165" y="195" width="40" height="35" fill="rgb(100, 70, 40)" rx="2"/>
   <polygon points="160,198 185,165 210,198" fill="rgb(60, 65, 80)"/>

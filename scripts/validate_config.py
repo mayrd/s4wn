@@ -32,7 +32,7 @@ def load_config(config_dir):
         if not path.exists():
             print(f"❌ Missing config file: {path}")
             sys.exit(1)
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             config[name] = json.load(f)
     return config
 

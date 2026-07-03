@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-Regenerate S4WN terrain atlas — fast version using numpy.
-Generates 8 terrain tiles and assembles them into a 2048×256 atlas PNG.
+Regenerate S4WN terrain atlas ? fast version using numpy.
+Generates 8 terrain tiles and assembles them into a 2048?256 atlas PNG.
 
-Usage: python3 scripts/regen_terrain_atlas.py
+Usage: python3 scripts/generators/generate_terrain_atlas.py
 """
 
 import os, struct, zlib
 import numpy as np
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-TEXTURES_DIR = os.path.join(SCRIPT_DIR, "..", "assets", "textures")
-TILES_DIR = os.path.join(SCRIPT_DIR, "..", "assets", "tiles")
+TEXTURES_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "assets", "textures"))
+TILES_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "assets", "tiles"))
 ATLAS_PATH = os.path.join(TEXTURES_DIR, "terrain_atlas.png")
 
 TILE_SIZE = 256
@@ -29,7 +29,7 @@ S4_COLORS = {
 }
 
 def make_tile(terrain):
-    """Generate a 256×256 RGBA tile using numpy noise."""
+    """Generate a 256?256 RGBA tile using numpy noise."""
     color = np.array(S4_COLORS.get(terrain, (128, 128, 128)), dtype=np.float32)
     ys, xs = np.mgrid[0:TILE_SIZE, 0:TILE_SIZE]
     
@@ -76,7 +76,7 @@ def make_tile(terrain):
     
     # Apply color with noise variation
     noise_3d = np.stack([noise] * 3, axis=-1)
-    variation = (noise_3d - 0.5) * 40  # ±20 color variation
+    variation = (noise_3d - 0.5) * 40  # ?20 color variation
     tile = np.clip(color + variation, 0, 255).astype(np.uint8)
     
     # Add alpha channel
@@ -118,7 +118,7 @@ def main():
         tiles.append(tile)
         # Save individual tile
         write_png(os.path.join(TILES_DIR, f"{terrain.lower()}.png"), tile)
-        print(f"{tile.shape[0]}×{tile.shape[1]}")
+        print(f"{tile.shape[0]}?{tile.shape[1]}")
     
     # Assemble atlas: horizontal strip
     atlas = np.concatenate(tiles, axis=1)
@@ -126,7 +126,7 @@ def main():
     
     size = os.path.getsize(ATLAS_PATH)
     print(f"\nAtlas: {ATLAS_PATH}")
-    print(f"  {atlas.shape[1]}×{atlas.shape[0]}, {size:,} bytes")
+    print(f"  {atlas.shape[1]}?{atlas.shape[0]}, {size:,} bytes")
 
 if __name__ == "__main__":
     main()

@@ -12,15 +12,19 @@ Run after any config JSON edit.
 import json
 from pathlib import Path
 
-CONFIG_DIR = Path("engine/config")
+CONFIG_DIR = Path(__file__).resolve().parent.parent.parent / "engine" / "config"
 
 def main():
-    with open(CONFIG_DIR / "buildings.json") as f: buildings = json.load(f)
-    with open(CONFIG_DIR / "resources.json") as f: resources = json.load(f)
-    with open(CONFIG_DIR / "terrain.json") as f: terrain = json.load(f)
-    with open(CONFIG_DIR / "units.json") as f: units = json.load(f)
-    with open(CONFIG_DIR / "nations.json") as f: nations = json.load(f)
-    with open(CONFIG_DIR / "categories.json") as f: categories = json.load(f)
+    if not CONFIG_DIR.exists():
+        print(f"Error: Config directory '{CONFIG_DIR}' does not exist.")
+        return
+
+    with open(CONFIG_DIR / "buildings.json", encoding="utf-8") as f: buildings = json.load(f)
+    with open(CONFIG_DIR / "resources.json", encoding="utf-8") as f: resources = json.load(f)
+    with open(CONFIG_DIR / "terrain.json", encoding="utf-8") as f: terrain = json.load(f)
+    with open(CONFIG_DIR / "units.json", encoding="utf-8") as f: units = json.load(f)
+    with open(CONFIG_DIR / "nations.json", encoding="utf-8") as f: nations = json.load(f)
+    with open(CONFIG_DIR / "categories.json", encoding="utf-8") as f: categories = json.load(f)
 
     js = "window.S4WN_CONFIG = " + json.dumps({
         "buildings": buildings, "resources": resources, "terrain": terrain,
@@ -59,9 +63,9 @@ def main():
 """
 
     out = CONFIG_DIR / "data.js"
-    with open(out, "w") as f:
+    with open(out, "w", encoding="utf-8") as f:
         f.write(js)
-    print(f"Generated {out} ({len(js)} bytes)")
+    print(f"Generated {out.name} ({len(js)} bytes)")
 
 if __name__ == '__main__':
     main()

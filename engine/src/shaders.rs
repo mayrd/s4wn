@@ -124,46 +124,46 @@ uniform vec3 u_sun_dir;
 uniform float u_god_ray_strength;
 out vec4 out_color;
 float cloud_shadow(float wpos_x, float wpos_z) {
-    const float GRID = 6.0;
-    const float OFFSET = -3.0;
-    float cx = floor((wpos_x - OFFSET) / GRID) * GRID + OFFSET;
-    float cz = floor((wpos_z - OFFSET) / GRID) * GRID + OFFSET;
-    float h = fract(sin(cx * 127.1 + cz * 311.7 + 74.7) * 43758.547);
-    if (h < 0.4) return 1.0;
-    float h2 = fract(sin(cx * 269.5 + cz * 183.3 + 67.2) * 28374.123);
-    float h3 = fract(sin(cx * 419.2 + cz * 357.8 + 91.3) * 19283.568);
-    float cl_x = cx + h2 * GRID * 0.8;
-    float cl_z = cz + h3 * GRID * 0.8;
-    float cl_size = 2.0 + h * 3.0;
-    float dist = length(vec2(wpos_x - cl_x, wpos_z - cl_z));
-    return mix(0.72, 1.0, smoothstep(cl_size * 0.6, cl_size, dist));
+const float GRID = 6.0;
+const float OFFSET = -3.0;
+float cx = floor((wpos_x - OFFSET) / GRID) * GRID + OFFSET;
+float cz = floor((wpos_z - OFFSET) / GRID) * GRID + OFFSET;
+float h = fract(sin(cx * 127.1 + cz * 311.7 + 74.7) * 43758.547);
+if (h < 0.4) return 1.0;
+float h2 = fract(sin(cx * 269.5 + cz * 183.3 + 67.2) * 28374.123);
+float h3 = fract(sin(cx * 419.2 + cz * 357.8 + 91.3) * 19283.568);
+float cl_x = cx + h2 * GRID * 0.8;
+float cl_z = cz + h3 * GRID * 0.8;
+float cl_size = 2.0 + h * 3.0;
+float dist = length(vec2(wpos_x - cl_x, wpos_z - cl_z));
+return mix(0.72, 1.0, smoothstep(cl_size * 0.6, cl_size, dist));
 }
 float god_ray_factor(vec2 world_xz, vec3 sun_dir) {
-    const int RAY_SAMPLES = 5;
-    const float RAY_STEP = 4.0;
-    float total = 0.0;
-    float weight_sum = 0.0;
-    for (int i = 0; i < RAY_SAMPLES; i++) {
-        float t = float(i) * RAY_STEP + 2.0;
-        vec2 sample_xz = world_xz + sun_dir.xz * t;
-        float shadow = cloud_shadow(sample_xz.x, sample_xz.y);
-        float weight = 1.0 / (1.0 + t * 0.08);
-        total += shadow * weight;
-        weight_sum += weight;
-    }
-    return total / max(weight_sum, 0.001);
+const int RAY_SAMPLES = 5;
+const float RAY_STEP = 4.0;
+float total = 0.0;
+float weight_sum = 0.0;
+for (int i = 0; i < RAY_SAMPLES; i++) {
+float t = float(i) * RAY_STEP + 2.0;
+vec2 sample_xz = world_xz + sun_dir.xz * t;
+float shadow = cloud_shadow(sample_xz.x, sample_xz.y);
+float weight = 1.0 / (1.0 + t * 0.08);
+total += shadow * weight;
+weight_sum += weight;
+}
+return total / max(weight_sum, 0.001);
 }
 float heat_shimmer(vec2 world_xz, float time, float day_phase) {
-    float n1 = sin(world_xz.x * 4.7 + time * 2.3) * cos(world_xz.y * 3.9 - time * 1.7);
-    float n2 = sin(world_xz.x * 6.1 - time * 1.3) * cos(world_xz.y * 2.8 + time * 2.1);
-    return (n1 * 0.5 + n2 * 0.3) * day_phase;
+float n1 = sin(world_xz.x * 4.7 + time * 2.3) * cos(world_xz.y * 3.9 - time * 1.7);
+float n2 = sin(world_xz.x * 6.1 - time * 1.3) * cos(world_xz.y * 2.8 + time * 2.1);
+return (n1 * 0.5 + n2 * 0.3) * day_phase;
 }
 vec2 heat_mirage_offset(vec2 world_xz, float time) {
-    float n1 = sin(world_xz.x * 5.3 + time * 3.1) * cos(world_xz.y * 4.7 - time * 2.4);
-    float n2 = cos(world_xz.x * 7.2 - time * 1.9) * sin(world_xz.y * 2.9 + time * 3.5);
-    float ox = n1 * 0.004 + n2 * 0.003;
-    float oy = cos(world_xz.x * 3.8 + time * 2.7) * sin(world_xz.y * 5.2 - time * 1.6) * 0.004;
-    return vec2(ox, oy);
+float n1 = sin(world_xz.x * 5.3 + time * 3.1) * cos(world_xz.y * 4.7 - time * 2.4);
+float n2 = cos(world_xz.x * 7.2 - time * 1.9) * sin(world_xz.y * 2.9 + time * 3.5);
+float ox = n1 * 0.004 + n2 * 0.003;
+float oy = cos(world_xz.x * 3.8 + time * 2.7) * sin(world_xz.y * 5.2 - time * 1.6) * 0.004;
+return vec2(ox, oy);
 }
 void main() {
 bool is_desert = (v_terrain_id > 4.5 && v_terrain_id < 5.5);
@@ -171,7 +171,7 @@ vec3 base_color;
 if (u_use_textures == 1) {
 vec2 tex_uv = v_uv;
 if (is_desert) {
-    tex_uv += heat_mirage_offset(v_world_xz, u_water_time);
+tex_uv += heat_mirage_offset(v_world_xz, u_water_time);
 }
 vec3 tex_grass = texture(u_terrain_textures, vec3(tex_uv, 0.0)).rgb;
 vec3 tex_rock = texture(u_terrain_textures, vec3(tex_uv, 2.0)).rgb;
@@ -253,15 +253,15 @@ lit = lit + glow;
 }
 float shadow_factor = mix(1.0, cs, day_light * 0.45);
 if (!is_water && v_terrain_id < 2.5) {
-    lit *= shadow_factor;
+lit *= shadow_factor;
 }
 if (!is_water && v_terrain_id < 2.5 && u_reflection_pass == 0) { // Shoreline foam
-    float water_proximity = v_splat.y * 0.3 + v_splat.z * 0.2 + v_splat.w * 0.5;
-    float near_water = smoothstep(0.02, 0.35, water_proximity);
-    float foam_noise = sin(v_world_xz.x * 12.7 + v_world_xz.y * 17.3 + u_water_time * 2.5) * 0.5 + 0.5; // Animated foam edge
-    float foam = near_water * (0.6 + foam_noise * 0.4) * day_light;
-    vec3 foam_color = vec3(0.93, 0.95, 0.91);
-    lit = mix(lit, foam_color, foam * 0.55);
+float water_proximity = v_splat.y * 0.3 + v_splat.z * 0.2 + v_splat.w * 0.5;
+float near_water = smoothstep(0.02, 0.35, water_proximity);
+float foam_noise = sin(v_world_xz.x * 12.7 + v_world_xz.y * 17.3 + u_water_time * 2.5) * 0.5 + 0.5;
+float foam = near_water * (0.6 + foam_noise * 0.4) * day_light;
+vec3 foam_color = vec3(0.93, 0.95, 0.91);
+lit = mix(lit, foam_color, foam * 0.55);
 }
 float edge_dist = v_edge_dist;
 float edge_zone = 8.0;
@@ -276,18 +276,18 @@ float fog_strength = mix(0.05, 0.35, fog_factor) * day_light;
 float elevation_fog_mod = 1.0 - smoothstep(0.0, 0.45, v_elevation) * 0.7;
 fog_strength *= elevation_fog_mod;
 if (u_reflection_pass == 0) {
-    lit = mix(lit, u_fog_color, fog_strength);
+lit = mix(lit, u_fog_color, fog_strength);
 }
 if (u_reflection_pass == 0 && !is_water && u_god_ray_strength > 0.0) {
-    float gr = god_ray_factor(v_world_xz, u_sun_dir);
-    float gr_brightness = (1.0 - gr) * u_god_ray_strength * day_light * 0.6;
-    vec3 god_ray_color = vec3(1.0, 0.95, 0.8);
-    lit += god_ray_color * gr_brightness * cs;
+float gr = god_ray_factor(v_world_xz, u_sun_dir);
+float gr_brightness = (1.0 - gr) * u_god_ray_strength * day_light * 0.6;
+vec3 god_ray_color = vec3(1.0, 0.95, 0.8);
+lit += god_ray_color * gr_brightness * cs;
 }
 if (is_desert) {
-    float hs = heat_shimmer(v_world_xz, u_water_time, day_light);
-    lit += lit * hs * 0.05;
-    lit.r += abs(hs) * 0.01;
+float hs = heat_shimmer(v_world_xz, u_water_time, day_light);
+lit += lit * hs * 0.05;
+lit.r += abs(hs) * 0.01;
 }
 lit = mix(lit * 0.7, lit, warmth);
 if (!is_water) {

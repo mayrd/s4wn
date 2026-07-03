@@ -18,6 +18,7 @@ import struct
 import random
 import os
 import sys
+from pathlib import Path
 
 TERRAIN = {
     "grass":     0,
@@ -45,6 +46,7 @@ RESOURCE = {
 
 def write_map(path, width, height, tiles):
     """Write a .map binary file."""
+    path = Path(path)
     with open(path, "wb") as f:
         # Magic: "WRLD"
         f.write(b"WRLD")
@@ -59,7 +61,7 @@ def write_map(path, width, height, tiles):
     size = os.path.getsize(path)
     expected = 16 + width * height * 6
     assert size == expected, f"Size mismatch: {size} != {expected}"
-    print(f"  Wrote {path}: {width}×{height}, {size} bytes ({len(tiles)} tiles)")
+    print(f"  Wrote {path.name}: {width}×{height}, {size} bytes ({len(tiles)} tiles)")
 
 
 def generate_island(width, height):
@@ -236,24 +238,28 @@ def generate_continents(width, height):
 
 
 def main():
-    out_dir = sys.argv[1] if len(sys.argv) > 1 else "assets/maps/test"
-    os.makedirs(out_dir, exist_ok=True)
+    if len(sys.argv) > 1:
+        out_dir = Path(sys.argv[1])
+    else:
+        out_dir = Path(__file__).resolve().parent.parent.parent / "assets" / "maps" / "test"
+    
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     print("Generating test .map corpus...")
 
     # 32×32 small island
-    write_map(os.path.join(out_dir, "test_island_32x32.map"),
+    write_map(out_dir / "test_island_32x32.map",
               32, 32, generate_island(32, 32))
 
     # 64×64 river valley
-    write_map(os.path.join(out_dir, "test_rivervalley_64x64.map"),
+    write_map(out_dir / "test_rivervalley_64x64.map",
               64, 64, generate_river_valley(64, 64))
 
     # 128×128 continents
-    write_map(os.path.join(out_dir, "test_continents_128x128.map"),
+    write_map(out_dir / "test_continents_128x128.map",
               128, 128, generate_continents(128, 128))
 
-    print(f"\nDone! Generated {3} test .map files in '{out_dir}'")
+    print(f"\nDone! Generated 3 test .map files in '{out_dir}'")
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ Output: assets/models/json/terrain_*.json
 import os, json, math, random
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR = os.path.join(SCRIPT_DIR, "..", "assets", "models", "json")
+MODEL_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "assets", "models", "json"))
 
 os.makedirs(MODEL_DIR, exist_ok=True)
 
@@ -49,7 +49,6 @@ def make_cone(segments=6, height=1.0, radius=0.3):
     # Side triangles
     for i in range(segments):
         j = (i + 1) % segments
-        # Compute side normal
         v1 = [vertices[base_start + j][0] - vertices[base_start + i][0],
               vertices[base_start + j][1] - vertices[base_start + i][1],
               vertices[base_start + j][2] - vertices[base_start + i][2]]
@@ -77,7 +76,6 @@ def make_box(w, h, d):
         [-hw, -hh, -hd], [hw, -hh, -hd], [hw, -hh, hd], [-hw, -hh, hd],
         [-hw, hh, -hd], [hw, hh, -hd], [hw, hh, hd], [-hw, hh, hd],
     ]
-    # Slightly perturb vertices for natural rock look
     for v in vertices:
         v[0] += (random.random() - 0.5) * 0.05
         v[1] += (random.random() - 0.5) * 0.05
@@ -124,7 +122,7 @@ def save_model(name, vertices, normals, uvs, indices, aabb, material=None):
 def main():
     print("Generating terrain feature models...")
     
-    # Tree types (cones of different sizes)
+    # Tree types
     trees = [
         ("pine", 1.2, 0.3, 8, {"diffuse": [0.15, 0.42, 0.15], "roughness": 0.85, "metallic": 0.0}),
         ("oak", 0.9, 0.45, 8, {"diffuse": [0.25, 0.48, 0.18], "roughness": 0.8, "metallic": 0.0}),
@@ -134,7 +132,7 @@ def main():
         v, n, u, i, aabb = make_cone(seg, h, r)
         save_model(f"tree_{name}", v, n, u, i, aabb, mat)
     
-    # Rock types (boxes with perturbation)
+    # Rock types
     rocks = [
         ("boulder", 0.5, 0.35, 0.4, {"diffuse": [0.45, 0.48, 0.52], "roughness": 0.6, "metallic": 0.15}),
         ("stone", 0.25, 0.18, 0.22, {"diffuse": [0.55, 0.55, 0.58], "roughness": 0.55, "metallic": 0.1}),

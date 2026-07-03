@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
-"""Generate procedural game assets for S4WN."""
+"""Generate procedural 2D building, unit, and UI sprites for S4WN."""
 
 import struct
 import zlib
 import os
 import math
 import random
+import argparse
+from pathlib import Path
 
+# Seed for reproducible noise
 random.seed(42)
-ASSETS_DIR = "/tmp/s4wn/assets"
-
-def ensure_dirs():
-    for sub in ["tiles", "buildings", "units", "ui"]:
-        os.makedirs(os.path.join(ASSETS_DIR, sub), exist_ok=True)
 
 def create_png(width, height, pixels):
     """Create a PNG file from RGBA pixel data."""
@@ -68,7 +66,7 @@ def fbm(x, y, octaves=4, seed=0):
         freq *= 2.0
     return val
 
-# ── Terrain Tiles ────────────────────────────────────────────────────────────
+# ?? Terrain Tiles (Fallback/Simplified) ??????????????????????????????????????
 
 def gen_grass_tile(size=64):
     pixels = [0] * (size * size * 4)
@@ -77,7 +75,6 @@ def gen_grass_tile(size=64):
             idx = (y * size + x) * 4
             n = fbm(x / 16, y / 16, 4, 1)
             base = lerp_color([80, 140, 60], [100, 170, 70], n)
-            # Add subtle variation
             variation = noise(x * 3, y * 7, 42) * 15 - 7
             pixels[idx] = max(0, min(255, int(base[0] + variation)))
             pixels[idx+1] = max(0, min(255, int(base[1] + variation * 1.5)))
@@ -133,7 +130,6 @@ def gen_forest_tile(size=64):
             idx = (y * size + x) * 4
             n = fbm(x / 12, y / 12, 4, 200)
             base = lerp_color([30, 80, 30], [50, 110, 40], n)
-            # Tree-like dots
             tree_noise = noise(x * 2, y * 2, 201)
             if tree_noise > 0.6:
                 base = lerp_color(base, [20, 60, 20], 0.5)
@@ -150,7 +146,6 @@ def gen_mountain_tile(size=64):
             idx = (y * size + x) * 4
             n = fbm(x / 10, y / 10, 5, 300)
             base = lerp_color([120, 110, 100], [160, 150, 140], n)
-            # Rocky lines
             if abs(math.sin(x * 0.5 + n * 8)) < 0.1:
                 base = lerp_color(base, [90, 85, 80], 0.5)
             pixels[idx] = int(base[0])
@@ -166,7 +161,6 @@ def gen_deepwater_tile(size=64):
             idx = (y * size + x) * 4
             n = fbm(x / 8, y / 8, 3, 400)
             base = lerp_color([15, 30, 80], [25, 45, 110], n)
-            # Subtle depth variation
             depth = math.sin(y * 0.15 + fbm(x / 20, y / 20, 2, 401) * 4) * 0.5 + 0.5
             base = lerp_color(base, [10, 20, 60], depth * 0.3)
             pixels[idx] = int(base[0])
@@ -182,7 +176,6 @@ def gen_swamp_tile(size=64):
             idx = (y * size + x) * 4
             n = fbm(x / 10, y / 10, 4, 500)
             base = lerp_color([60, 80, 50], [80, 100, 60], n)
-            # Murky spots
             if noise(x * 3, y * 3, 501) > 0.7:
                 base = lerp_color(base, [40, 60, 30], 0.4)
             pixels[idx] = int(base[0])
@@ -191,7 +184,7 @@ def gen_swamp_tile(size=64):
             pixels[idx+3] = 255
     return create_png(size, size, pixels)
 
-# ── Building Sprites ─────────────────────────────────────────────────────────
+# ?? Helpers for drawing ??????????????????????????????????????????????????????
 
 def draw_rect(pixels, w, h, x1, y1, x2, y2, color):
     for y in range(max(0, y1), min(h, y2 + 1)):
@@ -212,6 +205,8 @@ def draw_circle(pixels, w, h, cx, cy, r, color):
                 pixels[idx+1] = color[1]
                 pixels[idx+2] = color[2]
                 pixels[idx+3] = 255
+
+# ?? Building Sprites ?????????????????????????????????????????????????????????
 
 def gen_building_sprite(name, size=64):
     """Generate a simple building sprite."""
@@ -265,7 +260,7 @@ def gen_building_sprite(name, size=64):
 
     return create_png(size, size, pixels)
 
-# ── Unit Sprites ─────────────────────────────────────────────────────────────
+# ?? Unit Sprites ?????????????????????????????????????????????????????????????
 
 def gen_unit_sprite(name, size=32):
     """Generate a simple unit sprite."""
@@ -312,7 +307,7 @@ def gen_unit_sprite(name, size=32):
 
     return create_png(size, size, pixels)
 
-# ── UI Elements ──────────────────────────────────────────────────────────────
+# ?? UI Elements ??????????????????????????????????????????????????????????????
 
 def gen_ui_panel(size=256):
     """Generate a UI panel background."""
@@ -320,7 +315,6 @@ def gen_ui_panel(size=256):
     for y in range(size):
         for x in range(size):
             idx = (y * size + x) * 4
-            # Dark semi-transparent panel with border
             border = 4
             if x < border or x >= size - border or y < border or y >= size - border:
                 pixels[idx] = 180
@@ -340,15 +334,12 @@ def gen_button(size=64):
     for y in range(size):
         for x in range(size):
             idx = (y * size + x) * 4
-            # Rounded button
             cx, cy = size // 2, size // 2
             dx, dy = x - cx, y - cy
             dist = math.sqrt(dx * dx + dy * dy)
             if dist < size // 2 - 2:
-                # Gradient
                 t = y / size
                 base = lerp_color([60, 120, 180], [80, 140, 200], t)
-                # Highlight at top
                 if y < size // 3:
                     base = lerp_color(base, [120, 180, 240], 0.3)
                 pixels[idx] = int(base[0])
@@ -362,12 +353,37 @@ def gen_button(size=64):
                 pixels[idx+3] = 255
     return create_png(size, size, pixels)
 
-# ── Main ─────────────────────────────────────────────────────────────────────
+# ?? Main ?????????????????????????????????????????????????????????????????????
 
 def main():
-    ensure_dirs()
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent.parent
+    default_assets = project_root / "assets"
 
-    # Terrain tiles
+    parser = argparse.ArgumentParser(description="Generate S4WN procedural 2D sprites")
+    parser.add_argument(
+        "--out-dir",
+        type=str,
+        default=str(default_assets),
+        help=f"Output assets directory (default: {default_assets})"
+    )
+    parser.add_argument(
+        "--with-tiles",
+        action="store_true",
+        help="Also generate simple procedural 64x64 terrain tile files"
+    )
+    args = parser.parse_args()
+
+    assets_dir = Path(args.out_dir)
+    print(f"Generating procedural sprites into: {assets_dir}")
+
+    # Ensure target subdirectories exist
+    for sub in ["buildings", "units", "ui", "tiles"]:
+        if sub == "tiles" and not args.with_tiles:
+            continue
+        (assets_dir / sub).mkdir(parents=True, exist_ok=True)
+
+    # Terrain tiles (if requested)
     tiles = {
         "grass": gen_grass_tile,
         "water": gen_water_tile,
@@ -378,59 +394,55 @@ def main():
         "deepwater": gen_deepwater_tile,
         "swamp": gen_swamp_tile,
     }
-    for name, gen in tiles.items():
-        png = gen()
-        path = os.path.join(ASSETS_DIR, "tiles", f"{name}.png")
-        with open(path, "wb") as f:
-            f.write(png)
-        print(f"  tiles/{name}.png ({len(png)} bytes)")
+    if args.with_tiles:
+        for name, gen in tiles.items():
+            png = gen()
+            path = assets_dir / "tiles" / f"{name}.png"
+            path.write_bytes(png)
+            print(f"  tiles/{name}.png ({len(png)} bytes)")
 
     # Building sprites
     buildings = ["headquarters", "farm", "sawmill", "lumberjack", "warehouse"]
     for name in buildings:
         png = gen_building_sprite(name)
-        path = os.path.join(ASSETS_DIR, "buildings", f"{name}.png")
-        with open(path, "wb") as f:
-            f.write(png)
+        path = assets_dir / "buildings" / f"{name}.png"
+        path.write_bytes(png)
         print(f"  buildings/{name}.png ({len(png)} bytes)")
 
     # Unit sprites
     units = ["worker", "soldier", "archer"]
     for name in units:
         png = gen_unit_sprite(name)
-        path = os.path.join(ASSETS_DIR, "units", f"{name}.png")
-        with open(path, "wb") as f:
-            f.write(png)
+        path = assets_dir / "units" / f"{name}.png"
+        path.write_bytes(png)
         print(f"  units/{name}.png ({len(png)} bytes)")
 
     # UI elements
     png = gen_ui_panel()
-    path = os.path.join(ASSETS_DIR, "ui", "panel.png")
-    with open(path, "wb") as f:
-        f.write(png)
+    path = assets_dir / "ui" / "panel.png"
+    path.write_bytes(png)
     print(f"  ui/panel.png ({len(png)} bytes)")
 
     png = gen_button()
-    path = os.path.join(ASSETS_DIR, "ui", "button.png")
-    with open(path, "wb") as f:
-        f.write(png)
+    path = assets_dir / "ui" / "button.png"
+    path.write_bytes(png)
     print(f"  ui/button.png ({len(png)} bytes)")
 
     # Generate a manifest
     manifest = {
         "version": "0.1.0",
-        "tiles": list(tiles.keys()),
+        "tiles": list(tiles.keys()) if args.with_tiles else ["grass", "water", "desert", "snow", "forest", "mountain", "deepwater", "swamp"],
         "buildings": buildings,
         "units": units,
         "ui": ["panel", "button"],
     }
     import json
-    manifest_path = os.path.join(ASSETS_DIR, "manifest.json")
+    manifest_path = assets_dir / "manifest.json"
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=2)
-    print(f"  manifest.json")
+    print("  manifest.json")
 
-    print(f"\nAll assets generated in {ASSETS_DIR}/")
+    print(f"\nAll sprites generated successfully in {assets_dir}/")
 
 if __name__ == "__main__":
     main()

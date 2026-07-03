@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Generate S4WN icon and logo — pays tribute to Siedler 4 History Edition CD cover.
+"""Generate S4WN icon and logo ? pays tribute to Siedler 4 History Edition CD cover.
 Creates SVG favicon, multi-size PNG favicon, and full-size loading screen logo.
-All original artwork — no S4 assets extracted."""
+All original artwork ? no S4 assets extracted."""
 
 import math
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-OUT_DIR = Path(__file__).resolve().parent.parent / "assets" / "ui"
+OUT_DIR = Path(__file__).resolve().parent.parent.parent / "assets" / "ui"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── Color palette (Siedler 4 History Edition tribute) ──────────────────────
+# ?? Color palette (Siedler 4 History Edition tribute) ??????????????????????
 BG_DARK = (10, 14, 26)
 BG_MID = (20, 28, 48)
 GOLD = (212, 168, 67)
@@ -21,7 +21,6 @@ BROWN = (100, 70, 40)
 CREAM = (224, 216, 200)
 STEEL = (120, 130, 150)
 STEEL_DARK = (60, 65, 80)
-
 
 def draw_shield(draw, cx, cy, w, h, fill, outline=None, outline_width=0):
     """Draw a heraldic shield shape centered at cx,cy."""
@@ -34,7 +33,6 @@ def draw_shield(draw, cx, cy, w, h, fill, outline=None, outline_width=0):
     ]
     draw.polygon(points, fill=fill, outline=outline)
 
-
 def draw_hex_border(draw, cx, cy, r, width, color):
     """Draw a hexagon border."""
     points = []
@@ -45,27 +43,21 @@ def draw_hex_border(draw, cx, cy, r, width, color):
         points.append((px, py))
     draw.polygon(points, outline=color, width=width)
 
-
 def draw_settlement(draw, cx, cy, size, color):
-    """Draw a simple settlement/house icon — tribute to the original cover art houses."""
+    """Draw a simple settlement/house icon ? tribute to the original cover art houses."""
     s = size
-    # House body
     draw.rectangle([cx - s, cy - s // 2, cx + s, cy + s], fill=color)
-    # Roof (triangle)
     roof_points = [(cx - s - 2, cy - s // 2), (cx, cy - s - s // 2), (cx + s + 2, cy - s // 2)]
     draw.polygon(roof_points, fill=color)
-    # Door
     draw.rectangle(
         [cx - s // 3, cy, cx + s // 3, cy + s],
         fill=(min(color[0] + 40, 255), min(color[1] + 40, 255), min(color[2] + 40, 255)),
     )
-    # Window
     win_s = s // 3
     draw.rectangle(
         [cx + s // 2 - win_s, cy - s // 2 + win_s // 2, cx + s // 2, cy - s // 2 + win_s + win_s // 2],
         fill=GOLD_LIGHT,
     )
-
 
 def create_svg():
     """Create scalable SVG favicon/logo."""
@@ -106,7 +98,7 @@ def create_svg():
   <polygon points="256,100 360,160 360,280 256,340 152,280 152,160"
            fill="none" stroke="rgb{GOLD}" stroke-width="1.5" opacity="0.4"/>
 
-  <!-- Settlement icons (small houses) -->
+  <!-- Settlement icons -->
   <!-- Left house -->
   <rect x="165" y="195" width="40" height="35" fill="rgb{BROWN}" rx="2"/>
   <polygon points="160,198 185,165 210,198" fill="rgb{STEEL_DARK}"/>
@@ -143,18 +135,16 @@ def create_svg():
 </svg>'''
     return svg
 
-
 def create_png(size, has_subtitle=True, is_loading_screen=False):
     """Create a rasterized PNG icon/logo at given size."""
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    # Background circle
     margin = size // 32
     r = size // 2 - margin
     cx = cy = size // 2
 
-    # Radial gradient background (approximate with concentric circles)
+    # Radial gradient background
     for i in range(r, r // 4, -2):
         t = i / r
         r_val = int(BG_DARK[0] + (BG_MID[0] - BG_DARK[0]) * t)
@@ -189,7 +179,7 @@ def create_png(size, has_subtitle=True, is_loading_screen=False):
     inner_r2 = size // 5
     draw_hex_border(draw, cx, cy, inner_r2, 1, GOLD)
 
-    # Settlement houses (only on larger sizes)
+    # Houses
     if size >= 128:
         # Left house
         hx, hy = cx - shield_w // 4, cy - shield_h // 6
@@ -218,23 +208,35 @@ def create_png(size, has_subtitle=True, is_loading_screen=False):
             fill=GOLD_DARK,
         )
 
-    # Try to use a font, fall back to default
+    # Font setup
     try:
         if is_loading_screen:
-            font_title = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf", size // 8)
-            font_sub = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf", size // 20)
-            font_year = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf", size // 24)
+            font_title = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", size // 8)
+            font_sub = ImageFont.truetype("C:/Windows/Fonts/georgia.ttf", size // 20)
+            font_year = ImageFont.truetype("C:/Windows/Fonts/georgia.ttf", size // 24)
         else:
-            # Scale fonts based on size
             title_size = max(size // 7, 8)
             sub_size = max(size // 16, 4)
-            font_title = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf", title_size)
-            font_sub = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf", sub_size)
+            font_title = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", title_size)
+            font_sub = ImageFont.truetype("C:/Windows/Fonts/georgia.ttf", sub_size)
             font_year = font_sub
     except Exception:
-        font_title = ImageFont.load_default()
-        font_sub = ImageFont.load_default()
-        font_year = ImageFont.load_default()
+        try:
+            # Fall back to liberation if on linux or path mismatch
+            if is_loading_screen:
+                font_title = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf", size // 8)
+                font_sub = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf", size // 20)
+                font_year = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf", size // 24)
+            else:
+                title_size = max(size // 7, 8)
+                sub_size = max(size // 16, 4)
+                font_title = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf", title_size)
+                font_sub = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf", sub_size)
+                font_year = font_sub
+        except Exception:
+            font_title = ImageFont.load_default()
+            font_sub = ImageFont.load_default()
+            font_year = ImageFont.load_default()
 
     # Title
     title_y = cy + shield_h // 6 if size >= 128 else cy
@@ -268,9 +270,7 @@ def create_png(size, has_subtitle=True, is_loading_screen=False):
 
     return img
 
-
 def create_favicon():
-    """Create multi-size .ico file."""
     sizes = [16, 32, 48, 64]
     imgs = []
     for s in sizes:
@@ -280,17 +280,13 @@ def create_favicon():
     imgs[0].save(ico_path, format="ICO", sizes=[(s, s) for s in sizes], append_images=imgs[1:])
     print(f"  Created {ico_path}")
 
-
 def create_svg_favicon():
-    """Save SVG favicon."""
     svg_path = OUT_DIR / "favicon.svg"
     svg_content = create_svg()
     svg_path.write_text(svg_content, encoding="utf-8")
     print(f"  Created {svg_path}")
 
-
 def create_png_icons():
-    """Create PNG icons in various sizes."""
     sizes = {
         "favicon-16x16.png": 16,
         "favicon-32x32.png": 32,
@@ -302,17 +298,14 @@ def create_png_icons():
         img = create_png(size, has_subtitle=(size >= 128))
         path = OUT_DIR / name
         img.save(path, "PNG")
-        print(f"  Created {path} ({size}×{size})")
-
+        print(f"  Created {path} ({size}?{size})")
 
 def create_loading_screen():
-    """Create full-size loading screen logo."""
     size = 512
     img = create_png(size, has_subtitle=True, is_loading_screen=True)
     path = OUT_DIR / "logo-loading.png"
     img.save(path, "PNG")
-    print(f"  Created {path} ({size}×{size})")
-
+    print(f"  Created {path} ({size}?{size})")
 
 def main():
     print("Generating S4WN icon and logo assets...")
@@ -321,8 +314,6 @@ def main():
     create_png_icons()
     create_loading_screen()
     print(f"\nAll assets saved to {OUT_DIR}/")
-    print("Done!")
-
 
 if __name__ == "__main__":
     main()

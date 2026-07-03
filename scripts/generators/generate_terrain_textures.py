@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-S4WN Terrain Texture Generator — Uses Gemini via OpenRouter API.
-Generates all 8 terrain textures at 1024×1024, seamless tileable,
+S4WN Terrain Texture Generator ? Uses Gemini via OpenRouter API.
+Generates all 8 terrain textures at 1024?1024, seamless tileable,
 in the style of Die Siedler IV (The Settlers IV).
 
-Usage: python3 scripts/generate_terrains.py [--dry-run]
+Usage: python3 scripts/generators/generate_terrain_textures.py [--dry-run]
   --dry-run  Print prompts only, don't call API
 
-Cost estimate: ~$0.55 total (8 images × $0.068 each at 1024×1024)
+Cost estimate: ~$0.55 total (8 images ? $0.068 each at 1024?1024)
 """
 
 import os, sys, json, base64, time, argparse
@@ -15,7 +15,7 @@ import urllib.request
 
 API_KEY = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("GEMINI_API_KEY")
 if not API_KEY:
-    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env")
     if not os.path.exists(env_path):
         env_path = "/opt/data/.env"
     if os.path.exists(env_path):
@@ -35,12 +35,13 @@ if not API_KEY:
                     break
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "assets", "textures")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "assets", "textures"))
 MODEL = "google/gemini-2.5-flash-image"  # Reliable, GA
 
-# ── S4-Authentic Terrain Prompts ──────────────────────────────────────
-# Each prompt produces a seamless tileable top-down texture at 1024×1024.
-# Style targets: The Settlers IV (Die Siedler IV) — vibrant, saturated,
+# ?? S4-Authentic Terrain Prompts ??????????????????????????????????????
+# Each prompt produces a seamless tileable top-down texture at 1024?1024.
+# Style targets: The Settlers IV (Die Siedler IV) ? vibrant, saturated,
 # hand-painted feel with clear biome differentiation.
 
 TERRAIN_PROMPTS = {
@@ -50,7 +51,7 @@ TERRAIN_PROMPTS = {
         "Vibrant saturated green (#3d7a35 base), with patches of lighter meadow green, "
         "subtle wildflowers (tiny yellow/white dots), and darker grass tufts for depth. "
         "The grass should look hand-painted with visible brush strokes, slightly uneven terrain, "
-        "small clover clusters. No trees, no rocks — pure grassland. "
+        "small clover clusters. No trees, no rocks ? pure grassland. "
         "Seamless tiling edges. 1024x1024. Photorealistic but stylized for a game. "
         "Warm sunlight lighting from upper-left. "
         "ONLY output the image, no text whatsoever."
@@ -71,7 +72,7 @@ TERRAIN_PROMPTS = {
         "Blue-grey granite (#7a8090 base) with stratified rock layers, visible cracks and "
         "fissures, mineral veins (quartz-like white streaks). Jagged rocky surface with "
         "sharp edges and crevices catching shadows. Darker grey in crevices, lighter on "
-        "exposed faces. No vegetation, no snow — pure bare mountain rock. "
+        "exposed faces. No vegetation, no snow ? pure bare mountain rock. "
         "Seamless tiling edges. 1024x1024. Photorealistic but stylized for a game. "
         "ONLY output the image, no text whatsoever."
     ),
@@ -80,8 +81,8 @@ TERRAIN_PROMPTS = {
         "in the style of The Settlers IV (Die Siedler IV). "
         "Clear turquoise-blue water (#3a8fbf base) with visible gentle ripple patterns, "
         "light caustics on sandy bottom visible through the water, small wave crests catching "
-        "sunlight. Coastal shelf visible — lighter near 'shore' edges, deeper blue in center. "
-        "Smooth flowing water with subtle current lines. No foam, no rocks — pure water surface. "
+        "sunlight. Coastal shelf visible ? lighter near 'shore' edges, deeper blue in center. "
+        "Smooth flowing water with subtle current lines. No foam, no rocks ? pure water surface. "
         "Seamless tiling edges. 1024x1024. Photorealistic but stylized for a game. "
         "ONLY output the image, no text whatsoever."
     ),
@@ -101,7 +102,7 @@ TERRAIN_PROMPTS = {
         "Warm golden sand (#c8a850 base) with wind-rippled dune patterns, subtle shadow lines "
         "on dune crests, scattered small pebbles, and occasional darker sand patches. "
         "Fine granular texture visible. Heat shimmer suggested by subtle color variation. "
-        "No vegetation, no rocks — pure sandy desert. "
+        "No vegetation, no rocks ? pure sandy desert. "
         "Seamless tiling edges. 1024x1024. Photorealistic but stylized for a game. "
         "ONLY output the image, no text whatsoever."
     ),
@@ -111,7 +112,7 @@ TERRAIN_PROMPTS = {
         "Pristine white snow (#d0d8e8 base) with wind-drifted patterns, soft undulating "
         "contours, subtle blue shadows in depressions, tiny ice crystal sparkles catching "
         "sunlight. Fresh powder snow look with slight granular texture. "
-        "Cold blue-white ambient lighting. No footprints, no rocks — pure snowfield. "
+        "Cold blue-white ambient lighting. No footprints, no rocks ? pure snowfield. "
         "Seamless tiling edges. 1024x1024. Photorealistic but stylized for a game. "
         "ONLY output the image, no text whatsoever."
     ),
@@ -169,7 +170,6 @@ def generate_texture(name, prompt, dry_run=False):
     images = result.get("choices", [{}])[0].get("message", {}).get("images", [])
     if not images:
         print(f"NO IMAGE in response. Keys: {list(result.keys())}")
-        # Check for text-only response
         content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
         if content:
             print(f"  Model replied with text (no image): {content[:200]}")
@@ -180,11 +180,9 @@ def generate_texture(name, prompt, dry_run=False):
         print(f"BAD image URL: {str(img_url)[:80]}")
         return False
     
-    # Decode base64 image (format: data:image/jpeg;base64,...)
     b64_data = img_url.split(",", 1)[1]
     img_bytes = base64.b64decode(b64_data)
     
-    # Convert to PNG via Pillow if available, else save as-is
     try:
         from PIL import Image
         import io
@@ -193,7 +191,6 @@ def generate_texture(name, prompt, dry_run=False):
         im.save(out_path, "PNG")
         print(f"OK ({im.size[0]}x{im.size[1]} PNG, {os.path.getsize(out_path)} bytes)")
     except ImportError:
-        # Save raw JPEG
         if out_path.endswith(".png"):
             out_path = out_path.replace(".png", ".jpg")
         with open(out_path, "wb") as f:
@@ -208,7 +205,7 @@ def main():
     parser.add_argument("--terrain", type=str, help="Generate only specific terrain (e.g. 'Grass')")
     args = parser.parse_args()
     
-    if not API_KEY:
+    if not API_KEY and not args.dry_run:
         print("ERROR: No API key found. Set OPENROUTER_API_KEY or GEMINI_API_KEY.")
         sys.exit(1)
     
@@ -236,8 +233,7 @@ def main():
     if not args.dry_run and success > 0:
         print(f"\nOutput directory: {OUTPUT_DIR}")
         print("Next steps:")
-        print("  1. Run: python3 scripts/regen_terrain_atlas.py")
-        print("  2. Commit assets: git add -f assets/textures/terrain_*.png && git commit")
+        print("  1. Run: python3 scripts/generate.py terrain-atlas")
 
 if __name__ == "__main__":
     main()

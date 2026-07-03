@@ -7,19 +7,20 @@
     "snow",
     "forest",
     "mountain",
+    "deepwater",
     "swamp"
   ],
   "buildings": [
-    "castle",
+    "headquarters",
     "farm",
     "sawmill",
-    "woodcutter",
-    "storehouse"
+    "lumberjack",
+    "warehouse"
   ],
   "units": [
-    "settler",
-    "swordsman",
-    "bowman"
+    "worker",
+    "soldier",
+    "archer"
   ],
   "ui": [
     "panel",

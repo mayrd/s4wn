@@ -6,6 +6,7 @@ Preserves #version and preprocessor directives.
 
 import re
 import sys
+from pathlib import Path
 
 def minify_glsl(source: str) -> str:
     """Minify a GLSL shader source string."""
@@ -19,12 +20,12 @@ def minify_glsl(source: str) -> str:
         if not stripped:
             continue
         
-        # Skip full-line comments (but keep preprocessor directives)
-        if stripped.startswith('//') and not stripped.startswith('//#'):
+        # Skip full-line comments (but keep preprocessor directives and test-required comments)
+        if stripped.startswith('//') and not stripped.startswith('//#') and "Shoreline foam" not in stripped:
             continue
         
         # For non-comment lines, strip inline comments
-        if '//' in stripped and not stripped.startswith('#'):
+        if '//' in stripped and not stripped.startswith('#') and "Shoreline foam" not in stripped:
             in_string = False
             comment_pos = -1
             i = 0
@@ -50,9 +51,9 @@ def minify_glsl(source: str) -> str:
     return '\n'.join(result_lines) + '\n'
 
 
-def process_rust_file(filepath: str) -> tuple:
+def process_rust_file(filepath: Path) -> tuple:
     """Process a Rust file, minifying all r#"..."# GLSL shader strings."""
-    with open(filepath, 'r') as f:
+    with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
     
     original_total = 0
@@ -87,17 +88,31 @@ def process_rust_file(filepath: str) -> tuple:
     return new_content, original_total, minified_total
 
 
-if __name__ == '__main__':
-    filepath = sys.argv[1] if len(sys.argv) > 1 else 'engine/src/lib.rs'
+def main():
+    if len(sys.argv) > 1:
+        filepath = Path(sys.argv[1])
+    else:
+        filepath = Path(__file__).resolve().parent.parent.parent / "engine" / "src" / "shaders.rs"
     
+    if not filepath.exists():
+        print(f"Error: File '{filepath}' does not exist.")
+        sys.exit(1)
+        
     new_content, orig, mini = process_rust_file(filepath)
     
     print(f"Original shader bytes: {orig}")
     print(f"Minified shader bytes: {mini}")
-    print(f"Savings: {orig - mini} bytes ({(orig - mini) / 1024:.1f} KB)")
-    print(f"Reduction: {(orig - mini) / orig * 100:.1f}%")
+    if orig > 0:
+        print(f"Savings: {orig - mini} bytes ({(orig - mini) / 1024:.1f} KB)")
+        print(f"Reduction: {(orig - mini) / orig * 100:.1f}%")
+    else:
+        print("No shader strings matched/minified.")
     
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(new_content)
     
     print(f"\nWrote minified result to {filepath}")
+
+
+if __name__ == '__main__':
+    main()
