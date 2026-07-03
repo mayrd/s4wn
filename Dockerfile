@@ -34,6 +34,7 @@ COPY engine/pkg/ /usr/share/caddy/engine/pkg/
 COPY engine/index.html /usr/share/caddy/engine/index.html
 COPY engine/lobby.html /usr/share/caddy/engine/lobby.html
 COPY engine/mobile-enhancements.js /usr/share/caddy/engine/mobile-enhancements.js
+COPY engine/ui/ /usr/share/caddy/engine/ui/
 COPY engine/config/ /usr/share/caddy/engine/config/
 
 # Copy game assets (textures, tiles, models, maps, UI)

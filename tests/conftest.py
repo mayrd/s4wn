@@ -102,6 +102,7 @@ def page(browser, s4wn_server):
     page = context.new_page()
     page.goto(f"{s4wn_server}/engine/index.html", wait_until="domcontentloaded")
     page.wait_for_timeout(3000)  # Allow WASM to init
+    page.evaluate("if (typeof window.closeMenu === 'function') window.closeMenu();")
     yield page
     context.close()
 
