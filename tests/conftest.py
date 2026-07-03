@@ -3,17 +3,23 @@ import subprocess
 import time
 import socket
 import os
+import sys
 import pytest
 from playwright.sync_api import sync_playwright
 
 
 # Chromium binary path
-CHROMIUM_PATH = os.environ.get(
-    "S4WN_CHROMIUM_PATH",
-    "/opt/data/.playwright/chromium-1223/chrome-linux/chrome",
-)
+CHROMIUM_PATH_ENV = os.environ.get("S4WN_CHROMIUM_PATH")
+if CHROMIUM_PATH_ENV:
+    CHROMIUM_PATH = CHROMIUM_PATH_ENV
+else:
+    DEFAULT_PATH = "/opt/data/.playwright/chromium-1223/chrome-linux/chrome"
+    if os.path.exists(DEFAULT_PATH):
+        CHROMIUM_PATH = DEFAULT_PATH
+    else:
+        CHROMIUM_PATH = None
 
-# Project root — contains map-viewer.html and engine/ subdirectory
+# Project root — contains engine/ subdirectory and tests/map-viewer.html
 PROJECT_ROOT = os.path.join(os.path.dirname(__file__), "..")
 ENGINE_DIR = os.path.join(PROJECT_ROOT, "engine")
 
@@ -33,7 +39,7 @@ def s4wn_server():
     Serves from project root so:
     - /engine/index.html → main game
     - /engine/lobby.html → lobby
-    - /map-viewer.html → standalone map viewer
+    - /tests/map-viewer.html → standalone map viewer
     - /engine/pkg/ → WASM files
     """
     PORT = 8765
@@ -43,7 +49,7 @@ def s4wn_server():
         return
 
     proc = subprocess.Popen(
-        ["python3", "-m", "http.server", str(PORT), "--directory", PROJECT_ROOT],
+        [sys.executable, "-m", "http.server", str(PORT), "--directory", PROJECT_ROOT],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -122,7 +128,7 @@ def map_viewer_page(browser, s4wn_server):
     """Navigate to map-viewer.html."""
     context = browser.new_context()
     page = context.new_page()
-    page.goto(f"{s4wn_server}/map-viewer.html", wait_until="domcontentloaded")
+    page.goto(f"{s4wn_server}/tests/map-viewer.html", wait_until="domcontentloaded")
     page.wait_for_timeout(2000)
     yield page
     context.close()

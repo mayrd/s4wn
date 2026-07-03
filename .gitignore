@@ -29,3 +29,7 @@ Thumbs.db
 # Exception: test map corpus is version-controlled
 !assets/maps/test/
 engine/core
+
+# Local/Developer Logs and Shims
+as_calls.txt
+

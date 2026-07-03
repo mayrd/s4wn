@@ -39,8 +39,6 @@ COPY engine/config/ /usr/share/caddy/engine/config/
 # Copy game assets (textures, tiles, models, maps, UI)
 COPY assets/ /usr/share/caddy/assets/
 
-# Copy map viewer
-COPY map-viewer.html /usr/share/caddy/map-viewer.html
 
 # Caddy configuration
 COPY web/Caddyfile /etc/caddy/Caddyfile

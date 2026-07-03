@@ -69,7 +69,7 @@ class TestVisualRegression:
 
     def test_map_viewer_screenshot(self, page, s4wn_server):
         """Capture map viewer page screenshot."""
-        page.goto(f"{s4wn_server}/map-viewer.html", wait_until="domcontentloaded")
+        page.goto(f"{s4wn_server}/tests/map-viewer.html", wait_until="domcontentloaded")
         page.wait_for_timeout(1000)
         path = os.path.join(SCREENSHOT_DIR, "map_viewer.png")
         page.screenshot(path=path, full_page=True)
