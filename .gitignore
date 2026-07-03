@@ -32,4 +32,10 @@ engine/core
 
 # Local/Developer Logs and Shims
 as_calls.txt
+bin-shim/*.exe
+bin-shim/*.a
+bin-shim/*.o
+bin-shim/*.lib
+bin-shim/*.def
+bin-shim/*.s
 
