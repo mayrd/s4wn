@@ -1340,8 +1340,8 @@ mod marquee_selection_tests {
         assert_eq!(UNIT_STATE_NAMES[UnitState::Dying as usize], "Dying");
         assert_eq!(UNIT_STATE_NAMES[UnitState::Dead as usize], "Dead");
         // Verify all names are non-empty
-        for i in 0..8 {
-            assert!(!UNIT_STATE_NAMES[i].is_empty(), "UNIT_STATE_NAMES[{}] is empty", i);
+        for (i, name) in UNIT_STATE_NAMES.iter().enumerate() {
+            assert!(!name.is_empty(), "UNIT_STATE_NAMES[{}] is empty", i);
         }
     }
 
