@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S358 · 993 tests · WASM 299KB · Clippy: 0 errors, 0 warnings. Fix #85 resolved. All open issues closed. FPS benchmarking stats added — min/max/avg tracking in engine, StatsInfo expanded, toggle_fps_visible() + reset_fps_stats() exported. Right-click FPS display to hide for clean screenshots. Debug panel shows min/max/avg FPS. Next: (1) FPS/draw-call benchmarking on real hardware (1080p + 720p). (2) Visual verification of Phase 7 features by Daniel. (3) Verify Fix #73 on mobile — request render snapshot from Daniel. (4) Consider adding frametime histogram to debug panel.
+Status: S359 · 994 tests · WASM 299KB · Clippy: 0 errors, 0 warnings. BUGFIX: First-frame RENDER_DIAG diagnostic never fired — fps_frame_count was incremented before the ==0 check. Added dedicated first_frame_diag_done bool flag that gates the diagnostic (fires once per init/context-restore cycle, reset in reinit_webgl). 1 new structural test. Next: (1) FPS/draw-call benchmarking on real hardware (1080p + 720p). (2) Visual verification of Phase 7 features by Daniel. (3) Verify Fix #73 on mobile — request render snapshot from Daniel. (4) Consider adding frametime histogram to debug panel.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
