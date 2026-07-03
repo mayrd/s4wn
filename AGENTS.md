@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S366 · 1000 tests · WASM 299KB · Clippy: 0 errors, 0 warnings. Fixed deployment 404s for modular ES6 UI scripts by copying engine/ui/ to the Caddy root directory in Dockerfile, and resolved UI integration test failures by dismissing the main menu overlay in Playwright page setup. All 24 integration tests and 1000 backend Rust tests are green. Next: (1) FPS/draw-call benchmarking on real hardware (1080p + 720p). (2) Visual verification of Phase 7 features by Daniel. (3) Verify Fix #73 on mobile. (4) Verify #92 fix with Daniel — request render snapshot. (5) Consider adding frametime histogram to debug panel.
+Status: S368 · 1004 tests · WASM 299KB · Clippy: 0 errors, 0 warnings. S367: Added day/night cycle override slider to debug panel (0-100% range maps to day_phase, reset button restores game cycle). Added frametime histogram: compute_frametime_histogram() returns 8-bucket Vec<u32> from 128-sample ring buffer. 4 new tests for histogram computation. S368: Fixed histogram tooltip indexOf bug (use map index vs first-match). Added reveal_map() debug helper to toggle full map visibility in debug panel. Next: (1) FPS/draw-call benchmarking on real hardware (1080p + 720p). (2) Visual verification of Phase 7 features by Daniel. (3) Verify Fix #73 on mobile. (4) Verify #92 fix with Daniel — request render snapshot. (5) Add frametime histogram visual bar chart in debug panel (currently text-only).
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap
