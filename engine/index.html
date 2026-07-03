@@ -2342,18 +2342,18 @@ window._s4wn_fullmap = false;
 window._s4wn_show_resources = false;
 window._s4wn_show_building_debug = false;
 
-function toggleFullMap(on) {
+window.toggleFullMap = function(on) {
     window._s4wn_fullmap = on;
     if (typeof set_show_full_map === 'function') set_show_full_map(on);
-}
-function toggleResources(on) {
+};
+window.toggleResources = function(on) {
     window._s4wn_show_resources = on;
     const el = document.getElementById('resource-overlay');
     if (el) el.style.display = on ? 'block' : 'none';
-}
-function toggleBuildingDebug(on) {
+};
+window.toggleBuildingDebug = function(on) {
     window._s4wn_show_building_debug = on;
-}
+};
 document.addEventListener('DOMContentLoaded', () => {
     const fpsEl = document.getElementById('fps');
     if (fpsEl) {
@@ -3365,7 +3365,7 @@ function toRustName(configId) {
 }
 
 function showBuildCostTooltip(kindName) {
-    const disc = BUILDING_DISCRIMINANT_BY_CONFIG_ID[kindName];
+    const disc = window.BUILDING_DISCRIMINANT_BY_CONFIG_ID[kindName];
     if (disc === undefined) return '';
     const items = get_build_cost_by_id(disc);
     if (items && items.length > 0) {
@@ -3420,7 +3420,7 @@ function refreshBuildingAffordability() {
     placementButtons.forEach(btn => {
         const name = btn._buildingName;
         if (!name) return;
-        const disc = BUILDING_DISCRIMINANT_BY_CONFIG_ID[name];
+        const disc = window.BUILDING_DISCRIMINANT_BY_CONFIG_ID[name];
         if (disc === undefined) return;
         const items = get_build_cost_by_id(disc);
         let cost = null;
@@ -3437,7 +3437,7 @@ function refreshBuildingAffordability() {
         } else {
             btn.classList.remove('affordable');
             // Cancel placement if current building becomes unaffordable
-            const placementDisc = BUILDING_DISCRIMINANT_BY_CONFIG_ID[name];
+            const placementDisc = window.BUILDING_DISCRIMINANT_BY_CONFIG_ID[name];
             if (placementDisc !== undefined && placementMode === placementDisc) {
                 cancelPlacement();
             }
@@ -6971,7 +6971,7 @@ function populateConstructionPanel() {
 
 function selectBuilding(name) {
     try { Sfx.playUIClick(); } catch(e) {}
-    const disc = BUILDING_DISCRIMINANT_BY_CONFIG_ID[name];
+    const disc = window.BUILDING_DISCRIMINANT_BY_CONFIG_ID[name];
     if (disc === undefined) return;
     placementButtons.forEach(b => b.classList.remove('active'));
     placementMode = disc;
