@@ -1904,10 +1904,8 @@ impl App {
         if let Some(ref loc) = self.use_textures_loc {
             gl.uniform1i(Some(loc), if self.textures_loaded { 1 } else { 0 });
         }
-        if self.textures_loaded {
-            if let Some(ref loc) = self.terrain_tex_loc {
-                gl.uniform1i(Some(loc), 0); // TEXTURE0
-            }
+        if let Some(ref loc) = self.terrain_tex_loc {
+            gl.uniform1i(Some(loc), 0); // TEXTURE0
         }
 
         let canvas = gl
@@ -2094,11 +2092,13 @@ impl App {
             gl.uniform_matrix4fv_with_f32_array(Some(vp_loc), false, &main_vp);
             gl.uniform1i(Some(use_loc), 1);
         }
-        // Bind reflection texture for water shader to sample
-        if let (Some(ref loc), Some(ref tex)) = (&self.reflection_tex_loc, &self.reflection_tex) {
+        // Bind reflection texture for water shader to sample (always set uniform to prevent unit clash)
+        if let Some(ref loc) = self.reflection_tex_loc {
+            gl.uniform1i(Some(loc), 2); // TEXTURE2
+        }
+        if let Some(ref tex) = self.reflection_tex {
             gl.active_texture(WebGl2RenderingContext::TEXTURE2);
             gl.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(tex));
-            gl.uniform1i(Some(loc), 2);
         }
 
         gl.uniform2f(
