@@ -83,7 +83,7 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 
 ## 3. Implementation Plan
 
-Status: S359 · 994 tests · WASM 299KB · Clippy: 0 errors, 0 warnings. BUGFIX: First-frame RENDER_DIAG diagnostic never fired — fps_frame_count was incremented before the ==0 check. Added dedicated first_frame_diag_done bool flag that gates the diagnostic (fires once per init/context-restore cycle, reset in reinit_webgl). 1 new structural test. Next: (1) FPS/draw-call benchmarking on real hardware (1080p + 720p). (2) Visual verification of Phase 7 features by Daniel. (3) Verify Fix #73 on mobile — request render snapshot from Daniel. (4) Consider adding frametime histogram to debug panel.
+Status: S360 · 994 tests · WASM 299KB · Clippy: 0 errors, 0 warnings. All 5 open GitHub issues (#87-#91) resolved. #87 Remove bottom nation HUD (duplicative). #88 Minimap click-to-center with set_camera_center WASM export. #89 Minimap rotation arrows (±90°) with rotate_camera_azimuth export. #90 Compass N/S/E/W on minimap. #91 Debug panel toggles: Show Full Map (set_show_full_map export + Map::set_all_visible), Show Resources, Show Building Debug. — fps_frame_count was incremented before the ==0 check. Added dedicated first_frame_diag_done bool flag that gates the diagnostic (fires once per init/context-restore cycle, reset in reinit_webgl). 1 new structural test. Next: (1) FPS/draw-call benchmarking on real hardware (1080p + 720p). (2) Visual verification of Phase 7 features by Daniel. (3) Verify Fix #73 on mobile — request render snapshot from Daniel. (4) Consider adding frametime histogram to debug panel.
 **Methodology:** BDD/TDD — Objective → Test Cases → Implementation → Verify → Commit
 
 ### Roadmap

@@ -482,6 +482,13 @@ impl Map {
     /// Compute visibility from buildings and units.
     /// Buildings: Castle=5, GuardTower=7, Fortress=10, Storehouse=3, others=2
     /// Units: Settler=3, Swordsman=4, Bowman=4
+    /// Debug helper: mark all tiles as fully visible (bypass fog of war).
+    pub fn set_all_visible(&mut self) {
+        for tile in &mut self.tiles {
+            tile.visibility = 1.0;
+        }
+    }
+
     pub fn compute_visibility_from_entities(
         &mut self,
         buildings: &[(crate::economy::BuildingType, usize, usize)],

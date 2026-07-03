@@ -948,6 +948,8 @@ struct App {
     context_lost: bool,
     /// First-frame diagnostic has fired (debug logging)
     first_frame_diag_done: bool,
+    /// Debug toggle: show full map (bypass fog of war)
+    show_full_map: bool,
 
 }
 // ── Mesh Data ─────────────────────────────────────────────────────────────────
@@ -1718,6 +1720,7 @@ impl App {
             god_ray_strength_loc,
             context_lost: false,
             first_frame_diag_done: false,
+            show_full_map: false,
         })
     }
 
@@ -3554,6 +3557,10 @@ impl App {
     }
 
     fn rebuild_mesh(&mut self) {
+        // Debug toggle: show full map bypasses fog of war
+        if self.show_full_map {
+            self.map.set_all_visible();
+        }
         let mesh = build_map_mesh(&self.map, &self.camera);
 
         let gl = &self.gl;
