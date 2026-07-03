@@ -4506,6 +4506,45 @@ pub fn get_camera_state() -> Option<CameraState> {
         })
     }
 }
+
+/// Set camera center to world coordinates (immediate).
+/// Used by minimap click-to-center feature.
+#[wasm_bindgen]
+pub fn set_camera_center(x: f32, y: f32) {
+    unsafe {
+        if let Some(app) = (*std::ptr::addr_of_mut!(APP)).as_mut() {
+            app.camera.set_center(x, y);
+            app.mesh_dirty = true;
+        }
+    }
+}
+
+/// Rotate camera azimuth by a delta angle in degrees.
+/// Positive = clockwise rotation around the focus point.
+/// Used by minimap rotation arrow buttons.
+#[wasm_bindgen]
+pub fn rotate_camera_azimuth(delta_deg: f32) {
+    unsafe {
+        if let Some(app) = (*std::ptr::addr_of_mut!(APP)).as_mut() {
+            let new_azimuth = app.camera.azimuth + delta_deg;
+            app.camera.set_azimuth(new_azimuth);
+            app.mesh_dirty = true;
+        }
+    }
+}
+
+/// Toggle show full map (bypass fog of war).
+/// Used by debug panel checkbox.
+#[wasm_bindgen]
+pub fn set_show_full_map(on: bool) {
+    unsafe {
+        if let Some(app) = (*std::ptr::addr_of_mut!(APP)).as_mut() {
+            app.show_full_map = on;
+            app.mesh_dirty = true;
+        }
+    }
+}
+
 /// Starter result struct — replaces JSON string from setup_starter_base.
 /// `ok` is true when the base was placed successfully.
 /// `error` contains the error message when `ok` is false (empty on success).
