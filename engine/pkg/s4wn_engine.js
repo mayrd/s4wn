@@ -1587,6 +1587,41 @@ export class StatsInfo {
     /**
      * @returns {number}
      */
+    get fps_avg() {
+        const ret = wasm.__wbg_get_statsinfo_fps_avg(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get fps_max() {
+        const ret = wasm.__wbg_get_statsinfo_fps_max(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get fps_min() {
+        const ret = wasm.__wbg_get_statsinfo_fps_min(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get fps_sample_count() {
+        const ret = wasm.__wbg_get_statsinfo_fps_sample_count(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {boolean}
+     */
+    get fps_visible() {
+        const ret = wasm.__wbg_get_statsinfo_fps_visible(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * @returns {number}
+     */
     get fps() {
         const ret = wasm.__wbg_get_statsinfo_fps(this.__wbg_ptr);
         return ret >>> 0;
@@ -1618,6 +1653,36 @@ export class StatsInfo {
     get zoom() {
         const ret = wasm.__wbg_get_statsinfo_zoom(this.__wbg_ptr);
         return ret;
+    }
+    /**
+     * @param {number} arg0
+     */
+    set fps_avg(arg0) {
+        wasm.__wbg_set_statsinfo_fps_avg(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set fps_max(arg0) {
+        wasm.__wbg_set_statsinfo_fps_max(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set fps_min(arg0) {
+        wasm.__wbg_set_statsinfo_fps_min(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set fps_sample_count(arg0) {
+        wasm.__wbg_set_statsinfo_fps_sample_count(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {boolean} arg0
+     */
+    set fps_visible(arg0) {
+        wasm.__wbg_set_statsinfo_fps_visible(this.__wbg_ptr, arg0);
     }
     /**
      * @param {number} arg0
@@ -2657,6 +2722,13 @@ export function render(timestamp) {
 }
 
 /**
+ * Reset FPS benchmarking stats (min/max/avg). Called when starting a new benchmark session.
+ */
+export function reset_fps_stats() {
+    wasm.reset_fps_stats();
+}
+
+/**
  * Handle window/canvas resize.
  */
 export function resize() {
@@ -2797,6 +2869,15 @@ export function tick_building_destructions(dt) {
  */
 export function toggle_editor_grid() {
     const ret = wasm.toggle_editor_grid();
+    return ret !== 0;
+}
+
+/**
+ * Toggle FPS counter visibility. Returns new visibility state (true = visible).
+ * @returns {boolean}
+ */
+export function toggle_fps_visible() {
+    const ret = wasm.toggle_fps_visible();
     return ret !== 0;
 }
 

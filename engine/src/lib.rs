@@ -805,13 +805,18 @@ struct App {
     // Game loop (tick-based simulation)
     game_loop: GameLoop,
 
-    // FPS counter
     fps_frame_count: u32,
     fps_last_time: f64,
     current_fps: u32,
     last_frame_time_ms: f32,
     draw_call_count: u32,
 
+    // FPS benchmarking stats (min/max/avg over session)
+    fps_min: u32,
+    fps_max: u32,
+    fps_accum: f64,
+    fps_sample_count: u64,
+    fps_visible: bool,
     // Overlay (buildings + units) rendering
     overlay_program: WebGlProgram,
     overlay_vao: WebGlVertexArrayObject,
@@ -1603,6 +1608,11 @@ impl App {
             current_fps: 0,
             last_frame_time_ms: 0.0,
             draw_call_count: 0,
+            fps_min: u32::MAX,
+            fps_max: 0,
+            fps_accum: 0.0,
+            fps_sample_count: 0,
+            fps_visible: true,
             overlay_program,
             overlay_vao,
             overlay_pos_buffer,
@@ -2431,6 +2441,15 @@ impl App {
             self.current_fps = self.fps_frame_count;
             self.fps_frame_count = 0;
             self.fps_last_time = now;
+            // Update FPS benchmarking stats (min/max/avg)
+            let fps = self.current_fps;
+            if fps > 0 {
+                if fps < self.fps_min { self.fps_min = fps; }
+                if fps > self.fps_max { self.fps_max = fps; }
+                let n = self.fps_sample_count as f64;
+                self.fps_accum = (self.fps_accum * n + fps as f64) / (n + 1.0);
+                self.fps_sample_count += 1;
+            }
         }
 
         // Now borrow gl for drawing (after mutable operations are done)
@@ -3961,6 +3980,11 @@ pub struct StatsInfo {
     pub game_time: f32,
     pub zoom: f32,
     pub frame_time_ms: f32,
+    pub fps_min: u32,
+    pub fps_max: u32,
+    pub fps_avg: f32,
+    pub fps_sample_count: u32,
+    pub fps_visible: bool,
 }
 
 /// Get engine stats as a typed struct (replaces JSON string, eliminating JSON.parse()).
@@ -3973,6 +3997,11 @@ pub fn get_stats() -> Option<StatsInfo> {
             game_time: app.game_loop.state.game_time as f32,
             zoom: app.camera.zoom,
             frame_time_ms: app.last_frame_time_ms,
+            fps_min: app.fps_min,
+            fps_max: app.fps_max,
+            fps_avg: if app.fps_sample_count > 0 { app.fps_accum as f32 } else { 0.0 },
+            fps_sample_count: app.fps_sample_count as u32,
+            fps_visible: app.fps_visible,
         })
     }
 }
@@ -4538,6 +4567,32 @@ pub fn get_draw_calls() -> u32 {
     }
     0
 }
+
+/// Toggle FPS counter visibility. Returns new visibility state (true = visible).
+#[wasm_bindgen]
+pub fn toggle_fps_visible() -> bool {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.fps_visible = !app.fps_visible;
+            return app.fps_visible;
+        }
+    }
+    true
+}
+
+/// Reset FPS benchmarking stats (min/max/avg). Called when starting a new benchmark session.
+#[wasm_bindgen]
+pub fn reset_fps_stats() {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.fps_min = u32::MAX;
+            app.fps_max = 0;
+            app.fps_accum = 0.0;
+            app.fps_sample_count = 0;
+        }
+    }
+}
+
 /// Building information struct — replaces JSON string from get_building_summary.
 /// `index` is the position in the buildings array (used for garrison/destruction).
 /// `kind` is the BuildingType discriminant (use BUILDING_NAMES_BY_ID in JS).
@@ -9500,10 +9555,20 @@ mod parse_map_json_tests {
             game_time: 45.6,
             zoom: 1.5,
             frame_time_ms: 16.6,
+            fps_min: 55,
+            fps_max: 62,
+            fps_avg: 59.3,
+            fps_sample_count: 120,
+            fps_visible: true,
         };
         assert_eq!(stats.fps, 60);
         assert_eq!(stats.ticks, 12345);
         assert!((stats.game_time - 45.6).abs() < 0.001);
+        assert_eq!(stats.fps_min, 55);
+        assert_eq!(stats.fps_max, 62);
+        assert!((stats.fps_avg - 59.3).abs() < 0.001);
+        assert_eq!(stats.fps_sample_count, 120);
+        assert_eq!(stats.fps_visible, true);
         assert!((stats.zoom - 1.5).abs() < 0.001);
     }
 
@@ -9512,6 +9577,40 @@ mod parse_map_json_tests {
         // When APP is not initialized, get_tool_counts returns empty Vec
         let counts = get_tool_counts();
         assert!(counts.is_empty());
+    }
+
+    #[test]
+    fn test_toggle_fps_visible() {
+        // toggle_fps_visible returns true when APP is uninitialized
+        let result = toggle_fps_visible();
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn test_reset_fps_stats_no_panic_uninitialized() {
+        // reset_fps_stats should not panic when APP is uninitialized
+        reset_fps_stats();
+    }
+
+    #[test]
+    fn test_fps_stats_initial_values() {
+        // StatsInfo with fresh initialization values
+        let stats = StatsInfo {
+            fps: 0,
+            ticks: 0,
+            game_time: 0.0,
+            zoom: 1.0,
+            frame_time_ms: 0.0,
+            fps_min: u32::MAX,
+            fps_max: 0,
+            fps_avg: 0.0,
+            fps_sample_count: 0,
+            fps_visible: true,
+        };
+        assert_eq!(stats.fps_min, u32::MAX);
+        assert_eq!(stats.fps_max, 0);
+        assert_eq!(stats.fps_sample_count, 0);
+        assert_eq!(stats.fps_visible, true);
     }
 
     #[test]

@@ -1586,6 +1586,7 @@
   <div id="fps" title="Click to toggle debug panel">--</div>
   <div id="debug-extra" style="display:none">
     <span id="debug-time"></span> | <span id="debug-ticks"></span> | <span id="debug-tiles"></span> | <span id="debug-buildings"></span>
+    <br><span id="debug-fps-stats" style="color:#8af;font-size:11px;"></span>
     <br><button id="debug-snapshot-btn" style="margin-top:4px;padding:3px 8px;font-size:11px;background:rgba(200,170,100,0.15);border:1px solid rgba(200,170,100,0.3);border-radius:4px;color:#c8b878;cursor:pointer;" title="Collect render diagnostics + screenshot → GitHub issue">📸 Render Snapshot</button>
   </div>
 </div>
@@ -1669,6 +1670,8 @@ import init, {
     add_model_instance,
     get_camera_state,
     get_draw_calls,
+    toggle_fps_visible,
+    reset_fps_stats,
     load_map_json,
     export_map_json,
     get_building_at_tile,
@@ -2317,6 +2320,16 @@ let debugPanelOpen = false;
 document.addEventListener('DOMContentLoaded', () => {
     const fpsEl = document.getElementById('fps');
     if (fpsEl) {
+        // Right-click toggles FPS visibility (for clean screenshots)
+        fpsEl.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const visible = typeof toggle_fps_visible === 'function' ? toggle_fps_visible() : true;
+            fpsEl.style.display = visible ? '' : 'none';
+            if (!visible) {
+                const extra = document.getElementById('debug-extra');
+                if (extra) { extra.style.display = 'none'; debugPanelOpen = false; }
+            }
+        });
         fpsEl.addEventListener('click', () => {
             const extra = document.getElementById('debug-extra');
             if (!extra) return;
@@ -6128,7 +6141,17 @@ async function main() {
             const s = get_stats();
             if (s) {
                 const dc = get_draw_calls ? get_draw_calls() : 0;
-                fpsEl.textContent = currentFps + ' FPS · ' + dc + ' DC';
+                if (s.fps_visible !== false) {
+                    fpsEl.textContent = currentFps + ' FPS · ' + dc + ' DC';
+                    fpsEl.style.display = '';
+                } else {
+                    fpsEl.style.display = 'none';
+                }
+                // FPS benchmarking stats in debug panel
+                const dbgFps = document.getElementById('debug-fps-stats');
+                if (dbgFps && s.fps_sample_count > 0) {
+                    dbgFps.textContent = 'FPS min:' + s.fps_min + ' max:' + s.fps_max + ' avg:' + s.fps_avg.toFixed(1) + ' (samples:' + s.fps_sample_count + ')';
+                }
                 // Update extra debug info
                 const dbgTime = document.getElementById('debug-time');
                 const dbgTicks = document.getElementById('debug-ticks');
