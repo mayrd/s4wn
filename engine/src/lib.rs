@@ -4551,6 +4551,17 @@ pub fn set_day_phase(phase: f64) {
     }
 }
 
+/// Reveal all tiles on the map (bypass fog of war). Debug helper.
+#[wasm_bindgen]
+pub fn reveal_map() {
+    unsafe {
+        if let Some(ref mut app) = APP {
+            app.game_loop.state.map.set_all_visible();
+            app.mesh_dirty = true;
+        }
+    }
+}
+
 
 /// Camera state struct — replaces JSON string from get_camera_state.
 /// `center_x`/`center_y` are the camera center in world tile coords.

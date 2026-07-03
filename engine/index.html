@@ -1605,6 +1605,7 @@
     <label style="display:block;margin-top:2px;cursor:pointer;color:#8af;font-size:10px"><input type="checkbox" id="dbg-resources" onchange="toggleResources(this.checked)"> Show Resources</label>
     <label style="display:block;margin-top:2px;cursor:pointer;color:#8af;font-size:10px"><input type="checkbox" id="dbg-buildings" onchange="toggleBuildingDebug(this.checked)"> Show Building Debug</label>
     <br><label style="display:block;margin-top:4px;cursor:pointer;color:#8af;font-size:10px"><span>Time of Day</span> <input type="range" id="dbg-dayphase" min="0" max="100" value="25" step="1" style="width:80px;vertical-align:middle;margin-left:4px" oninput="setDayPhase(this.value/100)"><button id="dbg-dayphase-reset" style="margin-left:4px;padding:0 4px;font-size:9px;background:none;border:1px solid #8af;border-radius:2px;color:#8af;cursor:pointer" title="Reset to game cycle">reset</button></label>
+    <br><label style="display:block;margin-top:2px;cursor:pointer;color:#8af;font-size:10px"><input type="checkbox" id="dbg-reveal" onchange="if(this.checked)reveal_map();else{document.getElementById('dbg-dayphase').value=25;setDayPhase(-1);location.reload()}"> Reveal Map (Fog off)</label>
   </div>
 </div>
 
@@ -6201,9 +6202,9 @@ async function main() {
                         const total = hist.reduce((a,b) => a+b, 0);
                         const maxH = Math.max(1, ...hist);
                         const barWidth = 12;
-                        const hBlocks = hist.map(v => {
+                        const hBlocks = hist.map((v, i) => {
                             const h = Math.max(1, Math.round((v / maxH) * 30));
-                            return '<span title="' + labels[hist.indexOf(v)] + ': ' + v + '/' + total + '" style="display:inline-block;width:' + barWidth + 'px;height:' + h + 'px;background:' + (v > 0 ? '#8af' : '#333') + ';vertical-align:bottom;margin:0 1px;border-radius:1px 1px 0 0;"></span>';
+                            return '<span title="' + labels[i] + ': ' + v + '/' + total + '" style="display:inline-block;width:' + barWidth + 'px;height:' + h + 'px;background:' + (v > 0 ? '#8af' : '#333') + ';vertical-align:bottom;margin:0 1px;border-radius:1px 1px 0 0;"></span>';
                         }).join('');
                         dbgFps.innerHTML += '<br><span style="font-size:10px;color:#7af;">Frame times: ' + hBlocks + '</span>';
                     }

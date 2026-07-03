@@ -2744,6 +2744,13 @@ export function restore_game_state(json) {
 }
 
 /**
+ * Reveal all tiles on the map (bypass fog of war). Debug helper.
+ */
+export function reveal_map() {
+    wasm.reveal_map();
+}
+
+/**
  * Rotate camera azimuth by a delta angle in degrees.
  * Positive = clockwise rotation around the focus point.
  * Used by minimap rotation arrow buttons.

@@ -188,6 +188,7 @@ export const render: (a: number) => void;
 export const reset_fps_stats: () => void;
 export const resize: () => void;
 export const restore_game_state: (a: number, b: number) => number;
+export const reveal_map: () => void;
 export const rotate_camera_azimuth: (a: number) => void;
 export const set_camera_center: (a: number, b: number) => void;
 export const set_day_phase: (a: number) => void;

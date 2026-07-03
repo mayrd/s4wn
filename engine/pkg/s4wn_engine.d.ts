@@ -775,6 +775,11 @@ export function resize(): void;
 export function restore_game_state(json: string): RestoreStateResult;
 
 /**
+ * Reveal all tiles on the map (bypass fog of war). Debug helper.
+ */
+export function reveal_map(): void;
+
+/**
  * Rotate camera azimuth by a delta angle in degrees.
  * Positive = clockwise rotation around the focus point.
  * Used by minimap rotation arrow buttons.
@@ -1085,6 +1090,7 @@ export interface InitOutput {
     readonly reset_fps_stats: () => void;
     readonly resize: () => void;
     readonly restore_game_state: (a: number, b: number) => number;
+    readonly reveal_map: () => void;
     readonly rotate_camera_azimuth: (a: number) => void;
     readonly set_camera_center: (a: number, b: number) => void;
     readonly set_day_phase: (a: number) => void;
