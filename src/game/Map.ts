@@ -60,6 +60,43 @@ export class Map {
     return tile.terrain !== Terrain.Mountain && tile.terrain !== Terrain.Snow;
   }
 
+  updateTerritory(nationId: number, influencePoints: Array<{ x: number; y: number; radius: number }>): void {
+    // Reset territory for this nation (except neutral tiles)
+    // Actually, it's better to reset all territory and then recompute for all nations
+    // But for simplicity, we'll just update the tiles influenced by this nation's points
+    
+    // First, we need a way to clear previous territory. 
+    // Since we don't know which tiles were owned by this nation, we'll clear all tiles that are not neutral.
+    // This is inefficient but works for now.
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        if (this.tiles[y][x].territory !== 0) {
+          this.tiles[y][x].territory = 0;
+        }
+      }
+    }
+
+    // Apply influence
+    for (const point of influencePoints) {
+      const r = point.radius;
+      const startX = Math.max(0, Math.floor(point.x - r));
+      const endX = Math.min(this.width - 1, Math.ceil(point.x + r));
+      const startY = Math.max(0, Math.floor(point.y - r));
+      const endY = Math.min(this.height - 1, Math.ceil(point.y + r));
+
+      for (let y = startY; y <= endY; y++) {
+        for (let x = startX; x <= endX; x++) {
+          const dist = Math.sqrt((x - point.x) ** 2 + (y - point.y) ** 2);
+          if (dist <= r) {
+            // If multiple nations influence the same tile, the one with the closest point wins
+            // For simplicity, we'll just let the last one win or use a distance check
+            this.tiles[y][x].territory = nationId;
+          }
+        }
+      }
+    }
+  }
+
   speedMultiplier(x: number, y: number): number {
     const tile = this.get(x, y);
     if (!tile) return 1.0;

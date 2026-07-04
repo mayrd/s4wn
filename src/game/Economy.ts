@@ -90,12 +90,16 @@ export class Economy {
 
   // ── Building Management ──────────────────────────────────────────
 
-  tryPlaceBuilding(kind: BuildingType, x: number, y: number, map: GameMap): BuildingData | null {
+  tryPlaceBuilding(kind: BuildingType, x: number, y: number, map: GameMap, ownerId: number): BuildingData | null {
     const cost = buildCost(kind);
     if (!this.canAfford(cost)) return null;
 
     // Check if tile is buildable
     if (!map.isBuildable(x, y)) return null;
+
+    // Check territory ownership
+    const tile = map.get(x, y);
+    if (!tile || tile.territory !== ownerId) return null;
 
     // Check for collision with existing buildings
     for (const b of this.buildings) {
@@ -121,7 +125,7 @@ export class Economy {
       maxSettlers: maxSettlers(kind),
       destructionTimer: null,
       destructionProgress: null,
-      ownerId: 0,
+      ownerId,
     };
 
     this.buildings.push(building);
