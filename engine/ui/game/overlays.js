@@ -490,8 +490,23 @@ export async function startNewGame() {
     if (window.resetToolPickupTracking) window.resetToolPickupTracking();
 
     if (!window.engineReady || !load_map_json) {
-        alert(t('engine_not_ready'));
-        return;
+        // Wait for engine to be ready (poll up to 30s)
+        showLoading('Loading engine...');
+        const maxWait = 30000;
+        const pollInterval = 200;
+        const startTime = Date.now();
+        while (!window.engineReady && (Date.now() - startTime) < maxWait) {
+            await new Promise(r => setTimeout(r, pollInterval));
+            updateLoadingProgress(
+                Math.min(95, Math.floor((Date.now() - startTime) / maxWait * 100)),
+                'Loading engine...'
+            );
+        }
+        hideLoading();
+        if (!window.engineReady || !load_map_json) {
+            alert(t('engine_not_ready'));
+            return;
+        }
     }
 
     showLoading(t('generating_world'));
@@ -706,10 +721,25 @@ export function getSavedGameMeta() {
 }
 window.getSavedGameMeta = getSavedGameMeta;
 
-export function loadSavedGame() {
+export async function loadSavedGame() {
     if (!window.engineReady || !restore_game_state) {
-        alert('Engine not ready. Please wait...');
-        return;
+        // Wait for engine to be ready (poll up to 30s)
+        showLoading('Loading engine...');
+        const maxWait = 30000;
+        const pollInterval = 200;
+        const startTime = Date.now();
+        while (!window.engineReady && (Date.now() - startTime) < maxWait) {
+            await new Promise(r => setTimeout(r, pollInterval));
+            updateLoadingProgress(
+                Math.min(95, Math.floor((Date.now() - startTime) / maxWait * 100)),
+                'Loading engine...'
+            );
+        }
+        hideLoading();
+        if (!window.engineReady || !restore_game_state) {
+            alert('Engine not ready. Please wait...');
+            return;
+        }
     }
     const stateJson = localStorage.getItem(SAVE_KEY);
     if (!stateJson) {
@@ -1306,8 +1336,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const tutBtn = document.getElementById('btn-tutorial');
     if (tutBtn) {
-        tutBtn.addEventListener('click', () => {
+        tutBtn.addEventListener('click', async () => {
             closeMenu();
+
+            // Wait for engine to be ready (poll up to 30s)
+            if (!window.engineReady) {
+                showLoading('Loading engine...');
+                const maxWait = 30000; // 30 seconds
+                const pollInterval = 200;
+                const startTime = Date.now();
+                while (!window.engineReady && (Date.now() - startTime) < maxWait) {
+                    await new Promise(r => setTimeout(r, pollInterval));
+                    updateLoadingProgress(
+                        Math.min(95, Math.floor((Date.now() - startTime) / maxWait * 100)),
+                        'Loading engine...'
+                    );
+                }
+                hideLoading();
+                if (!window.engineReady) {
+                    alert('Engine failed to load. Please refresh the page.');
+                    return;
+                }
+            }
+
             const mapSelect = document.getElementById('ng-map');
             if (mapSelect) mapSelect.value = 'tutorial';
             const diffSelect = document.getElementById('ng-difficulty');
