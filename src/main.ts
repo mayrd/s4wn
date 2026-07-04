@@ -21,7 +21,7 @@ import { TerrainRenderer } from './rendering/TerrainRenderer';
 import { WaterPlane } from './rendering/WaterPlane';
 import { BuildingMesh } from './rendering/BuildingMesh';
 import { UIManager } from './ui/UIManager';
-import '../ui/styles.css';
+import './ui/styles.css';
 
 // ── Babylon.js Scene Setup ────────────────────────────────────────
 const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
