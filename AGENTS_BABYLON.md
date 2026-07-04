@@ -71,10 +71,10 @@
 - [ ] Audio system
 
 ### Phase 6 — Testing & Deployment (Sessions 14-15)
-- [ ] Migrate Rust tests to TypeScript/jest
+- [x] Migrate Rust tests to TypeScript/jest
 - [ ] Visual regression tests
 - [ ] Integration tests (keep Playwright)
-- [ ] Update Dockerfile for static serving
+- [x] Update Dockerfile for static serving
 - [ ] Update CI/CD pipeline
 
 ---
@@ -103,3 +103,11 @@
 | P0 | 2026-07-04 | Initialize npm + TypeScript + Babylon.js |
 | P1 | 2026-07-04 | Migrate core modules (Map, Unit, Pathfinding, Building) |
 | P2 | 2026-07-04 | Create main.ts with ArcRotateCamera, TerrainRenderer |
+| P3 | 2026-07-04 | Remove all WASM/Rust frontend code, clean up .gitignore, Dockerfile, AGENTS.md |
+
+### Next Session Priorities
+1. Terrain texture splat-mapping (Phase 2)
+2. Water plane with reflections
+3. Building 3D models (glTF via Babylon.js)
+4. Ground-plane shadows for buildings/units
+5. Continue GameLoop and WorkerAI implementation
