@@ -1,3 +1,17 @@
 {
-  "buildings": []
+  "buildings": [
+    {
+      "id": "Headquarters",
+      "category": "Logistics",
+      "cost": { "plank": 5, "stone": 2 },
+      "inputs": [],
+      "outputs": [],
+      "interval": 0,
+      "build_time": 0,
+      "tool": null,
+      "workers": 0,
+      "icon": "icon_hq.png",
+      "name_de": "Hauptquartier"
+    }
+  ]
 }

@@ -1,0 +1,10 @@
+[
+  { "id": 0, "name": "Grass", "name_de": "Grasland", "color": "#7cfc00", "buildable": true, "passable": true },
+  { "id": 1, "name": "Forest", "name_de": "Wald", "color": "#228b22", "buildable": false, "passable": true },
+  { "id": 2, "name": "Desert", "name_de": "Wüste", "color": "#edc9af", "buildable": true, "passable": true },
+  { "id": 3, "name": "Snow", "name_de": "Schnee", "color": "#ffffff", "buildable": true, "passable": true },
+  { "id": 4, "name": "Mountain", "name_de": "Gebirge", "color": "#808080", "buildable": false, "passable": false },
+  { "id": 5, "name": "Shallow Water", "name_de": "Flachwasser", "color": "#add8e6", "buildable": false, "passable": true },
+  { "id": 6, "name": "Deep Water", "name_de": "Tiefwasser", "color": "#00008b", "buildable": false, "passable": false },
+  { "id": 7, "name": "Swamp", "name_de": "Sumpf", "color": "#556b2f", "buildable": false, "passable": true }
+]

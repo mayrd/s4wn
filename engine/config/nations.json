@@ -1,0 +1,62 @@
+[
+  {
+    "id": "Roman",
+    "name_de": "Römer",
+    "color": "#FFD700",
+    "emoji": "🏛️",
+    "description": "The classic empire.",
+    "production": {},
+    "cost": {},
+    "units": {},
+    "special": {},
+    "unique_buildings": []
+  },
+  {
+    "id": "Viking",
+    "name_de": "Wikinger",
+    "color": "#C0C0C0",
+    "emoji": "🛡️",
+    "description": "Raiders from the north.",
+    "production": {},
+    "cost": {},
+    "units": {},
+    "special": {},
+    "unique_buildings": []
+  },
+  {
+    "id": "Maya",
+    "name_de": "Maya",
+    "color": "#32CD32",
+    "emoji": "🌴",
+    "description": "Masters of the jungle.",
+    "production": {},
+    "cost": {},
+    "units": {},
+    "special": {},
+    "unique_buildings": []
+  },
+  {
+    "id": "Trojan",
+    "name_de": "Trojaner",
+    "color": "#FF4500",
+    "emoji": "🐎",
+    "description": "Defenders of the city.",
+    "production": {},
+    "cost": {},
+    "units": {},
+    "special": {},
+    "unique_buildings": []
+  },
+  {
+    "id": "Dark Tribe",
+    "name_de": "Dunkler Stamm",
+    "color": "#4B0082",
+    "emoji": "🌑",
+    "description": "The shadow corruption.",
+    "production": {},
+    "cost": {},
+    "units": {},
+    "special": {},
+    "unique_buildings": []
+  }
+]

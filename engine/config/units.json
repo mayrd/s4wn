@@ -1,0 +1,32 @@
+[
+  {
+    "id": "Settler",
+    "name_de": "Siedler",
+    "hp": 10,
+    "speed": 1.0,
+    "attack": 0,
+    "defense": 0,
+    "range": 0,
+    "icon": "icon_settler.png"
+  },
+  {
+    "id": "Swordsman",
+    "name_de": "Schwertkämpfer",
+    "hp": 20,
+    "speed": 1.2,
+    "attack": 5,
+    "defense": 3,
+    "range": 0,
+    "icon": "icon_swordsman.png"
+  },
+  {
+    "id": "Bowman",
+    "name_de": "Bogenschütze",
+    "hp": 15,
+    "speed": 1.1,
+    "attack": 4,
+    "defense": 1,
+    "range": 5,
+    "icon": "icon_bowman.png"
+  }
+]
