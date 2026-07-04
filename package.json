@@ -1,7 +1,7 @@
 {
   "name": "s4wn",
   "version": "1.0.0",
-  "description": "S4WN - Siedler 4 Web-Native (Phaser Edition)",
+  "description": "S4WN - Siedler 4 Web-Native (Babylon.js Edition)",
   "main": "index.js",
   "directories": {
     "test": "tests"
