@@ -56,12 +56,14 @@ export class TerrainRenderer {
     // 3. Generate Splatmap
     const splatMap = this.generateSplatMap();
 
-    // 4. Create Material with Splat-mapping
-    // For now, we'll use a StandardMaterial with the splatmap as a diffuse texture 
-    // to demonstrate the concept, but a real implementation would use a CustomMaterial 
-    // or PBRMaterial with a shader to blend actual terrain textures.
+    // 4. Create Material with Splat-mapping and Fog of War
     const material = new StandardMaterial('terrainMat', this.scene);
     material.diffuseTexture = splatMap;
+    
+    // Implement basic Fog of War using a visibility texture
+    const visibilityMap = this.generateVisibilityMap();
+    material.diffuseTexture = visibilityMap; // For now, we use it as the main texture to show FoW
+    // In a real implementation, we would blend splatMap and visibilityMap in a shader
     
     this.mesh.material = material;
 
@@ -91,6 +93,31 @@ export class TerrainRenderer {
 
     heightMap.setPixels(data);
     return heightMap;
+  }
+
+  private generateVisibilityMap(): DynamicTexture {
+    const size = 256;
+    const visMap = new DynamicTexture('visMap', { width: size, height: size }, this.scene);
+    const data = new Uint8ClampedArray(size * size * 4);
+
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const mapX = Math.floor((x / size) * this.width);
+        const mapY = Math.floor((y / size) * this.height);
+        
+        const vis = this.map.getVisibility(mapX, mapY);
+        const index = (y * size + x) * 4;
+        
+        const val = Math.floor(vis * 255);
+        data[index] = val;
+        data[index + 1] = val;
+        data[index + 2] = val;
+        data[index + 3] = 255;
+      }
+    }
+
+    visMap.setPixels(data);
+    return visMap;
   }
 
   private generateSplatMap(): DynamicTexture {
