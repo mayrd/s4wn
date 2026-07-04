@@ -70,7 +70,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | 1 — Core Engine | ✅ | Map, camera, units, buildings, pathfinding |
 | 2 — 3D Rendering | 🔄 | Terrain, water, buildings, shadows, particles |
 | 3 — Game Systems | ⬤ | GameLoop, WorkerAI, CombatAI, territory, fog |
-| 4 — UI Migration | ⬤ | Main menu, editor, HUD panels |
+| 4 — UI Migration | 🔄 | Main menu, editor, HUD panels |
 | 5 — Integration | ⬤ | Save/load, mobile, performance, audio |
 | 6 — Testing | ⬤ | Jest tests, visual regression, deployment |
 
@@ -105,8 +105,11 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [ ] Territory computation
 - [ ] Fog of war system
 
-##### Phase 4 — UI Migration ⬤
-- [ ] Main menu (HTML/CSS overlay)
+##### Phase 4 — UI Migration 🔄
+- [x] Splash Screen and Main Menu (HTML/CSS)
+- [x] UI Styling (Siedler 4 aesthetic)
+- [x] UI Integration with GameLoop
+- [x] UI Testing (Playwright)
 - [ ] Map editor (side panel)
 - [ ] Object explorer (side panel)
 - [ ] HUD panels (HTML overlay)
@@ -150,12 +153,13 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P2 | 2026-07-04 | Create main.ts with ArcRotateCamera, TerrainRenderer |
 | P3 | 2026-07-04 | Remove all WASM/Rust frontend code, clean up .gitignore, Dockerfile, AGENTS.md |
 | P4 | 2026-07-05 | Implement Terrain splat-mapping, Water reflections, glTF Building loader, Shadows, and GameLoop/AI integration |
+| P5 | 2026-07-05 | Implement Splash Screen, Main Menu (HTML/CSS), and fix build/TS errors |
 
 ### Next Session Priorities
-1. Refine WorkerAI (resource gathering and delivery)
-2. Implement Territory expansion logic (Pioneers and Towers)
-3. Implement Fog of War blending in shaders
-4. Implement CombatAI for military units
-5. Create basic HUD/UI for resources and stats
+1. Implement Fog of War blending in shaders
+2. Implement CombatAI for military units
+3. Implement Map editor (side panel)
+4. Implement Object explorer (side panel)
+5. Implement HUD panels (HTML overlay)
 
 *All building data must match BASE.md. Never modify BASE.md.*
