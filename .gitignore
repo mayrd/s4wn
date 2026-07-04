@@ -1,46 +1,19 @@
-# Rust build artifacts
-engine/target/
-engine/pkg/
-**/target/
-**/Cargo.lock
-
-# Node modules (if we add JS tooling)
-node_modules/
-**/node_modules/
+# Build outputs
+dist/
+*.tsbuildinfo
 
 # IDE
-.vscode/
 .idea/
+.vscode/
 *.swp
 *.swo
-*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Environment
-.env
-.env.local
-.hermes/
-.venv/
+# Logs
+*.log
 
-# Build outputs (generated)
-*.wasm.map
-dist/
-
-# Exception: test map corpus is version-controlled
-!assets/maps/test/
-engine/core
-
-# Local/Developer Logs and Shims
-as_calls.txt
-bin-shim/*.exe
-bin-shim/*.a
-bin-shim/*.o
-bin-shim/*.lib
-bin-shim/*.def
-bin-shim/*.s
-
-# cache folder
-.pytest_cache/
+# Node modules
+node_modules/
