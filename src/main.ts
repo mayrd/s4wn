@@ -13,7 +13,7 @@ import {
   DirectionalLight, 
   ArcRotateCamera, 
   Vector3, 
-  Color3 
+  Color4 
 } from '@babylonjs/core';
 
 import { Map as GameMap } from './game/Map';
@@ -27,7 +27,7 @@ const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
 const engine = new Engine(canvas, true);
 const scene = new Scene(engine);
 
-scene.clearColor = new Color3(0.5, 0.7, 1.0);
+scene.clearColor = new Color4(0.5, 0.7, 1.0, 1.0);
 
 // ── Create Game Systems ──────────────────────────────────────────
 const MAP_WIDTH = 100;
@@ -57,7 +57,7 @@ const buildingData: Array<{ kind: string; x: number; y: number }> = [
         const buildingMesh = await buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2);
         if (buildingMesh) {
             // Link to economy via gameLoop
-            gameLoop.economy.tryPlaceBuilding(0, b.x, b.y, map);
+            gameLoop.economy.tryPlaceBuilding(b.kind as any, b.x, b.y, map, 0);
         }
     }
 })();

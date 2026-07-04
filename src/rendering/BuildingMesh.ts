@@ -7,8 +7,9 @@
 import {
   Scene,
   StandardMaterial,
+  SceneLoader,
 } from '@babylonjs/core';
-import { SceneLoader } from '@babylonjs/loaders';
+import '@babylonjs/loaders';
 
 export class BuildingMesh {
   private scene: Scene;
@@ -24,9 +25,9 @@ export class BuildingMesh {
     kind: string,
     x: number,
     y: number,
-    width: number,
-    height: number,
-    depth: number,
+    _width: number,
+    _height: number,
+    _depth: number,
     material: StandardMaterial | null = null
   ): Promise<any> {
     try {
@@ -41,9 +42,9 @@ export class BuildingMesh {
       // So for building: x is X, y is Z.
       root.position.set(x, 0, y);
 
-      if (material) {
-        result.meshes.forEach(m => m.material = material);
-      }
+       if (material) {
+         result.meshes.forEach((m) => (m.material = material));
+       }
 
       return root;
     } catch (error) {

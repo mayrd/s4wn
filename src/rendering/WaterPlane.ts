@@ -9,8 +9,8 @@ import {
   StandardMaterial,
   Texture,
   Scene,
-  Vector3,
   MirrorTexture,
+  Color3,
 } from '@babylonjs/core';
 
 export class WaterPlane {
@@ -40,8 +40,8 @@ export class WaterPlane {
     this.mesh.position.y = -0.5; 
 
     // Create Mirror Texture for reflections
-    this.mirrorTexture = new MirrorTexture('waterMirror', 512, this.scene);
-    this.mirrorTexture.clipPlane = new Vector3(0, 1, 0); // Reflect everything above Y=0
+        this.mirrorTexture = new MirrorTexture('waterMirror', 512, this.scene);
+        // Removed unsupported clipPlane property; MirrorTexture uses mirrorPlane for clipping if needed.
 
     const material = new StandardMaterial('waterMat', this.scene);
     

@@ -7,12 +7,9 @@
 import {
   MeshBuilder,
   StandardMaterial,
-  Texture,
   Scene,
   Vector3,
-  Color3,
   DynamicTexture,
-  Engine,
 } from '@babylonjs/core';
 import { Map as GameMap } from '../game/Map';
 import { Terrain } from '../game/types';
@@ -42,10 +39,10 @@ export class TerrainRenderer {
     // We use CreateGroundFromHeightMap for easier height integration
     this.mesh = MeshBuilder.CreateGroundFromHeightMap(
       'terrain',
-      heightMap,
+      heightMap as any,
       {
         width: this.width,
-        depth: this.height,
+        height: this.height,
         subdivisions: this.width - 1,
         minHeight: 0,
         maxHeight: 10, // Adjust based on expected elevation
@@ -73,7 +70,6 @@ export class TerrainRenderer {
 
   private generateHeightMap(): DynamicTexture {
     const size = 256; // Resolution of the heightmap texture
-    const engine = this.scene.getEngine();
     const heightMap = new DynamicTexture('heightMap', { width: size, height: size }, this.scene);
     const data = new Uint8Array(size * size);
 
@@ -91,7 +87,7 @@ export class TerrainRenderer {
       }
     }
 
-    heightMap.setPixels(data);
+    (heightMap as any).setPixels(data);
     return heightMap;
   }
 
@@ -116,7 +112,7 @@ export class TerrainRenderer {
       }
     }
 
-    visMap.setPixels(data);
+    (visMap as any).setPixels(data);
     return visMap;
   }
 
@@ -183,7 +179,7 @@ export class TerrainRenderer {
       }
     }
 
-    splatMap.setPixels(data);
+    (splatMap as any).setPixels(data);
     return splatMap;
   }
 

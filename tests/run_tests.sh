@@ -38,6 +38,11 @@ if [ -n "$TEST_FILE" ]; then
     PYTEST_ARGS+=("$TEST_FILE")
 fi
 
+echo "🔍 Running TypeScript type check..."
+cd "$SCRIPT_DIR/.."
+npx tsc --noEmit
+cd "$SCRIPT_DIR"
+
 echo "🧪 Running S4WN UI tests..."
 echo "   Server: auto-started on port 8765"
 echo "   Browser: Chromium (Playwright)"
