@@ -16,7 +16,7 @@
 
 **During:** Resolve open issues FIRST → one small atomic task per run → `npm test` after every TypeScript change.
 
-**End (MANDATORY):** `npm test` green → `git add -A && git commit` → `git push` (if fails, `git pull --rebase`) → update Session Log below with 3-5 next steps.
+**End (MANDATORY):** Run tests using `npm test` and ensure they are green → `git add -A && git commit` → `git push` (if fails, `git pull --rebase`) → update Session Log below with 3-5 next steps.
 
 ### Communication
 - Keep responses concise — short direct answers on Telegram
