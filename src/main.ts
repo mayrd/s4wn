@@ -8,8 +8,6 @@
 import { 
   Engine, 
   Scene, 
-  HemisphericLight, 
-  DirectionalLight, 
   ArcRotateCamera, 
   Vector3, 
   Color4 
