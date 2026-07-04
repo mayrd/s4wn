@@ -4037,6 +4037,17 @@ pub fn get_draw_calls() -> u32 {
     0
 }
 
+/// Get the number of currently active particles in the particle system.
+#[wasm_bindgen]
+pub fn get_particle_count() -> u32 {
+    unsafe {
+        if let Some(ref app) = APP {
+            return app.particle_system.alive_count() as u32;
+        }
+    }
+    0
+}
+
 /// Toggle FPS counter visibility. Returns new visibility state (true = visible).
 #[wasm_bindgen]
 pub fn toggle_fps_visible() -> bool {

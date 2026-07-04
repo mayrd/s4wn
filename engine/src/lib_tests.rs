@@ -2951,6 +2951,13 @@ mod parse_map_json_tests {
     }
 
     #[test]
+    fn test_get_particle_count_uninitialized() {
+        // get_particle_count returns 0 when APP is uninitialized (no crash)
+        let result = get_particle_count();
+        assert_eq!(result, 0);
+    }
+
+    #[test]
     fn test_first_frame_diag_flag_structural() {
         // Verify first_frame_diag_done field exists on App struct and is a bool.
         // This flag gates the RENDER_DIAG console.log per init/context-restore cycle.

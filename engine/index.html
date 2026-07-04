@@ -1598,7 +1598,7 @@
 <div id="debug-panel">
   <div id="fps" title="Click to toggle debug panel">--</div>
   <div id="debug-extra" style="display:none">
-    <span id="debug-time"></span> | <span id="debug-ticks"></span> | <span id="debug-tiles"></span> | <span id="debug-buildings"></span>
+    <span id="debug-time"></span> | <span id="debug-ticks"></span> | <span id="debug-tiles"></span> | <span id="debug-buildings"></span> | <span id="debug-particles"></span>
     <br><span id="debug-fps-stats" style="color:#8af;font-size:11px;"></span>
     <br><button id="debug-snapshot-btn" style="margin-top:4px;padding:3px 8px;font-size:11px;background:rgba(200,170,100,0.15);border:1px solid rgba(200,170,100,0.3);border-radius:4px;color:#c8b878;cursor:pointer;" title="Collect render diagnostics + screenshot → GitHub issue">📸 Render Snapshot</button>
     <br><label style="display:block;margin-top:4px;cursor:pointer;color:#8af;font-size:10px"><input type="checkbox" id="dbg-fullmap" onchange="toggleFullMap(this.checked)"> Show Full Map</label>
@@ -1696,6 +1696,7 @@ import init, {
     rotate_camera_azimuth,
     set_show_full_map,
     get_draw_calls,
+    get_particle_count,
     get_frametime_histogram,
     toggle_fps_visible,
     reset_fps_stats,
@@ -6215,10 +6216,12 @@ async function main() {
                 const dbgTicks = document.getElementById('debug-ticks');
                 const dbgTiles = document.getElementById('debug-tiles');
                 const dbgBldgs = document.getElementById('debug-buildings');
+                const dbgParticles = document.getElementById('debug-particles');
                 if (dbgTime) dbgTime.textContent = new Date().toLocaleTimeString();
                 if (dbgTicks) dbgTicks.textContent = `T${s.ticks}`;
                 if (dbgTiles) { try { const md = get_map_data(); if (md && md.length >= 4) { const mw = md[0] | (md[1] << 8); const mh = md[2] | (md[3] << 8); dbgTiles.textContent = mw + '×' + mh; } } catch(e) {} }
                 if (dbgBldgs) { try { const bs = get_building_summary(); dbgBldgs.textContent = bs.length + ' bldgs'; } catch(e) {} }
+                if (dbgParticles) { try { const pc = get_particle_count ? get_particle_count() : 0; dbgParticles.textContent = pc + ' particles'; } catch(e) {} }
                 // Camera center for HUD display
                 let cx = '?', cy = '?';
                 try {
