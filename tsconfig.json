@@ -20,5 +20,5 @@
     "ignoreDeprecations": "6.0",
     "types": ["jest", "node"]
   },
-  "include": ["src/**/*", "index_babylon.html"]
+  "include": ["src/**/*"]
 }

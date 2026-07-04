@@ -25,6 +25,5 @@
     # WebSocket game server proxy → localhost (same container)
     reverse_proxy /ws* localhost:8080
 
-    # Rewrite root / to index_babylon.html for convenience
-    redir / /index_babylon.html
+    # Root is served by index.html via file_server
 }
