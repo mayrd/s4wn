@@ -77,11 +77,7 @@ camera.upperRadiusLimit = 100;
 scene.activeCamera = camera;
 
 // ── Lighting ─────────────────────────────────────────────────────
-const hemiLight = new HemisphericLight('hemi', new Vector3(0, 1, 0), scene);
-hemiLight.intensity = 0.6;
-
-const dirLight = new DirectionalLight('dir', new Vector3(-1, -2, -1).normalize(), scene);
-dirLight.intensity = 0.5;
+// Temporarily disabled to debug trackUbosInFrame error
 
 // ── Shadows ──────────────────────────────────────────────────────
 // Temporarily disabled to debug trackUbosInFrame error
