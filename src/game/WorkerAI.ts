@@ -27,8 +27,104 @@ export class WorkerAI {
     // Assign idle settlers to buildings that need them
     this.assignIdleSettlers();
 
-    // Move settlers to their assigned buildings
+    // Handle gathering and delivery
+    this.processWorkerTasks();
+
+    // Move settlers to their assigned buildings (initial assignment)
     this.moveSettlersToBuildings();
+  }
+
+  private processWorkerTasks(): void {
+    for (const unit of this.unitManager.getAliveUnits()) {
+      if (unit.kind !== UnitKind.Settler) continue;
+      if (unit.assignedBuilding === null) continue;
+
+      const building = this.economy.getBuilding(unit.assignedBuilding);
+      if (!building) {
+        unit.unassign();
+        continue;
+      }
+
+      if (unit.carrying) {
+        // Deliver to building
+        this.handleDelivery(unit, building);
+      } else {
+        // Gather for building
+        this.handleGathering(unit, building);
+      }
+    }
+  }
+
+  private handleDelivery(unit: any, building: BuildingData): void {
+    const dist = Math.sqrt((unit.x - building.x) ** 2 + (unit.y - building.y) ** 2);
+    if (dist < 1.5) {
+      // Deliver resource
+      const res = unit.carrying.resource;
+      const amount = unit.carrying.amount;
+      building.inputBuffer[res as number] += amount;
+      unit.carrying = null;
+      unit.state = UnitState.Idle;
+    } else {
+      // Move to building
+      const path = Pathfinder.findPath(
+        this.map,
+        { x: Math.floor(unit.x), y: Math.floor(unit.y) },
+        { x: building.x, y: building.y }
+      );
+      if (path) {
+        unit.moveAlong(path);
+        unit.state = UnitState.Moving;
+      }
+    }
+  }
+
+  private handleGathering(unit: any, building: BuildingData): void {
+    const inputs = buildingInputs(building.kind);
+    if (inputs.length === 0) return;
+
+    // Find first needed input that isn't full in buffer
+    const needed = inputs.find(inp => building.inputBuffer[inp.resource as number] < 10);
+    if (!needed) return;
+
+    const resourcePos = this.findNearestResource(needed.resource, unit.x, unit.y);
+    if (!resourcePos) return;
+
+    const dist = Math.sqrt((unit.x - resourcePos.x) ** 2 + (unit.y - resourcePos.y) ** 2);
+    if (dist < 1.5) {
+      // Gather resource
+      unit.carrying = { resource: needed.resource, amount: 1 };
+      unit.state = UnitState.Idle;
+    } else {
+      // Move to resource
+      const path = Pathfinder.findPath(
+        this.map,
+        { x: Math.floor(unit.x), y: Math.floor(unit.y) },
+        resourcePos
+      );
+      if (path) {
+        unit.moveAlong(path);
+        unit.state = UnitState.Moving;
+      }
+    }
+  }
+
+  private findNearestResource(resource: any, startX: number, startY: number): { x: number, y: number } | null {
+    let nearest: { x: number, y: number } | null = null;
+    let minDist = Infinity;
+
+    for (let y = 0; y < this.map.height; y++) {
+      for (let x = 0; x < this.map.width; x++) {
+        const tile = this.map.get(x, y);
+        if (tile && tile.resource === resource) {
+          const d = Math.sqrt((x - startX) ** 2 + (y - startY) ** 2);
+          if (d < minDist) {
+            minDist = d;
+            nearest = { x, y };
+          }
+        }
+      }
+    }
+    return nearest;
   }
 
   private assignIdleSettlers(): void {
