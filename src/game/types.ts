@@ -6,24 +6,24 @@
 
 export enum Terrain {
   Grass = 'Grass',
-  Forest,
-  Desert,
-  Mountain,
-  Snow,
-  Water,
-  DeepWater,
-  Swamp,
+  Forest = 'Forest',
+  Desert = 'Desert',
+  Mountain = 'Mountain',
+  Snow = 'Snow',
+  Water = 'Water',
+  DeepWater = 'DeepWater',
+  Swamp = 'Swamp',
 }
 
 export enum ResourceType {
   None = 'None',
-  Wood,
-  Stone,
-  Iron,
-  Coal,
-  Sulfur,
-  Grain,
-  Fish,
+  Wood = 'Wood',
+  Stone = 'Stone',
+  Iron = 'Iron',
+  Coal = 'Coal',
+  Sulfur = 'Sulfur',
+  Grain = 'Grain',
+  Fish = 'Fish',
 }
 
 export interface TileData {
