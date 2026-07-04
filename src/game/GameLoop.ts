@@ -34,7 +34,7 @@ export class GameLoop {
   state: GameState = {
     gameTime: 0,
     ticks: 0,
-    isPaused: false,
+    isPaused: true,
     gameSpeed: 1.0,
     dayPhase: 0.25,
     showFullMap: false,

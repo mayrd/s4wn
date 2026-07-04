@@ -20,6 +20,8 @@ import { GameLoop } from './game/GameLoop';
 import { TerrainRenderer } from './rendering/TerrainRenderer';
 import { WaterPlane } from './rendering/WaterPlane';
 import { BuildingMesh } from './rendering/BuildingMesh';
+import { UIManager } from './ui/UIManager';
+import '../ui/styles.css';
 
 // ── Babylon.js Scene Setup ────────────────────────────────────────
 const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
@@ -33,6 +35,12 @@ const MAP_WIDTH = 100;
 const MAP_HEIGHT = 100;
 const map = new GameMap(MAP_WIDTH, MAP_HEIGHT);
 const gameLoop = new GameLoop(map);
+const uiManager = new UIManager();
+
+// Listen for game start event
+window.addEventListener('game-start', () => {
+    gameLoop.state.isPaused = false;
+});
 
 // ── Create Terrain ────────────────────────────────────────────────
 const terrainRenderer = new TerrainRenderer(scene, map);

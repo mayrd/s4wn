@@ -10,15 +10,43 @@
       padding: 0;
       overflow: hidden;
       background: #000;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     #game-container {
       width: 100vw;
       height: 100vh;
+      position: relative;
+    }
+    #ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .ui-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      pointer-events: auto;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    .ui-screen.active {
+      display: flex;
     }
   </style>
 </head>
 <body>
-  <div id="game-container"></div>
+  <div id="game-container">
+    <div id="ui-overlay"></div>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

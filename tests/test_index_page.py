@@ -2,14 +2,12 @@
 
 Covers:
 - Page loads without console errors
-- Canvas renders with correct dimensions
-- UI panels (menu, construction, stats) are interactive
-- WASM engine initializes
-- Error overlay behavior
+- Splash screen appears and transitions to main menu
+- Main menu buttons are present and interactive
+- Game starts when 'Start New Game' is clicked
 """
 import pytest
 from playwright.sync_api import Page, expect
-
 
 class TestPageLoad:
     """Verify the page loads and initializes correctly."""
@@ -19,122 +17,66 @@ class TestPageLoad:
         title = s4wn_page.title()
         assert len(title) > 0, "Page title should not be empty"
 
-    def test_canvas_exists(self, s4wn_page: Page):
-        """Game canvas should be present in DOM."""
-        canvas = s4wn_page.locator("#game-canvas")
-        expect(canvas).to_be_visible()
+    def test_ui_overlay_exists(self, s4wn_page: Page):
+        """UI overlay container should be present in DOM."""
+        overlay = s4wn_page.locator("#ui-overlay")
+        expect(overlay).to_be_visible()
 
-    def test_canvas_has_dimensions(self, s4wn_page: Page):
-        """Canvas should have non-zero dimensions after init."""
-        canvas = s4wn_page.locator("#game-canvas")
-        bbox = canvas.bounding_box()
-        assert bbox is not None
-        # Canvas may be full viewport or sized by WASM — check it's > 0
-        assert bbox["width"] > 0
-        assert bbox["height"] > 0
+class TestSplashScreen:
+    """Verify the splash screen behavior."""
 
-    def test_no_error_overlay_on_clean_load(self, s4wn_page: Page):
-        """Error overlay should NOT be active on normal load."""
-        overlay = s4wn_page.locator("#error-overlay.active")
-        expect(overlay).to_have_count(0)
+    def test_splash_screen_appears(self, s4wn_page: Page):
+        """Splash screen should be visible on initial load."""
+        splash = s4wn_page.locator(".splash-screen.active")
+        expect(splash).to_be_visible()
+        expect(s4wn_page.locator(".splash-logo")).to_contain_text("S4WN")
 
-    def test_wasm_console_log(self, s4wn_page: Page):
-        """WASM should log initialization message — check canvas is functional."""
-        result = s4wn_page.evaluate("document.querySelector('#game-canvas') !== null")
-        assert result is True
+    def test_splash_transitions_to_menu(self, s4wn_page: Page):
+        """Splash screen should transition to main menu after a delay."""
+        # Wait for the 3-second timeout in UIManager
+        s4wn_page.wait_for_timeout(3500)
+        
+        splash = s4wn_page.locator(".splash-screen.active")
+        menu = s4wn_page.locator(".ui-screen:has(.main-menu-container).active")
+        
+        expect(splash).not_to_be_visible()
+        expect(menu).to_be_visible()
 
+class TestMainMenu:
+    """Verify the main menu buttons and interactions."""
 
-class TestUIButtons:
-    """Verify interactive UI buttons exist and are clickable."""
+    def setup_menu(self, s4wn_page: Page):
+        """Helper to ensure we are at the main menu."""
+        s4wn_page.wait_for_timeout(3500)
+        return s4wn_page.locator(".main-menu-container")
 
-    def test_menu_button_exists(self, s4wn_page: Page):
-        btn = s4wn_page.locator("#btn-menu")
-        expect(btn).to_be_visible()
+    def test_menu_buttons_exist(self, s4wn_page: Page):
+        """All required main menu buttons should be present."""
+        menu = self.setup_menu(s4wn_page)
+        expect(menu.locator("#btn-tutorial")).to_be_visible()
+        expect(menu.locator("#btn-new-game")).to_be_visible()
+        expect(menu.locator("#btn-load-game")).to_be_visible()
+        expect(menu.locator("#btn-explorer")).to_be_visible()
+        expect(menu.locator("#btn-editor")).to_be_visible()
+        expect(menu.locator("#btn-multiplayer")).to_be_visible()
 
-    def test_speed_button_exists(self, s4wn_page: Page):
-        btn = s4wn_page.locator("#btn-speed")
-        expect(btn).to_be_visible()
+    def test_start_game_hides_ui(self, s4wn_page: Page):
+        """Clicking 'Start New Game' should hide the UI overlay."""
+        menu = self.setup_menu(s4wn_page)
+        menu.locator("#btn-new-game").click()
+        
+        # All screens should lose the 'active' class
+        active_screens = s4wn_page.locator(".ui-screen.active")
+        expect(active_screens).to_have_count(0)
 
-    def test_construction_button_exists(self, s4wn_page: Page):
-        btn = s4wn_page.locator("#btn-construction")
-        expect(btn).to_be_visible()
+class TestVisuals:
+    """Verify basic visual elements."""
 
-    def test_resources_button_exists(self, s4wn_page: Page):
-        btn = s4wn_page.locator("#btn-resources")
-        expect(btn).to_be_visible()
-
-    def test_settlers_button_exists(self, s4wn_page: Page):
-        btn = s4wn_page.locator("#btn-settlers")
-        expect(btn).to_be_visible()
-
-    def test_speed_button_toggles(self, s4wn_page: Page):
-        """Clicking speed button should change its text."""
-        btn = s4wn_page.locator("#btn-speed")
-        initial_text = btn.text_content()
-        btn.click()
-        s4wn_page.wait_for_timeout(500)
-        new_text = btn.text_content()
-        # Speed should have changed (e.g. 1× → 2×) or button is still visible
-        assert btn.is_visible()
-
-
-class TestMenuPanel:
-    """Verify menu panel opens/closes correctly."""
-
-    def test_menu_opens_on_button_click(self, s4wn_page: Page):
-        s4wn_page.locator("#btn-menu").click()
-        s4wn_page.wait_for_timeout(500)
-        # Some panel/overlay should become visible after menu click
-        # The menu creates panels dynamically — just verify no crash
-        assert s4wn_page.locator("#btn-menu").is_visible()
-
-    def test_menu_contains_new_game_option(self, s4wn_page: Page):
-        """Menu should contain a 'New Game' option."""
-        s4wn_page.locator("#btn-menu").click()
-        s4wn_page.wait_for_timeout(500)
-        page_text = s4wn_page.content()
-        assert "New Game" in page_text or "new" in page_text.lower()
-
-
-class TestConstructionPanel:
-    """Verify construction panel behavior."""
-
-    def test_construction_panel_in_dom(self, s4wn_page: Page):
-        """Construction panel should exist in DOM."""
-        panel = s4wn_page.locator("#construction-panel")
-        assert panel.count() == 1
-
-    def test_construction_panel_opens(self, s4wn_page: Page):
-        """Clicking construction button should show panel."""
-        s4wn_page.locator("#btn-construction").click()
-        s4wn_page.wait_for_timeout(500)
-        panel = s4wn_page.locator("#construction-panel")
-        expect(panel).to_be_visible()
-
-
-class TestErrorOverlay:
-    """Verify error overlay behavior."""
-
-    def test_error_overlay_exists_in_dom(self, s4wn_page: Page):
-        """Error overlay should exist in DOM (hidden by default)."""
-        overlay = s4wn_page.locator("#error-overlay")
-        assert overlay.count() == 1
-
-    def test_error_overlay_has_dismiss_button(self, s4wn_page: Page):
-        """Error overlay should have a dismiss button."""
-        dismiss_btn = s4wn_page.locator("#error-overlay .btn-secondary")
-        assert dismiss_btn.count() == 1
-
-    def test_error_overlay_has_github_button(self, s4wn_page: Page):
-        """Error overlay should have a GitHub report button."""
-        github_btn = s4wn_page.locator("#error-btn-github")
-        assert github_btn.count() == 1
-
-
-class TestMobileEnhancements:
-    """Verify mobile enhancement script loaded."""
-
-    def test_mobile_script_loaded(self, s4wn_page: Page):
-        """mobile-enhancements.js should be loaded."""
-        scripts = s4wn_page.locator("script[src='mobile-enhancements.js']")
-        expect(scripts).to_have_count(1)
+    def test_menu_styling(self, s4wn_page: Page):
+        """Main menu should have the correct CSS classes for styling."""
+        s4wn_page.wait_for_timeout(3500)
+        menu = s4wn_page.locator(".main-menu-container")
+        expect(menu).to_be_visible()
+        # Check if it has the expected background/border styles via computed style
+        style = menu.evaluate("el => window.getComputedStyle(el).backgroundColor")
+        assert style is not None

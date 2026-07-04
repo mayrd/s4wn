@@ -1,0 +1,88 @@
+/* Siedler 4 Inspired UI Styles */
+
+:root {
+  --parchment-bg: #f4e4bc;
+  --parchment-border: #d2b48c;
+  --wood-dark: #5d4037;
+  --wood-light: #8d6e63;
+  --text-color: #3e2723;
+  --accent-color: #ffab40;
+  --menu-width: 400px;
+}
+
+/* Splash Screen */
+.splash-screen {
+  background: radial-gradient(circle, #2c3e50 0%, #000 100%);
+  color: white;
+  text-align: center;
+}
+
+.splash-logo {
+  font-size: 4rem;
+  font-weight: bold;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  margin-bottom: 2rem;
+}
+
+.splash-loading {
+  font-size: 1.2rem;
+  opacity: 0.7;
+}
+
+/* Main Menu */
+.main-menu-container {
+  background: url('https://www.transparenttextures.com/patterns/wood-pattern.png'), var(--wood-dark);
+  border: 10px solid var(--wood-light);
+  border-radius: 15px;
+  padding: 40px;
+  width: var(--menu-width);
+  box-shadow: 0 0 50px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.menu-title {
+  font-size: 2.5rem;
+  color: var(--parchment-bg);
+  text-align: center;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  font-family: 'Georgia', serif;
+}
+
+.menu-button {
+  background: var(--parchment-bg);
+  border: 3px solid var(--wood-dark);
+  padding: 15px 25px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  border-radius: 5px;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+}
+
+.menu-button:hover {
+  background: var(--accent-color);
+  transform: scale(1.05);
+  box-shadow: 0 0 15px var(--accent-color);
+}
+
+.menu-button:active {
+  transform: scale(0.95);
+}
+
+.menu-button.secondary {
+  font-size: 1rem;
+  padding: 10px 20px;
+  background: var(--wood-light);
+  color: white;
+}
+
+/* Utility */
+.hidden {
+  display: none !important;
+}
