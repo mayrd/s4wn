@@ -1,0 +1,21 @@
+/** @type {import('ts-jest').JestConfigWithTsJest} */
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  roots: ['<rootDir>/src'],
+  testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
+  transform: {
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: 'tsconfig.json',
+      },
+    ],
+  },
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@game/(.*)$': '<rootDir>/src/game/$1',
+    '^@rendering/(.*)$': '<rootDir>/src/rendering/$1',
+    '^@ui/(.*)$': '<rootDir>/src/ui/$1',
+  },
+};

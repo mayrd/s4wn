@@ -1,4 +1,4 @@
-# S4WN — Single-Container Unified Image
+# S4WN — Single-Container Unified Image (Babylon.js/TypeScript)
 # Build: docker buildx build --platform linux/amd64,linux/arm64 -t s4wn .
 #
 # Runs both Caddy (static files + reverse proxy) and s4wn-server (WebSocket game server)
@@ -20,7 +20,22 @@ RUN cargo build --release 2>/dev/null || true
 COPY server/src/ src/
 RUN cargo build --release
 
-# ── Stage 2: Runtime (Caddy + server binary + all assets) ────────
+# ── Stage 2: Build TypeScript frontend ────────────────────────────
+FROM node:22-alpine AS frontend-builder
+
+WORKDIR /build
+
+# Cache npm dependencies
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Build TypeScript with Vite
+COPY tsconfig.json tsconfig.node.json vite.config.ts ./
+COPY index_babylon.html ./
+COPY src/ src/
+RUN npm run build
+
+# ── Stage 3: Runtime (Caddy + server binary + frontend dist) ──────
 FROM caddy:2-alpine
 
 # Install dumb-init for proper signal handling
@@ -29,17 +44,11 @@ RUN apk add --no-cache dumb-init
 # Copy Rust server binary
 COPY --from=server-builder /build/target/release/s4wn-server /usr/local/bin/s4wn-server
 
-# Copy game engine (WASM + JS bindings)
-COPY engine/pkg/ /usr/share/caddy/engine/pkg/
-COPY engine/index.html /usr/share/caddy/engine/index.html
-COPY engine/lobby.html /usr/share/caddy/engine/lobby.html
-COPY engine/mobile-enhancements.js /usr/share/caddy/engine/mobile-enhancements.js
-COPY engine/ui/ /usr/share/caddy/engine/ui/
-COPY engine/config/ /usr/share/caddy/engine/config/
+# Copy built frontend (Vite output)
+COPY --from=frontend-builder /build/dist/ /usr/share/caddy/
 
 # Copy game assets (textures, tiles, models, maps, UI)
 COPY assets/ /usr/share/caddy/assets/
-
 
 # Caddy configuration
 COPY web/Caddyfile /etc/caddy/Caddyfile
@@ -50,7 +59,7 @@ RUN chmod +x /usr/local/bin/start.sh
 
 # Health-check both services
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:80/engine/index.html || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:80/index_babylon.html || exit 1
 
 EXPOSE 80
 

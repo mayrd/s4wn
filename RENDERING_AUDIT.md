@@ -155,4 +155,46 @@
 
 Done: 52 rendering features across 7 passes. WASM 288KB (under 300KB target). 972 tests. Clippy clean.
 Needs verification: 3 visual items (unchanged) (reflection FBO, water tile exclusion, reflection pass correctness). 2 FPS benchmarks pending. 
-Next: Visual verification by Daniel — sky colors, roof specular, desert mirage, shadow penumbra quality.
+
+---
+
+## Babylon.js Migration (Phase 8)
+
+**Status:** Starting refactoring from Rust/WASM to Babylon.js/TypeScript.
+
+### Migration Architecture
+
+| Aspect | Rust/WASM | Babylon.js/TypeScript |
+|--------|-----------|-----------------------|
+| Engine | ~299KB WASM | Babylon.js (npm package) |
+| Rendering | Raw WebGL2 | Babylon.js WebGL/WebGPU |
+| Build | cargo + wasm-pack | npm + vite |
+| Tests | cargo test (1010 tests) | jest (TypeScript) |
+| Models | OBJ/MTL parsing | glTF 2.0 native support |
+
+### Features to Migrate
+
+- [x] Map system (terrain, elevation, resources, visibility)
+- [ ] Terrain mesh generation (height displacement)
+- [ ] Water plane with reflections
+- [ ] Building 3D models (glTF via Babylon.js)
+- [ ] Particle system (15 effect types)
+- [ ] UI overlays (HTML/CSS on top of canvas)
+- [ ] Network layer (WebSocket)
+
+### Performance Targets
+
+| Metric | Target | Status |
+|--------|--------|--------|
+| Bundle size | <1MB | TODO |
+| Tests | 1000+ | 17 (TypeScript), 1010 (Rust) |
+| FPS desktop | 60 | TODO |
+| FPS mobile | 30 | TODO |
+
+### Migration Log
+
+| Session | Changes | Tests | Notes |
+|---------|---------|-------|-------|
+| P0 | Initialize npm + TypeScript + Babylon.js | 17 | Core modules (Map, Unit, Pathfinding) |
+| P1 | Create main.ts with ArcRotateCamera | 17 | Orbital camera matching Rust |
+| ... | ... | ... | ...

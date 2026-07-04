@@ -6,50 +6,54 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
-  build:
-    name: Build (Rust → WASM)
+  test:
+    name: TypeScript Tests
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - target: wasm32-unknown-unknown
-            rust: stable
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          targets: wasm32-unknown-unknown
+          node-version: '22'
+          cache: 'npm'
 
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Build engine
-        working-directory: engine
-        run: wasm-pack build --target web --out-dir pkg --out-name s4wn_engine --release .
+      - name: TypeScript type check
+        run: npx tsc --noEmit
 
       - name: Run unit tests
-        working-directory: engine
-        run: cargo test --lib
+        run: npm test
 
-      - name: Validate test .map corpus
-        run: python3 scripts/validate_test_maps.py assets/maps/test
+      - name: Build frontend
+        run: npm run build
 
-      - name: Upload WASM artifact
+      - name: Upload frontend artifact
         uses: actions/upload-artifact@v4
         with:
-          name: s4wn-engine-wasm
-          path: engine/pkg/
+          name: s4wn-frontend-dist
+          path: dist/
+
+  validate-assets:
+    name: Validate game assets
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate test maps
+        run: python3 scripts/validate_test_maps.py assets/maps/test
+
+      - name: Validate config
+        run: python3 scripts/validate_config.py
 
   docker:
     name: Docker Multi-Arch Image → GHCR
-    needs: build
+    needs: [test, validate-assets]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     permissions:
@@ -58,12 +62,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Download WASM artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: s4wn-engine-wasm
-          path: engine/pkg/
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

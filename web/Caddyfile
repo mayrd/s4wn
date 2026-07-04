@@ -8,27 +8,23 @@
         level DEBUG
     }
 
-    # Root for static files (engine pages, assets, map viewer)
+    # Root for static files (Vite build output + assets)
     root * /usr/share/caddy
 
     # Serve static files
     file_server
 
-    # WASM requires proper MIME type
-    header *.wasm Content-Type application/wasm
-
     # Enable compression
     encode gzip zstd
 
-    # Security headers for WASM multithreading (SharedArrayBuffer)
+    # Security headers
     header Cross-Origin-Opener-Policy same-origin
     header *.html Cross-Origin-Embedder-Policy require-corp
     header *.js Cross-Origin-Embedder-Policy require-corp
-    header *.wasm Cross-Origin-Embedder-Policy require-corp
 
     # WebSocket game server proxy → localhost (same container)
     reverse_proxy /ws* localhost:8080
 
-    # Rewrite root / to /engine/ for convenience
-    redir / /engine/
+    # Rewrite root / to index_babylon.html for convenience
+    redir / /index_babylon.html
 }
