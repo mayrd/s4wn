@@ -1,71 +1,75 @@
 /**
- * S4WN Babylon.js/TypeScript - Game Types
- *
- * Core enums and types migrated from Rust backend.
- * ResourceType and BuildingCategory are now in ../economy/types
+ * S4WN TypeScript - Game Types
+ * 
+ * Migrated from engine/src/map.rs terrain data.
  */
 
-// Terrain types (8 variants matching Rust map.rs)
 export enum Terrain {
-  Grass = 0,
-  Water = 1,
-  DeepWater = 2,
-  Forest = 3,
-  Desert = 4,
-  Mountain = 5,
-  Snow = 6,
-  Swamp = 7,
+  Grass = 'Grass',
+  Forest,
+  Desert,
+  Mountain,
+  Snow,
+  Water,
+  DeepWater,
+  Swamp,
 }
 
-// Re-export ResourceType from economy for convenience
-export { ResourceType, RESOURCE_COUNT, BuildingCategory } from '../economy/types';
+export enum ResourceType {
+  None = 'None',
+  Wood,
+  Stone,
+  Iron,
+  Coal,
+  Sulfur,
+  Grain,
+  Fish,
+}
 
-// Unit kinds (matching Rust UnitKind enum)
+export interface TileData {
+  terrain: Terrain;
+  elevation: number;
+  resource: ResourceType | null;
+}
+
+export interface Position {
+  x: number;
+  y: number;
+}
+
 export enum UnitKind {
-  Settler = 0,
-  Swordsman = 1,
-  Bowman = 2,
+  Settler,
+  Swordsman,
+  Bowman,
+  Worker,
 }
 
-// Unit states
 export enum UnitState {
-  Idle = 0,
-  Moving = 1,
-  Working = 2,
-  Fighting = 3,
-  Carrying = 4,
-  Dying = 5,
+  Idle,
+  Moving,
+  Working,
+  Fighting,
+  Dead,
 }
 
-// Unit stances
 export enum UnitStance {
-  Aggressive = 0,
-  Passive = 1,
-  StandGround = 2,
+  Aggressive,
+  Defensive,
+  Passive,
 }
 
-// Nations
-export enum NationType {
-  Romans = 0,
-  Vikings = 1,
-  Mayans = 2,
-  Trojans = 3,
-  DarkTribe = 4,
+// Forward declaration for Unit (referenced by AI types)
+export type Unit = any; // Will be replaced with proper import from './Unit'
+
+/**
+ * WorkerAI needs to know when a worker is ready.
+ */
+export interface WorkOrder {
+  /** Building kind being constructed */
+  buildingKind: string;
+  /** Resource name needed (e.g., 'wood', 'stone') */
+  resourceNeeded: string;
 }
 
-// Tool types
-export enum ToolType {
-  Hammer = 0,
-  Saw = 1,
-  Pickaxe = 2,
-  Ax = 3,
-  Shovel = 4,
-  Sword = 5,
-  Bow = 6,
-}
-
-// Resource categories
-export enum ResourceCategory {
-  Raw = 0,
-  Processed = 1,
-}
+// Forward declaration for Nation (referenced by AI types)
+export type Nation = any; // Will be replaced with proper import from './Nation'

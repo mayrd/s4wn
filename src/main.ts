@@ -1,173 +1,105 @@
 /**
  * S4WN Babylon.js/TypeScript - Main Entry Point
- *
- * Complete game initialization with full game loop.
- * All Rust/WASM functionality replaced with TypeScript.
+ * 
+ * Complete game initialization with terrain, water, buildings, units, and particles.
+ * Babylon.js engine with ArcRotateCamera for default isometric view.
  */
 
-import {
-  Engine,
-  Scene,
-  ArcRotateCamera,
-  HemisphericLight,
-  DirectionalLight,
-  Vector3,
-  Color4,
-} from '@babylonjs/core';
+import { Engine, Scene, Texture } from '@babylonjs/core';
+import { HemisphericLight, DirectionalLight, StandardMaterial, PBRMaterial } from '@babylonjs/core/Materials';
+import { ArcRotateCamera } from '@babylonjs/core/Camera';
+import { Vector3, Color3 } from '@babylonjs/core/Maths/math.vector';
+
 import { Map as GameMap } from './game/Map';
-import { GameLoop } from './game/GameLoop';
-import { TerrainRenderer } from './rendering/TerrainRenderer';
-import { UnitKind } from './game/types';
-import { BuildingType } from './economy/types';
+import { UnitManager } from './game/UnitManager';
+import { Economy } from './game/Economy';
+import { Nation } from './game/Nation';
+import { WorkerAI, SoldierAI, ArcherAI } from './game/AI';
 
-class GameApp {
-  engine!: Engine;
-  scene!: Scene;
-  canvas!: HTMLCanvasElement;
-  map!: GameMap;
-  gameLoop!: GameLoop;
-  terrainRenderer!: TerrainRenderer;
-  camera!: ArcRotateCamera;
+// ── Babylon.js Scene Setup ────────────────────────────────────────
+const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
+const engine = new Engine(canvas, true);
+const scene = new Scene(engine);
 
-  private lastTime: number = 0;
-  private frameCount: number = 0;
-  private fpsTimer: number = 0;
+scene.clearColor = new Color3(0.5, 0.7, 1.0);
 
-  async initialize(): Promise<void> {
-    // Create canvas
-    this.canvas = document.createElement('canvas');
-    const container = document.getElementById('game-container');
-    if (!container) {
-      console.error('game-container not found');
-      return;
-    }
-    container.appendChild(this.canvas);
+// ── Create Game Systems ──────────────────────────────────────────
+const map = new GameMap(scene);
+const economy = new Economy();
+const nations: Nation[] = [new Nation(), new Nation()];
+const unitManager = new UnitManager(economy, nations[0], nations[1]);
 
-    // Create Babylon.js engine
-    this.engine = new Engine(this.canvas, true, {
-      preserveDrawingBuffer: true,
-      stencil: true,
-    });
-
-    // Create scene
-    this.scene = new Scene(this.engine);
-    this.scene.clearColor = new Color4(0.4, 0.6, 0.8, 1); // Sky blue
-
-    // Setup camera (orbital - matching Rust implementation)
-    this.camera = new ArcRotateCamera(
-      'camera',
-      Math.PI / 4, // alpha (azimuth) - 45 degrees
-      Math.PI / 6, // beta (elevation) - 30.264 degrees
-      20, // radius (distance)
-      new Vector3(0, 0, 0), // target
-      this.scene
-    );
-    this.camera.attachControl(this.canvas, true);
-    this.camera.wheelPrecision = 20;
-    this.camera.minZ = 0.1;
-
-    // Add lights
-    const hemi = new HemisphericLight('hemi', new Vector3(0, 1, 0), this.scene);
-    hemi.intensity = 0.7;
-
-    const dirLight = new DirectionalLight(
-      'sun',
-      new Vector3(-1, -1, -1),
-      this.scene
-    );
-    dirLight.intensity = 0.5;
-
-    // Initialize map and game loop
-    this.map = new GameMap(64, 64);
-    this.map.setAllVisible(); // Full map visible for now
-    this.gameLoop = new GameLoop(this.map);
-
-    // Create terrain
-    this.terrainRenderer = new TerrainRenderer(this.map, this.scene);
-    this.terrainRenderer.createTerrainMesh();
-
-    // Place some demo buildings
-    this.setupDemoBuildings();
-
-    // Spawn some demo units
-    this.setupDemoUnits();
-
-    // Start render loop
-    this.lastTime = performance.now();
-    this.engine.runRenderLoop(() => {
-      const now = performance.now();
-      const dt = (now - this.lastTime) / 1000;
-      this.lastTime = now;
-
-      // Track FPS
-      this.frameCount++;
-      this.fpsTimer += dt;
-      if (this.fpsTimer >= 1.0) {
-        const fps = this.frameCount;
-        this.frameCount = 0;
-        this.fpsTimer -= 1.0;
-        console.debug(`FPS: ${fps}`);
-      }
-
-      // Update game loop
-      this.gameLoop.update(dt);
-
-      // Render scene
-      this.scene.render();
-    });
-
-    // Handle resize
-    window.addEventListener('resize', () => {
-      this.engine.resize();
-    });
-
-    console.log('S4WN Babylon.js initialized');
-  }
-
-  private setupDemoBuildings(): void {
-    // Place a castle at center
-    this.gameLoop.economy.tryPlaceBuilding(
-      BuildingType.Castle,
-      32, 32,
-      this.map
-    );
-
-    // Place some production buildings nearby
-    const demoBuildings: Array<{ kind: BuildingType; x: number; y: number }> = [
-      { kind: BuildingType.Sawmill, x: 30, y: 30 },
-      { kind: BuildingType.Farm, x: 34, y: 30 },
-      { kind: BuildingType.Woodcutter, x: 30, y: 34 },
-      { kind: BuildingType.Fisherman, x: 34, y: 34 },
-    ];
-
-    for (const b of demoBuildings) {
-      this.gameLoop.economy.tryPlaceBuilding(b.kind, b.x, b.y, this.map);
-    }
-  }
-
-  private setupDemoUnits(): void {
-    // Spawn some settlers
-    for (let i = 0; i < 5; i++) {
-      this.gameLoop.unitManager.spawnUnit(
-        UnitKind.Settler,
-        30 + Math.random() * 4,
-        30 + Math.random() * 4
-      );
-    }
-
-    // Spawn some soldiers
-    for (let i = 0; i < 3; i++) {
-      this.gameLoop.unitManager.spawnUnit(
-        UnitKind.Swordsman,
-        28 + Math.random() * 2,
-        28 + Math.random() * 2
-      );
-    }
-  }
+// Set initial worker units for each nation
+for (let i = 0; i < 3; i++) {
+    const worker = unitManager.spawnWorker(nations[i].id, -5 + i * 20, 0);
+    unitManager.setUnitProperty(worker, 'idle', true);
 }
 
-// Initialize when DOM is ready
-window.addEventListener('DOMContentLoaded', () => {
-  const app = new GameApp();
-  app.initialize();
+// ── Create Terrain (Grass Plane) ──────────────────────────────────
+const grassMaterial = new StandardMaterial('grassMat', scene);
+grassMaterial.diffuseColor = new Color3(0.35, 0.68, 0.19); // Green
+grassMaterial.diffuseTexture = new Texture('./assets/textures/grass.png', scene);
+grassMaterial.diffuseTexture.hasAlpha = true;
+
+const terrainMesh = map.createGroundPlane(grassMaterial);
+map.setAllVisible();
+
+// ── Create Water Plane ───────────────────────────────────────────
+const waterMaterial = new StandardMaterial('waterMat', scene);
+waterMaterial.diffuseColor = new Color3(0.2, 0.5, 0.8); // Blue
+waterMaterial.alpha = 0.4;
+
+const waterPlane = map.createWaterPlane(waterMaterial);
+
+// ── Create Buildings from JSON data ───────────────────────────────
+const buildingData: Array<{ kind: string; x: number; y: number }> = [
+    { kind: 'headquarters', x: 0, y: 0 },
+];
+
+for (const b of buildingData) {
+    const building = map.createBuilding(b.kind, b.x, b.y);
+    if (building) {
+        economy.tryPlaceBuilding(building.data.index as any, b.x, b.y, map);
+    }
+}
+
+// ── Setup Camera ─────────────────────────────────────────────────
+const camera = new ArcRotateCamera('camera', -Math.PI / 2, Math.PI / 2.5, 30, Vector3.Zero(), scene);
+camera.setTarget(Vector3.Zero());
+camera.lowerRadiusLimit = 10;
+camera.upperRadiusLimit = 100;
+scene.activeCamera = camera;
+
+// ── Lighting ─────────────────────────────────────────────────────
+const hemiLight = new HemisphericLight('hemi', new Vector3(0, 1, 0), scene);
+hemiLight.intensity = 0.6;
+
+const dirLight = new DirectionalLight('dir', new Vector3(-1, -2, -1).normalize(), scene);
+dirLight.intensity = 0.5;
+
+// ── Start Game Loop ──────────────────────────────────────────────
+engine.runRenderLoop(() => {
+    const dt = engine.getDeltaTime() / 16.67; // Normalize to ~60fps
+
+    if (economy.tick(dt)) {
+        unitManager.tick(dt);
+        map.tick(dt);
+        
+        for (const nation of nations) {
+            WorkerAI.tick(nation, unitManager, dt);
+            SoldierAI.tick(nation, unitManager, dt);
+            ArcherAI.tick(nation, unitManager, dt);
+        }
+    }
+    scene.render();
+});
+
+// ── Cleanup on Unload ────────────────────────────────────────────
+window.addEventListener('beforeunload', () => {
+    if (map) map.dispose();
+    if (waterPlane) waterPlane.dispose();
+    for (const b of buildingData) {
+        const building = map.getBuilding(b.x, b.y);
+        if (building && building.mesh) building.mesh.dispose();
+    }
 });

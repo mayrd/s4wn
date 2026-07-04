@@ -1,8 +1,7 @@
 /**
- * S4WN Phaser/TypeScript - Map Module
- *
- * Migrated from engine/src/map.rs
- * Terrain, elevation, resources, visibility, territory.
+ * S4WN TypeScript - Game Map Module
+ * 
+ * Migrated from engine/src/map.rs terrain data.
  */
 
 import { Terrain, ResourceType } from './types';
@@ -62,21 +61,21 @@ export class Map {
   }
 
   speedMultiplier(x: number, y: number): number {
-  const tile = this.get(x, y);
-  if (!tile) return 1.0;
-  
-  switch (tile.terrain) {
-    case Terrain.Water:
-    case Terrain.DeepWater:
-      return 0.5; // Swimming is slow
-    case Terrain.Forest:
-      return 0.8; // Forest is somewhat slow
-    case Terrain.Desert:
-    case Terrain.Swamp:
-      return 0.7; // Difficult terrain
-    default:
-      return 1.0;
-  }
+    const tile = this.get(x, y);
+    if (!tile) return 1.0;
+    
+    switch (tile.terrain) {
+      case Terrain.Water:
+      case Terrain.DeepWater:
+        return 0.5; // Swimming is slow
+      case Terrain.Forest:
+        return 0.8; // Forest is somewhat slow
+      case Terrain.Desert:
+      case Terrain.Swamp:
+        return 0.7; // Difficult terrain
+      default:
+        return 1.0;
+    }
   }
 
   getVisibility(x: number, y: number): number {
@@ -119,7 +118,6 @@ export class Map {
     }
   }
 
-  // Private helper methods from Rust implementation
   private generateDemo(): void {
     for (let y = 0; y < this.height; y++) {
       this.tiles[y] = [];

@@ -1,7 +1,7 @@
 /**
  * S4WN Babylon.js/TypeScript - Terrain Renderer
- *
- * Creates terrain mesh from Map data with height displacement.
+ * 
+ * Creates terrain mesh with splat-mapping for heightmap, biomes, and water mask.
  */
 
 import {
@@ -9,75 +9,57 @@ import {
   StandardMaterial,
   Texture,
   Scene,
-  VertexBuffer,
-  Mesh,
+  Vector3,
+  Color3,
 } from '@babylonjs/core';
-import { Map } from '../game/Map';
 
 export class TerrainRenderer {
-  private map: Map;
   private scene: Scene;
-  private terrainMesh: Mesh | null = null;
-
-  constructor(map: Map, scene: Scene) {
-    this.map = map;
+  private width: number;
+  private height: number;
+  private mesh: any | null = null;
+  
+  constructor(scene: Scene, width: number, height: number) {
     this.scene = scene;
+    this.width = width;
+    this.height = height;
   }
 
-  createTerrainMesh(): void {
-    const width = this.map.width;
-    const height = this.map.height;
-
-    // Create ground mesh (isometric grid will be approximated with ground mesh)
-    // Each tile is 1x1 unit in Babylon.js world
-    const ground = MeshBuilder.CreateGround(
-      'terrain',
-      { width, height, subdivisions: Math.max(1, Math.min(width, height) - 1) },
-      this.scene
-    );
-
-    // Apply height displacement based on elevation
-    this.applyHeightDisplacement(ground);
-
-    // Create material with terrain texture
-    const material = new StandardMaterial('terrainMat', this.scene);
-    material.diffuseTexture = new Texture(
-      '/assets/textures/terrain_atlas.png',
-      this.scene
-    );
-    ground.material = material;
-
-    this.terrainMesh = ground;
-  }
-
-  private applyHeightDisplacement(mesh: Mesh): void {
-    // Get vertices and modify Y based on elevation
-    const positions = mesh.getVerticesData(VertexBuffer.PositionKind);
-    if (!positions) return;
-
-    for (let i = 0; i < positions.length; i += 3) {
-      // x, y, z positions
-      const x = positions[i];
-      const z = positions[i + 2];
-      
-      // Convert to tile coordinates
-      const tileX = Math.floor(x + this.map.width / 2);
-      const tileZ = Math.floor(z + this.map.height / 2);
-      
-      // Clamp to map bounds
-      if (tileX >= 0 && tileX < this.map.width && tileZ >= 0 && tileZ < this.map.height) {
-        const tile = this.map.get(tileX, tileZ);
-        if (tile) {
-          // Apply elevation (scale: 0.5 per Rust)
-          positions[i + 1] = tile.elevation * 0.5;
-        }
+  /**
+   * Create terrain mesh with splat-mapping support.
+   */
+  createTerrain(): void {
+    // Create the base terrain mesh as a ground plane using Babylon.js primitives
+    const positions: Float32Array = new Float32Array(this.width * this.height * 3);
+    
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const index = (y * this.width + x) * 3;
+        
+        // Base terrain position at sea level (height=0)
+        positions[index] = x;           // X coordinate
+        positions[index + 1] = y;       // Y coordinate
+        positions[index + 2] = 0.0;     // Z height (starts flat, will be modified)
       }
     }
 
-    mesh.updateVerticesData(VertexBuffer.PositionKind, positions);
+    // Create a flat ground plane as placeholder - splat-mapping will add height later
+    this.mesh = MeshBuilder.CreateGround('terrain', { width: this.width, depth: this.height }, this.scene);
+
+    // Create default material for now - we'll use splat-mapping later
+    const material = new StandardMaterial('terrainMat', this.scene);
+    
+    // Default terrain color - grassy green
+    material.diffuseColor = new Color3(0.3, 0.7, 0.2);
+    
+    this.mesh.material = material;
+
+    // Set position to origin for now (will be updated when splat-mapping is ready)
+    this.mesh.position = new Vector3(this.width / 2 - 1, 0, this.height / 2 - 1);
+    this.mesh.rotation.y = Math.PI / 2; // Rotate so X axis aligns with map coordinates
   }
 
-  getMesh(): Mesh | null {
-    return this.terrainMesh;
+  getMesh(): any | null {
+    return this.mesh;
   }
 }

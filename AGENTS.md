@@ -1,16 +1,11 @@
 # AGENTS.md — S4WN Project Reference
 
-> **⚠️ BASE.md is the priority source of truth.** Read BASE.md first. Never modify BASE.md unless explicitly asked.
-
----
-
 ## 1. Agent Rules
 
 ### Asset Policy (Non-Negotiable)
 - **NO original Siedler 4 assets** (sprites, textures, sounds, music) are ever extracted or committed.
 - All visuals and audio must be **generated from scratch** in `assets/`.
 - Standard web formats: PNG, WebP, OGG, JSON, glTF — never proprietary containers.
-- **Exception:** parse original `*.map` / `*.sav` for scenario data only, map to our own asset IDs.
 
 ### Base Knowledge
 - **[siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/)** — authoritative source for buildings, units, production chains, and game mechanics.
@@ -27,9 +22,7 @@
 - Keep responses concise — short direct answers on Telegram
 - Daniel prefers fewer, longer messages over many short ones
 
----
-
-## 2. Technology Choices
+## 2. Technology Stack
 
 ### Engine: Babylon.js/TypeScript
 **Chosen over:** Rust/WASM (complexity)
@@ -64,8 +57,6 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | Docker Buildx | Multi-arch images |
 | Jest | Testing |
 
----
-
 ## 3. Implementation Plan
 
 Status: P2 · Babylon.js Edition · Phase 2 in progress.
@@ -81,8 +72,6 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | 4 — UI Migration | ⬤ | Main menu, editor, HUD panels |
 | 5 — Integration | ⬤ | Save/load, mobile, performance, audio |
 | 6 — Testing | ⬤ | Jest tests, visual regression, deployment |
-
----
 
 ## 4. Session Log
 
