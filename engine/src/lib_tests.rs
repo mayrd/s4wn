@@ -2879,6 +2879,12 @@ mod parse_map_json_tests {
     }
 
     #[test]
+    fn test_get_stats_returns_none_when_uninitialized() {
+        let stats = get_stats();
+        assert!(stats.is_none());
+    }
+
+    #[test]
     fn test_get_tool_counts_empty_when_uninitialized() {
         // When APP is not initialized, get_tool_counts returns empty Vec
         let counts = get_tool_counts();

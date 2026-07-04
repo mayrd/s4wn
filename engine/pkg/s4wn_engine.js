@@ -2391,6 +2391,14 @@ export function get_draw_calls() {
 }
 
 /**
+ * @returns {StatsInfo | undefined}
+ */
+export function get_stats() {
+    const ret = wasm.get_stats();
+    return ret === 0 ? undefined : StatsInfo.__wrap(ret);
+}
+
+/**
  * @returns {Uint32Array}
  */
 export function get_frametime_histogram() {

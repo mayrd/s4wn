@@ -3474,6 +3474,7 @@ pub fn get_frametime_histogram() -> Vec<u32> {
 }
 
 /// Engine stats exported as structured type (avoids JSON.parse overhead).
+#[wasm_bindgen]
 pub fn get_stats() -> Option<StatsInfo> {
     unsafe {
         (*std::ptr::addr_of!(APP)).as_ref().map(|app| StatsInfo {
