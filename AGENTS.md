@@ -38,6 +38,7 @@
 | Rendering | Raw WebGL2 | Babylon.js WebGL/WebGPU |
 | Build | cargo + wasm-pack | npm + vite |
 | Models | OBJ/MTL parsing | glTF 2.0 (.glb) native support |
+| Tests | cargo test (Rust) | jest (TypeScript) |
 
 ### Camera: Orbital (Babylon.js ArcRotateCamera)
 Default: classic isometric (alpha=45° azimuth, beta=30.264° elevation). Smooth interpolation `dt * 8.0`.
@@ -73,6 +74,73 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | 5 — Integration | ⬤ | Save/load, mobile, performance, audio |
 | 6 — Testing | ⬤ | Jest tests, visual regression, deployment |
 
+#### Detailed Phase Breakdown
+
+##### Phase 0 — Project Setup ✅
+- [x] Initialize npm project with TypeScript
+- [x] Install Babylon.js, jest, vite, typescript
+- [x] Create src/ directory structure
+- [x] Migrate asset pipeline to npm run scripts
+
+##### Phase 1 — Core Game Logic Migration ✅
+- [x] Map system (terrain, elevation, resources)
+- [x] Camera system (orbital with Babylon.js ArcRotateCamera)
+- [x] Unit system (UnitKind, Unit, UnitManager, states, stances)
+- [x] Building system (BuildingType, Building, production)
+- [x] Pathfinding (A* implementation in TypeScript)
+
+##### Phase 2 — 3D Rendering Pipeline 🔄
+- [x] Scene setup with ArcRotateCamera (orbital)
+- [x] Terrain mesh generation (height displacement)
+- [ ] Terrain texture splat-mapping
+- [ ] Water plane with reflections
+- [ ] Building 3D models (glTF via Babylon.js)
+- [ ] Ground-plane shadows
+- [ ] Particle system (15 effect types)
+
+##### Phase 3 — Game Systems ⬤
+- [ ] GameLoop with tick-based simulation
+- [ ] WorkerAI for settler assignment/movement
+- [ ] CombatAI for military units
+- [ ] Territory computation
+- [ ] Fog of war system
+
+##### Phase 4 — UI Migration ⬤
+- [ ] Main menu (HTML/CSS overlay)
+- [ ] Map editor (side panel)
+- [ ] Object explorer (side panel)
+- [ ] HUD panels (HTML overlay)
+- [ ] Debug panel with stats
+
+##### Phase 5 — Integration & Polish ⬤
+- [ ] Network layer (WebSocket)
+- [ ] Save/load game state (localStorage)
+- [ ] Mobile touch controls
+- [ ] Performance optimization
+- [ ] Audio system
+
+##### Phase 6 — Testing & Deployment ⬤
+- [x] Migrate Rust tests to TypeScript/jest
+- [ ] Visual regression tests
+- [ ] Integration tests (keep Playwright)
+- [x] Update Dockerfile for static serving
+- [ ] Update CI/CD pipeline
+
+### File Migration Map
+
+| Rust Module | TypeScript Target | Notes |
+|-------------|------------------|-------|
+| `map.rs` | `src/game/Map.ts` | Terrain, elevation, resources |
+| `camera.rs` | `src/game/Camera.ts` | Orbital controls → ArcRotateCamera |
+| `units.rs` | `src/game/Unit.ts`, `src/game/UnitManager.ts` | UnitKind enum, Unit struct |
+| `economy.rs` | `src/game/Economy.ts` | BuildingType, Building, resources |
+| `pathfinding.rs` | `src/game/Pathfinder.ts` | A* algorithm (done) |
+| `worker_ai.rs` | `src/game/WorkerAI.ts` | AI logic |
+| `combat.rs` | `src/game/CombatAI.ts` | Military AI |
+| `nation.rs` | `src/game/Nation.ts` | Nation modifiers |
+| `particle.rs` | `src/game/particles/ParticleSystem.ts` | Effect types |
+| `shaders.rs` | `src/rendering/pipelines/*.ts` | GLSL → Babylon.js shaders |
+
 ## 4. Session Log
 
 | Session | Date | Summary |
@@ -80,11 +148,13 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P0 | 2026-07-04 | Initialize npm + TypeScript + Babylon.js, install deps |
 | P1 | 2026-07-04 | Migrate core modules (Map, Unit, Pathfinding, Building) |
 | P2 | 2026-07-04 | Create main.ts with ArcRotateCamera, TerrainRenderer |
+| P3 | 2026-07-04 | Remove all WASM/Rust frontend code, clean up .gitignore, Dockerfile, AGENTS.md |
 
 ### Next Session Priorities
 1. Terrain texture splat-mapping (Phase 2)
 2. Water plane with reflections
 3. Building 3D models (glTF via Babylon.js)
 4. Ground-plane shadows for buildings/units
+5. Continue GameLoop and WorkerAI implementation
 
 *All building data must match BASE.md. Never modify BASE.md.*

@@ -10,13 +10,13 @@ Web-native reimplementation of *The Settlers IV* (2001). Open-source, runs in an
 
 | | |
 |---|---|
-| **Engine** | Rust → WASM (wasm-bindgen + web-sys) |
-| **Graphics** | Raw WebGL2, custom shaders |
-| **UI** | Vanilla JS ES modules, single `index.html` |
-| **Audio** | Procedural Web Audio API |
+| **Engine** | Babylon.js / TypeScript |
+| **Graphics** | Babylon.js WebGL/WebGPU |
+| **UI** | HTML/CSS Overlay |
+| **Audio** | Web Audio API |
 | **Server** | Caddy (static files + WebSocket) |
 | **Deploy** | Docker, multi-arch (amd64 + arm64) |
-| **Tests** | 519 passing |
+| **Tests** | Jest |
 | **License** | MIT |
 
 ---
@@ -25,12 +25,11 @@ Web-native reimplementation of *The Settlers IV* (2001). Open-source, runs in an
 
 ```
 Browser → index.html
-  ├─ WASM engine (Rust, ~200KB)
+  ├─ Babylon.js Engine (TypeScript)
   │   ├─ Economy, Combat, Units, Map, Pathfinding
-  │   ├─ Orbital camera (azimuth/elevation/distance)
-  │   └─ GPU model rendering (instanced draw calls)
-  ├─ WebGL2 canvas — terrain, buildings, units, particles
-  ├─ 2D overlay canvas — selection, health bars, UI
+  │   ├─ Orbital camera (ArcRotateCamera)
+  │   └─ PBR materials, lighting, shadows, particles
+  ├─ HTML/CSS Overlay — UI, HUD, menus
   └─ Web Audio API — procedural sound effects
 ```
 
@@ -38,21 +37,26 @@ Browser → index.html
 
 ## Current Status
 
-**Phase 6.20 — 519 tests passing**
+**Phase 2 — 3D Rendering Pipeline in progress**
 
-- ✅ Full WASM engine with economy, combat, 5 nations
-- ✅ Orbital camera, terrain heightmap, GPU models
-- ✅ Unit commands, stances, building destruction
-- ✅ Mobile responsive, touch gestures, particles, sound
+- ✅ Engine setup with TypeScript & Babylon.js
+- ✅ Map system (terrain, elevation, resources)
+- ✅ Camera system (orbital ArcRotateCamera)
+- ✅ Unit & Building systems (core logic)
+- ✅ Pathfinding (A*)
+- 🔄 Terrain mesh generation (height displacement)
+- ⏳ Terrain texture splat-mapping
+- ⏳ Water plane with reflections
+- ⏳ Building 3D models (glTF)
 
 ---
 
 ## Development
 
 ```bash
-cd engine && wasm-pack build --target web --release   # Build WASM
-cargo test --lib                                      # Run tests (519 pass)
-python3 -m http.server 8000                           # Serve locally
+npm install          # Install dependencies
+npm test             # Run tests
+npm run dev          # Start development server (Vite)
 ```
 
 ### For AI Agents
