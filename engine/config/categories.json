@@ -1,3 +1,8 @@
 {
-  "Logistics": ["Storage Yard"]
+  "Basic Economy": ["Woodcutter's Hut", "Sawmill", "Stonecutter's Hut"],
+  "Food Production": ["Grain Farm", "Grain Mill", "Bakery", "Waterworks", "Fisherman's Hut", "Slaughterhouse", "Pig Ranch", "Sheep Ranch", "Goat Ranch", "Goose Ranch"],
+  "Mining & Smelting": ["Coal Mine", "Iron Ore Mine", "Gold Mine", "Sulfur Mine", "Iron Smelter", "Gold Smelter"],
+  "Military & Tools": ["Toolsmith", "Weaponsmith", "Weapon Foundry"],
+  "Logistics": ["Donkey Ranch", "Storage Yard"],
+  "Divine & Special": ["Vineyard", "Apiary", "Mead Brewery", "Agave Farm", "Tequila Distillery", "Trojan Farm", "Oil Press", "Powder Mill"]
 }
