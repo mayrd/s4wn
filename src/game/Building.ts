@@ -1,24 +1,13 @@
 /**
  * S4WN Babylon.js/TypeScript - Building Module
  *
- * Migrated from engine/src/economy.rs
- * Building types, placement, production.
+ * Building class for game state management.
+ * Uses economy types from ../economy/types for all building data.
  */
 
-import { BuildingType } from '../economy/types';
-import { ResourceType, RESOURCE_COUNT } from './types';
+import { BuildingType, ResourceType, RESOURCE_COUNT, maxHp, maxSettlers, buildTime } from '../economy/types';
 
 export interface BuildingCost {
-  resource: ResourceType;
-  amount: number;
-}
-
-export interface BuildingInputs {
-  resource: ResourceType;
-  amount: number;
-}
-
-export interface BuildingOutputs {
   resource: ResourceType;
   amount: number;
 }
@@ -29,12 +18,12 @@ export class Building {
   y: number;
   hp: number;
   maxHp: number;
-  constructionProgress: number; // 0.0 to 1.0
+  constructionProgress: number;
   isActive: boolean;
   productionProgress: number;
-  inputBuffer: number[]; // Indexed by ResourceType
-  outputBuffer: number[]; // Indexed by ResourceType
-  assignedSettlers: number[]; // Unit IDs
+  inputBuffer: number[];
+  outputBuffer: number[];
+  assignedSettlers: number[];
   maxSettlers: number;
   destructionTimer: number | null = null;
   destructionProgress: number | null = null;
@@ -43,38 +32,15 @@ export class Building {
     this.kind = kind;
     this.x = x;
     this.y = y;
-    this.hp = this.calcMaxHp();
-    this.maxHp = this.hp;
+    this.maxHp = maxHp(kind);
+    this.hp = this.maxHp;
     this.constructionProgress = 0;
     this.isActive = false;
     this.productionProgress = 0;
     this.inputBuffer = new Array(RESOURCE_COUNT).fill(0);
     this.outputBuffer = new Array(RESOURCE_COUNT).fill(0);
     this.assignedSettlers = [];
-    this.maxSettlers = this.calcMaxSettlers();
-  }
-
-  calcMaxHp(): number {
-    // Building HP based on type (matching Rust implementation)
-    const hpMap: Record<string, number> = {
-      // Economic buildings
-      headquarters: 1000,
-      farm: 300,
-      lumberjack: 200,
-      // ... more to be added
-    };
-    return hpMap[this.kind.toString()] || 500;
-  }
-
-  calcMaxSettlers(): number {
-    // Max workers based on building type
-    const settlerMap: Record<string, number> = {
-      farm: 2,
-      lumberjack: 1,
-      headquarters: 3,
-      // ... more to be added
-    };
-    return settlerMap[this.kind.toString()] || 1;
+    this.maxSettlers = maxSettlers(kind);
   }
 
   isComplete(): boolean {
@@ -83,11 +49,16 @@ export class Building {
 
   tickConstruction(speedMult: number): boolean {
     if (this.isComplete()) return false;
-    
-    this.constructionProgress += 0.01 * speedMult; // Simplified - should use build_ticks
+    const bt = buildTime(this.kind);
+    if (bt > 0) {
+      this.constructionProgress += (1.0 / bt) * speedMult;
+    } else {
+      this.constructionProgress = 1.0;
+    }
     if (this.constructionProgress >= 1.0) {
+      this.constructionProgress = 1.0;
       this.isActive = true;
-      return true; // Just completed
+      return true;
     }
     return false;
   }
@@ -95,7 +66,7 @@ export class Building {
   takeDamage(amount: number): void {
     this.hp = Math.max(0, this.hp - amount);
     if (this.hp === 0) {
-      this.startDestruction(5.0); // 5 seconds destruction
+      this.startDestruction(5.0);
     }
   }
 
@@ -106,10 +77,8 @@ export class Building {
 
   tickDestruction(dt: number): boolean {
     if (this.destructionTimer === null) return false;
-    
     this.destructionTimer -= dt;
     this.destructionProgress = 1 - (this.destructionTimer / 5.0);
-    
     return this.destructionTimer <= 0;
   }
 

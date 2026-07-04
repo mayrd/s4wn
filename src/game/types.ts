@@ -2,6 +2,7 @@
  * S4WN Babylon.js/TypeScript - Game Types
  *
  * Core enums and types migrated from Rust backend.
+ * ResourceType and BuildingCategory are now in ../economy/types
  */
 
 // Terrain types (8 variants matching Rust map.rs)
@@ -16,18 +17,8 @@ export enum Terrain {
   Swamp = 7,
 }
 
-// Resource types (matching Rust ResourceType enum)
-export enum ResourceType {
-  Wood = 0,
-  Iron = 1,
-  Coal = 2,
-  Gold = 3,
-  Stone = 4,
-  Sulfur = 5,
-  Fish = 6,
-  Grain = 7,
-}
-export const RESOURCE_COUNT = 8;
+// Re-export ResourceType from economy for convenience
+export { ResourceType, RESOURCE_COUNT, BuildingCategory } from '../economy/types';
 
 // Unit kinds (matching Rust UnitKind enum)
 export enum UnitKind {
@@ -60,13 +51,6 @@ export enum NationType {
   Mayans = 2,
   Trojans = 3,
   DarkTribe = 4,
-}
-
-// Building categories
-export enum BuildingCategory {
-  Civil = 0,
-  Military = 1,
-  Production = 2,
 }
 
 // Tool types
