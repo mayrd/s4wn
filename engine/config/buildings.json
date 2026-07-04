@@ -1,17 +1,15 @@
-{
-  "buildings": [
-    {
-      "id": "Headquarters",
-      "category": "Logistics",
-      "cost": { "plank": 5, "stone": 2 },
-      "inputs": [],
-      "outputs": [],
-      "interval": 0,
-      "build_time": 0,
-      "tool": null,
-      "workers": 0,
-      "icon": "icon_hq.png",
-      "name_de": "Hauptquartier"
-    }
-  ]
-}
+[
+  {
+    "id": "Storage Yard",
+    "category": "Logistics",
+    "cost": { "plank": 4, "stone": 1 },
+    "inputs": [],
+    "outputs": [],
+    "interval": 0,
+    "build_time": 0,
+    "tool": null,
+    "workers": 0,
+    "icon": "icon_storage_yard.png",
+    "name_de": "Lagerplatz"
+  }
+]
