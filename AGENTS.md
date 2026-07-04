@@ -149,12 +149,13 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P1 | 2026-07-04 | Migrate core modules (Map, Unit, Pathfinding, Building) |
 | P2 | 2026-07-04 | Create main.ts with ArcRotateCamera, TerrainRenderer |
 | P3 | 2026-07-04 | Remove all WASM/Rust frontend code, clean up .gitignore, Dockerfile, AGENTS.md |
+| P4 | 2026-07-05 | Implement Terrain splat-mapping, Water reflections, glTF Building loader, Shadows, and GameLoop/AI integration |
 
 ### Next Session Priorities
-1. Terrain texture splat-mapping (Phase 2)
-2. Water plane with reflections
-3. Building 3D models (glTF via Babylon.js)
-4. Ground-plane shadows for buildings/units
-5. Continue GameLoop and WorkerAI implementation
+1. Refine WorkerAI (resource gathering and delivery)
+2. Implement Territory expansion logic (Pioneers and Towers)
+3. Implement Fog of War blending in shaders
+4. Implement CombatAI for military units
+5. Create basic HUD/UI for resources and stats
 
 *All building data must match BASE.md. Never modify BASE.md.*
