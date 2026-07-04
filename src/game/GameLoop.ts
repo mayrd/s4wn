@@ -11,6 +11,7 @@ import { Map as GameMap } from './Map';
 import { Nation } from './Nation';
 import { WorkerAI } from './WorkerAI';
 import { CombatAI } from './CombatAI';
+import { TerritoryManager } from './TerritoryManager';
 
 export interface GameState {
   gameTime: number;
@@ -26,6 +27,7 @@ export class GameLoop {
   unitManager: UnitManager;
   map: GameMap;
   nation: Nation;
+  territoryManager: TerritoryManager;
   workerAI: WorkerAI;
   combatAI: CombatAI;
 
@@ -40,7 +42,6 @@ export class GameLoop {
 
   private tickAccumulator: number = 0;
   private readonly TICK_INTERVAL: number = 1.0 / 10;
-  private influencePoints: Array<{ x: number; y: number; radius: number }> = [];
 
   constructor(map: GameMap) {
     this.map = map;
@@ -49,9 +50,7 @@ export class GameLoop {
     this.nation = new Nation();
     this.workerAI = new WorkerAI(this.economy, this.unitManager, this.map);
     this.combatAI = new CombatAI(this.unitManager);
-    
-    // Initialize influence points with headquarters at (0,0) for ownerId 1
-    this.influencePoints = [{ x: 0, y: 0, radius: 5 }];
+    this.territoryManager = new TerritoryManager(map, this.unitManager, this.economy);
   }
 
   update(dt: number): void {
@@ -84,8 +83,8 @@ export class GameLoop {
     // Combat AI
     this.combatAI.tick();
 
-    // Update territory for ownerId 1 (example)
-    this.map.updateTerritory(1, this.influencePoints);
+    // Update territory
+    this.territoryManager.updateTerritory();
 
     // Update visibility
     this.updateVisibility();

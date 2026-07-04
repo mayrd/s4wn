@@ -42,6 +42,7 @@ export enum UnitKind {
   Swordsman,
   Bowman,
   Worker,
+  Pioneer,
 }
 
 export enum UnitState {
