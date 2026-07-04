@@ -11,52 +11,153 @@ import {
   Scene,
   Vector3,
   Color3,
+  DynamicTexture,
+  Engine,
 } from '@babylonjs/core';
+import { Map as GameMap } from '../game/Map';
+import { Terrain } from '../game/types';
 
 export class TerrainRenderer {
   private scene: Scene;
+  private map: GameMap;
   private width: number;
   private height: number;
   private mesh: any | null = null;
-  
-  constructor(scene: Scene, width: number, height: number) {
+
+  constructor(scene: Scene, map: GameMap) {
     this.scene = scene;
-    this.width = width;
-    this.height = height;
+    this.map = map;
+    this.width = map.width;
+    this.height = map.height;
   }
 
   /**
    * Create terrain mesh with splat-mapping support.
    */
   createTerrain(): void {
-    // Create the base terrain mesh as a ground plane using Babylon.js primitives
-    const positions: Float32Array = new Float32Array(this.width * this.height * 3);
+    // 1. Generate Heightmap
+    const heightMap = this.generateHeightMap();
     
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        const index = (y * this.width + x) * 3;
-        
-        // Base terrain position at sea level (height=0)
-        positions[index] = x;           // X coordinate
-        positions[index + 1] = y;       // Y coordinate
-        positions[index + 2] = 0.0;     // Z height (starts flat, will be modified)
-      }
-    }
+    // 2. Create Terrain Mesh from Heightmap
+    // We use CreateGroundFromHeightMap for easier height integration
+    this.mesh = MeshBuilder.CreateGroundFromHeightMap(
+      'terrain',
+      heightMap,
+      {
+        width: this.width,
+        depth: this.height,
+        subdivisions: this.width - 1,
+        minHeight: 0,
+        maxHeight: 10, // Adjust based on expected elevation
+      },
+      this.scene
+    );
 
-    // Create a flat ground plane as placeholder - splat-mapping will add height later
-    this.mesh = MeshBuilder.CreateGround('terrain', { width: this.width, depth: this.height }, this.scene);
+    // 3. Generate Splatmap
+    const splatMap = this.generateSplatMap();
 
-    // Create default material for now - we'll use splat-mapping later
+    // 4. Create Material with Splat-mapping
+    // For now, we'll use a StandardMaterial with the splatmap as a diffuse texture 
+    // to demonstrate the concept, but a real implementation would use a CustomMaterial 
+    // or PBRMaterial with a shader to blend actual terrain textures.
     const material = new StandardMaterial('terrainMat', this.scene);
-    
-    // Default terrain color - grassy green
-    material.diffuseColor = new Color3(0.3, 0.7, 0.2);
+    material.diffuseTexture = splatMap;
     
     this.mesh.material = material;
 
-    // Set position to origin for now (will be updated when splat-mapping is ready)
-    this.mesh.position = new Vector3(this.width / 2 - 1, 0, this.height / 2 - 1);
-    this.mesh.rotation.y = Math.PI / 2; // Rotate so X axis aligns with map coordinates
+    // Set position to origin
+    this.mesh.position = new Vector3(0, 0, 0);
+  }
+
+  private generateHeightMap(): DynamicTexture {
+    const size = 256; // Resolution of the heightmap texture
+    const engine = this.scene.getEngine();
+    const heightMap = new DynamicTexture('heightMap', { width: size, height: size }, this.scene);
+    const data = new Uint8Array(size * size);
+
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        // Map texture coordinates to map coordinates
+        const mapX = Math.floor((x / size) * this.width);
+        const mapY = Math.floor((y / size) * this.height);
+        
+        const tile = this.map.get(mapX, mapY);
+        const elevation = tile ? tile.elevation : 0;
+        
+        // Scale elevation to 0-255
+        data[y * size + x] = Math.min(255, Math.max(0, elevation * 25.5));
+      }
+    }
+
+    heightMap.setPixels(data);
+    return heightMap;
+  }
+
+  private generateSplatMap(): DynamicTexture {
+    const size = 256;
+    const splatMap = new DynamicTexture('splatMap', { width: size, height: size }, this.scene);
+    const data = new Uint8ClampedArray(size * size * 4);
+
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const mapX = Math.floor((x / size) * this.width);
+        const mapY = Math.floor((y / size) * this.height);
+        
+        const tile = this.map.get(mapX, mapY);
+        const terrain = tile ? tile.terrain : Terrain.Grass;
+
+        const index = (y * size + x) * 4;
+        
+        // Assign colors based on terrain type for the splatmap
+        // In a real implementation, these would be weights in RGBA channels
+        switch (terrain) {
+          case Terrain.Grass:
+            data[index] = 50;     // R
+            data[index + 1] = 200; // G
+            data[index + 2] = 50;  // B
+            break;
+          case Terrain.Forest:
+            data[index] = 20;
+            data[index + 1] = 100;
+            data[index + 2] = 20;
+            break;
+          case Terrain.Desert:
+            data[index] = 200;
+            data[index + 1] = 200;
+            data[index + 2] = 100;
+            break;
+          case Terrain.Mountain:
+            data[index] = 100;
+            data[index + 1] = 100;
+            data[index + 2] = 100;
+            break;
+          case Terrain.Snow:
+            data[index] = 255;
+            data[index + 1] = 255;
+            data[index + 2] = 255;
+            break;
+          case Terrain.Water:
+          case Terrain.DeepWater:
+            data[index] = 0;
+            data[index + 1] = 0;
+            data[index + 2] = 255;
+            break;
+          case Terrain.Swamp:
+            data[index] = 50;
+            data[index + 1] = 50;
+            data[index + 2] = 0;
+            break;
+          default:
+            data[index] = 128;
+            data[index + 1] = 128;
+            data[index + 2] = 128;
+        }
+        data[index + 3] = 255; // Alpha
+      }
+    }
+
+    splatMap.setPixels(data);
+    return splatMap;
   }
 
   getMesh(): any | null {

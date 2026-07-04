@@ -5,11 +5,10 @@
  */
 
 import {
-  MeshBuilder,
-  StandardMaterial,
-  Texture,
   Scene,
+  StandardMaterial,
 } from '@babylonjs/core';
+import { SceneLoader } from '@babylonjs/loaders';
 
 export class BuildingMesh {
   private scene: Scene;
@@ -19,51 +18,37 @@ export class BuildingMesh {
   }
 
   /**
-   * Create a simple building model using Babylon.js primitives.
-   * This replaces the OBJ file loading with procedural generation.
+   * Create a building model by loading an OBJ file.
    */
-  createBuilding(
-    name: string,
+  async createBuilding(
+    kind: string,
     x: number,
     y: number,
     width: number,
     height: number,
     depth: number,
     material: StandardMaterial | null = null
-  ): any {
-    // Create a box for the building base
-    const mesh = MeshBuilder.CreateBox(
-      name,
-      { 
-        width: width, 
-        height: height, 
-        depth: depth,
-        subdivisions: 0
-      },
-      this.scene
-    );
-
-    if (!material) {
-      // Default building material - gray/brown color
-      const mat = new StandardMaterial('buildingMat', this.scene);
+  ): Promise<any> {
+    try {
+      // Load the OBJ file from assets/models/
+      const result = await SceneLoader.ImportMeshAsync('', 'assets/models/', `${kind}.obj`, this.scene);
       
-      // Use different colors based on building type (name hash)
-      const hash = Math.abs(name.charCodeAt(0)) % 3;
-      switch(hash) {
-        case 0:
-          mat.diffuseColor.set(0.8, 0.7, 0.5); // Brown - residential
-          break;
-        case 1:
-          mat.diffuseColor.set(0.6, 0.4, 0.2); // Dark brown - commercial
-          break;
-        case 2:
-          mat.diffuseColor.set(0.9, 0.85, 0.7); // Light tan - office
-          break;
+      const root = result.meshes[0];
+      root.position.set(x, 0, y); // Assuming Y is up in Babylon, but map uses Y as depth? 
+      // Wait, in main.ts: map.createBuilding(b.kind, b.x, b.y)
+      // In TerrainRenderer: positions[index] = x; positions[index+1] = y; positions[index+2] = 0.0;
+      // This means X is width, Y is depth, Z is height.
+      // So for building: x is X, y is Z.
+      root.position.set(x, 0, y);
+
+      if (material) {
+        result.meshes.forEach(m => m.material = material);
       }
-      
-      mesh.material = mat;
-    }
 
-    return mesh;
+      return root;
+    } catch (error) {
+      console.error(`Failed to load building model for kind: ${kind}`, error);
+      return null;
+    }
   }
 }

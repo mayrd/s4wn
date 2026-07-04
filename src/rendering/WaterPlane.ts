@@ -10,6 +10,7 @@ import {
   Texture,
   Scene,
   Vector3,
+  MirrorTexture,
 } from '@babylonjs/core';
 
 export class WaterPlane {
@@ -17,7 +18,8 @@ export class WaterPlane {
   private width: number;
   private height: number;
   private mesh: any | null = null;
-  
+  private mirrorTexture: MirrorTexture | null = null;
+
   constructor(scene: Scene, width: number, height: number) {
     this.scene = scene;
     this.width = width;
@@ -25,44 +27,62 @@ export class WaterPlane {
   }
 
   /**
-   * Create water plane.
+   * Create water plane with reflections.
    */
   createWaterPlane(): void {
-    // Create a simple flat water surface for now (wave animation will be added later)
-    const positions: Float32Array = new Float32Array(this.width * this.height * 3);
-    
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        const index = (y * this.width + x) * 3;
-        
-        // Water surface at height -1.5 (slightly below terrain base)
-        positions[index]     = x;           // X coordinate
-        positions[index + 1] = y;           // Y coordinate
-        positions[index + 2] = -1.5;       // Z height (water level)
-      }
-    }
+    // Create a simple flat plane for water
+    this.mesh = MeshBuilder.CreateGround('water', { 
+      width: this.width, 
+      height: this.height 
+    }, this.scene);
 
-    this.mesh = MeshBuilder.CreateFromMesh(
-      'water',
-      new Texture('waterTexture', null),
-      { vertices: positions },
-      this.scene
-    );
+    // Set water level slightly below terrain base
+    this.mesh.position.y = -0.5; 
+
+    // Create Mirror Texture for reflections
+    this.mirrorTexture = new MirrorTexture('waterMirror', 512, this.scene);
+    this.mirrorTexture.clipPlane = new Vector3(0, 1, 0); // Reflect everything above Y=0
 
     const material = new StandardMaterial('waterMat', this.scene);
     
-    // Blue water color with some transparency for reflection effect
-    material.diffuseColor.set(0.2, 0.4, 0.8, 0.7);
-    material.alpha = 0.6;
+    // Base water color
+    material.diffuseColor = new Color3(0.1, 0.3, 0.6);
+    material.specularColor = new Color3(1, 1, 1);
     
-    this.mesh.material = material;
+    // Use mirror texture as the reflection map
+    material.reflectionTexture = this.mirrorTexture;
+    
+    // Add normal map for water ripples
+    const bumpTexture = new Texture('./assets/textures/water_normal.png', this.scene);
+    bumpTexture.uScale = 10;
+    bumpTexture.vScale = 10;
+    material.bumpTexture = bumpTexture;
 
-    // Set position to origin (will be updated when splat-mapping is ready)
-    this.mesh.position = new Vector3(this.width / 2 - 1, 0, this.height / 2 - 1);
-    this.mesh.rotation.y = Math.PI / 2;
+    material.alpha = 0.8;
+
+    this.mesh.material = material;
+  }
+
+  /**
+   * Update water animation (ripples)
+   */
+  update(dt: number): void {
+    if (this.mesh && this.mesh.material) {
+      const mat = this.mesh.material as StandardMaterial;
+      if (mat.bumpTexture instanceof Texture) {
+        // Slowly shift the normal map to simulate flowing water
+        mat.bumpTexture.uOffset += dt * 0.01;
+        mat.bumpTexture.vOffset += dt * 0.01;
+      }
+    }
   }
 
   getMesh(): any | null {
     return this.mesh;
+  }
+
+  dispose(): void {
+    if (this.mesh) this.mesh.dispose();
+    if (this.mirrorTexture) this.mirrorTexture.dispose();
   }
 }
