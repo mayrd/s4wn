@@ -55,6 +55,7 @@ export enum UnitState {
 export enum UnitStance {
   Aggressive,
   Defensive,
+  StandGround,
   Passive,
 }
 

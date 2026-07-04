@@ -8,12 +8,9 @@
 import { 
   Engine, 
   Scene, 
-  Texture, 
   ShadowGenerator, 
   HemisphericLight, 
   DirectionalLight, 
-  StandardMaterial, 
-  PBRMaterial, 
   ArcRotateCamera, 
   Vector3, 
   Color3 
@@ -54,13 +51,16 @@ const buildingData: Array<{ kind: string; x: number; y: number }> = [
     { kind: 'headquarters', x: 0, y: 0 },
 ];
 
-for (const b of buildingData) {
-    const buildingMesh = buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2);
-    if (buildingMesh) {
-        // Link to economy via gameLoop
-        gameLoop.economy.tryPlaceBuilding(0, b.x, b.y, map);
+// We use an async IIFE to handle the building creation
+(async () => {
+    for (const b of buildingData) {
+        const buildingMesh = await buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2);
+        if (buildingMesh) {
+            // Link to economy via gameLoop
+            gameLoop.economy.tryPlaceBuilding(0, b.x, b.y, map);
+        }
     }
-}
+})();
 
 // ── Setup Camera ─────────────────────────────────────────────────
 const camera = new ArcRotateCamera('camera', -Math.PI / 2, Math.PI / 2.5, 30, Vector3.Zero(), scene);
@@ -96,9 +96,6 @@ engine.runRenderLoop(() => {
 
 // ── Cleanup on Unload ────────────────────────────────────────────
 window.addEventListener('beforeunload', () => {
-    if (map) map.dispose();
     if (waterPlane) waterPlane.dispose();
-    for (const b of buildingData) {
-        // Building cleanup would happen via buildingRenderer or gameLoop
-    }
+    // Building cleanup would happen via buildingRenderer or gameLoop
 });

@@ -46,6 +46,15 @@ const UNIT_STATS: Record<UnitKind, UnitStats> = {
     canWork: false,
     canFight: true,
   },
+  [UnitKind.Worker]: {
+    maxHp: 80,
+    speed: 1.1,
+    attackDamage: 5,
+    attackRange: 0.5,
+    attackInterval: 0,
+    canWork: true,
+    canFight: false,
+  },
 };
 
 export class Unit {
