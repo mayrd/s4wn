@@ -41,8 +41,5 @@ bin-shim/*.lib
 bin-shim/*.def
 bin-shim/*.s
 
-#.hermes folder
-.hermes/
-
 # cache folder
 .pytest_cache/

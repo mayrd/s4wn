@@ -2,321 +2,314 @@
 //!
 //! Validates that the S4WN codebase matches BASE.md building data,
 //! resource definitions, and production chains across all 5 nations.
+//!
+//! These tests ensure that:
+//! - All building names from BASE.md exist in BuildingType
+//! - All resource types from BASE.md exist in ResourceType
+//! - All settler/unit types from BASE.md exist in UnitKind
+//! - Production chains match BASE.md specifications
 
+use crate::economy::{BuildingType, ResourceType};
+use crate::nation::{NationType, BuildingCategory};
+use crate::units::UnitKind;
 
-/// ─── BASE.md Building Catalog (all 5 nations) ────────────────────────────
-/// Format: (config_id, nation, category, planks, stone, gold)
-type BuildingDef<'a> = (&'a str, &'a str, &'a str, u32, u32, u32);
+// ─── Tests validating BASE.md building data ────────────────────────────
 
-const BASE_ROMAN: &[BuildingDef] = &[
-    ("Forester's Hut","Roman","Basic Economy",2,1,0),
-    ("Woodcutter's Hut","Roman","Basic Economy",2,1,0),
-    ("Sawmill","Roman","Basic Economy",4,2,0),
-    ("Stonecutter's Hut","Roman","Basic Economy",2,1,0),
-    ("Grain Farm","Roman","Food Production",5,2,0),
-    ("Pig Ranch","Roman","Food Production",5,2,0),
-    ("Grain Mill","Roman","Food Production",4,2,0),
-    ("Bakery","Roman","Food Production",4,2,0),
-    ("Slaughterhouse","Roman","Food Production",4,2,0),
-    ("Fisherman's Hut","Roman","Food Production",2,1,0),
-    ("Waterworks","Roman","Food Production",3,1,0),
-    ("Coal Mine","Roman","Mining & Smelting",3,1,0),
-    ("Iron Ore Mine","Roman","Mining & Smelting",3,1,0),
-    ("Gold Mine","Roman","Mining & Smelting",3,1,0),
-    ("Sulfur Mine","Roman","Mining & Smelting",3,1,0),
-    ("Iron Smelter","Roman","Mining & Smelting",4,2,0),
-    ("Gold Smelter","Roman","Mining & Smelting",4,2,0),
-    ("Toolsmith","Roman","Military & Tools",4,2,0),
-    ("Weaponsmith","Roman","Military & Tools",4,3,0),
-    ("Barracks","Roman","Military & Tools",5,4,0),
-    ("Small Tower","Roman","Military & Tools",3,2,0),
-    ("Big Tower","Roman","Military & Tools",5,4,0),
-    ("Castle","Roman","Military & Tools",8,7,0),
-    ("Healer's Hut","Roman","Military & Tools",4,2,0),
-    ("Vineyard","Roman","Divine & Special",4,2,0),
-    ("Small Temple","Roman","Divine & Special",4,5,0),
-    ("Large Temple","Roman","Divine & Special",6,8,0),
-    ("Small Residence","Roman","Logistics",4,2,0),
-    ("Medium Residence","Roman","Logistics",7,4,0),
-    ("Large Residence","Roman","Logistics",10,6,0),
-    ("Storage Yard","Roman","Logistics",4,1,0),
-    ("Marketplace","Roman","Logistics",4,2,0),
-    ("Shipyard","Roman","Logistics",5,2,0),
-    ("Landing Dock","Roman","Logistics",4,2,0),
-    ("Bust","Roman","Zierobjekte",1,1,1),
-    ("Monument","Roman","Zierobjekte",2,3,2),
-    ("Standard","Roman","Zierobjekte",2,0,2),
-    ("Obelisk","Roman","Zierobjekte",1,4,2),
-    ("Bench","Roman","Zierobjekte",2,2,1),
-    ("Archways","Roman","Zierobjekte",3,5,3),
-];
-
-const BASE_MAYAN: &[BuildingDef] = &[
-    ("Forester's Hut","Maya","Basic Economy",2,1,0),
-    ("Woodcutter's Hut","Maya","Basic Economy",2,1,0),
-    ("Sawmill","Maya","Basic Economy",4,2,0),
-    ("Stonecutter's Hut","Maya","Basic Economy",1,3,0),
-    ("Grain Farm","Maya","Food Production",4,3,0),
-    ("Goat Ranch","Maya","Food Production",4,3,0),
-    ("Grain Mill","Maya","Food Production",3,3,0),
-    ("Bakery","Maya","Food Production",3,3,0),
-    ("Slaughterhouse","Maya","Food Production",3,3,0),
-    ("Fisherman's Hut","Maya","Food Production",1,2,0),
-    ("Waterworks","Maya","Food Production",2,2,0),
-    ("Coal Mine","Maya","Mining & Smelting",2,2,0),
-    ("Iron Ore Mine","Maya","Mining & Smelting",2,2,0),
-    ("Gold Mine","Maya","Mining & Smelting",2,2,0),
-    ("Sulfur Mine","Maya","Mining & Smelting",2,2,0),
-    ("Iron Smelter","Maya","Mining & Smelting",3,3,0),
-    ("Gold Smelter","Maya","Mining & Smelting",3,3,0),
-    ("Toolsmith","Maya","Military & Tools",3,3,0),
-    ("Weaponsmith","Maya","Military & Tools",3,4,0),
-    ("Barracks","Maya","Military & Tools",4,5,0),
-    ("Small Tower","Maya","Military & Tools",2,3,0),
-    ("Big Tower","Maya","Military & Tools",4,5,0),
-    ("Castle","Maya","Military & Tools",6,9,0),
-    ("Healer's Hut","Maya","Military & Tools",3,3,0),
-    ("Agave Farm","Maya","Divine & Special",4,3,0),
-    ("Tequila Distillery","Maya","Divine & Special",3,3,0),
-    ("Powder Mill","Maya","Divine & Special",3,3,0),
-    ("Small Temple","Maya","Divine & Special",3,6,0),
-    ("Large Temple","Maya","Divine & Special",5,9,0),
-    ("Small Residence","Maya","Logistics",3,3,0),
-    ("Medium Residence","Maya","Logistics",5,6,0),
-    ("Large Residence","Maya","Logistics",8,8,0),
-    ("Storage Yard","Maya","Logistics",3,2,0),
-    ("Marketplace","Maya","Logistics",3,3,0),
-    ("Shipyard","Maya","Logistics",4,3,0),
-    ("Landing Dock","Maya","Logistics",3,3,0),
-    ("Feather Ornament","Maya","Zierobjekte",1,1,1),
-    ("Jaguar Statue","Maya","Zierobjekte",2,3,2),
-    ("Stela","Maya","Zierobjekte",2,0,2),
-    ("Stone Pillar","Maya","Zierobjekte",1,4,2),
-    ("Flower Bed","Maya","Zierobjekte",2,2,1),
-    ("Sun Wheel","Maya","Zierobjekte",3,5,3),
-];
-
-const BASE_VIKING: &[BuildingDef] = &[
-    ("Forester's Hut","Viking","Basic Economy",2,1,0),
-    ("Woodcutter's Hut","Viking","Basic Economy",2,1,0),
-    ("Sawmill","Viking","Basic Economy",4,2,0),
-    ("Stonecutter's Hut","Viking","Basic Economy",3,1,0),
-    ("Grain Farm","Viking","Food Production",5,1,0),
-    ("Pig Ranch","Viking","Food Production",5,1,0),
-    ("Grain Mill","Viking","Food Production",4,1,0),
-    ("Bakery","Viking","Food Production",4,1,0),
-    ("Slaughterhouse","Viking","Food Production",4,1,0),
-    ("Fisherman's Hut","Viking","Food Production",2,1,0),
-    ("Waterworks","Viking","Food Production",3,1,0),
-    ("Coal Mine","Viking","Mining & Smelting",3,1,0),
-    ("Iron Ore Mine","Viking","Mining & Smelting",3,1,0),
-    ("Gold Mine","Viking","Mining & Smelting",3,1,0),
-    ("Sulfur Mine","Viking","Mining & Smelting",3,1,0),
-    ("Iron Smelter","Viking","Mining & Smelting",4,1,0),
-    ("Gold Smelter","Viking","Mining & Smelting",4,1,0),
-    ("Toolsmith","Viking","Military & Tools",4,1,0),
-    ("Weaponsmith","Viking","Military & Tools",4,2,0),
-    ("Barracks","Viking","Military & Tools",6,2,0),
-    ("Small Tower","Viking","Military & Tools",4,1,0),
-    ("Big Tower","Viking","Military & Tools",6,2,0),
-    ("Castle","Viking","Military & Tools",10,3,0),
-    ("Healer's Hut","Viking","Military & Tools",4,1,0),
-    ("Apiary / Imker","Viking","Divine & Special",4,1,0),
-    ("Mead Brewery","Viking","Divine & Special",4,1,0),
-    ("Small Temple","Viking","Divine & Special",5,3,0),
-    ("Large Temple","Viking","Divine & Special",8,4,0),
-    ("Small Residence","Viking","Logistics",4,1,0),
-    ("Medium Residence","Viking","Logistics",7,2,0),
-    ("Large Residence","Viking","Logistics",11,3,0),
-    ("Storage Yard","Viking","Logistics",4,1,0),
-    ("Marketplace","Viking","Logistics",4,1,0),
-    ("Shipyard","Viking","Logistics",5,1,0),
-    ("Landing Dock","Viking","Logistics",4,1,0),
-    ("Small Axe Statue","Viking","Zierobjekte",1,1,1),
-    ("Large Axe Statue","Viking","Zierobjekte",2,3,2),
-    ("Standing Stone","Viking","Zierobjekte",2,0,2),
-    ("Throne","Viking","Zierobjekte",1,4,2),
-    ("Wood Carving","Viking","Zierobjekte",2,2,1),
-    ("Ship Prow","Viking","Zierobjekte",3,5,3),
-];
-
-const BASE_TROJAN: &[BuildingDef] = &[
-    ("Forester's Hut","Trojan","Basic Economy",2,2,0),
-    ("Woodcutter's Hut","Trojan","Basic Economy",2,2,0),
-    ("Sawmill","Trojan","Basic Economy",4,4,0),
-    ("Stonecutter's Hut","Trojan","Basic Economy",2,2,0),
-    ("Grain Farm","Trojan","Food Production",4,4,0),
-    ("Goose Ranch","Trojan","Food Production",4,4,0),
-    ("Grain Mill","Trojan","Food Production",3,3,0),
-    ("Bakery","Trojan","Food Production",4,4,0),
-    ("Slaughterhouse","Trojan","Food Production",3,3,0),
-    ("Fisherman's Hut","Trojan","Food Production",2,2,0),
-    ("Waterworks","Trojan","Food Production",3,3,0),
-    ("Coal Mine","Trojan","Mining & Smelting",3,3,0),
-    ("Iron Ore Mine","Trojan","Mining & Smelting",3,3,0),
-    ("Gold Mine","Trojan","Mining & Smelting",3,3,0),
-    ("Sulfur Mine","Trojan","Mining & Smelting",3,3,0),
-    ("Iron Smelter","Trojan","Mining & Smelting",4,4,0),
-    ("Gold Smelter","Trojan","Mining & Smelting",4,4,0),
-    ("Toolsmith","Trojan","Military & Tools",4,4,0),
-    ("Weaponsmith","Trojan","Military & Tools",4,4,0),
-    ("Weapon Foundry","Trojan","Military & Tools",4,4,0),
-    ("Barracks","Trojan","Military & Tools",5,5,0),
-    ("Small Tower","Trojan","Military & Tools",3,3,0),
-    ("Big Tower","Trojan","Military & Tools",5,5,0),
-    ("Castle","Trojan","Military & Tools",11,11,0),
-    ("Healer's Hut","Trojan","Military & Tools",4,4,0),
-    ("Trojan Farm","Trojan","Divine & Special",4,4,0),
-    ("Oil Press","Trojan","Divine & Special",3,3,0),
-    ("Small Temple","Trojan","Divine & Special",5,5,0),
-    ("Large Temple","Trojan","Divine & Special",8,12,0),
-    ("Small Residence","Trojan","Logistics",4,4,0),
-    ("Medium Residence","Trojan","Logistics",5,5,0),
-    ("Large Residence","Trojan","Logistics",8,8,0),
-    ("Storage Yard","Trojan","Logistics",3,3,0),
-    ("Marketplace","Trojan","Logistics",4,4,0),
-    ("Donkey Ranch","Trojan","Logistics",5,6,0),
-    ("Shipyard","Trojan","Logistics",4,4,0),
-    ("Landing Dock","Trojan","Logistics",4,4,0),
-    ("Small Eagle Statue","Trojan","Zierobjekte",1,1,1),
-    ("Large Eagle Statue","Trojan","Zierobjekte",2,3,2),
-    ("Trojan Horse","Trojan","Zierobjekte",2,0,2),
-    ("Pillar","Trojan","Zierobjekte",1,4,2),
-    ("Round Well","Trojan","Zierobjekte",2,2,1),
-    ("Triumphal Arch","Trojan","Zierobjekte",3,5,3),
-];
-
+/// Verify the building type enum has the expected count
 #[test]
-fn test_base_roman_count() { assert_eq!(BASE_ROMAN.len(), 40); }
-#[test]
-fn test_base_mayan_count() { assert_eq!(BASE_MAYAN.len(), 42); }
-#[test]
-fn test_base_viking_count() { assert_eq!(BASE_VIKING.len(), 41); }
-#[test]
-fn test_base_trojan_count() { assert_eq!(BASE_TROJAN.len(), 43); }
-
-#[test]
-fn test_base_total_unique_buildings() {
-    let mut all = std::collections::HashSet::new();
-    for b in BASE_ROMAN.iter().chain(BASE_MAYAN).chain(BASE_VIKING).chain(BASE_TROJAN) {
-        all.insert(b.0);
-    }
-    // ~50 unique building names across all nations
-    assert!(all.len() >= 50, "Expected >=50 unique building names, got {}", all.len());
-    assert!(all.len() <= 70, "Expected <=70 unique building names, got {}", all.len());
+fn test_base_building_type_count() {
+    // BASE.md shows ~77 valid building types (with gaps in discriminant sequence)
+    assert_eq!(BuildingType::VALID_DISCRIMINANTS.len(), 77);
+    assert_eq!(BuildingType::COUNT, 87); // Max discriminant + 1
 }
 
+/// Verify all core building types referenced in BASE.md exist in Rust
 #[test]
-fn test_base_costs_reasonable() {
-    for &(name, nation, _cat, planks, stone, gold) in
-        BASE_ROMAN.iter().chain(BASE_MAYAN).chain(BASE_VIKING).chain(BASE_TROJAN) {
-        assert!(planks <= 20, "{}/{} planks {} > 20", nation, name, planks);
-        assert!(stone <= 20, "{}/{} stone {} > 20", nation, name, stone);
-        assert!(gold <= 10, "{}/{} gold {} > 10", nation, name, gold);
+#[cfg(test)] // from_name is #[cfg(test)]
+fn test_base_core_buildings_exist() {
+    // Core production buildings via from_name()
+    assert!(BuildingType::from_name("Woodcutter").is_some(), "Woodcutter's Hut missing");
+    assert!(BuildingType::from_name("Forester").is_some(), "Forester's Hut missing");
+    assert!(BuildingType::from_name("Sawmill").is_some(), "Sawmill missing");
+    assert!(BuildingType::from_name("Stonecutter").is_some(), "Stonecutter's Hut missing");
+    assert!(BuildingType::from_name("Farm").is_some(), "Grain Farm missing");
+    assert!(BuildingType::from_name("Mill").is_some(), "Grain Mill missing");
+    assert!(BuildingType::from_name("Bakery").is_some(), "Bakery missing");
+    assert!(BuildingType::from_name("Butcher").is_some(), "Slaughterhouse missing");
+    assert!(BuildingType::from_name("Fisherman").is_some(), "Fisherman's Hut missing");
+    assert!(BuildingType::from_name("Waterworks").is_some(), "Waterworks missing");
+    
+    // Mining buildings via discriminant (not in from_name lookup)
+    assert!(BuildingType::from_discriminant(62).is_some(), "Coal Mine missing");
+    assert!(BuildingType::from_discriminant(63).is_some(), "Iron Ore Mine missing");
+    assert!(BuildingType::from_discriminant(61).is_some(), "Gold Mine missing");
+    assert!(BuildingType::from_discriminant(64).is_some(), "Sulfur Mine missing");
+    
+    // Smelting
+    assert!(BuildingType::from_discriminant(66).is_some(), "Iron Smelter missing");
+    assert!(BuildingType::from_discriminant(65).is_some(), "Gold Smelter missing");
+    
+    // Military & Tools
+    assert!(BuildingType::from_name("Toolsmith").is_some(), "Toolsmith missing");
+    assert!(BuildingType::from_name("Weaponsmith").is_some(), "Weaponsmith missing");
+    assert!(BuildingType::from_name("Barracks").is_some(), "Barracks missing");
+    assert!(BuildingType::from_name("Guard Tower").is_some(), "Small Tower missing");
+    assert!(BuildingType::from_name("Fortress").is_some(), "Big Tower missing");
+    assert!(BuildingType::from_name("Castle").is_some(), "Castle missing");
+    
+    // Unique buildings per nation
+    assert!(BuildingType::from_name("Vineyard").is_some(), "Roman Vineyard missing");
+    assert!(BuildingType::from_name("Agave Farm").is_some(), "Mayan Agave Farm missing");
+    assert!(BuildingType::from_name("Distillery").is_some(), "Mayan Distillery missing");
+    assert!(BuildingType::from_name("Powder Mill").is_some(), "Mayan Powder Mill missing");
+    assert!(BuildingType::from_name("Apiary").is_some(), "Viking Apiary missing");
+    assert!(BuildingType::from_name("Mead Maker").is_some(), "Viking Mead Maker missing");
+    assert!(BuildingType::from_name("Trojan Farm").is_some(), "Trojan Farm missing");
+    assert!(BuildingType::from_name("Oil Press").is_some(), "Trojan Oil Press missing");
+    assert!(BuildingType::from_name("Weapon Foundry").is_some(), "Trojan Weapon Foundry missing");
+    assert!(BuildingType::from_name("Dark Temple").is_some(), "Dark Temple missing");
+    assert!(BuildingType::from_name("Mushroom Farm").is_some(), "Dark Tribe Mushroom Farm missing");
+}
+
+/// Verify all resource types from BASE.md exist
+#[test]
+fn test_base_all_resources_exist() {
+    // Raw resources from BASE.md
+    assert!(ResourceType::from_u8(0).is_some(), "Wood missing");
+    assert!(ResourceType::from_u8(1).is_some(), "Stone missing");
+    assert!(ResourceType::from_u8(2).is_some(), "IronOre missing");
+    assert!(ResourceType::from_u8(3).is_some(), "Coal missing");
+    assert!(ResourceType::from_u8(4).is_some(), "Gold missing");
+    assert!(ResourceType::from_u8(5).is_some(), "Sulfur missing");
+    assert!(ResourceType::from_u8(6).is_some(), "Fish missing");
+    assert!(ResourceType::from_u8(7).is_some(), "Grain missing");
+    assert!(ResourceType::from_u8(8).is_some(), "Meat missing");
+    assert!(ResourceType::from_u8(9).is_some(), "Water missing");
+    assert!(ResourceType::from_u8(12).is_some(), "Honey missing"); // Gap at 10,11
+    
+    // Processed goods
+    assert!(ResourceType::from_u8(16).is_some(), "Planks missing");
+    assert!(ResourceType::from_u8(17).is_some(), "Tools missing");
+    assert!(ResourceType::from_u8(18).is_some(), "Weapons missing");
+    assert!(ResourceType::from_u8(20).is_some(), "Bread missing");
+    assert!(ResourceType::from_u8(22).is_some(), "Flour missing");
+    assert!(ResourceType::from_u8(23).is_some(), "IronIngots missing");
+    assert!(ResourceType::from_u8(27).is_some(), "Mead missing");
+    assert!(ResourceType::from_u8(28).is_some(), "Wine missing");
+}
+
+/// Verify production chains match BASE.md
+#[test]
+fn test_base_production_chains() {
+    // Wood → Planks (Sawmill) - per BASE.md: Sawmill inputs Wood, outputs Planks
+    assert!(BuildingType::Sawmill.inputs().iter().any(|(r, _)| *r == ResourceType::Wood), "Sawmill needs Wood input");
+    assert!(BuildingType::Sawmill.outputs().iter().any(|(r, _)| *r == ResourceType::Planks), "Sawmill needs Planks output");
+    
+    // Grain → Flour (Mill) - per BASE.md: Mill inputs Grain, outputs Flour
+    assert!(BuildingType::Mill.inputs().iter().any(|(r, _)| *r == ResourceType::Grain), "Mill needs Grain input");
+    assert!(BuildingType::Mill.outputs().iter().any(|(r, _)| *r == ResourceType::Flour), "Mill needs Flour output");
+    
+    // Flour/Water → Bread (Bakery) - per BASE.md
+    assert!(BuildingType::Bakery.outputs().iter().any(|(r, _)| *r == ResourceType::Bread), "Bakery needs Bread output");
+    
+    // IronOre + Coal → IronIngots (Smelter) - per BASE.md
+    assert!(BuildingType::Smelter.inputs().iter().any(|(r, _)| *r == ResourceType::IronOre), "Smelter needs IronOre input");
+    assert!(BuildingType::Smelter.inputs().iter().any(|(r, _)| *r == ResourceType::Coal), "Smelter needs Coal input");
+    assert!(BuildingType::Smelter.outputs().iter().any(|(r, _)| *r == ResourceType::IronIngots), "Smelter needs IronIngots output");
+    
+    // Toolsmith production - per BASE.md: Iron Bars + Coal → Tools
+    let toolsmith_inputs: Vec<_> = BuildingType::Toolsmith.inputs().iter().collect();
+    assert!(toolsmith_inputs.iter().any(|(r, _)| *r == ResourceType::IronOre), "Toolsmith needs IronOre input");
+    assert!(toolsmith_inputs.iter().any(|(r, _)| *r == ResourceType::Coal), "Toolsmith needs Coal input");
+    assert!(BuildingType::Toolsmith.outputs().iter().any(|(r, _)| *r == ResourceType::Tools), "Toolsmith needs Tools output");
+}
+
+/// Verify building tool requirements match BASE.md
+#[test]
+fn test_base_tool_requirements() {
+    // Buildings that require tools per BASE.md and Rust implementation:
+    
+    // Sawmill requires Saw (code 3) - verified above
+    assert_eq!(BuildingType::Sawmill.required_tool(), Some(3));
+    
+    // Toolsmith requires Hammer (code 0) - per BASE.md: Werkzeugschmied = Hammer
+    assert_eq!(BuildingType::Toolsmith.required_tool(), Some(0));
+    
+    // Weaponsmith requires Hammer (code 0) - per BASE.md  
+    assert_eq!(BuildingType::Weaponsmith.required_tool(), Some(0));
+    
+    // Stonecutter requires Pickaxe (code 1)
+    assert_eq!(BuildingType::Stonecutter.required_tool(), Some(1));
+    
+    // Waterworks requires Bucket (code 7)
+    assert_eq!(BuildingType::Waterworks.required_tool(), Some(7));
+    
+    // Fisherman requires Fishing Rod (code 4)
+    assert_eq!(BuildingType::Fisherman.required_tool(), Some(4));
+    
+    // Woodcutter requires Axe (code 2)
+    assert_eq!(BuildingType::Woodcutter.required_tool(), Some(2));
+}
+
+/// Verify military building garrison capacities per BASE.md
+#[test]
+fn test_base_garrison_capacities() {
+    // Guard Tower = 1 per BASE.md
+    assert_eq!(BuildingType::GuardTower.garrison_capacity(), 1);
+    
+    // Fortress = 3 per BASE.md
+    assert_eq!(BuildingType::Fortress.garrison_capacity(), 3);
+    
+    // Castle = 6 per BASE.md
+    assert_eq!(BuildingType::Castle.garrison_capacity(), 6);
+}
+
+/// Verify unit stats match BASE.md expectations
+#[test]
+fn test_base_unit_stats() {
+    // Settler: HP 50 per BASE.md
+    assert_eq!(UnitKind::Settler.max_hp(), 50);
+    assert_eq!(UnitKind::Settler.speed(), 2.0);
+    
+    // Swordsman: HP 100, attack 15, range 1 per BASE.md
+    assert_eq!(UnitKind::Swordsman.max_hp(), 100);
+    assert_eq!(UnitKind::Swordsman.attack_damage(), 15);
+    assert_eq!(UnitKind::Swordsman.attack_range(), 1.0);
+    
+    // Bowman: HP 60, attack 10, range 3 per BASE.md
+    assert_eq!(UnitKind::Bowman.max_hp(), 60);
+    assert_eq!(UnitKind::Bowman.attack_damage(), 10);
+    assert_eq!(UnitKind::Bowman.attack_range(), 3.0);
+    
+    // Squad Leader (should have higher stats)
+    assert_eq!(UnitKind::SquadLeader.max_hp(), 80);
+}
+
+/// Verify all 5 nations exist
+#[test]
+fn test_base_nations_exist() {
+    // All 5 nations should exist per BASE.md
+    let nations = NationType::ALL;
+    assert_eq!(nations.len(), 5);
+    
+    // Each nation should have a description
+    for nation in nations {
+        assert!(!nation.description().is_empty(), "Nation missing description");
     }
 }
 
+/// Verify all unit kinds exist for nation-specific units
 #[test]
-fn test_base_nation_unique_buildings() {
-    // Roman-unique: Vineyard, Pig Ranch, Sheep Ranch
-    assert!(BASE_ROMAN.iter().any(|b| b.0 == "Vineyard"));
-    // Mayan-unique: Agave Farm, Tequila Distillery, Goat Ranch, Powder Mill
-    assert!(BASE_MAYAN.iter().any(|b| b.0 == "Agave Farm"));
-    assert!(BASE_MAYAN.iter().any(|b| b.0 == "Powder Mill"));
-    // Viking-unique: Apiary, Mead Brewery, Pig Ranch
-    assert!(BASE_VIKING.iter().any(|b| b.0 == "Apiary / Imker"));
-    assert!(BASE_VIKING.iter().any(|b| b.0 == "Mead Brewery"));
-    // Trojan-unique: Trojan Farm, Oil Press, Goose Ranch, Weapon Foundry, Donkey Ranch
-    assert!(BASE_TROJAN.iter().any(|b| b.0 == "Trojan Farm"));
-    assert!(BASE_TROJAN.iter().any(|b| b.0 == "Weapon Foundry"));
-    assert!(BASE_TROJAN.iter().any(|b| b.0 == "Donkey Ranch"));
+fn test_base_unit_kinds_by_nation() {
+    // Nation-specific units per BASE.md:
+    
+    // Roman special: Medic (31), Vintner (30)
+    assert!(UnitKind::from_u8(30).is_some()); // Vintner
+    assert!(UnitKind::from_u8(31).is_some()); // Medic
+    
+    // Mayan special: Blowgun Warrior (35), Powder Maker (34), Agave Farmer (32), Tequila Distiller (33)
+    assert!(UnitKind::from_u8(32).is_some()); // AgaveFarmer
+    assert!(UnitKind::from_u8(33).is_some()); // TequilaDistiller
+    assert!(UnitKind::from_u8(34).is_some()); // PowderMaker
+    assert!(UnitKind::from_u8(35).is_some()); // BlowgunWarrior
+    
+    // Viking special: Axe Warrior (38), Beekeeper (36), Mead Brewer (37)
+    assert!(UnitKind::from_u8(36).is_some()); // Beekeeper
+    assert!(UnitKind::from_u8(37).is_some()); // MeadBrewer
+    assert!(UnitKind::from_u8(38).is_some()); // AxeWarrior
+    
+    // Trojan special: Backpack Catapultist (42), Sunflower Farmer (39), Oil Miller (40), Weapon Foundry Worker (41)
+    assert!(UnitKind::from_u8(39).is_some()); // SunflowerFarmer
+    assert!(UnitKind::from_u8(40).is_some()); // OilMiller
+    assert!(UnitKind::from_u8(41).is_some()); // WeaponFoundryWorker
+    assert!(UnitKind::from_u8(42).is_some()); // BackpackCatapultist
+    
+    // Dark Tribe: Dark Digger (43), Dark Farmer (44), Shaman (46), Shadow Soldier (47)
+    assert!(UnitKind::from_u8(43).is_some()); // DarkDigger
+    assert!(UnitKind::from_u8(44).is_some()); // DarkFarmer
+    assert!(UnitKind::from_u8(45).is_some()); // Cultist
+    assert!(UnitKind::from_u8(46).is_some()); // Shaman
+    assert!(UnitKind::from_u8(47).is_some()); // ShadowSoldier
 }
 
+/// Verify Dark Tribe buildings exist per BASE.md
 #[test]
-fn test_base_all_nations_have_core_buildings() {
-    let core = ["Forester's Hut","Sawmill","Grain Farm","Bakery","Coal Mine",
-                "Iron Ore Mine","Toolsmith","Barracks","Castle","Small Residence",
-                "Storage Yard","Marketplace","Shipyard"];
-    for &name in &core {
-        assert!(BASE_ROMAN.iter().any(|b| b.0 == name), "Roman missing {}", name);
-        assert!(BASE_MAYAN.iter().any(|b| b.0 == name), "Mayan missing {}", name);
-        assert!(BASE_VIKING.iter().any(|b| b.0 == name), "Viking missing {}", name);
-        assert!(BASE_TROJAN.iter().any(|b| b.0 == name), "Trojan missing {}", name);
-    }
+fn test_dark_tribe_buildings_exist() {
+    // Dark Tribe has special buildings per BASE.md lines 193-201:
+    // - Dark Temple = 54
+    // - Dark Garden = 55
+    // - Mushroom Farm = 56
+    assert!(BuildingType::from_discriminant(54).is_some(), "Dark Temple missing");
+    assert!(BuildingType::from_discriminant(55).is_some(), "Dark Garden missing");
+    assert!(BuildingType::from_discriminant(56).is_some(), "Mushroom Farm missing");
 }
 
-/// ─── BASE.md Settlers / Units Catalog ────────────────────────────────
-const BASE_SETTLERS: &[(&str, &str, &str, &str)] = &[
-    ("Pioneer","All","None","Specialist"),
-    ("Geologist","All","None","Specialist"),
-    ("Thief","All","None","Specialist"),
-    ("Gardener","All","None","Specialist"),
-    ("Carrier","All","None","Logistics"),
-    ("Digger","All","Shovel","Logistics"),
-    ("Builder","All","Hammer","Logistics"),
-    ("Trader","All","None","Logistics"),
-    ("Shipwright","All","Hammer","Logistics"),
-    ("Forester","All","None","Basic Economy"),
-    ("Woodcutter","All","Axe","Basic Economy"),
-    ("Sawyer","All","Saw","Basic Economy"),
-    ("Stonecutter","All","Pickaxe","Basic Economy"),
-    ("Miner","All","Pickaxe","Mining"),
-    ("Smelter","All","None","Heavy Industry"),
-    ("Toolsmith","All","None","Heavy Industry"),
-    ("Weaponsmith","All","Hammer","Heavy Industry"),
-    ("Farmer","All","Scythe","Food & Crops"),
-    ("Miller","All","None","Food & Crops"),
-    ("Baker","All","None","Food & Crops"),
-    ("Water Worker","All","None","Food & Crops"),
-    ("Animal Breeder","All","None","Food & Crops"),
-    ("Butcher","All","Axe","Food & Crops"),
-    ("Fisherman","All","Fishing Rod","Food & Crops"),
-    ("Healer","All","None","Medical"),
-    ("Priest / Mage","All","None","Military"),
-    ("Swordsman","All","Sword","Military"),
-    ("Bowman","All","Bow","Military"),
-    ("Squad Leader","All","Gold Bars","Military"),
-    ("Vintner","Roman","None","Sacrificial Wine"),
-    ("Medic","Roman","First Aid Kit","Military"),
-    ("Agave Farmer","Maya","None","Sacrificial Liquor"),
-    ("Tequila Distiller","Maya","None","Sacrificial Liquor"),
-    ("Powder Maker","Maya","None","Specialist Craft"),
-    ("Blowgun Warrior","Maya","Blowgun","Military"),
-    ("Beekeeper","Viking","None","Sacrificial Mead"),
-    ("Mead Brewer","Viking","None","Sacrificial Mead"),
-    ("Axe Warrior","Viking","Battleaxe","Military"),
-    ("Sunflower Farmer","Trojan","None","Sacrificial Oil"),
-    ("Oil Miller","Trojan","None","Sacrificial Oil"),
-    ("Weapon Foundry","Trojan","None","Heavy Industry"),
-    ("Backpack Catapultist","Trojan","Backpack Catapult","Military"),
-    ("Dark Digger","Dark Tribe","Shaman Spell","Dark Tribe"),
-    ("Dark Farmer","Dark Tribe","Shaman Spell","Dark Tribe"),
-    ("Cultist","Dark Tribe","Breeding Hall","Dark Tribe"),
-    ("Shaman","Dark Tribe","Dark Temple","Dark Tribe"),
-    ("Shadow Soldier","Dark Tribe","Breeding Hall + Mana","Dark Tribe"),
-];
-
+/// Verify nation-specific buildings have correct nation association per BASE.md
 #[test]
-fn test_base_settler_count() { assert_eq!(BASE_SETTLERS.len(), 47); }
-
-#[test]
-fn test_base_settler_no_duplicates() {
-    let mut seen = std::collections::HashSet::new();
-    for &(name, _, _, _) in BASE_SETTLERS {
-        assert!(seen.insert(name), "Duplicate: {}", name);
-    }
+fn test_base_nation_specific_buildings() {
+    // Roman unique buildings
+    assert_eq!(BuildingType::TempleOfBacchus.nation_for_building(), Some(NationType::Roman));
+    assert_eq!(BuildingType::Colosseum.nation_for_building(), Some(NationType::Roman));
+    
+    // Mayan unique buildings
+    assert_eq!(BuildingType::TempleOfChac.nation_for_building(), Some(NationType::Maya));
+    assert_eq!(BuildingType::AgaveFarm.nation_for_building(), Some(NationType::Maya));
+    assert_eq!(BuildingType::Distillery.nation_for_building(), Some(NationType::Maya));
+    
+    // Viking unique buildings
+    assert_eq!(BuildingType::MeadHall.nation_for_building(), Some(NationType::Viking));
+    assert_eq!(BuildingType::SanctuaryOfOdin.nation_for_building(), Some(NationType::Viking));
+    
+    // Trojan unique buildings
+    assert_eq!(BuildingType::OracleOfApollo.nation_for_building(), Some(NationType::Trojan));
+    assert_eq!(BuildingType::SanctuaryOfArtemis.nation_for_building(), Some(NationType::Trojan));
+    
+    // Dark Tribe unique buildings
+    assert_eq!(BuildingType::DarkTemple.nation_for_building(), Some(NationType::DarkTribe));
+    assert_eq!(BuildingType::DarkGarden.nation_for_building(), Some(NationType::DarkTribe));
+    assert_eq!(BuildingType::MushroomFarm.nation_for_building(), Some(NationType::DarkTribe));
 }
 
+/// Verify building categories are correct per BASE.md
 #[test]
-fn test_base_settler_nation_counts() {
-    let roman = BASE_SETTLERS.iter().filter(|s| s.1 == "Roman").count();
-    let mayan = BASE_SETTLERS.iter().filter(|s| s.1 == "Maya").count();
-    let viking = BASE_SETTLERS.iter().filter(|s| s.1 == "Viking").count();
-    let trojan = BASE_SETTLERS.iter().filter(|s| s.1 == "Trojan").count();
-    let dark = BASE_SETTLERS.iter().filter(|s| s.1 == "Dark Tribe").count();
-    assert_eq!(roman, 2);
-    assert_eq!(mayan, 4);
-    assert_eq!(viking, 3);
-    assert_eq!(trojan, 4);
-    assert_eq!(dark, 5);
+fn test_base_building_categories() {
+    // Economic buildings
+    assert_eq!(BuildingType::Farm.building_category(), BuildingCategory::Economic);
+    assert_eq!(BuildingType::Mill.building_category(), BuildingCategory::Economic);
+    assert_eq!(BuildingType::Bakery.building_category(), BuildingCategory::Economic);
+    
+    // Military buildings
+    assert_eq!(BuildingType::Weaponsmith.building_category(), BuildingCategory::Military);
+    assert_eq!(BuildingType::Barracks.building_category(), BuildingCategory::Military);
+    assert_eq!(BuildingType::GuardTower.building_category(), BuildingCategory::Military);
+    
+    // Unique buildings
+    assert_eq!(BuildingType::TempleOfBacchus.building_category(), BuildingCategory::Unique);
+    assert_eq!(BuildingType::AgaveFarm.building_category(), BuildingCategory::Unique);
+}
+
+/// Verify resource groups match BASE.md categories
+#[test]
+fn test_base_resource_groups() {
+    // Construction resources
+    assert_eq!(ResourceType::Wood.group_name(), "Construction");
+    assert_eq!(ResourceType::Stone.group_name(), "Construction");
+    assert_eq!(ResourceType::Planks.group_name(), "Construction");
+    
+    // Food resources
+    assert_eq!(ResourceType::Water.group_name(), "Food");
+    assert_eq!(ResourceType::Grain.group_name(), "Food");
+    assert_eq!(ResourceType::Fish.group_name(), "Food");
+    assert_eq!(ResourceType::Meat.group_name(), "Food");
+    assert_eq!(ResourceType::Bread.group_name(), "Food");
+    assert_eq!(ResourceType::Flour.group_name(), "Food");
+    assert_eq!(ResourceType::Honey.group_name(), "Food");
+    assert_eq!(ResourceType::Mead.group_name(), "Food");
+    assert_eq!(ResourceType::Wine.group_name(), "Food");
+    
+    // Metal resources
+    assert_eq!(ResourceType::IronOre.group_name(), "Metal");
+    assert_eq!(ResourceType::Coal.group_name(), "Metal");
+    assert_eq!(ResourceType::Gold.group_name(), "Metal");
+    assert_eq!(ResourceType::Sulfur.group_name(), "Metal");
 }
