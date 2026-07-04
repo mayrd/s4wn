@@ -6,8 +6,8 @@
 
 export class UIManager {
   private overlay: HTMLElement;
-  private splashScreen: HTMLElement;
-  private mainMenu: HTMLElement;
+  private splashScreen!: HTMLElement;
+  private mainMenu!: HTMLElement;
 
   constructor() {
     this.overlay = document.getElementById('ui-overlay')!;

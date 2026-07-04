@@ -35,7 +35,7 @@ const MAP_WIDTH = 100;
 const MAP_HEIGHT = 100;
 const map = new GameMap(MAP_WIDTH, MAP_HEIGHT);
 const gameLoop = new GameLoop(map);
-const uiManager = new UIManager();
+new UIManager();
 
 // Listen for game start event
 window.addEventListener('game-start', () => {
