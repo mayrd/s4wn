@@ -8,7 +8,6 @@
 import { 
   Engine, 
   Scene, 
-  ShadowGenerator, 
   HemisphericLight, 
   DirectionalLight, 
   ArcRotateCamera, 
@@ -77,14 +76,7 @@ const dirLight = new DirectionalLight('dir', new Vector3(-1, -2, -1).normalize()
 dirLight.intensity = 0.5;
 
 // ── Shadows ──────────────────────────────────────────────────────
-const shadowGenerator = new ShadowGenerator(1024, dirLight);
-shadowGenerator.useBlurExponentialShadowMap = true;
-shadowGenerator.blurKernel = 32;
-
-// Add terrain as shadow receiver
-if (terrainRenderer.getMesh()) {
-    shadowGenerator.addShadowCaster(terrainRenderer.getMesh()); // Terrain usually doesn't cast, but can receive
-}
+// Temporarily disabled to debug trackUbosInFrame error
 
 // ── Start Game Loop ──────────────────────────────────────────────
 engine.runRenderLoop(() => {
