@@ -1874,11 +1874,8 @@ impl App {
             // Update FPS benchmarking stats (min/max/avg)
             let fps = self.current_fps;
             if fps > 0 {
-                if fps < self.fps_min { self.fps_min = fps; }
-                if fps > self.fps_max { self.fps_max = fps; }
-                let n = self.fps_sample_count as f64;
-                self.fps_accum = (self.fps_accum * n + fps as f64) / (n + 1.0);
-                self.fps_sample_count += 1;
+                (self.fps_min, self.fps_max, self.fps_accum, self.fps_sample_count) =
+                    compute_fps_stats_update(self.fps_min, self.fps_max, self.fps_accum, self.fps_sample_count, fps);
             }
         }
 
@@ -3444,6 +3441,25 @@ pub(crate) fn compute_frametime_histogram(times: &[f32]) -> Vec<u32> {
         buckets[bucket] += 1;
     }
     buckets.to_vec()
+}
+
+/// Update FPS benchmarking stats (min/max/running-average) with a new FPS reading.
+/// Returns (new_min, new_max, new_accum, new_sample_count).
+/// Uses Welford-style incremental mean: accum_n = (accum_{n-1} * n + x) / (n + 1).
+/// `fps_min` should start at `u32::MAX`, `fps_max` at 0, `fps_accum` at 0.0, `sample_count` at 0.
+pub(crate) fn compute_fps_stats_update(
+    min: u32,
+    max: u32,
+    accum: f64,
+    sample_count: u64,
+    new_fps: u32,
+) -> (u32, u32, f64, u64) {
+    let new_min = if new_fps < min { new_fps } else { min };
+    let new_max = if new_fps > max { new_fps } else { max };
+    let n = sample_count as f64;
+    let new_accum = (accum * n + new_fps as f64) / (n + 1.0);
+    let new_count = sample_count + 1;
+    (new_min, new_max, new_accum, new_count)
 }
 
 #[wasm_bindgen]

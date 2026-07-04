@@ -2920,6 +2920,73 @@ mod parse_map_json_tests {
     }
 
     #[test]
+    fn test_compute_fps_stats_update_first_sample() {
+        // First sample with initial values: min=MAX, max=0, accum=0, count=0
+        let (min, max, accum, count) = compute_fps_stats_update(u32::MAX, 0, 0.0, 0, 60);
+        assert_eq!(min, 60);
+        assert_eq!(max, 60);
+        assert_eq!(accum, 60.0);
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn test_compute_fps_stats_update_min_tracking() {
+        // After first sample of 60, add a lower FPS of 30
+        let (min, max, accum, count) = compute_fps_stats_update(60, 60, 60.0, 1, 30);
+        assert_eq!(min, 30);
+        assert_eq!(max, 60);
+        assert!((accum - 45.0).abs() < 0.001, "running avg should be 45.0, got {}", accum);
+        assert_eq!(count, 2);
+    }
+
+    #[test]
+    fn test_compute_fps_stats_update_max_tracking() {
+        // After first sample of 60, add a higher FPS of 120
+        let (min, max, accum, count) = compute_fps_stats_update(60, 60, 60.0, 1, 120);
+        assert_eq!(min, 60);
+        assert_eq!(max, 120);
+        assert!((accum - 90.0).abs() < 0.001, "running avg should be 90.0, got {}", accum);
+        assert_eq!(count, 2);
+    }
+
+    #[test]
+    fn test_compute_fps_stats_update_running_average() {
+        // Simulate 5 samples: 60, 30, 90, 45, 75 → avg = 60.0
+        let mut min = u32::MAX;
+        let mut max = 0u32;
+        let mut accum = 0.0f64;
+        let mut count = 0u64;
+
+        let samples = [60u32, 30, 90, 45, 75];
+        for fps in samples {
+            (min, max, accum, count) = compute_fps_stats_update(min, max, accum, count, fps);
+        }
+
+        assert_eq!(min, 30);
+        assert_eq!(max, 90);
+        assert_eq!(count, 5);
+        // Running average: (0*0 + 60)/1 = 60, (60*1 + 30)/2 = 45, (45*2 + 90)/3 = 60,
+        // (60*3 + 45)/4 = 56.25, (56.25*4 + 75)/5 = 60.0
+        assert!((accum - 60.0).abs() < 0.001, "running avg should be 60.0, got {}", accum);
+    }
+
+    #[test]
+    fn test_compute_fps_stats_update_monotonic_count() {
+        let mut min = u32::MAX;
+        let mut max = 0u32;
+        let mut accum = 0.0f64;
+        let mut count = 0u64;
+
+        for fps in [60u32, 60, 60, 60, 60] {
+            (min, max, accum, count) = compute_fps_stats_update(min, max, accum, count, fps);
+            assert!((accum - 60.0).abs() < 0.001);
+        }
+        assert_eq!(min, 60);
+        assert_eq!(max, 60);
+        assert_eq!(count, 5);
+    }
+
+    #[test]
     fn test_compute_frametime_histogram_empty() {
         let result = compute_frametime_histogram(&[]);
         assert_eq!(result, vec![0u32; 8]);
