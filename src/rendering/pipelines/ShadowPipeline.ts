@@ -23,16 +23,19 @@ export class ShadowPipeline {
    * Initialize shadows in the scene.
    */
   init(): void {
-    // Create a directional light for shadows
+    // Create a hemispheric light for basic ambient lighting to avoid UBO issues
+    // that often occur with DirectionalLight in certain environments
+    const ambientLight = new (require('@babylonjs/core').HemisphericLight)('ambientLight', new Vector3(0, 1, 0), this.scene);
+    ambientLight.intensity = 0.7;
+
+    // We'll try a very simple DirectionalLight without a ShadowGenerator first
+    // to see if the 'trackUbosInFrame' error is caused by the light itself or the generator.
     const light = new DirectionalLight('dirLight', new Vector3(-1, -2, -1), this.scene);
     light.position = new Vector3(20, 40, 20);
-    light.intensity = 0.8;
+    light.intensity = 0.5;
 
-    // Initialize ShadowGenerator
-    // @ts-ignore
-    this.shadowGenerator = new ShadowGenerator(1024, light, this.scene);
-    this.shadowGenerator.useBlurExponentialShadowMap = true;
-    this.shadowGenerator.blurScale = 2;
+    // ShadowGenerator is disabled temporarily to resolve 'trackUbosInFrame' runtime error
+    // this.shadowGenerator = new ShadowGenerator(1024, light, this.scene);
   }
 
   /**
