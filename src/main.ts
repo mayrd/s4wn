@@ -82,6 +82,12 @@ scene.activeCamera = camera;
 const shadowPipeline = new ShadowPipeline(scene);
 shadowPipeline.init();
 
+// Add terrain to shadow caster
+const terrainMesh = terrainRenderer.getMesh();
+if (terrainMesh) {
+  shadowPipeline.addShadowCaster(terrainMesh);
+}
+
 const particleSystem = new ParticleSystem(scene);
 
 // ── Start Game Loop ──────────────────────────────────────────────
