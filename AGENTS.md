@@ -9,14 +9,14 @@
 
 ### Base Knowledge
 - **[siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/)** — authoritative source for buildings, units, production chains, and game mechanics.
-- **BASE.md** contains building reference data — always consult it before implementing building-related features.
+- **BASE.md** contains building, resources and settlers reference data — always consult it before implementing any features.
 
 ### Session Protocol
-**Start:** Read BASE.md → fetch open GitHub issues (token in `/opt/data/.env`) → read Next Session below.
+**Start:** Read BASE.md → fetch open GitHub issues → read Next Session below.
 
-**During:** Resolve open issues FIRST → one small atomic task per run → `npm test` after every TypeScript change.
+**During:** Resolve open issues FIRST → one small atomic task per run → run tests after every change.
 
-**End (MANDATORY):** Run tests using `npm test` and ensure they are green → `git add -A && git commit` → `git push` (if fails, `git pull --rebase`) → update Session Log below with 3-5 next steps.
+**End (MANDATORY):** Run tests `/tests/run_tests.sh` and ensure they are green → `git add -A && git commit` → `git push` (if fails, `git pull --rebase`) → update Session Log below with 3-5 next steps.
 
 ### Communication
 - Keep responses concise — short direct answers on Telegram
@@ -162,4 +162,4 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 4. Implement Object explorer (side panel)
 5. Implement HUD panels (HTML overlay)
 
-*All building data must match BASE.md. Never modify BASE.md.*
+*All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
