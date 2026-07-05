@@ -13,8 +13,8 @@ test.describe('Initial UI Flow', () => {
     await expect(page.locator('.splash-loading')).toContainText('Loading the world...');
 
     // 2. Wait for transition to main menu (3 seconds in UIManager.ts)
-    const mainMenu = page.locator('.ui-screen:not(.splash-screen)'); 
-    // Note: UIManager.ts creates the main menu but doesn't give it a specific class other than 'ui-screen'
+    const mainMenu = page.locator('.ui-screen', { has: page.locator('.main-menu-container') }); 
+    // Use the container to uniquely identify the main menu screen
     // but it's the only other screen. Let's be more specific if possible.
     // Wait, in UIManager.ts: this.mainMenu.className = 'ui-screen';
     // I'll wait for the main menu buttons to appear which indicates transition is complete.

@@ -58,7 +58,7 @@ export class GameApp {
     const MAP_HEIGHT = 100;
     this.map = new GameMap(MAP_WIDTH, MAP_HEIGHT);
     this.gameLoop = new GameLoop(this.map);
-    new UIManager();
+    new UIManager(this.gameLoop);
 
     window.addEventListener('game-start', () => {
         this.gameLoop.state.isPaused = false;

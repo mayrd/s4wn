@@ -77,7 +77,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 
 #### Detailed Phase Breakdown
 
-##### Error Handling & Logging (PRIORITY) 🔄
+##### Error Handling & Logging (PRIORITY) ✅
 - [x] Implement structured `Logger` with severity levels (`src/core/Logger.ts`)
 - [x] Implement global `ErrorHandler` for unhandled exceptions/rejections (`src/core/ErrorHandler.ts`)
 - [x] Enable Vite SourceMaps for original code references in console
@@ -118,7 +118,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [x] UI Integration with GameLoop
 - [x] UI Testing (Playwright)
 - [ ] Map editor (side panel)
-- [ ] Object explorer (side panel)
+- [x] Object explorer (side panel)
 - [x] HUD panels (HTML overlay)
 - [ ] Debug panel with stats
 
@@ -162,12 +162,12 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P4 | 2026-07-05 | Implement Terrain splat-mapping, Water reflections, glTF Building loader, Shadows, and GameLoop/AI integration |
 | P5 | 2026-07-05 | Implement Splash Screen, Main Menu (HTML/CSS), and fix build/TS errors |
 | P6 | 2026-07-05 | Fix ShaderMaterial Jest test mock, update index.html styles, fix Playwright port config |
+| P7 | 2026-07-05 | Implement Object Explorer UI, fix RawTexture type errors, and resolve UI test regressions |
 
 ### Next Session Priorities
-1. Implement Map editor (side panel) - create UI panel with map tools
-2. Implement Object explorer (side panel) - create UI panel for game object inspection
+1. Integrate Object Explorer with game data (UnitManager, Economy)
+2. Implement Map editor (side panel) - create UI panel with map tools
 3. Implement Debug panel with stats - create UI panel with performance/debug info
-4. Fix Playwright UI tests - resolve splash screen visibility timeout
-5. Visual regression tests - implement Playwright screenshot comparison tests
+4. Visual regression tests - implement Playwright screenshot comparison tests
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*

@@ -5,6 +5,7 @@
  */
 
 import { ObjectExplorer } from './explorer/ObjectExplorer';
+import { GameLoop } from '../game/GameLoop';
 
 export class UIManager {
   private overlay: HTMLElement;
@@ -12,9 +13,9 @@ export class UIManager {
   private mainMenu!: HTMLElement;
   private objectExplorer: ObjectExplorer;
 
-  constructor() {
+  constructor(gameLoop: GameLoop) {
     this.overlay = document.getElementById('ui-overlay')!;
-    this.objectExplorer = new ObjectExplorer(this);
+    this.objectExplorer = new ObjectExplorer(this, gameLoop);
     this.init();
   }
 

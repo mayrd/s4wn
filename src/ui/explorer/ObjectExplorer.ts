@@ -5,6 +5,7 @@
  */
 
 import { UIManager } from '../UIManager';
+import { GameLoop } from '../../game/GameLoop';
 
 export interface ExplorerObject {
   id: string;
@@ -18,8 +19,11 @@ export class ObjectExplorer {
   private listElement!: HTMLElement;
   private detailsElement!: HTMLElement;
   private isOpen: boolean = false;
+  private gameLoop: GameLoop;
+  private refreshInterval?: number;
 
-  constructor(_uiManager: UIManager) {
+  constructor(_uiManager: UIManager, gameLoop: GameLoop) {
+    this.gameLoop = gameLoop;
     this.container = document.createElement('div');
     this.container.className = 'ui-screen explorer-panel hidden';
     
@@ -64,12 +68,14 @@ export class ObjectExplorer {
     this.container.classList.remove('hidden');
     this.container.classList.add('active');
     this.isOpen = true;
+    this.startRefreshLoop();
   }
 
   public hide(): void {
     this.container.classList.add('hidden');
     this.container.classList.remove('active');
     this.isOpen = false;
+    this.stopRefreshLoop();
   }
 
   public toggle(): void {
@@ -78,6 +84,58 @@ export class ObjectExplorer {
     } else {
       this.show();
     }
+  }
+
+  private startRefreshLoop(): void {
+    this.stopRefreshLoop();
+    this.refreshInterval = window.setInterval(() => {
+      this.refresh();
+    }, 1000);
+  }
+
+  private stopRefreshLoop(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = undefined;
+    }
+  }
+
+  private refresh(): void {
+    const objects: ExplorerObject[] = [];
+
+    // Add Buildings
+    for (const building of this.gameLoop.economy.getCompleteBuildings()) {
+      objects.push({
+        id: building.index.toString(),
+        type: 'building',
+        name: building.kind.toString(),
+        properties: {
+          x: building.x,
+          y: building.y,
+          hp: `${building.hp}/${building.maxHp}`,
+          active: building.isActive,
+          progress: `${Math.floor(building.productionProgress * 100)}%`,
+        }
+      });
+    }
+
+    // Add Units
+    for (const unit of this.gameLoop.unitManager.getAliveUnits()) {
+      objects.push({
+        id: unit.id.toString(),
+        type: 'unit',
+        name: unit.kind.toString(),
+        properties: {
+          x: unit.x,
+          y: unit.y,
+          hp: unit.hp,
+          state: unit.state,
+          rank: unit.rank,
+        }
+      });
+    }
+
+    this.updateList(objects);
   }
 
   /**
