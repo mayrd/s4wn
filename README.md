@@ -37,17 +37,15 @@ Browser → index.html
 
 ## Current Status
 
-**Phase 2 — 3D Rendering Pipeline in progress**
+**Phase 4 — UI Migration in progress**
 
-- ✅ Engine setup with TypeScript & Babylon.js
-- ✅ Map system (terrain, elevation, resources)
-- ✅ Camera system (orbital ArcRotateCamera)
-- ✅ Unit & Building systems (core logic)
-- ✅ Pathfinding (A*)
-- 🔄 Terrain mesh generation (height displacement)
-- ⏳ Terrain texture splat-mapping
-- ⏳ Water plane with reflections
-- ⏳ Building 3D models (glTF)
+- ✅ Phase 0: Foundation (npm, TypeScript, Babylon.js)
+- ✅ Phase 1: Core Engine (Map, Camera, Units, Buildings, Pathfinding)
+- ✅ Phase 2: 3D Rendering (Terrain, Water, Buildings, Shadows, Particles)
+- ✅ Phase 3: Game Systems (GameLoop, WorkerAI, CombatAI, Territory, Fog)
+- 🔄 Phase 4: UI Migration (Main Menu, Object Explorer, HUD, Debug Panel)
+- ⏳ Phase 5: Integration & Polish (Network, Save/Load, Mobile, Audio)
+- ⏳ Phase 6: Testing & Deployment (Visual Regression, CI/CD)
 
 ---
 
