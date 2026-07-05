@@ -21,6 +21,7 @@ import { BuildingMesh } from './rendering/BuildingMesh';
 import { UIManager } from './ui/UIManager';
 import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
 import { ParticleSystem, ParticleEffectType } from './game/particles/ParticleSystem';
+import { HUD } from './ui/HUD';
 import './ui/styles.css';
 
 // ── Babylon.js Scene Setup ────────────────────────────────────────
@@ -35,11 +36,13 @@ const MAP_WIDTH = 100;
 const MAP_HEIGHT = 100;
 const map = new GameMap(MAP_WIDTH, MAP_HEIGHT);
 const gameLoop = new GameLoop(map);
-new UIManager();
+const uiManager = new UIManager();
+let hud: HUD | null = null;
 
 // Listen for game start event
 window.addEventListener('game-start', () => {
     gameLoop.state.isPaused = false;
+    hud = new HUD(gameLoop);
 });
 
 // ── Create Terrain ────────────────────────────────────────────────
