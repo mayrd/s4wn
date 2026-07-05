@@ -89,21 +89,21 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [x] Building system (BuildingType, Building, production)
 - [x] Pathfinding (A* implementation in TypeScript)
 
-##### Phase 2 — 3D Rendering Pipeline 🔄
+##### Phase 2 — 3D Rendering Pipeline ✅
 - [x] Scene setup with ArcRotateCamera (orbital)
 - [x] Terrain mesh generation (height displacement)
-- [ ] Terrain texture splat-mapping
-- [ ] Water plane with reflections
-- [ ] Building 3D models (glTF via Babylon.js)
-- [ ] Ground-plane shadows
-- [ ] Particle system (15 effect types)
+- [x] Terrain texture splat-mapping
+- [x] Water plane with reflections
+- [x] Building 3D models (OBJ via Babylon.js loaders)
+- [x] Ground-plane shadows
+- [x] Particle system (15 effect types)
 
-##### Phase 3 — Game Systems ⬤
-- [ ] GameLoop with tick-based simulation
-- [ ] WorkerAI for settler assignment/movement
-- [ ] CombatAI for military units
-- [ ] Territory computation
-- [ ] Fog of war system
+##### Phase 3 — Game Systems ✅
+- [x] GameLoop with tick-based simulation
+- [x] WorkerAI for settler assignment/movement
+- [x] CombatAI for military units
+- [x] Territory computation
+- [ ] Fog of war system (Shader blending)
 
 ##### Phase 4 — UI Migration 🔄
 - [x] Splash Screen and Main Menu (HTML/CSS)
@@ -112,7 +112,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [x] UI Testing (Playwright)
 - [ ] Map editor (side panel)
 - [ ] Object explorer (side panel)
-- [ ] HUD panels (HTML overlay)
+- [x] HUD panels (HTML overlay)
 - [ ] Debug panel with stats
 
 ##### Phase 5 — Integration & Polish ⬤
