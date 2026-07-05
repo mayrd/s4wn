@@ -17,6 +17,15 @@ export class CombatAI {
     const military = this.unitManager.getAliveUnits().filter(u => u.canFight());
 
     for (const unit of military) {
+      // 1. Low Health Retreat: If HP < 20%, stop attacking and go passive
+      if (unit.hp < unit.getMaxHp() * 0.2) {
+        if (unit.attackTargetId !== null) {
+          unit.attackTargetId = null;
+          unit.stance = UnitStance.Passive;
+        }
+        continue;
+      }
+
       if (unit.attackTargetId !== null) continue;
 
       switch (unit.stance) {
@@ -27,6 +36,7 @@ export class CombatAI {
           this.tryAttackInRange(unit);
           break;
         case UnitStance.Passive:
+          // Passive units don't initiate, but could be expanded to defend
           break;
       }
     }
@@ -34,8 +44,8 @@ export class CombatAI {
 
   private tryEngageNearby(unit: import('./Unit').Unit): void {
     const searchRadius = 8;
-    let closestEnemy: import('./Unit').Unit | null = null;
-    let closestDist = searchRadius + 1;
+    let bestTarget: import('./Unit').Unit | null = null;
+    let bestScore = -1;
 
     for (const other of this.unitManager.getAliveUnits()) {
       if (other.id === unit.id) continue;
@@ -45,14 +55,21 @@ export class CombatAI {
         (unit.x - other.x) ** 2 + (unit.y - other.y) ** 2
       );
 
-      if (dist < closestDist) {
-        closestDist = dist;
-        closestEnemy = other;
+      if (dist <= searchRadius) {
+        // Score based on distance and health (prioritize closer, weaker targets)
+        const healthFactor = 1 - (other.hp / other.getMaxHp());
+        const distFactor = 1 - (dist / searchRadius);
+        const score = (healthFactor * 0.6) + (distFactor * 0.4);
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestTarget = other;
+        }
       }
     }
 
-    if (closestEnemy) {
-      this.unitManager.attackUnit(unit.id, closestEnemy.id);
+    if (bestTarget) {
+      this.unitManager.attackUnit(unit.id, bestTarget.id);
     }
   }
 

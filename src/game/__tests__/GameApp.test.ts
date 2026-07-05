@@ -59,17 +59,21 @@ jest.mock('@babylonjs/core', () => {
     MirrorTexture: jest.fn().mockImplementation(() => ({
       dispose: jest.fn(),
     })),
-  MeshBuilder: {
-    CreateGroundFromHeightMap: jest.fn().mockReturnValue({
-      position: { x: 0, y: 0, z: 0 },
-      dispose: jest.fn(),
-    }),
-    CreateGround: jest.fn().mockReturnValue({
-      position: { x: 0, y: 0, z: 0 },
-      dispose: jest.fn(),
-    }),
-  },
+    MeshBuilder: {
+      CreateGroundFromHeightMap: jest.fn().mockReturnValue({
+        position: { x: 0, y: 0, z: 0 },
+        dispose: jest.fn(),
+      }),
+      CreateGround: jest.fn().mockReturnValue({
+        position: { x: 0, y: 0, z: 0 },
+        dispose: jest.fn(),
+      }),
+    },
     StandardMaterial: jest.fn().mockImplementation(() => ({
+      dispose: jest.fn(),
+    })),
+    ShaderMaterial: jest.fn().mockImplementation(() => ({
+      setTexture: jest.fn(),
       dispose: jest.fn(),
     })),
   };

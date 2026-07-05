@@ -6,7 +6,7 @@
 
 import {
   MeshBuilder,
-  StandardMaterial,
+  ShaderMaterial,
   Scene,
   Vector3,
   DynamicTexture,
@@ -54,17 +54,33 @@ export class TerrainRenderer {
     const splatMap = this.generateSplatMap();
 
     // 4. Create Material with Splat-mapping and Fog of War
-    const material = new StandardMaterial('terrainMat', this.scene);
-    material.diffuseTexture = splatMap;
+    const material = new ShaderMaterial('terrainMat', this.scene, {
+      vertex: `
+        varying vec2 vUV;
+        void main(void) {
+          vUV = uv;
+          gl_Position = worldViewProj * vec4(position, 1.0);
+        }
+      `,
+      fragment: `
+        varying vec2 vUV;
+        uniform sampler2D diffuseSampler;
+        uniform sampler2D visibilitySampler;
+        void main(void) {
+          vec4 diffuseColor = texture2D(diffuseSampler, vUV);
+          vec4 visibilityColor = texture2D(visibilitySampler, vUV);
+          gl_FragColor = diffuseColor * visibilityColor.r;
+        }
+      `
+    });
     
-    // Implement basic Fog of War using a visibility texture
+    material.setTexture('diffuseSampler', splatMap);
+    
+    // Implement Fog of War using a visibility texture and custom shader blending
     const visibilityMap = this.generateVisibilityMap();
-    // In a real implementation, we would blend splatMap and visibilityMap in a shader
+    material.setTexture('visibilitySampler', visibilityMap);
     
     this.mesh.material = material;
-    
-    // Add the visibility map as an emissive texture or use it for fog effect
-    (material as any).emissiveTexture = visibilityMap;
 
     // Set position to origin
     this.mesh.position = new Vector3(0, 0, 0);

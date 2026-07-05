@@ -38,6 +38,59 @@
       align-items: center;
       background: rgba(0, 0, 0, 0.7);
     }
+    .splash-screen {
+      background: radial-gradient(circle, #2c3e50 0%, #000 100%);
+      color: white;
+      text-align: center;
+    }
+    .splash-logo {
+      font-size: 4rem;
+      font-weight: bold;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+      margin-bottom: 2rem;
+    }
+    .splash-loading {
+      font-size: 1.2rem;
+      opacity: 0.7;
+    }
+    .main-menu-container {
+      background: #5d4037;
+      border: 10px solid #8d6e63;
+      border-radius: 15px;
+      padding: 40px;
+      width: 400px;
+      box-shadow: 0 0 50px rgba(0,0,0,0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .menu-title {
+      font-size: 2.5rem;
+      color: #f4e4bc;
+      text-align: center;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      font-family: 'Georgia', serif;
+    }
+    .menu-button {
+      background: #f4e4bc;
+      border: 3px solid #5d4037;
+      padding: 15px 25px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #3e2723;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      border-radius: 5px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    }
+    .menu-button.secondary {
+      font-size: 1rem;
+      padding: 10px 20px;
+      background: #8d6e63;
+      color: white;
+    }
     .ui-screen.active {
       display: flex;
     }
