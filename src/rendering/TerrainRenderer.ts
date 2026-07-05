@@ -59,10 +59,12 @@ export class TerrainRenderer {
     
     // Implement basic Fog of War using a visibility texture
     const visibilityMap = this.generateVisibilityMap();
-    material.diffuseTexture = visibilityMap; // For now, we use it as the main texture to show FoW
     // In a real implementation, we would blend splatMap and visibilityMap in a shader
     
     this.mesh.material = material;
+    
+    // Add the visibility map as an emissive texture or use it for fog effect
+    (material as any).emissiveTexture = visibilityMap;
 
     // Set position to origin
     this.mesh.position = new Vector3(0, 0, 0);

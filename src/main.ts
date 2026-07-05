@@ -19,6 +19,8 @@ import { TerrainRenderer } from './rendering/TerrainRenderer';
 import { WaterPlane } from './rendering/WaterPlane';
 import { BuildingMesh } from './rendering/BuildingMesh';
 import { UIManager } from './ui/UIManager';
+import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
+import { ParticleSystem, ParticleEffectType } from './game/particles/ParticleSystem';
 import './ui/styles.css';
 
 // ── Babylon.js Scene Setup ────────────────────────────────────────
@@ -63,6 +65,8 @@ const buildingData: Array<{ kind: string; x: number; y: number }> = [
         if (buildingMesh) {
             // Link to economy via gameLoop
             gameLoop.economy.tryPlaceBuilding(b.kind as any, b.x, b.y, map, 0);
+            // Add to shadow pipeline
+            shadowPipeline.addShadowCaster(buildingMesh);
         }
     }
 })();
@@ -74,22 +78,25 @@ camera.lowerRadiusLimit = 10;
 camera.upperRadiusLimit = 100;
 scene.activeCamera = camera;
 
-// ── Lighting ─────────────────────────────────────────────────────
-// Temporarily disabled to debug trackUbosInFrame error
+// ── Lighting & Shadows ───────────────────────────────────────────
+const shadowPipeline = new ShadowPipeline(scene);
+shadowPipeline.init();
 
-// ── Shadows ──────────────────────────────────────────────────────
-// Temporarily disabled to debug trackUbosInFrame error
+const particleSystem = new ParticleSystem(scene);
 
 // ── Start Game Loop ──────────────────────────────────────────────
 engine.runRenderLoop(() => {
     const dt = engine.getDeltaTime() / 1000; // Use seconds for GameLoop.update
 
     gameLoop.update(dt);
+    particleSystem.update(dt);
     scene.render();
 });
 
 // ── Cleanup on Unload ────────────────────────────────────────────
 window.addEventListener('beforeunload', () => {
     if (waterPlane) waterPlane.dispose();
+    shadowPipeline.dispose();
+    particleSystem.dispose();
     // Building cleanup would happen via buildingRenderer or gameLoop
 });
