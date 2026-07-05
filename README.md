@@ -55,7 +55,9 @@ Browser → index.html
 
 ```bash
 npm install          # Install dependencies
-npm test             # Run tests
+npm test             # Run unit tests (Jest)
+npm run test:ui      # Run UI tests (Playwright)
+./tests/run_tests.sh # Run full pipeline (Typecheck + UI tests)
 npm run dev          # Start development server (Vite)
 ```
 

@@ -53,10 +53,11 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | Tool | Purpose |
 |------|---------|
 | TypeScript (stable) | Game logic |
-| Vite | Build system |
+| Vite | Build system (with SourceMaps enabled) |
 | Caddy 2.x | Production web server |
 | Docker Buildx | Multi-arch images |
-| Jest | Testing |
+| Jest | Unit Testing |
+| Playwright | UI/E2E Testing |
 
 ## 3. Implementation Plan
 
@@ -75,6 +76,12 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | 6 — Testing | ⬤ | Jest (Unit), Playwright (UI/E2E), visual regression, deployment |
 
 #### Detailed Phase Breakdown
+
+##### Error Handling & Logging (PRIORITY) 🔄
+- [x] Implement structured `Logger` with severity levels (`src/core/Logger.ts`)
+- [x] Implement global `ErrorHandler` for unhandled exceptions/rejections (`src/core/ErrorHandler.ts`)
+- [x] Enable Vite SourceMaps for original code references in console
+- [x] Integrate global error handling into boot sequence
 
 ##### Phase 0 — Project Setup ✅
 - [x] Initialize npm project with TypeScript

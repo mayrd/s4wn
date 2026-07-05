@@ -5,26 +5,12 @@
  * Babylon.js engine with ArcRotateCamera for default isometric view.
  */
 
-import { 
-  Engine, 
-  Scene, 
-  ArcRotateCamera, 
-  Vector3, 
-  Color4 
-} from '@babylonjs/core';
-
-import { Map as GameMap } from './game/Map';
-import { GameLoop } from './game/GameLoop';
-import { TerrainRenderer } from './rendering/TerrainRenderer';
-import { WaterPlane } from './rendering/WaterPlane';
-import { BuildingMesh } from './rendering/BuildingMesh';
-import { UIManager } from './ui/UIManager';
-import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
-import { ParticleSystem } from './game/particles/ParticleSystem';
-import { HUD } from './ui/HUD';
-import { DebugPanel } from './ui/panels/DebugPanel';
 import { GameApp } from './GameApp';
+import { errorHandler } from './core/ErrorHandler';
 import './ui/styles.css';
+
+// ── Initialize Global Error Handling ────────────────────────────────
+errorHandler.init();
 
 // ── Initialize Game Application ──────────────────────────────────
 const app = new GameApp('renderCanvas');

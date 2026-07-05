@@ -90,7 +90,6 @@ jest.mock('@babylonjs/loaders', () => {
   };
 });
 
-import { Engine, Scene } from '@babylonjs/core';
 
 describe('GameApp Initialization', () => {
   let canvas: HTMLCanvasElement;

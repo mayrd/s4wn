@@ -1,14 +1,16 @@
-# S4WN TypeScript/Jest Tests
+# S4WN Tests
 
-Tests are written in TypeScript using Jest and run with `npm test`.
+The project uses Jest for unit testing and Playwright for UI/Integration testing.
 
 ## Test Categories
 
-- Unit tests: Individual modules and functions
-- Integration tests: Full page interactions using Playwright (Python)
+- **Unit tests**: Individual modules and functions (Jest)
+- **UI tests**: Full page interactions and visual regression (Playwright)
 
 ## Running Tests
 
 ```bash
-npm test              # Run Jest unit tests
-pip install -r requirements.txt && pytest  # Run Playwright integration tests
+npm test              # Run unit tests
+npm run test:ui       # Run UI tests
+./tests/run_tests.sh  # Run full pipeline (Typecheck + UI tests)
+```
