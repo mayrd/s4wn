@@ -82,6 +82,61 @@
   color: white;
 }
 
+/* HUD */
+.hud-container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  pointer-events: none;
+  z-index: 20;
+}
+.hud-panel {
+  background: rgba(93, 64, 55, 0.8);
+  border: 2px solid #d2b48c;
+  border-radius: 8px;
+  padding: 10px;
+  color: #f4e4bc;
+  font-family: 'Georgia', serif;
+  min-width: 150px;
+  pointer-events: auto;
+}
+.hud-title {
+  font-weight: bold;
+  font-size: 1.1rem;
+  border-bottom: 1px solid #d2b48c;
+  margin-bottom: 5px;
+  padding-bottom: 2px;
+}
+.hud-stat {
+  font-size: 0.9rem;
+}
+
+/* Debug Panel */
+.debug-panel {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #444;
+  padding: 15px;
+  color: #0f0;
+  font-family: monospace;
+  z-index: 100;
+  pointer-events: auto;
+  min-width: 200px;
+}
+.debug-title {
+  color: #0f0;
+  font-weight: bold;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #0f0;
+}
+.debug-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
 /* Utility */
 .hidden {
   display: none !important;

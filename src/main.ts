@@ -22,6 +22,7 @@ import { UIManager } from './ui/UIManager';
 import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
 import { ParticleSystem, ParticleEffectType } from './game/particles/ParticleSystem';
 import { HUD } from './ui/HUD';
+import { DebugPanel } from './ui/panels/DebugPanel';
 import './ui/styles.css';
 
 // ── Babylon.js Scene Setup ────────────────────────────────────────
@@ -43,6 +44,7 @@ let hud: HUD | null = null;
 window.addEventListener('game-start', () => {
     gameLoop.state.isPaused = false;
     hud = new HUD(gameLoop);
+    new DebugPanel(document, engine, gameLoop);
 });
 
 // ── Create Terrain ────────────────────────────────────────────────
