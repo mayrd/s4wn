@@ -165,8 +165,18 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P7 | 2026-07-05 | Implement Object Explorer UI, fix RawTexture type errors, and resolve UI test regressions |
 
 ### Next Session Priorities
-1. Implement Map editor (side panel) - create UI panel with map tools and terrain modification logic
-2. Implement visual feedback for map editing in TerrainRenderer
-3. Visual regression tests - implement Playwright screenshot comparison tests
+1. **Map Editor - UI Foundation**:
+   - Create `MapEditor` side panel with tool selection (Brush, Eraser) and terrain type palette.
+   - Integrate editor toggle into `UIManager` and main menu.
+2. **Map Editor - Interaction**:
+   - Implement 3D-to-2D coordinate mapping using Babylon.js raycasting on the terrain mesh.
+   - Implement brush-based terrain modification (type and elevation).
+3. **Map Editor - Rendering**:
+   - Update `TerrainRenderer` to support dynamic texture updates for real-time visual feedback.
+   - Implement a 3D brush cursor for precise editing.
+4. **Map Editor - Persistence**:
+   - Implement map export functionality to JSON format.
+5. **Visual Regression Tests**:
+   - Implement Playwright screenshot comparison tests for UI components.
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
