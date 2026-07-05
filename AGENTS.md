@@ -32,13 +32,13 @@
 - Built-in PBR materials, lighting, shadows, post-processing
 
 ### Graphics: Babylon.js WebGL/WebGPU
-| Aspect | Before (Rust/WASM) | After (Babylon.js/TypeScript) |
-|--------|-------------------|------------------------------|
-| Engine | Rust → WASM (299KB) | Babylon.js (TypeScript) |
-| Rendering | Raw WebGL2 | Babylon.js WebGL/WebGPU |
-| Build | cargo + wasm-pack | npm + vite |
-| Models | OBJ/MTL parsing | glTF 2.0 (.glb) native support |
-| Tests | cargo test (Rust) | jest (TypeScript) |
+| Aspect | Babylon.js/TypeScript |
+|--------|------------------------------|
+| Engine | Babylon.js (TypeScript) |
+| Rendering |Babylon.js WebGL/WebGPU |
+| Build | npm + vite |
+| Models | glTF 2.0 (.glb) native support |
+| Tests | jest (TypeScript) |
 
 ### Camera: Orbital (Babylon.js ArcRotateCamera)
 Default: classic isometric (alpha=45° azimuth, beta=30.264° elevation). Smooth interpolation `dt * 8.0`.
