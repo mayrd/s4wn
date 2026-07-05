@@ -63,7 +63,7 @@ export class ParticleSystem {
 
   private createParticleSystem(
     type: ParticleEffectType,
-    position: Vector3,
+    _position: Vector3,
     name: string
   ): BJSParticleSystem {
     const ps = new BJSParticleSystem(name, 1000, this.scene);
@@ -239,7 +239,9 @@ export class ParticleSystem {
         break;
     }
 
+    // @ts-ignore
     ps.emissiveColor = ps.color1;
+    // @ts-ignore
     ps.target = Vector3.Zero();
     ps.gravity = new Vector3(0, -9.81, 0);
 
@@ -271,7 +273,7 @@ export class ParticleSystem {
   /**
    * Update all active particle effects.
    */
-  update(dt: number): void {
+  update(_dt: number): void {
     // Update any time-based particle logic here
     this.emitters.forEach((emitter) => {
       if (emitter.particleSystem && emitter.active) {

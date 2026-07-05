@@ -20,7 +20,7 @@ import { WaterPlane } from './rendering/WaterPlane';
 import { BuildingMesh } from './rendering/BuildingMesh';
 import { UIManager } from './ui/UIManager';
 import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
-import { ParticleSystem, ParticleEffectType } from './game/particles/ParticleSystem';
+import { ParticleSystem } from './game/particles/ParticleSystem';
 import { HUD } from './ui/HUD';
 import { DebugPanel } from './ui/panels/DebugPanel';
 import './ui/styles.css';
@@ -37,13 +37,12 @@ const MAP_WIDTH = 100;
 const MAP_HEIGHT = 100;
 const map = new GameMap(MAP_WIDTH, MAP_HEIGHT);
 const gameLoop = new GameLoop(map);
-const uiManager = new UIManager();
-let hud: HUD | null = null;
+new UIManager();
 
 // Listen for game start event
 window.addEventListener('game-start', () => {
     gameLoop.state.isPaused = false;
-    hud = new HUD(gameLoop);
+    new HUD(gameLoop);
     new DebugPanel(document, engine, gameLoop);
 });
 
@@ -56,6 +55,16 @@ map.setAllVisible();
 const waterRenderer = new WaterPlane(scene, MAP_WIDTH, MAP_HEIGHT);
 waterRenderer.createWaterPlane();
 const waterPlane = waterRenderer.getMesh();
+
+// ── Lighting & Shadows ───────────────────────────────────────────
+const shadowPipeline = new ShadowPipeline(scene);
+shadowPipeline.init();
+
+// Add terrain to shadow caster
+const terrainMesh = terrainRenderer.getMesh();
+if (terrainMesh) {
+  shadowPipeline.addShadowCaster(terrainMesh);
+}
 
 // ── Create Buildings ──────────────────────────────────────────────
 const buildingRenderer = new BuildingMesh(scene);
@@ -82,16 +91,6 @@ camera.setTarget(Vector3.Zero());
 camera.lowerRadiusLimit = 10;
 camera.upperRadiusLimit = 100;
 scene.activeCamera = camera;
-
-// ── Lighting & Shadows ───────────────────────────────────────────
-const shadowPipeline = new ShadowPipeline(scene);
-shadowPipeline.init();
-
-// Add terrain to shadow caster
-const terrainMesh = terrainRenderer.getMesh();
-if (terrainMesh) {
-  shadowPipeline.addShadowCaster(terrainMesh);
-}
 
 const particleSystem = new ParticleSystem(scene);
 

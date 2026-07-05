@@ -8,7 +8,6 @@ import { GameLoop } from '../game/GameLoop';
 
 export class HUD {
   private container: HTMLElement;
-  private statsElement: HTMLElement;
 
   constructor(gameLoop: GameLoop) {
     this.container = document.getElementById('ui-overlay')!;
@@ -61,7 +60,6 @@ export class HUD {
     `;
     document.head.appendChild(style);
 
-    this.statsElement = document.getElementById('stats-panel')!;
   }
 
   private updateLoop(gameLoop: GameLoop): void {

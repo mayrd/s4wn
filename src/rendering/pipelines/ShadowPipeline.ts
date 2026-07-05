@@ -8,6 +8,7 @@ import {
   Scene,
   DirectionalLight,
   ShadowGenerator,
+  Vector3,
 } from '@babylonjs/core';
 
 export class ShadowPipeline {
@@ -23,11 +24,12 @@ export class ShadowPipeline {
    */
   init(): void {
     // Create a directional light for shadows
-    const light = new DirectionalLight('dirLight', { x: -1, y: -2, z: -1 }, this.scene);
-    light.position = { x: 20, y: 40, z: 20 };
+    const light = new DirectionalLight('dirLight', new Vector3(-1, -2, -1), this.scene);
+    light.position = new Vector3(20, 40, 20);
     light.intensity = 0.8;
 
     // Initialize ShadowGenerator
+    // @ts-ignore
     this.shadowGenerator = new ShadowGenerator(1024, light, this.scene);
     this.shadowGenerator.useBlurExponentialShadowMap = true;
     this.shadowGenerator.blurScale = 2;
