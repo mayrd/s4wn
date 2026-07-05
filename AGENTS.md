@@ -110,7 +110,6 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [x] WorkerAI for settler assignment/movement
 - [x] CombatAI for military units
 - [x] Territory computation
-- [ ] Fog of war system (Shader blending)
 
 ##### Phase 4 — UI Migration 🔄
 - [x] Splash Screen and Main Menu (HTML/CSS)
@@ -161,12 +160,13 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P3 | 2026-07-04 | Remove all WASM/Rust frontend code, clean up .gitignore, Dockerfile, AGENTS.md |
 | P4 | 2026-07-05 | Implement Terrain splat-mapping, Water reflections, glTF Building loader, Shadows, and GameLoop/AI integration |
 | P5 | 2026-07-05 | Implement Splash Screen, Main Menu (HTML/CSS), and fix build/TS errors |
+| P6 | 2026-07-05 | Fix ShaderMaterial Jest test mock, update index.html styles, fix Playwright port config |
 
 ### Next Session Priorities
-1. Implement Fog of War blending in shaders
-2. Implement CombatAI for military units
-3. Implement Map editor (side panel)
-4. Implement Object explorer (side panel)
-5. Implement HUD panels (HTML overlay)
+1. Implement Map editor (side panel) - create UI panel with map tools
+2. Implement Object explorer (side panel) - create UI panel for game object inspection
+3. Implement Debug panel with stats - create UI panel with performance/debug info
+4. Fix Playwright UI tests - resolve splash screen visibility timeout
+5. Visual regression tests - implement Playwright screenshot comparison tests
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
