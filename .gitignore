@@ -16,10 +16,8 @@ Thumbs.db
 *.log
 
 # Node modules
-node_modules/
+node_modules
 
 # test results
-test-results/
-
-playwright-report/
-
+test-results
+playwright-report
