@@ -4,13 +4,17 @@
  * Manages the game's UI overlays, including the splash screen and main menu.
  */
 
+import { ObjectExplorer } from './explorer/ObjectExplorer';
+
 export class UIManager {
   private overlay: HTMLElement;
   private splashScreen!: HTMLElement;
   private mainMenu!: HTMLElement;
+  private objectExplorer: ObjectExplorer;
 
   constructor() {
     this.overlay = document.getElementById('ui-overlay')!;
+    this.objectExplorer = new ObjectExplorer(this);
     this.init();
   }
 
@@ -57,7 +61,7 @@ export class UIManager {
     this.mainMenu.querySelector('#btn-new-game')?.addEventListener('click', () => this.startGame());
     this.mainMenu.querySelector('#btn-tutorial')?.addEventListener('click', () => alert('Tutorial coming soon!'));
     this.mainMenu.querySelector('#btn-load-game')?.addEventListener('click', () => alert('Load game coming soon!'));
-    this.mainMenu.querySelector('#btn-explorer')?.addEventListener('click', () => alert('Object Explorer coming soon!'));
+    this.mainMenu.querySelector('#btn-explorer')?.addEventListener('click', () => this.objectExplorer.toggle());
     this.mainMenu.querySelector('#btn-editor')?.addEventListener('click', () => alert('Map Editor coming soon!'));
     this.mainMenu.querySelector('#btn-multiplayer')?.addEventListener('click', () => alert('Multiplayer coming soon!'));
   }
@@ -76,6 +80,10 @@ export class UIManager {
     this.hideAll();
     // Dispatch event to notify GameLoop to start simulation
     window.dispatchEvent(new CustomEvent('game-start'));
+  }
+
+  public toggleExplorer(): void {
+    this.objectExplorer.toggle();
   }
 
   private hideAll(): void {

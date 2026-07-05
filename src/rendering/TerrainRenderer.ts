@@ -9,7 +9,7 @@ import {
   ShaderMaterial,
   Scene,
   Vector3,
-  DynamicTexture,
+  RawTexture,
 } from '@babylonjs/core';
 import { Map as GameMap } from '../game/Map';
 import { Terrain } from '../game/types';
@@ -86,9 +86,8 @@ export class TerrainRenderer {
     this.mesh.position = new Vector3(0, 0, 0);
   }
 
-  private generateHeightMap(): DynamicTexture {
+  private generateHeightMap(): RawTexture {
     const size = 256; // Resolution of the heightmap texture
-    const heightMap = new DynamicTexture('heightMap', { width: size, height: size }, this.scene);
     const data = new Uint8Array(size * size);
 
     for (let y = 0; y < size; y++) {
@@ -105,13 +104,11 @@ export class TerrainRenderer {
       }
     }
 
-    (heightMap as any).setPixels(data);
-    return heightMap;
+    return new RawTexture(data, size, size, 0, this.scene, false);
   }
 
-  private generateVisibilityMap(): DynamicTexture {
+  private generateVisibilityMap(): RawTexture {
     const size = 256;
-    const visMap = new DynamicTexture('visMap', { width: size, height: size }, this.scene);
     const data = new Uint8ClampedArray(size * size * 4);
 
     for (let y = 0; y < size; y++) {
@@ -130,13 +127,11 @@ export class TerrainRenderer {
       }
     }
 
-    (visMap as any).setPixels(data);
-    return visMap;
+    return new RawTexture(data, size, size, 0, this.scene, false);
   }
 
-  private generateSplatMap(): DynamicTexture {
+  private generateSplatMap(): RawTexture {
     const size = 256;
-    const splatMap = new DynamicTexture('splatMap', { width: size, height: size }, this.scene);
     const data = new Uint8ClampedArray(size * size * 4);
 
     for (let y = 0; y < size; y++) {
@@ -197,8 +192,7 @@ export class TerrainRenderer {
       }
     }
 
-    (splatMap as any).setPixels(data);
-    return splatMap;
+    return new RawTexture(data, size, size, 0, this.scene, false);
   }
 
   getMesh(): any | null {

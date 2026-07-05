@@ -76,6 +76,9 @@ jest.mock('@babylonjs/core', () => {
       setTexture: jest.fn(),
       dispose: jest.fn(),
     })),
+    RawTexture: jest.fn().mockImplementation(() => ({
+      dispose: jest.fn(),
+    })),
     SceneLoader: {
       ImportMeshAsync: jest.fn().mockResolvedValue({
         meshes: [{
