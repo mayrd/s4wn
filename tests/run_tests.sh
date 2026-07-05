@@ -23,7 +23,7 @@ echo ""
 
 # Start preview server in background
 npm run build
-npm run preview &
+npm run preview -- --port 8765 &
 PREVIEW_PID=$!
 
 # Give server time to start
@@ -31,9 +31,9 @@ sleep 5
 
 # Run tests
 if [ -n "$HEADED_FLAG" ]; then
-    npx playwright test --headed
+    npx playwright test -c tests/playwright.config.ts --headed
 else
-    npx playwright test
+    npx playwright test -c tests/playwright.config.ts
 fi
 
 # Kill preview server
