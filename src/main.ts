@@ -26,18 +26,22 @@ import { DebugPanel } from './ui/panels/DebugPanel';
 import './ui/styles.css';
 
 // ── Babylon.js Scene Setup ────────────────────────────────────────
+console.log('[S4WN] Initializing Babylon.js Engine...');
 const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
 const engine = new Engine(canvas, true);
 const scene = new Scene(engine);
+console.log('[S4WN] Scene created successfully');
 
 scene.clearColor = new Color4(0.5, 0.7, 1.0, 1.0);
 
 // ── Create Game Systems ──────────────────────────────────────────
+console.log('[S4WN] Initializing Game Systems...');
 const MAP_WIDTH = 100;
 const MAP_HEIGHT = 100;
 const map = new GameMap(MAP_WIDTH, MAP_HEIGHT);
 const gameLoop = new GameLoop(map);
 new UIManager();
+console.log('[S4WN] Game systems initialized');
 
 // Listen for game start event
 window.addEventListener('game-start', () => {
@@ -47,16 +51,21 @@ window.addEventListener('game-start', () => {
 });
 
 // ── Create Terrain ────────────────────────────────────────────────
+console.log('[S4WN] Rendering Terrain...');
 const terrainRenderer = new TerrainRenderer(scene, map);
 terrainRenderer.createTerrain();
 map.setAllVisible();
+console.log('[S4WN] Terrain rendered');
 
 // ── Create Water Plane ───────────────────────────────────────────
+console.log('[S4WN] Rendering Water Plane...');
 const waterRenderer = new WaterPlane(scene, MAP_WIDTH, MAP_HEIGHT);
 waterRenderer.createWaterPlane();
 const waterPlane = waterRenderer.getMesh();
+console.log('[S4WN] Water plane rendered');
 
 // ── Lighting & Shadows ───────────────────────────────────────────
+console.log('[S4WN] Initializing Lighting & Shadows...');
 const shadowPipeline = new ShadowPipeline(scene);
 shadowPipeline.init();
 
@@ -65,6 +74,7 @@ const terrainMesh = terrainRenderer.getMesh();
 if (terrainMesh) {
   shadowPipeline.addShadowCaster(terrainMesh);
 }
+console.log('[S4WN] Lighting & Shadows initialized');
 
 // ── Create Buildings ──────────────────────────────────────────────
 const buildingRenderer = new BuildingMesh(scene);
@@ -95,6 +105,7 @@ scene.activeCamera = camera;
 const particleSystem = new ParticleSystem(scene);
 
 // ── Start Game Loop ──────────────────────────────────────────────
+console.log('[S4WN] Starting Render Loop...');
 engine.runRenderLoop(() => {
     const dt = engine.getDeltaTime() / 1000; // Use seconds for GameLoop.update
 
