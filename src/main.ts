@@ -23,101 +23,21 @@ import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
 import { ParticleSystem } from './game/particles/ParticleSystem';
 import { HUD } from './ui/HUD';
 import { DebugPanel } from './ui/panels/DebugPanel';
+import { GameApp } from './GameApp';
 import './ui/styles.css';
 
-// ── Babylon.js Scene Setup ────────────────────────────────────────
-console.log('[S4WN] Initializing Babylon.js Engine...');
-const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
-const engine = new Engine(canvas, true);
-const scene = new Scene(engine);
-console.log('[S4WN] Scene created successfully');
-
-scene.clearColor = new Color4(0.5, 0.7, 1.0, 1.0);
-
-// ── Create Game Systems ──────────────────────────────────────────
-console.log('[S4WN] Initializing Game Systems...');
-const MAP_WIDTH = 100;
-const MAP_HEIGHT = 100;
-const map = new GameMap(MAP_WIDTH, MAP_HEIGHT);
-const gameLoop = new GameLoop(map);
-new UIManager();
-console.log('[S4WN] Game systems initialized');
+// ── Initialize Game Application ──────────────────────────────────
+const app = new GameApp('renderCanvas');
 
 // Listen for game start event
 window.addEventListener('game-start', () => {
-    gameLoop.state.isPaused = false;
-    new HUD(gameLoop);
-    new DebugPanel(document, engine, gameLoop);
+    app.gameLoop.state.isPaused = false;
 });
 
-// ── Create Terrain ────────────────────────────────────────────────
-console.log('[S4WN] Rendering Terrain...');
-const terrainRenderer = new TerrainRenderer(scene, map);
-terrainRenderer.createTerrain();
-map.setAllVisible();
-console.log('[S4WN] Terrain rendered');
-
-// ── Create Water Plane ───────────────────────────────────────────
-console.log('[S4WN] Rendering Water Plane...');
-const waterRenderer = new WaterPlane(scene, MAP_WIDTH, MAP_HEIGHT);
-waterRenderer.createWaterPlane();
-const waterPlane = waterRenderer.getMesh();
-console.log('[S4WN] Water plane rendered');
-
-// ── Lighting & Shadows ───────────────────────────────────────────
-console.log('[S4WN] Initializing Lighting & Shadows...');
-const shadowPipeline = new ShadowPipeline(scene);
-shadowPipeline.init();
-
-// Add terrain to shadow caster
-const terrainMesh = terrainRenderer.getMesh();
-if (terrainMesh) {
-  shadowPipeline.addShadowCaster(terrainMesh);
-}
-console.log('[S4WN] Lighting & Shadows initialized');
-
-// ── Create Buildings ──────────────────────────────────────────────
-const buildingRenderer = new BuildingMesh(scene);
-const buildingData: Array<{ kind: string; x: number; y: number }> = [
-    { kind: 'headquarters', x: 0, y: 0 },
-];
-
-// We use an async IIFE to handle the building creation
-(async () => {
-    for (const b of buildingData) {
-        const buildingMesh = await buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2);
-        if (buildingMesh) {
-            // Link to economy via gameLoop
-            gameLoop.economy.tryPlaceBuilding(b.kind as any, b.x, b.y, map, 0);
-            // Add to shadow pipeline
-            shadowPipeline.addShadowCaster(buildingMesh);
-        }
-    }
-})();
-
-// ── Setup Camera ─────────────────────────────────────────────────
-const camera = new ArcRotateCamera('camera', -Math.PI / 2, Math.PI / 2.5, 30, Vector3.Zero(), scene);
-camera.setTarget(Vector3.Zero());
-camera.lowerRadiusLimit = 10;
-camera.upperRadiusLimit = 100;
-scene.activeCamera = camera;
-
-const particleSystem = new ParticleSystem(scene);
-
-// ── Start Game Loop ──────────────────────────────────────────────
-console.log('[S4WN] Starting Render Loop...');
-engine.runRenderLoop(() => {
-    const dt = engine.getDeltaTime() / 1000; // Use seconds for GameLoop.update
-
-    gameLoop.update(dt);
-    particleSystem.update(dt);
-    scene.render();
-});
+// For global accessibility in debug/cleanup
+(window as any).gameApp = app;
 
 // ── Cleanup on Unload ────────────────────────────────────────────
 window.addEventListener('beforeunload', () => {
-    if (waterPlane) waterPlane.dispose();
-    shadowPipeline.dispose();
-    particleSystem.dispose();
-    // Building cleanup would happen via buildingRenderer or gameLoop
+    app.dispose();
 });

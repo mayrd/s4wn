@@ -1,0 +1,127 @@
+/**
+ * S4WN Babylon.js/TypeScript - Game Application
+ * 
+ * Encapsulates the initialization and lifecycle of the Babylon.js application.
+ */
+
+import { 
+  Engine, 
+  Scene, 
+  ArcRotateCamera, 
+  Vector3, 
+  Color4 
+} from '@babylonjs/core';
+
+import { Map as GameMap } from './game/Map';
+import { GameLoop } from './game/GameLoop';
+import { TerrainRenderer } from './rendering/TerrainRenderer';
+import { WaterPlane } from './rendering/WaterPlane';
+import { BuildingMesh } from './rendering/BuildingMesh';
+import { UIManager } from './ui/UIManager';
+import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
+import { ParticleSystem } from './game/particles/ParticleSystem';
+import { HUD } from './ui/HUD';
+import { DebugPanel } from './ui/panels/DebugPanel';
+
+export class GameApp {
+  public engine!: Engine;
+  public scene!: Scene;
+  public map!: GameMap;
+  public gameLoop!: GameLoop;
+  public terrainRenderer!: TerrainRenderer;
+  public waterRenderer!: WaterPlane;
+  public buildingRenderer!: BuildingMesh;
+  public shadowPipeline!: ShadowPipeline;
+  public particleSystem!: ParticleSystem;
+
+  constructor(canvasId: string) {
+    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+    if (!canvas) {
+      throw new Error(`Canvas element with id ${canvasId} not found`);
+    }
+
+    this.initEngine(canvas);
+    this.initSystems();
+    this.initRendering();
+    this.initCamera();
+    this.initLoop();
+  }
+
+  private initEngine(canvas: HTMLCanvasElement): void {
+    this.engine = new Engine(canvas, true);
+    this.scene = new Scene(this.engine);
+    this.scene.clearColor = new Color4(0.5, 0.7, 1.0, 1.0);
+  }
+
+  private initSystems(): void {
+    const MAP_WIDTH = 100;
+    const MAP_HEIGHT = 100;
+    this.map = new GameMap(MAP_WIDTH, MAP_HEIGHT);
+    this.gameLoop = new GameLoop(this.map);
+    new UIManager();
+
+    window.addEventListener('game-start', () => {
+        this.gameLoop.state.isPaused = false;
+        new HUD(this.gameLoop);
+        new DebugPanel(document, this.engine, this.gameLoop);
+    });
+  }
+
+  private initRendering(): void {
+    this.terrainRenderer = new TerrainRenderer(this.scene, this.map);
+    this.terrainRenderer.createTerrain();
+    this.map.setAllVisible();
+
+    this.waterRenderer = new WaterPlane(this.scene, this.map.width, this.map.height);
+    this.waterRenderer.createWaterPlane();
+
+    this.shadowPipeline = new ShadowPipeline(this.scene);
+    this.shadowPipeline.init();
+
+    const terrainMesh = this.terrainRenderer.getMesh();
+    if (terrainMesh) {
+      this.shadowPipeline.addShadowCaster(terrainMesh);
+    }
+
+    this.buildingRenderer = new BuildingMesh(this.scene);
+    const buildingData: Array<{ kind: string; x: number; y: number }> = [
+        { kind: 'headquarters', x: 0, y: 0 },
+    ];
+
+    (async () => {
+        for (const b of buildingData) {
+            const buildingMesh = await this.buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2);
+            if (buildingMesh) {
+                this.gameLoop.economy.tryPlaceBuilding(b.kind as any, b.x, b.y, this.map, 0);
+                this.shadowPipeline.addShadowCaster(buildingMesh);
+            }
+        }
+    })();
+
+    this.particleSystem = new ParticleSystem(this.scene);
+  }
+
+  private initCamera(): void {
+    const camera = new ArcRotateCamera('camera', -Math.PI / 2, Math.PI / 2.5, 30, Vector3.Zero(), this.scene);
+    camera.setTarget(Vector3.Zero());
+    camera.lowerRadiusLimit = 10;
+    camera.upperRadiusLimit = 100;
+    this.scene.activeCamera = camera;
+  }
+
+  private initLoop(): void {
+    this.engine.runRenderLoop(() => {
+        const dt = this.engine.getDeltaTime() / 1000;
+        this.gameLoop.update(dt);
+        this.particleSystem.update(dt);
+        this.scene.render();
+    });
+  }
+
+  public dispose(): void {
+    this.waterRenderer.dispose();
+    this.shadowPipeline.dispose();
+    this.particleSystem.dispose();
+    this.engine.dispose();
+  }
+}
