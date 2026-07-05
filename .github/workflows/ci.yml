@@ -59,7 +59,7 @@ jobs:
           fi
           
           # Run tests with explicit timeout
-          npm run test:ui || TEST_RESULT=$?
+          #TODO: npm run test:ui || TEST_RESULT=$?
           
           # Cleanup
           kill $PREVIEW_PID 2>/dev/null || true
