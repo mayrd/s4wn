@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:ui": "playwright test",
     "generate": "python scripts/generate.py"
   },
   "repository": {
@@ -26,6 +27,7 @@
   },
   "homepage": "https://github.com/mayrd/s4wn#readme",
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.1.0",
     "jest": "^30.4.2",

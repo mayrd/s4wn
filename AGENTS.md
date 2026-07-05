@@ -38,7 +38,7 @@
 | Rendering |Babylon.js WebGL/WebGPU |
 | Build | npm + vite |
 | Models | glTF 2.0 (.glb) native support |
-| Tests | jest (TypeScript) |
+| Tests | jest (Unit), Playwright (UI) |
 
 ### Camera: Orbital (Babylon.js ArcRotateCamera)
 Default: classic isometric (alpha=45° azimuth, beta=30.264° elevation). Smooth interpolation `dt * 8.0`.
@@ -68,11 +68,11 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 |-------|--------|-------------|
 | 0 — Foundation | ✅ | npm + TypeScript + Babylon.js setup |
 | 1 — Core Engine | ✅ | Map, camera, units, buildings, pathfinding |
-| 2 — 3D Rendering | 🔄 | Terrain, water, buildings, shadows, particles |
-| 3 — Game Systems | ⬤ | GameLoop, WorkerAI, CombatAI, territory, fog |
+| 2 — 3D Rendering | ✅ | Terrain, water, buildings, shadows, particles |
+| 3 — Game Systems | ✅ | GameLoop, WorkerAI, CombatAI, territory, fog |
 | 4 — UI Migration | 🔄 | Main menu, editor, HUD panels |
 | 5 — Integration | ⬤ | Save/load, mobile, performance, audio |
-| 6 — Testing | ⬤ | Jest tests, visual regression, deployment |
+| 6 — Testing | ⬤ | Jest (Unit), Playwright (UI/E2E), visual regression, deployment |
 
 #### Detailed Phase Breakdown
 
