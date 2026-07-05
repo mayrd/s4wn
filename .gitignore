@@ -12,17 +12,12 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-.pytest_cache/
-.venv/
-
 # Logs
 *.log
 
 # Node modules
 node_modules/
 
+# test results
 test-results/
+playwright-report/
