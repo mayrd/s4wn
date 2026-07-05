@@ -22,7 +22,7 @@ echo "   Server: vite preview (port 8766)"
 echo ""
 
 # Start preview server in background
-npx vite build --port 8766
+npx vite build
 npx vite preview --port 8766 &
 PREVIEW_PID=$!
 
