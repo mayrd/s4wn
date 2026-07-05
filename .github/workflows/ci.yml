@@ -39,7 +39,7 @@ jobs:
           npm run preview > /tmp/preview.log 2>&1 &
           PREVIEW_PID=$!
           
-          # Wait for server to be healthy (max 30 seconds)
+          # Wait for server to be healthy
           max_attempts=30
           attempt=0
           while [ $attempt -lt $max_attempts ]; do

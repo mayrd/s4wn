@@ -25,6 +25,8 @@ export class DebugPanel {
       <div class="debug-stat-row"><span>FPS:</span> <span id="debug-fps">0</span></div>
       <div class="debug-stat-row"><span>Ticks:</span> <span id="debug-ticks">0</span></div>
       <div class="debug-stat-row"><span>Game Time:</span> <span id="debug-time">0s</span></div>
+      <div class="debug-stat-row"><span>Units:</span> <span id="debug-units">0</span></div>
+      <div class="debug-stat-row"><span>Buildings:</span> <span id="debug-buildings">0</span></div>
       <div class="debug-stat-row"><span>Engine:</span> <span id="debug-engine">Babylon.js</span></div>
     `;
   }
@@ -35,10 +37,14 @@ export class DebugPanel {
       const fpsElement = document.getElementById('debug-fps');
       const ticksElement = document.getElementById('debug-ticks');
       const timeElement = document.getElementById('debug-time');
+      const unitsElement = document.getElementById('debug-units');
+      const buildingsElement = document.getElementById('debug-buildings');
 
       if (fpsElement) fpsElement.textContent = Math.round(engine.getFps()).toString();
       if (ticksElement) ticksElement.textContent = stats.ticks.toString();
       if (timeElement) timeElement.textContent = Math.floor(stats.gameTime).toString() + 's';
+      if (unitsElement) unitsElement.textContent = gameLoop.unitManager.getAliveUnits().length.toString();
+      if (buildingsElement) buildingsElement.textContent = gameLoop.economy.getCompleteBuildings().length.toString();
 
       requestAnimationFrame(update);
     };

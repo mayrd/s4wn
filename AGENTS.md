@@ -120,7 +120,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [ ] Map editor (side panel)
 - [x] Object explorer (side panel)
 - [x] HUD panels (HTML overlay)
-- [ ] Debug panel with stats
+- [x] Debug panel with stats
 
 ##### Phase 5 — Integration & Polish ⬤
 - [ ] Network layer (WebSocket)
@@ -165,9 +165,8 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P7 | 2026-07-05 | Implement Object Explorer UI, fix RawTexture type errors, and resolve UI test regressions |
 
 ### Next Session Priorities
-1. Integrate Object Explorer with game data (UnitManager, Economy)
-2. Implement Map editor (side panel) - create UI panel with map tools
-3. Implement Debug panel with stats - create UI panel with performance/debug info
-4. Visual regression tests - implement Playwright screenshot comparison tests
+1. Implement Map editor (side panel) - create UI panel with map tools and terrain modification logic
+2. Implement visual feedback for map editing in TerrainRenderer
+3. Visual regression tests - implement Playwright screenshot comparison tests
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
