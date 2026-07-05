@@ -35,7 +35,7 @@ jobs:
       - name: Run UI tests
         run: |
           npm run build
-          npx vite preview &
+          npm run preview &
           sleep 5
           npm run test:ui
 
