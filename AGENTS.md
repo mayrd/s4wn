@@ -110,6 +110,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [x] WorkerAI for settler assignment/movement
 - [x] CombatAI for military units
 - [x] Territory computation
+- [x] Fog of war system (Shader blending)
 
 ##### Phase 4 — UI Migration 🔄
 - [x] Splash Screen and Main Menu (HTML/CSS)
