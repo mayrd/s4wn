@@ -45,6 +45,13 @@ export class Map {
     return true;
   }
 
+  setElevation(x: number, y: number, elevation: number): boolean {
+    const tile = this.get(x, y);
+    if (!tile) return false;
+    tile.elevation = elevation;
+    return true;
+  }
+
   isBuildable(x: number, y: number): boolean {
     const tile = this.get(x, y);
     if (!tile) return false;
