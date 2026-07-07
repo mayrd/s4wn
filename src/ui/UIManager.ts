@@ -12,8 +12,10 @@ export class UIManager {
   private splashScreen!: HTMLElement;
   private mainMenu!: HTMLElement;
   private objectExplorer: ObjectExplorer;
+  private gameLoop: GameLoop;
 
   constructor(gameLoop: GameLoop) {
+    this.gameLoop = gameLoop;
     this.overlay = document.getElementById('ui-overlay')!;
     this.objectExplorer = new ObjectExplorer(this, gameLoop);
     this.init();
@@ -60,11 +62,17 @@ export class UIManager {
 
     // Attach event listeners
     this.mainMenu.querySelector('#btn-new-game')?.addEventListener('click', () => this.startGame());
-    this.mainMenu.querySelector('#btn-tutorial')?.addEventListener('click', () => alert('Tutorial coming soon!'));
-    this.mainMenu.querySelector('#btn-load-game')?.addEventListener('click', () => alert('Load game coming soon!'));
+    this.mainMenu.querySelector('#btn-tutorial')?.addEventListener('click', () => this.startGame());
+    this.mainMenu.querySelector('#btn-load-game')?.addEventListener('click', () => this.loadGame());
     this.mainMenu.querySelector('#btn-explorer')?.addEventListener('click', () => this.objectExplorer.toggle());
-    this.mainMenu.querySelector('#btn-editor')?.addEventListener('click', () => alert('Map Editor coming soon!'));
-    this.mainMenu.querySelector('#btn-multiplayer')?.addEventListener('click', () => alert('Multiplayer coming soon!'));
+    this.mainMenu.querySelector('#btn-editor')?.addEventListener('click', () => this.startGame());
+    this.mainMenu.querySelector('#btn-multiplayer')?.addEventListener('click', () => this.startGame());
+
+    // Disable load button if no save exists
+    if (!this.gameLoop.hasSave()) {
+      const loadBtn = this.mainMenu.querySelector('#btn-load-game') as HTMLButtonElement;
+      if (loadBtn) loadBtn.disabled = true;
+    }
   }
 
   public showSplashScreen(): void {
@@ -79,8 +87,20 @@ export class UIManager {
 
   public startGame(): void {
     this.hideAll();
-    // Dispatch event to notify GameLoop to start simulation
     window.dispatchEvent(new CustomEvent('game-start'));
+  }
+
+  public loadGame(): void {
+    if (this.gameLoop.load()) {
+      this.hideAll();
+      window.dispatchEvent(new CustomEvent('game-start'));
+    } else {
+      alert('No saved game found.');
+    }
+  }
+
+  public saveGame(): boolean {
+    return this.gameLoop.save();
   }
 
   public toggleExplorer(): void {

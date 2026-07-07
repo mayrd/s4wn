@@ -176,6 +176,42 @@ export class Map {
       }
     }
   }
+
+  /* ── Save / Load ─────────────────────────────────────────── */
+
+  toJSON(): object {
+    return {
+      width: this.width,
+      height: this.height,
+      tiles: this.tiles.map(row => row.map(t => ({
+        terrain: t.terrain,
+        elevation: t.elevation,
+        resource: t.resource,
+        visibility: t.visibility,
+        territory: t.territory,
+      }))),
+    };
+  }
+
+  static fromJSON(data: any): Map {
+    const m = new Map(data.width, data.height);
+    // Overwrite generated tiles with saved data
+    for (let y = 0; y < data.height; y++) {
+      for (let x = 0; x < data.width; x++) {
+        if (data.tiles[y]?.[x]) {
+          const t = data.tiles[y][x];
+          m.tiles[y][x] = {
+            terrain: t.terrain,
+            elevation: t.elevation,
+            resource: t.resource ?? null,
+            visibility: t.visibility ?? 0,
+            territory: t.territory ?? 0,
+          };
+        }
+      }
+    }
+    return m;
+  }
 }
 
 // Export Terrain for backward compatibility

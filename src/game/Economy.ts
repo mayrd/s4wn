@@ -277,4 +277,58 @@ export class Economy {
   getRecentResourcePickups(): number {
     return this.resourcePickups;
   }
+
+  /* ── Save / Load ─────────────────────────────────────────── */
+
+  toJSON(): object {
+    return {
+      resources: [...this.resources],
+      buildings: this.buildings.map(b => ({
+        index: b.index,
+        kind: b.kind,
+        x: b.x,
+        y: b.y,
+        hp: b.hp,
+        maxHp: b.maxHp,
+        constructionProgress: b.constructionProgress,
+        isActive: b.isActive,
+        productionProgress: b.productionProgress,
+        productionCounter: b.productionCounter,
+        inputBuffer: [...b.inputBuffer],
+        outputBuffer: [...b.outputBuffer],
+        assignedSettlers: [...b.assignedSettlers],
+        maxSettlers: b.maxSettlers,
+        destructionTimer: b.destructionTimer,
+        destructionProgress: b.destructionProgress,
+        ownerId: b.ownerId,
+      })),
+      nextBuildingIndex: this.nextBuildingIndex,
+      storageCapacity: this.storageCapacity,
+    };
+  }
+
+  restoreFromJSON(data: any): void {
+    this.resources = [...data.resources];
+    this.nextBuildingIndex = data.nextBuildingIndex;
+    this.storageCapacity = data.storageCapacity;
+    this.buildings = (data.buildings || []).map((b: any) => ({
+      index: b.index,
+      kind: b.kind,
+      x: b.x,
+      y: b.y,
+      hp: b.hp,
+      maxHp: b.maxHp,
+      constructionProgress: b.constructionProgress,
+      isActive: b.isActive,
+      productionProgress: b.productionProgress,
+      productionCounter: b.productionCounter,
+      inputBuffer: [...b.inputBuffer],
+      outputBuffer: [...b.outputBuffer],
+      assignedSettlers: [...b.assignedSettlers],
+      maxSettlers: b.maxSettlers,
+      destructionTimer: b.destructionTimer,
+      destructionProgress: b.destructionProgress,
+      ownerId: b.ownerId,
+    }));
+  }
 }

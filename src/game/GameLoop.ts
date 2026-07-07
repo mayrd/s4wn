@@ -12,6 +12,7 @@ import { Nation } from './Nation';
 import { WorkerAI } from './WorkerAI';
 import { CombatAI } from './CombatAI';
 import { TerritoryManager } from './TerritoryManager';
+import { SaveManager } from '../core/SaveManager';
 
 export interface GameState {
   gameTime: number;
@@ -129,6 +130,33 @@ export class GameLoop {
   revealMap(): void {
     this.state.showFullMap = true;
     this.map.setAllVisible();
+  }
+
+  // ── Save / Load ──────────────────────────────────────────────
+
+  save(): boolean {
+    return SaveManager.save(this.state, this.map, this.economy, this.unitManager);
+  }
+
+  load(): boolean {
+    const data = SaveManager.load();
+    if (!data) return false;
+    // Restore game state
+    this.state = { ...data.gameState, isPaused: true };
+    // Replace map, economy, unitManager
+    this.map = SaveManager.restoreMap(data);
+    this.economy = SaveManager.restoreEconomy(data);
+    this.unitManager = SaveManager.restoreUnits(data);
+    // Re-create AI systems with new instances
+    this.workerAI = new WorkerAI(this.economy, this.unitManager, this.map);
+    this.combatAI = new CombatAI(this.unitManager);
+    this.territoryManager = new TerritoryManager(this.map, this.unitManager, this.economy);
+    this.tickAccumulator = 0;
+    return true;
+  }
+
+  hasSave(): boolean {
+    return SaveManager.hasSave();
   }
 
   // ── Stats ────────────────────────────────────────────────────────
