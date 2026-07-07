@@ -8,6 +8,19 @@
 
 import { GameApp } from '../../GameApp';
 
+// Mock Web Audio API for the audio system
+// @ts-ignore
+global.AudioContext = jest.fn(() => ({
+  state: 'running',
+  sampleRate: 44100,
+  destination: {},
+  resume: jest.fn(),
+  close: jest.fn(),
+  createBuffer: jest.fn((_ch, length) => ({ length, getChannelData: () => new Float32Array(length) })),
+  createBufferSource: jest.fn(() => ({ connect: jest.fn(), start: jest.fn(), buffer: null, loop: false, stop: jest.fn() })),
+  createGain: jest.fn(() => ({ gain: { value: 1 }, connect: jest.fn() })),
+}));
+
 // Mock Babylon.js core and loaders to avoid ESM issues in Jest
 jest.mock('@babylonjs/core', () => {
   const mockEngine = jest.fn().mockImplementation(() => ({

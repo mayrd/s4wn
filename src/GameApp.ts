@@ -22,6 +22,7 @@ import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
 import { ParticleSystem } from './game/particles/ParticleSystem';
 import { HUD } from './ui/HUD';
 import { DebugPanel } from './ui/panels/DebugPanel';
+import { soundManager } from './audio/SoundManager';
 
 export class GameApp {
   public engine!: Engine;
@@ -59,6 +60,9 @@ export class GameApp {
     this.map = new GameMap(MAP_WIDTH, MAP_HEIGHT);
     this.gameLoop = new GameLoop(this.map);
     new UIManager(this.gameLoop);
+
+    // Initialize sound system with default game sounds
+    soundManager.generateDefaults();
 
     window.addEventListener('game-start', () => {
         this.gameLoop.state.isPaused = false;
@@ -123,5 +127,6 @@ export class GameApp {
     this.shadowPipeline.dispose();
     this.particleSystem.dispose();
     this.engine.dispose();
+    soundManager.dispose();
   }
 }
