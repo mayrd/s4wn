@@ -8,7 +8,7 @@ import { Map } from '../../game/Map';
 import { Economy } from '../../game/Economy';
 import { SaveManager } from '../SaveManager';
 import { Terrain } from '../../game/types';
-import { ResourceType } from '../../economy/types';
+import { ResourceType as EconResource } from '../../economy/types';
 
 describe('SaveManager', () => {
   beforeEach(() => {
@@ -21,7 +21,7 @@ describe('SaveManager', () => {
       map.setTerrain(3, 3, Terrain.Mountain);
       map.setElevation(5, 5, 5);
       const tile = map.get(0, 0)!;
-      tile.resource = ResourceType.Stone;
+      tile.resource = 'Stone' as any;
       tile.visibility = 0.5;
       tile.territory = 1;
 
@@ -32,7 +32,7 @@ describe('SaveManager', () => {
       expect(restored.height).toBe(10);
       expect(restored.get(3, 3)!.terrain).toBe(Terrain.Mountain);
       expect(restored.get(5, 5)!.elevation).toBe(5);
-      expect(restored.get(0, 0)!.resource).toBe(ResourceType.Stone);
+      expect(restored.get(0, 0)!.resource).toBe('Stone');
       expect(restored.get(0, 0)!.visibility).toBe(0.5);
       expect(restored.get(0, 0)!.territory).toBe(1);
     });
@@ -41,7 +41,7 @@ describe('SaveManager', () => {
   describe('Economy serialization', () => {
     it('should round-trip economy state', () => {
       const economy = new Economy();
-      economy.addResource(ResourceType.Wood, 50);
+      economy.addResource(EconResource.Wood, 50);
       economy.storageCapacity = 200;
 
       // Place a "building" via direct push (skip territory check)
@@ -69,7 +69,7 @@ describe('SaveManager', () => {
       const restored = new Economy();
       restored.restoreFromJSON(json);
 
-      expect(restored.getResource(ResourceType.Wood)).toBe(70); // 20 initial + 50 added
+      expect(restored.getResource(EconResource.Wood)).toBe(70); // 20 initial + 50 added
       expect(restored.storageCapacity).toBe(200);
       expect(restored.buildings.length).toBe(1);
       expect(restored.buildings[0].index).toBe(5);

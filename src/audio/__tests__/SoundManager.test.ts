@@ -34,7 +34,7 @@ const mockContext = {
   destination: {},
   resume: jest.fn(),
   close: jest.fn(),
-  createBuffer: jest.fn((_ch, length, sr) => ({ ...mockAudioBuffer, length })),
+  createBuffer: jest.fn((_ch, length, _sr) => ({ ...mockAudioBuffer, length })),
   createBufferSource: jest.fn(() => mockSource),
   createGain: jest.fn(() => mockGain),
 };
