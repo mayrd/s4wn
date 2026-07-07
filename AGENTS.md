@@ -72,7 +72,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | 2 — 3D Rendering | ✅ | Terrain, water, buildings, shadows, particles |
 | 3 — Game Systems | ✅ | GameLoop, WorkerAI, CombatAI, territory, fog |
 | 4 — UI Migration | 🔄 | Main menu, editor, HUD panels |
-| 5 — Integration | ⬤ | Save/load, mobile, performance, audio |
+| 5 — Integration | 🔄 | Audio, save/load, mobile, performance |
 | 6 — Testing | ⬤ | Jest (Unit), Playwright (UI/E2E), visual regression, deployment |
 
 #### Detailed Phase Breakdown
@@ -117,13 +117,13 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [x] UI Styling (Siedler 4 aesthetic)
 - [x] UI Integration with GameLoop
 - [x] UI Testing (Playwright)
-- [ ] Map editor (side panel)
+- [x] Map editor (side panel)
 - [x] Object explorer (side panel)
 - [x] HUD panels (HTML overlay)
 - [x] Debug panel with stats
 
-##### Phase 5 — Integration & Polish ⬤
-- [ ] Network layer (WebSocket)
+##### Phase 5 — Integration 🔄
+- [x] Audio system (SoundManager with Web Audio API)
 - [ ] Save/load game state (localStorage)
 - [ ] Mobile touch controls
 - [ ] Performance optimization
@@ -163,20 +163,21 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P5 | 2026-07-05 | Implement Splash Screen, Main Menu (HTML/CSS), and fix build/TS errors |
 | P6 | 2026-07-05 | Fix ShaderMaterial Jest test mock, update index.html styles, fix Playwright port config |
 | P7 | 2026-07-05 | Implement Object Explorer UI, fix RawTexture type errors, and resolve UI test regressions |
+| P8 | 2026-07-07 | Implement SoundManager (Web Audio API) with procedural tone generation, 6 default game sounds, 10 unit tests |
 
 ### Next Session Priorities
-1. **Map Editor - UI Foundation**:
-   - Create `MapEditor` side panel with tool selection (Brush, Eraser) and terrain type palette.
-   - Integrate editor toggle into `UIManager` and main menu.
-2. **Map Editor - Interaction**:
-   - Implement 3D-to-2D coordinate mapping using Babylon.js raycasting on the terrain mesh.
-   - Implement brush-based terrain modification (type and elevation).
-3. **Map Editor - Rendering**:
-   - Update `TerrainRenderer` to support dynamic texture updates for real-time visual feedback.
-   - Implement a 3D brush cursor for precise editing.
-4. **Map Editor - Persistence**:
-   - Implement map export functionality to JSON format.
-5. **Visual Regression Tests**:
+1. **Save/Load System**:
+   - Implement localStorage-based game state serialization for Map, Economy, and UnitManager.
+   - Add save/load menu buttons to the main menu UI.
+2. **Mobile Touch Controls**:
+   - Implement pinch-to-zoom and two-finger pan for the ArcRotateCamera.
+   - Add touch-friendly button sizing in HUD panels.
+3. **Performance Optimization**:
+   - Profile render loop with Babylon.js Inspector.
+   - Implement frustum culling for off-screen entities.
+4. **Visual Regression Tests**:
    - Implement Playwright screenshot comparison tests for UI components.
+5. **CI/CD Pipeline**:
+   - Update GitHub Actions workflow for TypeScript/Jest/Vite build.
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
