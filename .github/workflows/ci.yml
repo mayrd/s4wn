@@ -93,9 +93,10 @@ jobs:
         run: python3 scripts/validate_config.py
 
   docker:
-    name: Docker Multi-Arch Image → GHCR
+    name: Docker Image → GHCR (amd64)
     needs: [test, validate-assets]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: github.ref == 'refs/heads/main'
     permissions:
       packages: write
@@ -124,12 +125,12 @@ jobs:
             type=ref,event=branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build and push multi-arch image
+      - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
