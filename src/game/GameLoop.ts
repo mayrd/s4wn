@@ -36,7 +36,7 @@ export class GameLoop {
   state: GameState = {
     gameTime: 0,
     ticks: 0,
-    isPaused: true,
+    isPaused: false,  // Start unpaused — game-start event is redundant backup
     gameSpeed: 1.0,
     dayPhase: 0.25,
     showFullMap: false,
