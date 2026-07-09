@@ -1,0 +1,58 @@
+name: CD Token Refresh
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: pip install google-auth google-auth-oauthlib google-api-python-client
+
+      - name: Refresh OAuth token
+        run: |
+          python3 -c "
+          import json, os
+          from google.oauth2.credentials import Credentials
+          from google.auth.transport.requests import Request
+
+          cd = json.loads(os.environ['GMAIL_TOKEN_JSON'])
+          creds = Credentials(cd['token'],
+              refresh_token=cd['refresh_token'],
+              token_uri=cd['token_uri'],
+              client_id=cd['client_id'],
+              client_secret=cd['client_secret'],
+              scopes=cd['scopes'])
+          creds.refresh(Request())
+          new = {
+              'token': creds.token,
+              'refresh_token': creds.refresh_token,
+              'token_uri': creds.token_uri,
+              'client_id': creds.client_id,
+              'client_secret': creds.client_secret,
+              'scopes': creds.scopes,
+              'universe_domain': getattr(creds, 'universe_domain', 'googleapis.com'),
+              'account': getattr(creds, 'account', ''),
+              'expiry': creds.expiry.isoformat() + 'Z',
+              'type': 'authorized_user'
+          }
+          print(json.dumps(new, indent=2))
+          with open('/tmp/gmail_token.json', 'w') as f:
+              json.dump(new, f)
+          "
+        env:
+          GMAIL_TOKEN_JSON: ${{ secrets.GMAIL_TOKEN_JSON }}
+
+      - name: Update secret
+        uses: gliech/create-github-secret-action@v1
+        with:
+          name: GMAIL_TOKEN_JSON
+          value: ${{ steps.refresh.outputs.token }}
