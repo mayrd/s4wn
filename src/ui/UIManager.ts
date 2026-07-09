@@ -46,7 +46,7 @@ export class UIManager {
 
   private createMainMenu(): void {
     this.mainMenu = document.createElement('div');
-    this.mainMenu.className = 'ui-screen';
+    this.mainMenu.className = 'ui-screen main-menu-screen';
     this.mainMenu.innerHTML = `
       <div class="main-menu-container">
         <div class="menu-title">S4WN</div>

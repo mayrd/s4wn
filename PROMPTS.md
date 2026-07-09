@@ -7,25 +7,44 @@ For regenerating assets, run `python3 scripts/generate_art.py`.
 
 ## UI / Brand Assets
 
-### Splash Screen (3840×2160 — `assets/images/splash-4k.png`)
+> **⚠️ Aspect ratio requirement:** Splash screen and menu background must work
+> in BOTH 16:9 (desktop) and 9:16 (mobile/portrait). Generate at 4K resolution
+> with the critical focal content inside a **center 9:16 safe zone** so the
+> image crops cleanly to either orientation. The game uses CSS `object-fit: cover`
+> or `background-size: cover` to auto-crop to the viewport.
+
+### Splash Screen (`assets/images/splash.png`)
 ```
-Epic 4K splash screen for a medieval fantasy settlement-building strategy game
+Epic splash screen for a medieval fantasy settlement-building strategy game
 called S4WN. Rich painterly oil-painting style. A sprawling medieval village
 nestled in a lush green valley at golden hour: timber-framed houses, a stone
 castle on a hill, wheat fields, orchards, winding cobblestone paths, a river
 with a watermill, distant snow-capped mountains, warm amber sunlight casting
-long shadows. Foreground shows a wooden signpost reading "S4WN". Vibrant,
-immersive, high fantasy but grounded in medieval European aesthetics. No
-modern elements. Cinematic composition, 4K ultra HD quality, highly detailed.
+long shadows. Foreground shows a wooden signpost reading "S4WN".
+
+CRITICAL LAYOUT: All key subjects (castle, village, signpost, river, watermill)
+must be inside the CENTER VERTICAL STRIP of the image so the composition works
+when cropped to a narrow 9:16 phone screen. The left and right thirds can
+contain scenic filler (trees, distant hills, sky) that can be safely cut off
+without losing the focal point. The signpost with "S4WN" must be centered
+horizontally. Vibrant, immersive, high fantasy but grounded in medieval
+European aesthetics. No modern elements. Cinematic composition, 4K ultra HD
+quality, highly detailed.
 ```
 
-### Main Menu Background (3840×2160 — `assets/images/menu-bg-4k.png`)
+### Main Menu Background (`assets/images/menu-bg.png`)
 ```
 Main menu background for medieval settlement strategy game S4WN. Twilight
 atmosphere: medieval village silhouette against deep purple-orange sunset sky
 with emerging stars. Soft glowing lanterns in cottage windows, a castle tower
-silhouetted on the horizon, mist rolling over fields. Large dark empty area
-on the LEFT side for menu text overlay. Painterly oil-painting style, rich
+silhouetted on the horizon, mist rolling over fields.
+
+CRITICAL LAYOUT: The entire image must work at both 16:9 and 9:16 ratios.
+The dark empty area for menu text overlay must be a CENTER BAND (not just the
+left side) — centered both horizontally and vertically — so menu buttons are
+legible in landscape AND portrait. The atmospheric elements (village, castle,
+lanterns, stars) should frame this center band from above and below in 16:9,
+and from top/bottom edges in 9:16 portrait. Painterly oil-painting style, rich
 atmospheric lighting, cinematic. No text or UI elements — pure background art.
 Dark edges, atmospheric, medieval European aesthetic.
 ```
