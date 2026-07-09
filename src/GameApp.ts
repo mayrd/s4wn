@@ -91,14 +91,15 @@ export class GameApp {
 
     this.buildingRenderer = new BuildingMesh(this.scene);
     const buildingData: Array<{ kind: string; x: number; y: number }> = [
-        { kind: 'headquarters', x: 0, y: 0 },
+        { kind: 'castle', x: 0, y: 0 },
     ];
 
     (async () => {
         for (const b of buildingData) {
+            const kind: BuildingType = b.kind === 'castle' ? BuildingType.Castle : (BuildingType as any)[b.kind];
             const buildingMesh = await this.buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2);
             if (buildingMesh) {
-                this.gameLoop.economy.tryPlaceBuilding(b.kind as any, b.x, b.y, this.map, 0);
+                this.gameLoop.economy.tryPlaceBuilding(kind, b.x, b.y, this.map, 0);
                 this.shadowPipeline.addShadowCaster(buildingMesh);
             }
         }
