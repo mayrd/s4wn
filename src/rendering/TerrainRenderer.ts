@@ -53,7 +53,7 @@ export class TerrainRenderer {
 
     // 3. Simple material — use StandardMaterial for reliable cross-platform rendering
     const material = new StandardMaterial('terrainMat', this.scene);
-    material.diffuseColor = new Color3(0.2, 0.8, 0.2);  // Grass green
+    material.diffuseColor = new Color3(0.3, 0.9, 0.3);  // Bright grass green
     material.specularColor = new Color3(0, 0, 0);        // No shininess
     
     this.mesh.material = material;

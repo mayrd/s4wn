@@ -15,7 +15,6 @@ import {
 import { Map as GameMap } from './game/Map';
 import { GameLoop } from './game/GameLoop';
 import { TerrainRenderer } from './rendering/TerrainRenderer';
-import { WaterPlane } from './rendering/WaterPlane';
 import { BuildingMesh } from './rendering/BuildingMesh';
 import { UIManager } from './ui/UIManager';
 import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
@@ -32,7 +31,7 @@ export class GameApp {
   public map!: GameMap;
   public gameLoop!: GameLoop;
   public terrainRenderer!: TerrainRenderer;
-  public waterRenderer!: WaterPlane;
+  public waterRenderer: any;
   public buildingRenderer!: BuildingMesh;
   public shadowPipeline!: ShadowPipeline;
   public particleSystem!: ParticleSystem;
@@ -79,8 +78,10 @@ export class GameApp {
     this.map.setAllVisible();  // Must be BEFORE createTerrain — visibility texture reads map data
     this.terrainRenderer.createTerrain();
 
-    this.waterRenderer = new WaterPlane(this.scene, this.map.width, this.map.height);
-    this.waterRenderer.createWaterPlane();
+    // Water plane disabled — currently obscures the terrain at low camera angles
+    // this.waterRenderer = new WaterPlane(this.scene, this.map.width, this.map.height);
+    // this.waterRenderer.createWaterPlane();
+    this.waterRenderer = { dispose: () => {}, getMesh: () => null } as any;
 
     this.shadowPipeline = new ShadowPipeline(this.scene);
     this.shadowPipeline.init();
@@ -110,10 +111,11 @@ export class GameApp {
   }
 
   private initCamera(): void {
-    const camera = new ArcRotateCamera('camera', -Math.PI / 2, Math.PI / 2.5, 30, Vector3.Zero(), this.scene);
-    camera.setTarget(Vector3.Zero());
+    // Classic isometric-like view: alpha=-45° (south-east), beta=45° from zenith, radius=70
+    const camera = new ArcRotateCamera('camera', -Math.PI / 4, Math.PI / 4, 70, Vector3.Zero(), this.scene);
+    camera.setTarget(new Vector3(50, 0, 50));  // Center of 100×100 map
     camera.lowerRadiusLimit = 10;
-    camera.upperRadiusLimit = 100;
+    camera.upperRadiusLimit = 200;
     this.scene.activeCamera = camera;
 
     // Attach touch controller (pinch-to-zoom, two-finger pan, rotation)
