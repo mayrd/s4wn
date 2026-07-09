@@ -170,6 +170,7 @@ export class ObjectExplorer {
             resource: tile.resource?.toString() ?? 'none',
             visibility: tile.visibility,
             territory: tile.territory,
+            generation: 'Procedural splat-map shader → see PROMPTS.md §Terrain',
           }
         };
         terrainGroups.get(terrainName)!.push(obj);
@@ -215,6 +216,7 @@ export class ObjectExplorer {
         resource: tile.resource?.toString() ?? 'none',
         visibility: tile.visibility,
         territory: tile.territory,
+        generation: 'Procedural splat-map shader → see PROMPTS.md §Terrain',
       }
     };
     this.showDetails(obj);
