@@ -126,7 +126,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [x] Audio system (SoundManager with Web Audio API)
 - [x] Save/load game state (localStorage)
 - [ ] Mobile touch controls
-- [ ] Performance optimization
+- [x] Performance optimization (view culling)
 
 ##### Phase 6 — Testing & Deployment ⬤
 - [x] Migrate Rust tests to TypeScript/jest
@@ -164,19 +164,15 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P7 | 2026-07-05 | Implement Object Explorer UI, fix RawTexture type errors, and resolve UI test regressions |
 | P8 | 2026-07-07 | Implement SoundManager (Web Audio API) with procedural tone generation, 6 default game sounds, 10 unit tests |
 | P9 | 2026-07-07 | Implement save/load system with localStorage persistence, SaveManager, Map/Economy serialization, 5 round-trip tests |
+| P10 | 2026-07-07 | Implement view-based entity culling (ViewCuller) for performance, 9 unit tests |
 
 ### Next Session Priorities
 1. **Mobile Touch Controls**:
    - Implement pinch-to-zoom and two-finger pan for the ArcRotateCamera.
    - Add touch-friendly button sizing in HUD panels.
-2. **Performance Optimization**:
-   - Profile render loop with Babylon.js Inspector.
-   - Implement frustum culling for off-screen entities.
-3. **Visual Regression Tests**:
+2. **Visual Regression Tests**:
    - Implement Playwright screenshot comparison tests for UI components.
-4. **CI/CD Pipeline**:
+3. **CI/CD Pipeline**:
    - Update GitHub Actions workflow for TypeScript/Jest/Vite build.
-5. **In-Game Save Button**:
-   - Add a floppy-disk save button to the HUD that calls gameLoop.save().
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
