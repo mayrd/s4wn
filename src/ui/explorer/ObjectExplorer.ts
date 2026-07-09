@@ -188,7 +188,10 @@ export class ObjectExplorer {
           runtime_active: b.isActive,
           mesh: `OBJ model — loaded from assets/models/${name.toLowerCase()}.obj via SceneLoader (BuildingMesh.ts)`,
           texture: 'StandardMaterial — diffuse + specular; PBR planned for later',
-          animation: 'Construction progress bar (Economy.tick) — particle burst on completion (spawn/construction particles, ParticleSystem.ts)',
+          animations: {
+            construction: `Progress bar ${buildTime(kind)} ticks → Economy.tick() + construction/spawn particles on completion (ParticleSystem.ts)`,
+            production: interval > 0 ? `Cycle every ${interval} ticks: consume inputs → produce outputs → Economy.tick(1.0)` : 'none (military/support building)',
+          },
           count: this.gameLoop.economy.getCompleteBuildings().filter(x => buildingName(x.kind) === name).length,
         }
       });
@@ -214,7 +217,10 @@ export class ObjectExplorer {
             requiresSettler: requiresSettler(kind),
             mesh: `OBJ model — assets/models/${name.toLowerCase()}.obj (BuildingMesh.ts)`,
             texture: 'StandardMaterial — diffuse + specular',
-            animation: 'Construction progress + spawn particles on completion (ParticleSystem.ts)',
+            animations: {
+              construction: `Progress bar ${buildTime(kind)} ticks → Economy.tick() + particles on completion`,
+              production: interval > 0 ? `Cycle every ${interval} ticks: consume inputs → produce outputs → Economy.tick(1.0)` : 'none (military/support)',
+            },
             count: 0,
           }
         });
@@ -230,11 +236,16 @@ export class ObjectExplorer {
 
   private showUnits(): void {
     const unitDefs = [
-      { name: 'Settler',   hp: 50,  atk: 1,  speed: 1.5, sight: 8,  desc: 'Civilian; builds and gathers resources' },
-      { name: 'Swordsman', hp: 100, atk: 15, speed: 1.0, sight: 6,  desc: 'Melee infantry unit' },
-      { name: 'Bowman',    hp: 75,  atk: 12, speed: 1.2, sight: 10, desc: 'Ranged archer unit' },
-      { name: 'Worker',    hp: 40,  atk: 1,  speed: 1.0, sight: 5,  desc: 'Operates production buildings' },
-      { name: 'Pioneer',   hp: 40,  atk: 1,  speed: 1.0, sight: 5,  desc: 'Border expander; digs territory stakes' },
+      { name: 'Settler',   hp: 50,  atk: 1,  speed: 1.5, sight: 8,  desc: 'Civilian; builds and gathers resources',
+        idle: 'Standing upright, slight idle sway (UnitState.Idle)', walking: 'Walk cycle at speed 1.5 — pathfinding A* interpolation (GameLoop.tick → UnitManager.tick)', working: 'Hammer swing loop when constructing buildings; carry animation when hauling resources' },
+      { name: 'Swordsman', hp: 100, atk: 15, speed: 1.0, sight: 6,  desc: 'Melee infantry unit',
+        idle: 'Standing at attention, shield forward (UnitState.Idle)', walking: 'March cycle at speed 1.0 — A* pathfinding', working: 'Combat: sword slash/parry loop vs enemy units (UnitState.Fighting → CombatAI.tick)' },
+      { name: 'Bowman',    hp: 75,  atk: 12, speed: 1.2, sight: 10, desc: 'Ranged archer unit',
+        idle: 'Bow lowered, scanning (UnitState.Idle)', walking: 'Jog cycle at speed 1.2 — A* pathfinding', working: 'Combat: draw → aim → release loop at range (UnitState.Fighting, sight 10 for aggro)' },
+      { name: 'Worker',    hp: 40,  atk: 1,  speed: 1.0, sight: 5,  desc: 'Operates production buildings',
+        idle: 'Standing at building entrance (UnitState.Idle)', walking: 'Walk cycle at speed 1.0 — to/from workplace', working: 'Tool animation (hammer/saw/pickaxe) per building type — operates assigned building (WorkerAI.assignWorker)' },
+      { name: 'Pioneer',   hp: 40,  atk: 1,  speed: 1.0, sight: 5,  desc: 'Border expander; digs territory stakes',
+        idle: 'Standing with shovel (UnitState.Idle)', walking: 'Walk cycle at speed 1.0 — to border edge', working: 'Digging animation — shovel strike loop, expands territory radius (UnitState.Working)' },
     ];
     this.updateList(unitDefs.map(u => ({
       id: `unit-${u.name}`,
@@ -245,7 +256,11 @@ export class ObjectExplorer {
         stats: { hp: u.hp, attack: u.atk, speed: u.speed, sightRange: u.sight },
         mesh: 'glTF/OBJ — loaded via BuildingMesh.ts (reuses building loader pattern)',
         texture: 'StandardMaterial — diffuse color per unit type',
-        animation: 'Movement — pathfinding interpolation (GameLoop.tick → UnitManager.tick)',
+        animations: {
+          idle: u.idle,
+          walking: u.walking,
+          working: u.working,
+        },
         count: this.gameLoop.unitManager.getAliveUnits().filter(x => x.kind.toString() === u.name).length,
       }
     })));
