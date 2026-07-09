@@ -24,6 +24,7 @@ import { HUD } from './ui/HUD';
 import { DebugPanel } from './ui/panels/DebugPanel';
 import { soundManager } from './audio/SoundManager';
 import { TouchCameraController } from './input/TouchCameraController';
+import { BuildingType } from './economy/types';
 
 export class GameApp {
   public engine!: Engine;

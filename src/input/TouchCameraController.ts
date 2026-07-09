@@ -10,7 +10,7 @@
  * so off-screen entity culling tracks the camera position.
  */
 
-import { ArcRotateCamera } from '@babylonjs/core';
+import { ArcRotateCamera, Vector3 } from '@babylonjs/core';
 
 export class TouchCameraController {
   private camera: ArcRotateCamera;
@@ -36,7 +36,7 @@ export class TouchCameraController {
 
     // Touch pan: two-finger drag moves the camera target
     c.panningSensibility = 50;       // Pan speed for touch
-    c.panningAxis = { x: 1, y: 1, z: 0 }; // Pan in X/Y plane (follow terrain)
+    c.panningAxis = new Vector3(1, 1, 0); // Pan in X/Y plane (follow terrain)
 
     // Touch rotate: single finger orbits camera
     c.angularSensibilityX = 800;     // Rotation sensitivity
