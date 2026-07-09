@@ -80,9 +80,6 @@ export class ObjectExplorer {
               <span class="explorer-tab" data-tab="buildings" style="margin-right:12px;cursor:pointer">Buildings</span>
               <span class="explorer-tab" data-tab="units" style="cursor:pointer">Units</span>
             </div>
-            <div class="explorer-search">
-              <input type="text" id="explorer-search" placeholder="Search tile: x,y (e.g. 5,10)" />
-            </div>
             <div class="explorer-list" id="explorer-list"></div>
           </div>
           <div class="explorer-details-section">
@@ -110,14 +107,6 @@ export class ObjectExplorer {
         this.refresh();
       });
     });
-
-    // Coordinate search
-    const searchInput = this.container.querySelector('#explorer-search') as HTMLInputElement;
-    if (searchInput) {
-      searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') this.searchTile(searchInput.value.trim());
-      });
-    }
 
     const overlay = document.getElementById('ui-overlay');
     if (overlay) overlay.appendChild(this.container);
@@ -275,44 +264,6 @@ export class ObjectExplorer {
 
     this.updateList(objects);
   }
-
-  // ── Coordinate search (on-demand tile inspection) ──────────────────
-
-  private searchTile(input: string): void {
-    const parts = input.split(',').map(s => s.trim());
-    const x = parseInt(parts[0], 10);
-    const y = parseInt(parts[1], 10);
-    if (isNaN(x) || isNaN(y)) {
-      this.detailsElement.innerHTML = '<div class="explorer-empty-msg">Invalid format. Use: x,y (e.g. 5,10)</div>';
-      return;
-    }
-    const tile = this.gameLoop.map.get(x, y);
-    if (!tile) {
-      this.detailsElement.innerHTML = `<div class="explorer-empty-msg">Tile (${x},${y}) not found on map</div>`;
-      return;
-    }
-    // Look up terrain catalog for extra metadata
-    const catEntry = TERRAIN_CATALOG.find(t => t.terrain === tile.terrain);
-    const obj: ExplorerObject = {
-      id: `${x},${y}`,
-      type: 'terrain-tile',
-      name: `Tile (${x},${y})`,
-      properties: {
-        terrain: tile.terrain.toString(),
-        elevation: tile.elevation.toFixed(2),
-        resource: tile.resource?.toString() ?? 'none',
-        visibility: tile.visibility.toFixed(2),
-        territory: tile.territory,
-        buildable: catEntry?.buildable ?? '?',
-        movementCost: catEntry?.movementCost ?? '?',
-        splatColor: catEntry ? `rgb(${catEntry.splatRgb})` : '?',
-        generation: catEntry?.generation ?? 'Procedural splat-map shader',
-      }
-    };
-    this.showDetails(obj);
-  }
-
-  // ── List rendering ─────────────────────────────────────────────────
 
   private updateList(objects: ExplorerObject[]): void {
     this.listElement.innerHTML = '';
