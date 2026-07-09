@@ -13,6 +13,7 @@ import { WorkerAI } from './WorkerAI';
 import { CombatAI } from './CombatAI';
 import { TerritoryManager } from './TerritoryManager';
 import { SaveManager } from '../core/SaveManager';
+import { ViewCuller } from '../core/ViewCuller';
 
 export interface GameState {
   gameTime: number;
@@ -40,6 +41,9 @@ export class GameLoop {
     dayPhase: 0.25,
     showFullMap: false,
   };
+
+  /** View culler — skips off-screen entities for performance. */
+  viewCuller: ViewCuller = new ViewCuller();
 
   private tickAccumulator: number = 0;
   private readonly TICK_INTERVAL: number = 1.0 / 10;
@@ -72,11 +76,17 @@ export class GameLoop {
   private tick(): void {
     this.state.ticks++;
 
-    // Economy tick
+    // Economy always runs (production is global)
     this.economy.tick(1.0);
 
-    // Unit tick (movement, state updates)
-    this.unitManager.tick(this.map);
+    const isFullTick = this.viewCuller.isFullTick(this.state.ticks);
+
+    // Unit tick — cull off-screen units on non-full ticks
+    if (isFullTick || this.state.showFullMap) {
+      this.unitManager.tick(this.map);
+    } else {
+      this.unitManager.tickCulled(this.map, this.viewCuller);
+    }
 
     // Worker AI
     this.workerAI.tick();
@@ -84,11 +94,17 @@ export class GameLoop {
     // Combat AI
     this.combatAI.tick();
 
-    // Update territory
-    this.territoryManager.updateTerritory();
+    // Update territory (only on full ticks for performance)
+    if (isFullTick || this.state.showFullMap) {
+      this.territoryManager.updateTerritory();
+    }
 
-    // Update visibility
-    this.updateVisibility();
+    // Update visibility (always, but cull off-screen sources on non-full ticks)
+    if (isFullTick || this.state.showFullMap) {
+      this.updateVisibility();
+    } else {
+      this.updateVisibilityCulled();
+    }
   }
 
   private updateVisibility(): void {
@@ -97,17 +113,41 @@ export class GameLoop {
       return;
     }
 
-    // Compute visibility from buildings and units
     const sources: Array<{ x: number; y: number; radius: number }> = [];
 
-    // Buildings provide visibility
     for (const building of this.economy.getCompleteBuildings()) {
       sources.push({ x: building.x, y: building.y, radius: 5 });
     }
 
-    // Units provide visibility
     for (const unit of this.unitManager.getAliveUnits()) {
       sources.push({ x: Math.floor(unit.x), y: Math.floor(unit.y), radius: 3 });
+    }
+
+    this.map.computeVisibility(sources);
+  }
+
+  private updateVisibilityCulled(): void {
+    if (this.state.showFullMap) {
+      this.map.setAllVisible();
+      return;
+    }
+
+    const sources: Array<{ x: number; y: number; radius: number }> = [];
+
+    // Only include buildings near the view
+    for (const building of this.economy.getCompleteBuildings()) {
+      if (this.viewCuller.isWithinView(building.x, building.y)) {
+        sources.push({ x: building.x, y: building.y, radius: 5 });
+      }
+    }
+
+    // Only include units near the view
+    for (const unit of this.unitManager.getAliveUnits()) {
+      const ux = Math.floor(unit.x);
+      const uy = Math.floor(unit.y);
+      if (this.viewCuller.isWithinView(ux, uy)) {
+        sources.push({ x: ux, y: uy, radius: 3 });
+      }
     }
 
     this.map.computeVisibility(sources);

@@ -141,11 +141,27 @@ export class UnitManager {
   // ── Tick ─────────────────────────────────────────────────────────
 
   tick(map: GameMap): void {
+    this.tickUnits(map, null);
+  }
+
+  /**
+   * Tick units with view culling — only update units within view radius.
+   * Off-screen units are skipped (they pause in place).
+   * Every 30th tick, a full pass runs (handled by GameLoop).
+   */
+  tickCulled(map: GameMap, culler: { isWithinView(x: number, y: number): boolean }): void {
+    this.tickUnits(map, culler);
+  }
+
+  private tickUnits(map: GameMap, culler: { isWithinView(x: number, y: number): boolean } | null): void {
     this.deathCount = 0;
     this.combatCount = 0;
 
     for (const unit of this.units) {
       if (!unit.isAlive()) continue;
+
+      // Skip off-screen units when culling (they pause in place)
+      if (culler && !culler.isWithinView(Math.floor(unit.x), Math.floor(unit.y))) continue;
 
       // Handle dying animation
       if (unit.dyingTimer !== null) {
