@@ -125,7 +125,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 ##### Phase 5 — Integration 🔄
 - [x] Audio system (SoundManager with Web Audio API)
 - [x] Save/load game state (localStorage)
-- [ ] Mobile touch controls
+- [x] Mobile touch controls
 - [x] Performance optimization (view culling)
 
 ##### Phase 6 — Testing & Deployment ⬤
@@ -165,12 +165,10 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P8 | 2026-07-07 | Implement SoundManager (Web Audio API) with procedural tone generation, 6 default game sounds, 10 unit tests |
 | P9 | 2026-07-07 | Implement save/load system with localStorage persistence, SaveManager, Map/Economy serialization, 5 round-trip tests |
 | P10 | 2026-07-07 | Implement view-based entity culling (ViewCuller) for performance, 9 unit tests |
+| P11 | 2026-07-09 | Implement touch camera controller (pinch-to-zoom, two-finger pan), mobile-friendly CSS, wire ViewCuller → camera sync |
 
 ### Next Session Priorities
-1. **Mobile Touch Controls**:
-   - Implement pinch-to-zoom and two-finger pan for the ArcRotateCamera.
-   - Add touch-friendly button sizing in HUD panels.
-2. **Visual Regression Tests**:
+1. **Visual Regression Tests**:
    - Implement Playwright screenshot comparison tests for UI components.
 3. **CI/CD Pipeline**:
    - Update GitHub Actions workflow for TypeScript/Jest/Vite build.
