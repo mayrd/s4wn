@@ -96,6 +96,12 @@ jest.mock('@babylonjs/core', () => {
     RawTexture: jest.fn().mockImplementation(() => ({
       dispose: jest.fn(),
     })),
+    Constants: {
+      TEXTUREFORMAT_ALPHA: 0,
+      TEXTUREFORMAT_LUMINANCE: 1,
+      TEXTUREFORMAT_RGB: 3,
+      TEXTUREFORMAT_RGBA: 4,
+    },
     SceneLoader: {
       ImportMeshAsync: jest.fn().mockResolvedValue({
         meshes: [{

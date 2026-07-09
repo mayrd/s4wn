@@ -10,6 +10,7 @@ import {
   Scene,
   Vector3,
   RawTexture,
+  Constants,
 } from '@babylonjs/core';
 import { Map as GameMap } from '../game/Map';
 import { Terrain } from '../game/types';
@@ -104,7 +105,7 @@ export class TerrainRenderer {
       }
     }
 
-    return new RawTexture(data, size, size, 0, this.scene, false);
+    return new RawTexture(data, size, size, Constants.TEXTUREFORMAT_LUMINANCE, this.scene, false);
   }
 
   private generateVisibilityMap(): RawTexture {
@@ -127,7 +128,7 @@ export class TerrainRenderer {
       }
     }
 
-    return new RawTexture(data, size, size, 0, this.scene, false);
+    return new RawTexture(data, size, size, Constants.TEXTUREFORMAT_RGBA, this.scene, false);
   }
 
   private generateSplatMap(): RawTexture {
@@ -192,7 +193,7 @@ export class TerrainRenderer {
       }
     }
 
-    return new RawTexture(data, size, size, 0, this.scene, false);
+    return new RawTexture(data, size, size, Constants.TEXTUREFORMAT_RGBA, this.scene, false);
   }
 
   getMesh(): any | null {

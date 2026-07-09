@@ -7,6 +7,7 @@
 import {
   Scene,
   DirectionalLight,
+  HemisphericLight,
   ShadowGenerator,
   Vector3,
 } from '@babylonjs/core';
@@ -25,7 +26,7 @@ export class ShadowPipeline {
   init(): void {
     // Create a hemispheric light for basic ambient lighting to avoid UBO issues
     // that often occur with DirectionalLight in certain environments
-    const ambientLight = new (require('@babylonjs/core').HemisphericLight)('ambientLight', new Vector3(0, 1, 0), this.scene);
+    const ambientLight = new HemisphericLight('ambientLight', new Vector3(0, 1, 0), this.scene);
     ambientLight.intensity = 0.7;
 
     // We'll try a very simple DirectionalLight without a ShadowGenerator first

@@ -76,8 +76,8 @@ export class GameApp {
 
   private initRendering(): void {
     this.terrainRenderer = new TerrainRenderer(this.scene, this.map);
+    this.map.setAllVisible();  // Must be BEFORE createTerrain — visibility texture reads map data
     this.terrainRenderer.createTerrain();
-    this.map.setAllVisible();
 
     this.waterRenderer = new WaterPlane(this.scene, this.map.width, this.map.height);
     this.waterRenderer.createWaterPlane();
