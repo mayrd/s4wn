@@ -6,14 +6,14 @@
 
 import {
   MeshBuilder,
-  ShaderMaterial,
+  StandardMaterial,
+  Color3,
   Scene,
   Vector3,
   RawTexture,
   Constants,
 } from '@babylonjs/core';
 import { Map as GameMap } from '../game/Map';
-import { Terrain } from '../game/types';
 
 export class TerrainRenderer {
   private scene: Scene;
@@ -51,35 +51,10 @@ export class TerrainRenderer {
       this.scene
     );
 
-    // 3. Generate Splatmap
-    const splatMap = this.generateSplatMap();
-
-    // 4. Create Material with Splat-mapping and Fog of War
-    const material = new ShaderMaterial('terrainMat', this.scene, {
-      vertex: `
-        varying vec2 vUV;
-        void main(void) {
-          vUV = uv;
-          gl_Position = worldViewProj * vec4(position, 1.0);
-        }
-      `,
-      fragment: `
-        varying vec2 vUV;
-        uniform sampler2D diffuseSampler;
-        uniform sampler2D visibilitySampler;
-        void main(void) {
-          vec4 diffuseColor = texture2D(diffuseSampler, vUV);
-          vec4 visibilityColor = texture2D(visibilitySampler, vUV);
-          gl_FragColor = diffuseColor * visibilityColor.r;
-        }
-      `
-    });
-    
-    material.setTexture('diffuseSampler', splatMap);
-    
-    // Implement Fog of War using a visibility texture and custom shader blending
-    const visibilityMap = this.generateVisibilityMap();
-    material.setTexture('visibilitySampler', visibilityMap);
+    // 3. Simple material — use StandardMaterial for reliable cross-platform rendering
+    const material = new StandardMaterial('terrainMat', this.scene);
+    material.diffuseColor = new Color3(0.2, 0.8, 0.2);  // Grass green
+    material.specularColor = new Color3(0, 0, 0);        // No shininess
     
     this.mesh.material = material;
 
@@ -106,94 +81,6 @@ export class TerrainRenderer {
     }
 
     return new RawTexture(data, size, size, Constants.TEXTUREFORMAT_LUMINANCE, this.scene, false);
-  }
-
-  private generateVisibilityMap(): RawTexture {
-    const size = 256;
-    const data = new Uint8ClampedArray(size * size * 4);
-
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        const mapX = Math.floor((x / size) * this.width);
-        const mapY = Math.floor((y / size) * this.height);
-        
-        const vis = this.map.getVisibility(mapX, mapY);
-        const index = (y * size + x) * 4;
-        
-        const val = Math.floor(vis * 255);
-        data[index] = val;
-        data[index + 1] = val;
-        data[index + 2] = val;
-        data[index + 3] = 255;
-      }
-    }
-
-    return new RawTexture(data, size, size, Constants.TEXTUREFORMAT_RGBA, this.scene, false);
-  }
-
-  private generateSplatMap(): RawTexture {
-    const size = 256;
-    const data = new Uint8ClampedArray(size * size * 4);
-
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        const mapX = Math.floor((x / size) * this.width);
-        const mapY = Math.floor((y / size) * this.height);
-        
-        const tile = this.map.get(mapX, mapY);
-        const terrain = tile ? tile.terrain : Terrain.Grass;
-
-        const index = (y * size + x) * 4;
-        
-        // Assign colors based on terrain type for the splatmap
-        // In a real implementation, these would be weights in RGBA channels
-        switch (terrain) {
-          case Terrain.Grass:
-            data[index] = 50;     // R
-            data[index + 1] = 200; // G
-            data[index + 2] = 50;  // B
-            break;
-          case Terrain.Forest:
-            data[index] = 20;
-            data[index + 1] = 100;
-            data[index + 2] = 20;
-            break;
-          case Terrain.Desert:
-            data[index] = 200;
-            data[index + 1] = 200;
-            data[index + 2] = 100;
-            break;
-          case Terrain.Mountain:
-            data[index] = 100;
-            data[index + 1] = 100;
-            data[index + 2] = 100;
-            break;
-          case Terrain.Snow:
-            data[index] = 255;
-            data[index + 1] = 255;
-            data[index + 2] = 255;
-            break;
-          case Terrain.Water:
-          case Terrain.DeepWater:
-            data[index] = 0;
-            data[index + 1] = 0;
-            data[index + 2] = 255;
-            break;
-          case Terrain.Swamp:
-            data[index] = 50;
-            data[index + 1] = 50;
-            data[index + 2] = 0;
-            break;
-          default:
-            data[index] = 128;
-            data[index + 1] = 128;
-            data[index + 2] = 128;
-        }
-        data[index + 3] = 255; // Alpha
-      }
-    }
-
-    return new RawTexture(data, size, size, Constants.TEXTUREFORMAT_RGBA, this.scene, false);
   }
 
   getMesh(): any | null {

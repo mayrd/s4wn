@@ -88,7 +88,10 @@ jest.mock('@babylonjs/core', () => {
     },
     StandardMaterial: jest.fn().mockImplementation(() => ({
       dispose: jest.fn(),
+      diffuseColor: {},
+      specularColor: {},
     })),
+    Color3: jest.fn().mockImplementation((r, g, b) => ({ r, g, b })),
     ShaderMaterial: jest.fn().mockImplementation(() => ({
       setTexture: jest.fn(),
       dispose: jest.fn(),
