@@ -36,6 +36,10 @@ jest.mock('@babylonjs/core', () => {
     setTarget: jest.fn(),
     lowerRadiusLimit: 0,
     upperRadiusLimit: 0,
+    target: { x: 0, y: 0, z: 0 },
+    attachControl: jest.fn(),
+    detachControl: jest.fn(),
+    onAfterCheckInputsObservable: { add: jest.fn() },
   }));
   
   return {

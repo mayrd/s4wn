@@ -295,3 +295,82 @@
 .hidden {
   display: none !important;
 }
+
+/* ── Mobile / Touch-Friendly Sizing ─────────────────────────────── */
+
+/* Increase hit targets for touch devices */
+@media (pointer: coarse) {
+  .menu-button {
+    padding: 20px 30px;
+    font-size: 1.4rem;
+    min-height: 56px;
+  }
+
+  .menu-button.secondary {
+    padding: 14px 24px;
+    font-size: 1.15rem;
+    min-height: 48px;
+  }
+
+  .hud-btn {
+    padding: 10px 16px;
+    font-size: 1.5rem;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .hud-panel {
+    padding: 12px;
+    min-width: 180px;
+  }
+
+  .hud-title {
+    font-size: 1.3rem;
+  }
+
+  .hud-stat {
+    font-size: 1.05rem;
+  }
+
+  .explorer-item {
+    padding: 12px 15px;
+  }
+
+  .explorer-close {
+    font-size: 2.2rem;
+    padding: 8px;
+  }
+
+  .toast {
+    padding: 14px 28px;
+    font-size: 1.1rem;
+  }
+
+  /* Wider menu on tablets */
+  :root {
+    --menu-width: 320px;
+  }
+}
+
+/* Larger menu on phones */
+@media (pointer: coarse) and (max-width: 480px) {
+  :root {
+    --menu-width: 90vw;
+  }
+
+  .main-menu-container {
+    padding: 24px;
+    gap: 16px;
+    border-width: 6px;
+  }
+
+  .menu-title {
+    font-size: 2rem;
+  }
+
+  .menu-button {
+    padding: 18px 24px;
+    font-size: 1.2rem;
+    min-height: 52px;
+  }
+}

@@ -23,6 +23,7 @@ import { ParticleSystem } from './game/particles/ParticleSystem';
 import { HUD } from './ui/HUD';
 import { DebugPanel } from './ui/panels/DebugPanel';
 import { soundManager } from './audio/SoundManager';
+import { TouchCameraController } from './input/TouchCameraController';
 
 export class GameApp {
   public engine!: Engine;
@@ -34,6 +35,7 @@ export class GameApp {
   public buildingRenderer!: BuildingMesh;
   public shadowPipeline!: ShadowPipeline;
   public particleSystem!: ParticleSystem;
+  public touchController!: TouchCameraController;
 
   constructor(canvasId: string) {
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -111,6 +113,11 @@ export class GameApp {
     camera.lowerRadiusLimit = 10;
     camera.upperRadiusLimit = 100;
     this.scene.activeCamera = camera;
+
+    // Attach touch controller (pinch-to-zoom, two-finger pan, rotation)
+    this.touchController = new TouchCameraController(camera, (x, y) => {
+      this.gameLoop.viewCuller.setCenter(x, y);
+    });
   }
 
   private initLoop(): void {
@@ -123,6 +130,7 @@ export class GameApp {
   }
 
   public dispose(): void {
+    this.touchController.dispose();
     this.waterRenderer.dispose();
     this.shadowPipeline.dispose();
     this.particleSystem.dispose();
