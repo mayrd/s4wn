@@ -1,11 +1,20 @@
 /**
  * S4WN Babylon.js/TypeScript - Object Explorer
  * 
- * A side panel UI for inspecting game objects (units, buildings, etc.)
+ * A side panel catalog showing one representative per game asset TYPE:
+ * terrain types, building kinds, unit kinds — each with full static metadata
+ * (costs, production, generation, rendering info). 
+ * Includes coordinate search for on-demand individual tile inspection.
  */
 
 import { UIManager } from '../UIManager';
 import { GameLoop } from '../../game/GameLoop';
+import { Terrain } from '../../game/types';
+import { 
+  BuildingType, BUILDING_NAMES, buildCost, buildTime, productionInterval,
+  buildingInputs, buildingOutputs, requiredTool, requiresSettler,
+  resourceName, buildingName,
+} from '../../economy/types';
 
 export interface ExplorerObject {
   id: string;
@@ -14,19 +23,46 @@ export interface ExplorerObject {
   properties: Record<string, any>;
 }
 
+// ── Terrain type catalog ────────────────────────────────────────────
+
+interface TerrainEntry {
+  terrain: Terrain;
+  splatRgb: string;
+  buildable: boolean;
+  movementCost: number;
+  generation: string;
+}
+
+const TERRAIN_CATALOG: TerrainEntry[] = [
+  { terrain: Terrain.Grass,   splatRgb: '50,200,50',    buildable: true,  movementCost: 1.0, generation: 'Procedural splat-map shader (TerrainRenderer.ts)' },
+  { terrain: Terrain.Forest,  splatRgb: '20,100,20',    buildable: false, movementCost: 2.0, generation: 'Procedural splat-map shader (TerrainRenderer.ts)' },
+  { terrain: Terrain.Desert,  splatRgb: '200,200,100',  buildable: true,  movementCost: 1.2, generation: 'Procedural splat-map shader (TerrainRenderer.ts)' },
+  { terrain: Terrain.Mountain,splatRgb: '100,100,100',  buildable: false, movementCost: 3.0, generation: 'Procedural splat-map shader (TerrainRenderer.ts)' },
+  { terrain: Terrain.Snow,    splatRgb: '255,255,255',  buildable: true,  movementCost: 1.5, generation: 'Procedural splat-map shader (TerrainRenderer.ts)' },
+  { terrain: Terrain.Water,   splatRgb: '0,0,255',      buildable: false, movementCost: 99.0,generation: 'Procedural splat-map shader (TerrainRenderer.ts)' },
+  { terrain: Terrain.DeepWater,splatRgb:'0,0,255',      buildable: false, movementCost: 99.0,generation: 'Procedural splat-map shader (TerrainRenderer.ts)' },
+  { terrain: Terrain.Swamp,   splatRgb: '50,50,0',      buildable: false, movementCost: 2.5, generation: 'Procedural splat-map shader (TerrainRenderer.ts)' },
+];
+
+// ── Helper to format cost items ─────────────────────────────────────
+
+function fmtCost(items: Array<{resource: any; amount: number}>): string {
+  if (items.length === 0) return 'none';
+  return items.map(i => `${resourceName(i.resource)}×${i.amount}`).join(', ');
+}
+
 export class ObjectExplorer {
   private container: HTMLElement;
   private listElement!: HTMLElement;
   private detailsElement!: HTMLElement;
   private isOpen: boolean = false;
   private gameLoop: GameLoop;
-  private refreshInterval?: number;
+  private activeCatalog: 'terrain' | 'buildings' | 'units' = 'terrain';
 
   constructor(_uiManager: UIManager, gameLoop: GameLoop) {
     this.gameLoop = gameLoop;
     this.container = document.createElement('div');
     this.container.className = 'ui-screen explorer-panel hidden';
-    
     this.init();
   }
 
@@ -39,7 +75,11 @@ export class ObjectExplorer {
         </div>
         <div class="explorer-content">
           <div class="explorer-list-section">
-            <div class="explorer-list-header">Objects</div>
+            <div class="explorer-list-header">
+              <span class="explorer-tab" data-tab="terrain" style="font-weight:bold;margin-right:12px;cursor:pointer">Terrain</span>
+              <span class="explorer-tab" data-tab="buildings" style="margin-right:12px;cursor:pointer">Buildings</span>
+              <span class="explorer-tab" data-tab="units" style="cursor:pointer">Units</span>
+            </div>
             <div class="explorer-search">
               <input type="text" id="explorer-search" placeholder="Search tile: x,y (e.g. 5,10)" />
             </div>
@@ -60,138 +100,183 @@ export class ObjectExplorer {
 
     this.container.querySelector('.explorer-close')?.addEventListener('click', () => this.hide());
 
-    // Coordinate search: enter "x,y" to jump to a tile
+    // Tab switching
+    this.container.querySelectorAll('.explorer-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        const category = (e.target as HTMLElement).dataset.tab as 'terrain' | 'buildings' | 'units';
+        this.activeCatalog = category;
+        this.container.querySelectorAll('.explorer-tab').forEach(t => (t as HTMLElement).style.fontWeight = 'normal');
+        (e.target as HTMLElement).style.fontWeight = 'bold';
+        this.refresh();
+      });
+    });
+
+    // Coordinate search
     const searchInput = this.container.querySelector('#explorer-search') as HTMLInputElement;
     if (searchInput) {
       searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          this.searchTile(searchInput.value.trim());
-        }
+        if (e.key === 'Enter') this.searchTile(searchInput.value.trim());
       });
     }
-    
-    // Add to the main UI overlay
+
     const overlay = document.getElementById('ui-overlay');
-    if (overlay) {
-      overlay.appendChild(this.container);
-    }
+    if (overlay) overlay.appendChild(this.container);
   }
 
   public show(): void {
     this.container.classList.remove('hidden');
     this.container.classList.add('active');
     this.isOpen = true;
-    this.startRefreshLoop();
+    this.refresh();
   }
 
   public hide(): void {
     this.container.classList.add('hidden');
     this.container.classList.remove('active');
     this.isOpen = false;
-    this.stopRefreshLoop();
   }
 
   public toggle(): void {
-    if (this.isOpen) {
-      this.hide();
-    } else {
-      this.show();
-    }
+    this.isOpen ? this.hide() : this.show();
   }
 
-  private startRefreshLoop(): void {
-    this.stopRefreshLoop();
-    this.refreshInterval = window.setInterval(() => {
-      this.refresh();
-    }, 1000);
-  }
-
-  private stopRefreshLoop(): void {
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-      this.refreshInterval = undefined;
-    }
-  }
+  // ── Refresh: build catalog list based on active tab ─────────────────
 
   private refresh(): void {
+    switch (this.activeCatalog) {
+      case 'terrain': this.showTerrainCatalog(); break;
+      case 'buildings': this.showBuildingCatalog(); break;
+      case 'units': this.showUnitCatalog(); break;
+    }
+  }
+
+  private showTerrainCatalog(): void {
+    const objects: ExplorerObject[] = TERRAIN_CATALOG.map(t => ({
+      id: `terrain-${t.terrain}`,
+      type: 'terrain-type',
+      name: t.terrain.toString(),
+      properties: {
+        terrain: t.terrain.toString(),
+        splatColor: `rgb(${t.splatRgb})`,
+        buildable: t.buildable,
+        movementCost: t.movementCost,
+        generation: t.generation,
+        description: t.movementCost >= 99 ? 'Impassable water body' : t.movementCost >= 3 ? 'High terrain, slow movement' : t.buildable ? 'Fertile land, can build' : 'Wooded area, blocks building',
+      }
+    }));
+    this.updateList(objects);
+  }
+
+  private showBuildingCatalog(): void {
+    const seen = new Set<string>();
     const objects: ExplorerObject[] = [];
 
-    // Add Buildings
-    for (const building of this.gameLoop.economy.getCompleteBuildings()) {
+    // Show in-game buildings with runtime state
+    for (const b of this.gameLoop.economy.getCompleteBuildings()) {
+      const name = buildingName(b.kind);
+      if (seen.has(name)) continue;
+      seen.add(name);
+
+      const kind = b.kind as BuildingType;
+      const costs = buildCost(kind);
+      const inputs = buildingInputs(kind);
+      const outputs = buildingOutputs(kind);
+      const interval = productionInterval(kind);
+      const time = buildTime(kind);
+      const tool = requiredTool(kind);
+
       objects.push({
-        id: building.index.toString(),
+        id: `building-${name}`,
         type: 'building',
-        name: building.kind.toString(),
+        name,
         properties: {
-          x: building.x,
-          y: building.y,
-          hp: `${building.hp}/${building.maxHp}`,
-          active: building.isActive,
-          progress: `${Math.floor(building.productionProgress * 100)}%`,
+          buildCost: fmtCost(costs),
+          buildTime: `${time} ticks`,
+          productionInputs: fmtCost(inputs),
+          productionOutputs: fmtCost(outputs),
+          productionInterval: interval > 0 ? `${interval} ticks (${(interval/10).toFixed(1)}s)` : 'no production',
+          requiredTool: tool !== null ? tool.toString() : 'none',
+          requiresSettler: requiresSettler(kind),
+          generation: 'Procedural Babylon.js mesh (BuildingMesh.ts)',
+          // Runtime state from placed instances
+          count: this.gameLoop.economy.getCompleteBuildings().filter(x => buildingName(x.kind) === name).length,
+          runtime_x: b.x,
+          runtime_y: b.y,
+          runtime_hp: `${b.hp}/${b.maxHp}`,
+          runtime_active: b.isActive,
         }
       });
     }
 
-    // Add Units
-    for (const unit of this.gameLoop.unitManager.getAliveUnits()) {
-      objects.push({
-        id: unit.id.toString(),
-        type: 'unit',
-        name: unit.kind.toString(),
-        properties: {
-          x: unit.x,
-          y: unit.y,
-          hp: unit.hp,
-          state: unit.state,
-          rank: unit.rank,
-        }
-      });
-    }
+    // If no buildings placed yet, show catalog of all building types
+    if (objects.length === 0) {
+      for (let i = 0; i < BUILDING_NAMES.length; i++) {
+        const name = BUILDING_NAMES[i];
+        if (!name) continue;
+        if (name === 'Castle') continue; // Castle is placed at game start
 
-    // Add Terrain Tiles — grouped by terrain type
-    const map = this.gameLoop.map;
-    const terrainGroups = new Map<string, ExplorerObject[]>();
-    for (let y = 0; y < map.height; y++) {
-      for (let x = 0; x < map.width; x++) {
-        const tile = map.get(x, y);
-        if (!tile) continue;
-        const terrainName = tile.terrain.toString();
-        if (!terrainGroups.has(terrainName)) {
-          terrainGroups.set(terrainName, []);
-        }
-        const coord = `${x},${y}`;
-        const obj: ExplorerObject = {
-          id: coord,
-          type: 'terrain',
-          name: coord,
+        const kind = i as BuildingType;
+        const costs = buildCost(kind);
+        const inputs = buildingInputs(kind);
+        const outputs = buildingOutputs(kind);
+        const interval = productionInterval(kind);
+        const time = buildTime(kind);
+
+        objects.push({
+          id: `building-${name}`,
+          type: 'building',
+          name,
           properties: {
-            terrain: terrainName,
-            elevation: tile.elevation.toFixed(2),
-            resource: tile.resource?.toString() ?? 'none',
-            visibility: tile.visibility,
-            territory: tile.territory,
-            generation: 'Procedural splat-map shader → see PROMPTS.md §Terrain',
+            buildCost: fmtCost(costs),
+            buildTime: `${time} ticks`,
+            productionInputs: fmtCost(inputs),
+            productionOutputs: fmtCost(outputs),
+            productionInterval: interval > 0 ? `${interval} ticks (${(interval/10).toFixed(1)}s)` : 'no production',
+            requiredTool: requiredTool(kind)?.toString() ?? 'none',
+            requiresSettler: requiresSettler(kind),
+            generation: 'Procedural Babylon.js mesh (BuildingMesh.ts)',
+            count: 0,
           }
-        };
-        terrainGroups.get(terrainName)!.push(obj);
+        });
       }
     }
 
-    // Sort terrain groups by name, add as collapsible group entries
-    const sortedGroups = [...terrainGroups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-    for (const [terrainName, tiles] of sortedGroups) {
-      // Group header — clicking expands to show tiles
-      const groupId = `terrain-group-${terrainName}`;
-      objects.push({
-        id: groupId,
-        type: `terrain-group`,
-        name: `${terrainName} (${tiles.length} tiles)`,
-        properties: { groupId, terrainName, tileCount: tiles.length, expanded: false }
-      });
-    }
-
-    this.updateList(objects, terrainGroups);
+    objects.sort((a, b) => a.name.localeCompare(b.name));
+    this.updateList(objects);
   }
+
+  private showUnitCatalog(): void {
+    // Unit catalog from UnitKind enum (types.ts)
+    const unitKinds = [
+      { name: 'Settler', hp: 50, atk: 1, speed: 1.5, sight: 8,  desc: 'Civilian unit; can build and gather' },
+      { name: 'Swordsman', hp: 100, atk: 15, speed: 1.0, sight: 6, desc: 'Melee infantry; standard soldier' },
+      { name: 'Bowman', hp: 75, atk: 12, speed: 1.2, sight: 10, desc: 'Ranged unit; attacks from distance' },
+      { name: 'Worker', hp: 40, atk: 1, speed: 1.0, sight: 5, desc: 'Economic unit; operates buildings' },
+      { name: 'Pioneer', hp: 40, atk: 1, speed: 1.0, sight: 5, desc: 'Border expander; digs territory stakes' },
+    ];
+
+    const objects: ExplorerObject[] = unitKinds.map(u => ({
+      id: `unit-${u.name}`,
+      type: 'unit',
+      name: u.name,
+      properties: {
+        hp: u.hp,
+        attack: u.atk,
+        speed: u.speed,
+        sightRange: u.sight,
+        description: u.desc,
+        generation: 'Game-logic entity; mesh from glTF (BuildingMesh.ts)',
+        // Count alive units of this kind in the game
+        count: this.gameLoop.unitManager.getAliveUnits().filter(
+          x => x.kind.toString() === u.name
+        ).length,
+      }
+    }));
+
+    this.updateList(objects);
+  }
+
+  // ── Coordinate search (on-demand tile inspection) ──────────────────
 
   private searchTile(input: string): void {
     const parts = input.split(',').map(s => s.trim());
@@ -206,119 +291,41 @@ export class ObjectExplorer {
       this.detailsElement.innerHTML = `<div class="explorer-empty-msg">Tile (${x},${y}) not found on map</div>`;
       return;
     }
+    // Look up terrain catalog for extra metadata
+    const catEntry = TERRAIN_CATALOG.find(t => t.terrain === tile.terrain);
     const obj: ExplorerObject = {
       id: `${x},${y}`,
-      type: 'terrain',
-      name: `${x},${y}`,
+      type: 'terrain-tile',
+      name: `Tile (${x},${y})`,
       properties: {
         terrain: tile.terrain.toString(),
         elevation: tile.elevation.toFixed(2),
         resource: tile.resource?.toString() ?? 'none',
-        visibility: tile.visibility,
+        visibility: tile.visibility.toFixed(2),
         territory: tile.territory,
-        generation: 'Procedural splat-map shader → see PROMPTS.md §Terrain',
+        buildable: catEntry?.buildable ?? '?',
+        movementCost: catEntry?.movementCost ?? '?',
+        splatColor: catEntry ? `rgb(${catEntry.splatRgb})` : '?',
+        generation: catEntry?.generation ?? 'Procedural splat-map shader',
       }
     };
     this.showDetails(obj);
   }
 
-  /**
-   * Updates the list of objects in the explorer.
-   */
-  public updateList(objects: ExplorerObject[], terrainGroups?: Map<string, ExplorerObject[]>): void {
+  // ── List rendering ─────────────────────────────────────────────────
+
+  private updateList(objects: ExplorerObject[]): void {
     this.listElement.innerHTML = '';
-    
     objects.forEach(obj => {
       const item = document.createElement('div');
-      if (obj.type === 'terrain-group') {
-        // Expandable terrain group
-        item.className = 'explorer-item explorer-item-group';
-        item.innerHTML = `
-          <span class="explorer-item-type">[terrain]</span>
-          <span class="explorer-item-name">${obj.name}</span>
-          <span class="explorer-expand-arrow" data-groupid="${obj.properties.groupId}">▶</span>
-        `;
-        item.addEventListener('click', () => {
-          const expanded = obj.properties.expanded;
-          obj.properties.expanded = !expanded;
-          const arrow = item.querySelector('.explorer-expand-arrow') as HTMLElement;
-          if (obj.properties.expanded) {
-            arrow.textContent = '▼';
-            this.insertTerrainTiles(obj.properties.terrainName, terrainGroups);
-          } else {
-            arrow.textContent = '▶';
-            this.collapseTerrainTiles(obj.properties.terrainName);
-          }
-        });
-      } else {
-        item.className = 'explorer-item';
-        item.innerHTML = `
-          <span class="explorer-item-type">[${obj.type}]</span>
-          <span class="explorer-item-name">${obj.name}</span>
-        `;
-        item.addEventListener('click', () => this.showDetails(obj));
-      }
+      item.className = 'explorer-item';
+      item.innerHTML = `
+        <span class="explorer-item-type">[${obj.type}]</span>
+        <span class="explorer-item-name">${obj.name}</span>
+      `;
+      item.addEventListener('click', () => this.showDetails(obj));
       this.listElement.appendChild(item);
     });
-  }
-
-  private insertTerrainTiles(terrainName: string, terrainGroups?: Map<string, ExplorerObject[]>): void {
-    if (!terrainGroups) return;
-    const tiles = terrainGroups.get(terrainName);
-    if (!tiles) return;
-
-    // Find the group header element and insert tiles after it
-    const groupId = `terrain-group-${terrainName}`;
-    for (let i = 0; i < this.listElement.children.length; i++) {
-      const child = this.listElement.children[i];
-      if (child.querySelector(`[data-groupid="${groupId}"]`)) {
-        // Remove any existing tile children for this group
-        let next = child.nextElementSibling;
-        while (next && next.classList.contains('explorer-item-terrain')) {
-          const toRemove = next;
-          next = next.nextElementSibling;
-          toRemove.remove();
-        }
-
-        // Insert tiles (paginated: first 50)
-        const maxTiles = 50;
-        for (let j = 0; j < Math.min(tiles.length, maxTiles); j++) {
-          const tile = tiles[j];
-          const tileItem = document.createElement('div');
-          tileItem.className = 'explorer-item explorer-item-terrain';
-          tileItem.innerHTML = `
-            <span class="explorer-item-type">[tile]</span>
-            <span class="explorer-item-name">${tile.name}</span>
-          `;
-          tileItem.addEventListener('click', () => this.showDetails(tile));
-          this.listElement.insertBefore(tileItem, next);
-        }
-
-        if (tiles.length > maxTiles) {
-          const moreItem = document.createElement('div');
-          moreItem.className = 'explorer-item explorer-item-terrain explorer-item-more';
-          moreItem.innerHTML = `<span class="explorer-item-name">… ${tiles.length - maxTiles} more tiles (use search for specific coords)</span>`;
-          this.listElement.insertBefore(moreItem, next);
-        }
-        break;
-      }
-    }
-  }
-
-  private collapseTerrainTiles(terrainName: string): void {
-    const groupId = `terrain-group-${terrainName}`;
-    for (let i = 0; i < this.listElement.children.length; i++) {
-      const child = this.listElement.children[i];
-      if (child.querySelector(`[data-groupid="${groupId}"]`)) {
-        let next = child.nextElementSibling;
-        while (next && next.classList.contains('explorer-item-terrain')) {
-          const toRemove = next;
-          next = next.nextElementSibling;
-          toRemove.remove();
-        }
-        break;
-      }
-    }
   }
 
   private showDetails(obj: ExplorerObject): void {
