@@ -14,6 +14,19 @@ import {
 } from '@babylonjs/core';
 import '@babylonjs/loaders';
 
+/**
+ * Convert a building kind string to the OBJ filename (snake_case).
+ * e.g. "GuardTower" → "guard_tower", "TempleOfBacchus" → "temple_of_bacchus"
+ */
+function kindToObjName(kind: string): string {
+  // Insert underscore before uppercase letters, then lowercase
+  const snake = kind
+    .replace(/([A-Z])/g, '_$1')
+    .replace(/^_/, '')
+    .toLowerCase();
+  return snake;
+}
+
 export class BuildingMesh {
   private scene: Scene;
   
@@ -35,7 +48,8 @@ export class BuildingMesh {
   ): Promise<any> {
     // Try loading OBJ model from assets/models/
     try {
-      const result = await SceneLoader.ImportMeshAsync('', 'assets/models/', `${kind}.obj`, this.scene);
+      const objName = kindToObjName(kind);
+      const result = await SceneLoader.ImportMeshAsync('', 'assets/models/', `${objName}.obj`, this.scene);
       const root = result.meshes[0];
       root.position.set(x, 0, y);
       if (material) {
