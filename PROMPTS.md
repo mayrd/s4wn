@@ -68,6 +68,98 @@ Instantly recognizable at tiny size. No text. Transparent background.
 
 ---
 
+## UI / Interface Textures
+
+> **UI textures give the game Siedler 4's distinctive medieval panel-and-gold
+> aesthetic.** These replace the current flat CSS gradients with textured
+> backgrounds, decorated buttons, ornamental corners, and resource icons.
+> Output path: `assets/textures/ui_<name>.png`
+
+### Panel Background (`assets/textures/ui_panel.png`)
+**Used by:** HUD panels, object explorer, debug panel, map editor
+```
+Seamless tileable dark wood panel texture, 256×256 pixels. Vertical wooden
+planks with deep brown grain (RGB 70,45,30), subtle saw marks, slight gap
+between planks. Heavy medieval wood — like a tavern tabletop. Flat view,
+evenly lit. Must tile seamlessly top-to-bottom (panels scroll vertically).
+No borders or ornaments — pure material. Photorealistic game UI texture.
+```
+
+### Panel Header Bar (`assets/textures/ui_header.png`)
+**Used by:** Explorer/list headers, panel title bars
+```
+Horizontal ornamental UI header bar, 400×40 pixels. Rich dark wood with
+carved gold ornamental border top and bottom, small gold rivets at corners.
+Centered area slightly lighter for header text. Medieval Siedler 4 style
+panel header. No text embedded — pure decorative bar. Flat view.
+```
+
+### Button — Normal (`assets/textures/ui_button.png`)
+**Used by:** All menu and HUD buttons (default state)
+```
+Medieval UI button, 200×60 pixels. Rectangular stone block with carved gold
+border rim, warm parchment-colored center. Slight bevel giving 3D raised
+appearance. Gold corner ornaments with small rivets. Clean, crisp edges.
+No text. Siedler 4 style game button. Flat view, evenly lit.
+```
+
+### Button — Hover (`assets/textures/ui_button_hover.png`)
+**Used by:** Same buttons, hover/mouse-over state
+```
+Same medieval UI button as ui_button.png, 200×60 pixels, but brighter.
+Gold border glows slightly, parchment center is warmer and brighter by ~15%.
+Still raised appearance but illuminated as if highlighted. No text.
+```
+
+### Button — Pressed (`assets/textures/ui_button_pressed.png`)
+**Used by:** Same buttons, pressed/active state
+```
+Same medieval UI button as ui_button.png, 200×60 pixels, but depressed.
+Inset/depressed 3D appearance — gold border sinks inward, parchment center
+darker and recessed. Slight shadow at inner edges. No text.
+```
+
+### Panel Corner Ornament (`assets/textures/ui_corner.png`)
+**Used by:** Top-left, top-right, bottom-left, bottom-right corners of panels
+```
+Square medieval UI corner ornament, 64×64 pixels. Intricate gold filigree
+in the corner of a dark wood panel. Curving gold scrollwork with small
+gold rivet at the outermost tip. Transparent background outside the
+ornament. Used in all four corners (CSS rotates for each). Siedler 4 style.
+```
+
+### Gold Divider (`assets/textures/ui_divider.png`)
+**Used by:** Horizontal separators between UI sections
+```
+Horizontal gold ornamental divider line, 400×8 pixels. Thin gold bar with
+small diamond-shaped gem in center, subtle engraved pattern along length.
+Small decorative curls at ends. Semi-transparent on dark wood background.
+Siedler 4 UI element. Flat view.
+```
+
+### Resource Icons — Sprite Sheet (`assets/textures/ui_resources.png`)
+**Used by:** HUD resource display, economy panel
+```
+Sprite sheet of 14 medieval resource icons arranged in a 7×2 grid, each
+32×32 pixels (total 224×64). Each icon is a small circular gold-rimmed
+medallion with the resource depicted inside on a dark wood background.
+Left-to-right, top-to-bottom:
+Row 1: Wood (logs), Iron Ore (grey rock), Coal (black lump), Gold (coin),
+Stone (grey block), Sulfur (yellow crystal), Fish (silver fish)
+Row 2: Grain (wheat sheaf), Meat (drumstick), Water (blue drop),
+Honey (golden pot), Planks (stacked boards), Tools (hammer+pickaxe),
+Weapons (sword+shield)
+Each icon: clean, simple, readable at 32×32. Siedler 4 style.
+```
+
+### Building Icons — Placeholder Note
+> Building and unit selection icons should be generated per type once the
+> building textures are available. Each 48×48 circular icon showing the
+> building/unit silhouette on a gold-rimmed dark wood background.
+> For now, OBJ thumbnail renders can serve this purpose once textures exist.
+
+---
+
 ## Terrain Textures
 
 > **All terrain textures: 1024×1024 pixels, seamless/tileable in all 4 directions,
