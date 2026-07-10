@@ -70,23 +70,112 @@ Instantly recognizable at tiny size. No text. Transparent background.
 
 ## Terrain Textures
 
-Terrain textures are **procedurally generated** at runtime via a splat-map
-shader in `src/rendering/TerrainRenderer.ts`. No AI prompts are used — the
-`generateSplatMap()` method assigns RGB colors per terrain type:
+> **All terrain textures: 1024×1024 pixels, seamless/tileable in all 4 directions,
+> PNG format.** Terrain spans a 100×100 world map; textures tile across the entire
+> plane. Each texture must wrap perfectly at all edges so identical tiles
+> blend seamlessly at grid boundaries. Output paths are listed per type.
+> Applied via Babylon.js `Texture` on the ground mesh in `TerrainRenderer.ts`.
 
-| Terrain    | RGB           | Visual        |
-|------------|---------------|---------------|
-| Grass      | (50, 200, 50) | Green fields  |
-| Forest     | (20, 100, 20) | Dark woodland |
-| Desert     | (200, 200, 50)| Sandy plains  |
-| Mountain   | (100, 100, 100)| Grey peaks   |
-| Snow       | (220, 220, 255)| White caps   |
-| Water      | (30, 80, 200) | Blue water    |
-| DeepWater  | (10, 30, 100) | Dark ocean    |
-| Swamp      | (50, 100, 50) | Murky marsh   |
+### Terrain UV Layout
 
-**Future direction**: Replace procedural colors with AI-generated seamless
-terrain texture atlases. Prompts for those should be added below when needed.
+The terrain plane is a single quad spanning the full map. UVs repeat
+across the [0,1] range per tile — so a 1024×1024 texture tiles once
+per terrain cell. Tiling direction: X (right), Z (forward). The splat-map
+shader blends up to 4 texture layers per pixel based on terrain type weights.
+
+| Texture                       | Used for              | Output path                             |
+|-------------------------------|-----------------------|-----------------------------------------|
+| `terrain_grass.png`           | Grass, meadows        | `assets/textures/terrain_grass.png`     |
+| `terrain_forest.png`          | Forest, woodland      | `assets/textures/terrain_forest.png`    |
+| `terrain_desert.png`          | Desert, arid plains   | `assets/textures/terrain_desert.png`    |
+| `terrain_mountain.png`        | Mountain, high peaks  | `assets/textures/terrain_mountain.png`  |
+| `terrain_snow.png`            | Snow, ice caps        | `assets/textures/terrain_snow.png`      |
+| `terrain_water.png`           | Shallow water, rivers | `assets/textures/terrain_water.png`     |
+| `terrain_deepwater.png`       | Deep ocean            | `assets/textures/terrain_deepwater.png` |
+| `terrain_swamp.png`           | Swamp, marsh          | `assets/textures/terrain_swamp.png`     |
+
+### Grass (`assets/textures/terrain_grass.png`)
+```
+Seamless tileable medieval grass texture, top-down view, 1024×1024 pixels.
+Lush green meadow with subtle variation: patches of lighter green, tiny
+wildflowers scattered sparsely (white daisies, yellow dandelions), very
+short grass blades. Slight natural variation in hue but no obvious repeating
+pattern. Flat top-down orthographic view, evenly diffuse-lit. No shadows,
+no modern elements, no text. Must tile seamlessly at all four edges —
+identical texture at left and right edges, top and bottom edges. Photorealistic
+game terrain texture.
+```
+
+### Forest (`assets/textures/terrain_forest.png`)
+```
+Seamless tileable forest floor texture, top-down view, 1024×1024 pixels.
+Dark woodland ground: rich dark brown soil with fallen leaves (autumn
+orange, brown, amber), small patches of green moss on stones, occasional
+tiny ferns. Deep earthy tones. Flat top-down view, diffuse-lit. No
+individual trees visible — this is the ground cover texture. Must tile
+seamlessly at all four edges. Photorealistic game terrain texture.
+```
+
+### Desert (`assets/textures/terrain_desert.png`)
+```
+Seamless tileable desert sand texture, top-down view, 1024×1024 pixels.
+Warm golden-orange sand with natural ripple patterns from wind, small
+scattered pebbles and occasional tufts of dry grass. Slight dune-like
+curve in sand ripple direction. Sandy beige-gold palette. Flat top-down
+view, diffuse-lit. Must tile seamlessly at all four edges. Photorealistic
+game terrain texture.
+```
+
+### Mountain (`assets/textures/terrain_mountain.png`)
+```
+Seamless tileable rocky mountain terrain texture, top-down view, 1024×1024
+pixels. Jagged grey-brown rock surface with exposed stone faces, small
+cracks, patches of sparse alpine grass between rocks. High-altitude feel.
+Neutral grey-brown palette with subtle green-grey lichen patches. Flat
+top-down view, diffuse-lit. Must tile seamlessly at all four edges.
+Photorealistic game terrain texture.
+```
+
+### Snow (`assets/textures/terrain_snow.png`)
+```
+Seamless tileable snow-covered terrain texture, top-down view, 1024×1024
+pixels. Pristine white snow with subtle crystalline sparkle, slight
+undulation suggesting underlying ground shape. Occasional exposed grey
+rock tip and small patches of ice-blue shadow in depressions. Bright
+white with pale blue-grey undertones. Flat top-down view, diffuse-lit.
+Must tile seamlessly at all four edges. Photorealistic game terrain texture.
+```
+
+### Water (`assets/textures/terrain_water.png`)
+```
+Seamless tileable shallow water texture, top-down view, 1024×1024 pixels.
+Gentle rippling water surface in teal-blue, with subtle light caustic
+patterns from sunlight refraction. Slightly darker in center of each
+ripple, lighter at crests. See-through shallow-water feel with hints
+of sandy riverbed below. Cool blue-green palette. Flat top-down view,
+diffuse-lit. Must tile seamlessly at all four edges. Photorealistic
+game terrain texture.
+```
+
+### Deep Water (`assets/textures/terrain_deepwater.png`)
+```
+Seamless tileable deep ocean water texture, top-down view, 1024×1024
+pixels. Dark navy-blue water surface with slow, broad wave patterns.
+Very subtle foam crests at wave peaks. Deep, opaque feel — no seafloor
+visible. Dark blue-black palette with occasional deep teal highlight.
+Flat top-down view, diffuse-lit. Must tile seamlessly at all four edges.
+Photorealistic game terrain texture.
+```
+
+### Swamp (`assets/textures/terrain_swamp.png`)
+```
+Seamless tileable murky swamp texture, top-down view, 1024×1024 pixels.
+Dark green-brown stagnant water with patches of floating algae, lily pads,
+and exposed muddy ground. Small patches of tall reeds at scattered
+positions. Murky olive-brown palette with dark green algae patches. Flat
+top-down view, diffuse-lit. Must tile seamlessly at all four edges.
+Photorealistic game terrain texture.
+```
 
 ---
 
@@ -246,6 +335,11 @@ texture, photorealistic game asset quality. Tiles seamlessly on all four edges.
 > **All particle textures: 128×128 pixels, grayscale on transparent background, PNG.**
 > Output path: `assets/textures/particle_<name>.png`
 > Applied via Babylon.js `ParticleSystem.particleTexture` in `ParticleSystem.ts`.
+>
+> **UV layout:** Each particle is a single GPU billboard quad — one sprite per
+> texture file. The sprite fills the full [0,1] UV range. No UV sheet or atlas
+> layout needed. The texture should be centered with feathered edges fading to
+> transparent so particles blend smoothly when overlapping.
 
 ### Smoke (`assets/textures/particle_smoke.png`)
 ```
