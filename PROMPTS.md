@@ -90,6 +90,57 @@ terrain texture atlases. Prompts for those should be added below when needed.
 
 ---
 
+## UV Mapping Reference
+
+> All building OBJs use a uniform box-projection UV layout so a single
+> seamless texture maps correctly onto every face. Textures generated from
+> the prompts below must respect these assumptions.
+
+### OBJ Face Layout (per generated box)
+
+Each box-shaped sub-mesh has 6 quad faces with UVs mapped to the full
+[0,1] × [0,1] range per face:
+
+| Face  | Normal  | UV (0,0) corner       | Wrapping                 |
+|-------|---------|-----------------------|--------------------------|
+| Front | +Z      | bottom-left (-w,-y,+d)| (0,0)→(1,0)→(1,1)→(0,1) |
+| Right | +X      | bottom-left (+w,-y,+d)| (0,0)→(1,0)→(1,1)→(0,1) |
+| Back  | -Z      | bottom-left (+w,-y,-d)| (0,0)→(1,0)→(1,1)→(0,1) |
+| Left  | -X      | bottom-left (-w,-y,-d)| (0,0)→(1,0)→(1,1)→(0,1) |
+| Top   | +Y      | bottom-left (-w,+y,+d)| (0,0)→(1,0)→(1,1)→(0,1) |
+| Bottom| -Y      | bottom-left (-w,-y,+d)| (0,0)→(1,0)→(1,1)→(0,1) |
+
+### Roof Triangles (cottage / house shapes)
+
+Gabled roof slopes use triangular UVs:
+- Front slope: (0,0) — (1,0) — (0.5,1)
+- Back slope: same, inverted winding
+- Side quads: standard [0,1] wrapping
+
+### Texture Requirements
+
+- **Every prompt must specify "seamless/tileable"** — a texture that tiles
+  cleanly at all four edges without visible seams at face boundaries.
+- **Square format (512×512)** — no aspect-ratio distortion on square UV faces.
+- **Flat diffuse lighting** — no baked shadows, directional highlights, or
+  ambient occlusion. Engine lighting handles that at runtime.
+- **Grayscale is acceptable** — Babylon.js `StandardMaterial` can tint via
+  `diffuseColor` on top of the texture, so neutral/desaturated works.
+
+### Material → Texture Mapping
+
+| OBJ shape template      | MTL reference            | Prompt section              |
+|-------------------------|--------------------------|-----------------------------|
+| cottage base, house     | `building_timber.png`    | Timber Planks               |
+| cottage roof, barn      | `building_thatch.png`    | Thatch / Straw              |
+| keep                   | `building_stone.png`     | Stone Masonry               |
+| dark keep              | `building_darkstone.png` | Dark Stone                  |
+| temple                 | `building_marble.png`    | White Marble                |
+| cottage (forge), smith | `building_metal.png`     | Wrought Iron / Dark Metal   |
+| mine, marketplace      | `building_adobe.png`     | Mud-Brick / Adobe           |
+
+---
+
 ## Building Textures
 
 > **All building textures: 512×512 pixels, seamless/tileable, PNG format.**
