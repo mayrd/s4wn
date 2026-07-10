@@ -15,16 +15,22 @@ import {
 import '@babylonjs/loaders';
 
 /**
- * Convert a building kind string to the OBJ filename (snake_case).
- * e.g. "GuardTower" → "guard_tower", "TempleOfBacchus" → "temple_of_bacchus"
+ * Convert a building kind/name to the OBJ filename (snake_case).
+ * Handles both CamelCase ("GuardTower") and display names ("Guard Tower").
+ * e.g. "Guard Tower" → "guard_tower", "TempleOfBacchus" → "temple_of_bacchus"
  */
 function kindToObjName(kind: string): string {
-  // Insert underscore before uppercase letters, then lowercase
-  const snake = kind
-    .replace(/([A-Z])/g, '_$1')
-    .replace(/^_/, '')
-    .toLowerCase();
-  return snake;
+  // If name has spaces ("Guard Tower"), replace with underscores
+  // Otherwise insert underscore before uppercase letters
+  const snake = kind.includes(' ')
+    ? kind.toLowerCase().replace(/\s+/g, '_')
+    : kind.replace(/([A-Z])/g, '_$1').replace(/^_/, '').toLowerCase();
+  
+  // Known aliases: buildingName() returns display names that differ from enum names
+  const aliases: Record<string, string> = {
+    'fishery': 'fisherman',    // economy enum says "Fisherman" which maps to "fisherman"
+  };
+  return aliases[snake] ?? snake;
 }
 
 export class BuildingMesh {
