@@ -1,8 +1,9 @@
 # Procedural S4WN material
 newmtl material
-Kd 0.400 0.450 0.350
-Ka 0.120 0.135 0.105
-Ks 0.1 0.1 0.1
-Ns 10
+Kd 0.8 0.8 0.8
+Ka 0.2 0.2 0.2
+Ks 0.0 0.0 0.0
+Ns 0
 d 1.0
 illum 2
+map_Kd building_marble.png
