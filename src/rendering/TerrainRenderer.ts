@@ -48,8 +48,8 @@ export class TerrainRenderer {
     console.log('Terrain created:', {
       width: this.width,
       height: this.height,
-      position: this.mesh.position,
-      vertices: this.mesh.getTotalVertices() || 0,
+      position: this.mesh?.position,
+      vertices: this.mesh?.getTotalVertices?.() ?? '?',
     });
 
     // Debug marker: bright red sphere at map center

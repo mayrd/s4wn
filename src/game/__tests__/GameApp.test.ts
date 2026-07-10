@@ -80,10 +80,17 @@ jest.mock('@babylonjs/core', () => {
       CreateGroundFromHeightMap: jest.fn().mockReturnValue({
         position: { x: 0, y: 0, z: 0 },
         dispose: jest.fn(),
+        getTotalVertices: jest.fn(() => 4),
       }),
       CreateGround: jest.fn().mockReturnValue({
         position: { x: 0, y: 0, z: 0 },
         dispose: jest.fn(),
+        getTotalVertices: jest.fn(() => 4),
+      }),
+      CreateSphere: jest.fn().mockReturnValue({
+        position: { x: 0, y: 0, z: 0 },
+        dispose: jest.fn(),
+        material: null,
       }),
     },
     StandardMaterial: jest.fn().mockImplementation(() => ({
