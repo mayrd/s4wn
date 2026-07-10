@@ -138,6 +138,7 @@ Gabled roof slopes use triangular UVs:
 | temple                 | `building_marble.png`    | White Marble                |
 | cottage (forge), smith | `building_metal.png`     | Wrought Iron / Dark Metal   |
 | mine, marketplace      | `building_adobe.png`     | Mud-Brick / Adobe           |
+| humanoid               | `unit_*.png`             | Unit Textures               |
 
 ---
 
@@ -370,45 +371,93 @@ professional particle texture.
 
 ## Unit Textures
 
-> **Unit textures are applied as diffuse color + simple detail on glTF/OBJ models.**
+> **Unit textures are 256×256 character UV sheets — each body region maps to
+> a specific quadrant of the image. The humanoid OBJ uses 6 UV-mapped boxes
+> (head, torso, left arm, right arm, left leg, right leg), each wrapping a
+> full [0,1] UV quad. The prompt must describe what goes in each region so
+> the generated texture wraps correctly around the model.**
+>
 > Output path: `assets/textures/unit_<name>.png`
-> Format: 256×256, flat color with subtle fabric/armor detail, PNG.
+> Format: 256×256 PNG.
+>
+> ### UV Sheet Layout (all unit types)
+>
+> ```
+> ┌──────────────┬──────────────┐
+> │    HEAD      │    HEAD      │
+> │  (0.0,1.0)   │  (0.5,1.0)   │
+> │  front face  │  back head   │
+> ├──────┬───────┼──────┬───────┤
+> │ LEFT │ RIGHT │ LEFT │ RIGHT │
+> │ ARM  │ ARM   │ LEG  │ LEG   │
+> │(0,.6)│(.5,.6)│(0,.2)│(.5,.2)│
+> ├──────┴───────┼──────┴───────┤
+> │    TORSO     │    TORSO     │
+> │  (0.0,0.6)   │  (0.5,0.6)   │
+> │  front body  │  back body   │
+> └──────────────┴──────────────┘
+> Dimensions: (x, y) ranges, origin at bottom-left
+> ```
 
 ### Settler (`assets/textures/unit_settler.png`)
 ```
-Simple unit texture for civilian settler character, 256×256 pixels. Flat
-warm beige/cream tunic with brown leather belt. Slight fabric weave texture
-visible on tunic. Neutral pose, no background. Used as diffuse map on 3D
-character model. Siedler 4 style, simple geometric shapes.
+Character UV texture sheet for a medieval settler, 256×256 pixels. Layout
+as described above. Head region (top half, left side): fair-skinned face
+looking forward, brown eyes, short brown hair. Head back (top half, right):
+same hair from behind. Torso front (bottom-left quadrant): warm beige/cream
+linen tunic with brown leather belt across middle, slight fabric weave
+texture. Torso back (bottom-right quadrant): same tunic from behind, belt
+visible as horizontal line. Left arm (left center): cream sleeve matching
+tunic, brown hand. Right arm (right center): same. Left leg (lower-left):
+brown trousers, black leather boot. Right leg (lower-right): same. No
+background — transparent outside UV islands. Seamless blending where tunic
+meets sleeves. Flat diffuse lighting, no baked shadows. Siedler 4 style.
 ```
 
 ### Soldier / Swordsman (`assets/textures/unit_soldier.png`)
 ```
-Simple unit texture for military soldier character, 256×256 pixels. Dark
-grey chainmail/armor with red tabard overlay. Metallic sheen on armor plates
-(RGB ~120,115,110), deep red fabric (RGB ~160,40,35). Slight rivet detail on
-armor. No background. Siedler 4 style, simple shapes.
+Character UV texture sheet for a medieval soldier, 256×256 pixels. Layout
+as described above. Head front: stern face, short dark hair, grey steel
+helmet covering top. Head back: helmet from behind. Torso front: dark grey
+chainmail with deep red tabard overlay (RGB 160,40,35), metallic sheen on
+mail rings, red fabric with subtle fold lines. Torso back: chainmail from
+behind, tabard edge visible. Arms: chainmail sleeves, grey gauntlets. Legs:
+dark grey plate greaves, metal boots. No background. Flat diffuse. Siedler 4 style.
 ```
 
 ### Archer / Bowman (`assets/textures/unit_archer.png`)
 ```
-Simple unit texture for archer character, 256×256 pixels. Forest green tunic
-(RGB ~80,140,70) with brown leather quiver on back. Lighter green hood.
-Slight texture weave on fabric. No background. Siedler 4 style, simple shapes.
+Character UV texture sheet for a medieval archer, 256×256 pixels. Layout
+as described above. Head front: focused expression, brown hair, forest green
+hood (RGB 80,140,70) framing face. Head back: green hood from behind.
+Torso front: forest green tunic with brown leather cross-strap across chest
+(for quiver mount). Slight fabric weave. Torso back: green tunic, brown
+quiver strap visible across back. Arms: green sleeves rolled at elbow, bare
+forearms (flesh tone). Legs: brown leather trousers, soft leather boots.
+No background. Flat diffuse. Siedler 4 style.
 ```
 
 ### Worker (`assets/textures/unit_worker.png`)
 ```
-Simple unit texture for worker character, 256×256 pixels. Brown linen tunic
-(RGB ~140,110,75) with grey apron. Simple functional clothing, slight wear
-marks. Neutral pose, no background. Siedler 4 style, simple shapes.
+Character UV texture sheet for a medieval worker, 256×256 pixels. Layout
+as described above. Head front: friendly face, short brown hair, no helmet.
+Head back: hair from behind. Torso front: brown linen tunic (RGB 140,110,75)
+with grey apron overlay in center. Tool belt with small pouch. Slight dirt
+stains on apron. Torso back: brown tunic, apron strings tied behind. Arms:
+brown sleeves rolled up, work-worn hands. Legs: grey-brown trousers, simple
+leather shoes. No background. Flat diffuse. Siedler 4 style.
 ```
 
 ### Pioneer (`assets/textures/unit_pioneer.png`)
 ```
-Simple unit texture for pioneer character, 256×256 pixels. Dark brown leather
-jerkin (RGB ~130,95,60) with tan undershirt. Mining/exploration aesthetic,
-rugged appearance. No background. Siedler 4 style, simple shapes.
+Character UV texture sheet for a medieval pioneer/explorer, 256×256 pixels.
+Layout as described above. Head front: rugged face, dusty brown hair, wide-
+brimmed leather hat. Head back: hat from behind. Torso front: dark brown
+leather jerkin (RGB 130,95,60) with tan cotton undershirt visible at neck
+and hem. Small pickaxe emblem on chest. Torso back: leather jerkin, shoulder
+straps. Arms: leather sleeves, reinforced gloves. Legs: dark brown trousers
+tucked into tall boots. Dust layer on boots. No background. Flat diffuse.
+Siedler 4 style.
 ```
 
 ---

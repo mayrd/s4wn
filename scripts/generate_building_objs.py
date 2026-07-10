@@ -110,6 +110,11 @@ BUILDINGS = {
 
     # Also covering the castle (renamed from headquarters)
     "castle":           ("keep", (3.0, 4.0, 3.0), "building_stone.png"),
+
+    # ── Units (humanoid shape, character UV sheet) ──────────────────
+    "unit_archer":      ("humanoid", (0.3, 1.2, 0.3), "unit_archer.png"),
+    "unit_soldier":     ("humanoid", (0.35, 1.2, 0.35), "unit_soldier.png"),
+    "unit_worker":      ("humanoid", (0.3, 1.2, 0.3), "unit_worker.png"),
 }
 
 
@@ -330,6 +335,25 @@ def generate_shape(shape, size, tex_name):
 
     elif shape == "pillar":
         add_box(verts, uvs, norms, faces, (w, h, d), (0, h/2, 0))
+
+    elif shape == "humanoid":
+        # ── Humanoid character for isometric view ──
+        # Proportions: head 0.25, torso 0.4, legs 0.35 of total height
+        hw, hh, hd = w, h, d  # rename for clarity
+        # Head (top)
+        head_h = hh * 0.25
+        add_box(verts, uvs, norms, faces, (hw*1.3, head_h, hd*1.3), (0, hh - head_h/2, 0))
+        # Torso (middle)
+        torso_h = hh * 0.40
+        add_box(verts, uvs, norms, faces, (hw*1.4, torso_h, hd*0.9), (0, hh*0.3, 0))
+        # Arms (sides — narrow boxes)
+        arm_h = hh * 0.38
+        add_box(verts, uvs, norms, faces, (hw*0.22, arm_h, hd*0.22), ( hw*0.85, hh*0.28, 0))
+        add_box(verts, uvs, norms, faces, (hw*0.22, arm_h, hd*0.22), (-hw*0.85, hh*0.28, 0))
+        # Legs (bottom)
+        leg_h = hh * 0.35
+        add_box(verts, uvs, norms, faces, (hw*0.45, leg_h, hd*0.45), ( hw*0.3, leg_h/2, 0))
+        add_box(verts, uvs, norms, faces, (hw*0.45, leg_h, hd*0.45), (-hw*0.3, leg_h/2, 0))
 
     return verts, uvs, norms, faces
 
