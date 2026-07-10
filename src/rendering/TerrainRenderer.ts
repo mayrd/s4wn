@@ -49,7 +49,7 @@ export class TerrainRenderer {
       width: this.width,
       height: this.height,
       position: this.mesh.position,
-      vertices: this.mesh.getTotalVertices(),
+      vertices: this.mesh.getTotalVertices() || 0,
     });
 
     // Debug marker: bright red sphere at map center

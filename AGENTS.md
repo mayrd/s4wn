@@ -168,9 +168,9 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P11 | 2026-07-09 | Implement touch camera controller (pinch-to-zoom, two-finger pan), mobile-friendly CSS, wire ViewCuller → camera sync |
 
 ### Next Session Priorities
-1. **Visual Regression Tests**:
-   - Implement Playwright screenshot comparison tests for UI components.
-3. **CI/CD Pipeline**:
+1. **CI/CD Pipeline**:
    - Update GitHub Actions workflow for TypeScript/Jest/Vite build.
+2. **Visual Regression Tests**:
+   - Implement Playwright screenshot comparison tests for UI components.
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*

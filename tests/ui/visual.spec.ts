@@ -18,23 +18,26 @@ test.describe('Visual Regression Tests', () => {
   });
 
   test('HUD should match baseline', async ({ page }) => {
-    // To test HUD, we might need to trigger a game start.
-    // For now, let's just check if the HUD elements exist if they are part of the initial overlay
-    // or if we can trigger them.
-    // Assuming 'game-start' event is needed, we might need to click 'Start'
+    // To test HUD, we need to trigger a game start.
     await page.click('text=Start Tutorial');
     
     // Wait for HUD to appear (assuming it has a specific class or ID)
-    // Based on subagent info, HUD is managed by UIManager.
-    // We'll wait for a short period to allow the transition.
-    await page.waitForTimeout(2000);
+    // Based on HUD.ts, the container has class 'hud-container'
+    const hud = page.locator('.hud-container');
+    await hud.waitFor({ state: 'visible', timeout: 5000 });
     
-    const hud = page.locator('.hud-container'); // Assuming this class exists based on typical HUD implementations
-    if (await hud.isVisible()) {
-        await expect(hud).toHaveScreenshot('hud.png');
-    } else {
-        // Fallback: screenshot the whole page if HUD class is unknown
-        await expect(page).toHaveScreenshot('game-hud-fallback.png');
-    }
+    await expect(hud).toHaveScreenshot('hud.png');
+  });
+
+  test('Object Explorer should match baseline', async ({ page }) => {
+    // Open the Object Explorer from the Main Menu
+    await page.click('text=Object Explorer');
+    
+    // Wait for the explorer panel to be visible
+    // Based on ObjectExplorer.ts, it has class 'explorer-panel'
+    const explorer = page.locator('.explorer-panel');
+    await explorer.waitFor({ state: 'visible', timeout: 5000 });
+    
+    await expect(explorer).toHaveScreenshot('object-explorer.png');
   });
 });
