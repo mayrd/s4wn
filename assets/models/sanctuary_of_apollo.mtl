@@ -1,0 +1,8 @@
+# Procedural S4WN material
+newmtl material
+Kd 0.700 0.650 0.550
+Ka 0.210 0.195 0.165
+Ks 0.1 0.1 0.1
+Ns 10
+d 1.0
+illum 2

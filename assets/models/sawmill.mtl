@@ -1,4 +1,8 @@
-newmtl sawmill
-Kd 0.600 0.400 0.200
-Ns 0.0
+# Procedural S4WN material
+newmtl material
+Kd 0.550 0.350 0.200
+Ka 0.165 0.105 0.060
+Ks 0.1 0.1 0.1
+Ns 10
 d 1.0
+illum 2
