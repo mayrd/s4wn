@@ -124,9 +124,11 @@ export class ObjectExplorer {
   private gameLoop: GameLoop;
   private activeTab: CatalogTab = 'terrain';
   private objects: ExplorerObject[] = [];
+  private isMobile = false;
 
   constructor(_ui: UIManager, gl: GameLoop) {
     this.gameLoop = gl;
+    this.isMobile = window.matchMedia('(max-width: 768px)').matches;
     this.container = document.createElement('div');
     this.container.className = 'ui-screen explorer-panel hidden';
     this.build();
@@ -138,6 +140,7 @@ export class ObjectExplorer {
     const tabs: CatalogTab[] = ['terrain','buildings','units','decorations','misc'];
     this.container.innerHTML = `<div class="explorer-container">
       <div class="explorer-header"><span class="explorer-title">🐞 Object Explorer</span><button class="explorer-close">&times;</button></div>
+      <div class="explorer-mobile-back" id="explorer-mobile-back">&larr; Back</div>
       <div class="explorer-content">
         <div class="explorer-list-section">
           <div class="explorer-list-header" id="explorer-tabs">${tabs.map(t => `<span class="explorer-tab" data-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</span>`).join('')}</div>
@@ -154,6 +157,7 @@ export class ObjectExplorer {
     this.searchInput = this.container.querySelector('#explorer-search')!;
     this.searchInput.addEventListener('input', () => this.filter());
     this.container.querySelector('.explorer-close')?.addEventListener('click', () => this.hide());
+    this.container.querySelector('#explorer-mobile-back')?.addEventListener('click', () => this.showListView());
     this.container.querySelectorAll('.explorer-tab').forEach(tab =>
       tab.addEventListener('click', e => this.switchTab((e.target as HTMLElement).dataset.tab as CatalogTab)));
     this.switchTab('terrain');
@@ -163,14 +167,24 @@ export class ObjectExplorer {
   // ── Tab control ──────────────────────────────────────────────────
 
   private switchTab(t: CatalogTab): void {
-    this.activeTab = t; this.searchInput.value = '';
+    this.activeTab = t; this.searchInput.value = ''; this.showListView();
     this.container.querySelectorAll('.explorer-tab').forEach(el =>
       (el as HTMLElement).style.fontWeight = (el as HTMLElement).dataset.tab === t ? 'bold' : 'normal');
     this.loadCatalog(); this.filter();
   }
-  public show(): void { this.container.classList.remove('hidden'); this.container.classList.add('active'); this.isOpen = true; this.loadCatalog(); this.filter(); }
+  public show(): void { this.container.classList.remove('hidden'); this.container.classList.add('active'); this.isOpen = true; this.loadCatalog(); this.filter(); this.showListView(); }
   public hide(): void { this.container.classList.add('hidden'); this.container.classList.remove('active'); this.isOpen = false; }
   public toggle(): void { this.isOpen ? this.hide() : this.show(); }
+
+  private showListView(): void {
+    this.container.classList.remove('explorer-mobile-details');
+    this.container.classList.add('explorer-mobile-list');
+  }
+
+  private showDetailView(): void {
+    this.container.classList.remove('explorer-mobile-list');
+    this.container.classList.add('explorer-mobile-details');
+  }
   private loadCatalog(): void {
     switch (this.activeTab) {
       case 'terrain': this.loadTerrain(); break; case 'buildings': this.loadBuildings(); break;
@@ -369,5 +383,8 @@ export class ObjectExplorer {
     this.detailsEl.innerHTML = `<div class="explorer-detail-item"><strong>${obj.name}</strong></div>
       <div class="explorer-detail-item" style="opacity:0.6">${obj.type} · ${obj.id}</div>
       ${parts.join('\n')}`;
+
+    // On mobile, switch from list to detail view
+    if (this.isMobile) this.showDetailView();
   }
 }

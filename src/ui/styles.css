@@ -492,6 +492,89 @@
   image-rendering: auto;
 }
 
+/* ── Mobile back navigation ──────────────────────────────────────── */
+
+.explorer-mobile-back {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Full-width stacking layout */
+  .explorer-content {
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .explorer-list-section {
+    flex: 1 1 100%;
+    width: 100%;
+    border-right: none;
+    transition: transform 0.25s ease;
+  }
+
+  .explorer-details-section {
+    flex: 1 1 100%;
+    width: 100%;
+    transition: transform 0.25s ease;
+  }
+
+  /* Show/hide list & details as pages */
+  .explorer-mobile-list .explorer-list-section {
+    display: flex;
+  }
+  .explorer-mobile-list .explorer-details-section {
+    display: none;
+  }
+
+  .explorer-mobile-details .explorer-list-section {
+    display: none;
+  }
+  .explorer-mobile-details .explorer-details-section {
+    display: flex;
+  }
+
+  /* Back button — sits between header and content */
+  .explorer-mobile-details .explorer-mobile-back {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    background: var(--wood-dark);
+    color: var(--parchment-bg);
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-bottom: 2px solid var(--wood-light);
+    user-select: none;
+  }
+  .explorer-mobile-back:hover {
+    background: #6e3b1e;
+  }
+
+  /* Details fill available height */
+  .explorer-details {
+    height: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Detail panels need more padding on mobile */
+  .explorer-detail-item {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+
+  /* Asset chain more compact */
+  .explorer-chain-node {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+  }
+
+  .explorer-tex-preview {
+    max-width: 120px;
+    max-height: 120px;
+  }
+}
+
 /* Utility */
 .hidden {
   display: none !important;

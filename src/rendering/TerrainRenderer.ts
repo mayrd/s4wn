@@ -18,7 +18,7 @@ import {
 } from '@babylonjs/core';
 import { Map as GameMap } from '../game/Map';
 
-const TEX_SIZE = 32; // pixels per map tile in the atlas (small but enough for a 48×48=1536px atlas)
+const TEX_SIZE = 256; // px per map tile → 48×256 = 12,288px atlas
 
 /** Convert terrain enum string → texture array index (0-6). */
 function terrainToIdx(t: string): number {
