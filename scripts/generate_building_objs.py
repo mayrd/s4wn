@@ -148,7 +148,7 @@ def write_mtl(path, texture_name):
         f.write(f"Ns 0\n")
         f.write(f"d 1.0\n")
         f.write(f"illum 2\n")
-        f.write(f"map_Kd {texture_name}\n")
+        f.write(f"map_Kd ../textures/{texture_name}\n")
 
 
 def box_vertices(w, h, d):
