@@ -128,7 +128,7 @@ export class ObjectExplorer {
 
   constructor(_ui: UIManager, gl: GameLoop) {
     this.gameLoop = gl;
-    this.isMobile = window.matchMedia('(max-width: 768px)').matches;
+    this.isMobile = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 768px)').matches === true;
     this.container = document.createElement('div');
     this.container.className = 'ui-screen explorer-panel hidden';
     this.build();
