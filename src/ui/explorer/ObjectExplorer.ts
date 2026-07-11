@@ -75,7 +75,13 @@ const PROMPT_EXCERPTS: Record<string, string> = {
   menu_bg: '4K menu background. Twilight village silhouette, dark centered band for white text overlay. Atmospheric mist, warm window lights. Center-safe for 9:16. PROMPTS.md §Menu Background.',
   logo: 'Game logo. Rustic medieval typography "S4WN", wood/stone texture, bronze-gold trim. Circular seal, dark green background. 1024×1024. PROMPTS.md §Logo.',
   terrain_grass: 'Seamless grass 1024×1024. Lush green with wildflowers, must tile at all four edges. Top-down orthographic, flat diffuse. PROMPTS.md §Terrain Grass.',
+  terrain_forest: 'Seamless forest floor 1024×1024. Dark woodland with fallen leaves, moss, ferns. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Forest.',
+  terrain_desert: 'Seamless desert sand 1024×1024. Golden sand with wind ripples, pebbles, dry grass tufts. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Desert.',
+  terrain_mountain: 'Seamless rocky mountain 1024×1024. Jagged grey rock, cracks, alpine grass patches. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Mountain.',
+  terrain_snow: 'Seamless snow terrain 1024×1024. White snow with crystalline sparkle, blue-grey shadows. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Snow.',
   terrain_water: 'Seamless shallow water 1024×1024. Teal-blue ripples with caustic patterns, must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Water.',
+  terrain_deepwater: 'Seamless deep water 1024×1024. Dark navy ocean surface with slow wave patterns, opaque. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Deep Water.',
+  terrain_swamp: 'Seamless swamp 1024×1024. Murky green-brown water with algae, lily pads, reeds. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Swamp.',
 };
 
 function promptExcerpt(key: string): string {
@@ -196,10 +202,20 @@ export class ObjectExplorer {
   // ── Catalog loaders ──────────────────────────────────────────────
 
   private loadTerrain(): void {
+    const texMap: Record<string, string> = {
+      'Grass': 'terrain_grass.png', 'Forest': 'terrain_forest.png',
+      'Desert': 'terrain_desert.png', 'Mountain': 'terrain_mountain.png',
+      'Snow': 'terrain_snow.png', 'Water': 'terrain_water.png',
+      'DeepWater': 'terrain_water.png', 'Swamp': 'terrain_swamp.png',
+    };
     this.objects = TERRAIN_DEFS.map(t => ({
       id: `terrain-${t.terrain}`, type: 'terrain', name: t.terrain.toString(),
-      _promptKey: (t.terrain === Terrain.Water || t.terrain === Terrain.DeepWater) ? 'terrain_water' : 'terrain_grass',
-      _chain: { mesh:'Ground Plane — CreateGround 100×100, 4 verts (TerrainRenderer.ts)', texture:'Splat-map RGB procedural 256×256 per type', animation:'Water UV scroll loop (WaterPlane.ts)' },
+      _promptKey: `terrain_${t.terrain.toString().toLowerCase()}`,
+      _chain: {
+        mesh: 'Ground Plane — CreateGround 100×100, 4 verts (TerrainRenderer.ts)',
+        texture: `assets/textures/${texMap[t.terrain.toString()] ?? 'terrain_grass.png'}`,
+        animation: `Water UV scroll loop (WaterPlane.ts) — ${t.terrain === Terrain.Water || t.terrain === Terrain.DeepWater ? 'enabled' : 'N/A'}`,
+      },
       properties: { description:t.desc, buildable:t.buildable, movementCost:t.movementCost, splatColor:`rgb(${t.splatRgb})` }
     }));
   }

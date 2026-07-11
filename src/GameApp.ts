@@ -76,8 +76,9 @@ export class GameApp {
   private initRendering(): void {
     this.terrainRenderer = new TerrainRenderer(this.scene, this.map);
     this.map.setAllVisible();
-    this.terrainRenderer.createGround();              // synchronous — green plane appears immediately
-    this.terrainRenderer.loadTerrainTextures();       // async — textures load in background, apply when ready
+    this.terrainRenderer.createGround();              // green plane, always visible
+    // Terrain splat-map texturing deferred until shader-based approach is ready
+    // (the Canvas2D atlas approach hit WebGL MAX_TEXTURE_SIZE at 12,288px)
 
     // Water plane disabled — currently obscures the terrain at low camera angles
     // this.waterRenderer = new WaterPlane(this.scene, this.map.width, this.map.height);
