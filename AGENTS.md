@@ -166,11 +166,11 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P9 | 2026-07-07 | Implement save/load system with localStorage persistence, SaveManager, Map/Economy serialization, 5 round-trip tests |
 | P10 | 2026-07-07 | Implement view-based entity culling (ViewCuller) for performance, 9 unit tests |
 | P11 | 2026-07-09 | Implement touch camera controller (pinch-to-zoom, two-finger pan), mobile-friendly CSS, wire ViewCuller → camera sync |
+| P12 | 2026-07-11 | **Object Explorer → Grade A Debugging Tool** — runtime state inspection per asset, full asset chain display (mesh+texture+animation+logic), GitHub issue deep-link button on every asset detail panel, coordinator-based asset registry for live state access |
 
 ### Next Session Priorities
-1. **CI/CD Pipeline**:
-   - Update GitHub Actions workflow for TypeScript/Jest/Vite build.
-2. **Visual Regression Tests**:
-   - Implement Playwright screenshot comparison tests for UI components.
+1. **Object Explorer Runtime State** — Wire GameLoop game state into the ObjectExplorer so it shows live HP, position, AI state, and economy progress for placed buildings/units.
+2. **GitHub Issue Deep Links** — Add "Report Issue" buttons that open `github.com/mayrd/s4wn/issues/new?title=[AssetName]&body=...` with pre-filled asset info.
+3. **Visual Regression Tests** — Implement Playwright screenshot comparison tests for UI components.
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*

@@ -326,6 +326,64 @@
   margin-left: 10px;
 }
 
+/* ── P12: Object Explorer Debug Sections ──────────────────────────── */
+
+.explorer-issue-btn {
+  display: block;
+  text-align: center;
+  padding: 6px 12px;
+  margin: 10px 0;
+  background: #6e3b1e;
+  color: #ffab40;
+  border: 1px solid #ffab40;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.explorer-issue-btn:hover {
+  background: #8b4d2a;
+  color: #ffc261;
+}
+
+.explorer-section {
+  margin-top: 12px;
+  border: 1px solid #8d6e63;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.explorer-section-title {
+  background: #5d4037;
+  color: #ffab40;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.explorer-section-body {
+  padding: 8px 10px;
+  background: rgba(93, 64, 55, 0.15);
+  font-size: 0.8rem;
+}
+.explorer-section-body .explorer-prop-row {
+  border-bottom: 1px dotted rgba(141, 110, 99, 0.3);
+}
+.explorer-section-body .prop-key {
+  color: #5d4037;
+}
+.explorer-section-body .prop-val {
+  color: #3e2723;
+}
+
+.explorer-debug-link {
+  color: #ffab40 !important;
+}
+.explorer-debug-link:hover {
+  color: #ffc261 !important;
+  text-decoration: underline !important;
+}
+
 /* Utility */
 .hidden {
   display: none !important;

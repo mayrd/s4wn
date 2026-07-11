@@ -1,15 +1,16 @@
 /**
- * S4WN Babylon.js/TypeScript - Object Explorer
- * 
- * Asset catalog organized by logical game categories.
- * Each entry shows its full asset chain: type info + mesh + texture + animation.
+ * S4WN Babylon.js/TypeScript - Object Explorer (P12 Grade A Debugging Tool)
+ *
+ * Asset catalog with runtime state inspection for every game asset.
+ * Each asset: look (mesh+texture+animation) + logic (stats+economy+AI)
+ * + runtime state (HP/position/progress) + GitHub issue deep-link.
  * Tabs: Terrain | Buildings | Units | Decorations | Misc
  */
 
 import { UIManager } from '../UIManager';
 import { GameLoop } from '../../game/GameLoop';
 import { Terrain } from '../../game/types';
-import { 
+import {
   BuildingType, BUILDING_NAMES, buildCost, buildTime, productionInterval,
   buildingInputs, buildingOutputs, requiredTool, requiresSettler,
   resourceName, buildingName,
@@ -26,9 +27,38 @@ type CatalogTab = 'terrain' | 'buildings' | 'units' | 'decorations' | 'misc';
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function fmtCost(items: Array<{resource: any; amount: number}>): string {
+function fmtCost(items: Array<{ resource: any; amount: number }>): string {
   if (items.length === 0) return 'none';
   return items.map(i => `${resourceName(i.resource)}×${i.amount}`).join(', ');
+}
+
+const GITHUB_ISSUE_BASE = 'https://github.com/mayrd/s4wn/issues/new';
+
+function gitHubIssueLink(assetType: string, assetName: string): string {
+  const title = encodeURIComponent(`[${assetType}] ${assetName}`);
+  const body = encodeURIComponent(
+    `## Asset: ${assetName} (${assetType})\n\n` +
+    `### What needs to change?\n\n\n` +
+    `### Current behavior\n\n\n` +
+    `### Expected behavior\n\n\n` +
+    `_\nAutomated deep-link from Object Explorer._\n`
+  );
+  return `${GITHUB_ISSUE_BASE}?title=${title}&body=${body}&labels=asset,debug`;
+}
+
+function renderPropRow(key: string, val: any): string {
+  const display = typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val);
+  return `<div class="explorer-prop-row">
+    <span class="prop-key">${key}:</span>
+    <span class="prop-val">${display}</span>
+  </div>`;
+}
+
+function renderSection(title: string, content: string): string {
+  return `<div class="explorer-section">
+    <div class="explorer-section-title">${title}</div>
+    <div class="explorer-section-body">${content}</div>
+  </div>`;
 }
 
 // ── Terrain catalog ──────────────────────────────────────────────────
@@ -80,7 +110,7 @@ export class ObjectExplorer {
     this.container.innerHTML = `
       <div class="explorer-container">
         <div class="explorer-header">
-          <span class="explorer-title">Object Explorer</span>
+          <span class="explorer-title">🐞 Object Explorer</span>
           <button class="explorer-close">&times;</button>
         </div>
         <div class="explorer-content">
@@ -91,7 +121,10 @@ export class ObjectExplorer {
             <div class="explorer-list" id="explorer-list"></div>
           </div>
           <div class="explorer-details-section">
-            <div class="explorer-details-header">Details</div>
+            <div class="explorer-details-header">
+              Details
+              <a href="#" class="explorer-debug-link" id="explorer-debug-link" target="_blank" style="float:right;font-size:0.75rem;text-decoration:none" title="Open GitHub issue for this asset">🐛 Report Issue</a>
+            </div>
             <div class="explorer-details" id="explorer-details">
               <div class="explorer-empty-msg">Select an object to inspect</div>
             </div>
@@ -138,7 +171,7 @@ export class ObjectExplorer {
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  //  TERRAIN — terrain types + ground mesh + splat texture + water ripple
+  //  TERRAIN
   // ═══════════════════════════════════════════════════════════════════
 
   private showTerrain(): void {
@@ -152,240 +185,207 @@ export class ObjectExplorer {
         buildable: t.buildable,
         movementCost: t.movementCost,
         mesh: 'Ground Plane — CreateGround, 100×100 units, 4 vertices (TerrainRenderer.ts)',
-        texture: `Splat-map — 256×256, procedural (RGB per terrain type) → see PROMPTS.md §Terrain`,
-        animation: 'Water ripple — UV scroll loop on WaterPlane normal map (dt × 0.01), WaterPlane.ts',
+        texture: 'Splat-map — 256×256 procedural RGB per terrain type → PROMPTS.md §Terrain',
+        animation: 'Water ripple — UV scroll loop on WaterPlane normal map (WaterPlane.ts)',
       }
     })));
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  //  BUILDINGS — building types + OBJ mesh + production animation
+  //  BUILDINGS — per-instance runtime debug
   // ═══════════════════════════════════════════════════════════════════
 
   private showBuildings(): void {
-    const seen = new Set<string>();
-    const objects: ExplorerObject[] = [];
+    const buildings = this.gameLoop.economy.getCompleteBuildings();
+    if (buildings.length === 0) {
+      this.showBuildingCatalog();
+      return;
+    }
 
-    for (const b of this.gameLoop.economy.getCompleteBuildings()) {
+    // Show each placed building instance with runtime state
+    const objects: ExplorerObject[] = buildings.map((b, idx) => {
       const name = buildingName(b.kind);
-      if (seen.has(name)) continue;
-      seen.add(name);
       const kind = b.kind as BuildingType;
+      const interval = productionInterval(kind);
+      return {
+        id: `building-${name}-${idx}`,
+        type: 'building',
+        name: `${name} #${idx + 1}`,
+        properties: {
+          // ── Static (type-level) ──
+          kind: name,
+          buildCost: fmtCost(buildCost(kind)),
+          buildTime: `${buildTime(kind)} ticks`,
+          produces: interval > 0 ? `${fmtCost(buildingOutputs(kind))} / ${interval} ticks` : 'none',
+          consumes: fmtCost(buildingInputs(kind)),
+          tool: requiredTool(kind)?.toString() ?? 'none',
+          needsSettler: requiresSettler(kind),
+          mesh: `assets/models/${name.toLowerCase()}.obj — loaded via SceneLoader (BuildingMesh.ts)`,
+          texture: 'MTL → map_Kd → PROMPTS.md §Building Textures (7 materials)',
+          animation_construction: `Progress bar ${buildTime(kind)} ticks + particles on completion (ParticleSystem.ts)`,
+          animation_production: interval > 0 ? `Cycle every ${interval} ticks: inputs → outputs → Economy.tick()` : 'none (military/support)',
+          // ── Runtime state ──
+          '🔴 HP': `${b.hp} / ${b.maxHp}`,
+          '🔴 Active': b.isActive,
+          '🔴 Position': `(${b.x}, ${b.y})`,
+          '🔴 Workers': `${(b as any).workers?.length ?? '?'}`,
+          '🔴 Progress': `${(b as any).progress ?? '?'}/${buildTime(kind)}`,
+        }
+      };
+    });
+    this.updateList(objects);
+  }
+
+  private showBuildingCatalog(): void {
+    // Full catalog when no buildings placed
+    const objects: ExplorerObject[] = [];
+    for (let i = 0; i < BUILDING_NAMES.length; i++) {
+      const name = BUILDING_NAMES[i];
+      if (!name) continue;
+      const kind = i as BuildingType;
       const interval = productionInterval(kind);
       objects.push({
         id: `building-${name}`,
         type: 'building',
         name,
         properties: {
+          kind: name,
           buildCost: fmtCost(buildCost(kind)),
           buildTime: `${buildTime(kind)} ticks`,
-          productionInputs: fmtCost(buildingInputs(kind)),
-          productionOutputs: fmtCost(buildingOutputs(kind)),
-          productionInterval: interval > 0 ? `${interval} ticks (${(interval/10).toFixed(1)}s)` : 'none',
-          requiredTool: requiredTool(kind)?.toString() ?? 'none',
-          requiresSettler: requiresSettler(kind),
-          runtime_hp: `${b.hp}/${b.maxHp}`,
-          runtime_active: b.isActive,
-          mesh: `OBJ model — loaded from assets/models/${name.toLowerCase()}.obj via SceneLoader (BuildingMesh.ts)`,
-          texture: 'StandardMaterial — diffuse + specular; PBR planned for later',
-          animations: {
-            construction: `Progress bar ${buildTime(kind)} ticks → Economy.tick() + construction/spawn particles on completion (ParticleSystem.ts)`,
-            production: interval > 0 ? `Cycle every ${interval} ticks: consume inputs → produce outputs → Economy.tick(1.0)` : 'none (military/support building)',
-          },
-          count: this.gameLoop.economy.getCompleteBuildings().filter(x => buildingName(x.kind) === name).length,
+          produces: interval > 0 ? `${fmtCost(buildingOutputs(kind))} / ${interval} ticks` : 'none',
+          consumes: fmtCost(buildingInputs(kind)),
+          tool: requiredTool(kind)?.toString() ?? 'none',
+          needsSettler: requiresSettler(kind),
+          mesh: `assets/models/${name.toLowerCase()}.obj (BuildingMesh.ts)`,
+          texture: 'MTL → map_Kd → PROMPTS.md §Building Textures',
+          animation_construction: `Progress bar ${buildTime(kind)} ticks + particles on completion`,
+          animation_production: interval > 0 ? `Cycle every ${interval} ticks: inputs → outputs` : 'none',
+          '🔴 Placed': 0,
         }
       });
-    }
-
-    if (objects.length === 0) {
-      for (let i = 0; i < BUILDING_NAMES.length; i++) {
-        const name = BUILDING_NAMES[i];
-        if (!name || name === 'Castle') continue;
-        const kind = i as BuildingType;
-        const interval = productionInterval(kind);
-        objects.push({
-          id: `building-${name}`,
-          type: 'building',
-          name,
-          properties: {
-            buildCost: fmtCost(buildCost(kind)),
-            buildTime: `${buildTime(kind)} ticks`,
-            productionInputs: fmtCost(buildingInputs(kind)),
-            productionOutputs: fmtCost(buildingOutputs(kind)),
-            productionInterval: interval > 0 ? `${interval} ticks (${(interval/10).toFixed(1)}s)` : 'none',
-            requiredTool: requiredTool(kind)?.toString() ?? 'none',
-            requiresSettler: requiresSettler(kind),
-            mesh: `OBJ model — assets/models/${name.toLowerCase()}.obj (BuildingMesh.ts)`,
-            texture: 'StandardMaterial — diffuse + specular',
-            animations: {
-              construction: `Progress bar ${buildTime(kind)} ticks → Economy.tick() + particles on completion`,
-              production: interval > 0 ? `Cycle every ${interval} ticks: consume inputs → produce outputs → Economy.tick(1.0)` : 'none (military/support)',
-            },
-            count: 0,
-          }
-        });
-      }
     }
     objects.sort((a, b) => a.name.localeCompare(b.name));
     this.updateList(objects);
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  //  UNITS — unit types + mesh + movement animation
+  //  UNITS — per-instance runtime debug
   // ═══════════════════════════════════════════════════════════════════
 
   private showUnits(): void {
+    const aliveUnits = this.gameLoop.unitManager.getAliveUnits();
     const unitDefs = [
       { name: 'Settler',   hp: 50,  atk: 1,  speed: 1.5, sight: 8,  desc: 'Civilian; builds and gathers resources',
-        idle: 'Standing upright, slight idle sway (UnitState.Idle)', walking: 'Walk cycle at speed 1.5 — pathfinding A* interpolation (GameLoop.tick → UnitManager.tick)', working: 'Hammer swing loop when constructing buildings; carry animation when hauling resources' },
+        idle: 'Standing upright, slight idle sway (UnitState.Idle)',
+        walking: 'Walk cycle at speed 1.5 — A* pathfinding interpolation',
+        working: 'Hammer swing (building) + carry (hauling)' },
       { name: 'Swordsman', hp: 100, atk: 15, speed: 1.0, sight: 6,  desc: 'Melee infantry unit',
-        idle: 'Standing at attention, shield forward (UnitState.Idle)', walking: 'March cycle at speed 1.0 — A* pathfinding', working: 'Combat: sword slash/parry loop vs enemy units (UnitState.Fighting → CombatAI.tick)' },
+        idle: 'Standing at attention, shield forward',
+        walking: 'March cycle at speed 1.0 — A* pathfinding',
+        working: 'Slash/parry combat loop vs enemy (CombatAI.tick)' },
       { name: 'Bowman',    hp: 75,  atk: 12, speed: 1.2, sight: 10, desc: 'Ranged archer unit',
-        idle: 'Bow lowered, scanning (UnitState.Idle)', walking: 'Jog cycle at speed 1.2 — A* pathfinding', working: 'Combat: draw → aim → release loop at range (UnitState.Fighting, sight 10 for aggro)' },
+        idle: 'Bow lowered, scanning',
+        walking: 'Jog cycle at speed 1.2 — A* pathfinding',
+        working: 'Draw → aim → release at range (sight 10 aggro)' },
       { name: 'Worker',    hp: 40,  atk: 1,  speed: 1.0, sight: 5,  desc: 'Operates production buildings',
-        idle: 'Standing at building entrance (UnitState.Idle)', walking: 'Walk cycle at speed 1.0 — to/from workplace', working: 'Tool animation (hammer/saw/pickaxe) per building type — operates assigned building (WorkerAI.assignWorker)' },
-      { name: 'Pioneer',   hp: 40,  atk: 1,  speed: 1.0, sight: 5,  desc: 'Border expander; digs territory stakes',
-        idle: 'Standing with shovel (UnitState.Idle)', walking: 'Walk cycle at speed 1.0 — to border edge', working: 'Digging animation — shovel strike loop, expands territory radius (UnitState.Working)' },
+        idle: 'Standing at building entrance',
+        walking: 'Walk cycle at speed 1.0 — to/from workplace',
+        working: 'Tool animation per building type (WorkerAI.assignWorker)' },
+      { name: 'Pioneer',   hp: 40,  atk: 1,  speed: 1.0, sight: 5,  desc: 'Border expander',
+        idle: 'Standing with shovel',
+        walking: 'Walk cycle at speed 1.0 — to border edge',
+        working: 'Shovel strike loop, expands territory (UnitState.Working)' },
     ];
-    this.updateList(unitDefs.map(u => ({
-      id: `unit-${u.name}`,
-      type: 'unit',
-      name: u.name,
-      properties: {
-        description: u.desc,
-        stats: { hp: u.hp, attack: u.atk, speed: u.speed, sightRange: u.sight },
-        mesh: 'glTF/OBJ — loaded via BuildingMesh.ts (reuses building loader pattern)',
-        texture: 'StandardMaterial — diffuse color per unit type',
-        animations: {
-          idle: u.idle,
-          walking: u.walking,
-          working: u.working,
-        },
-        count: this.gameLoop.unitManager.getAliveUnits().filter(x => x.kind.toString() === u.name).length,
-      }
-    })));
+
+    const objects: ExplorerObject[] = unitDefs.map(u => {
+      const instances = aliveUnits.filter(x => x.kind.toString() === u.name);
+      const aliveCount = instances.length;
+      return {
+        id: `unit-${u.name}`,
+        type: 'unit',
+        name: `${u.name} (${aliveCount} alive)`,
+        properties: {
+          description: u.desc,
+          '🔴 Alive count': aliveCount,
+          '🔴 Instances': instances.length > 0
+            ? instances.map((unit: any) =>
+                `#${unit.id ?? '?'} @(${unit.x},${unit.y}) HP:${unit.hp}/${u.hp} State:${unit.state ?? '?'}`
+              ).join('\n')
+            : 'none placed',
+          stats_hp: u.hp,
+          stats_attack: u.atk,
+          stats_speed: u.speed,
+          stats_sight: u.sight,
+          mesh: 'Humanoid OBJ — head+torso+arms+legs, UV-unwrapped (generate_building_objs.py)',
+          texture: `assets/textures/unit_${u.name.toLowerCase()}.png — PROMPTS.md §Unit Textures`,
+          animation_idle: u.idle,
+          animation_walking: u.walking,
+          animation_working: u.working,
+        }
+      };
+    });
+
+    this.updateList(objects);
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  //  DECORATIONS — particles, water, effects
+  //  DECORATIONS
   // ═══════════════════════════════════════════════════════════════════
 
   private showDecorations(): void {
     this.updateList([
       { id: 'deco-water',  type: 'decoration', name: 'Water Plane',
-        p: { mesh: 'CreateGround — 100×100 flat plane, 4 vertices, y=-0.5 (WaterPlane.ts)',
-             texture: 'StandardMaterial — diffuse (0.1,0.3,0.6), mirror reflection texture 512px, water normal map (assets/textures/water_normal.png)',
-             animation: 'Normal map UV scroll — uOffset/vOffset += dt × 0.01, loop (WaterPlane.update)',
-             generation: 'Procedural (WaterPlane.ts), normal map from PROMPTS.md if generated' }},
+        p: { mesh: 'CreateGround — 100×100 flat plane, y=-0.5 (WaterPlane.ts)',
+             texture: 'StandardMaterial + water normal map (assets/textures/water_normal.png)',
+             animation: 'Normal map UV scroll — dt×0.01 loop',
+             generation: 'Procedural (WaterPlane.ts)' }},
       { id: 'deco-debug',  type: 'decoration', name: 'Debug Marker',
-        p: { mesh: 'CreateSphere — diameter 1, positioned at map center (TerrainRenderer.ts)',
-             texture: 'StandardMaterial — emissive red (1,0,0)',
+        p: { mesh: 'CreateSphere — diameter 1, map center (TerrainRenderer.ts)',
+             texture: 'StandardMaterial emissive red (1,0,0)',
              animation: 'none' }},
-      { id: 'deco-smoke',  type: 'particle',   name: 'Smoke',
+      ...['Smoke','Fire','Explosion','Spark','Dust','Rain','Snow',
+          'Water Splash','Construction','Spawn','Death','Flash',
+          'Impact','Fog','Magic'].map(name => ({
+        id: `deco-${name.toLowerCase()}`,
+        type: 'particle',
+        name,
         p: { mesh: 'GPU particle — billboarded quad (ParticleSystem.ts)',
-             texture: 'assets/textures/particle_smoke.png',
-             animation: 'Size/alpha fade over lifetime 0.3–2s, velocity spread' }},
-      { id: 'deco-fire',   type: 'particle',   name: 'Fire',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_fire.png',
-             animation: 'Orange flicker, size/alpha fade' }},
-      { id: 'deco-explosion',type: 'particle', name: 'Explosion',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_explosion.png',
-             animation: 'Rapid burst, expanding radius' }},
-      { id: 'deco-spark',  type: 'particle',   name: 'Spark',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_spark.png',
-             animation: 'Fast streak, short lifetime' }},
-      { id: 'deco-dust',   type: 'particle',   name: 'Dust',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_dust.png',
-             animation: 'Slow drift, brown tint' }},
-      { id: 'deco-rain',   type: 'particle',   name: 'Rain',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_rain.png',
-             animation: 'Vertical drop, thin streak' }},
-      { id: 'deco-snow',   type: 'particle',   name: 'Snow',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_snow.png',
-             animation: 'Slow fall, drift' }},
-      { id: 'deco-waterfx',type: 'particle',   name: 'Water Splash',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_water.png',
-             animation: 'Blue droplets, arc trajectory' }},
-      { id: 'deco-construct',type: 'particle', name: 'Construction',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_construction.png',
-             animation: 'Wood chips, dust burst' }},
-      { id: 'deco-spawn',  type: 'particle',   name: 'Spawn',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_spawn.png',
-             animation: 'White glow flash' }},
-      { id: 'deco-death',  type: 'particle',   name: 'Death',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_death.png',
-             animation: 'Red burst, expanding ring' }},
-      { id: 'deco-flash',  type: 'particle',   name: 'Flash',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_flash.png',
-             animation: 'Single-burst lens flare' }},
-      { id: 'deco-impact', type: 'particle',   name: 'Impact',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_impact.png',
-             animation: 'Sparks on collision point' }},
-      { id: 'deco-fog',    type: 'particle',   name: 'Fog',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_fog.png',
-             animation: 'Grey mist, slow drift' }},
-      { id: 'deco-magic',  type: 'particle',   name: 'Magic',
-        p: { mesh: 'GPU particle — billboarded quad',
-             texture: 'assets/textures/particle_magic.png',
-             animation: 'Purple sparkle, rotating' }},
+             texture: `assets/textures/particle_${name.toLowerCase().replace(' ','_')}.png`,
+             animation: 'Size/alpha fade over lifetime, velocity spread',
+             prompt: `PROMPTS.md §${name}` }
+      })),
     ].map(d => ({ id: d.id, type: d.type, name: d.name, properties: d.p })));
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  //  MISC — UI assets, CSS animations, audio
+  //  MISC
   // ═══════════════════════════════════════════════════════════════════
 
   private showMisc(): void {
     this.updateList([
-      { id: 'misc-splash',  type: 'ui-asset',   name: 'Splash Screen',
-        p: { file: 'assets/images/splash.png', dimensions: '4K (responsive, 9:16 safe zone)',
-             prompt: 'PROMPTS.md §Splash Screen',
-             desc: 'Game splash screen — painterly medieval village at golden hour, center-safe for portrait cropping' }},
-      { id: 'misc-menu-bg', type: 'ui-asset',   name: 'Menu Background',
-        p: { file: 'assets/images/menu-bg.png', dimensions: '4K (responsive, center dark band)',
-             prompt: 'PROMPTS.md §Main Menu Background',
-             desc: 'Twilight village silhouette, centered dark area for menu text overlay' }},
-      { id: 'misc-logo',    type: 'ui-asset',   name: 'Game Logo',
-        p: { file: 'assets/images/logo-1024.png', dimensions: '1024×1024',
-             prompt: 'PROMPTS.md §Logo',
-             desc: 'S4WN logo — rustic medieval typography, wood/stone texture, bronze/gold trim' }},
-      { id: 'misc-favicon', type: 'ui-asset',   name: 'Favicon',
-        p: { file: 'assets/images/favicon-256.png', dimensions: '256×256',
-             prompt: 'PROMPTS.md §Favicon',
-             desc: 'Castle tower silhouette in gold on dark green circle' }},
-      { id: 'misc-audio',   type: 'audio',      name: 'Sound Effects',
-        p: { source: 'SoundManager.ts — Web Audio API oscillator tones',
-             sounds: 'select, place, error, tick, win, lose — 6 procedural tones with gain envelopes',
-             desc: 'No asset files; generated at runtime via createOscillator + createGain' }},
-      { id: 'misc-splash-anim',type: 'animation',name: 'Splash → Menu Fade',
-        p: { type: 'CSS Transition', duration: '3s', target: '.ui-screen',
-             desc: 'Splash screen fades out after 3s, main menu fades in (UIManager.ts, setTimeout)' }},
-      { id: 'misc-menu-hover',type: 'animation',name: 'Menu Button Hover',
-        p: { type: 'CSS Transition', duration: '0.2s', target: '.menu-button',
-             desc: 'Scale + color shift on hover — background: #f4e4bc, border: #5d4037 (index.html styles)' }},
-      { id: 'misc-toast',   type: 'animation',  name: 'Toast Notification',
-        p: { type: 'CSS Animation', duration: '2.5s', target: '.toast (HUD.ts)',
-             desc: 'Slide-in from top, hold, fade-out — used for save-game confirmation' }},
-      { id: 'misc-camera',  type: 'animation',  name: 'Camera Orbit (Touch)',
-        p: { type: 'Babylon.js Input', duration: 'realtime', target: 'ArcRotateCamera',
-             desc: 'Pinch-to-zoom + two-finger pan via TouchCameraController.ts' }},
+      { id: 'misc-splash',  type: 'ui',   name: 'Splash Screen',
+        p: { file: 'assets/images/splash.png', format: '4K responsive (9:16 safe zone)', prompt: 'PROMPTS.md §Splash Screen' }},
+      { id: 'misc-menu-bg', type: 'ui',   name: 'Menu Background',
+        p: { file: 'assets/images/menu-bg.png', format: '4K responsive (center band)', prompt: 'PROMPTS.md §Menu Background' }},
+      { id: 'misc-logo',    type: 'ui',   name: 'Game Logo',
+        p: { file: 'assets/images/logo-1024.png', format: '1024×1024', prompt: 'PROMPTS.md §Logo' }},
+      { id: 'misc-favicon', type: 'ui',   name: 'Favicon',
+        p: { file: 'assets/images/favicon-256.png', format: '256×256', prompt: 'PROMPTS.md §Favicon' }},
+      { id: 'misc-audio',   type: 'audio', name: 'Sound Effects',
+        p: { source: 'Web Audio API oscillator tones (SoundManager.ts)',
+             sounds: 'select, place, error, tick, win, lose — 6 procedural tones' }},
+      { id: 'misc-anim-splash', type: 'animation', name: 'Splash → Menu Fade',
+        p: { type: 'CSS Transition', duration: '3s', target: '.ui-screen', source: 'UIManager.ts' }},
+      { id: 'misc-anim-hover', type: 'animation', name: 'Menu Button Hover',
+        p: { type: 'CSS Transition', duration: '0.2s', target: '.menu-button' }},
+      { id: 'misc-anim-toast', type: 'animation', name: 'Toast Notification',
+        p: { type: 'CSS Animation', duration: '2.5s', target: '.toast (HUD.ts)' }},
+      { id: 'misc-anim-camera', type: 'animation', name: 'Camera Orbit',
+        p: { type: 'Babylon.js Input', target: 'ArcRotateCamera', source: 'TouchCameraController.ts' }},
     ].map(d => ({ id: d.id, type: d.type, name: d.name, properties: d.p })));
   }
 
-  // ── List / Details rendering ───────────────────────────────────────
+  // ── List / Details rendering (with GitHub link) ───────────────────
 
   private updateList(objects: ExplorerObject[]): void {
     this.listElement.innerHTML = '';
@@ -399,19 +399,34 @@ export class ObjectExplorer {
   }
 
   private showDetails(obj: ExplorerObject): void {
+    const issueLink = gitHubIssueLink(obj.type, obj.name);
+
+    // Separate static properties from runtime (🔴 prefixed)
+    const staticProps: Record<string, any> = {};
+    const runtimeProps: Record<string, any> = {};
+    for (const [key, val] of Object.entries(obj.properties)) {
+      if (key.startsWith('🔴')) {
+        runtimeProps[key.replace('🔴 ', '')] = val;
+      } else {
+        staticProps[key] = val;
+      }
+    }
+
+    const staticRows = Object.entries(staticProps)
+      .map(([k, v]) => renderPropRow(k, v)).join('');
+
+    const runtimeRows = Object.entries(runtimeProps)
+      .map(([k, v]) => renderPropRow(k, v)).join('');
+
     this.detailsElement.innerHTML = `
-      <div class="explorer-detail-item"><strong>ID:</strong> ${obj.id}</div>
-      <div class="explorer-detail-item"><strong>Type:</strong> ${obj.type}</div>
       <div class="explorer-detail-item"><strong>Name:</strong> ${obj.name}</div>
-      <hr class="explorer-divider" />
-      <div class="explorer-properties">
-        ${Object.entries(obj.properties).map(([key, val]) => `
-          <div class="explorer-prop-row">
-            <span class="prop-key">${key}:</span>
-            <span class="prop-val">${JSON.stringify(val)}</span>
-          </div>
-        `).join('')}
-      </div>
+      <div class="explorer-detail-item"><strong>Type:</strong> ${obj.type}</div>
+      <div class="explorer-detail-item"><strong>ID:</strong> ${obj.id}</div>
+
+      <a href="${issueLink}" target="_blank" class="explorer-issue-btn">🐛 Report Issue on GitHub</a>
+
+      ${runtimeRows ? renderSection('🔴 Runtime State', runtimeRows) : ''}
+      ${staticRows ? renderSection('📋 Asset Info', staticRows) : ''}
     `;
   }
 }
