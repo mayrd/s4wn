@@ -525,7 +525,15 @@
   .explorer-details-section {
     flex: 1 1 100%;
     width: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     transition: transform 0.25s ease;
+  }
+
+  .explorer-mobile-details .explorer-details-section {
+    display: flex;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Show/hide list & details as pages */
@@ -538,9 +546,6 @@
 
   .explorer-mobile-details .explorer-list-section {
     display: none;
-  }
-  .explorer-mobile-details .explorer-details-section {
-    display: flex;
   }
 
   /* Back button — sits between header and content */
@@ -561,8 +566,7 @@
 
   /* Details fill available height */
   .explorer-details {
-    height: auto;
-    overflow-y: auto;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
   }
 
