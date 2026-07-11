@@ -75,8 +75,9 @@ export class GameApp {
 
   private initRendering(): void {
     this.terrainRenderer = new TerrainRenderer(this.scene, this.map);
-    this.map.setAllVisible();  // Must be BEFORE createTerrain — visibility texture reads map data
-    this.terrainRenderer.createTerrain();
+    this.map.setAllVisible();
+    this.terrainRenderer.createGround();              // synchronous — green plane appears immediately
+    this.terrainRenderer.loadTerrainTextures();       // async — textures load in background, apply when ready
 
     // Water plane disabled — currently obscures the terrain at low camera angles
     // this.waterRenderer = new WaterPlane(this.scene, this.map.width, this.map.height);
