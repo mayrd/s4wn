@@ -384,6 +384,90 @@
   text-decoration: underline !important;
 }
 
+/* ── P13: Search, Asset Chain, Instance Cards, Collapse ──────────── */
+
+.explorer-search-box {
+  padding: 4px 8px;
+  background: rgba(93, 64, 55, 0.3);
+}
+.explorer-search-box input {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid #8d6e63;
+  border-radius: 4px;
+  background: #f4e4bc;
+  color: #3e2723;
+  font-size: 0.85rem;
+  outline: none;
+  box-sizing: border-box;
+}
+.explorer-search-box input:focus {
+  border-color: #ffab40;
+}
+
+.explorer-chain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.8rem;
+}
+.explorer-chain-node {
+  background: rgba(255, 171, 64, 0.08);
+  border: 1px solid rgba(141, 110, 99, 0.4);
+  border-radius: 4px;
+  padding: 4px 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.explorer-chain-node span {
+  display: inline-block;
+  width: 60px;
+  font-weight: bold;
+  color: #ffab40;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+.explorer-chain-arrow {
+  font-size: 0.7rem;
+  color: #8d6e63;
+}
+
+.explorer-instance-card {
+  border: 1px solid rgba(141, 110, 99, 0.3);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin: 4px 0;
+  font-size: 0.78rem;
+  background: rgba(255, 171, 64, 0.05);
+}
+.explorer-instance-header {
+  font-weight: bold;
+  color: #ffab40;
+  font-size: 0.8rem;
+}
+
+.explorer-collapsed .explorer-section-body {
+  display: none;
+}
+.explorer-section-title {
+  cursor: pointer;
+  user-select: none;
+}
+.explorer-section-title:hover {
+  background: #6e3b1e;
+}
+
+.explorer-prompt-text {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #d4a574;
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: block;
+  padding: 4px 0;
+}
+
 /* Utility */
 .hidden {
   display: none !important;
