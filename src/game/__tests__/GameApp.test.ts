@@ -20,8 +20,14 @@ jest.mock('@babylonjs/core', () => ({
     clearColor: { set: jest.fn() },
     activeCamera: null,
   })),
-  ArcRotateCamera: jest.fn(),
-  Vector3: { Zero: () => ({ x: 0, y: 0, z: 0 }) },
+  ArcRotateCamera: jest.fn(() => ({
+    setTarget: jest.fn(),
+    attachControl: jest.fn(),
+  })),
+  Vector3: Object.assign(
+    function(x?:number,y?:number,z?:number) { return { x:x??0, y:y??0, z:z??0 }; },
+    { Zero: () => ({ x:0, y:0, z:0 }) },
+  ),
   Color4: jest.fn(),
   MeshBuilder: {
     CreateGround: jest.fn(() => ({ position: { set: jest.fn() }, material: null, receiveShadows: false, getTotalVertices: jest.fn(() => 4), dispose: jest.fn() })),
