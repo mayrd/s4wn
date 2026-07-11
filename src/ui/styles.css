@@ -165,8 +165,16 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: stretch;
+  align-items: stretch;
   background: var(--parchment-bg);
   border: none;
   box-shadow: 0 0 30px rgba(0,0,0,0.7);
@@ -175,6 +183,7 @@
   font-family: 'Georgia', serif;
   transition: opacity 0.2s ease, transform 0.2s ease;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .explorer-panel.hidden {
@@ -471,6 +480,16 @@
   word-break: break-word;
   display: block;
   padding: 4px 0;
+}
+
+.explorer-tex-preview {
+  display: block;
+  max-width: 160px;
+  max-height: 160px;
+  border: 2px solid #8d6e63;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  image-rendering: auto;
 }
 
 /* Utility */

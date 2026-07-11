@@ -328,15 +328,31 @@ export class ObjectExplorer {
     const parts: string[] = [];
     parts.push(`<a href="${link}" target="_blank" class="explorer-issue-btn">🐛 Report Issue on GitHub</a>`);
 
-    if (chain) parts.push(`<div class="explorer-section">
+    if (chain) {
+      // Build texture preview — extract PNG path from chain.texture
+      let texHtml = esc(chain.texture);
+      const texMatch = (chain.texture as string).match(/[a-zA-Z0-9_/-]+\.png/i);
+      if (texMatch) {
+        const texPath = texMatch[0];
+        texHtml = `<img src="/assets/textures/${texPath.split('/').pop()}" class="explorer-tex-preview" onerror="this.style.display='none'" /> ${esc(chain.texture)}`;
+      }
+      // Also try ../textures/ prefix
+      if (!texMatch) {
+        const altMatch = (chain.texture as string).match(/(?:textures\/)?([a-zA-Z0-9_-]+\.png)/i);
+        if (altMatch) {
+          texHtml = `<img src="/assets/textures/${altMatch[1]}" class="explorer-tex-preview" onerror="this.style.display='none'" /> ${esc(chain.texture)}`;
+        }
+      }
+      parts.push(`<div class="explorer-section">
       <div class="explorer-section-title">🔗 Asset Chain</div>
       <div class="explorer-section-body"><div class="explorer-chain">
         <div class="explorer-chain-node"><span>Mesh</span>${esc(chain.mesh)}</div>
         <div class="explorer-chain-arrow">↓</div>
-        <div class="explorer-chain-node"><span>Texture</span>${esc(chain.texture)}</div>
+        <div class="explorer-chain-node"><span>Texture</span>${texHtml}</div>
         <div class="explorer-chain-arrow">↓</div>
         <div class="explorer-chain-node"><span>Animation</span>${esc(chain.animation)}</div>
       </div></div></div>`);
+    }
 
     if (promptTxt) parts.push(`<div class="explorer-section explorer-section-prompt">
       <div class="explorer-section-title" onclick="this.parentElement.classList.toggle('explorer-collapsed')">📝 Generation Prompt ▾</div>
