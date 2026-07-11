@@ -1,10 +1,10 @@
 /**
  * S4WN Babylon.js/TypeScript - Terrain Renderer
  *
- * Creates a textured ground plane. Uses a Canvas2D composite atlas
- * at safe resolution (16px/tile → 768×768px, well within WebGL limits).
- * Each map tile gets its terrain texture sampled into the atlas.
- * The atlas is applied as a single diffuse texture on the ground plane.
+ * Creates a visible ground plane for the game map.
+ * Uses a guaranteed-visible bright green Box instead of a flat plane
+ * to eliminate any possibility of invisible geometry (zero-thickness
+ * planes can disappear at certain camera angles).
  */
 
 import {
@@ -18,7 +18,7 @@ import {
 } from '@babylonjs/core';
 import { Map as GameMap } from '../game/Map';
 
-const TILE_PX = 16; // pixels per map tile — safe for any GPU
+const TILE_PX = 16;
 
 export class TerrainRenderer {
   private scene: Scene;
@@ -32,30 +32,31 @@ export class TerrainRenderer {
     this.height = map.height;
   }
 
-  /** Create green ground plane instantly, then kick off async texture loading. */
+  /** Create a guaranteed-visible thick green ground box. */
   createGround(): void {
     const cx = this.width / 2;
     const cz = this.height / 2;
-    this.terrainMesh = MeshBuilder.CreateGround('terrain', {
+
+    // Use a very thin Box so it's 3D and visible from any angle
+    this.terrainMesh = MeshBuilder.CreateBox('terrainBox', {
       width: this.width,
-      height: this.height,
-      subdivisions: 1,
-      updatable: false,
+      height: 1,
+      depth: this.height,
     }, this.scene);
-    this.terrainMesh.position = new Vector3(cx, 0, cz);
+    this.terrainMesh.position = new Vector3(cx, -0.5, cz);
 
     const mat = new StandardMaterial('terrainMat', this.scene);
-    mat.diffuseColor = new Color3(0.25, 0.70, 0.25);
-    mat.emissiveColor = new Color3(0.05, 0.15, 0.05);
+    mat.diffuseColor = new Color3(0.20, 0.80, 0.20);  // bright green
+    mat.emissiveColor = new Color3(0.10, 0.35, 0.10);
     mat.specularColor = new Color3(0, 0, 0);
     mat.backFaceCulling = false;
     this.terrainMesh.material = mat;
-    this.terrainMesh.receiveShadows = true;
+    this.terrainMesh.isVisible = true;
 
-    console.log(`🌍 Terrain: green ground plane ${this.width}×${this.height}`);
+    console.log(`🌍 Terrain: green box ${this.width}×1×${this.height} at y=-0.5`);
   }
 
-  /** Async: load terrain textures, build small atlas, replace material. */
+  /** Async: build terrain texture atlas, replace material. */
   async loadTerrainTextures(map: GameMap): Promise<void> {
     if (!this.terrainMesh) return;
 
@@ -74,10 +75,8 @@ export class TerrainRenderer {
         '/assets/textures/terrain_swamp.png',
       ];
 
-      // Load images
       const images = await Promise.all(filenames.map(f => this.loadImage(f)));
 
-      // Draw atlas on offscreen canvas
       const canvas = document.createElement('canvas');
       canvas.width = atlasW;
       canvas.height = atlasH;
@@ -87,31 +86,25 @@ export class TerrainRenderer {
         for (let tx = 0; tx < map.width; tx++) {
           const terrain = map.tiles[ty][tx].terrain as string;
           const idx = this.terrainToIdx(terrain);
-          // drawImage sourced from full 1024×1024 → tiny TILE_PX×TILE_PX
           ctx.drawImage(images[idx],
             0, 0, images[idx].width, images[idx].height,
             tx * TILE_PX, ty * TILE_PX, TILE_PX, TILE_PX);
         }
       }
 
-      // Upload as DynamicTexture
       const dynTex = new DynamicTexture('terrainAtlas', canvas, this.scene, false);
       dynTex.updateSamplingMode(Texture.BILINEAR_SAMPLINGMODE);
       dynTex.wrapU = Texture.CLAMP_ADDRESSMODE;
       dynTex.wrapV = Texture.CLAMP_ADDRESSMODE;
 
-      // Replace material
-      const mat = new StandardMaterial('terrainTexMat', this.scene);
+      const mat = this.terrainMesh.material as StandardMaterial;
       mat.diffuseTexture = dynTex;
+      mat.diffuseColor = Color3.White();
       mat.emissiveColor = Color3.Black();
-      mat.specularColor = new Color3(0, 0, 0);
-      mat.backFaceCulling = false;
-      this.terrainMesh.material = mat;
-      this.terrainMesh.receiveShadows = true;
 
       console.log(`✅ Terrain atlas applied: ${atlasW}×${atlasH}`);
     } catch (err) {
-      console.warn('⚠️ Terrain textures failed — keeping flat green:', err);
+      console.warn('⚠️ Terrain textures failed — keeping bright green:', err);
     }
   }
 

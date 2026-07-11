@@ -9,7 +9,10 @@ import {
   Scene, 
   ArcRotateCamera, 
   Vector3, 
-  Color4 
+  Color4,
+  MeshBuilder,
+  StandardMaterial,
+  Color3,
 } from '@babylonjs/core';
 
 import { Map as GameMap } from './game/Map';
@@ -77,6 +80,16 @@ export class GameApp {
     this.terrainRenderer = new TerrainRenderer(this.scene, this.map);
     this.map.setAllVisible();
     this.terrainRenderer.createGround();
+
+    // Diagnostic: bright red sphere at terrain center — if you see this,
+    // the scene is working and the ground should be below it
+    const diag = MeshBuilder.CreateSphere('diagCenter', { diameter: 3 }, this.scene);
+    diag.position = new Vector3(50, 2, 50);
+    const diagMat = new StandardMaterial('diagMat', this.scene);
+    diagMat.diffuseColor = new Color3(1, 0, 0);
+    diagMat.emissiveColor = new Color3(0.5, 0, 0);
+    diag.material = diagMat;
+
     // Load terrain textures asynchronously — green plane shows immediately,
     // texture atlas replaces it once loaded (16px/tile = 768×768px atlas)
     this.terrainRenderer.loadTerrainTextures(this.map);
