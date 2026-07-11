@@ -92,6 +92,24 @@ function promptExcerpt(key: string): string {
   return '';
 }
 
+/** Resolve a texture string to an actual image URL that Vite serves. Tries multiple path patterns. */
+function resolveTextureUrl(texture: string): string | null {
+  if (!texture) return null;
+  // Extract the filename from the chain texture string
+  const fnameM = texture.match(/([a-zA-Z0-9_-]+\.(png|jpg|webp|gif))/i);
+  if (!fnameM) return null;
+  const fname = fnameM[1];
+  // Try common asset directories
+  const candidates = [
+    `/assets/textures/${fname}`,
+    `/assets/images/${fname}`,
+    `/assets/models/${fname}`,
+  ];
+  // Return the first candidate — the browser will 404 if it's wrong,
+  // and the onerror handler hides broken images
+  return candidates[0]; // textures/ is most common
+}
+
 // ── Terrain catalog ──────────────────────────────────────────────────
 
 interface TerrainDef { terrain: Terrain; splatRgb: string; buildable: boolean; movementCost: number; desc: string; }
@@ -359,19 +377,22 @@ export class ObjectExplorer {
     parts.push(`<a href="${link}" target="_blank" class="explorer-issue-btn">🐛 Report Issue on GitHub</a>`);
 
     if (chain) {
-      // Build texture preview — extract PNG path from chain.texture
-      let texHtml = esc(chain.texture);
-      const texMatch = (chain.texture as string).match(/[a-zA-Z0-9_/-]+\.png/i);
-      if (texMatch) {
-        const texPath = texMatch[0];
-        texHtml = `<img src="/assets/textures/${texPath.split('/').pop()}" class="explorer-tex-preview" onerror="this.style.display='none'" /> ${esc(chain.texture)}`;
+      // ── Texture preview — show raw image for ANY asset type ──
+      const imgUrl = resolveTextureUrl(chain.texture);
+      if (imgUrl) {
+        parts.push(`<div class="explorer-section explorer-section-preview">
+          <div class="explorer-section-title">🖼️ Texture Preview</div>
+          <div class="explorer-section-body" style="text-align:center">
+            <img src="${imgUrl}" class="explorer-tex-preview-full" onerror="this.style.display='none'" loading="lazy" />
+          </div>
+        </div>`);
       }
-      // Also try ../textures/ prefix
-      if (!texMatch) {
-        const altMatch = (chain.texture as string).match(/(?:textures\/)?([a-zA-Z0-9_-]+\.png)/i);
-        if (altMatch) {
-          texHtml = `<img src="/assets/textures/${altMatch[1]}" class="explorer-tex-preview" onerror="this.style.display='none'" /> ${esc(chain.texture)}`;
-        }
+
+      // Build asset chain with inline thumbnails
+      let texHtml = esc(chain.texture);
+      const texMatch = resolveTextureUrl(chain.texture);
+      if (texMatch) {
+        texHtml = `<img src="${texMatch}" class="explorer-tex-preview" onerror="this.style.display='none'" /> ${esc(chain.texture)}`;
       }
       parts.push(`<div class="explorer-section">
       <div class="explorer-section-title">🔗 Asset Chain</div>
