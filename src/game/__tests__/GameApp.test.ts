@@ -57,7 +57,7 @@ jest.mock('../../rendering/TerrainRenderer', () => ({
   TerrainRenderer: jest.fn(() => ({
     createGround: jest.fn(),
     loadTerrainTextures: jest.fn(() => Promise.resolve()),
-    getMesh: jest.fn(() => null),
+    getMesh: jest.fn(() => ({ position: { x: 50, y: 0, z: 50 } })),
   })),
 }));
 
