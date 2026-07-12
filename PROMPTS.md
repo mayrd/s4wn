@@ -22,14 +22,14 @@ castle on a hill, wheat fields, orchards, winding cobblestone paths, a river
 with a watermill, distant snow-capped mountains, warm amber sunlight casting
 long shadows. Foreground shows a wooden signpost reading "S4WN".
 
-CRITICAL LAYOUT: All key subjects (castle, village, signpost, river, watermill)
-must be inside the CENTER VERTICAL STRIP of the image so the composition works
-when cropped to a narrow 9:16 phone screen. The left and right thirds can
-contain scenic filler (trees, distant hills, sky) that can be safely cut off
-without losing the focal point. The signpost with "S4WN" must be centered
-horizontally. Vibrant, immersive, high fantasy but grounded in medieval
-European aesthetics. No modern elements. Cinematic composition, 4K ultra HD
-quality, highly detailed.
+CRITICAL: The entire image must be ONE seamless continuous painting with no
+visible divisions, no borders, no composition lines. Every part should feel
+natural and unified — a single landscape where all elements flow organically
+across the full 16:9 canvas. The castle, village, signpost, and key landmarks
+should cluster naturally around the center so they remain visible when
+center-cropped to a narrow 9:16 phone screen, but there must be NO visual
+seam or transition zone between center and edges. Just one beautiful cohesive
+painting.
 ```
 
 ### Main Menu Background (`assets/images/menu-bg.png`)
