@@ -169,6 +169,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P12 | 2026-07-12 | Fix TypeScript errors in DebugPanel.ts (wrong import path, incorrect unit type property, unused parameters) |
 | P13 | 2026-07-12 | Fix asset paths (404 errors) and AudioContext suspension warning; update UI tests |
 | P14 | 2026-07-12 | Fix Dockerfile redundant asset copy — remove `COPY assets/` line, Vite publicDir already places textures/models at root level |
+| P15 | 2026-07-12 | Redo loading architecture: lazy GameApp via dynamic import (heavy Babylon chunk code-split), light splash capability checks; replace menu title with transparent logo, generate procedural UI textures (ui_panel/header/button/corner/divider/resources) + restyle menu & Object Explorer |
  
 ### Next Session Priorities
 1. **Build and Deploy** — Build Docker image and deploy to verify production asset paths work correctly on s4wn.mayrd.org.

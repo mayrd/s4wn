@@ -101,7 +101,7 @@ export class UIManager {
     this.mainMenu.className = 'ui-screen main-menu-screen';
     this.mainMenu.innerHTML = `
       <div class="main-menu-container">
-        <div class="menu-title">S4WN</div>
+        <img class="menu-logo" src="/images/logo-1024.png" alt="S4WN" />
         <button class="menu-button" id="btn-tutorial">Start Tutorial</button>
         <button class="menu-button" id="btn-new-game">Start New Game</button>
         <button class="menu-button" id="btn-load-game">Load Game</button>
