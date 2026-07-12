@@ -170,11 +170,12 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P13 | 2026-07-12 | Fix asset paths (404 errors) and AudioContext suspension warning; update UI tests |
 | P14 | 2026-07-12 | Fix Dockerfile redundant asset copy — remove `COPY assets/` line, Vite publicDir already places textures/models at root level |
 | P15 | 2026-07-12 | Redo loading architecture: lazy GameApp via dynamic import (heavy Babylon chunk code-split), light splash capability checks; replace menu title with transparent logo, generate procedural UI textures (ui_panel/header/button/corner/divider/resources) + restyle menu & Object Explorer |
+| P15 | 2026-07-12 | Set up visual regression test infrastructure — Playwright snapshot config, 9 tests (main menu, explorer, HUD, splash), __snapshots__ dir |
  
 ### Next Session Priorities
-1. **Build and Deploy** — Build Docker image and deploy to verify production asset paths work correctly on s4wn.mayrd.org.
-2. **Object Explorer Runtime State** — Wire GameLoop game state into the ObjectExplorer so it shows live HP, position, AI state, and economy progress for placed buildings/units.
-3. **Performance Monitoring** — Verify view culling and asset loading performance in production build.
-4. **Visual Regression Tests** — Complete remaining Phase 6 items (visual regression tests, CI/CD pipeline).
+1. **Capture Baseline Snapshots** — Run `npm run test:ui` locally (with headed browser) to generate baseline screenshots for the 9 visual regression tests. Without baselines, these tests will fail.
+2. **Build and Deploy** — Build Docker image and deploy to verify production asset paths work correctly on s4wn.mayrd.org.
+3. **Object Explorer Runtime State** — Wire GameLoop game state into the ObjectExplorer so it shows live HP, position, AI state, and economy progress for placed buildings/units.
+4. **CI/CD Pipeline** — Add GitHub Actions workflow for jest tests and Playwright tests (with baseline snapshot uploads).
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
