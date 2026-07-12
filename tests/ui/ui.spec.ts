@@ -12,7 +12,7 @@ test.describe('Initial UI Flow', () => {
 
     // 2. Check for splash logo and loading text
     await expect(page.locator('.splash-logo')).toContainText('S4WN');
-    await expect(page.locator('.splash-loading')).toContainText('Loading the world...');
+    await expect(page.locator('.splash-loading')).toContainText('Checking your system...');
 
     // 3. Verify splash screen has background image (not just color)
     const backgroundImage = await splashScreen.evaluate((el) => {

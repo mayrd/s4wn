@@ -18,6 +18,14 @@ jest.mock('../../../game/GameLoop', () => ({
 jest.mock('../../../game/particles/ParticleSystem', () => ({ ParticleSystem: jest.fn(()=>({update:jest.fn(),dispose:jest.fn()})) }));
 jest.mock('../../../input/TouchCameraController', () => ({ TouchCameraController: jest.fn(()=>({dispose:jest.fn()})) }));
 jest.mock('../../../audio/SoundManager', () => ({ soundManager: { generateDefaults: jest.fn(), dispose: jest.fn() } }));
+jest.mock('../../../core/CapabilityChecker', () => ({
+  checkCapabilities: () => ({
+    ok: true,
+    errors: [],
+    warnings: [],
+    info: { webgl2: true, webgpu: false, webAudio: true, mobile: false, userAgent: 'node' },
+  }),
+}));
 jest.mock('../../explorer/ObjectExplorer', () => ({ ObjectExplorer: jest.fn() }));
 
 import { UIManager } from '../../UIManager';

@@ -149,7 +149,7 @@ export class ObjectExplorer {
   private objects: ExplorerObject[] = [];
   private isMobile = false;
 
-  constructor(_ui: UIManager, gl: GameLoop) {
+  constructor(_ui: UIManager | null, gl: GameLoop) {
     this.gameLoop = gl;
     this.isMobile = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 768px)').matches === true;
     this.container = document.createElement('div');

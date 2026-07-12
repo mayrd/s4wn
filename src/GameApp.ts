@@ -1,27 +1,34 @@
 /**
  * S4WN Babylon.js/TypeScript - Game Application
- * 
+ *
  * Encapsulates the initialization and lifecycle of the Babylon.js application.
+ *
+ * IMPORTANT: This is the "heavy" loader. It is only instantiated once the user
+ * actually starts or loads a game (i.e. when the canvas/engine is needed).
+ * The splash screen + main menu are handled by the lightweight UIManager so
+ * that the initial page load does not pull in the engine, map, textures, etc.
  */
 
-import { 
-  Engine, 
-  Scene, 
-  ArcRotateCamera, 
-  Vector3, 
-  Color4 
+import {
+  Engine,
+  Scene,
+  ArcRotateCamera,
+  Vector3,
+  Color4
 } from '@babylonjs/core';
 
 import { Map as GameMap } from './game/Map';
 import { GameLoop } from './game/GameLoop';
 import { TerrainRenderer } from './rendering/TerrainRenderer';
 import { BuildingMesh } from './rendering/BuildingMesh';
-import { UIManager } from './ui/UIManager';
+import { UIManager, StartMode } from './ui/UIManager';
 import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
 import { ParticleSystem } from './game/particles/ParticleSystem';
 import { GridRenderer } from './rendering/GridRenderer';
 import { HUD } from './ui/HUD';
 import { DebugPanel } from './ui/panels/DebugPanel';
+import { ObjectExplorer } from './ui/explorer/ObjectExplorer';
+import { MapEditor } from './ui/editor/MapEditor';
 import { soundManager } from './audio/SoundManager';
 import { TouchCameraController } from './input/TouchCameraController';
 import { BuildingType } from './economy/types';
@@ -38,8 +45,17 @@ export class GameApp {
   public particleSystem!: ParticleSystem;
   public touchController!: TouchCameraController;
   public gridRenderer!: GridRenderer;
+  public ui!: UIManager;
+  public objectExplorer!: ObjectExplorer;
+  public mapEditor!: MapEditor;
 
-  constructor(canvasId: string) {
+  private mode: StartMode;
+  private onExplorerToggle!: () => void;
+  private onEditorToggle!: () => void;
+
+  constructor(canvasId: string, mode: StartMode = 'new') {
+    this.mode = mode;
+
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
     if (!canvas) {
       throw new Error(`Canvas element with id ${canvasId} not found`);
@@ -49,6 +65,7 @@ export class GameApp {
     this.initSystems();
     this.initRendering();
     this.initCamera();
+    this.initUI();
     this.initLoop();
   }
 
@@ -64,7 +81,22 @@ export class GameApp {
     const MAP_HEIGHT = 100;
     this.map = new GameMap(MAP_WIDTH, MAP_HEIGHT);
     this.gameLoop = new GameLoop(this.map);
-    new UIManager(this.gameLoop);
+
+    // If a saved game was requested, restore it BEFORE building the renderer
+    // (the terrain mesh is generated from the restored map).
+    if (this.mode === 'load') {
+      if (!this.gameLoop.load()) {
+        console.warn('No save found for load mode — starting a new game instead.');
+        this.mode = 'new';
+      }
+    }
+
+    // Lightweight UI manager (no engine dependency) used for save handling.
+    this.ui = new UIManager(this.gameLoop);
+
+    // Debug tool — created now that a GameLoop exists.
+    this.objectExplorer = new ObjectExplorer(null, this.gameLoop);
+    this.ui.setObjectExplorer(this.objectExplorer);
 
     // Initialize sound system on first user gesture (required by browser policies)
     const initAudioOnGesture = () => {
@@ -75,15 +107,11 @@ export class GameApp {
     document.addEventListener('click', initAudioOnGesture);
     document.addEventListener('keydown', initAudioOnGesture);
 
-    window.addEventListener('game-start', () => {
-        this.gameLoop.state.isPaused = false;
-        new HUD(this.gameLoop);
-        const debugPanel = new DebugPanel(document, this.engine, this.gameLoop, this.scene);
-        // Wire grid renderer to debug panel for toggling
-        debugPanel.setGridRenderer(this.gridRenderer);
-        // Expose debug panel for console access
-        (window as any).debugPanel = debugPanel;
-    });
+    // Forward menu-driven toggles to the in-game tools.
+    this.onExplorerToggle = () => this.objectExplorer.toggle();
+    this.onEditorToggle = () => this.mapEditor?.toggle();
+    window.addEventListener('ui-explorer-toggle', this.onExplorerToggle);
+    window.addEventListener('ui-editor-toggle', this.onEditorToggle);
   }
 
   private initRendering(): void {
@@ -91,7 +119,9 @@ export class GameApp {
     this.terrainRenderer = new TerrainRenderer(this.scene, this.map);
     this.terrainRenderer.createGround(this.map.width, this.map.height);
     const tm = this.terrainRenderer.getMesh();
-    console.log(`🎨 Terrain mesh created: exists=${!!tm}, position=(${tm?.position?.x ?? 0}, ${tm?.position?.y ?? 0}, ${tm?.position?.z ?? 0})`);
+    console.log(
+      `🎨 Terrain mesh created: exists=${!!tm}, position=(${tm?.position?.x ?? 0}, ${tm?.position?.y ?? 0}, ${tm?.position?.z ?? 0})`
+    );
     // Load textures and log success/failure
     this.terrainRenderer.loadTerrainTextures(this.map).then(() => {
       console.log('✅ Terrain textures loaded successfully');
@@ -117,22 +147,26 @@ export class GameApp {
 
     this.buildingRenderer = new BuildingMesh(this.scene);
     const buildingData: Array<{ kind: string; x: number; y: number }> = [
-        { kind: 'castle', x: 50, y: 50 },
+      { kind: 'castle', x: 50, y: 50 },
     ];
 
     (async () => {
-        for (const b of buildingData) {
-            const kind: BuildingType = b.kind === 'castle' ? BuildingType.Castle : (BuildingType as any)[b.kind];
-            const buildingMesh = await this.buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2);
-            if (buildingMesh) {
-                this.gameLoop.economy.tryPlaceBuilding(kind, b.x, b.y, this.map, 0);
-                this.shadowPipeline.addShadowCaster(buildingMesh);
-            }
+      for (const b of buildingData) {
+        const kind: BuildingType =
+          b.kind === 'castle' ? BuildingType.Castle : (BuildingType as any)[b.kind];
+        const buildingMesh = await this.buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2);
+        if (buildingMesh) {
+          this.gameLoop.economy.tryPlaceBuilding(kind, b.x, b.y, this.map, 0);
+          this.shadowPipeline.addShadowCaster(buildingMesh);
         }
-        console.log('🏰 Building loaded');
+      }
+      console.log('🏰 Building loaded');
     })();
 
     this.particleSystem = new ParticleSystem(this.scene);
+
+    // Map editor needs the scene + terrain renderer.
+    this.mapEditor = new MapEditor(this.ui, this.gameLoop, this.scene, this.terrainRenderer);
   }
 
   private initCamera(): void {
@@ -151,16 +185,30 @@ export class GameApp {
     });
   }
 
+  /** Wire HUD + debug panel now that the game (and canvas) exist. */
+  private initUI(): void {
+    this.gameLoop.state.isPaused = false;
+    new HUD(this.gameLoop);
+    const debugPanel = new DebugPanel(document, this.engine, this.gameLoop, this.scene);
+    // Wire grid renderer to debug panel for toggling
+    debugPanel.setGridRenderer(this.gridRenderer);
+    // Expose debug panel for console access
+    (window as any).debugPanel = debugPanel;
+  }
+
   private initLoop(): void {
     this.engine.runRenderLoop(() => {
-        const dt = this.engine.getDeltaTime() / 1000;
-        this.gameLoop.update(dt);
-        this.particleSystem.update(dt);
-        this.scene.render();
+      const dt = this.engine.getDeltaTime() / 1000;
+      this.gameLoop.update(dt);
+      this.particleSystem.update(dt);
+      this.scene.render();
     });
   }
 
   public dispose(): void {
+    window.removeEventListener('ui-explorer-toggle', this.onExplorerToggle);
+    window.removeEventListener('ui-editor-toggle', this.onEditorToggle);
+    this.mapEditor?.hide();
     this.touchController.dispose();
     this.waterRenderer.dispose();
     this.shadowPipeline.dispose();

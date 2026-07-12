@@ -70,7 +70,30 @@ jest.mock('../../rendering/BuildingMesh', () => ({
 }));
 
 jest.mock('../../ui/UIManager', () => ({
-  UIManager: jest.fn(),
+  UIManager: jest.fn(() => ({
+    setObjectExplorer: jest.fn(),
+  })),
+}));
+
+jest.mock('../../ui/explorer/ObjectExplorer', () => ({
+  ObjectExplorer: jest.fn(() => ({
+    toggle: jest.fn(),
+  })),
+}));
+
+jest.mock('../../ui/editor/MapEditor', () => ({
+  MapEditor: jest.fn(() => ({
+    toggle: jest.fn(),
+    hide: jest.fn(),
+  })),
+}));
+
+jest.mock('../../core/SaveManager', () => ({
+  SaveManager: {
+    hasSave: jest.fn(() => false),
+    save: jest.fn(() => true),
+    load: jest.fn(() => null),
+  },
 }));
 
 jest.mock('../../rendering/GridRenderer', () => ({
@@ -101,7 +124,7 @@ jest.mock('../../ui/HUD', () => ({
 }));
 
 jest.mock('../../ui/panels/DebugPanel', () => ({
-  DebugPanel: jest.fn(),
+  DebugPanel: jest.fn(() => ({ setGridRenderer: jest.fn() })),
 }));
 
 jest.mock('../../input/TouchCameraController', () => ({
