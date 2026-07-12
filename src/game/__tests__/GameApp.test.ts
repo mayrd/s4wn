@@ -31,6 +31,7 @@ jest.mock('@babylonjs/core', () => ({
   Color4: jest.fn(),
   MeshBuilder: {
     CreateGround: jest.fn(() => ({ position: { set: jest.fn() }, material: null, receiveShadows: false, getTotalVertices: jest.fn(() => 4), dispose: jest.fn() })),
+    CreateLines: jest.fn(() => ({ name: 'grid', isVisible: true, dispose: jest.fn() })),
   },
   StandardMaterial: jest.fn(() => ({ dispose: jest.fn() })),
   Color3: { Black: jest.fn(() => ({})), White: jest.fn(() => ({})), FromHexString: jest.fn(() => ({})), Random: jest.fn(() => ({})) },
@@ -38,6 +39,7 @@ jest.mock('@babylonjs/core', () => ({
   Mesh: {
     CAPACITY: 0,
   },
+  LinesMesh: jest.fn(() => ({ name: 'grid', isVisible: true, dispose: jest.fn() })),
 }));
 
 jest.mock('@babylonjs/loaders', () => ({
@@ -69,6 +71,14 @@ jest.mock('../../rendering/BuildingMesh', () => ({
 
 jest.mock('../../ui/UIManager', () => ({
   UIManager: jest.fn(),
+}));
+
+jest.mock('../../rendering/GridRenderer', () => ({
+  GridRenderer: jest.fn(() => ({
+    createGrid: jest.fn(),
+    setVisible: jest.fn(),
+    dispose: jest.fn(),
+  })),
 }));
 
 jest.mock('../../rendering/pipelines/ShadowPipeline', () => ({

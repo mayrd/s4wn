@@ -19,6 +19,7 @@ import { BuildingMesh } from './rendering/BuildingMesh';
 import { UIManager } from './ui/UIManager';
 import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
 import { ParticleSystem } from './game/particles/ParticleSystem';
+import { GridRenderer } from './rendering/GridRenderer';
 import { HUD } from './ui/HUD';
 import { DebugPanel } from './ui/panels/DebugPanel';
 import { soundManager } from './audio/SoundManager';
@@ -36,6 +37,7 @@ export class GameApp {
   public shadowPipeline!: ShadowPipeline;
   public particleSystem!: ParticleSystem;
   public touchController!: TouchCameraController;
+  public gridRenderer!: GridRenderer;
 
   constructor(canvasId: string) {
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -77,6 +79,8 @@ export class GameApp {
         this.gameLoop.state.isPaused = false;
         new HUD(this.gameLoop);
         const debugPanel = new DebugPanel(document, this.engine, this.gameLoop, this.scene);
+        // Wire grid renderer to debug panel for toggling
+        debugPanel.setGridRenderer(this.gridRenderer);
         // Expose debug panel for console access
         (window as any).debugPanel = debugPanel;
     });
@@ -94,6 +98,10 @@ export class GameApp {
     }).catch((e) => {
       console.error('❌ Terrain texture loading failed:', e);
     });
+
+    // Create grid overlay
+    this.gridRenderer = new GridRenderer(this.scene, this.map.width, this.map.height);
+    this.gridRenderer.createGrid();
 
     this.map.setAllVisible();
 
@@ -157,6 +165,9 @@ export class GameApp {
     this.waterRenderer.dispose();
     this.shadowPipeline.dispose();
     this.particleSystem.dispose();
+    if (this.gridRenderer) {
+      this.gridRenderer.dispose();
+    }
     this.engine.dispose();
     soundManager.dispose();
   }

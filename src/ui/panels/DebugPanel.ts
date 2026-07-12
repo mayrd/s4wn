@@ -4,16 +4,18 @@
  * Real-time game statistics and debug controls.
  */
 
-import { Engine, Scene, Color3 } from '@babylonjs/core';
+import { Engine, Scene, Color3, ArcRotateCamera } from '@babylonjs/core';
 import { GameLoop } from '../../game/GameLoop';
+import { GridRenderer } from '../../rendering/GridRenderer';
 import { BuildingType } from '../../economy/types';
 import { UnitKind } from '../../game/types';
 
 export class DebugPanel {
   private container: HTMLElement;
-  private inspectResult!: HTMLElement;
+  private camera: ArcRotateCamera | null = null;
   private gameLoop: GameLoop;
   private scene: Scene;
+  private gridRenderer: GridRenderer | null = null;
   private pauseBtn: HTMLButtonElement | null = null;
   /** Store original textures to restore when toggling back on */
   private originalTextures: WeakMap<any, any> = new WeakMap();
@@ -26,11 +28,10 @@ export class DebugPanel {
     this.container.className = 'debug-panel';
     document.body.appendChild(this.container);
 
-    this.createContent(gameLoop);
-    this.startUpdateLoop(engine, gameLoop);
+    this.createContent(gameLoop, engine);
   }
 
-  private createContent(_gameLoop: GameLoop): void {
+  private createContent(_gameLoop: GameLoop, engine: Engine): void {
     this.container.innerHTML = `
       <div class="debug-title">Debug Console</div>
       
@@ -67,30 +68,14 @@ export class DebugPanel {
       
       <hr class="debug-divider" />
       
-      <div class="debug-title" style="font-size:0.85rem;margin-top:4px">Tile Inspector</div>
-      <div style="display:flex;gap:4px;margin:4px 0">
-        <input type="text" id="debug-tile-x" placeholder="x" style="width:40px;padding:2px;font-size:0.7rem" />
-        <input type="text" id="debug-tile-y" placeholder="y" style="width:40px;padding:2px;font-size:0.7rem" />
-        <button id="debug-tile-go" style="padding:2px 6px;font-size:0.7rem;cursor:pointer">Inspect</button>
-      </div>
+      <div class="debug-title" style="font-size:0.85rem;margin-top:4px">Mouse Tile</div>
+      <div class="debug-stat-row" style="font-size:0.75rem"><span>Coords:</span> <span id="debug-mouse-coords" style="color:#ff8">(-,-)</span></div>
       <div id="debug-tile-result" style="font-size:0.7rem;line-height:1.4;max-height:120px;overflow-y:auto;margin-top:4px"></div>
     `;
 
-    const xInput = this.container.querySelector('#debug-tile-x') as HTMLInputElement;
-    const yInput = this.container.querySelector('#debug-tile-y') as HTMLInputElement;
-    const goBtn  = this.container.querySelector('#debug-tile-go') as HTMLButtonElement;
-    this.inspectResult = this.container.querySelector('#debug-tile-result') as HTMLElement;
-
-    const inspect = () => {
-      const x = parseInt(xInput.value.trim(), 10);
-      const y = parseInt(yInput.value.trim(), 10);
-      this.inspectTile(x, y);
-    };
-    goBtn.addEventListener('click', inspect);
-    xInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') inspect(); });
-    yInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') inspect(); });
-
     this.setupToggles();
+    this.setupMouseTracking(engine);
+    this.startUpdateLoop(engine, _gameLoop);
   }
 
   private setupToggles(): void {
@@ -154,11 +139,82 @@ export class DebugPanel {
   }
 
   private setGridVisibility(visible: boolean): void {
-    this.scene.meshes.forEach((mesh) => {
-      if (mesh.name === 'grid') {
-        mesh.isVisible = visible;
-      }
+    if (this.gridRenderer) {
+      this.gridRenderer.setVisible(visible);
+    } else {
+      // Fallback: search scene meshes for grid (for backward compatibility)
+      this.scene.meshes.forEach((mesh) => {
+        if (mesh.name === 'grid') {
+          mesh.isVisible = visible;
+        }
+      });
+    }
+  }
+
+  /** Set the grid renderer reference (called after it's created) */
+  public setGridRenderer(renderer: GridRenderer): void {
+    this.gridRenderer = renderer;
+  }
+
+  /** Set up mouse tracking for tile inspection */
+  private setupMouseTracking(engine: Engine): void {
+    // Find the camera
+    const cam = this.scene.activeCamera as ArcRotateCamera | null;
+    if (!cam) return;
+    this.camera = cam;
+
+    // Canvas element for pointer events
+    const canvas = engine.getRenderingCanvas();
+    if (!canvas) return;
+
+    // Pointer move handler
+    canvas.addEventListener('pointermove', (evt) => {
+      this.updateMouseCoords(evt);
     });
+
+    // Use pointerenter/pointerleave for clean state
+    canvas.addEventListener('pointerleave', () => {
+      const coordsEl = document.getElementById('debug-mouse-coords');
+      if (coordsEl) coordsEl.textContent = '(-,-)';
+    });
+  }
+
+  private updateMouseCoords(evt: PointerEvent): void {
+    if (!this.camera) return;
+
+    const coordsEl = document.getElementById('debug-mouse-coords');
+    if (!coordsEl) return;
+
+    // Get pick info from the scene
+    const pick = this.scene.pick(evt.clientX, evt.clientY);
+    if (!pick || !pick.pickedPoint) {
+      coordsEl.textContent = '(-,-)';
+      return;
+    }
+
+    // Convert world position to map tile coordinates
+    const x = Math.floor(pick.pickedPoint.x);
+    const y = Math.floor(pick.pickedPoint.z); // z in Babylon = y in map
+
+    // Check bounds
+    if (x < 0 || x >= this.gameLoop.map.width || y < 0 || y >= this.gameLoop.map.height) {
+      coordsEl.textContent = '(-,-)';
+      return;
+    }
+
+    coordsEl.textContent = `(${x},${y})`;
+    
+    // Auto-inspect the tile under cursor
+    const tile = this.gameLoop.map.get(x, y);
+    if (tile) {
+      document.getElementById('debug-tile-result')!.innerHTML = `
+        <div><b>${tile.terrain}</b> (${x},${y})</div>
+        <div>Elevation: ${tile.elevation.toFixed(2)}</div>
+        <div>Resource: ${tile.resource?.toString() ?? 'none'}</div>
+        <div>Visibility: ${tile.visibility.toFixed(2)}</div>
+        <div>Territory: ${tile.territory}</div>
+      `;
+    }
   }
 
   private setTextureMode(enabled: boolean): void {
@@ -221,25 +277,6 @@ export class DebugPanel {
            kind !== BuildingType.Storehouse &&
            kind !== BuildingType.StorageYard &&
            kind !== BuildingType.LandingDock;
-  }
-
-  private inspectTile(x: number, y: number): void {
-    if (isNaN(x) || isNaN(y)) {
-      this.inspectResult.innerHTML = '<span style="color:#f88">Enter both x and y</span>';
-      return;
-    }
-    const tile = this.gameLoop.map.get(x, y);
-    if (!tile) {
-      this.inspectResult.innerHTML = `<span style="color:#f88">Tile (${x},${y}) not found on map</span>`;
-      return;
-    }
-    this.inspectResult.innerHTML = `
-      <div><b>${tile.terrain}</b> (${x},${y})</div>
-      <div>Elevation: ${tile.elevation.toFixed(2)}</div>
-      <div>Resource: ${tile.resource?.toString() ?? 'none'}</div>
-      <div>Visibility: ${tile.visibility.toFixed(2)}</div>
-      <div>Territory: ${tile.territory}</div>
-    `;
   }
 
   private startUpdateLoop(engine: Engine, gameLoop: GameLoop): void {
