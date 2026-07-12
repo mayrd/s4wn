@@ -69,13 +69,13 @@ describe('TerrainRenderer', () => {
     const e = ['terrain_grass.png','terrain_forest.png','terrain_desert.png','terrain_mountain.png','terrain_snow.png','terrain_water.png','terrain_swamp.png'];
     expect(e.length).toBe(7);
   });
-  it('texture paths use /textures/ prefix (Vite publicDir compatibility)', () => {
+  it('texture paths use assets/textures/ prefix (Docker deployment compatibility)', () => {
     // Extract paths from source by checking they would be correct
-    const expectedPrefix = '/textures/';
+    const expectedPrefix = 'assets/textures/';
     const names = ['terrain_grass','terrain_forest','terrain_desert','terrain_mountain','terrain_snow','terrain_water','terrain_swamp'];
     names.forEach(n => {
       const fullPath = `${expectedPrefix}${n}.png`;
-      expect(fullPath).toMatch(/^\/textures\/terrain_.*\.png$/);
+      expect(fullPath).toMatch(/^assets\/textures\/terrain_.*\.png$/);
     });
   });
 });
