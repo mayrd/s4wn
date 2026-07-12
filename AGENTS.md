@@ -167,10 +167,11 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P10 | 2026-07-07 | Implement view-based entity culling (ViewCuller) for performance, 9 unit tests |
 | P11 | 2026-07-09 | Implement touch camera controller (pinch-to-zoom, two-finger pan), mobile-friendly CSS, wire ViewCuller → camera sync |
 | P12 | 2026-07-12 | Fix TypeScript errors in DebugPanel.ts (wrong import path, incorrect unit type property, unused parameters) |
-
+| P13 | 2026-07-12 | Fix asset paths (404 errors) and AudioContext suspension warning; update UI tests |
+ 
 ### Next Session Priorities
-1. **Object Explorer Runtime State** — Wire GameLoop game state into the ObjectExplorer so it shows live HP, position, AI state, and economy progress for placed buildings/units.
-2. **GitHub Issue Deep Links** — Add "Report Issue" buttons that open `github.com/mayrd/s4wn/issues/new?title=[AssetName]&body=...` with pre-filled asset info.
-3. **Visual Regression Tests** — Implement Playwright screenshot comparison tests for UI components.
+1. **Build and Deploy** — Build Docker image and deploy to verify production asset paths work correctly on s4wn.mayrd.org.
+2. **Object Explorer Runtime State** — Wire GameLoop game state into the ObjectExplorer so it shows live HP, position, AI state, and economy progress for placed buildings/units.
+3. **Performance Monitoring** — Verify view culling and asset loading performance in production build.
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
