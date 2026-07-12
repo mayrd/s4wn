@@ -53,8 +53,8 @@ export class WaterPlane {
     material.reflectionTexture = this.mirrorTexture;
     
     // Add normal map for water ripples
-    // Assets are served at /assets/textures/ via Docker deployment
-    const bumpTexture = new Texture('assets/textures/water_normal.png', this.scene);
+    // Vite publicDir: 'assets' serves textures at /textures/
+    const bumpTexture = new Texture('/textures/water_normal.png', this.scene);
     bumpTexture.uScale = 10;
     bumpTexture.vScale = 10;
     material.bumpTexture = bumpTexture;

@@ -10,9 +10,11 @@
   --menu-width: 400px;
 }
 
-/* Splash Screen */
+/* Splash Screen - background-image is set in index.html */
 .splash-screen {
-  background: radial-gradient(circle, #2c3e50 0%, #000 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: white;
   text-align: center;
 }

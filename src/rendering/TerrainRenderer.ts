@@ -60,13 +60,12 @@ export class TerrainRenderer {
     const atlasW = map.width * TILE_PX;
     const atlasH = map.height * TILE_PX;
     try {
-      // Assets are served at /assets/textures/ via Docker deployment
-      // Vite dev server serves publicDir: 'assets' at root, so 'assets/textures/...' works
-      console.log(`🗺️ Loading terrain textures from assets/textures/... for ${map.width}x${map.height} map`);
+      // Vite publicDir: 'assets' serves textures at /textures/ (not /assets/textures/)
+      // Both dev and production serve public assets at root path
+      console.log(`🗺️ Loading terrain textures from /textures/... for ${map.width}x${map.height} map`);
       const names = ['terrain_grass','terrain_forest','terrain_desert','terrain_mountain','terrain_snow','terrain_water','terrain_swamp'];
-      // Use relative path that works in both dev and production
-      console.log(`📋 Texture paths: ${names.map(n => `assets/textures/${n}.png`).join(', ')}`);
-      const images = await Promise.all(names.map(n => this.loadImage(`assets/textures/${n}.png`)));
+      console.log(`📋 Texture paths: ${names.map(n => `/textures/${n}.png`).join(', ')}`);
+      const images = await Promise.all(names.map(n => this.loadImage(`/textures/${n}.png`)));
       console.log(`✅ Loaded ${images.length} terrain images`);
       const c = document.createElement('canvas');
       c.width = atlasW; c.height = atlasH;
