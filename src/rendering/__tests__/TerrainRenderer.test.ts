@@ -126,15 +126,16 @@ describe('TerrainRenderer', () => {
     it('should set backFaceCulling = false on the material', () => {
       terrain.createGround(48, 48);
       const mesh = terrain.getMesh();
-      expect(mesh!.material).not.toBeNull();
-      expect(mesh!.material.backFaceCulling).toBe(false);
+      expect(mesh).not.toBeNull();
+      expect((mesh! as any).material.backFaceCulling).toBe(false);
     });
 
     it('should set a non-null diffuseColor on the material', () => {
       terrain.createGround(10, 10);
       const mesh = terrain.getMesh();
-      expect(mesh!.material.diffuseColor).toBeDefined();
-      expect(mesh!.material.diffuseColor.r).toBeGreaterThan(0);
+      expect(mesh).not.toBeNull();
+      expect((mesh! as any).material.diffuseColor).toBeDefined();
+      expect((mesh! as any).material.diffuseColor.r).toBeGreaterThan(0);
     });
   });
 
