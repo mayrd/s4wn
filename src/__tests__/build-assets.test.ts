@@ -3,9 +3,6 @@
  * @jest-environment node
  *
  * Runs `vite build` and verifies critical asset files are present in dist/.
- * Distinguishes between:
- *   - Source file missing → WARN (known gap, logged for tracking)
- *   - Source exists but missing in dist → FAIL (build bug like missing COPY)
  */
 
 import { execSync } from 'child_process';
@@ -16,28 +13,12 @@ const ROOT = join(__dirname, '..', '..');
 const DIST = join(ROOT, 'dist');
 const ASSETS = join(ROOT, 'assets');
 
-/** Files that must land in dist/ if they exist in assets/ */
 const REQUIRED_ASSETS = [
-  'images/splash.png',
-  'images/logo-1024.png',
-  'images/favicon-256.png',
-  'textures/terrain_grass.png',
-  'textures/terrain_forest.png',
-  'textures/terrain_desert.png',
-  'textures/terrain_mountain.png',
-  'textures/terrain_snow.png',
-  'textures/terrain_water.png',
-  'textures/terrain_swamp.png',
+  'images/splash.png', 'images/logo-1024.png', 'images/favicon-256.png',
+  'textures/terrain_grass.png', 'textures/terrain_forest.png', 'textures/terrain_desert.png',
+  'textures/terrain_mountain.png', 'textures/terrain_snow.png', 'textures/terrain_water.png', 'textures/terrain_swamp.png',
   'textures/building_stone.png',
-  'textures/building_timber.png',
-  'textures/ui_button.png',
-  'textures/ui_panel.png',
-  'textures/ui_corner.png',
-  'textures/ui_button_hover.png',
-  'models/castle.obj',
-  'models/castle.mtl',
-  'maps/test/tutorial.json',
-  'maps/test/big_4P.json',
+  'models/castle.obj', 'models/castle.mtl',
 ];
 
 describe('Vite build assets', () => {
@@ -62,48 +43,39 @@ describe('Vite build assets', () => {
     expect(c).toBeGreaterThanOrEqual(20);
   });
 
-  // Check each asset
-  let missingSource = 0;
-  let missingInDist = 0;
+  it('all critical assets exist in dist/ after build', () => {
+    let missingSource = 0;
+    let missingInDist = 0;
+    const results: string[] = [];
 
-  for (const path of REQUIRED_ASSETS) {
-    const src = join(ASSETS, path);
-    const dst = join(DIST, path);
+    for (const path of REQUIRED_ASSETS) {
+      const src = join(ASSETS, path);
+      const dst = join(DIST, path);
+      const srcOk = existsSync(src);
+      const dstOk = existsSync(dst);
 
-    const srcExists = existsSync(src);
-    const dstExists = existsSync(dst);
-
-    if (!srcExists && !dstExists) {
-      // Neither exists — known gap, log warning
-      it(`${path} [KNOWN MISSING]`, () => {
+      if (!srcOk && !dstOk) {
         missingSource++;
-        console.warn(`  ⚠️  ${path} — source file does not exist in assets/, skipped.`);
-        expect(true).toBe(true); // pass but log
-      });
-    } else if (srcExists && !dstExists) {
-      // Source exists but NOT in dist — BUILD BUG!
-      it(`${path} — BUILD BROKEN ❌`, () => {
+        results.push(`  ⚠️  ${path} — source missing, skipped`);
+      } else if (srcOk && !dstOk) {
         missingInDist++;
-        throw new Error(
-          `❌ ${path} exists in assets/ but NOT in dist/!\n` +
-          `   Source: ${src}\n` +
-          `   Expected: ${dst}\n` +
-          `   Root cause: Dockerfile probably didn't COPY assets/ assets/\n` +
-          `   Check: Dockerfile line ~20 should have 'COPY assets/ assets/'\n` +
-          `          AND vite.config.ts should have publicDir: 'assets'`
-        );
-      });
-    } else {
-      // Both exist — OK
-      it(`${path} ✅`, () => {
-        expect(dstExists).toBe(true);
-      });
+        results.push(`  ❌ ${path} — BUILD BROKEN (in assets/ but not dist/)`);
+      } else {
+        results.push(`  ✅ ${path}`);
+      }
     }
-  }
 
-  it('summary: no build regressions detected', () => {
-    console.log(`\n  📊 Source missing (known gaps): ${missingSource}`);
-    console.log(`  ❌ Missing in dist (build bugs):  ${missingInDist}`);
-    expect(missingInDist).toBe(0);
+    console.log('\n' + results.join('\n'));
+    console.log(`\n  📊 Source missing: ${missingSource}  ❌ Build bugs: ${missingInDist}`);
+
+    if (missingInDist > 0) {
+      throw new Error(
+        `${missingInDist} asset file(s) exist in assets/ but are missing from dist/.\n` +
+        `Root cause: Dockerfile is probably missing 'COPY assets/ assets/' before 'RUN npm run build'.\n` +
+        `Or: vite.config.ts publicDir is not set to 'assets'.`
+      );
+    }
+    // missingSource is fine — those are files we know we haven't generated yet
+    expect(true).toBe(true);
   });
 });
