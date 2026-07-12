@@ -1,13 +1,15 @@
 /**
- * S4WN Babylon.js/TypeScript - Terrain Renderer
+ * S4WN Terrain Renderer — Raspberry Pi GPU workaround.
  *
- * Creates terrain using raw VertexData instead of MeshBuilder,
- * bypassing potential GPU-specific MeshBuilder issues on arm64/Raspberry Pi.
+ * Theory: VideoCore VI (Pi GPU) requires a texture sampler to be
+ * bound for every draw call. StandardMaterial with only diffuseColor
+ * (no diffuseTexture) uses an untextured shader path that may produce
+ * invisible output on this GPU. Fix: always bind a 1×1 magenta pixel
+ * as diffuseTexture, then replace with terrain atlas when ready.
  */
 
 import {
-  Mesh,
-  VertexData,
+  MeshBuilder,
   StandardMaterial,
   Texture,
   DynamicTexture,
@@ -21,7 +23,7 @@ const TILE_PX = 16;
 
 export class TerrainRenderer {
   private scene: Scene;
-  private terrainMesh: Mesh | null = null;
+  private terrainMesh: any | null = null;
 
   constructor(scene: Scene, _map: GameMap) {
     this.scene = scene;
@@ -31,36 +33,30 @@ export class TerrainRenderer {
     const cx = w / 2;
     const cz = h / 2;
 
-    // Build raw vertex data — 4 vertices, 2 triangles
-    const positions = [
-      -cx, 0, -cz,   // bottom-left
-       cx, 0, -cz,   // bottom-right
-       cx, 0,  cz,   // top-right
-      -cx, 0,  cz,   // top-left
-    ];
-    const indices = [0, 1, 2, 0, 2, 3];
-    const normals = [0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0];
-    const uvs = [0, 0, 1, 0, 1, 1, 0, 1];
-
-    this.terrainMesh = new Mesh('terrain', this.scene);
+    this.terrainMesh = MeshBuilder.CreateGround('terrain', {
+      width: w, height: h, subdivisions: 1, updatable: false,
+    }, this.scene);
     this.terrainMesh.position = new Vector3(cx, 0, cz);
 
-    const vd = new VertexData();
-    vd.positions = positions;
-    vd.indices = indices;
-    vd.normals = normals;
-    vd.uvs = uvs;
-    vd.applyToMesh(this.terrainMesh, false);
-
     const mat = new StandardMaterial('terrainMat', this.scene);
-    mat.diffuseColor = new Color3(1, 0, 1);   // magenta
-    mat.emissiveColor = new Color3(0.5, 0, 0.5);
+    mat.diffuseColor = new Color3(1, 0, 1);
+
+    // 🔬 Bind 1×1 magenta pixel texture — Pi GPU may require a texture
+    // sampler bound for every draw call to produce visible output
+    const pixel = document.createElement('canvas');
+    pixel.width = 1; pixel.height = 1;
+    const pctx = pixel.getContext('2d')!;
+    pctx.fillStyle = '#FF00FF';
+    pctx.fillRect(0, 0, 1, 1);
+    const tex = new DynamicTexture('tex1px', pixel, this.scene, false);
+    mat.diffuseTexture = tex;
+    mat.useAlphaFromDiffuseTexture = true;
+
+    mat.emissiveColor = new Color3(0.3, 0, 0.3);
     mat.backFaceCulling = false;
     this.terrainMesh.material = mat;
-    this.terrainMesh.isVisible = true;
-    this.terrainMesh.isPickable = false;
 
-    console.log(`🌍 TERRAIN (raw): ${w}×${h} mesh, verts=${vd.positions!.length/3}, visible=${this.terrainMesh.isVisible}, enabled=${this.terrainMesh.isEnabled()}`);
+    console.log(`🌍 TERRAIN: ${w}×${h} with 1×1 tex, mesh=true, verts=${this.terrainMesh?.getTotalVertices?.() ?? '?'}`);
   }
 
   async loadTerrainTextures(map: GameMap): Promise<void> {
@@ -81,7 +77,6 @@ export class TerrainRenderer {
       dt.updateSamplingMode(Texture.BILINEAR_SAMPLINGMODE);
       const mat = this.terrainMesh.material as StandardMaterial;
       mat.diffuseTexture = dt;
-      mat.diffuseColor = Color3.White();
       mat.emissiveColor = Color3.Black();
       console.log(`✅ Terrain atlas: ${atlasW}×${atlasH}`);
     } catch (e) { console.warn('⚠️ Atlas failed:', e); }
