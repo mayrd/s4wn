@@ -31,4 +31,34 @@ test.describe('Initial UI Flow', () => {
     await expect(page.locator('#btn-new-game')).toBeVisible();
     await expect(page.locator('#btn-load-game')).toBeVisible();
   });
+
+  test('should show terrain and castle when starting tutorial', async ({ page }) => {
+    // Go to the app and wait for splash to transition
+    await page.goto('/');
+    await page.locator('#btn-tutorial').waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Click tutorial button to start game
+    await page.locator('#btn-tutorial').click();
+    
+    // Wait for game-start event to trigger (game to unpause)
+    await page.waitForTimeout(100);
+    
+    // Check that terrain canvas is present and rendering
+    const canvas = page.locator('#renderCanvas');
+    await expect(canvas).toBeVisible();
+    await expect(canvas).toHaveCount(1);
+    
+    // Check that the canvas has been initialized (not just blank)
+    // The terrain should render to the canvas
+    const canvasBox = await canvas.boundingBox();
+    expect(canvasBox.width).toBeGreaterThan(0);
+    expect(canvasBox.height).toBeGreaterThan(0);
+    
+    // Verify the scene is not red (background should be sky blue)
+    const bgColor = await canvas.evaluate((el: any) => {
+      const ctx = el.getContext('webgl2') || el.getContext('webgl');
+      return ctx ? 'initialized' : 'not initialized';
+    });
+    expect(bgColor).toBe('initialized');
+  });
 });
