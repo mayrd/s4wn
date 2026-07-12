@@ -53,8 +53,8 @@ export class GameApp {
   private initEngine(canvas: HTMLCanvasElement): void {
     this.engine = new Engine(canvas, true);
     this.scene = new Scene(this.engine);
-    // 🔴 RED background — if you see this, the render loop works
-    this.scene.clearColor = new Color4(1.0, 0.2, 0.2, 1.0);
+    // Sky blue background
+    this.scene.clearColor = new Color4(0.5, 0.7, 0.9, 1.0);
   }
 
   private initSystems(): void {
@@ -75,11 +75,13 @@ export class GameApp {
   }
 
   private initRendering(): void {
+    // Create terrain first - it needs to exist before the render loop starts
     this.terrainRenderer = new TerrainRenderer(this.scene, this.map);
-    this.map.setAllVisible();
-    // Terrain created AFTER castle loads (in async block below) to isolate OBJ loader issues
+    this.terrainRenderer.createGround(this.map.width, this.map.height);
+    this.terrainRenderer.loadTerrainTextures(this.map);
 
-    // Water plane disabled
+    this.map.setAllVisible();
+
     this.waterRenderer = { dispose: () => {}, getMesh: () => null } as any;
 
     this.shadowPipeline = new ShadowPipeline(this.scene);
@@ -92,7 +94,7 @@ export class GameApp {
 
     this.buildingRenderer = new BuildingMesh(this.scene);
     const buildingData: Array<{ kind: string; x: number; y: number }> = [
-        { kind: 'castle', x: 0, y: 0 },
+        { kind: 'castle', x: 50, y: 50 },
     ];
 
     (async () => {
@@ -104,23 +106,22 @@ export class GameApp {
                 this.shadowPipeline.addShadowCaster(buildingMesh);
             }
         }
-        // 🔬 Create terrain AFTER castle loads — isolates OBJ loader interference
-        console.log('🏰 Castle loaded — creating terrain now...');
-        this.terrainRenderer.createGround(this.map.width, this.map.height);
-        const tm = this.terrainRenderer.getMesh();
-        console.log('🔬 terrain mesh:', !!tm, 'visible:', tm?.isVisible, 'enabled:', tm?.isEnabled?.());
-        this.terrainRenderer.loadTerrainTextures(this.map);
+        console.log('🏰 Building loaded');
     })();
 
     this.particleSystem = new ParticleSystem(this.scene);
   }
 
   private initCamera(): void {
-    const camera = new ArcRotateCamera('camera', -Math.PI / 4, Math.PI / 4, 70, Vector3.Zero(), this.scene);
+    // Isometric camera: alpha=45° azimuth, beta=30.264° elevation (classic Siedler 4 view)
+    const camera = new ArcRotateCamera('camera', Math.PI / 4, 0.528, 70, Vector3.Zero(), this.scene);
     camera.setTarget(new Vector3(50, 0, 50));
     camera.lowerRadiusLimit = 10;
     camera.upperRadiusLimit = 200;
     this.scene.activeCamera = camera;
+
+    // Initialize view culler to match camera target
+    this.gameLoop.viewCuller.setCenter(50, 50);
 
     this.touchController = new TouchCameraController(camera, (x, y) => {
       this.gameLoop.viewCuller.setCenter(x, y);

@@ -1,11 +1,7 @@
 /**
- * S4WN Terrain Renderer — Raspberry Pi GPU workaround.
+ * S4WN Terrain Renderer — Creates terrain mesh with splat-mapped textures.
  *
- * Theory: VideoCore VI (Pi GPU) requires a texture sampler to be
- * bound for every draw call. StandardMaterial with only diffuseColor
- * (no diffuseTexture) uses an untextured shader path that may produce
- * invisible output on this GPU. Fix: always bind a 1×1 magenta pixel
- * as diffuseTexture, then replace with terrain atlas when ready.
+ * Generates terrain texture atlas from individual terrain type images.
  */
 
 import {
@@ -41,8 +37,8 @@ export class TerrainRenderer {
     const mat = new StandardMaterial('terrainMat', this.scene);
     mat.diffuseColor = new Color3(1, 0, 1);
 
-    // 🔬 Bind 1×1 magenta pixel texture — Pi GPU may require a texture
-    // sampler bound for every draw call to produce visible output
+    // Bind a 1×1 magenta pixel texture to ensure the mesh is visible
+    // (some GPUs require a texture sampler bound even for simple shaders)
     const pixel = document.createElement('canvas');
     pixel.width = 1; pixel.height = 1;
     const pctx = pixel.getContext('2d')!;
@@ -64,8 +60,9 @@ export class TerrainRenderer {
     const atlasW = map.width * TILE_PX;
     const atlasH = map.height * TILE_PX;
     try {
+      // Vite serves publicDir at root, so textures are at /textures/ not /assets/textures/
       const names = ['terrain_grass','terrain_forest','terrain_desert','terrain_mountain','terrain_snow','terrain_water','terrain_swamp'];
-      const images = await Promise.all(names.map(n => this.loadImage(`/assets/textures/${n}.png`)));
+      const images = await Promise.all(names.map(n => this.loadImage(`/textures/${n}.png`)));
       const c = document.createElement('canvas');
       c.width = atlasW; c.height = atlasH;
       const ctx = c.getContext('2d')!;

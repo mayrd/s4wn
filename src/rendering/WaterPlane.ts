@@ -53,7 +53,7 @@ export class WaterPlane {
     material.reflectionTexture = this.mirrorTexture;
     
     // Add normal map for water ripples
-    const bumpTexture = new Texture('./assets/textures/water_normal.png', this.scene);
+    const bumpTexture = new Texture('/textures/water_normal.png', this.scene);
     bumpTexture.uScale = 10;
     bumpTexture.vScale = 10;
     material.bumpTexture = bumpTexture;
