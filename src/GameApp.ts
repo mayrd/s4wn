@@ -70,7 +70,9 @@ export class GameApp {
     window.addEventListener('game-start', () => {
         this.gameLoop.state.isPaused = false;
         new HUD(this.gameLoop);
-        new DebugPanel(document, this.engine, this.gameLoop);
+        const debugPanel = new DebugPanel(document, this.engine, this.gameLoop, this.scene);
+        // Expose debug panel for console access
+        (window as any).debugPanel = debugPanel;
     });
   }
 
