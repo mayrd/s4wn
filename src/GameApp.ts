@@ -64,8 +64,14 @@ export class GameApp {
     this.gameLoop = new GameLoop(this.map);
     new UIManager(this.gameLoop);
 
-    // Initialize sound system with default game sounds
-    soundManager.generateDefaults();
+    // Initialize sound system on first user gesture (required by browser policies)
+    const initAudioOnGesture = () => {
+      soundManager.generateDefaults();
+      document.removeEventListener('click', initAudioOnGesture);
+      document.removeEventListener('keydown', initAudioOnGesture);
+    };
+    document.addEventListener('click', initAudioOnGesture);
+    document.addEventListener('keydown', initAudioOnGesture);
 
     window.addEventListener('game-start', () => {
         this.gameLoop.state.isPaused = false;

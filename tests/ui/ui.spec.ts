@@ -19,7 +19,7 @@ test.describe('Initial UI Flow', () => {
       const style = window.getComputedStyle(el);
       return style.backgroundImage;
     });
-    expect(backgroundImage).toContain('splash.png');
+    expect(backgroundImage).toContain('splash');  // Vite hashes assets: splash-DV3-t8b8.png
   });
 
   test('should transition to main menu after splash', async ({ page }) => {
@@ -70,12 +70,10 @@ test.describe('Tutorial Game View', () => {
     // Verify background is not red (clear color should be sky blue)
     // We can't easily check actual pixel colors in headless mode, but we can verify
     // the canvas has content by checking it's been rendered to
+    // For WebGL canvas, check the WebGL context is active and canvas has dimensions
     const canvasHasContent = await canvas.evaluate((el: HTMLCanvasElement) => {
-      // Check if canvas has been drawn to (not just blank)
-      const ctx = el.getContext('2d') as CanvasRenderingContext2D;
-      if (!ctx) return false;
-      // This is a simple check - in practice WebGL renders differently
-      return el.width > 0 && el.height > 0;
+      const gl = el.getContext('webgl2') || el.getContext('webgl');
+      return gl !== null && el.width > 0 && el.height > 0;
     });
     expect(canvasHasContent).toBe(true);
   });
