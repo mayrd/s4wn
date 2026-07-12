@@ -98,6 +98,9 @@ export class GameApp {
     this.objectExplorer = new ObjectExplorer(null, this.gameLoop);
     this.ui.setObjectExplorer(this.objectExplorer);
 
+    // Subscribe ObjectExplorer to game ticks so runtime state stays live
+    this.gameLoop.onTick(() => this.objectExplorer.update());
+
     // Initialize sound system on first user gesture (required by browser policies)
     const initAudioOnGesture = () => {
       soundManager.generateDefaults();

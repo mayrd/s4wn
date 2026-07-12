@@ -78,6 +78,7 @@ jest.mock('../../ui/UIManager', () => ({
 jest.mock('../../ui/explorer/ObjectExplorer', () => ({
   ObjectExplorer: jest.fn(() => ({
     toggle: jest.fn(),
+    update: jest.fn(),
   })),
 }));
 
@@ -139,6 +140,7 @@ jest.mock('../../game/GameLoop', () => ({
     economy: { tryPlaceBuilding: jest.fn(() => true) },
     viewCuller: { setCenter: jest.fn() },
     update: jest.fn(),
+    onTick: jest.fn(),
   })),
 }));
 

@@ -45,8 +45,16 @@ export class GameLoop {
   /** View culler — skips off-screen entities for performance. */
   viewCuller: ViewCuller = new ViewCuller();
 
+  /** Per-tick callbacks for external subscribers (e.g. UI panels, debug tools). */
+  private tickSubscribers: Array<(gameLoop: GameLoop) => void> = [];
+
   private tickAccumulator: number = 0;
   private readonly TICK_INTERVAL: number = 1.0 / 10;
+
+  /** Register a callback that fires once per simulation tick. */
+  onTick(fn: (gameLoop: GameLoop) => void): void {
+    this.tickSubscribers.push(fn);
+  }
 
   constructor(map: GameMap) {
     this.map = map;
@@ -78,6 +86,11 @@ export class GameLoop {
 
     // Economy always runs (production is global)
     this.economy.tick(1.0);
+
+    // Notify external subscribers (UI panels, debug tools)
+    for (const fn of this.tickSubscribers) {
+      fn(this);
+    }
 
     const isFullTick = this.viewCuller.isFullTick(this.state.ticks);
 

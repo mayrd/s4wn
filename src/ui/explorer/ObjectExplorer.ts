@@ -148,6 +148,8 @@ export class ObjectExplorer {
   private activeTab: CatalogTab = 'terrain';
   private objects: ExplorerObject[] = [];
   private isMobile = false;
+  /** Track the currently selected object ID so we can refresh its details live. */
+  private selectedObjectId: string | null = null;
 
   constructor(_ui: UIManager | null, gl: GameLoop) {
     this.gameLoop = gl;
@@ -190,14 +192,35 @@ export class ObjectExplorer {
   // ── Tab control ──────────────────────────────────────────────────
 
   private switchTab(t: CatalogTab): void {
-    this.activeTab = t; this.searchInput.value = ''; this.showListView();
+    this.activeTab = t; this.searchInput.value = ''; this.selectedObjectId = null; this.showListView();
     this.container.querySelectorAll('.explorer-tab').forEach(el =>
       (el as HTMLElement).style.fontWeight = (el as HTMLElement).dataset.tab === t ? 'bold' : 'normal');
     this.loadCatalog(); this.filter();
   }
   public show(): void { this.container.classList.remove('hidden'); this.container.classList.add('active'); this.isOpen = true; this.loadCatalog(); this.filter(); this.showListView(); }
-  public hide(): void { this.container.classList.add('hidden'); this.container.classList.remove('active'); this.isOpen = false; }
+  public hide(): void { this.container.classList.add('hidden'); this.container.classList.remove('active'); this.isOpen = false; this.selectedObjectId = null; }
   public toggle(): void { this.isOpen ? this.hide() : this.show(); }
+
+  /**
+   * Called from the game loop tick. Refreshes the catalog data and the
+   * currently open detail view so HP, position, AI state, and economy
+   * progress stay live while the panel is visible.
+   */
+  public update(): void {
+    if (!this.isOpen) return;
+    this.loadCatalog();
+    this.filter();
+
+    // Refresh the detail view if one is selected
+    if (this.selectedObjectId && this.objects.length > 0) {
+      const obj = this.objects.find(o => o.id === this.selectedObjectId);
+      if (obj) {
+        this.showDetails(obj);
+      } else {
+        this.selectedObjectId = null;
+      }
+    }
+  }
 
   private showListView(): void {
     this.container.classList.remove('explorer-mobile-details');
@@ -339,6 +362,7 @@ export class ObjectExplorer {
   // ── Detail view ──────────────────────────────────────────────────
 
   private showDetails(obj: ExplorerObject): void {
+    this.selectedObjectId = obj.id;
     const x = obj as any;
     const link = gitHubIssueLink(obj.type, obj.name);
     const promptTxt = x._promptKey ? promptExcerpt(x._promptKey) : '';
@@ -356,17 +380,24 @@ export class ObjectExplorer {
     if (instances.length > 0) {
       if (obj.type === 'building') {
         const bt = buildTime(kind ?? BuildingType.Castle);
-        runtimeHtml = instances.map((b:any,i:number) =>
-          `<div class="explorer-instance-card">
-            <div class="explorer-instance-header">🏠 #${i+1} @(${b.x},${b.y})</div>
-            <div>HP ${b.hp}/${b.maxHp} ${b.isActive?'✅':'⏸️'} | Prg ${(b as any).progress??'?'}/${bt} | Workers ${(b as any).workers?.length??0}</div>
-          </div>`).join('');
+        runtimeHtml = instances.map((b: any, i: number) => {
+          const progress = b.constructionProgress ?? b.progress ?? 0;
+          const workerCount = (b.assignedSettlers ?? b.workers ?? []).length;
+          return `<div class="explorer-instance-card">
+            <div class="explorer-instance-header">🏠 #${i + 1} @(${b.x},${b.y})</div>
+            <div>HP ${b.hp}/${b.maxHp} ${b.isActive ? '✅' : '⏸️'} | Prg ${progress}/${bt} | Workers ${workerCount}</div>
+          </div>`;
+        }).join('');
       } else if (obj.type === 'unit') {
-        runtimeHtml = instances.map((u:any,i:number) =>
-          `<div class="explorer-instance-card">
-            <div class="explorer-instance-header">👤 #${u.id??i+1} @(${u.x},${u.y})</div>
-            <div>HP ${u.hp} | State:${u.state??'?'} | Stance:${u.stance??'?'} | Path:${u.path?.length??0} steps</div>
-          </div>`).join('');
+        runtimeHtml = instances.map((u: any, i: number) => {
+          const stateStr = u.state ?? u.currentState ?? '?';
+          const stanceStr = u.stance ?? u.currentStance ?? '?';
+          const pathLen = u.path?.length ?? u.currentPath?.length ?? 0;
+          return `<div class="explorer-instance-card">
+            <div class="explorer-instance-header">👤 #${u.id ?? i + 1} @(${u.x},${u.y})</div>
+            <div>HP ${u.hp} | State:${stateStr} | Stance:${stanceStr} | Path:${pathLen} steps</div>
+          </div>`;
+        }).join('');
       }
     }
 
