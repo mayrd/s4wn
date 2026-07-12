@@ -26,6 +26,14 @@ export class DebugPanel {
     this.scene = scene;
     this.container = document.createElement('div');
     this.container.className = 'debug-panel';
+    // Make the title bar the trigger for double-click expand/collapse
+    this.container.addEventListener('dblclick', (e) => {
+      // Only trigger from title bar area (not from child buttons/links)
+      const target = e.target as HTMLElement;
+      if (target.closest('.debug-title') || target === this.container) {
+        this.container.classList.toggle('debug-collapsed');
+      }
+    });
     document.body.appendChild(this.container);
 
     this.createContent(gameLoop, engine);
@@ -204,17 +212,36 @@ export class DebugPanel {
 
     coordsEl.textContent = `(${x},${y})`;
     
-    // Auto-inspect the tile under cursor
+    // Auto-inspect the tile under cursor + any objects on it
     const tile = this.gameLoop.map.get(x, y);
+    let html = '';
     if (tile) {
-      document.getElementById('debug-tile-result')!.innerHTML = `
-        <div><b>${tile.terrain}</b> (${x},${y})</div>
+      html += `<div><b>${tile.terrain}</b> (${x},${y})</div>
         <div>Elevation: ${tile.elevation.toFixed(2)}</div>
         <div>Resource: ${tile.resource?.toString() ?? 'none'}</div>
-        <div>Visibility: ${tile.visibility.toFixed(2)}</div>
-        <div>Territory: ${tile.territory}</div>
-      `;
+        <div style="font-size:0.6rem;opacity:0.6">Visibility: ${tile.visibility.toFixed(2)} · Territory: ${tile.territory}</div>`;
     }
+
+    // Check for buildings at this tile
+    const building = this.gameLoop.economy.getBuildingAt(x, y);
+    if (building) {
+      html += `<hr class="debug-divider" style="margin:3px 0" />
+        <div style="color:#8f8">🏰 <b>Building</b></div>
+        <div>Kind: ${BuildingType[building.kind] ?? building.kind}</div>`;
+    }
+
+    // Check for units at this tile
+    const unitsHere = this.gameLoop.unitManager.getAliveUnits()
+      .filter(u => Math.floor(u.x) === x && Math.floor(u.y) === y);
+    if (unitsHere.length > 0) {
+      html += `<hr class="debug-divider" style="margin:3px 0" />`;
+      for (const u of unitsHere) {
+        html += `<div style="color:#ff8">👤 <b>${UnitKind[u.kind] ?? 'Unit'} #${u.id}</b></div>
+          <div>HP: ${u.hp.toFixed(0)} · State: ${u.state}</div>`;
+      }
+    }
+
+    document.getElementById('debug-tile-result')!.innerHTML = html || '—';
   }
 
   private setTextureMode(enabled: boolean): void {
