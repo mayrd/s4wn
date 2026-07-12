@@ -43,29 +43,29 @@ export class BuildingMesh {
   /**
    * Create a building model. Tries OBJ first, falls back to procedural primitive.
    */
-   async createBuilding(
-     kind: string,
-     x: number,
-     y: number,
-     _width: number,
-     _height: number,
-     _depth: number,
-     material: StandardMaterial | null = null
-   ): Promise<any> {
-      // Try loading OBJ model from /assets/models/ (Vite publicDir: assets serves at root)
-      try {
-        const objName = kindToObjName(kind);
-        const result = await SceneLoader.ImportMeshAsync('', '/assets/models/', `${objName}.obj`, this.scene);
-       const root = result.meshes[0];
-       root.position.set(x, 0, y);
-       if (material) {
-         result.meshes.forEach((m: any) => (m.material = material));
-       }
-       return root;
-     } catch (_error) {
-       // OBJ not found — fall back to procedural primitive
-       return this.createProceduralBuilding(kind, x, y, material);
-     }
+  async createBuilding(
+    kind: string,
+    x: number,
+    y: number,
+    _width: number,
+    _height: number,
+    _depth: number,
+    material: StandardMaterial | null = null
+  ): Promise<any> {
+    // Try loading OBJ model from /models/ (Vite publicDir: assets serves at root)
+    try {
+      const objName = kindToObjName(kind);
+      const result = await SceneLoader.ImportMeshAsync('', '/models/', `${objName}.obj`, this.scene);
+      const root = result.meshes[0];
+      root.position.set(x, 0, y);
+      if (material) {
+        result.meshes.forEach((m: any) => (m.material = material));
+      }
+      return root;
+    } catch (_error) {
+      // OBJ not found — fall back to procedural primitive
+      return this.createProceduralBuilding(kind, x, y, material);
+    }
   }
 
   /**

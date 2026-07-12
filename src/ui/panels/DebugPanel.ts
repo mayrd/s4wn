@@ -4,7 +4,7 @@
  * Real-time game statistics and debug controls.
  */
 
-import { Engine, Scene } from '@babylonjs/core';
+import { Engine, Scene, Color3 } from '@babylonjs/core';
 import { GameLoop } from '../../game/GameLoop';
 import { BuildingType } from '../../economy/types';
 import { UnitKind } from '../../game/types';
@@ -15,6 +15,9 @@ export class DebugPanel {
   private gameLoop: GameLoop;
   private scene: Scene;
   private pauseBtn: HTMLButtonElement | null = null;
+  /** Store original textures to restore when toggling back on */
+  private originalTextures: WeakMap<any, any> = new WeakMap();
+  private originalEmissive: WeakMap<any, any> = new WeakMap();
 
   constructor(document: Document, engine: Engine, gameLoop: GameLoop, scene: Scene) {
     this.gameLoop = gameLoop;
@@ -163,10 +166,23 @@ export class DebugPanel {
       if (mesh.material) {
         const mat = mesh.material as any;
         if (enabled) {
-          mat.diffuseTexture = mat._originalTexture || mat.diffuseTexture;
+          // Restore original texture if we saved one
+          const saved = this.originalTextures.get(mat);
+          if (saved !== undefined) {
+            mat.diffuseTexture = saved;
+          }
+          const savedEmissive = this.originalEmissive.get(mat);
+          if (savedEmissive !== undefined) {
+            mat.emissiveColor = savedEmissive;
+            this.originalEmissive.delete(mat);
+            this.originalTextures.delete(mat);
+          }
         } else {
-          mat._originalTexture = mat.diffuseTexture;
+          // Save original texture and emissive color before disabling
+          this.originalTextures.set(mat, mat.diffuseTexture);
+          this.originalEmissive.set(mat, mat.emissiveColor.clone());
           mat.diffuseTexture = null;
+          mat.emissiveColor = new Color3(1, 0, 1); // Magenta for debugging
         }
       }
     });
