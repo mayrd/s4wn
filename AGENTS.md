@@ -166,6 +166,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P9 | 2026-07-07 | Implement save/load system with localStorage persistence, SaveManager, Map/Economy serialization, 5 round-trip tests |
 | P10 | 2026-07-07 | Implement view-based entity culling (ViewCuller) for performance, 9 unit tests |
 | P11 | 2026-07-09 | Implement touch camera controller (pinch-to-zoom, two-finger pan), mobile-friendly CSS, wire ViewCuller → camera sync |
+| P12 | 2026-07-12 | Fix TypeScript errors in DebugPanel.ts (wrong import path, incorrect unit type property, unused parameters) |
 
 ### Next Session Priorities
 1. **Object Explorer Runtime State** — Wire GameLoop game state into the ObjectExplorer so it shows live HP, position, AI state, and economy progress for placed buildings/units.
