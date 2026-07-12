@@ -6,7 +6,8 @@
 
 import { Engine, Scene } from '@babylonjs/core';
 import { GameLoop } from '../../game/GameLoop';
-import { BuildingType } from '../../../economy/types';
+import { BuildingType } from '../../economy/types';
+import { UnitKind } from '../../game/types';
 
 export class DebugPanel {
   private container: HTMLElement;
@@ -26,7 +27,7 @@ export class DebugPanel {
     this.startUpdateLoop(engine, gameLoop);
   }
 
-  private createContent(gameLoop: GameLoop): void {
+  private createContent(_gameLoop: GameLoop): void {
     this.container.innerHTML = `
       <div class="debug-title">Debug Console</div>
       
@@ -180,12 +181,12 @@ export class DebugPanel {
     });
   }
 
-  private setTerritoryVisibility(visible: boolean): void {
+  private setTerritoryVisibility(_visible: boolean): void {
     // Territory visualization would be controlled here
     // This is a placeholder for future territory rendering
   }
 
-  private setFogVisibility(enabled: boolean): void {
+  private setFogVisibility(_enabled: boolean): void {
     // Fog of war would be controlled here
     // This is a placeholder for future fog rendering
   }
@@ -245,9 +246,9 @@ export class DebugPanel {
       const buildings = gameLoop.economy.getCompleteBuildings();
 
       if (unitsTotal) unitsTotal.textContent = units.length.toString();
-      if (unitsWorkers) unitsWorkers.textContent = units.filter(u => u.type === 'Worker').length.toString();
-      if (unitsArchers) unitsArchers.textContent = units.filter(u => u.type === 'Archer').length.toString();
-      if (unitsSoldiers) unitsSoldiers.textContent = units.filter(u => u.type === 'Soldier').length.toString();
+      if (unitsWorkers) unitsWorkers.textContent = units.filter(u => u.kind === UnitKind.Worker).length.toString();
+      if (unitsArchers) unitsArchers.textContent = units.filter(u => u.kind === UnitKind.Bowman).length.toString();
+      if (unitsSoldiers) unitsSoldiers.textContent = units.filter(u => u.kind === UnitKind.Swordsman).length.toString();
 
       if (buildingsTotal) buildingsTotal.textContent = buildings.length.toString();
       if (buildingsStorage) buildingsStorage.textContent = buildings.filter(b => this.isStorageBuilding(b.kind)).length.toString();
