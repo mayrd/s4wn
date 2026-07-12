@@ -98,11 +98,11 @@ function resolveTextureUrl(texture: string): string | null {
   const fnameM = texture.match(/([a-zA-Z0-9_-]+\.(png|jpg|webp|gif))/i);
   if (!fnameM) return null;
   const fname = fnameM[1];
-  // Try common asset directories
+  // Try common asset directories (Vite publicDir: 'assets' serves these at root)
   const candidates = [
-    `/assets/textures/${fname}`,
-    `/assets/images/${fname}`,
-    `/assets/models/${fname}`,
+    `/textures/${fname}`,
+    `/images/${fname}`,
+    `/models/${fname}`,
   ];
   // Return the first candidate — the browser will 404 if it's wrong,
   // and the onerror handler hides broken images
@@ -313,8 +313,8 @@ export class ObjectExplorer {
 
   private loadMisc(): void {
     this.objects = [
-      { id:'m-splash',type:'ui',name:'Splash',_promptKey:'splash',_instances:[],_chain:{mesh:'CSS bg-image',texture:'assets/images/splash.png',animation:'Fade 0.3s'},properties:{file:'splash.png',format:'4K responsive center-safe'}},
-      { id:'m-favicon',type:'ui',name:'Favicon',_promptKey:'',_instances:[],_chain:{mesh:'<link rel=icon>',texture:'assets/images/favicon-256.png',animation:'none'},properties:{file:'favicon-256.png',format:'256×256'}},
+      { id:'m-splash',type:'ui',name:'Splash',_promptKey:'splash',_instances:[],_chain:{mesh:'CSS bg-image',texture:'/images/splash.png',animation:'Fade 0.3s'},properties:{file:'splash.png',format:'4K responsive center-safe'}},
+      { id:'m-favicon',type:'ui',name:'Favicon',_promptKey:'',_instances:[],_chain:{mesh:'<link rel=icon>',texture:'/images/favicon-256.png',animation:'none'},properties:{file:'favicon-256.png',format:'256×256'}},
       { id:'m-audio',type:'audio',name:'Sound FX',_promptKey:'',_instances:[],_chain:{mesh:'Web Audio API',texture:'Oscillator+Gain nodes',animation:'Envelope attack/sustain/release'},properties:{source:'SoundManager.ts',sounds:'select,place,error,tick,win,lose (6 tones)'}},
       { id:'m-anim1',type:'anim',name:'Splash→Menu',_promptKey:'',_instances:[],_chain:{mesh:'.ui-screen div',texture:'CSS opacity',animation:'3s fade-out (UIManager.ts)'},properties:{type:'CSS Transition',duration:'3s'}},
       { id:'m-anim2',type:'anim',name:'Btn Hover',_promptKey:'',_instances:[],_chain:{mesh:'.menu-button',texture:'CSS transform+color',animation:'0.2s scale+color shift'},properties:{type:'CSS Transition',duration:'0.2s'}},
