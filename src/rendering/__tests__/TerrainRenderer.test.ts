@@ -10,36 +10,25 @@
  */
 
 jest.mock('@babylonjs/core', () => {
-  const mockMeshes: any[] = [];
   return {
-    MeshBuilder: {
-      CreateGround: jest.fn((name: string, _opts: any, _scene: any) => {
-        const mesh: any = {
-          name,
-          position: { x: 0, y: 0, z: 0 },
-          material: null,
-          receiveShadows: false,
-          isVisible: true,
-          getTotalVertices: () => 4,
-          dispose: jest.fn(),
-        };
-        mockMeshes.push(mesh);
-        return mesh;
-      }),
-      CreateBox: jest.fn((name: string, _opts: any, _scene: any) => {
-        const mesh: any = {
-          name,
-          position: { x: 0, y: 0, z: 0 },
-          material: null,
-          receiveShadows: false,
-          isVisible: true,
-          getTotalVertices: () => 36,
-          dispose: jest.fn(),
-        };
-        mockMeshes.push(mesh);
-        return mesh;
-      }),
-    },
+    Mesh: jest.fn(function(this: any, name: string, _scene: any) {
+      this.name = name;
+      this.position = { x: 0, y: 0, z: 0 };
+      this.material = null;
+      this.receiveShadows = false;
+      this.isVisible = true;
+      this.isPickable = false;
+      this.isEnabled = () => true;
+      this.getTotalVertices = () => 4;
+      this.dispose = jest.fn();
+    } as any),
+    VertexData: jest.fn(function(this: any) {
+      this.positions = null;
+      this.indices = null;
+      this.normals = null;
+      this.uvs = null;
+      this.applyToMesh = jest.fn();
+    } as any),
     StandardMaterial: jest.fn((name: string, _scene: any) => ({
       name,
       diffuseColor: { r: 0, g: 0, b: 0 },
@@ -115,7 +104,6 @@ describe('TerrainRenderer', () => {
       terrain.createGround(100, 60);
       const mesh = terrain.getMesh();
       expect(mesh).not.toBeNull();
-      // MeshBuilder.CreateGround creates the plane; position is set in createGround
       expect(mesh!.position).toBeDefined();
     });
 
@@ -141,7 +129,6 @@ describe('TerrainRenderer', () => {
 
   describe('texture filenames', () => {
     it('should reference all 7 generated terrain texture files', () => {
-      // This is a documentation test — verifies all texture filenames exist
       const expected = [
         'terrain_grass.png',
         'terrain_forest.png',
