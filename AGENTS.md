@@ -171,11 +171,13 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P14 | 2026-07-12 | Fix Dockerfile redundant asset copy — remove `COPY assets/` line, Vite publicDir already places textures/models at root level |
 | P15 | 2026-07-12 | Redo loading architecture: lazy GameApp via dynamic import (heavy Babylon chunk code-split), light splash capability checks; replace menu title with transparent logo, generate procedural UI textures (ui_panel/header/button/corner/divider/resources) + restyle menu & Object Explorer |
 | P15 | 2026-07-12 | Set up visual regression test infrastructure — Playwright snapshot config, 9 tests (main menu, explorer, HUD, splash), __snapshots__ dir |
- 
+| P16 | 2026-07-12 | **Live ObjectExplorer state**: Add GameLoop.onTick() subscriber system; ObjectExplorer.update() refreshes catalog + detail view each tick (live HP, position, AI state, economy progress); fix BuildingData/Unit property refs (constructionProgress/assignedSettlers vs nonexistent .progress/.workers); wire ObjectExplorer as tick subscriber in GameApp; 4 new GameLoop tick subscriber tests; total 72 tests (12 suites) |
+
 ### Next Session Priorities
-1. **Capture Baseline Snapshots** — Run `npm run test:ui` locally (with headed browser) to generate baseline screenshots for the 9 visual regression tests. Without baselines, these tests will fail.
-2. **Build and Deploy** — Build Docker image and deploy to verify production asset paths work correctly on s4wn.mayrd.org.
-3. **Object Explorer Runtime State** — Wire GameLoop game state into the ObjectExplorer so it shows live HP, position, AI state, and economy progress for placed buildings/units.
-4. **CI/CD Pipeline** — Add GitHub Actions workflow for jest tests and Playwright tests (with baseline snapshot uploads).
+1. **Fix GITHUB_TOKEN** — Token is expired/invalid (401 on API, auth failure on git push). Need fresh token with `repo` scope to push commits and access GitHub API.
+2. **Capture Baseline Snapshots** — Run `npm run test:ui` locally (with headed browser) to generate baseline screenshots for the 9 visual regression tests.
+3. **Object Explorer Enhancements** — Add resource display to explorer (show resource counts from Economy.resources), wire Unit path progress to show live A* progress, add auto-refresh toggle.
+4. **CI: Enable Playwright Tests** — Un-skip the UI test block in ci.yml, add Playwright report artifact upload, set up baseline snapshot handling for CI.
+5. **Build and Deploy** — Build Docker image and deploy to verify production asset paths work on s4wn.mayrd.org.
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
