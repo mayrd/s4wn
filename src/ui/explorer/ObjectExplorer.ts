@@ -18,8 +18,6 @@ import {
   buildingInputs, buildingOutputs, requiredTool, requiresSettler,
   resourceName, buildingName,
 } from '../../economy/types';
-import * as BABYLON from '@babylonjs/core';
-import '@babylonjs/loaders';
 
 export interface ExplorerObject {
   id: string;
