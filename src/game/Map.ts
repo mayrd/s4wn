@@ -163,11 +163,59 @@ export class Map {
   }
 
   private generateDemo(): void {
+    // Create a diverse demo map with terrain variety
+    const seed = 42; // Deterministic
+
     for (let y = 0; y < this.height; y++) {
       this.tiles[y] = [];
       for (let x = 0; x < this.width; x++) {
+        // Simple terrain generation: rings of terrain radiating from center
+        const cx = this.width / 2;
+        const cy = this.height / 2;
+        const dx = x - cx;
+        const dy = y - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Use multiple overlapping patterns to create variety
+        const noise1 = Math.sin(x * 0.3 + seed) * Math.cos(y * 0.3 + seed + 1);
+        const noise2 = Math.sin(x * 0.15 - y * 0.15) * Math.cos(x * 0.1 + y * 0.2);
+        const noiseVal = (noise1 + noise2) * 0.5; // Range: ~[-1, 1]
+
+        let terrain: Terrain;
+
+        // Center: small lake (water)
+        if (dist < 3) {
+          terrain = Terrain.Water;
+        }
+        // Ring 1: grassland with scattered forest patches
+        else if (dist < 8) {
+          terrain = noiseVal > 0.3 ? Terrain.Forest : Terrain.Grass;
+        }
+        // Ring 2: mostly grassland with desert and forest
+        else if (dist < 14) {
+          if (noiseVal > 0.5) terrain = Terrain.Desert;
+          else if (noiseVal < -0.5) terrain = Terrain.Forest;
+          else terrain = Terrain.Grass;
+        }
+        // Ring 3: mountains starting to appear
+        else if (dist < 20) {
+          if (noiseVal > 0.6) terrain = Terrain.Mountain;
+          else if (noiseVal > 0.2) terrain = Terrain.Grass;
+          else terrain = Terrain.Forest;
+        }
+        // Ring 4: more mountains, forest, and start of snow
+        else if (dist < 24) {
+          if (noiseVal > 0.7) terrain = Terrain.Snow;
+          else if (noiseVal > 0.3) terrain = Terrain.Mountain;
+          else terrain = Terrain.Forest;
+        }
+        // Outer ring: snow and peaks
+        else {
+          terrain = noiseVal > 0.1 ? Terrain.Snow : Terrain.Mountain;
+        }
+
         this.tiles[y][x] = {
-          terrain: Terrain.Grass,
+          terrain,
           elevation: 0.0,
           resource: null,
           visibility: 0,

@@ -53,7 +53,8 @@ export class GameApp {
   private initEngine(canvas: HTMLCanvasElement): void {
     this.engine = new Engine(canvas, true);
     this.scene = new Scene(this.engine);
-    this.scene.clearColor = new Color4(0.5, 0.7, 1.0, 1.0);
+    // 🔴 RED background — if you see this, the render loop works
+    this.scene.clearColor = new Color4(1.0, 0.2, 0.2, 1.0);
   }
 
   private initSystems(): void {
@@ -75,12 +76,10 @@ export class GameApp {
 
   private initRendering(): void {
     this.terrainRenderer = new TerrainRenderer(this.scene, this.map);
-    this.map.setAllVisible();  // Must be BEFORE createTerrain — visibility texture reads map data
-    this.terrainRenderer.createTerrain();
+    this.map.setAllVisible();
+    // Terrain created AFTER castle loads (in async block below) to isolate OBJ loader issues
 
-    // Water plane disabled — currently obscures the terrain at low camera angles
-    // this.waterRenderer = new WaterPlane(this.scene, this.map.width, this.map.height);
-    // this.waterRenderer.createWaterPlane();
+    // Water plane disabled
     this.waterRenderer = { dispose: () => {}, getMesh: () => null } as any;
 
     this.shadowPipeline = new ShadowPipeline(this.scene);
@@ -105,20 +104,24 @@ export class GameApp {
                 this.shadowPipeline.addShadowCaster(buildingMesh);
             }
         }
+        // 🔬 Create terrain AFTER castle loads — isolates OBJ loader interference
+        console.log('🏰 Castle loaded — creating terrain now...');
+        this.terrainRenderer.createGround(this.map.width, this.map.height);
+        const tm = this.terrainRenderer.getMesh();
+        console.log('🔬 terrain mesh:', !!tm, 'visible:', tm?.isVisible, 'enabled:', tm?.isEnabled?.());
+        this.terrainRenderer.loadTerrainTextures(this.map);
     })();
 
     this.particleSystem = new ParticleSystem(this.scene);
   }
 
   private initCamera(): void {
-    // Classic isometric-like view: alpha=-45° (south-east), beta=45° from zenith, radius=70
     const camera = new ArcRotateCamera('camera', -Math.PI / 4, Math.PI / 4, 70, Vector3.Zero(), this.scene);
-    camera.setTarget(new Vector3(50, 0, 50));  // Center of 100×100 map
+    camera.setTarget(new Vector3(50, 0, 50));
     camera.lowerRadiusLimit = 10;
     camera.upperRadiusLimit = 200;
     this.scene.activeCamera = camera;
 
-    // Attach touch controller (pinch-to-zoom, two-finger pan, rotation)
     this.touchController = new TouchCameraController(camera, (x, y) => {
       this.gameLoop.viewCuller.setCenter(x, y);
     });

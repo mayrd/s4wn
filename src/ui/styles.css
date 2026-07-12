@@ -162,22 +162,34 @@
 
 /* Object Explorer */
 .explorer-panel {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: stretch;
+  align-items: stretch;
   background: var(--parchment-bg);
-  border: 8px solid var(--wood-light);
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
-  z-index: 100;
+  border: none;
+  box-shadow: 0 0 30px rgba(0,0,0,0.7);
+  z-index: 200;
   color: var(--text-color);
   font-family: 'Georgia', serif;
-  transition: transform 0.3s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  overflow: hidden;
+  pointer-events: auto;
 }
 
 .explorer-panel.hidden {
-  transform: translateX(100%);
+  opacity: 0;
+  transform: scale(0.97);
+  pointer-events: none;
 }
 
 .explorer-container {
@@ -216,15 +228,17 @@
   overflow: hidden;
 }
 
-.explorer-list-section, .explorer-details-section {
-  flex: 1;
+.explorer-list-section {
+  flex: 0 0 320px;
   display: flex;
   flex-direction: column;
-  border-right: 2px solid var(--wood-light);
-  overflow: hidden;
+  border-right: 3px solid var(--wood-light);
 }
 
 .explorer-details-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   border-right: none;
   background: rgba(0,0,0,0.05);
 }
@@ -339,6 +353,254 @@
   word-break: break-all;
   text-align: right;
   margin-left: 10px;
+}
+
+/* ── P12: Object Explorer Debug Sections ──────────────────────────── */
+
+.explorer-issue-btn {
+  display: block;
+  text-align: center;
+  padding: 6px 12px;
+  margin: 10px 0;
+  background: #6e3b1e;
+  color: #ffab40;
+  border: 1px solid #ffab40;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.explorer-issue-btn:hover {
+  background: #8b4d2a;
+  color: #ffc261;
+}
+
+.explorer-section {
+  margin-top: 12px;
+  border: 1px solid #8d6e63;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.explorer-section-title {
+  background: #5d4037;
+  color: #ffab40;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.explorer-section-body {
+  padding: 8px 10px;
+  background: rgba(93, 64, 55, 0.15);
+  font-size: 0.8rem;
+}
+.explorer-section-body .explorer-prop-row {
+  border-bottom: 1px dotted rgba(141, 110, 99, 0.3);
+}
+.explorer-section-body .prop-key {
+  color: #5d4037;
+}
+.explorer-section-body .prop-val {
+  color: #3e2723;
+}
+
+.explorer-debug-link {
+  color: #ffab40 !important;
+}
+.explorer-debug-link:hover {
+  color: #ffc261 !important;
+  text-decoration: underline !important;
+}
+
+/* ── P13: Search, Asset Chain, Instance Cards, Collapse ──────────── */
+
+.explorer-search-box {
+  padding: 4px 8px;
+  background: rgba(93, 64, 55, 0.3);
+}
+.explorer-search-box input {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid #8d6e63;
+  border-radius: 4px;
+  background: #f4e4bc;
+  color: #3e2723;
+  font-size: 0.85rem;
+  outline: none;
+  box-sizing: border-box;
+}
+.explorer-search-box input:focus {
+  border-color: #ffab40;
+}
+
+.explorer-chain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.8rem;
+}
+.explorer-chain-node {
+  background: rgba(255, 171, 64, 0.08);
+  border: 1px solid rgba(141, 110, 99, 0.4);
+  border-radius: 4px;
+  padding: 4px 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.explorer-chain-node span {
+  display: inline-block;
+  width: 60px;
+  font-weight: bold;
+  color: #ffab40;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+.explorer-chain-arrow {
+  font-size: 0.7rem;
+  color: #8d6e63;
+}
+
+.explorer-instance-card {
+  border: 1px solid rgba(141, 110, 99, 0.3);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin: 4px 0;
+  font-size: 0.78rem;
+  background: rgba(255, 171, 64, 0.05);
+}
+.explorer-instance-header {
+  font-weight: bold;
+  color: #ffab40;
+  font-size: 0.8rem;
+}
+
+.explorer-collapsed .explorer-section-body {
+  display: none;
+}
+.explorer-section-title {
+  cursor: pointer;
+  user-select: none;
+}
+.explorer-section-title:hover {
+  background: #6e3b1e;
+}
+
+.explorer-prompt-text {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #d4a574;
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: block;
+  padding: 4px 0;
+}
+
+.explorer-tex-preview {
+  display: block;
+  max-width: 160px;
+  max-height: 160px;
+  border: 2px solid #8d6e63;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  image-rendering: auto;
+}
+
+.explorer-tex-preview-full {
+  display: inline-block;
+  max-width: 100%;
+  max-height: 300px;
+  border: 3px solid #8d6e63;
+  border-radius: 6px;
+  image-rendering: auto;
+}
+
+/* ── Mobile back navigation ──────────────────────────────────────── */
+
+.explorer-mobile-back {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Full-width stacking layout */
+  .explorer-content {
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .explorer-list-section {
+    flex: 1 1 100%;
+    width: 100%;
+    border-right: none;
+    transition: transform 0.25s ease;
+  }
+
+  .explorer-details-section {
+    flex: 1 1 100%;
+    width: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    transition: transform 0.25s ease;
+  }
+
+  .explorer-mobile-details .explorer-details-section {
+    display: flex;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Show/hide list & details as pages */
+  .explorer-mobile-list .explorer-list-section {
+    display: flex;
+  }
+  .explorer-mobile-list .explorer-details-section {
+    display: none;
+  }
+
+  .explorer-mobile-details .explorer-list-section {
+    display: none;
+  }
+
+  /* Back button — sits between header and content */
+  .explorer-mobile-details .explorer-mobile-back {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    background: var(--wood-dark);
+    color: var(--parchment-bg);
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-bottom: 2px solid var(--wood-light);
+    user-select: none;
+  }
+  .explorer-mobile-back:hover {
+    background: #6e3b1e;
+  }
+
+  /* Details fill available height */
+  .explorer-details {
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Detail panels need more padding on mobile */
+  .explorer-detail-item {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+
+  /* Asset chain more compact */
+  .explorer-chain-node {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+  }
+
+  .explorer-tex-preview {
+    max-width: 120px;
+    max-height: 120px;
+  }
 }
 
 /* Utility */
