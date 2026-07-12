@@ -1,4 +1,4 @@
-# S4WN — Siedler 4 Web-Native
+# S4WN — Siedler 4 Wildering New-Dawn
 
 > **⚠️ Priority: [BASE.md](BASE.md)** contains game knowledge (building data, production chains). Never modify BASE.md.
 
