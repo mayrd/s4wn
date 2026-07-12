@@ -11,9 +11,13 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:8766',
     trace: 'on-first-retry',
-    screenshot: 'always',
+    screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
+  // Visual regression: baseline snapshots are committed, diffs go to test-results/
+  snapshotDir: './ui/__snapshots__',
+  snapshotPathTemplate: '{snapshotDir}/{testFileName}/{arg}{ext}',
+  outputDir: '../test-results',
   projects: [
     {
       name: 'chromium',
