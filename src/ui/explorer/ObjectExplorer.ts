@@ -14,6 +14,8 @@ import {
   buildingInputs, buildingOutputs, requiredTool, requiresSettler,
   resourceName, buildingName,
 } from '../../economy/types';
+import * as BABYLON from '@babylonjs/core';
+import '@babylonjs/loaders';
 
 export interface ExplorerObject {
   id: string;
@@ -61,6 +63,12 @@ export class ObjectExplorer {
   private gameLoop: GameLoop;
   private activeCatalog: CatalogTab = 'terrain';
 
+  // Preview Scene properties
+  private previewEngine?: BABYLON.Engine;
+  private previewScene?: BABYLON.Scene;
+  private previewCanvas?: HTMLCanvasElement;
+  private currentPreviewMesh?: BABYLON.AbstractMesh;
+
   constructor(_uiManager: UIManager, gameLoop: GameLoop) {
     this.gameLoop = gameLoop;
     this.container = document.createElement('div');
@@ -92,6 +100,9 @@ export class ObjectExplorer {
           </div>
           <div class="explorer-details-section">
             <div class="explorer-details-header">Details</div>
+            <div class="explorer-preview-container" id="explorer-preview">
+               <canvas id="explorer-canvas" style="width: 100%; height: 300px; background: #222;"></canvas>
+            </div>
             <div class="explorer-details" id="explorer-details">
               <div class="explorer-empty-msg">Select an object to inspect</div>
             </div>
@@ -102,6 +113,7 @@ export class ObjectExplorer {
 
     this.listElement = this.container.querySelector('#explorer-list') as HTMLElement;
     this.detailsElement = this.container.querySelector('#explorer-details') as HTMLElement;
+    this.previewCanvas = this.container.querySelector('#explorer-canvas') as HTMLCanvasElement;
     this.container.querySelector('.explorer-close')?.addEventListener('click', () => this.hide());
 
     this.container.querySelectorAll('.explorer-tab').forEach(tab => {
@@ -110,6 +122,7 @@ export class ObjectExplorer {
       });
     });
     this.setActiveTab('terrain');
+    this.initPreviewScene();
 
     const overlay = document.getElementById('ui-overlay');
     if (overlay) overlay.appendChild(this.container);
@@ -124,7 +137,12 @@ export class ObjectExplorer {
   }
 
   public show(): void { this.container.classList.remove('hidden'); this.container.classList.add('active'); this.isOpen = true; this.refresh(); }
-  public hide(): void { this.container.classList.add('hidden'); this.container.classList.remove('active'); this.isOpen = false; }
+  public hide(): void { 
+    this.container.classList.add('hidden'); 
+    this.container.classList.remove('active'); 
+    this.isOpen = false; 
+    if (this.previewEngine) this.previewEngine.stopRenderLoop();
+  }
   public toggle(): void { this.isOpen ? this.hide() : this.show(); }
 
   private refresh(): void {
@@ -346,7 +364,7 @@ export class ObjectExplorer {
 
   // ═══════════════════════════════════════════════════════════════════
   //  MISC — UI assets, CSS animations, audio
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
 
   private showMisc(): void {
     this.updateList([
@@ -413,5 +431,67 @@ export class ObjectExplorer {
         `).join('')}
       </div>
     `;
+    this.loadPreviewModel(obj);
+  }
+
+  private initPreviewScene(): void {
+    if (!this.previewCanvas) return;
+
+    this.previewEngine = new BABYLON.Engine(this.previewCanvas, true);
+    this.previewScene = new BABYLON.Scene(this.previewEngine);
+    this.previewScene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.1, 1);
+
+    const camera = new BABYLON.ArcRotateCamera('previewCam', -Math.PI / 2, Math.PI / 3, 5, BABYLON.Vector3.Zero(), this.previewScene);
+    camera.attachControl(this.previewCanvas, true);
+    
+    const light = new BABYLON.HemisphericLight('previewLight', new BABYLON.Vector3(0, 1, 0), this.previewScene);
+    light.intensity = 0.7;
+
+    this.previewEngine.runRenderLoop(() => {
+      this.previewScene?.render();
+    });
+
+    window.addEventListener('resize', () => {
+      this.previewEngine?.resize();
+    });
+  }
+
+  private async loadPreviewModel(obj: ExplorerObject): Promise<void> {
+    if (!this.previewScene) return;
+
+    // Clear previous model
+    if (this.currentPreviewMesh) {
+      this.currentPreviewMesh.dispose();
+      this.currentPreviewMesh = undefined;
+    }
+
+    const meshPath = obj.properties.mesh;
+    if (!meshPath || typeof meshPath !== 'string' || !meshPath.includes('assets/models/')) {
+      return;
+    }
+
+    try {
+      // Extract path from the description string if necessary
+      const match = meshPath.match(/assets\/models\/[^\s,)]+/);
+      if (!match) return;
+      const path = match[0];
+
+      // Load the model
+      const result = await BABYLON.SceneLoader.ImportMeshAsync('', 'assets/models/', path, this.previewScene);
+      this.currentPreviewMesh = result.meshes[0];
+      
+      // Center the model
+      const boundingInfo = this.currentPreviewMesh.getBoundingInfo();
+      const center = boundingInfo.boundingBox.center;
+      this.currentPreviewMesh.position.subtractInPlace(center);
+
+      // Basic animation if it's a unit or building with production
+      if (obj.type === 'unit' || obj.type === 'building') {
+        const animGroup = this.previewScene.getAnimationGroupByName('default');
+        if (animGroup) animGroup.play(true);
+      }
+    } catch (e) {
+      console.error(`Failed to load preview model for ${obj.name}:`, e);
+    }
   }
 }
