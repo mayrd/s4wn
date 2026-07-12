@@ -25,11 +25,8 @@ FROM caddy:2-alpine
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
-# Copy built frontend
+# Copy built frontend (includes textures, models, etc. from Vite publicDir)
 COPY --from=frontend-builder /build/dist/ /usr/share/caddy/
-
-# Copy game assets (textures, tiles, models, maps, UI)
-COPY assets/ /usr/share/caddy/assets/
 
 # Caddy configuration
 COPY web/Caddyfile /etc/caddy/Caddyfile
