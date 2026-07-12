@@ -17,6 +17,7 @@ RUN npm ci
 COPY tsconfig.json tsconfig.node.json vite.config.ts ./
 COPY index.html ./
 COPY src/ src/
+COPY assets/ assets/
 RUN npm run build
 
 # ── Stage 2: Runtime (Caddy + server binary + frontend dist) ──────
