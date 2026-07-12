@@ -72,7 +72,6 @@ const PROMPT_EXCERPTS: Record<string, string> = {
   unit_worker: 'Character UV sheet 256×256. Head: friendly face. Torso: brown tunic, grey apron. Arms: rolled sleeves. Legs: grey-brown trousers. PROMPTS.md §Worker.',
   unit_pioneer: 'Character UV sheet 256×256. Head: rugged face, wide-brim hat. Torso: leather jerkin. Arms: leather sleeves. Legs: tall boots. PROMPTS.md §Pioneer.',
   splash: '4K splash screen. Painterly medieval village in valley at golden hour. Castle, village square, timber-frame houses. Title "S4WN" in medieval typography. Center-safe for 9:16. PROMPTS.md §Splash.',
-  menu_bg: '4K menu background. Twilight village silhouette, dark centered band for white text overlay. Atmospheric mist, warm window lights. Center-safe for 9:16. PROMPTS.md §Menu Background.',
   logo: 'Game logo. Rustic medieval typography "S4WN", wood/stone texture, bronze-gold trim. Circular seal, dark green background. 1024×1024. PROMPTS.md §Logo.',
   terrain_grass: 'Seamless grass 1024×1024. Lush green with wildflowers, must tile at all four edges. Top-down orthographic, flat diffuse. PROMPTS.md §Terrain Grass.',
   terrain_forest: 'Seamless forest floor 1024×1024. Dark woodland with fallen leaves, moss, ferns. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Forest.',
@@ -314,9 +313,7 @@ export class ObjectExplorer {
 
   private loadMisc(): void {
     this.objects = [
-      { id:'m-splash',type:'ui',name:'Splash Screen',_promptKey:'splash',_instances:[],_chain:{mesh:'CSS bg-image',texture:'assets/images/splash.png',animation:'Fade 3s→menu'},properties:{file:'splash.png',format:'4K responsive 9:16-safe'}},
-      { id:'m-menu-bg',type:'ui',name:'Menu BG',_promptKey:'menu_bg',_instances:[],_chain:{mesh:'CSS bg-image',texture:'assets/images/menu-bg.png',animation:'Fade 0.3s'},properties:{file:'menu-bg.png',format:'4K responsive center band'}},
-      { id:'m-logo',type:'ui',name:'Game Logo',_promptKey:'logo',_instances:[],_chain:{mesh:'CSS img',texture:'assets/images/logo-1024.png',animation:'none'},properties:{file:'logo-1024.png',format:'1024×1024'}},
+      { id:'m-splash',type:'ui',name:'Splash',_promptKey:'splash',_instances:[],_chain:{mesh:'CSS bg-image',texture:'assets/images/splash.png',animation:'Fade 0.3s'},properties:{file:'splash.png',format:'4K responsive center-safe'}},
       { id:'m-favicon',type:'ui',name:'Favicon',_promptKey:'',_instances:[],_chain:{mesh:'<link rel=icon>',texture:'assets/images/favicon-256.png',animation:'none'},properties:{file:'favicon-256.png',format:'256×256'}},
       { id:'m-audio',type:'audio',name:'Sound FX',_promptKey:'',_instances:[],_chain:{mesh:'Web Audio API',texture:'Oscillator+Gain nodes',animation:'Envelope attack/sustain/release'},properties:{source:'SoundManager.ts',sounds:'select,place,error,tick,win,lose (6 tones)'}},
       { id:'m-anim1',type:'anim',name:'Splash→Menu',_promptKey:'',_instances:[],_chain:{mesh:'.ui-screen div',texture:'CSS opacity',animation:'3s fade-out (UIManager.ts)'},properties:{type:'CSS Transition',duration:'3s'}},
