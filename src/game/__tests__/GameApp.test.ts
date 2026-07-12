@@ -56,7 +56,7 @@ jest.mock('../../audio/SoundManager', () => ({
 jest.mock('../../rendering/TerrainRenderer', () => ({
   TerrainRenderer: jest.fn(() => ({
     createGround: jest.fn(),
-    loadTerrainTextures: jest.fn(),
+    loadTerrainTextures: jest.fn(() => Promise.resolve()),
     getMesh: jest.fn(() => null),
   })),
 }));

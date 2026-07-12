@@ -78,7 +78,13 @@ export class GameApp {
     // Create terrain first - it needs to exist before the render loop starts
     this.terrainRenderer = new TerrainRenderer(this.scene, this.map);
     this.terrainRenderer.createGround(this.map.width, this.map.height);
-    this.terrainRenderer.loadTerrainTextures(this.map);
+    // Load textures and log success/failure
+    this.terrainRenderer.loadTerrainTextures(this.map).then(() => {
+      console.log('✅ Terrain textures loaded successfully');
+    }).catch((e) => {
+      console.error('❌ Terrain texture loading failed:', e);
+    });
+    console.log('🎨 Terrain mesh created, awaiting texture load...');
 
     this.map.setAllVisible();
 
