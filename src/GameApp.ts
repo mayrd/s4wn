@@ -53,7 +53,8 @@ export class GameApp {
   private initEngine(canvas: HTMLCanvasElement): void {
     this.engine = new Engine(canvas, true);
     this.scene = new Scene(this.engine);
-    this.scene.clearColor = new Color4(0.5, 0.7, 1.0, 1.0);
+    // 🔴 RED background — if you see this, the render loop works
+    this.scene.clearColor = new Color4(1.0, 0.2, 0.2, 1.0);
   }
 
   private initSystems(): void {
@@ -76,8 +77,7 @@ export class GameApp {
   private initRendering(): void {
     this.terrainRenderer = new TerrainRenderer(this.scene, this.map);
     this.map.setAllVisible();
-    this.terrainRenderer.createGround(this.map.width, this.map.height);
-    this.terrainRenderer.loadTerrainTextures(this.map);
+    // Terrain created AFTER castle loads (in async block below) to isolate OBJ loader issues
 
     // Water plane disabled
     this.waterRenderer = { dispose: () => {}, getMesh: () => null } as any;
@@ -104,6 +104,12 @@ export class GameApp {
                 this.shadowPipeline.addShadowCaster(buildingMesh);
             }
         }
+        // 🔬 Create terrain AFTER castle loads — isolates OBJ loader interference
+        console.log('🏰 Castle loaded — creating terrain now...');
+        this.terrainRenderer.createGround(this.map.width, this.map.height);
+        const tm = this.terrainRenderer.getMesh();
+        console.log('🔬 terrain mesh:', !!tm, 'visible:', tm?.isVisible, 'enabled:', tm?.isEnabled?.());
+        this.terrainRenderer.loadTerrainTextures(this.map);
     })();
 
     this.particleSystem = new ParticleSystem(this.scene);
