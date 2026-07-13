@@ -182,11 +182,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P24 | 2026-07-13 | **Resource icons & low-storage warning** — Added `resourceIcon()` mapping each of the 19 `ResourceType` discriminants to a distinct glyph + color badge; `resourceIconKey()` for OBJ model filename stems (`icon_*.obj`); `LOW_STORAGE_PCT=90` threshold with pulsing ⚠ indicator per row; colored badge in list rows for resource type; CSS: `.explorer-res-icon` (22px rounded badge), `.explorer-res-warn` (red pulsing), `@keyframes explorer-warn-pulse`. `tsc --noEmit` clean, 230/230 unit tests green (1 pre-existing ErrorHandler `import.meta` failure). |
 
 ### Next Session Priorities
-1. **Visually confirm terrain fix + new Explorer Resources tab/toggle** — On a machine with a working Chromium/Playwright browser, load a game, open Object Explorer, confirm terrain renders textured (not black), Resources tab shows live counts, and the "Live" toggle actually pauses/resumes refresh.
-2. **Build and Deploy** — Build Docker image and deploy to verify production asset paths work on s4wn.mayrd.org.
-3. **Dockerfile Review** — Verify multi-stage build works for both amd64 and arm64 with Vite publicDir setup.
-4. **CI Playwright dependency** — Investigate whether the CI runner (unlike this sandbox) has full Chromium system deps so visual regression tests keep running there; consider documenting/setting up a way to run Playwright locally without sudo (e.g. `PLAYWRIGHT_BROWSERS_PATH` + prebuilt cache, or a Docker-based test runner).
-5. **Object Explorer polish** — Consider adding a resource icon (from `assets/models/icon_*.obj`) per row in the Resources tab, and a low-storage (>90% full) visual warning indicator.
+1. **Border Posts Implementation** — Add border post OBJ models and textures for all 5 nation colors; integrate into Object Explorer under "decorations" tab; wire Pioneer settler to place border posts during territory expansion.
 
 
 

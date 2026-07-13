@@ -175,16 +175,16 @@ across the [0,1] range per tile — so a 1024×1024 texture tiles once
 per terrain cell. Tiling direction: X (right), Z (forward). The splat-map
 shader blends up to 4 texture layers per pixel based on terrain type weights.
 
-| Texture                       | Used for              | Output path                             |
-|-------------------------------|-----------------------|-----------------------------------------|
-| `terrain_grass.png`           | Grass, meadows        | `assets/textures/terrain_grass.png`     |
-| `terrain_forest.png`          | Forest, woodland      | `assets/textures/terrain_forest.png`    |
-| `terrain_desert.png`          | Desert, arid plains   | `assets/textures/terrain_desert.png`    |
-| `terrain_mountain.png`        | Mountain, high peaks  | `assets/textures/terrain_mountain.png`  |
-| `terrain_snow.png`            | Snow, ice caps        | `assets/textures/terrain_snow.png`      |
-| `terrain_water.png`           | Shallow water, rivers | `assets/textures/terrain_water.png`     |
-| `terrain_deepwater.png`       | Deep ocean            | `assets/textures/terrain_deepwater.png` |
-| `terrain_swamp.png`           | Swamp, marsh          | `assets/textures/terrain_swamp.png`     |
+| Texture                       | Used for              | Output path                               |
+|-------------------------------|-----------------------|-------------------------------------------|
+| `terrain_grass.png`           | Grass, meadows        | `assets/textures/terrain_grass.png`    |
+| `terrain_forest.png`          | Forest, woodland      | `assets/textures/terrain_forest.png`   |
+| `terrain_desert.png`          | Desert, arid plains   | `assets/textures/terrain_desert.png`   |
+| `terrain_mountain.png`        | Mountain, high peaks  | `assets/textures/terrain_mountain.png` |
+| `terrain_snow.png`            | Snow, ice caps        | `assets/textures/terrain_snow.png`     |
+| `terrain_water.png`           | Shallow water, rivers | `assets/textures/terrain_water.png`    |
+| `terrain_deepwater.png`       | Deep ocean            | `assets/textures/terrain_deepwater.png`|
+| `terrain_swamp.png`           | Swamp, marsh          | `assets/textures/terrain_swamp.png`      |
 
 ### Grass (`assets/textures/terrain_grass.png`)
 ```
@@ -418,6 +418,73 @@ purple undertone in crevices suggesting dark magic corruption. Smooth but
 slightly pitted surface. Ominous, gothic architectural material. Flat square-on
 view, evenly lit. No shadows, no modern elements, no text. Pure material
 texture, photorealistic game asset quality. Tiles seamlessly on all four edges.
+```
+
+---
+
+## Border Post Textures
+
+> **Border posts are placed by Pioneer settlers to mark territorial boundaries.**
+> Each nation has a distinct color-coded post. Textures are 256×256 pixels,
+> square, flat-diffuse, representing a wooden/metal stake with nation-specific
+> colored pennant/flags.
+> Output path: `assets/textures/borderpost_<nation>.png`
+
+### Roman Border Post (`assets/textures/borderpost_roman.png`)
+**Used by:** Pioneer settlers of Roman nation
+```
+Seamless tileable wooden border post texture, 256×256 pixels. Rough-hewn timber
+stake driven into ground, weathered medium-brown wood (RGB ~130,100,70) with
+visible bark ridges. Crimson red pennant cloth attached to the top, frayed
+edges, slight wind ripple. Roman nation color (#cc3333) dominant. Metal bracket
+band securing the pennant. Flat square-on view, evenly lit. No shadows.
+Pure material texture, photorealistic game asset quality. Tiles seamlessly.
+```
+
+### Viking Border Post (`assets/textures/borderpost_viking.png`)
+**Used by:** Pioneer settlers of Viking nation
+```
+Seamless tileable wooden border post texture, 256×256 pixels. Rough-hewn timber
+stake driven into ground, weathered dark brown wood (RGB ~100,80,50) with
+visible bark texture. Deep navy blue pennant cloth attached to the top,
+tattered frayed edges, Nordic style. Viking nation color (#3366cc) dominant.
+Iron bracket band securing the pennant. Flat square-on view, evenly lit.
+No shadows. Pure material texture, photorealistic game asset quality.
+Tiles seamlessly.
+```
+
+### Mayan Border Post (`assets/textures/borderpost_mayan.png`)
+**Used by:** Pioneer settlers of Mayan nation
+```
+Seamless tileable wooden border post texture, 256×256 pixels. Rough-hewn timber
+stake driven into ground, weathered golden-brown wood (RGB ~140,110,60) with
+jaguar-carved patterns near the top. Emerald green pennant cloth attached,
+jade-toned fabric with subtle geometric border pattern. Mayan nation color
+(#33cc33) dominant. Stone bracket securing the pennant. Flat square-on view,
+evenly lit. No shadows. Pure material texture, photorealistic game asset
+quality. Tiles seamlessly.
+```
+
+### Trojan Border Post (`assets/textures/borderpost_trojan.png`)
+**Used by:** Pioneer settlers of Trojan nation
+```
+Seamless tileable wooden border post texture, 256×256 pixels. Rough-hewn timber
+stake driven into ground, weathered tan wood (RGB ~150,120,80) with
+horse-head carving near the top. Golden brown pennant cloth attached to the top,
+sun-faded edges. Trojan nation color (#cc9933) dominant. Bronze bracket band
+securing the pennant. Flat square-on view, evenly lit. No shadows. Pure material
+texture, photorealistic game asset quality. Tiles seamlessly.
+```
+
+### Dark Tribe Border Post (`assets/textures/borderpost_dark.png`)
+**Used by:** Pioneer settlers of Dark Tribe nation
+```
+Seamless tileable dark border post texture, 256×256 pixels. Twisted obsidian-black
+wooden stake driven into ground, warped and unnatural. Deep purple pennant cloth
+attached to the top, ethereal and slightly translucent with dark energy swirls.
+Dark Tribe nation color (#9933cc) dominant. Void-like aura around the post.
+Flat square-on view, evenly lit. No shadows. Pure material texture, photorealistic
+game asset quality. Tiles seamlessly.
 ```
 
 ---
@@ -667,6 +734,6 @@ above in §Building Textures and §Unit Textures.
 
 ---
 
-*Last updated: 2026-07-10 · See also: `scripts/generate_art.py` for the
+*Last updated: 2026-07-14 · See also: `scripts/generate_art.py` for the
 Gemini/OpenRouter generation script, `scripts/generate_building_objs.py` for
 procedural building geometry.*

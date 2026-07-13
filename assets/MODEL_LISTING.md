@@ -360,3 +360,43 @@ All textures procedurally generated, seamless tiling, PNG/RGBA format.
 | TX42 | particle_spark | Particle | RGBA 64² | Sharp yellow-orange radial |
 | TX43 | particle_dust | Particle | RGBA 64² | Soft tan radial gradient |
 | TX44 | particle_leaves | Particle | RGBA 64² | Soft green radial gradient |
+
+### Border Post Textures (5) — 256×256 PNG
+
+> Border posts are placed by Pioneer settlers to mark territorial boundaries.
+> Each nation has a distinct color-coded post.
+
+| ID | Name | Type | Format | Notes |
+|----|------|------|--------|-------|
+| TX45 | borderpost_roman | Diffuse | PNG 256² | Weathered brown timber + crimson pennant |
+| TX46 | borderpost_viking | Diffuse | PNG 256² | Dark brown timber + navy blue pennant |
+| TX47 | borderpost_mayan | Diffuse | PNG 256² | Golden-brown timber + emerald pennant |
+| TX48 | borderpost_trojan | Diffuse | PNG 256² | Tan timber + golden brown pennant |
+| TX49 | borderpost_dark | Diffuse | PNG 256² | Obsidian-black stake + purple ethereal pennant |
+
+### Border Post Models (5) — OBJ
+
+> Simple stake model with pennant/flag, placed on borders by Pioneer settlers.
+
+| ID | Name | Status | Tris | Color | Nation | Notes |
+|----|------|--------|------|-------|--------|-------|
+| BP01 | borderpost_roman | ⬜ | 40 | #CC3333 | Romans | Rough timber stake + crimson pennant flag |
+| BP02 | borderpost_viking | ⬜ | 40 | #3366CC | Vikings | Dark timber stake + navy blue pennant |
+| BP03 | borderpost_mayan | ⬜ | 40 | #33CC33 | Mayans | Golden-brown stake + emerald pennant |
+| BP04 | borderpost_trojan | ⬜ | 40 | #CC9933 | Trojans | Tan timber stake + golden pennant |
+| BP05 | borderpost_dark | ⬜ | 40 | #9933CC | Dark Tribe | Twisted obsidian stake + purple aura flag |
+
+---
+
+## 19. Border Posts (5 models)
+
+Border posts are placed by Pioneer settlers to dynamically expand territory
+without requiring military towers. Each post is color-coded to its nation.
+
+| ID | Name | Status | Tris | Terrain | Nation | Function |
+|----|------|--------|------|---------|--------|----------|
+| BP01 | borderpost_roman | ⬜ | 40 | Border tiles | Roman | Territory marker, red pennant |
+| BP02 | borderpost_viking | ⬜ | 40 | Border tiles | Viking | Territory marker, blue pennant |
+| BP03 | borderpost_mayan | ⬜ | 40 | Border tiles | Mayan | Territory marker, green pennant |
+| BP04 | borderpost_trojan | ⬜ | 40 | Border tiles | Trojan | Territory marker, tan pennant |
+| BP05 | borderpost_dark | ⬜ | 40 | Border tiles | Dark Tribe | Territory marker, purple pennant |
