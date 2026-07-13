@@ -16,6 +16,7 @@ export class DebugPanel {
   private gameLoop: GameLoop;
   private scene: Scene;
   private gridRenderer: GridRenderer | null = null;
+  private terrainRenderer: any; // TerrainRenderer reference for splatting toggle
   private pauseBtn: HTMLButtonElement | null = null;
   /** Store original textures to restore when toggling back on */
   private originalTextures: WeakMap<any, any> = new WeakMap();
@@ -63,16 +64,19 @@ export class DebugPanel {
       
       <hr class="debug-divider" />
       
-      <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
-        <button id="debug-btn-grid" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Grid: ON</button>
-        <button id="debug-btn-textures" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Textures: ON</button>
-        <button id="debug-btn-wireframe" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Wire: OFF</button>
-      </div>
-      <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
-        <button id="debug-btn-territory" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Territory: ON</button>
-        <button id="debug-btn-fog" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Fog: ON</button>
-        <button id="debug-btn-pause" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Pause: OFF</button>
-      </div>
+       <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
+         <button id="debug-btn-grid" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Grid: ON</button>
+         <button id="debug-btn-textures" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Textures: ON</button>
+         <button id="debug-btn-wireframe" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Wire: OFF</button>
+       </div>
+       <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
+         <button id="debug-btn-splat" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Splat: ON</button>
+         <button id="debug-btn-territory" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Territory: ON</button>
+         <button id="debug-btn-fog" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Fog: ON</button>
+       </div>
+       <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
+         <button id="debug-btn-pause" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Pause: OFF</button>
+       </div>
       
       <hr class="debug-divider" />
       
@@ -123,6 +127,14 @@ export class DebugPanel {
       this.setTerritoryVisibility(territoryVisible);
     });
 
+    // Splat toggle
+    const splatBtn = this.container.querySelector('#debug-btn-splat') as HTMLButtonElement;
+    splatBtn.addEventListener('click', () => {
+      const enabled = !this.terrainRenderer?.isSplattingEnabled();
+      splatBtn.textContent = `Splat: ${enabled ? 'ON' : 'OFF'}`;
+      this.terrainRenderer?.setSplattingEnabled(enabled);
+    });
+
     // Fog toggle
     const fogBtn = this.container.querySelector('#debug-btn-fog') as HTMLButtonElement;
     let fogEnabled = true;
@@ -162,6 +174,11 @@ export class DebugPanel {
   /** Set the grid renderer reference (called after it's created) */
   public setGridRenderer(renderer: GridRenderer): void {
     this.gridRenderer = renderer;
+  }
+
+  /** Set the terrain renderer reference for splatting toggle */
+  public setTerrainRenderer(renderer: any): void {
+    this.terrainRenderer = renderer;
   }
 
   /** Set up mouse tracking for tile inspection */

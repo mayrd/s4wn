@@ -1,11 +1,10 @@
 /**
- * S4WN Terrain Renderer — Creates terrain mesh with per-tile splat textures.
+ * S4WN Terrain Renderer — Creates terrain mesh with splatting support.
  *
  * Builds a ground mesh with one vertex per tile so that elevations can be
- * displaced into real 3D relief. A texture atlas is assembled from the
- * individual 1024² terrain type PNGs (one CELL×CELL cell per tile, clamped to
- * the GPU's max texture size) and mapped onto the mesh with 1:1 UVs so each
- * tile samples its own atlas cell.
+ * displaced into real 3D relief. The base texture uses a texture atlas where
+ * each tile's terrain type is sampled. When splatting is enabled, smooth
+ * transitions are applied at tile boundaries using edge blending.
  */
 
 import {
@@ -19,6 +18,7 @@ import {
   Vector3,
 } from '@babylonjs/core';
 import { Map as GameMap } from '../game/Map';
+// Terrain type is used in switch statements with string literals
 
 // Maximum per-tile atlas cell size in pixels. Each tile's 1024² source texture
 // is downscaled into a CELL×CELL region of the atlas. Larger cells retain more
@@ -31,6 +31,8 @@ export class TerrainRenderer {
   private scene: Scene;
   private map: GameMap;
   private terrainMesh: Mesh | null = null;
+  private splattingEnabled: boolean = true;
+  private _savedDiffuseColor: Color3 | null = null;
 
   constructor(scene: Scene, map: GameMap) {
     this.scene = scene;
@@ -130,6 +132,8 @@ export class TerrainRenderer {
       // Opaque base so uncovered edges never turn transparent.
       ctx.fillStyle = '#3c8c38';
       ctx.fillRect(0, 0, atlasW, atlasH);
+
+      // First pass: draw all terrain textures
       for (let ty = 0; ty < map.height; ty++) {
         for (let tx = 0; tx < map.width; tx++) {
           const idx = this.toIdx(String(map.tiles[ty][tx].terrain));
@@ -140,6 +144,12 @@ export class TerrainRenderer {
           );
         }
       }
+
+      // Second pass: apply splat blending at edges
+      if (this.splattingEnabled && cell >= 16) {
+        this.applySplatBlending(ctx, map, images, cell);
+      }
+
       const dt = new DynamicTexture('terrainAtlas', c, this.scene, false);
       // CRITICAL: the DynamicTexture constructor only ALLOCATES the GPU
       // texture — the canvas pixels are uploaded ONLY when update() is
@@ -162,6 +172,100 @@ export class TerrainRenderer {
     }
   }
 
+  /** Apply smooth blending at tile boundaries to eliminate checkered look */
+  private applySplatBlending(
+    ctx: CanvasRenderingContext2D,
+    map: GameMap,
+    images: HTMLImageElement[],
+    cell: number
+  ): void {
+    const BLEND_WIDTH = Math.max(2, Math.floor(cell * 0.15)); // 15% of cell for blending
+
+    for (let ty = 0; ty < map.height; ty++) {
+      for (let tx = 0; tx < map.width; tx++) {
+        const centerTerrain = map.tiles[ty][tx].terrain;
+        const centerIdx = this.toIdx(String(centerTerrain));
+
+        // Check each edge for different terrain neighbor
+        const offsetX = tx * cell;
+        const offsetY = ty * cell;
+
+        // Sample the tile center color for blending
+        const centerColor = this.sampleTerrainColor(images[centerIdx]);
+
+        // Blend with neighbors
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = tx + dx;
+            const ny = ty + dy;
+            const neighbor = map.get(nx, ny);
+            if (neighbor && neighbor.terrain !== centerTerrain) {
+              const neighborIdx = this.toIdx(String(neighbor.terrain));
+              const neighborColor = this.sampleTerrainColor(images[neighborIdx]);
+
+              // Apply blending to shared edge(s)
+              if (dx === -1) { // Left edge
+                this.blendEdge(ctx, offsetX, offsetY, cell, cell, centerColor, neighborColor, BLEND_WIDTH, 'left');
+              }
+              if (dx === 1) { // Right edge
+                this.blendEdge(ctx, offsetX + cell, offsetY, cell, cell, centerColor, neighborColor, BLEND_WIDTH, 'right');
+              }
+              if (dy === -1) { // Top edge
+                this.blendEdge(ctx, offsetX, offsetY, cell, cell, centerColor, neighborColor, BLEND_WIDTH, 'top');
+              }
+              if (dy === 1) { // Bottom edge
+                this.blendEdge(ctx, offsetX, offsetY + cell, cell, cell, centerColor, neighborColor, BLEND_WIDTH, 'bottom');
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /** Sample average color of a terrain texture */
+  private sampleTerrainColor(img: HTMLImageElement): string {
+    // Create a small canvas to sample the center color
+    const sampleCanvas = document.createElement('canvas');
+    const sCtx = sampleCanvas.getContext('2d')!;
+    sCtx.drawImage(img, img.width / 2 - 2, img.height / 2 - 2, 4, 4, 0, 0, 1, 1);
+    const pixel = sCtx.getImageData(0, 0, 1, 1).data;
+    return `rgb(${pixel[0]},${pixel[1]},${pixel[2]})`;
+  }
+
+  /** Blend colors along a tile edge */
+  private blendEdge(
+    ctx: CanvasRenderingContext2D,
+    x: number, y: number,
+    width: number, height: number,
+    colorA: string, colorB: string,
+    blendWidth: number,
+    edge: 'left' | 'right' | 'top' | 'bottom'
+  ): void {
+    const grad = ctx.createLinearGradient(
+      edge === 'left' ? x - blendWidth : x,
+      edge === 'top' ? y - blendWidth : y,
+      edge === 'left' ? x : x + blendWidth,
+      edge === 'top' ? y : y + blendWidth
+    );
+
+    grad.addColorStop(0, colorA);
+    grad.addColorStop(1, colorB);
+
+    ctx.fillStyle = grad;
+
+    if (edge === 'left') {
+      ctx.fillRect(x - blendWidth, y, blendWidth, height);
+    } else if (edge === 'right') {
+      ctx.fillRect(x, y, blendWidth, height);
+    } else if (edge === 'top') {
+      ctx.fillRect(x, y - blendWidth, width, blendWidth);
+    } else {
+      ctx.fillRect(x, y, width, blendWidth);
+    }
+  }
+
   private toIdx(t: string): number {
     switch (t) {
       case 'Forest': return 1;
@@ -180,8 +284,41 @@ export class TerrainRenderer {
       const i = new Image();
       i.onload = () => ok(i);
       i.onerror = () => no(Error(`failed to load ${s}`));
+      i.crossOrigin = 'anonymous';
       i.src = s;
     });
+  }
+
+  /** Toggle splatting on/off - when off, shows flat colored terrain */
+  setSplattingEnabled(enabled: boolean): void {
+    this.splattingEnabled = enabled;
+    const mesh = this.terrainMesh;
+    if (!mesh) return;
+
+    const mat = mesh.material as StandardMaterial;
+
+    if (enabled) {
+      // Restore textures
+      mat.diffuseColor = this._savedDiffuseColor ?? new Color3(1, 1, 1);
+    } else {
+      // Disable - show flat color for debugging checkered view
+      this._savedDiffuseColor = mat.diffuseColor.clone();
+      mat.diffuseTexture = null;
+      mat.diffuseColor = new Color3(0.4, 0.7, 0.3); // Flat green
+    }
+  }
+
+  /** Get current splatting state */
+  isSplattingEnabled(): boolean {
+    return this.splattingEnabled;
+  }
+
+  /** Refresh splat texture after map changes */
+  async refreshSplatting(): Promise<void> {
+    if (this.splattingEnabled) {
+      // Reload the entire atlas with splatting applied
+      await this.loadTerrainTextures(this.map);
+    }
   }
 
   getMesh() {

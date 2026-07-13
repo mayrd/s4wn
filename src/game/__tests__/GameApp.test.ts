@@ -125,7 +125,10 @@ jest.mock('../../ui/HUD', () => ({
 }));
 
 jest.mock('../../ui/panels/DebugPanel', () => ({
-  DebugPanel: jest.fn(() => ({ setGridRenderer: jest.fn() })),
+  DebugPanel: jest.fn(() => ({ 
+    setGridRenderer: jest.fn(),
+    setTerrainRenderer: jest.fn(),
+  })),
 }));
 
 jest.mock('../../input/TouchCameraController', () => ({

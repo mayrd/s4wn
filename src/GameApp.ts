@@ -195,8 +195,9 @@ export class GameApp {
     this.gameLoop.state.isPaused = false;
     new HUD(this.gameLoop);
     const debugPanel = new DebugPanel(document, this.engine, this.gameLoop, this.scene);
-    // Wire grid renderer to debug panel for toggling
+    // Wire renderers to debug panel for toggling
     debugPanel.setGridRenderer(this.gridRenderer);
+    debugPanel.setTerrainRenderer(this.terrainRenderer);
     // Expose debug panel for console access
     (window as any).debugPanel = debugPanel;
   }

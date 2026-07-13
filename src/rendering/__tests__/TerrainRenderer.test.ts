@@ -6,6 +6,11 @@
 HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
   fillStyle: '',
   fillRect: jest.fn(),
+  drawImage: jest.fn(),
+  createLinearGradient: jest.fn(() => ({
+    addColorStop: jest.fn(),
+  })),
+  getImageData: jest.fn(() => ({ data: [100, 100, 100, 255] })),
 })) as any;
 
 jest.mock('@babylonjs/core', () => {
@@ -18,6 +23,18 @@ jest.mock('@babylonjs/core', () => {
     getTotalVertices: () => 48 * 48,
     dispose: jest.fn(),
   };
+  // Color3 mock with clone method
+  const Color3Mock = Object.assign(
+    function (r?: number, g?: number, b?: number) { 
+      const obj = { r: r ?? 0, g: g ?? 0, b: b ?? 0 };
+      obj.clone = () => ({ r: obj.r, g: obj.g, b: obj.b, clone: () => ({ r: obj.r, g: obj.g, b: obj.b }) });
+      return obj;
+    },
+    { 
+      Black: () => { const o = { r: 0, g: 0, b: 0 }; o.clone = () => ({ r: 0, g: 0, b: 0 }); return o; }, 
+      White: () => { const o = { r: 1, g: 1, b: 1 }; o.clone = () => ({ r: 1, g: 1, b: 1 }); return o; }
+    }
+  );
   return {
     Mesh: jest.fn((name: string, _scene: any) => ({ ...mesh, name })),
     VertexData: Object.assign(
@@ -26,20 +43,20 @@ jest.mock('@babylonjs/core', () => {
       },
       { ComputeNormals: jest.fn() },
     ),
-    StandardMaterial: jest.fn((name: string, _scene: any) => ({
-      name,
-      diffuseColor: { r: 0, g: 0, b: 0 },
-      emissiveColor: { r: 0, g: 0, b: 0 },
-      specularColor: { r: 0, g: 0, b: 0 },
-      backFaceCulling: true,
-      diffuseTexture: null,
-      useAlphaFromDiffuseTexture: false,
-      dispose: jest.fn(),
-    })),
-    Color3: Object.assign(
-      function (r?: number, g?: number, b?: number) { return { r: r ?? 0, g: g ?? 0, b: b ?? 0 }; },
-      { Black: () => ({ r: 0, g: 0, b: 0 }), White: () => ({ r: 1, g: 1, b: 1 }) },
-    ),
+    StandardMaterial: jest.fn(() => {
+      const mat = {
+        name: 'terrainMat',
+        diffuseColor: { r: 0, g: 0, b: 0, clone: () => ({ r: 0, g: 0, b: 0 }) },
+        emissiveColor: { r: 0, g: 0, b: 0 },
+        specularColor: { r: 0, g: 0, b: 0 },
+        backFaceCulling: true,
+        diffuseTexture: null,
+        useAlphaFromDiffuseTexture: false,
+        dispose: jest.fn(),
+      };
+      return mat;
+    }),
+    Color3: Color3Mock,
     DynamicTexture: jest.fn(() => ({
       update: jest.fn(),
       updateSamplingMode: jest.fn(),
@@ -103,6 +120,42 @@ describe('TerrainRenderer', () => {
     names.forEach(n => {
       const fullPath = `${expectedPrefix}${n}.png`;
       expect(fullPath).toMatch(/^\/textures\/terrain_.*\.png$/);
+    });
+  });
+  
+  describe('Splatting', () => {
+    it('splatting enabled by default', () => {
+      terrain.createGround(48, 48);
+      expect(terrain.isSplattingEnabled()).toBe(true);
+    });
+    
+    it('setSplattingEnabled toggles state', () => {
+      expect(terrain.isSplattingEnabled()).toBe(true);
+      terrain.setSplattingEnabled(false);
+      expect(terrain.isSplattingEnabled()).toBe(false);
+      terrain.setSplattingEnabled(true);
+      expect(terrain.isSplattingEnabled()).toBe(true);
+    });
+    
+    it('splatting disabled shows flat color', () => {
+      terrain.createGround(48, 48);
+      terrain.setSplattingEnabled(false);
+      // When splatting is off, diffuseTexture should be null
+      expect((terrain.getMesh()! as any).material.diffuseTexture).toBeNull();
+    });
+    
+    it('splatting toggle preserves original diffuseColor', () => {
+      terrain.createGround(48, 48);
+      const mat = (terrain.getMesh()! as any).material;
+      // Manually set a meaningful diffuseColor for testing
+      mat.diffuseColor = { r: 0.3, g: 0.7, b: 0.2, clone: () => ({ r: 0.3, g: 0.7, b: 0.2 }) };
+      const originalColor = mat.diffuseColor;
+      terrain.setSplattingEnabled(false);
+      terrain.setSplattingEnabled(true);
+      // Color should be restored (same values, not necessarily same object)
+      expect(mat.diffuseColor.r).toBe(originalColor.r);
+      expect(mat.diffuseColor.g).toBe(originalColor.g);
+      expect(mat.diffuseColor.b).toBe(originalColor.b);
     });
   });
 });
