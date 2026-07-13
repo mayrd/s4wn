@@ -334,6 +334,51 @@ export class ObjectExplorer {
     });
   }
 
+  /**
+   * Glyph + color badge per resource. The actual icon assets live as
+   * OBJ models (`assets/models/icon_*.obj`) which can't be rendered inline
+   * in a DOM list, so we surface a distinct glyph/color here and reference
+   * the OBJ model in the detail asset-chain.
+   */
+  private resourceIcon(disc: number): { glyph: string; color: string } {
+    const ICONS: Record<number, { glyph: string; color: string }> = {
+      0:  { glyph: '🪵', color: '#9b6a3c' }, // Wood
+      1:  { glyph: '⛰️', color: '#8a8f98' }, // Iron Ore
+      2:  { glyph: '⚫', color: '#2b2b2b' }, // Coal
+      3:  { glyph: '🪙', color: '#d4af37' }, // Gold
+      4:  { glyph: '🪨', color: '#9a9a9a' }, // Stone
+      5:  { glyph: '🟡', color: '#e3c93a' }, // Sulfur
+      6:  { glyph: '🐟', color: '#4aa3c7' }, // Fish
+      7:  { glyph: '🌾', color: '#d9b94a' }, // Grain
+      8:  { glyph: '🥩', color: '#b5524a' }, // Meat
+      9:  { glyph: '💧', color: '#3b8fd1' }, // Water
+      10: { glyph: '🍯', color: '#e0a83a' }, // Honey
+      11: { glyph: '🟫', color: '#b07a3f' }, // Planks
+      12: { glyph: '🔧', color: '#7f8c8d' }, // Tools
+      13: { glyph: '⚔️', color: '#b0b6bd' }, // Weapons
+      14: { glyph: '🍞', color: '#d9a441' }, // Bread
+      15: { glyph: '🌫️', color: '#cdbf9a' }, // Flour
+      16: { glyph: '🔩', color: '#9aa0a6' }, // Iron Ingots
+      17: { glyph: '🍺', color: '#caa23a' }, // Mead
+      18: { glyph: '🍷', color: '#7a2230' }, // Wine
+    };
+    return ICONS[disc] ?? { glyph: '❔', color: '#888' };
+  }
+
+  /** Maps a resource discriminant to its icon asset key (icon_*.obj filename stem). */
+  private resourceIconKey(disc: number): string {
+    const KEYS: Record<number, string> = {
+      0: 'wood', 1: 'iron', 2: 'coal', 3: 'gold', 4: 'stone',
+      5: 'sulfur', 6: 'fish', 7: 'grain', 8: 'meat', 9: 'water',
+      10: 'honey', 11: 'planks', 12: 'tools', 13: 'weapons',
+      14: 'bread', 15: 'flour', 16: 'iron', 17: 'mead', 18: 'wine',
+    };
+    return KEYS[disc] ?? 'wood';
+  }
+
+  /** Low-storage threshold: warn when a store is >= 90% full. */
+  private static readonly LOW_STORAGE_PCT = 90;
+
   private loadResources(): void {
     const counts = this.gameLoop.economy.getResourceCounts();
     const storageCapacity = (this.gameLoop.economy as any).storageCapacity ?? 100;
@@ -346,9 +391,14 @@ export class ObjectExplorer {
       if (/^Resource#/.test(name)) continue;
       const amount = counts[disc] ?? 0;
       const pct = storageCapacity > 0 ? Math.round((amount / storageCapacity) * 100) : 0;
+      const lowStorage = pct >= ObjectExplorer.LOW_STORAGE_PCT;
+      const icon = this.resourceIcon(disc);
+      const iconKey = this.resourceIconKey(disc);
       results.push({
         id: `resource-${disc}`, type: 'resource', name: `${name} (${amount})`,
-        properties: { amount, storageCapacity, percentFull: `${pct}%`, discriminant: disc },
+        _icon: icon, _warn: lowStorage, _promptKey: `icon_${iconKey}`,
+        _chain: { mesh:`assets/models/icon_${iconKey}.obj`, texture:`MTL→map_Kd→icon_${iconKey}.png`, animation:'static billboard badge' },
+        properties: { amount, storageCapacity, percentFull: `${pct}%`, discriminant: disc, _lowStorage: lowStorage },
       } as ExplorerObject);
     }
     this.objects = results;
@@ -386,7 +436,16 @@ export class ObjectExplorer {
     this.objects.filter(o => !q || o.name.toLowerCase().includes(q) || o.type.includes(q))
       .forEach(o => {
         const div = document.createElement('div'); div.className = 'explorer-item';
-        div.innerHTML = `<span class="explorer-item-type">[${o.type}]</span> <span class="explorer-item-name">${o.name}</span>`;
+        const x = o as any;
+        let prefix = `<span class="explorer-item-type">[${o.type}]</span> `;
+        // Resource rows get a colored glyph badge + low-storage warning indicator
+        if (o.type === 'resource' && x._icon) {
+          const warn = x._warn
+            ? `<span class="explorer-res-warn" title="Storage >= 90% full — build/expand warehouse!">⚠</span>`
+            : '';
+          prefix += `<span class="explorer-res-icon" style="background:${x._icon.color}">${x._icon.glyph}</span>${warn} `;
+        }
+        div.innerHTML = `${prefix}<span class="explorer-item-name">${o.name}</span>`;
         div.addEventListener('click', () => this.showDetails(o));
         this.listEl.appendChild(div);
       });

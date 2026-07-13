@@ -415,6 +415,30 @@
   opacity: 0.8;
 }
 
+/* Resource list rows: colored glyph badge + low-storage warning */
+.explorer-res-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  line-height: 1;
+  flex: 0 0 auto;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+.explorer-res-warn {
+  color: #c62828;
+  font-size: 0.95rem;
+  margin-left: -2px;
+  animation: explorer-warn-pulse 1.2s ease-in-out infinite;
+}
+@keyframes explorer-warn-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
 .explorer-details {
   flex: 1;
   overflow-y: auto;
