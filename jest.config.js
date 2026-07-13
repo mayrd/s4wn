@@ -9,6 +9,8 @@ module.exports = {
       'ts-jest',
       {
         tsconfig: 'tsconfig.json',
+        // Use inline-source-map to handle ESM properly
+        diagnostics: false,
       },
     ],
   },
@@ -18,4 +20,6 @@ module.exports = {
     '^@rendering/(.*)$': '<rootDir>/src/rendering/$1',
     '^@ui/(.*)$': '<rootDir>/src/ui/$1',
   },
+  // Provide import.meta polyfill for Vite/Babel compatibility
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
 };

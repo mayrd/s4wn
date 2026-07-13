@@ -52,16 +52,20 @@ export class ErrorHandler {
       stack,
     };
 
-    logger.fatal(`Error:${type}`, message, errorContext);
+     logger.fatal(`Error:${type}`, message, errorContext);
 
-    // In development, we might want to alert the user or show a crash screen
-    if (import.meta.env.DEV) {
-      console.group('%c 🚨 S4WN CRITICAL ERROR ', 'background: #ff0000; color: #ffffff; font-weight: bold; font-size: 14px;');
-      console.error(`Type: ${type}`);
-      console.error(`Message: ${message}`);
-      console.error(`Stack: ${stack}`);
-      console.groupEnd();
-    }
+     // In development, we might want to alert the user or show a crash screen
+     // Simple check: if we're in a browser with document, check for dev mode
+     const isDev = typeof document !== 'undefined' && 
+                   (document.documentElement?.dataset?.dev === 'true' || 
+                    typeof process !== 'undefined' && process.env.NODE_ENV !== 'production');
+     if (isDev) {
+       console.group('%c 🚨 S4WN CRITICAL ERROR ', 'background: #ff0000; color: #ffffff; font-weight: bold; font-size: 14px;');
+       console.error(`Type: ${type}`);
+       console.error(`Message: ${message}`);
+       console.error(`Stack: ${stack}`);
+       console.groupEnd();
+     }
   }
 }
 
