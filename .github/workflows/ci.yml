@@ -34,9 +34,6 @@ jobs:
 
       - name: Run UI tests
         run: |
-          echo "SKIP UI tests for now."
-          exit 0
-          
           npm run build
           # Start preview server with explicit port & capture PID
           npm run preview > /tmp/preview.log 2>&1 &
@@ -61,14 +58,33 @@ jobs:
             exit 1
           fi
           
-          # Run tests with explicit timeout
-          #TODO: npm run test:ui || TEST_RESULT=$?
+          # Run Playwright tests — create missing snapshots in CI,
+          # upload them as artifacts so they can be committed as baselines.
+          npx playwright test -c tests/playwright.config.ts --update-snapshots || TEST_RESULT=$?
           
           # Cleanup
           kill $PREVIEW_PID 2>/dev/null || true
           wait $PREVIEW_PID 2>/dev/null || true
           
           exit ${TEST_RESULT:-0}
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
+      - name: Upload baseline snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines
+          path: tests/ui/__snapshots__/
+          retention-days: 7
 
       - name: Build frontend
         run: npm run build
