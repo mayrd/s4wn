@@ -25,14 +25,13 @@ jest.mock('@babylonjs/core', () => {
   };
   // Color3 mock with clone method
   const Color3Mock = Object.assign(
-    function (r?: number, g?: number, b?: number) { 
-      const obj = { r: r ?? 0, g: g ?? 0, b: b ?? 0 };
-      obj.clone = () => ({ r: obj.r, g: obj.g, b: obj.b, clone: () => ({ r: obj.r, g: obj.g, b: obj.b }) });
+    function (this: any, r?: number, g?: number, b?: number) { 
+      const obj = { r: r ?? 0, g: g ?? 0, b: b ?? 0, clone: () => ({ r: obj.r, g: obj.g, b: obj.b }) };
       return obj;
     },
     { 
-      Black: () => { const o = { r: 0, g: 0, b: 0 }; o.clone = () => ({ r: 0, g: 0, b: 0 }); return o; }, 
-      White: () => { const o = { r: 1, g: 1, b: 1 }; o.clone = () => ({ r: 1, g: 1, b: 1 }); return o; }
+      Black: () => ({ r: 0, g: 0, b: 0, clone: () => ({ r: 0, g: 0, b: 0 }) }), 
+      White: () => ({ r: 1, g: 1, b: 1, clone: () => ({ r: 1, g: 1, b: 1 }) })
     }
   );
   return {
