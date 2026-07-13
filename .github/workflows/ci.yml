@@ -60,11 +60,9 @@ jobs:
           fi
 
           # Run Playwright tests only if the server is up.
-          # Create missing snapshots in CI, upload them as artifacts so they
-          # can be committed as baselines. Non-fatal: UI tests are still being
-          # established, so a snapshot mismatch must not fail the whole job.
+          # Baselines are committed; visual regressions now fail the build.
           if [ -z "${PREVIEW_FAILED:-}" ]; then
-            npx playwright test -c tests/playwright.config.ts --update-snapshots || echo "⚠️ Some Playwright tests failed — check artifacts for baseline snapshots"
+            npx playwright test -c tests/playwright.config.ts
           else
             echo "⚠️ Skipping Playwright (preview server unavailable)"
           fi
