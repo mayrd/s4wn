@@ -18,6 +18,7 @@ import { checkCapabilities, CapabilityResult } from '../core/CapabilityChecker';
 export type StartMode = 'new' | 'load';
 
 export class UIManager {
+  private static instance: UIManager | null = null;
   private overlay: HTMLElement;
   private splashScreen!: HTMLElement;
   private mainMenu!: HTMLElement;
@@ -25,6 +26,21 @@ export class UIManager {
   private gameLoop: GameLoop | null = null;
 
   constructor(gameLoop?: GameLoop) {
+    // Singleton: reuse the first-created instance so duplicate DOM elements
+    // (with duplicate IDs) are never appended to the overlay.
+    if (UIManager.instance) {
+      this.overlay = UIManager.instance.overlay;
+      this.splashScreen = UIManager.instance.splashScreen;
+      this.mainMenu = UIManager.instance.mainMenu;
+      this.gameLoop = gameLoop ?? UIManager.instance.gameLoop;
+      UIManager.instance.gameLoop = this.gameLoop;
+      // Share the objectExplorer reference so setObjectExplorer() and
+      // toggleExplorer() both see the same instance.
+      this.objectExplorer = UIManager.instance.objectExplorer;
+      return;
+    }
+    UIManager.instance = this;
+
     this.gameLoop = gameLoop ?? null;
     this.overlay = document.getElementById('ui-overlay')!;
     // ObjectExplorer only exists once a game (GameLoop) is running.
@@ -182,6 +198,11 @@ export class UIManager {
 
   public setObjectExplorer(explorer: ObjectExplorer): void {
     this.objectExplorer = explorer;
+    // Keep the singleton in sync so toggleExplorer() (which runs on the
+    // original instance's click handler) sees the explorer reference.
+    if (UIManager.instance && UIManager.instance !== this) {
+      UIManager.instance.objectExplorer = explorer;
+    }
   }
 
   public hideAll(): void {
