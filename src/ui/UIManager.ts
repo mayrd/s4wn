@@ -24,6 +24,9 @@ export class UIManager {
   private mainMenu!: HTMLElement;
   private objectExplorer: ObjectExplorer | null = null;
   private gameLoop: GameLoop | null = null;
+  /** Set when the user opens a panel from the menu before a game is running. */
+  private pendingExplorerOpen = false;
+  private pendingEditorOpen = false;
 
   constructor(gameLoop?: GameLoop) {
     // Singleton: reuse the first-created instance so duplicate DOM elements
@@ -182,18 +185,49 @@ export class UIManager {
     return this.gameLoop ? this.gameLoop.save() : false;
   }
 
-  /** Toggle the in-game Object Explorer (only available once a game runs). */
+  /**
+   * Toggle the in-game Object Explorer. From the main menu (no game running
+   * yet) this boots a new game and opens the explorer automatically once the
+   * engine is ready (see onGameReady()).
+   */
   public toggleExplorer(): void {
     if (this.objectExplorer) {
       this.objectExplorer.toggle();
     } else {
-      window.dispatchEvent(new CustomEvent('ui-explorer-toggle'));
+      this.pendingExplorerOpen = true;
+      this.startGame('new');
     }
   }
 
   /** Toggle the in-game Map Editor (only available once a game runs). */
   public toggleEditor(): void {
-    window.dispatchEvent(new CustomEvent('ui-editor-toggle'));
+    if (this.objectExplorer) {
+      window.dispatchEvent(new CustomEvent('ui-editor-toggle'));
+    } else {
+      this.pendingEditorOpen = true;
+      this.startGame('new');
+    }
+  }
+
+  /**
+   * Called by the bootstrap (main.ts) once the heavy GameApp has been
+   * constructed and this singleton now holds the live ObjectExplorer
+   * reference. Opens any panel the user requested from the menu before the
+   * game had started.
+   */
+  public onGameReady(): void {
+    if (this.pendingExplorerOpen) {
+      this.pendingExplorerOpen = false;
+      if (this.objectExplorer) {
+        this.objectExplorer.toggle();
+      } else {
+        window.dispatchEvent(new CustomEvent('ui-explorer-toggle'));
+      }
+    }
+    if (this.pendingEditorOpen) {
+      this.pendingEditorOpen = false;
+      window.dispatchEvent(new CustomEvent('ui-editor-toggle'));
+    }
   }
 
   public setObjectExplorer(explorer: ObjectExplorer): void {

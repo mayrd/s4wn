@@ -47,6 +47,9 @@ window.addEventListener('game-start', async (event: Event) => {
       app = new GameApp('renderCanvas', mode);
       // Hide the splash once the engine is up and rendering.
       menu.hideAll();
+      // Open any panel the user requested from the menu (e.g. Object Explorer)
+      // before the game had actually started.
+      menu.onGameReady();
       // For global accessibility in debug/cleanup
       (window as any).gameApp = app;
     } catch (err) {
