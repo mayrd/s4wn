@@ -29,7 +29,10 @@ test.describe('Initial UI Flow', () => {
 
     const mainMenu = page.locator('.main-menu-screen');
     await expect(mainMenu).toHaveClass(/active/);
-    await expect(page.locator('.menu-title')).toContainText('S4WN');
+    // The menu title is a transparent logo image (P15), not a .menu-title
+    // text node — assert the logo element is present and carries the S4WN alt.
+    await expect(page.locator('.menu-logo')).toBeVisible();
+    await expect(page.locator('.menu-logo')).toHaveAttribute('alt', 'S4WN');
     await expect(page.locator('#btn-tutorial')).toBeVisible();
     await expect(page.locator('#btn-new-game')).toBeVisible();
     await expect(page.locator('#btn-load-game')).toBeVisible();
