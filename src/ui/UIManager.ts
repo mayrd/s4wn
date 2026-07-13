@@ -39,6 +39,11 @@ export class UIManager {
     this.createSplashScreen();
     this.createMainMenu();
     this.showSplashScreen();
+    // Fade in from black once the splash screen is visible.
+    requestAnimationFrame(() => {
+      const fade = document.getElementById('fade-layer');
+      if (fade) fade.classList.add('clear');
+    });
     this.runBootChecks();
   }
 
@@ -71,11 +76,8 @@ export class UIManager {
     this.splashScreen = document.createElement('div');
     this.splashScreen.className = 'ui-screen splash-screen active';
     this.splashScreen.innerHTML = `
-      <div>
-        <div class="splash-logo">S4WN</div>
-        <div class="splash-loading">Checking your system...</div>
-        <div class="splash-note"></div>
-      </div>
+      <div class="splash-loading">Checking your system...</div>
+      <div class="splash-note"></div>
     `;
     this.overlay.appendChild(this.splashScreen);
   }

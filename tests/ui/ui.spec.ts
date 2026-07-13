@@ -10,8 +10,7 @@ test.describe('Initial UI Flow', () => {
     await expect(splashScreen).toBeVisible();
     await expect(splashScreen).toHaveClass(/active/);
 
-    // 2. Check for splash logo and loading text
-    await expect(page.locator('.splash-logo')).toContainText('S4WN');
+    // 2. Check for loading text (logo is now part of the splash image)
     await expect(page.locator('.splash-loading')).toContainText('Checking your system...');
 
     // 3. Verify splash screen has background image (not just color)
