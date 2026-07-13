@@ -136,6 +136,12 @@ export class TerrainRenderer {
         }
       }
       const dt = new DynamicTexture('terrainAtlas', c, this.scene, false);
+      // CRITICAL: the DynamicTexture constructor only ALLOCATES the GPU
+      // texture — the canvas pixels are uploaded ONLY when update() is
+      // called. Without this the terrain samples an empty (black) texture.
+      // invertY=false keeps canvas row 0 aligned with UV v=0 (tile row 0),
+      // so the atlas orientation matches the mesh UV layout.
+      dt.update(false);
       dt.updateSamplingMode(Texture.BILINEAR_SAMPLINGMODE);
       dt.wrapU = Texture.CLAMP_ADDRESSMODE;
       dt.wrapV = Texture.CLAMP_ADDRESSMODE;

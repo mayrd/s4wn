@@ -41,6 +41,7 @@ jest.mock('@babylonjs/core', () => {
       { Black: () => ({ r: 0, g: 0, b: 0 }), White: () => ({ r: 1, g: 1, b: 1 }) },
     ),
     DynamicTexture: jest.fn(() => ({
+      update: jest.fn(),
       updateSamplingMode: jest.fn(),
       dispose: jest.fn(),
     })),
