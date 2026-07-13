@@ -59,9 +59,14 @@ export class TerrainRenderer {
         const i1 = i0 + 1;
         const i2 = i0 + w;
         const i3 = i2 + 1;
-        // Two triangles per quad (counter-clockwise winding).
-        indices.push(i0, i2, i1);
-        indices.push(i1, i2, i3);
+        // Two triangles per quad. Winding chosen so the computed face
+        // normal points +Y (up) — with the opposite winding the cross
+        // product yields a downward normal, which makes the HemisphericLight
+        // fall back to its (default black) groundColor and renders the
+        // terrain completely black even though the mesh geometry/elevation
+        // is correct.
+        indices.push(i0, i1, i2);
+        indices.push(i1, i3, i2);
       }
     }
 
