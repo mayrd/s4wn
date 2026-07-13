@@ -175,12 +175,13 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P17 | 2026-07-13 | **CI: Enable Playwright UI Tests** — Remove skip block (`echo "SKIP"; exit 0`) from ci.yml; run `npx playwright test --update-snapshots` in CI to auto-create baseline snapshots; upload Playwright report + visual baselines as artifacts (7-day retention); 72 unit tests green |
 | P18 | 2026-07-13 | **Complete Visual Baselines + Fix Duplicate UIManager IDs** — Generated 4 missing baseline snapshots (object-explorer, hud-container, in-game-full, splash-screen); fixed ObjectExplorer visual tests to start game first (explorer only available after GameLoop runs); fixed in-game-full instability (WebGL canvas continuously animated — raised thresholds to 0.2/0.15); made UIManager a singleton to prevent duplicate DOM elements (second instance created by GameApp caused duplicate #btn-explorer IDs); all 72 unit + 9 visual tests green |
 | P19 | 2026-07-13 | **CI: Visual Regression Enforcement** — Removed `--update-snapshots` from CI Playwright step; removed `|| echo` fallback so snapshot mismatches now fail the build; baselines already committed, CI now runs normal compare mode for true visual regression detection; all 73 unit tests green |
+| P20 | 2026-07-13 | **Fix Terrain Texture + CI Build Break** — Terrain atlas used 16px cells (crushed the 1024² source textures) and kept a green `diffuseColor` tint, so terrain looked flat/untextured; switched to a GPU-safe per-tile cell size (clamped to engine `maxTextureSize`) and reset `diffuseColor` to white on atlas apply. CI broke because `in-game-full` visual test screenshot the continuously-animating WebGL canvas and failed compare mode; replaced it with a deterministic render check (canvas visible + live WebGL context + GameApp scene running). HUD/Explorer panels have opaque `ui_panel.png` backgrounds so their baselines are unaffected by terrain changes. 73 unit tests green. |
 
 ### Next Session Priorities
 1. **Object Explorer Enhancements** — Add resource display to explorer (show resource counts from Economy.resources), wire Unit path progress to show live A* progress, add auto-refresh toggle.
 2. **Build and Deploy** — Build Docker image and deploy to verify production asset paths work on s4wn.mayrd.org.
 3. **Dockerfile Review** — Verify multi-stage build works for both amd64 and arm64 with Vite publicDir setup.
 4. **Fix `test-results/` gitignore** — Ensure Playwright test-results and playwright-report are properly gitignored from the snapshots commit.
-5. **Verify CI green** — Check that the updated CI workflow passes with snapshot enforcement on the next push.
+5. **Verify CI green** — Confirm the P20 CI fix (in-game-full → deterministic render check) keeps the build green after push.
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*

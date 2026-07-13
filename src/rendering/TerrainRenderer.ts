@@ -3,8 +3,9 @@
  *
  * Builds a ground mesh with one vertex per tile so that elevations can be
  * displaced into real 3D relief. A texture atlas is assembled from the
- * individual terrain type PNGs (one 16×16 cell per tile) and mapped onto the
- * mesh with 1:1 UVs so each tile samples its own atlas cell.
+ * individual 1024² terrain type PNGs (one CELL×CELL cell per tile, clamped to
+ * the GPU's max texture size) and mapped onto the mesh with 1:1 UVs so each
+ * tile samples its own atlas cell.
  */
 
 import {
@@ -19,7 +20,10 @@ import {
 } from '@babylonjs/core';
 import { Map as GameMap } from '../game/Map';
 
-const TILE_PX = 16;
+// Maximum per-tile atlas cell size in pixels. Each tile's 1024² source texture
+// is downscaled into a CELL×CELL region of the atlas. Larger cells retain more
+// visible detail. The actual cell is clamped to the GPU's max texture size.
+const MAX_CELL_PX = 64;
 // World-units of vertical displacement per elevation point.
 const ELEV_SCALE = 0.6;
 
@@ -94,10 +98,14 @@ export class TerrainRenderer {
 
   async loadTerrainTextures(map: GameMap): Promise<void> {
     if (!this.terrainMesh) return;
-    const atlasW = map.width * TILE_PX;
-    const atlasH = map.height * TILE_PX;
+    // Pick a per-tile cell size that keeps the full atlas within the GPU's
+    // maximum texture size, so detail is preserved without exceeding limits.
+    const maxTex = (this.scene.getEngine().getCaps().maxTextureSize as number) || 4096;
+    const cell = Math.max(8, Math.min(MAX_CELL_PX, Math.floor(maxTex / Math.max(map.width, map.height))));
+    const atlasW = map.width * cell;
+    const atlasH = map.height * cell;
     try {
-      console.log(`🗺️ Building terrain atlas (${atlasW}×${atlasH}) from /textures/...`);
+      console.log(`🗺️ Building terrain atlas (${atlasW}×${atlasH}, cell=${cell}px) from /textures/...`);
       const names = [
         'terrain_grass',
         'terrain_forest',
@@ -123,7 +131,7 @@ export class TerrainRenderer {
           ctx.drawImage(
             images[idx],
             0, 0, images[idx].width, images[idx].height,
-            tx * TILE_PX, ty * TILE_PX, TILE_PX, TILE_PX
+            tx * cell, ty * cell, cell, cell
           );
         }
       }
@@ -133,6 +141,9 @@ export class TerrainRenderer {
       dt.wrapV = Texture.CLAMP_ADDRESSMODE;
       const mat = this.terrainMesh.material as StandardMaterial;
       mat.diffuseTexture = dt;
+      // The atlas carries the full colour — stop tinting it with the
+      // placeholder diffuse colour so terrain shows its real texture.
+      mat.diffuseColor = new Color3(1, 1, 1);
       mat.useAlphaFromDiffuseTexture = false;
       console.log(`✅ Terrain atlas applied: ${atlasW}×${atlasH}`);
     } catch (e) {
