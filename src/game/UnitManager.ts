@@ -158,19 +158,22 @@ export class UnitManager {
     this.combatCount = 0;
 
     for (const unit of this.units) {
-      if (!unit.isAlive()) continue;
-
       // Skip off-screen units when culling (they pause in place)
       if (culler && !culler.isWithinView(Math.floor(unit.x), Math.floor(unit.y))) continue;
 
-      // Handle dying animation
+      // Handle dying animation. Note: isAlive() is false while dyingTimer !== null,
+      // so this must run BEFORE the isAlive() bail-out below, otherwise the
+      // countdown (and death registration) would never run.
       if (unit.dyingTimer !== null) {
+        const wasAboveZero = unit.dyingTimer > 0;
         unit.dyingTimer -= 0.1;
-        if (unit.dyingTimer <= 0) {
+        if (wasAboveZero && unit.dyingTimer <= 0) {
           this.deathCount++;
         }
         continue;
       }
+
+      if (!unit.isAlive()) continue;
 
       // Handle movement
       if (unit.path && !unit.path.isEmpty()) {

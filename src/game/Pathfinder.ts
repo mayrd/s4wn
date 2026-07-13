@@ -101,7 +101,7 @@ export class Pathfinder {
       openSet.splice(lowestPos, 1);
 
       if (currentIdx === goalIdx) {
-        return Pathfinder.reconstructPath(cameFrom, start, {
+        return Pathfinder.reconstructPath(cameFrom, width, {
           x: goal.x,
           y: goal.y,
         });
@@ -158,16 +158,16 @@ export class Pathfinder {
 
   private static reconstructPath(
     cameFrom: CameFromMap,
-    _start: PathPoint,
+    width: number,
     current: PathPoint
   ): Path {
     const path: PathPoint[] = [current];
-    let currentIdx = current.y * 1000 + current.x;
+    let currentIdx = current.y * width + current.x;
 
     while (cameFrom.has(currentIdx)) {
       const prev = cameFrom.get(currentIdx)!;
       path.unshift(prev);
-      currentIdx = prev.y * 1000 + prev.x;
+      currentIdx = prev.y * width + prev.x;
     }
 
     return Path.new(path);
