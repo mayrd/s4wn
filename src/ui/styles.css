@@ -296,6 +296,27 @@
   line-height: 1;
 }
 
+.explorer-autorefresh-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--parchment-bg);
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.9;
+}
+
+.explorer-autorefresh-toggle input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--wood-light, #a1887f);
+}
+
+.explorer-autorefresh-toggle:hover {
+  opacity: 1;
+}
+
+
 .explorer-content {
   display: flex;
   flex: 1;

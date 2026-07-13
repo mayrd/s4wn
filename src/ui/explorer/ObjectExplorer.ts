@@ -16,7 +16,7 @@ import { Terrain } from '../../game/types';
 import {
   BuildingType, BUILDING_NAMES, buildCost, buildTime, productionInterval,
   buildingInputs, buildingOutputs, requiredTool, requiresSettler,
-  resourceName, buildingName,
+  resourceName, buildingName, ResourceType, RESOURCE_COUNT,
 } from '../../economy/types';
 
 export interface ExplorerObject {
@@ -26,7 +26,7 @@ export interface ExplorerObject {
   properties: Record<string, any>;
 }
 
-type CatalogTab = 'terrain' | 'buildings' | 'units' | 'decorations' | 'misc';
+type CatalogTab = 'terrain' | 'buildings' | 'units' | 'resources' | 'decorations' | 'misc';
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -150,6 +150,8 @@ export class ObjectExplorer {
   private isMobile = false;
   /** Track the currently selected object ID so we can refresh its details live. */
   private selectedObjectId: string | null = null;
+  /** Auto-refresh toggle — when enabled, update() re-renders the currently open detail every tick. */
+  private autoRefresh = true;
 
   constructor(_ui: UIManager | null, gl: GameLoop) {
     this.gameLoop = gl;
@@ -162,9 +164,13 @@ export class ObjectExplorer {
   // ── Build DOM ────────────────────────────────────────────────────
 
   private build(): void {
-    const tabs: CatalogTab[] = ['terrain','buildings','units','decorations','misc'];
+    const tabs: CatalogTab[] = ['terrain','buildings','units','resources','decorations','misc'];
     this.container.innerHTML = `<div class="explorer-container">
-      <div class="explorer-header"><span class="explorer-title">🐞 Object Explorer</span><button class="explorer-close">&times;</button></div>
+      <div class="explorer-header"><span class="explorer-title">🐞 Object Explorer</span>
+        <label class="explorer-autorefresh-toggle" title="Auto-refresh live data every tick">
+          <input type="checkbox" id="explorer-autorefresh" checked /> Live
+        </label>
+        <button class="explorer-close">&times;</button></div>
       <div class="explorer-mobile-back" id="explorer-mobile-back">&larr; Back</div>
       <div class="explorer-content">
         <div class="explorer-list-section">
@@ -183,6 +189,11 @@ export class ObjectExplorer {
     this.searchInput.addEventListener('input', () => this.filter());
     this.container.querySelector('.explorer-close')?.addEventListener('click', () => this.hide());
     this.container.querySelector('#explorer-mobile-back')?.addEventListener('click', () => this.showListView());
+    const autoRefreshEl = this.container.querySelector('#explorer-autorefresh') as HTMLInputElement | null;
+    if (autoRefreshEl) {
+      autoRefreshEl.checked = this.autoRefresh;
+      autoRefreshEl.addEventListener('change', () => { this.autoRefresh = autoRefreshEl.checked; });
+    }
     this.container.querySelectorAll('.explorer-tab').forEach(tab =>
       tab.addEventListener('click', e => this.switchTab((e.target as HTMLElement).dataset.tab as CatalogTab)));
     this.switchTab('terrain');
@@ -207,7 +218,7 @@ export class ObjectExplorer {
    * progress stay live while the panel is visible.
    */
   public update(): void {
-    if (!this.isOpen) return;
+    if (!this.isOpen || !this.autoRefresh) return;
     this.loadCatalog();
     this.filter();
 
@@ -234,7 +245,8 @@ export class ObjectExplorer {
   private loadCatalog(): void {
     switch (this.activeTab) {
       case 'terrain': this.loadTerrain(); break; case 'buildings': this.loadBuildings(); break;
-      case 'units': this.loadUnits(); break; case 'decorations': this.loadDecorations(); break;
+      case 'units': this.loadUnits(); break; case 'resources': this.loadResources(); break;
+      case 'decorations': this.loadDecorations(); break;
       case 'misc': this.loadMisc(); break;
     }
   }
@@ -322,6 +334,27 @@ export class ObjectExplorer {
     });
   }
 
+  private loadResources(): void {
+    const counts = this.gameLoop.economy.getResourceCounts();
+    const storageCapacity = (this.gameLoop.economy as any).storageCapacity ?? 100;
+    const results: ExplorerObject[] = [];
+    // Only the 19 real ResourceType enum members are valid — the discriminants
+    // 19-28 are gaps and resourceName() falls back to "Resource#N" for those,
+    // which we skip here.
+    for (let disc = 0; disc < RESOURCE_COUNT; disc++) {
+      const name = resourceName(disc as ResourceType);
+      if (/^Resource#/.test(name)) continue;
+      const amount = counts[disc] ?? 0;
+      const pct = storageCapacity > 0 ? Math.round((amount / storageCapacity) * 100) : 0;
+      results.push({
+        id: `resource-${disc}`, type: 'resource', name: `${name} (${amount})`,
+        properties: { amount, storageCapacity, percentFull: `${pct}%`, discriminant: disc },
+      } as ExplorerObject);
+    }
+    this.objects = results;
+  }
+
+
   private loadDecorations(): void {
     this.objects = [
       { id:'d-water', type:'deco', name:'Water Plane', _promptKey:'', _chain:{ mesh:'CreateGround 100×100', texture:'Water normal + reflect 512px', animation:'UV scroll dt×0.01' }, properties:{} },
@@ -390,15 +423,19 @@ export class ObjectExplorer {
         }).join('');
       } else if (obj.type === 'unit') {
         runtimeHtml = instances.map((u: any, i: number) => {
-          const stateStr = u.state ?? u.currentState ?? '?';
-          const stanceStr = u.stance ?? u.currentStance ?? '?';
-          const pathLen = u.path?.length ?? u.currentPath?.length ?? 0;
+          const stateStr = u.state ?? '?';
+          const stanceStr = u.stance ?? '?';
+          const pathLen = typeof u.path?.len === 'function' ? u.path.len() : 0;
+          const goal = typeof u.path?.goal === 'function' ? u.path.goal() : undefined;
+          const goalStr = goal ? ` → (${goal.x},${goal.y})` : '';
+          const targetStr = (u.targetX != null && u.targetY != null) ? ` | Target:(${u.targetX},${u.targetY})` : '';
           return `<div class="explorer-instance-card">
             <div class="explorer-instance-header">👤 #${u.id ?? i + 1} @(${u.x},${u.y})</div>
-            <div>HP ${u.hp} | State:${stateStr} | Stance:${stanceStr} | Path:${pathLen} steps</div>
+            <div>HP ${u.hp} | State:${stateStr} | Stance:${stanceStr} | Path:${pathLen} steps${goalStr}${targetStr}</div>
           </div>`;
         }).join('');
       }
+
     }
 
     const parts: string[] = [];
