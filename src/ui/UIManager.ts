@@ -15,7 +15,7 @@ import { GameLoop } from '../game/GameLoop';
 import { SaveManager } from '../core/SaveManager';
 import { checkCapabilities, CapabilityResult } from '../core/CapabilityChecker';
 
-export type StartMode = 'new' | 'load';
+export type StartMode = 'new' | 'load' | 'tutorial';
 
 export class UIManager {
   private static instance: UIManager | null = null;
@@ -132,7 +132,7 @@ export class UIManager {
 
     // Attach event listeners
     this.mainMenu.querySelector('#btn-new-game')?.addEventListener('click', () => this.startGame('new'));
-    this.mainMenu.querySelector('#btn-tutorial')?.addEventListener('click', () => this.startGame('new'));
+    this.mainMenu.querySelector('#btn-tutorial')?.addEventListener('click', () => this.startGame('tutorial'));
     this.mainMenu.querySelector('#btn-load-game')?.addEventListener('click', () => this.loadGame());
     this.mainMenu.querySelector('#btn-explorer')?.addEventListener('click', () => this.toggleExplorer());
     this.mainMenu.querySelector('#btn-editor')?.addEventListener('click', () => this.toggleEditor());

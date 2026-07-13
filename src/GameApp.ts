@@ -79,7 +79,9 @@ export class GameApp {
   private initSystems(): void {
     const MAP_WIDTH = 100;
     const MAP_HEIGHT = 100;
-    this.map = new GameMap(MAP_WIDTH, MAP_HEIGHT);
+    // Tutorial mode uses a dedicated, gentler island map.
+    const mapKind = this.mode === 'tutorial' ? 'tutorial' : 'demo';
+    this.map = new GameMap(MAP_WIDTH, MAP_HEIGHT, mapKind);
     this.gameLoop = new GameLoop(this.map);
 
     // If a saved game was requested, restore it BEFORE building the renderer
