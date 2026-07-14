@@ -9,13 +9,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         main: './index.html',
       },
-    },
-    // Externalize optional dev-only packages that may not be installed
-    rolldownOptions: {
       external: ['@babylonjs/inspector'],
     },
   },
