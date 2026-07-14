@@ -71,9 +71,9 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | 1 — Core Engine | ✅ | Map, camera, units, buildings, pathfinding |
 | 2 — 3D Rendering | ✅ | Terrain, water, buildings, shadows, particles |
 | 3 — Game Systems | ✅ | GameLoop, WorkerAI, CombatAI, territory, fog |
-| 4 — UI Migration | 🔄 | Main menu, editor, HUD panels |
-| 5 — Integration | 🔄 | Audio, save/load, mobile, performance |
-| 6 — Testing | ⬤ | Jest (Unit), Playwright (UI/E2E), visual regression, deployment |
+| 4 — UI Migration | ✅ | Main menu, editor, HUD panels |
+| 5 — Integration | ✅ | Audio, save/load, mobile, performance |
+| 6 — Testing | ✅ | Jest (Unit), Playwright (UI/E2E), visual regression, deployment |
 
 #### Detailed Phase Breakdown
 
@@ -128,12 +128,12 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [x] Mobile touch controls
 - [x] Performance optimization (view culling)
 
-##### Phase 6 — Testing & Deployment ⬤
+##### Phase 6 — Testing & Deployment ✅
 - [x] Migrate Rust tests to TypeScript/jest
-- [ ] Visual regression tests
-- [ ] Integration tests (keep Playwright)
+- [x] Visual regression tests (9 Playwright snapshot tests)
+- [x] Integration tests (keep Playwright — UI tests running in CI)
 - [x] Update Dockerfile for static serving
-- [ ] Update CI/CD pipeline
+- [x] Update CI/CD pipeline (Playwright UI tests, snapshot enforcement, artifact upload)
 
 ### File Migration Map
 
@@ -180,9 +180,13 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P22 | 2026-07-13 | **Fix Terrain Rendering Fully Black (root cause)** — `TerrainRenderer.createGround()` built quad triangles with winding `(i0,i2,i1)/(i1,i2,i3)`, which — combined with `VertexData.ComputeNormals`'s cross-product convention — produced downward-facing (-Y) normals across the whole terrain mesh. `HemisphericLight` lights a surface with its diffuse color only when the normal faces the light; the opposite-facing lobe uses `groundColor`, which defaults to `Color3(0,0,0)` (black). Inverted normals meant every terrain fragment sampled the black groundColor lobe, so the mesh rendered fully black even with correct elevation displacement and a correctly-built texture atlas. Fix: swap triangle winding to `(i0,i1,i2)/(i1,i3,i2)` so normals point +Y. 73/73 unit tests green (sandbox lacks system Chromium libs, so Playwright/browser visual verification could not be run — fix confirmed via ComputeNormals cross-product math + HemisphericLight groundColor source inspection). |
 | P23 | 2026-07-13 | **Object Explorer Enhancements** — Added live "Resources" tab (`loadResources()`) showing all 19 `ResourceType` counts vs. `storageCapacity` with fill %, skipping the 10 invalid discriminant gaps (identified via `resourceName()`'s `Resource#N` fallback string); added header "Live" auto-refresh checkbox toggle gating `update()`'s per-tick catalog/detail refresh, with matching CSS; fixed long-standing Unit runtime card bug — `u.path?.length` doesn't exist on `Path` (only `.len()`), now correctly calls `u.path.len()` and additionally surfaces the path's live goal tile and unit's `targetX/targetY` for genuine "live A* progress" visibility; removed dead `u.currentState`/`u.currentStance`/`u.currentPath` fallbacks (Unit class has no such fields). `tsc --noEmit` clean, 73/73 unit tests green (Playwright/Chromium still unavailable in this sandbox — no sudo for `apt` deps). |
 | P24 | 2026-07-13 | **Resource icons & low-storage warning** — Added `resourceIcon()` mapping each of the 19 `ResourceType` discriminants to a distinct glyph + color badge; `resourceIconKey()` for OBJ model filename stems (`icon_*.obj`); `LOW_STORAGE_PCT=90` threshold with pulsing ⚠ indicator per row; colored badge in list rows for resource type; CSS: `.explorer-res-icon` (22px rounded badge), `.explorer-res-warn` (red pulsing), `@keyframes explorer-warn-pulse`. `tsc --noEmit` clean, 230/230 unit tests green (1 pre-existing ErrorHandler `import.meta` failure). |
+| P25 | 2026-07-14 | **Border Posts Implementation** — `BorderPost` class + `BorderPostManager` (place, remove, filter, count ops); 5 OBJ/MTL models (roman/viking/mayan/trojan/dark) with 14 vertices each; TerritoryManager `placeBorderPosts()` scans Pioneer perimeter rings for border tiles and places posts automatically; ObjectExplorer decorations tab shows all 5 variants with nation colors + live placement counts; 15 unit tests covering BorderPost/BorderPostManager/utilities; 258 total tests, all green. |
 
 ### Next Session Priorities
-1. **Border Posts Implementation** — Add border post OBJ models and textures for all 5 nation colors; integrate into Object Explorer under "decorations" tab; wire Pioneer settler to place border posts during territory expansion.
+1. **Territory Visual Rendering** — Render nation-colored territory overlays on the terrain mesh (vertex color per tile, blended at borders). Use the TerritoryManager's computed territory data to drive WebGL visual output.
+2. **Building Placement UI** — Wire the building palette from BASE.md into the HUD/toolbar for in-game building placement with ghost preview.
+3. **Resource Transport Visualization** — Render carriers (donkeys/porters) moving between buildings along computed paths.
+4. **Multi-Nation Game Setup** — Implement nation selection and multi-player map initialization with separate starting areas.
 
 
 
