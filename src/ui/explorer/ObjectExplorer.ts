@@ -10,7 +10,6 @@
  * - GitHub issue deep-link on every asset
  */
 
-import { UIManager } from '../UIManager';
 import { GameLoop } from '../../game/GameLoop';
 import { Terrain } from '../../game/types';
 import {
@@ -34,19 +33,6 @@ type CatalogTab = 'terrain' | 'buildings' | 'units' | 'resources' | 'decorations
 function fmtCost(items: Array<{ resource: any; amount: number }>): string {
   if (items.length === 0) return 'none';
   return items.map(i => `${resourceName(i.resource)}×${i.amount}`).join(', ');
-}
-
-const GITHUB_ISSUE_BASE = 'https://github.com/mayrd/s4wn/issues/new';
-function gitHubIssueLink(assetType: string, assetName: string): string {
-  const title = encodeURIComponent(`[${assetType}] ${assetName}`);
-  const body = encodeURIComponent(
-    `## Asset: ${assetName} (${assetType})\n\n` +
-    `### What needs to change?\n\n\n` +
-    `### Current behavior\n\n\n` +
-    `### Expected behavior\n\n\n` +
-    `_\nAutomated deep-link from Object Explorer._\n`
-  );
-  return `${GITHUB_ISSUE_BASE}?title=${title}&body=${body}&labels=asset,debug`;
 }
 
 function esc(s: string): string {
@@ -154,7 +140,7 @@ export class ObjectExplorer {
   /** Auto-refresh toggle — when enabled, update() re-renders the currently open detail every tick. */
   private autoRefresh = true;
 
-  constructor(_ui: UIManager | null, gl: GameLoop) {
+  constructor(gl: GameLoop) {
     this.gameLoop = gl;
     this.isMobile = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 768px)').matches === true;
     this.container = document.createElement('div');
@@ -166,23 +152,23 @@ export class ObjectExplorer {
 
   private build(): void {
     const tabs: CatalogTab[] = ['terrain','buildings','units','resources','decorations','misc'];
-    this.container.innerHTML = `<div class="explorer-container">
-      <div class="explorer-header"><span class="explorer-title">🐞 Object Explorer</span>
-        <label class="explorer-autorefresh-toggle" title="Auto-refresh live data every tick">
-          <input type="checkbox" id="explorer-autorefresh" checked /> Live
-        </label>
-        <button class="explorer-close">&times;</button></div>
-      <div class="explorer-mobile-back" id="explorer-mobile-back">&larr; Back</div>
+     this.container.innerHTML = `<div class="explorer-container">
+       <div class="explorer-header"><span class="explorer-title">Object Explorer</span>
+         <label class="explorer-autorefresh-toggle" title="Auto-refresh live data every tick">
+           <input type="checkbox" id="explorer-autorefresh" checked /> Live
+         </label>
+         <button class="explorer-close">&times;</button></div>
+       <div class="explorer-mobile-back" id="explorer-mobile-back">&larr; Back</div>
       <div class="explorer-content">
         <div class="explorer-list-section">
           <div class="explorer-list-header" id="explorer-tabs">${tabs.map(t => `<span class="explorer-tab" data-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</span>`).join('')}</div>
           <div class="explorer-search-box"><input type="text" id="explorer-search" placeholder="🔍 Filter..." autocomplete="off" /></div>
           <div class="explorer-list" id="explorer-list"></div>
         </div>
-        <div class="explorer-details-section">
-          <div class="explorer-details-header">Details<a href="#" class="explorer-debug-link" id="explorer-debug-link" target="_blank" title="Open GitHub issue">🐛 Report Issue</a></div>
-          <div class="explorer-details" id="explorer-details"><div class="explorer-empty-msg">Select an object to inspect</div></div>
-        </div>
+       <div class="explorer-details-section">
+         <div class="explorer-details-header">Details</div>
+         <div class="explorer-details" id="explorer-details"><div class="explorer-empty-msg">Select an object to inspect</div></div>
+       </div>
       </div></div>`;
     this.listEl = this.container.querySelector('#explorer-list')!;
     this.detailsEl = this.container.querySelector('#explorer-details')!;
@@ -507,10 +493,9 @@ export class ObjectExplorer {
 
   // ── Detail view ──────────────────────────────────────────────────
 
-  private showDetails(obj: ExplorerObject): void {
+   private showDetails(obj: ExplorerObject): void {
     this.selectedObjectId = obj.id;
     const x = obj as any;
-    const link = gitHubIssueLink(obj.type, obj.name);
     const promptTxt = x._promptKey ? promptExcerpt(x._promptKey) : '';
     const chain = x._chain;
     const instances: any[] = x._instances ?? [];
@@ -552,7 +537,6 @@ export class ObjectExplorer {
     }
 
     const parts: string[] = [];
-    parts.push(`<a href="${link}" target="_blank" class="explorer-issue-btn">🐛 Report Issue on GitHub</a>`);
 
     if (chain) {
       // ── Texture preview — show raw image for ANY asset type ──

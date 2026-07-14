@@ -96,8 +96,8 @@ export class GameApp {
     // Lightweight UI manager (no engine dependency) used for save handling.
     this.ui = new UIManager(this.gameLoop);
 
-    // Debug tool — created now that a GameLoop exists.
-    this.objectExplorer = new ObjectExplorer(null, this.gameLoop);
+    // Object explorer tool — created now that a GameLoop exists.
+    this.objectExplorer = new ObjectExplorer(this.gameLoop);
     this.ui.setObjectExplorer(this.objectExplorer);
 
     // Subscribe ObjectExplorer to game ticks so runtime state stays live

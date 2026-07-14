@@ -492,27 +492,6 @@
   margin-left: 10px;
 }
 
-/* ── P12: Object Explorer Debug Sections ──────────────────────── */
-
-.explorer-issue-btn {
-  display: block;
-  text-align: center;
-  padding: 6px 12px;
-  margin: 10px 0;
-  background: #6e3b1e;
-  color: #ffab40;
-  border: 1px solid #ffab40;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.explorer-issue-btn:hover {
-  background: #8b4d2a;
-  color: #ffc261;
-}
-
 .explorer-section {
   margin-top: 12px;
   border: 1px solid #8d6e63;
@@ -546,8 +525,6 @@
 .explorer-section-body .prop-key { color: #5d4037; }
 .explorer-section-body .prop-val { color: #3e2723; }
 
-.explorer-debug-link { color: #ffab40 !important; }
-.explorer-debug-link:hover { color: #ffc261 !important; text-decoration: underline !important; }
 
 /* ── P13: Search, Asset Chain, Instance Cards, Collapse ─────── */
 

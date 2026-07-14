@@ -47,9 +47,8 @@ export class UIManager {
     this.gameLoop = gameLoop ?? null;
     this.overlay = document.getElementById('ui-overlay')!;
     // ObjectExplorer only exists once a game (GameLoop) is running.
-    // It is purely a debug tool and must not be created for the menu bootstrap.
     if (this.gameLoop) {
-      this.objectExplorer = new ObjectExplorer(null, this.gameLoop);
+      this.objectExplorer = new ObjectExplorer(this.gameLoop);
     }
     this.init();
   }
