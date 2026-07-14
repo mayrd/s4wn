@@ -303,3 +303,86 @@ All Nations, Buildings, Resources and Settlers are taken from Siedler 4 History 
 | **Dark Tribe (NPC)** | Cultist | Kultist | Dark Tribe | Breeding Hall | Automatically harvests grown dark mushrooms and carries them to the temple. |
 | **Dark Tribe (NPC)** | Shaman | Schamane | Dark Tribe | Dark Temple | Casts powerful blights and continually summons Dark Diggers and Farmers. |
 | **Dark Tribe (NPC)** | Shadow Soldier | Schattensoldat | Dark Tribe | Breeding Hall + Mana | The core melee combat units tasked with wiping out mortal settlements. |
+
+
+# S4WN Tutorial
+
+> **CRITICAL PRIORITY:** Your absolute primary focus is to implement and build the interactive tutorial system first. All other game development, main menu features, and sandbox gameplay modes must be deferred until this tutorial flow is fully functional and playable.
+
+---
+
+## PART 1: System Architecture (Development Phases)
+
+These are the technical components you need to build in sequence.
+
+### Phase 1: First-Time Player Routing
+*   **Target:** Game entry point / router.
+*   **Task:** Implement a system to check if the player is opening the game for the first time. You are free to choose the tracking/persistence mechanism. 
+    *   **If new:** Force-load the tutorial scene, bypassing the main menu.
+    *   **If completed:** Load the standard main menu.
+    *   **Debug helper:** Provide a development shortcut/command to reset this state for testing.
+
+### Phase 2: UI Restriction Hooks
+*   **Target:** UI System / HUD.
+*   **Task:** Build programmatic controls to manipulate the HUD during the tutorial:
+    *   `lockAllMenus()` / `unlockSpecificMenu(menuId)` to restrict where the player can click.
+    *   `highlightButton(buttonId)` to apply a visual pulse or pointer to guide the player.
+    *   `showTutorialDialog(text)` to display the narrative prompt in a clean dialog overlay.
+
+### Phase 3: State-Driven Tutorial Engine
+*   **Target:** A new `TutorialManager` engine.
+*   **Task:** Create a runner that processes a sequence of defined steps. Each step must define:
+    1. The narrative text to display.
+    2. The UI lock/unlock/highlight configuration to apply on start.
+    3. The event trigger/condition required to progress to the next step.
+    4. Optional setup actions (e.g., modifying game speed, spawning entities).
+
+---
+
+## PART 2: Gameplay Step Sequence (The Scenario Config)
+
+Configure the `TutorialManager` database with these literal gameplay steps, running in this exact chronological order:
+
+### Step 1: Camera Basics
+*   **Narrative:** "Welcome, Leader! Before we can build an empire, we must learn to survey our lands. Move the camera using your arrow keys or by dragging your mouse to the edges of the screen."
+*   **Start Actions:** Lock all HUD elements.
+*   **Success Trigger:** Camera coordinates shift past a minor threshold from the starting position.
+
+### Step 2: Wood Economy
+*   **Narrative:** "Wood is the foundation of all construction. Open the Construction Menu and place a Woodcutter's Hut near the forest, a Forest Ranger's Hut to replant trees, and a Sawmill to refine logs into planks."
+*   **Start Actions:** Highlight the Construction Menu. Unlock *only* the Woodcutter, Ranger, and Sawmill blueprints. Apply a temporary 10x construction and transport speed multiplier so the player doesn't wait.
+*   **Success Trigger:** All three blueprints (Woodcutter, Ranger, Sawmill) are successfully placed.
+
+### Step 3: Basic Food Economy
+*   **Narrative:** "Our future miners will require food to work. Let's build a basic food loop: a Grain Farm to grow wheat and a Bakery to bake bread."
+*   **Start Actions:** Highlight the food submenu. Unlock *only* the Grain Farm and Bakery.
+*   **Success Trigger:** The Bakery is fully constructed and produces its first loaf of bread.
+
+### Step 4: Territorial Expansion
+*   **Narrative:** "See those red border stones? They limit our land. Build a Small Tower near the eastern border to push our frontier outward toward the mountains."
+*   **Start Actions:** Highlight the military construction menu. Unlock the Small Tower.
+*   **Success Trigger:** The Small Tower is fully constructed and occupied by an ally soldier.
+*   **Visual Event:** Trigger a smooth animation showing the red border stones physically shifting outward to claim the mountain.
+
+### Step 5: Mining & Metallurgy
+*   **Narrative:** "Now that the mountain is ours, we can extract resources. Build a Coal or Iron Ore Mine on the mountain, and a Smelting Works nearby to process the ore."
+*   **Start Actions:** Highlight the mining/metallurgy menu. Unlock Coal Mine, Iron Ore Mine, and Smelting Works.
+*   **Success Trigger:** The Smelting Works produces its first metal bar.
+
+### Step 6: Military Recruitment
+*   **Narrative:** "Our scouts have located an enemy outpost in the far upper corner of the map. Build a Weaponsmith to forge swords, and a Barracks to train your first soldier."
+*   **Start Actions:** Unlock Weaponsmith and Barracks.
+*   **Success Trigger:** At least one combat-ready soldier is trained and under player control.
+
+### Step 7: Combat & Victory Condition
+*   **Map Setup:** Ensure the map contains a single enemy Castle in the far upper corner, guarded by exactly one enemy soldier.
+*   **Narrative:** "Our military is ready. Select your soldier, right-click the enemy castle in the upper corner of the map, and defeat their lone guard to claim the territory!"
+*   **Success Trigger:** The single enemy guard is defeated, and the castle is captured/destroyed by the player.
+
+---
+
+## PART 3: Completion Handshake
+
+*   Upon completing **Step 7**, trigger a victory splash screen.
+*   Provide a "Finish" button that permanently flags the tutorial as completed in the tracking system designed in Phase 1.
+*   Transition scenes smoothly back to the fully unlocked Main Menu.
