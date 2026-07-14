@@ -50,7 +50,12 @@ test.describe('Visual Regression — Object Explorer', () => {
     await goToMainMenu(page);
     await page.locator('#btn-tutorial').waitFor({ state: 'visible' });
     await page.click('#btn-tutorial');
-    // Wait for GameApp to initialize and HUD to appear
+    // Wait for loading screen to hide (assets loaded) before checking HUD
+    await page.waitForFunction(() => {
+      const splash = document.querySelector('.splash-screen');
+      return !splash?.classList.contains('active');
+    }, { timeout: 30000 });
+    // Wait for HUD to appear after loading completes
     await page.locator('#hud-container').waitFor({ state: 'visible', timeout: 10000 });
   });
 
@@ -97,8 +102,13 @@ test.describe('Visual Regression — In-Game HUD', () => {
     await goToMainMenu(page);
     await page.locator('#btn-tutorial').waitFor({ state: 'visible' });
     await page.click('#btn-tutorial');
-    // Wait for HUD to appear after game starts
-    await page.locator('#hud-container').waitFor({ state: 'visible', timeout: 8000 });
+    // Wait for loading screen to hide (assets loaded) before HUD is visible
+    await page.waitForFunction(() => {
+      const splash = document.querySelector('.splash-screen');
+      return !splash?.classList.contains('active');
+    }, { timeout: 30000 });
+    // Wait for HUD to appear after loading completes
+    await page.locator('#hud-container').waitFor({ state: 'visible', timeout: 10000 });
   });
 
   test('HUD container matches baseline', async ({ page }) => {
