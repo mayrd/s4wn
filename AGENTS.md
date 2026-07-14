@@ -59,7 +59,38 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | Jest | Unit Testing |
 | Playwright | UI/E2E Testing |
 
-## 3. Implementation Plan
+## 3. Test-Driven Development
+
+### Philosophy
+Every feature begins with a failing test. Tests drive implementation, not documentation. The test suite is the source of truth for expected behavior.
+
+### Testing Stack
+| Layer | Framework | Command |
+|-------|-----------|---------|
+| Unit | Jest | `npm test` |
+| Visual Regression | Playwright | `npm run test:ui` |
+| Type Check | TypeScript | `npx tsc --noEmit` |
+| Full Pipeline | Shell script | `./tests/run_tests.sh` |
+
+### TDD Workflow
+1. **Write a failing test** for the behavior you want
+2. **Run tests** to confirm the test fails for the right reason
+3. **Implement minimally** to make the test pass
+4. **Refactor** while keeping tests green
+5. **Commit** with test results verified
+
+### Test Categories
+- **Core Logic Tests** (`src/__tests__/`): Game state, pathfinding, economy
+- **UI Tests** (`tests/ui/`): Playwright visual regression for UI components
+- **Integration Tests**: Full game loop, asset loading, system interactions
+
+### Visual Regression Protocol
+- Baselines stored in `tests/ui/__snapshots__/` (committed)
+- Diffs go to `test-results/` (gitignored)
+- To update: `PLAYWRIGHT_UPDATE_SNAPSHOTS=1 npx playwright test tests/ui/visual.spec.ts`
+- Thresholds: 0.1 (static UI), 0.15 (animated/live content)
+
+## 4. Implementation Plan
 
 Status: P2 · Babylon.js Edition · Phase 2 in progress.
 
@@ -150,7 +181,59 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | `particle.rs` | `src/game/particles/ParticleSystem.ts` | Effect types |
 | `shaders.rs` | `src/rendering/pipelines/*.ts` | GLSL → Babylon.js shaders |
 
-## 4. Session Log
+## 5. Object Explorer
+
+### Architecture
+The Object Explorer is a **standalone debugging tool** that can be instantiated without a full game context. It shows:
+- Static catalog of all game assets (terrain, buildings, units, resources)
+- Runtime instance data when connected to a live GameLoop
+- Asset chain visualization (mesh → texture → animation)
+- Generation prompt excerpts from PROMPTS.md
+
+### Decoupled Mode
+The Object Explorer works in two modes:
+1. **Standalone Mode**: Shows static asset catalog without runtime data
+2. **Connected Mode**: Shows live game state when provided a GameLoop instance
+
+To use standalone mode:
+```typescript
+import { ObjectExplorer } from './ui/explorer/ObjectExplorer';
+const explorer = new ObjectExplorer(); // No GameLoop required
+explorer.show(); // Shows catalog only
+```
+
+### UI Features
+- **Font Readability**: Uses Georgia serif font with high contrast (var(--text-color) on parchment background)
+- **Clickable Assets**: Each asset row triggers `showDetails()` with full property inspection
+- **Auto-refresh**: "Live" toggle controls per-tick updates when connected to game
+- **Resource Icons**: Color-coded badges with low-storage warnings (≥90% capacity)
+- **Tabs**: terrain | buildings | units | resources | decorations | misc
+
+## 6. Debug Panel
+
+### Features
+- Real-time FPS, game time, unit/building counts
+- Toggle controls for Grid, Textures, Wireframe, Splat, Territory, Fog
+- Mouse tile inspection with object detection
+- **Babylon Inspector**: Can be launched via `debugPanel.showBabylonInspector()` or console
+
+### Babylon Inspector Activation
+```typescript
+// In-game, open browser console and run:
+debugPanel.showBabylonInspector();
+
+// Or programmatically:
+const inspector = new DebugPanel(doc, engine, gameLoop, scene);
+inspector.showBabylonInspector();
+```
+
+The inspector provides:
+- Scene graph inspection
+- Mesh/material debugging
+- Performance profiler
+- Real-time property editing
+
+## 7. Session Log
 
 | Session | Date | Summary |
 |---------|------|---------|
@@ -183,13 +266,11 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P25 | 2026-07-14 | **Border Posts Implementation** — `BorderPost` class + `BorderPostManager` (place, remove, filter, count ops); 5 OBJ/MTL models (roman/viking/mayan/trojan/dark) with 14 vertices each; TerritoryManager `placeBorderPosts()` scans Pioneer perimeter rings for border tiles and places posts automatically; ObjectExplorer decorations tab shows all 5 variants with nation colors + live placement counts; 15 unit tests covering BorderPost/BorderPostManager/utilities; 258 total tests, all green. |
 | P26 | 2026-07-14 | **CC0 Visual Enhancement** — Integrated 24 CC0 glTF models from Poly Pizza (castle, house, market, windmill, well, tree, cactus, rock, boat + symlinks for farm/sawmill/storehouse/barracks/fisherman); Enhanced TerrainRenderer with richer terrain textures featuring S4-authentic patterns (wildflowers, leaves, strata, ripples, dunes, sparkles, algae/lily pads); Added generate_terrain_textures.js for standalone texture generation; 258 tests pass. |
 | P27 | 2026-07-14 | **Territory Visual Rendering** — New `TerritoryOverlay` class: semi-transparent vertex-colored mesh positioned just above terrain, rendering territory ownership using nation palette colors (Romans red, Vikings blue, Mayans green, Trojans gold, Dark Tribe purple) at ~30% opacity. `refresh()` updates vertex colors from map territory state on each game tick. Wired into GameApp `initRendering()` and DebugPanel territory toggle (previously placeholder). 11 unit tests covering mesh creation, visibility, refresh, dispose, neutral/owned per-nation colors. 270 total tests, all green. |
- 
+
 ### Next Session Priorities
 1. **Building Placement UI** — Wire the building palette from BASE.md into the HUD/toolbar for in-game building placement with ghost preview.
 2. **Resource Transport Visualization** — Render carriers (donkeys/porters) moving between buildings along computed paths.
 3. **Multi-Nation Game Setup** — Implement nation selection and multi-player map initialization with separate starting areas.
 4. **Territory Border Blending** — Add smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries.
-
-
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*

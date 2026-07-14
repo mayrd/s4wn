@@ -367,6 +367,21 @@ export class DebugPanel {
     this.container.classList.toggle('hidden');
   }
 
+  /** Launch Babylon.js Inspector for advanced scene debugging */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public showBabylonInspector(): any {
+    // Lazy-load the inspector (optional dev dependency) to avoid bundling in production
+    // The inspector package may not be installed in all environments
+    // @ts-ignore - optional package, error handled at runtime
+    import('@babylonjs/inspector' as any).then((mod: any) => {
+      if (mod && mod.Inspector) {
+        mod.Inspector.Show(this.scene, { embedMode: true, enableClose: true });
+      }
+    }).catch(() => {
+      // Package not installed - silently fail for production
+    });
+  }
+
   public dispose(): void {
     this.container.remove();
   }

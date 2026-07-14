@@ -131,7 +131,7 @@ export class ObjectExplorer {
   private searchInput!: HTMLInputElement;
   private detailsEl!: HTMLElement;
   private isOpen = false;
-  private gameLoop: GameLoop;
+  private gameLoop: GameLoop | null;
   private activeTab: CatalogTab = 'terrain';
   private objects: ExplorerObject[] = [];
   private isMobile = false;
@@ -140,8 +140,8 @@ export class ObjectExplorer {
   /** Auto-refresh toggle — when enabled, update() re-renders the currently open detail every tick. */
   private autoRefresh = true;
 
-  constructor(gl: GameLoop) {
-    this.gameLoop = gl;
+  constructor(gl?: GameLoop) {
+    this.gameLoop = gl ?? null;
     this.isMobile = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 768px)').matches === true;
     this.container = document.createElement('div');
     this.container.className = 'ui-screen explorer-panel hidden';
@@ -152,11 +152,11 @@ export class ObjectExplorer {
 
   private build(): void {
     const tabs: CatalogTab[] = ['terrain','buildings','units','resources','decorations','misc'];
+    // Hide the Live toggle in standalone mode (no GameLoop = no live data)
+    const liveToggle = this.gameLoop ? '<label class="explorer-autorefresh-toggle" title="Auto-refresh live data every tick"><input type="checkbox" id="explorer-autorefresh" checked /> Live</label>' : '';
      this.container.innerHTML = `<div class="explorer-container">
        <div class="explorer-header"><span class="explorer-title">Object Explorer</span>
-         <label class="explorer-autorefresh-toggle" title="Auto-refresh live data every tick">
-           <input type="checkbox" id="explorer-autorefresh" checked /> Live
-         </label>
+         ${liveToggle}
          <button class="explorer-close">&times;</button></div>
        <div class="explorer-mobile-back" id="explorer-mobile-back">&larr; Back</div>
       <div class="explorer-content">
@@ -260,7 +260,7 @@ export class ObjectExplorer {
   }
 
   private loadBuildings(): void {
-    const placed = this.gameLoop.economy.getCompleteBuildings();
+    const placed = this.gameLoop?.economy.getCompleteBuildings() ?? [];
     if (placed.length > 0) {
       const counts = new Map<string, { count: number; instances: any[] }>();
       for (const b of placed) {
@@ -301,7 +301,7 @@ export class ObjectExplorer {
   }
 
   private loadUnits(): void {
-    const alive = this.gameLoop.unitManager.getAliveUnits();
+    const alive = this.gameLoop?.unitManager.getAliveUnits() ?? [];
     const defs = [
       { n:'Settler', hp:50,a:1,sp:1.5,si:8, idle:'Standing, slight sway', walk:'Walk 1.5 — A*', work:'Hammer (build) + carry (haul)' },
       { n:'Swordsman', hp:100,a:15,sp:1.0,si:6, idle:'At attention, shield fwd', walk:'March 1.0 — A*', work:'Slash/parry combat (CombatAI)' },
@@ -367,8 +367,8 @@ export class ObjectExplorer {
   private static readonly LOW_STORAGE_PCT = 90;
 
   private loadResources(): void {
-    const counts = this.gameLoop.economy.getResourceCounts();
-    const storageCapacity = (this.gameLoop.economy as any).storageCapacity ?? 100;
+    const counts: Record<number, number> = this.gameLoop?.economy.getResourceCounts() ?? {};
+    const storageCapacity = (this.gameLoop?.economy as any)?.storageCapacity ?? 100;
     const results: ExplorerObject[] = [];
     // Only the 19 real ResourceType enum members are valid — the discriminants
     // 19-28 are gaps and resourceName() falls back to "Resource#N" for those,
@@ -395,7 +395,8 @@ export class ObjectExplorer {
   private loadDecorations(): void {
     // Border posts placed by Pioneers
     const borderPostEntries: ExplorerObject[] = [];
-    const bpCounts = this.gameLoop.territoryManager?.borderPosts?.getCountByNation();
+    const territory = this.gameLoop?.territoryManager || { borderPosts: { getCountByNation: () => null } as any };
+    const bpCounts = territory.borderPosts?.getCountByNation();
     if (bpCounts && bpCounts.size > 0) {
       for (const [nationId, count] of bpCounts.entries()) {
         const name = borderPostNationName(nationId);
