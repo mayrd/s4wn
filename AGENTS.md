@@ -182,12 +182,13 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | P24 | 2026-07-13 | **Resource icons & low-storage warning** — Added `resourceIcon()` mapping each of the 19 `ResourceType` discriminants to a distinct glyph + color badge; `resourceIconKey()` for OBJ model filename stems (`icon_*.obj`); `LOW_STORAGE_PCT=90` threshold with pulsing ⚠ indicator per row; colored badge in list rows for resource type; CSS: `.explorer-res-icon` (22px rounded badge), `.explorer-res-warn` (red pulsing), `@keyframes explorer-warn-pulse`. `tsc --noEmit` clean, 230/230 unit tests green (1 pre-existing ErrorHandler `import.meta` failure). |
 | P25 | 2026-07-14 | **Border Posts Implementation** — `BorderPost` class + `BorderPostManager` (place, remove, filter, count ops); 5 OBJ/MTL models (roman/viking/mayan/trojan/dark) with 14 vertices each; TerritoryManager `placeBorderPosts()` scans Pioneer perimeter rings for border tiles and places posts automatically; ObjectExplorer decorations tab shows all 5 variants with nation colors + live placement counts; 15 unit tests covering BorderPost/BorderPostManager/utilities; 258 total tests, all green. |
 | P26 | 2026-07-14 | **CC0 Visual Enhancement** — Integrated 24 CC0 glTF models from Poly Pizza (castle, house, market, windmill, well, tree, cactus, rock, boat + symlinks for farm/sawmill/storehouse/barracks/fisherman); Enhanced TerrainRenderer with richer terrain textures featuring S4-authentic patterns (wildflowers, leaves, strata, ripples, dunes, sparkles, algae/lily pads); Added generate_terrain_textures.js for standalone texture generation; 258 tests pass. |
+| P27 | 2026-07-14 | **Territory Visual Rendering** — New `TerritoryOverlay` class: semi-transparent vertex-colored mesh positioned just above terrain, rendering territory ownership using nation palette colors (Romans red, Vikings blue, Mayans green, Trojans gold, Dark Tribe purple) at ~30% opacity. `refresh()` updates vertex colors from map territory state on each game tick. Wired into GameApp `initRendering()` and DebugPanel territory toggle (previously placeholder). 11 unit tests covering mesh creation, visibility, refresh, dispose, neutral/owned per-nation colors. 270 total tests, all green. |
  
- ### Next Session Priorities
- 1. **Territory Visual Rendering** — Render nation-colored territory overlays on the terrain mesh (vertex color per tile, blended at borders). Use the TerritoryManager's computed territory data to drive WebGL visual output.
-2. **Building Placement UI** — Wire the building palette from BASE.md into the HUD/toolbar for in-game building placement with ghost preview.
-3. **Resource Transport Visualization** — Render carriers (donkeys/porters) moving between buildings along computed paths.
-4. **Multi-Nation Game Setup** — Implement nation selection and multi-player map initialization with separate starting areas.
+### Next Session Priorities
+1. **Building Placement UI** — Wire the building palette from BASE.md into the HUD/toolbar for in-game building placement with ghost preview.
+2. **Resource Transport Visualization** — Render carriers (donkeys/porters) moving between buildings along computed paths.
+3. **Multi-Nation Game Setup** — Implement nation selection and multi-player map initialization with separate starting areas.
+4. **Territory Border Blending** — Add smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries.
 
 
 
