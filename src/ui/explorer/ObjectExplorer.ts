@@ -32,7 +32,7 @@ type CatalogTab = 'terrain' | 'buildings' | 'units' | 'resources' | 'decorations
 
 function fmtCost(items: Array<{ resource: any; amount: number }>): string {
   if (items.length === 0) return 'none';
-  return items.map(i => `${resourceName(i.resource)}×${i.amount}`).join(', ');
+  return items.map(i => `${resourceName(i.resource)}\u00d7${i.amount}`).join(', ');
 }
 
 function esc(s: string): string {
@@ -46,28 +46,28 @@ function propRow(key: string, val: any): string {
 // ── Generation Prompt Excerpts (inlined from PROMPTS.md) ────────────
 
 const PROMPT_EXCERPTS: Record<string, string> = {
-  building_stone: 'Seamless medieval stone masonry. 512×512 tileable. Weathered grey stone blocks with mortar lines, subtle moss. Flat diffuse, no shadows. PROMPTS.md §Stone Masonry.',
-  building_timber: 'Seamless timber planks. 512×512 tileable. Rough-sawn wood with rich brown grain, saw marks. Flat diffuse. PROMPTS.md §Timber Planks.',
-  building_thatch: 'Seamless thatched roof. 512×512 tileable. Dense golden-brown straw weave. Flat diffuse. PROMPTS.md §Thatch/Straw.',
-  building_marble: 'Seamless white marble. 512×512 tileable. Polished smooth with faint grey veining. Flat diffuse. PROMPTS.md §White Marble.',
-  building_metal: 'Seamless wrought iron. 512×512 tileable. Dark grey-black riveted plates, slight rust patina. Flat diffuse. PROMPTS.md §Wrought Iron.',
-  building_adobe: 'Seamless mud-brick. 512×512 tileable. Sandy brown bricks with rough mortar, sun-baked look. Flat diffuse. PROMPTS.md §Mud-Brick/Adobe.',
-  building_darkstone: 'Seamless dark stone. 512×512 tileable. Obsidian-black blocks, purple-grey mortar. Flat diffuse. PROMPTS.md §Dark Stone.',
-  unit_settler: 'Character UV sheet 256×256. Head: fair face, brown eyes, short hair. Torso: cream linen tunic, brown belt. Arms: cream sleeves. Legs: brown trousers, black boots. PROMPTS.md §Settler.',
-  unit_soldier: 'Character UV sheet 256×256. Head: stern face, grey helmet. Torso: chainmail, red tabard. Arms: mail sleeves. Legs: grey plate greaves. PROMPTS.md §Soldier.',
-  unit_archer: 'Character UV sheet 256×256. Head: green hood framing face. Torso: green tunic, brown cross-strap. Arms: rolled sleeves. Legs: leather trousers. PROMPTS.md §Archer.',
-  unit_worker: 'Character UV sheet 256×256. Head: friendly face. Torso: brown tunic, grey apron. Arms: rolled sleeves. Legs: grey-brown trousers. PROMPTS.md §Worker.',
-  unit_pioneer: 'Character UV sheet 256×256. Head: rugged face, wide-brim hat. Torso: leather jerkin. Arms: leather sleeves. Legs: tall boots. PROMPTS.md §Pioneer.',
-  splash: '4K splash screen. Painterly medieval village in valley at golden hour. Castle, village square, timber-frame houses. Title "S4WN" in medieval typography. Center-safe for 9:16. PROMPTS.md §Splash.',
-  logo: 'Game logo. Rustic medieval typography "S4WN", wood/stone texture, bronze-gold trim. Circular seal, dark green background. 1024×1024. PROMPTS.md §Logo.',
-  terrain_grass: 'Seamless grass 1024×1024. Lush green with wildflowers, must tile at all four edges. Top-down orthographic, flat diffuse. PROMPTS.md §Terrain Grass.',
-  terrain_forest: 'Seamless forest floor 1024×1024. Dark woodland with fallen leaves, moss, ferns. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Forest.',
-  terrain_desert: 'Seamless desert sand 1024×1024. Golden sand with wind ripples, pebbles, dry grass tufts. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Desert.',
-  terrain_mountain: 'Seamless rocky mountain 1024×1024. Jagged grey rock, cracks, alpine grass patches. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Mountain.',
-  terrain_snow: 'Seamless snow terrain 1024×1024. White snow with crystalline sparkle, blue-grey shadows. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Snow.',
-  terrain_water: 'Seamless shallow water 1024×1024. Teal-blue ripples with caustic patterns, must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Water.',
-  terrain_deepwater: 'Seamless deep water 1024×1024. Dark navy ocean surface with slow wave patterns, opaque. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Deep Water.',
-  terrain_swamp: 'Seamless swamp 1024×1024. Murky green-brown water with algae, lily pads, reeds. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md §Terrain Swamp.',
+  building_stone: 'Seamless medieval stone masonry. 512\u00d7512 tileable. Weathered grey stone blocks with mortar lines, subtle moss. Flat diffuse, no shadows. PROMPTS.md \u00a7Stone Masonry.',
+  building_timber: 'Seamless timber planks. 512\u00d7512 tileable. Rough-sawn wood with rich brown grain, saw marks. Flat diffuse. PROMPTS.md \u00a7Timber Planks.',
+  building_thatch: 'Seamless thatched roof. 512\u00d7512 tileable. Dense golden-brown straw weave. Flat diffuse. PROMPTS.md \u00a7Thatch/Straw.',
+  building_marble: 'Seamless white marble. 512\u00d7512 tileable. Polished smooth with faint grey veining. Flat diffuse. PROMPTS.md \u00a7White Marble.',
+  building_metal: 'Seamless wrought iron. 512\u00d7512 tileable. Dark grey-black riveted plates, slight rust patina. Flat diffuse. PROMPTS.md \u00a7Wrought Iron.',
+  building_adobe: 'Seamless mud-brick. 512\u00d7512 tileable. Sandy brown bricks with rough mortar, sun-baked look. Flat diffuse. PROMPTS.md \u00a7Mud-Brick/Adobe.',
+  building_darkstone: 'Seamless dark stone. 512\u00d7512 tileable. Obsidian-black blocks, purple-grey mortar. Flat diffuse. PROMPTS.md \u00a7Dark Stone.',
+  unit_settler: 'Character UV sheet 256\u00d7256. Head: fair face, brown eyes, short hair. Torso: cream linen tunic, brown belt. Arms: cream sleeves. Legs: brown trousers, black boots. PROMPTS.md \u00a7Settler.',
+  unit_soldier: 'Character UV sheet 256\u00d7256. Head: stern face, grey helmet. Torso: chainmail, red tabard. Arms: mail sleeves. Legs: grey plate greaves. PROMPTS.md \u00a7Soldier.',
+  unit_archer: 'Character UV sheet 256\u00d7256. Head: green hood framing face. Torso: green tunic, brown cross-strap. Arms: rolled sleeves. Legs: leather trousers. PROMPTS.md \u00a7Archer.',
+  unit_worker: 'Character UV sheet 256\u00d7256. Head: friendly face. Torso: brown tunic, grey apron. Arms: rolled sleeves. Legs: grey-brown trousers. PROMPTS.md \u00a7Worker.',
+  unit_pioneer: 'Character UV sheet 256\u00d7256. Head: rugged face, wide-brim hat. Torso: leather jerkin. Arms: leather sleeves. Legs: tall boots. PROMPTS.md \u00a7Pioneer.',
+  splash: '4K splash screen. Painterly medieval village in valley at golden hour. Castle, village square, timber-frame houses. Title "S4WN" in medieval typography. Center-safe for 9:16. PROMPTS.md \u00a7Splash.',
+  logo: 'Game logo. Rustic medieval typography "S4WN", wood/stone texture, bronze-gold trim. Circular seal, dark green background. 1024\u00d71024. PROMPTS.md \u00a7Logo.',
+  terrain_grass: 'Seamless grass 1024\u00d71024. Lush green with wildflowers, must tile at all four edges. Top-down orthographic, flat diffuse. PROMPTS.md \u00a7Terrain Grass.',
+  terrain_forest: 'Seamless forest floor 1024\u00d71024. Dark woodland with fallen leaves, moss, ferns. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md \u00a7Terrain Forest.',
+  terrain_desert: 'Seamless desert sand 1024\u00d71024. Golden sand with wind ripples, pebbles, dry grass tufts. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md \u00a7Terrain Desert.',
+  terrain_mountain: 'Seamless rocky mountain 1024\u00d71024. Jagged grey rock, cracks, alpine grass patches. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md \u00a7Terrain Mountain.',
+  terrain_snow: 'Seamless snow terrain 1024\u00d71024. White snow with crystalline sparkle, blue-grey shadows. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md \u00a7Terrain Snow.',
+  terrain_water: 'Seamless shallow water 1024\u00d71024. Teal-blue ripples with caustic patterns, must tile at all four edges. Top-down, flat diffuse. PROMPTS.md \u00a7Terrain Water.',
+  terrain_deepwater: 'Seamless deep water 1024\u00d71024. Dark navy ocean surface with slow wave patterns, opaque. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md \u00a7Terrain Deep Water.',
+  terrain_swamp: 'Seamless swamp 1024\u00d71024. Murky green-brown water with algae, lily pads, reeds. Must tile at all four edges. Top-down, flat diffuse. PROMPTS.md \u00a7Terrain Swamp.',
 };
 
 function promptExcerpt(key: string): string {
@@ -82,7 +82,7 @@ function promptExcerpt(key: string): string {
 function resolveTextureUrl(texture: string): string | null {
   if (!texture) return null;
   // Extract the filename from the chain texture string
-  const fnameM = texture.match(/([a-zA-Z0-9_-]+\.(png|jpg|webp|gif))/i);
+  const fnameM = texture.match(/([a-zA-Z0-9_-]+\\.(png|jpg|webp|gif))/i);
   if (!fnameM) return null;
   const fname = fnameM[1];
   // Try common asset directories (Vite publicDir: 'assets' serves these at root)
@@ -131,7 +131,7 @@ export class ObjectExplorer {
   private searchInput!: HTMLInputElement;
   private detailsEl!: HTMLElement;
   private isOpen = false;
-  private gameLoop: GameLoop | null;
+  private gameLoop: GameLoop | null = null;
   private activeTab: CatalogTab = 'terrain';
   private objects: ExplorerObject[] = [];
   private isMobile = false;
@@ -139,20 +139,36 @@ export class ObjectExplorer {
   private selectedObjectId: string | null = null;
   /** Auto-refresh toggle — when enabled, update() re-renders the currently open detail every tick. */
   private autoRefresh = true;
+  private autoRefreshCallback: (() => void) | null = null;
 
-  constructor(gl?: GameLoop) {
-    this.gameLoop = gl ?? null;
+  constructor() {
+    this.gameLoop = null;
     this.isMobile = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 768px)').matches === true;
     this.container = document.createElement('div');
     this.container.className = 'ui-screen explorer-panel hidden';
     this.build();
   }
 
+  /**
+   * Connect to a live GameLoop to enable runtime data display.
+   * This enables the "Live" toggle and per-tick updates.
+   */
+  public connectGame(gl: GameLoop): void {
+    this.gameLoop = gl;
+    this.setupLiveRefresh();
+  }
+
+  private setupLiveRefresh(): void {
+    // Subscribe to game ticks for auto-refresh
+    this.autoRefreshCallback = () => this.update();
+    this.gameLoop?.onTick(this.autoRefreshCallback);
+  }
+
   // ── Build DOM ────────────────────────────────────────────────────
 
   private build(): void {
     const tabs: CatalogTab[] = ['terrain','buildings','units','resources','decorations','misc'];
-    // Hide the Live toggle in standalone mode (no GameLoop = no live data)
+    // "Live" toggle only shown when connected to a GameLoop
     const liveToggle = this.gameLoop ? '<label class="explorer-autorefresh-toggle" title="Auto-refresh live data every tick"><input type="checkbox" id="explorer-autorefresh" checked /> Live</label>' : '';
      this.container.innerHTML = `<div class="explorer-container">
        <div class="explorer-header"><span class="explorer-title">Object Explorer</span>
@@ -166,10 +182,10 @@ export class ObjectExplorer {
           <div class="explorer-list" id="explorer-list"></div>
         </div>
        <div class="explorer-details-section">
-         <div class="explorer-details-header">Details</div>
-         <div class="explorer-details" id="explorer-details"><div class="explorer-empty-msg">Select an object to inspect</div></div>
-       </div>
-      </div></div>`;
+          <div class="explorer-details-header">Details</div>
+          <div class="explorer-details" id="explorer-details"><div class="explorer-empty-msg">Select an object to inspect</div></div>
+        </div>
+       </div></div>`;
     this.listEl = this.container.querySelector('#explorer-list')!;
     this.detailsEl = this.container.querySelector('#explorer-details')!;
     this.searchInput = this.container.querySelector('#explorer-search')!;
@@ -495,96 +511,96 @@ export class ObjectExplorer {
   // ── Detail view ──────────────────────────────────────────────────
 
    private showDetails(obj: ExplorerObject): void {
-    this.selectedObjectId = obj.id;
-    const x = obj as any;
-    const promptTxt = x._promptKey ? promptExcerpt(x._promptKey) : '';
-    const chain = x._chain;
-    const instances: any[] = x._instances ?? [];
-    const kind = x._kind as BuildingType | undefined;
+     this.selectedObjectId = obj.id;
+     const x = obj as any;
+     const promptTxt = x._promptKey ? promptExcerpt(x._promptKey) : '';
+     const chain = x._chain;
+     const instances: any[] = x._instances ?? [];
+     const kind = x._kind as BuildingType | undefined;
 
-    // Statics
-    const statics = Object.entries(obj.properties as Record<string,any>)
-      .filter(([k]) => !k.startsWith('🔴'))
-      .map(([k,v]) => propRow(k,v)).join('');
+     // Statics
+     const statics = Object.entries(obj.properties as Record<string,any>)
+       .filter(([k]) => !k.startsWith('🔴'))
+       .map(([k,v]) => propRow(k,v)).join('');
 
-    // Runtime cards
-    let runtimeHtml = '';
-    if (instances.length > 0) {
-      if (obj.type === 'building') {
-        const bt = buildTime(kind ?? BuildingType.Castle);
-        runtimeHtml = instances.map((b: any, i: number) => {
-          const progress = b.constructionProgress ?? b.progress ?? 0;
-          const workerCount = (b.assignedSettlers ?? b.workers ?? []).length;
-          return `<div class="explorer-instance-card">
-            <div class="explorer-instance-header">🏠 #${i + 1} @(${b.x},${b.y})</div>
-            <div>HP ${b.hp}/${b.maxHp} ${b.isActive ? '✅' : '⏸️'} | Prg ${progress}/${bt} | Workers ${workerCount}</div>
-          </div>`;
-        }).join('');
-      } else if (obj.type === 'unit') {
-        runtimeHtml = instances.map((u: any, i: number) => {
-          const stateStr = u.state ?? '?';
-          const stanceStr = u.stance ?? '?';
-          const pathLen = typeof u.path?.len === 'function' ? u.path.len() : 0;
-          const goal = typeof u.path?.goal === 'function' ? u.path.goal() : undefined;
-          const goalStr = goal ? ` → (${goal.x},${goal.y})` : '';
-          const targetStr = (u.targetX != null && u.targetY != null) ? ` | Target:(${u.targetX},${u.targetY})` : '';
-          return `<div class="explorer-instance-card">
-            <div class="explorer-instance-header">👤 #${u.id ?? i + 1} @(${u.x},${u.y})</div>
-            <div>HP ${u.hp} | State:${stateStr} | Stance:${stanceStr} | Path:${pathLen} steps${goalStr}${targetStr}</div>
-          </div>`;
-        }).join('');
-      }
+     // Runtime cards
+     let runtimeHtml = '';
+     if (instances.length > 0) {
+       if (obj.type === 'building') {
+         const bt = buildTime(kind ?? BuildingType.Castle);
+         runtimeHtml = instances.map((b: any, i: number) => {
+           const progress = b.constructionProgress ?? b.progress ?? 0;
+           const workerCount = (b.assignedSettlers ?? b.workers ?? []).length;
+           return `<div class="explorer-instance-card">
+             <div class="explorer-instance-header">🏠 #${i + 1} @(${b.x},${b.y})</div>
+             <div>HP ${b.hp}/${b.maxHp} ${b.isActive ? '✅' : '⏸️'} | Prg ${progress}/${bt} | Workers ${workerCount}</div>
+           </div>`;
+         }).join('');
+       } else if (obj.type === 'unit') {
+         runtimeHtml = instances.map((u: any, i: number) => {
+           const stateStr = u.state ?? '?';
+           const stanceStr = u.stance ?? '?';
+           const pathLen = typeof u.path?.len === 'function' ? u.path.len() : 0;
+           const goal = typeof u.path?.goal === 'function' ? u.path.goal() : undefined;
+           const goalStr = goal ? ` → (${goal.x},${goal.y})` : '';
+           const targetStr = (u.targetX != null && u.targetY != null) ? ` | Target:(${u.targetX},${u.targetY})` : '';
+           return `<div class="explorer-instance-card">
+             <div class="explorer-instance-header">👤 #${u.id ?? i + 1} @(${u.x},${u.y})</div>
+             <div>HP ${u.hp} | State:${stateStr} | Stance:${stanceStr} | Path:${pathLen} steps${goalStr}${targetStr}</div>
+           </div>`;
+         }).join('');
+       }
 
-    }
+     }
 
-    const parts: string[] = [];
+     const parts: string[] = [];
 
-    if (chain) {
-      // ── Texture preview — show raw image for ANY asset type ──
-      const imgUrl = resolveTextureUrl(chain.texture);
-      if (imgUrl) {
-        parts.push(`<div class="explorer-section explorer-section-preview">
-          <div class="explorer-section-title">🖼️ Texture Preview</div>
-          <div class="explorer-section-body" style="text-align:center">
-            <img src="${imgUrl}" class="explorer-tex-preview-full" onerror="this.style.display='none'" loading="lazy" />
-          </div>
-        </div>`);
-      }
+     if (chain) {
+       // ── Texture preview — show raw image for ANY asset type ──
+       const imgUrl = resolveTextureUrl(chain.texture);
+       if (imgUrl) {
+         parts.push(`<div class="explorer-section explorer-section-preview">
+           <div class="explorer-section-title">🖼️ Texture Preview</div>
+           <div class="explorer-section-body" style="text-align:center">
+             <img src="${imgUrl}" class="explorer-tex-preview-full" onerror="this.style.display='none'" loading="lazy" />
+           </div>
+         </div>`);
+       }
 
-      // Build asset chain with inline thumbnails
-      let texHtml = esc(chain.texture);
-      const texMatch = resolveTextureUrl(chain.texture);
-      if (texMatch) {
-        texHtml = `<img src="${texMatch}" class="explorer-tex-preview" onerror="this.style.display='none'" /> ${esc(chain.texture)}`;
-      }
-      parts.push(`<div class="explorer-section">
-      <div class="explorer-section-title">🔗 Asset Chain</div>
-      <div class="explorer-section-body"><div class="explorer-chain">
-        <div class="explorer-chain-node"><span>Mesh</span>${esc(chain.mesh)}</div>
-        <div class="explorer-chain-arrow">↓</div>
-        <div class="explorer-chain-node"><span>Texture</span>${texHtml}</div>
-        <div class="explorer-chain-arrow">↓</div>
-        <div class="explorer-chain-node"><span>Animation</span>${esc(chain.animation)}</div>
-      </div></div></div>`);
-    }
+       // Build asset chain with inline thumbnails
+       let texHtml = esc(chain.texture);
+       const texMatch = resolveTextureUrl(chain.texture);
+       if (texMatch) {
+         texHtml = `<img src="${texMatch}" class="explorer-tex-preview" onerror="this.style.display='none'" /> ${esc(chain.texture)}`;
+       }
+       parts.push(`<div class="explorer-section">
+       <div class="explorer-section-title">🔗 Asset Chain</div>
+       <div class="explorer-section-body"><div class="explorer-chain">
+         <div class="explorer-chain-node"><span>Mesh</span>${esc(chain.mesh)}</div>
+         <div class="explorer-chain-arrow">↓</div>
+         <div class="explorer-chain-node"><span>Texture</span>${texHtml}</div>
+         <div class="explorer-chain-arrow">↓</div>
+         <div class="explorer-chain-node"><span>Animation</span>${esc(chain.animation)}</div>
+       </div></div></div>`);
+     }
 
-    if (promptTxt) parts.push(`<div class="explorer-section explorer-section-prompt">
-      <div class="explorer-section-title" onclick="this.parentElement.classList.toggle('explorer-collapsed')">📝 Generation Prompt ▾</div>
-      <div class="explorer-section-body"><code class="explorer-prompt-text">${esc(promptTxt)}</code></div></div>`);
+     if (promptTxt) parts.push(`<div class="explorer-section explorer-section-prompt">
+       <div class="explorer-section-title" onclick="this.parentElement.classList.toggle('explorer-collapsed')">📝 Generation Prompt ▾</div>
+       <div class="explorer-section-body"><code class="explorer-prompt-text">${esc(promptTxt)}</code></div></div>`);
 
-    if (runtimeHtml) parts.push(`<div class="explorer-section">
-      <div class="explorer-section-title" onclick="this.parentElement.classList.toggle('explorer-collapsed')">🔴 Runtime (${instances.length}) ▾</div>
-      <div class="explorer-section-body">${runtimeHtml}</div></div>`);
+     if (runtimeHtml) parts.push(`<div class="explorer-section">
+       <div class="explorer-section-title" onclick="this.parentElement.classList.toggle('explorer-collapsed')">🔴 Runtime (${instances.length}) ▾</div>
+       <div class="explorer-section-body">${runtimeHtml}</div></div>`);
 
-    if (statics) parts.push(`<div class="explorer-section">
-      <div class="explorer-section-title" onclick="this.parentElement.classList.toggle('explorer-collapsed')">📋 Asset Info ▾</div>
-      <div class="explorer-section-body">${statics}</div></div>`);
+     if (statics) parts.push(`<div class="explorer-section">
+       <div class="explorer-section-title" onclick="this.parentElement.classList.toggle('explorer-collapsed')">📋 Asset Info ▾</div>
+       <div class="explorer-section-body">${statics}</div></div>`);
 
-    this.detailsEl.innerHTML = `<div class="explorer-detail-item"><strong>${obj.name}</strong></div>
-      <div class="explorer-detail-item" style="opacity:0.6">${obj.type} · ${obj.id}</div>
-      ${parts.join('\n')}`;
+     this.detailsEl.innerHTML = `<div class="explorer-detail-item"><strong>${obj.name}</strong></div>
+       <div class="explorer-detail-item" style="opacity:0.6">${obj.type} · ${obj.id}</div>
+       ${parts.join('\n')}`;
 
-    // On mobile, switch from list to detail view
-    if (this.isMobile) this.showDetailView();
-  }
+     // On mobile, switch from list to detail view
+     if (this.isMobile) this.showDetailView();
+   }
 }

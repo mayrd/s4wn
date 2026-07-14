@@ -26,7 +26,14 @@ jest.mock('../../../core/CapabilityChecker', () => ({
     info: { webgl2: true, webgpu: false, webAudio: true, mobile: false, userAgent: 'node' },
   }),
 }));
-jest.mock('../../explorer/ObjectExplorer', () => ({ ObjectExplorer: jest.fn() }));
+jest.mock('../../explorer/ObjectExplorer', () => ({ 
+  ObjectExplorer: jest.fn().mockImplementation(() => ({
+    connectGame: jest.fn(),
+    toggle: jest.fn(),
+    show: jest.fn(),
+    hide: jest.fn(),
+  })) 
+}));
 
 import { UIManager } from '../../UIManager';
 import { GameLoop } from '../../../game/GameLoop';

@@ -44,34 +44,19 @@ test.describe('Visual Regression — Main Menu', () => {
   });
 });
 
-test.describe('Visual Regression — Object Explorer', () => {
-  test.beforeEach(async ({ page }) => {
-    // Object Explorer is only available after starting a game (GameApp has GameLoop).
+test.describe('Visual Regression — Object Explorer Standalone', () => {
+  test('object explorer opens from menu without game', async ({ page }) => {
+    // Object Explorer works standalone — no need to start a game first
     await goToMainMenu(page);
-    await page.locator('#btn-tutorial').waitFor({ state: 'visible' });
-    await page.click('#btn-tutorial');
-    // Wait for loading screen to hide (assets loaded) before checking HUD
-    await page.waitForFunction(() => {
-      const splash = document.querySelector('.splash-screen');
-      return !splash?.classList.contains('active');
-    }, { timeout: 30000 });
-    // Wait for HUD to appear after loading completes
-    await page.locator('#hud-container').waitFor({ state: 'visible', timeout: 10000 });
-  });
+    await page.locator('#btn-explorer').waitFor({ state: 'visible' });
+    await page.click('#btn-explorer');
 
-  test('object explorer panel matches baseline', async ({ page }) => {
-    // Toggle via the GameApp API since the main-menu #btn-explorer is hidden
-    // behind the game view after game-start.
-    await page.evaluate(() => {
-      const app = (window as any).gameApp;
-      if (app?.objectExplorer) app.objectExplorer.toggle();
-    });
-
+    // Object Explorer should open immediately (standalone mode)
     const explorer = page.locator('.explorer-panel');
     await explorer.waitFor({ state: 'visible', timeout: 5000 });
 
-    // Explorer updates on every game tick — use generous stability settings
-    await expect(explorer).toHaveScreenshot('object-explorer.png', {
+    // Explorer shows static catalog in standalone mode (no "Live" toggle)
+    await expect(explorer).toHaveScreenshot('object-explorer-standalone.png', {
       threshold: 0.15,
       maxDiffPixelRatio: 0.05,
       timeout: 10000,
@@ -79,21 +64,33 @@ test.describe('Visual Regression — Object Explorer', () => {
   });
 
   test('object explorer can be closed', async ({ page }) => {
-    await page.evaluate(() => {
-      const app = (window as any).gameApp;
-      if (app?.objectExplorer) app.objectExplorer.toggle();
-    });
+    await goToMainMenu(page);
+    await page.click('#btn-explorer');
     await page.locator('.explorer-panel').waitFor({ state: 'visible', timeout: 5000 });
 
-    // Close via the toggle API — avoids pointer-event interception by debug panel
+    // Close via the toggle API
     await page.evaluate(() => {
       const app = (window as any).gameApp;
-      if (app?.objectExplorer) app.objectExplorer.toggle();
+      if (app?.ui?.objectExplorer) app.ui.objectExplorer.toggle();
     });
 
     // Panel should hide (classList has 'hidden')
     const explorer = page.locator('.explorer-panel');
     await expect(explorer).toHaveClass(/hidden/, { timeout: 3000 });
+  });
+
+  test('object explorer shows terrain tab', async ({ page }) => {
+    await goToMainMenu(page);
+    await page.click('#btn-explorer');
+    await page.locator('.explorer-panel').waitFor({ state: 'visible', timeout: 5000 });
+
+    // Check that terrain tab is active and has items
+    const terrainTab = page.locator('.explorer-tab[data-tab="terrain"]');
+    await expect(terrainTab).toBeVisible();
+
+    // Verify there are terrain items in the list
+    const terrainItems = page.locator('.explorer-item');
+    await expect(terrainItems.first()).toBeVisible();
   });
 });
 
@@ -168,5 +165,39 @@ test.describe('Visual Regression — Splash Screen', () => {
       });
     }
     // Always passes — splash may have already transitioned
+  });
+});
+
+test.describe('Visual Regression — Object Explorer In-Game', () => {
+  test.beforeEach(async ({ page }) => {
+    // Start a game to get the connected ObjectExplorer with live data
+    await goToMainMenu(page);
+    await page.locator('#btn-tutorial').waitFor({ state: 'visible' });
+    await page.click('#btn-tutorial');
+    // Wait for loading screen to hide (assets loaded) before HUD is visible
+    await page.waitForFunction(() => {
+      const splash = document.querySelector('.splash-screen');
+      return !splash?.classList.contains('active');
+    }, { timeout: 30000 });
+    // Wait for HUD to appear after loading completes
+    await page.locator('#hud-container').waitFor({ state: 'visible', timeout: 10000 });
+  });
+
+  test('object explorer shows live data when connected to game', async ({ page }) => {
+    // Toggle via the GameApp API
+    await page.evaluate(() => {
+      const app = (window as any).gameApp;
+      if (app?.ui?.objectExplorer) app.ui.objectExplorer.toggle();
+    });
+
+    const explorer = page.locator('.explorer-panel');
+    await explorer.waitFor({ state: 'visible', timeout: 5000 });
+
+    // Explorer updates on every game tick — use generous stability settings
+    await expect(explorer).toHaveScreenshot('object-explorer-ingame.png', {
+      threshold: 0.15,
+      maxDiffPixelRatio: 0.05,
+      timeout: 10000,
+    });
   });
 });

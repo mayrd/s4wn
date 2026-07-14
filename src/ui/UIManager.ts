@@ -11,7 +11,6 @@
  */
 
 import { ObjectExplorer } from './explorer/ObjectExplorer';
-import { GameLoop } from '../game/GameLoop';
 import { SaveManager } from '../core/SaveManager';
 import { checkCapabilities, CapabilityResult } from '../core/CapabilityChecker';
 
@@ -22,10 +21,9 @@ export class UIManager {
   private overlay: HTMLElement;
   private splashScreen!: HTMLElement;
   private mainMenu!: HTMLElement;
-  private objectExplorer: ObjectExplorer | null = null;
+  public objectExplorer: ObjectExplorer;
   private gameLoop: GameLoop | null = null;
-  /** Set when the user opens a panel from the menu before a game is running. */
-  private pendingExplorerOpen = false;
+  /** Set when the user opens the Map Editor from the menu before a game is running. */
   private pendingEditorOpen = false;
 
   constructor(gameLoop?: GameLoop) {
@@ -37,18 +35,23 @@ export class UIManager {
       this.mainMenu = UIManager.instance.mainMenu;
       this.gameLoop = gameLoop ?? UIManager.instance.gameLoop;
       UIManager.instance.gameLoop = this.gameLoop;
-      // Share the objectExplorer reference so setObjectExplorer() and
-      // toggleExplorer() both see the same instance.
+      // Share the objectExplorer reference
       this.objectExplorer = UIManager.instance.objectExplorer;
+      // If we received a GameLoop now, connect it to enable live data
+      if (gameLoop) {
+        this.objectExplorer.connectGame(gameLoop);
+      }
       return;
     }
     UIManager.instance = this;
 
     this.gameLoop = gameLoop ?? null;
     this.overlay = document.getElementById('ui-overlay')!;
-    // ObjectExplorer only exists once a game (GameLoop) is running.
+    // ObjectExplorer works standalone (no GameLoop required) — shows static catalog.
+    // It will be connected to live game data when a GameLoop becomes available.
+    this.objectExplorer = new ObjectExplorer();
     if (this.gameLoop) {
-      this.objectExplorer = new ObjectExplorer(this.gameLoop);
+      this.objectExplorer.connectGame(this.gameLoop);
     }
     this.init();
   }
@@ -186,22 +189,17 @@ export class UIManager {
   }
 
   /**
-   * Toggle the in-game Object Explorer. From the main menu (no game running
-   * yet) this boots a new game and opens the explorer automatically once the
-   * engine is ready (see onGameReady()).
+   * Toggle the Object Explorer. Works standalone (no game required) to show
+   * the static asset catalog. If a game is running, also shows live runtime data.
    */
   public toggleExplorer(): void {
-    if (this.objectExplorer) {
-      this.objectExplorer.toggle();
-    } else {
-      this.pendingExplorerOpen = true;
-      this.startGame('new');
-    }
+    // ObjectExplorer works standalone — no need to start a game to open it
+    this.objectExplorer.toggle();
   }
 
   /** Toggle the in-game Map Editor (only available once a game runs). */
   public toggleEditor(): void {
-    if (this.objectExplorer) {
+    if (this.gameLoop) {
       window.dispatchEvent(new CustomEvent('ui-editor-toggle'));
     } else {
       this.pendingEditorOpen = true;
@@ -211,31 +209,13 @@ export class UIManager {
 
   /**
    * Called by the bootstrap (main.ts) once the heavy GameApp has been
-   * constructed and this singleton now holds the live ObjectExplorer
-   * reference. Opens any panel the user requested from the menu before the
-   * game had started.
+   * constructed. Opens any panel the user requested from the menu before the
+   * game had started (e.g. Map Editor).
    */
   public onGameReady(): void {
-    if (this.pendingExplorerOpen) {
-      this.pendingExplorerOpen = false;
-      if (this.objectExplorer) {
-        this.objectExplorer.toggle();
-      } else {
-        window.dispatchEvent(new CustomEvent('ui-explorer-toggle'));
-      }
-    }
     if (this.pendingEditorOpen) {
       this.pendingEditorOpen = false;
       window.dispatchEvent(new CustomEvent('ui-editor-toggle'));
-    }
-  }
-
-  public setObjectExplorer(explorer: ObjectExplorer): void {
-    this.objectExplorer = explorer;
-    // Keep the singleton in sync so toggleExplorer() (which runs on the
-    // original instance's click handler) sees the explorer reference.
-    if (UIManager.instance && UIManager.instance !== this) {
-      UIManager.instance.objectExplorer = explorer;
     }
   }
 
@@ -258,3 +238,6 @@ export class UIManager {
     }
   }
 }
+
+// Forward type import for the optional GameLoop parameter
+type GameLoop = import('../game/GameLoop').GameLoop;

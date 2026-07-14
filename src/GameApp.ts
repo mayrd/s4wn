@@ -28,7 +28,6 @@ import { ParticleSystem } from './game/particles/ParticleSystem';
 import { GridRenderer } from './rendering/GridRenderer';
 import { HUD } from './ui/HUD';
 import { DebugPanel } from './ui/panels/DebugPanel';
-import { ObjectExplorer } from './ui/explorer/ObjectExplorer';
 import { MapEditor } from './ui/editor/MapEditor';
 import { soundManager } from './audio/SoundManager';
 import { TouchCameraController } from './input/TouchCameraController';
@@ -48,7 +47,6 @@ export class GameApp {
   public touchController!: TouchCameraController;
   public gridRenderer!: GridRenderer;
   public ui!: UIManager;
-  public objectExplorer!: ObjectExplorer;
   public mapEditor!: MapEditor;
 
   private mode: StartMode;
@@ -106,15 +104,9 @@ export class GameApp {
       }
     }
 
-    // Lightweight UI manager (no engine dependency) used for save handling.
+    // UI manager (no engine dependency) used for save handling + splash screen.
+    // ObjectExplorer is already created by UIManager in standalone mode.
     this.ui = new UIManager(this.gameLoop);
-
-    // Object explorer tool — created now that a GameLoop exists.
-    this.objectExplorer = new ObjectExplorer(this.gameLoop);
-    this.ui.setObjectExplorer(this.objectExplorer);
-
-    // Subscribe ObjectExplorer to game ticks so runtime state stays live
-    this.gameLoop.onTick(() => this.objectExplorer.update());
 
     // Subscribe territory overlay to game ticks so territory changes are reflected
     this.gameLoop.onTick(() => {
@@ -130,10 +122,10 @@ export class GameApp {
       document.removeEventListener('keydown', initAudioOnGesture);
     };
     document.addEventListener('click', initAudioOnGesture);
-    document.addEventListener('keydown', initAudioOnGesture);
+    document.removeEventListener('keydown', initAudioOnGesture);
 
     // Forward menu-driven toggles to the in-game tools.
-    this.onExplorerToggle = () => this.objectExplorer.toggle();
+    this.onExplorerToggle = () => this.ui.objectExplorer.toggle();
     this.onEditorToggle = () => this.mapEditor?.toggle();
     window.addEventListener('ui-explorer-toggle', this.onExplorerToggle);
     window.addEventListener('ui-editor-toggle', this.onEditorToggle);
@@ -201,6 +193,11 @@ export class GameApp {
     // Step 6: Map editor
     this.ui.updateProgress('Finalizing...', 85);
     this.mapEditor = new MapEditor(this.ui, this.gameLoop, this.scene, this.terrainRenderer);
+
+    // Notify UI manager that game is ready so ObjectExplorer can connect
+    // (if it hasn't already) and any pending panels can be opened.
+    this.ui.onGameReady();
+
     this.ui.updateProgress('Ready!', 100);
   }
 
