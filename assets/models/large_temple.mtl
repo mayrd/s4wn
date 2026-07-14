@@ -6,4 +6,4 @@ Ks 0.0 0.0 0.0
 Ns 0
 d 1.0
 illum 2
-map_Kd building_marble.png
+map_Kd ../textures/building_marble.png

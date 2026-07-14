@@ -11,12 +11,11 @@
     "swamp"
   ],
   "buildings": [
-    "castle",
+    "headquarters",
     "farm",
     "sawmill",
-    "warehouse",
-    "barracks",
-    "marketplace"
+    "lumberjack",
+    "warehouse"
   ],
   "units": [
     "worker",
@@ -25,15 +24,6 @@
   ],
   "ui": [
     "panel",
-    "button",
-    "header",
-    "corner",
-    "divider",
-    "resources"
-  ],
-  "_sources": {
-    "note": "All 3D models in assets/models/poly_pizza/ are CC0 public domain from Poly Pizza (poly.pizza)",
-    "license": "CC0 - No rights reserved, free for commercial and personal use",
-    "attribution": "Models by Quaternius (poly.pizza)"
-  }
+    "button"
+  ]
 }
