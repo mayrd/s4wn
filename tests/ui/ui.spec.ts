@@ -45,11 +45,14 @@ test.describe('Tutorial Game View', () => {
     await page.goto('/');
     await page.locator('#btn-tutorial').waitFor({ state: 'visible', timeout: 5000 });
 
-    // Click tutorial button to start game
-    await page.locator('#btn-tutorial').click();
+  // Click tutorial button to start game
+  await page.locator('#btn-tutorial').click();
 
-    // Wait for game-start event to trigger (game to unpause)
-    await page.waitForTimeout(500);
+  // Wait for loading screen to hide (assets loaded)
+  await page.waitForFunction(() => {
+    const splash = document.querySelector('.splash-screen');
+    return !splash?.classList.contains('active');
+  }, { timeout: 30000 });
 
     // Check that terrain canvas is present and rendering
     const canvas = page.locator('#renderCanvas');

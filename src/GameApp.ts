@@ -157,8 +157,6 @@ export class GameApp {
 
     this.map.setAllVisible();
 
-    this.waterRenderer = { dispose: () => {}, getMesh: () => null } as any;
-
     this.shadowPipeline = new ShadowPipeline(this.scene);
     this.shadowPipeline.init();
 
@@ -176,7 +174,6 @@ export class GameApp {
     this.loadBuildings(buildingData);
 
     // Map editor needs the scene + terrain renderer.
-    // Note: particleSystem already created in initLoop() for immediate render availability
     this.mapEditor = new MapEditor(this.ui, this.gameLoop, this.scene, this.terrainRenderer);
   }
 
