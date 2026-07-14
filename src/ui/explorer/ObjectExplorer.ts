@@ -155,6 +155,21 @@ export class ObjectExplorer {
    */
   public connectGame(gl: GameLoop): void {
     this.gameLoop = gl;
+    
+    const header = this.container.querySelector('.explorer-header');
+    if (header && !this.container.querySelector('.explorer-autorefresh-toggle')) {
+      const liveToggleHtml = '<label class="explorer-autorefresh-toggle" title="Auto-refresh live data every tick"><input type="checkbox" id="explorer-autorefresh" checked /> Live</label>';
+      const closeBtn = header.querySelector('.explorer-close');
+      if (closeBtn) {
+        closeBtn.insertAdjacentHTML('beforebegin', liveToggleHtml);
+      }
+      const autoRefreshEl = this.container.querySelector('#explorer-autorefresh') as HTMLInputElement | null;
+      if (autoRefreshEl) {
+        autoRefreshEl.checked = this.autoRefresh;
+        autoRefreshEl.addEventListener('change', () => { this.autoRefresh = autoRefreshEl.checked; });
+      }
+    }
+    
     this.setupLiveRefresh();
   }
 

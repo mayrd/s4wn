@@ -68,11 +68,8 @@ test.describe('Visual Regression — Object Explorer Standalone', () => {
     await page.click('#btn-explorer');
     await page.locator('.explorer-panel').waitFor({ state: 'visible', timeout: 5000 });
 
-    // Close via the toggle API
-    await page.evaluate(() => {
-      const app = (window as any).gameApp;
-      if (app?.ui?.objectExplorer) app.ui.objectExplorer.toggle();
-    });
+    // Close via the close button since we are in standalone mode (no gameApp)
+    await page.click('.explorer-close');
 
     // Panel should hide (classList has 'hidden')
     const explorer = page.locator('.explorer-panel');
@@ -109,6 +106,19 @@ test.describe('Visual Regression — In-Game HUD', () => {
   });
 
   test('HUD container matches baseline', async ({ page }) => {
+    // Pause the game loop and freeze dynamic values so the DOM becomes visually stable
+    await page.evaluate(() => {
+      const app = (window as any).gameApp;
+      if (app && app.gameLoop) app.gameLoop.state.isPaused = true;
+      const ticks = document.getElementById('hud-ticks');
+      if (ticks) ticks.textContent = '42';
+      const time = document.getElementById('hud-time');
+      if (time) time.textContent = '10s';
+    });
+
+    // Short wait to ensure any pending requestAnimationFrame frames execute
+    await page.waitForTimeout(100);
+
     const hud = page.locator('#hud-container');
     await expect(hud).toHaveScreenshot('hud-container.png', {
       threshold: 0.1,
