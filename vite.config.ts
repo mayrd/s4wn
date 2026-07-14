@@ -14,5 +14,9 @@ export default defineConfig({
         main: './index.html',
       },
     },
+    // Externalize optional dev-only packages that may not be installed
+    rolldownOptions: {
+      external: ['@babylonjs/inspector'],
+    },
   },
 });
