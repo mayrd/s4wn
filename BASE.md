@@ -316,11 +316,7 @@ All Nations, Buildings, Resources and Settlers are taken from Siedler 4 History 
 These are the technical components you need to build in sequence.
 
 ### Phase 1: First-Time Player Routing
-*   **Target:** Game entry point / router.
-*   **Task:** Implement a system to check if the player is opening the game for the first time. You are free to choose the tracking/persistence mechanism. 
-    *   **If new:** Force-load the tutorial scene, bypassing the main menu.
-    *   **If completed:** Load the standard main menu.
-    *   **Debug helper:** Provide a development shortcut/command to reset this state for testing.
+* The player can start the tutorial directly from the Main Menu.
 
 ### Phase 2: UI Restriction Hooks
 *   **Target:** UI System / HUD.
