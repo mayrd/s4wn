@@ -140,7 +140,7 @@ export class GameApp {
   }
 
   private async initRendering(): Promise<void> {
-    // Create terrain first - it needs to exist before the render loop starts
+    // Step 1: Create terrain mesh
     this.terrainRenderer = new TerrainRenderer(this.scene, this.map);
     this.terrainRenderer.setProgressCallback((msg, pct) => {
       this.ui.updateProgress(msg, pct);
@@ -151,23 +151,25 @@ export class GameApp {
       `🎨 Terrain mesh created: exists=${!!tm}, position=(${tm?.position?.x ?? 0}, ${tm?.position?.y ?? 0}, ${tm?.position?.z ?? 0})`
     );
     this.ui.updateProgress('Loading terrain textures...', 15);
-    // Wait for textures to load before proceeding - this prevents the canvas
-    // from being unresponsive after showing the loading screen
+
+    // Step 2: Load terrain textures (async with progress)
     try {
       await this.terrainRenderer.loadTerrainTextures(this.map);
       console.log('✅ Terrain textures loaded successfully');
     } catch (e) {
       console.error('❌ Terrain texture loading failed:', e);
     }
+    this.ui.updateProgress('Initializing systems...', 55);
 
-    // Create grid overlay
+    // Yield to UI thread before continuing with non-critical initialization
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    // Step 3: Create grid overlay
     this.gridRenderer = new GridRenderer(this.scene, this.map.width, this.map.height);
     this.gridRenderer.createGrid();
+    this.ui.updateProgress('Setting up lights...', 60);
 
-    // Create territory overlay (vertex-colored mesh above terrain)
-    this.territoryOverlay = new TerritoryOverlay(this.scene, this.map);
-    this.territoryOverlay.createOverlay(this.map.width, this.map.height);
-
+    // Step 4: Set visibility + shadows
     this.map.setAllVisible();
 
     this.shadowPipeline = new ShadowPipeline(this.scene);
@@ -178,6 +180,16 @@ export class GameApp {
       this.shadowPipeline.addShadowCaster(terrainMesh);
     }
 
+    // Create territory overlay (vertex-colored mesh above terrain)
+    this.territoryOverlay = new TerritoryOverlay(this.scene, this.map);
+    this.territoryOverlay.createOverlay(this.map.width, this.map.height);
+
+    this.ui.updateProgress('Loading buildings...', 65);
+
+    // Yield to UI thread
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    // Step 5: Buildings (async)
     this.buildingRenderer = new BuildingMesh(this.scene);
     const buildingData: Array<{ kind: string; x: number; y: number }> = [
       { kind: 'castle', x: 50, y: 50 },
@@ -186,8 +198,10 @@ export class GameApp {
     // Building loading happens in background - non-critical for initial render
     this.loadBuildings(buildingData);
 
-    // Map editor needs the scene + terrain renderer.
+    // Step 6: Map editor
+    this.ui.updateProgress('Finalizing...', 85);
     this.mapEditor = new MapEditor(this.ui, this.gameLoop, this.scene, this.terrainRenderer);
+    this.ui.updateProgress('Ready!', 100);
   }
 
   private async loadBuildings(buildingData: Array<{ kind: string; x: number; y: number }>): Promise<void> {

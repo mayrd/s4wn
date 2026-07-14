@@ -103,17 +103,17 @@ export class TerrainRenderer {
     return mat;
   }
 
-   /** Progress callback for loading status */
-   private progressCallback?: (msg: string, percent: number) => void;
+  /** Progress callback for loading status */
+  private progressCallback?: (msg: string, percent: number) => void;
 
-   /**
-    * Set a progress callback to receive loading updates.
-    */
-   setProgressCallback(cb: (msg: string, percent: number) => void): void {
-     this.progressCallback = cb;
-   }
+  /**
+   * Set a progress callback to receive loading updates.
+   */
+  setProgressCallback(cb: (msg: string, percent: number) => void): void {
+    this.progressCallback = cb;
+  }
 
-   async loadTerrainTextures(map: GameMap): Promise<void> {
+  async loadTerrainTextures(map: GameMap): Promise<void> {
     if (!this.terrainMesh) return;
     // Pick a per-tile cell size that keeps the full atlas within the GPU's
     // maximum texture size, so detail is preserved without exceeding limits.
@@ -217,38 +217,31 @@ export class TerrainRenderer {
         const centerTerrain = map.tiles[ty][tx].terrain;
         const centerIdx = this.toIdx(String(centerTerrain));
 
-        // Check each edge for different terrain neighbor
         const offsetX = tx * cell;
         const offsetY = ty * cell;
 
         // Sample the tile center color for blending
         const centerColor = this.sampleTerrainColor(images[centerIdx]);
 
-        // Blend with neighbors
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            if (dx === 0 && dy === 0) continue;
-            const nx = tx + dx;
-            const ny = ty + dy;
-            const neighbor = map.get(nx, ny);
-            if (neighbor && neighbor.terrain !== centerTerrain) {
-              const neighborIdx = this.toIdx(String(neighbor.terrain));
-              const neighborColor = this.sampleTerrainColor(images[neighborIdx]);
+        // Only check orthogonal (4-directional) neighbors - NOT diagonals
+        // This prevents the "rotated/twisted" appearance where diagonals incorrectly blend
+        const directions = [
+          { dx: -1, dy: 0, edge: 'left' as const },   // Left neighbor
+          { dx: 1, dy: 0, edge: 'right' as const },    // Right neighbor
+          { dx: 0, dy: -1, edge: 'top' as const },    // Top neighbor
+          { dx: 0, dy: 1, edge: 'bottom' as const },   // Bottom neighbor
+        ];
 
-              // Apply blending to shared edge(s)
-              if (dx === -1) { // Left edge
-                this.blendEdge(ctx, offsetX, offsetY, cell, cell, centerColor, neighborColor, BLEND_WIDTH, 'left');
-              }
-              if (dx === 1) { // Right edge
-                this.blendEdge(ctx, offsetX + cell, offsetY, cell, cell, centerColor, neighborColor, BLEND_WIDTH, 'right');
-              }
-              if (dy === -1) { // Top edge
-                this.blendEdge(ctx, offsetX, offsetY, cell, cell, centerColor, neighborColor, BLEND_WIDTH, 'top');
-              }
-              if (dy === 1) { // Bottom edge
-                this.blendEdge(ctx, offsetX, offsetY + cell, cell, cell, centerColor, neighborColor, BLEND_WIDTH, 'bottom');
-              }
-            }
+        for (const { dx, dy, edge } of directions) {
+          const nx = tx + dx;
+          const ny = ty + dy;
+          const neighbor = map.get(nx, ny);
+          if (neighbor && neighbor.terrain !== centerTerrain) {
+            const neighborIdx = this.toIdx(String(neighbor.terrain));
+            const neighborColor = this.sampleTerrainColor(images[neighborIdx]);
+            // Blend from neighbor's color (at edge) to center's color (away from edge)
+            // This ensures the center is the primary color and edges smoothly transition to neighbors
+            this.blendEdge(ctx, offsetX, offsetY, cell, cell, neighborColor, centerColor, BLEND_WIDTH, edge);
           }
         }
       }
