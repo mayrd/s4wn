@@ -20,6 +20,7 @@ import {
 import { Map as GameMap } from './game/Map';
 import { GameLoop } from './game/GameLoop';
 import { TerrainRenderer } from './rendering/TerrainRenderer';
+import { TerritoryOverlay } from './rendering/TerritoryOverlay';
 import { BuildingMesh } from './rendering/BuildingMesh';
 import { UIManager, StartMode } from './ui/UIManager';
 import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
@@ -39,6 +40,7 @@ export class GameApp {
   public map!: GameMap;
   public gameLoop!: GameLoop;
   public terrainRenderer!: TerrainRenderer;
+  public territoryOverlay!: TerritoryOverlay;
   public waterRenderer: any;
   public buildingRenderer!: BuildingMesh;
   public shadowPipeline!: ShadowPipeline;
@@ -114,6 +116,13 @@ export class GameApp {
     // Subscribe ObjectExplorer to game ticks so runtime state stays live
     this.gameLoop.onTick(() => this.objectExplorer.update());
 
+    // Subscribe territory overlay to game ticks so territory changes are reflected
+    this.gameLoop.onTick(() => {
+      if (this.territoryOverlay) {
+        this.territoryOverlay.refresh();
+      }
+    });
+
     // Initialize sound system on first user gesture (required by browser policies)
     const initAudioOnGesture = () => {
       soundManager.generateDefaults();
@@ -154,6 +163,10 @@ export class GameApp {
     // Create grid overlay
     this.gridRenderer = new GridRenderer(this.scene, this.map.width, this.map.height);
     this.gridRenderer.createGrid();
+
+    // Create territory overlay (vertex-colored mesh above terrain)
+    this.territoryOverlay = new TerritoryOverlay(this.scene, this.map);
+    this.territoryOverlay.createOverlay(this.map.width, this.map.height);
 
     this.map.setAllVisible();
 
@@ -214,6 +227,7 @@ export class GameApp {
     // Wire renderers to debug panel for toggling
     debugPanel.setGridRenderer(this.gridRenderer);
     debugPanel.setTerrainRenderer(this.terrainRenderer);
+    debugPanel.setTerritoryOverlay(this.territoryOverlay);
     // Expose debug panel for console access
     (window as any).debugPanel = debugPanel;
   }

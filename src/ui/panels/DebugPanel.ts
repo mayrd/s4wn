@@ -17,6 +17,7 @@ export class DebugPanel {
   private scene: Scene;
   private gridRenderer: GridRenderer | null = null;
   private terrainRenderer: any; // TerrainRenderer reference for splatting toggle
+  private territoryOverlay: any; // TerritoryOverlay reference for territory toggle
   private pauseBtn: HTMLButtonElement | null = null;
   /** Store original textures to restore when toggling back on */
   private originalTextures: WeakMap<any, any> = new WeakMap();
@@ -181,6 +182,11 @@ export class DebugPanel {
     this.terrainRenderer = renderer;
   }
 
+  /** Set the territory overlay reference for territory toggle */
+  public setTerritoryOverlay(overlay: any): void {
+    this.territoryOverlay = overlay;
+  }
+
   /** Set up mouse tracking for tile inspection */
   private setupMouseTracking(engine: Engine): void {
     // Find the camera
@@ -297,9 +303,10 @@ export class DebugPanel {
     });
   }
 
-  private setTerritoryVisibility(_visible: boolean): void {
-    // Territory visualization would be controlled here
-    // This is a placeholder for future territory rendering
+  private setTerritoryVisibility(visible: boolean): void {
+    if (this.territoryOverlay) {
+      this.territoryOverlay.setVisible(visible);
+    }
   }
 
   private setFogVisibility(_enabled: boolean): void {

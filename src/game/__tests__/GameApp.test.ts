@@ -64,6 +64,16 @@ jest.mock('../../rendering/TerrainRenderer', () => ({
    })),
  }));
 
+jest.mock('../../rendering/TerritoryOverlay', () => ({
+   TerritoryOverlay: jest.fn(() => ({
+     createOverlay: jest.fn(),
+     refresh: jest.fn(),
+     setVisible: jest.fn(),
+     getMesh: jest.fn(() => null),
+     dispose: jest.fn(),
+   })),
+ }));
+
 jest.mock('../../rendering/BuildingMesh', () => ({
   BuildingMesh: jest.fn(() => ({
     createBuilding: jest.fn(() => Promise.resolve({ dispose: jest.fn() })),
@@ -127,9 +137,10 @@ jest.mock('../../ui/HUD', () => ({
 }));
 
 jest.mock('../../ui/panels/DebugPanel', () => ({
-  DebugPanel: jest.fn(() => ({ 
+  DebugPanel: jest.fn(() => ({
     setGridRenderer: jest.fn(),
     setTerrainRenderer: jest.fn(),
+    setTerritoryOverlay: jest.fn(),
   })),
 }));
 
@@ -150,10 +161,8 @@ jest.mock('../../game/GameLoop', () => ({
 }));
 
 jest.mock('../../game/Map', () => ({
-  Map: jest.fn(() => ({
-    width: 100,
-    height: 100,
-    tiles: Array.from({ length: 100 }, () =>
+  Map: jest.fn(() => {
+    const tiles = Array.from({ length: 100 }, () =>
       Array.from({ length: 100 }, () => ({
         terrain: 'Grass',
         elevation: 0,
@@ -161,9 +170,18 @@ jest.mock('../../game/Map', () => ({
         visibility: 0,
         territory: 0,
       }))
-    ),
-    setAllVisible: jest.fn(),
-  })),
+    );
+    return {
+      width: 100,
+      height: 100,
+      tiles,
+      get: (x: number, y: number) => {
+        if (x < 0 || x >= 100 || y < 0 || y >= 100) return undefined;
+        return tiles[y]?.[x];
+      },
+      setAllVisible: jest.fn(),
+    };
+  }),
   Terrain: { Grass: 'Grass', Water: 'Water', DeepWater: 'DeepWater' },
 }));
 
