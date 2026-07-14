@@ -32,6 +32,7 @@ import { MapEditor } from './ui/editor/MapEditor';
 import { soundManager } from './audio/SoundManager';
 import { TouchCameraController } from './input/TouchCameraController';
 import { BuildingType } from './economy/types';
+import { NationType } from './game/Nation';
 
 export class GameApp {
   public engine!: Engine;
@@ -215,10 +216,12 @@ export class GameApp {
   }
 
   private async loadBuildings(buildingData: Array<{ kind: string; x: number; y: number }>): Promise<void> {
+    // Default nation for initial buildings: Romans (player nation)
+    const playerNation = NationType.Romans;
     for (const b of buildingData) {
       const kind: BuildingType =
         b.kind === 'castle' ? BuildingType.Castle : (BuildingType as any)[b.kind];
-      const buildingMesh = await this.buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2);
+      const buildingMesh = await this.buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2, null, playerNation);
       if (buildingMesh) {
         this.gameLoop.economy.tryPlaceBuilding(kind, b.x, b.y, this.map, 0);
         this.shadowPipeline.addShadowCaster(buildingMesh);

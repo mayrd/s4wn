@@ -13,6 +13,34 @@ import {
   Color3,
 } from '@babylonjs/core';
 import '@babylonjs/loaders';
+import { NationType } from '../game/Nation';
+
+/**
+ * Nation accent colors for material tinting and flag meshes.
+ * Each nation gets a distinct color from NATION_INFO.
+ */
+const NATION_COLORS: Record<number, Color3> = {
+  [NationType.Romans]:    new Color3(0.80, 0.20, 0.20),  // Crimson red
+  [NationType.Vikings]:   new Color3(0.20, 0.40, 0.80),  // Navy blue
+  [NationType.Mayans]:    new Color3(0.20, 0.80, 0.20),  // Emerald green
+  [NationType.Trojans]:   new Color3(0.80, 0.60, 0.20),  // Golden tan
+  [NationType.DarkTribe]: new Color3(0.60, 0.20, 0.80),  // Dark purple
+};
+
+/**
+ * Get the nation-specific texture suffix for unit textures.
+ * e.g. NationType.Romans → "roman", NationType.Vikings → "viking"
+ */
+export function nationTextureSuffix(nation: NationType): string {
+  const map: Record<number, string> = {
+    [NationType.Romans]: 'roman',
+    [NationType.Vikings]: 'viking',
+    [NationType.Mayans]: 'mayan',
+    [NationType.Trojans]: 'trojan',
+    [NationType.DarkTribe]: 'dark',
+  };
+  return map[nation] || 'roman';
+}
 
 /**
  * Convert a building kind/name to the OBJ filename (snake_case).
@@ -43,42 +71,102 @@ export class BuildingMesh {
 /**
   * Create a building model. Tries GLB first (from poly_pizza), then OBJ, 
   * falls back to procedural primitive.
+  * Optionally applies nation-specific tint and decorative flag.
   */
   async createBuilding(
     kind: string,
     x: number,
     y: number,
-    _width: number,
-    _height: number,
-    _depth: number,
-    material: StandardMaterial | null = null
+    _width: number = 2,
+    _height: number = 2,
+    _depth: number = 2,
+    material: StandardMaterial | null = null,
+    nation?: NationType
   ): Promise<any> {
+    let root: any = null;
+
     // Try loading GLB model from /models/poly_pizza/ first (higher quality CC0 models)
     try {
       const objName = kindToObjName(kind);
       const result = await SceneLoader.ImportMeshAsync('', '/models/poly_pizza/', `${objName}.glb`, this.scene);
-      const root = result.meshes[0];
+      root = result.meshes[0];
       root.position.set(x, 0, y);
       if (material) {
         result.meshes.forEach((m: any) => (m.material = material));
       }
-      return root;
     } catch (_glbError) {
       // Try loading OBJ model from /models/ (Vite publicDir: assets serves at root)
       try {
         const objName = kindToObjName(kind);
         const result = await SceneLoader.ImportMeshAsync('', '/models/', `${objName}.obj`, this.scene);
-        const root = result.meshes[0];
+        root = result.meshes[0];
         root.position.set(x, 0, y);
         if (material) {
           result.meshes.forEach((m: any) => (m.material = material));
         }
-        return root;
       } catch (_error) {
         // OBJ not found — fall back to procedural primitive
-        return this.createProceduralBuilding(kind, x, y, material);
+        root = this.createProceduralBuilding(kind, x, y, material);
       }
     }
+
+    // Apply nation-specific tint and decorative flag
+    if (root && nation !== undefined) {
+      this.applyNationVariant(root, nation, kind);
+    }
+
+    return root;
+  }
+
+  /**
+   * Apply nation-specific visual variant: tint material and add a small flag mesh.
+   */
+  private applyNationVariant(root: any, nation: NationType, _kind: string): void {
+    const nationColor = NATION_COLORS[nation];
+    if (!nationColor) return;
+
+    // Tint all child meshes with the nation color
+    const childMeshes = root.getChildMeshes ? root.getChildMeshes() : [root];
+    for (const mesh of childMeshes) {
+      if (mesh.material && mesh.material.diffuseColor) {
+        // Blend: 70% original + 30% nation tint
+        const orig = mesh.material.diffuseColor;
+        if (orig.r > 0 || orig.g > 0 || orig.b > 0) {
+          mesh.material.diffuseColor = new Color3(
+            orig.r * 0.7 + nationColor.r * 0.3,
+            orig.g * 0.7 + nationColor.g * 0.3,
+            orig.b * 0.7 + nationColor.b * 0.3
+          );
+        } else {
+          mesh.material.diffuseColor = nationColor;
+        }
+      }
+    }
+
+    // Add a small flag/pennant mesh on top of the building
+    const flag = MeshBuilder.CreateCylinder(
+      `flag-pole-${nation}`,
+      { height: 0.8, diameter: 0.06 },
+      this.scene
+    );
+    flag.position.set(root.position.x, root.position.y + 2.5, root.position.z);
+
+    const flagCloth = MeshBuilder.CreatePlane(
+      `flag-cloth-${nation}`,
+      { width: 0.4, height: 0.25 },
+      this.scene
+    );
+    flagCloth.position.set(root.position.x + 0.22, root.position.y + 2.8, root.position.z);
+
+    const flagMat = new StandardMaterial(`flagMat-${nation}`, this.scene);
+    flagMat.diffuseColor = nationColor;
+    flagMat.emissiveColor = nationColor.scale(0.3);
+    flagMat.specularColor = new Color3(0, 0, 0);
+    flagCloth.material = flagMat;
+
+    // Parent flag to root so it moves with the building
+    flag.parent = root;
+    flagCloth.parent = root;
   }
 
   /**
