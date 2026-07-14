@@ -1,13 +1,54 @@
 # S4WN 3D Model Asset Listing
 
 > Complete catalog of all 3D models needed for a Siedler 4 Web-Native map.
-> Status: 🟡 = OBJ exists · ⬜ = not yet generated · ✅ = complete with textures
+> Status: 🟡 = OBJ exists · 🟢 = GLB available (CC0) · ⬜ = not yet generated · ✅ = complete with textures
 
-Last updated: 2026-06-15
+Last updated: 2026-06-15 (terrain textures updated for better S4 fidelity)
+
+---
+
+## CC0 Model Sources
+
+All models in `/assets/models/poly_pizza/` are CC0 public domain from 
+[Poly Pizza](https://poly.pizza) (by Quaternius). These can be used 
+commercially without attribution. Downloaded models include:
+
+- `castle.glb` - Castle/fortress (for Castle, Barracks)
+- `house.glb` - House/Half-timber (for Farm, Sawmill)
+- `town_center.glb` - Town center (for Storehouse, Marketplace)
+- `windmill.glb` - Windmill (for Fisherman)
+- `well.glb` - Well (for Stonecutter)
+- `tree.glb` - Tree (for Bush, vegetation)
+- `cactus.glb` - Cactus (for Desert)
+- `rock.glb` - Rock (for deposits, decorations)
+- `boat.glb` - Boat (for Water transport)
 
 ---
 
 ## 1. Terrain Tiles (8 models)
+
+**Terrain textures have been enhanced** with richer noise patterns and 
+S4-authentic color variations (see `scripts/generate_terrain_textures.js`).
+Each tile now includes terrain-specific details:
+- Grass: wildflower speckles, clover clusters
+- Forest: fallen leaves, pine needle coverage
+- Mountain: stratified rock layers, mineral veins
+- Water: gentle ripples, caustics
+- Desert: wind-rippled dunes, pebble details
+- Snow: drift patterns, ice sparkles
+- Swamp: algae patches, lily pads, twisted roots
+
+| ID | Name | Status | Tris | Color | Notes |
+|----|------|--------|------|-------|-------|
+| T01 | terrain_grass | 🟢 | 14 | #3D7A35 | Enhanced with flower speckles |
+| T02 | terrain_forest | 🟢 | 14 | #26591A | Enhanced with leaf coverage |
+| T03 | terrain_mountain | 🟢 | 14 | #66605A | Enhanced with strata/vains |
+| T04 | terrain_water | 🟢 | 14 | #2659B3 | Enhanced with ripples |
+| T05 | terrain_deepwater | 🟢 | 14 | #143380 | Rich deep ocean pattern |
+| T06 | terrain_desert | 🟢 | 14 | #D9BF66 | Enhanced with dunes |
+| T07 | terrain_swamp | 🟢 | 14 | #4D6640 | Enhanced with algae/lily |
+| T08 | terrain_snow | 🟢 | 14 | #E6EBF2 | Enhanced with sparkles |
+
 
 Base terrain tiles — one per terrain type. Flat diamond shapes for isometric view,
 height-displaced quads for full 3D.

@@ -40,9 +40,10 @@ export class BuildingMesh {
     this.scene = scene;
   }
 
-  /**
-   * Create a building model. Tries OBJ first, falls back to procedural primitive.
-   */
+/**
+  * Create a building model. Tries GLB first (from poly_pizza), then OBJ, 
+  * falls back to procedural primitive.
+  */
   async createBuilding(
     kind: string,
     x: number,
@@ -52,19 +53,31 @@ export class BuildingMesh {
     _depth: number,
     material: StandardMaterial | null = null
   ): Promise<any> {
-    // Try loading OBJ model from /models/ (Vite publicDir: assets serves at root)
+    // Try loading GLB model from /models/poly_pizza/ first (higher quality CC0 models)
     try {
       const objName = kindToObjName(kind);
-      const result = await SceneLoader.ImportMeshAsync('', '/models/', `${objName}.obj`, this.scene);
+      const result = await SceneLoader.ImportMeshAsync('', '/models/poly_pizza/', `${objName}.glb`, this.scene);
       const root = result.meshes[0];
       root.position.set(x, 0, y);
       if (material) {
         result.meshes.forEach((m: any) => (m.material = material));
       }
       return root;
-    } catch (_error) {
-      // OBJ not found — fall back to procedural primitive
-      return this.createProceduralBuilding(kind, x, y, material);
+    } catch (_glbError) {
+      // Try loading OBJ model from /models/ (Vite publicDir: assets serves at root)
+      try {
+        const objName = kindToObjName(kind);
+        const result = await SceneLoader.ImportMeshAsync('', '/models/', `${objName}.obj`, this.scene);
+        const root = result.meshes[0];
+        root.position.set(x, 0, y);
+        if (material) {
+          result.meshes.forEach((m: any) => (m.material = material));
+        }
+        return root;
+      } catch (_error) {
+        // OBJ not found — fall back to procedural primitive
+        return this.createProceduralBuilding(kind, x, y, material);
+      }
     }
   }
 
