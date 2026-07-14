@@ -3,11 +3,15 @@
  *
  * In-game building palette panel: select a building type from categorized tabs,
  * then click on the terrain to place it (with resource and territory checks).
+ *
+ * Supports ghost preview — when a building is selected, `ghostX / ghostY`
+ * track the tile under the cursor for an external 3D ghost mesh.
  */
 
 import { BuildingType, buildingName, buildCost, resourceName, VALID_BUILDING_DISCRIMINANTS } from '../economy/types';
 import { Map as GameMap } from '../game/Map';
 import { Economy } from '../game/Economy';
+import { Scene, Ray, Vector3, Color3 } from '@babylonjs/core';
 
 // ── Building Categorisation ──────────────────────────────────────
 
@@ -95,19 +99,32 @@ export class BuildingPlacement {
   private selectedBuilding: BuildingType | null = null;
   private activeCategory: string = 'basic';
 
-  // Ghost preview state
+  /** Ghost preview position (tile coords the cursor is hovering over). */
+  private _ghostX: number = -1;
+  private _ghostY: number = -1;
   private ghostActive: boolean = false;
-  // _ghostX / _ghostY tracked in onPointerMove for future ghost rendering hook
+
+  /** Babylon.js scene for ray-casting pointer events. Optional — when set,
+   *  onPointerDown places buildings at the picked terrain location instead of
+   *  the fallback (50, 50). */
+  private scene: Scene | null = null;
 
   // Bound handlers for cleanup
   private boundPointerMove: (e: PointerEvent) => void;
   private boundPointerDown: (e: PointerEvent) => void;
 
-  constructor(economy: Economy, map: GameMap, ownerId: number, canvas: HTMLCanvasElement) {
+  constructor(
+    economy: Economy,
+    map: GameMap,
+    ownerId: number,
+    canvas: HTMLCanvasElement,
+    scene?: Scene
+  ) {
     this.economy = economy;
     this.map = map;
     this.ownerId = ownerId;
     this.canvas = canvas;
+    this.scene = scene ?? null;
 
     this.panel = this.createPanel();
     this.toggleBtn = this.createToggleButton();
@@ -115,6 +132,14 @@ export class BuildingPlacement {
     this.boundPointerMove = this.onPointerMove.bind(this);
     this.boundPointerDown = this.onPointerDown.bind(this);
   }
+
+  /** Returns the current ghost preview tile X, or -1 if not hovering. */
+  get ghostX(): number { return this._ghostX; }
+  /** Returns the current ghost preview tile Y, or -1 if not hovering. */
+  get ghostY(): number { return this._ghostY; }
+
+  /** Whether ghost preview is currently active (building selected + hovering). */
+  get isGhostActive(): boolean { return this.ghostActive && this.selectedBuilding !== null && this._ghostX >= 0; }
 
   // ── Toggle ─────────────────────────────────────────────────────
 
@@ -128,6 +153,8 @@ export class BuildingPlacement {
       this.panel.classList.add('hidden');
       this.selectedBuilding = null;
       this.ghostActive = false;
+      this._ghostX = -1;
+      this._ghostY = -1;
       this.detachPointerListeners();
     }
   }
@@ -148,7 +175,6 @@ export class BuildingPlacement {
 
   getAllPlaceableBuildings(): BuildingType[] {
     return VALID_BUILDING_DISCRIMINANTS.filter(d => {
-      // Filter out buildings with no cost (unimplemented or NPC-only)
       const cost = buildCost(d as BuildingType);
       return cost.length > 0;
     });
@@ -164,7 +190,6 @@ export class BuildingPlacement {
     btn.textContent = '🏗️';
     btn.addEventListener('click', () => this.toggle());
 
-    // Try to append to hud-actions, fallback to ui-overlay
     const actions = document.querySelector('.hud-actions');
     if (actions) {
       actions.appendChild(btn);
@@ -173,7 +198,6 @@ export class BuildingPlacement {
       if (overlay) overlay.appendChild(btn);
     }
 
-    // Style the toggle button
     const style = document.createElement('style');
     style.id = 'building-palette-styles';
     style.textContent = this.getStyles();
@@ -208,7 +232,6 @@ export class BuildingPlacement {
   private renderCategory(categoryId: string): void {
     this.activeCategory = categoryId;
 
-    // Render tabs
     const tabsEl = this.panel.querySelector('#bp-tabs')!;
     const categories = getBuildingCategories();
     tabsEl.innerHTML = categories.map(cat => {
@@ -223,7 +246,6 @@ export class BuildingPlacement {
       });
     });
 
-    // Render buildings for active category
     const contentEl = this.panel.querySelector('#bp-content')!;
     const cat = categories.find(c => c.id === categoryId);
     if (!cat) return;
@@ -254,9 +276,10 @@ export class BuildingPlacement {
 
   private selectBuilding(kind: BuildingType): void {
     if (this.selectedBuilding === kind) {
-      // Deselect
       this.selectedBuilding = null;
       this.ghostActive = false;
+      this._ghostX = -1;
+      this._ghostY = -1;
     } else {
       this.selectedBuilding = kind;
       this.ghostActive = true;
@@ -264,7 +287,7 @@ export class BuildingPlacement {
     this.renderCategory(this.activeCategory);
   }
 
-  // ── Pointer Interaction ────────────────────────────────────────
+  // ── Pointer Interaction (Scene Picking) ─────────────────────────
 
   private attachPointerListeners(): void {
     this.canvas.addEventListener('pointermove', this.boundPointerMove);
@@ -276,13 +299,42 @@ export class BuildingPlacement {
     this.canvas.removeEventListener('pointerdown', this.boundPointerDown);
   }
 
-  private onPointerMove(_e: PointerEvent): void {
-    if (!this.visible || !this.ghostActive || !this.selectedBuilding) return;
-    // Ghost preview would need scene access - for now track position
-    // (position computation from _e + canvas rect will be wired when scene picking is integrated)
+  /** Pick the terrain tile under the pointer. Returns {x,y} tile coords
+   *  or null if no terrain was hit. */
+  private pickTile(e: PointerEvent): { x: number; y: number } | null {
+    if (!this.scene) return null;
+
+    const pointerInfo = this.scene.pick(e.offsetX, e.offsetY);
+    if (!pointerInfo?.hit || !pointerInfo.pickedPoint) return null;
+
+    // Snap the world-space hit point to the nearest tile centre
+    const worldX = pointerInfo.pickedPoint.x;
+    const worldZ = pointerInfo.pickedPoint.z;
+    const tileX = Math.round(worldX);
+    const tileY = Math.round(worldZ);
+
+    // Bounds check
+    if (tileX < 0 || tileX >= this.map.width || tileY < 0 || tileY >= this.map.height) {
+      return null;
+    }
+
+    return { x: tileX, y: tileY };
   }
 
-  private onPointerDown(_e: PointerEvent): void {
+  private onPointerMove(e: PointerEvent): void {
+    if (!this.visible || !this.ghostActive || !this.selectedBuilding) return;
+
+    const tile = this.pickTile(e);
+    if (tile) {
+      this._ghostX = tile.x;
+      this._ghostY = tile.y;
+    } else {
+      this._ghostX = -1;
+      this._ghostY = -1;
+    }
+  }
+
+  private onPointerDown(e: PointerEvent): void {
     if (!this.visible || !this.selectedBuilding) return;
 
     const kind = this.selectedBuilding;
@@ -290,21 +342,25 @@ export class BuildingPlacement {
 
     if (!this.economy.canAfford(cost)) return;
 
-    // Simple placement: place at a default position near center for now.
-    // Full click-on-terrain placement requires scene picking integration.
-    // The building will be placed by the game loop through economy.
-    const placed = this.economy.tryPlaceBuilding(kind, 50, 50, this.map, this.ownerId);
-    if (!placed) {
-      // Couldn't place - may be blocked by terrain, territory, or collision
-      return;
+    // Determine placement position via scene picking, fallback to (50, 50)
+    let placeX = 50;
+    let placeY = 50;
+
+    const tile = this.pickTile(e);
+    if (tile) {
+      placeX = tile.x;
+      placeY = tile.y;
     }
+
+    const placed = this.economy.tryPlaceBuilding(kind, placeX, placeY, this.map, this.ownerId);
+    if (!placed) return;
 
     // Dispatch event so GameApp/GameLoop can create the 3D mesh
     window.dispatchEvent(new CustomEvent('building-placed', {
       detail: { kind, x: placed.x, y: placed.y, building: placed }
     }));
 
-    // Stay in placement mode (don't deselect) for quick multi-placement
+    // Stay in placement mode for quick multi-placement
     this.renderCategory(this.activeCategory);
   }
 

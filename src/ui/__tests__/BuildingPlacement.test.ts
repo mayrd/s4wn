@@ -8,10 +8,26 @@
 import { BuildingPlacement } from '../BuildingPlacement';
 import { BuildingType, VALID_BUILDING_DISCRIMINANTS } from '../../economy/types';
 import { ResourceType } from '../../economy/types';
-import { Map as GameMap } from '../../game/Map';
+import { Map as GameMap, Terrain } from '../../game/Map';
 import { Economy } from '../../game/Economy';
 
-// Mock DOM elements
+// Polyfill PointerEvent for jsdom (not natively available in the test environment)
+if (typeof PointerEvent === 'undefined') {
+  (global as any).PointerEvent = class PointerEvent extends MouseEvent {
+    constructor(type: string, opts?: PointerEventInit) {
+      super(type, opts);
+    }
+  };
+}
+
+// Mock Babylon.js Scene for picking tests
+class MockScene {
+  pick(_x: number, _y: number): { hit: boolean; pickedPoint: { x: number; y: number; z: number } | null } | null {
+    // By default return a hit at tile (30, 40)
+    return { hit: true, pickedPoint: { x: 30.5, y: 0, z: 40.5 } };
+  }
+}
+
 function createMockOverlay(): HTMLElement {
   const overlay = document.createElement('div');
   overlay.id = 'ui-overlay';
@@ -34,16 +50,13 @@ describe('BuildingPlacement', () => {
   let economy: Economy;
 
   beforeEach(() => {
-    // Clean up DOM
     document.body.innerHTML = '';
     void createMockOverlay();
     canvas = createMockCanvas();
     map = new GameMap(100, 100, 'demo');
     economy = new Economy();
-    // Ensure enough resources for testing
     economy.addResource(ResourceType.Wood, 200);
     economy.addResource(ResourceType.Stone, 200);
-    // Give player territory around center
     for (let dx = -5; dx <= 5; dx++) {
       for (let dy = -5; dy <= 5; dy++) {
         const tile = map.get(50 + dx, 50 + dy);
@@ -114,7 +127,6 @@ describe('BuildingPlacement', () => {
       bp.toggle();
       const buildingBtns = document.querySelectorAll('.bp-building-btn');
       expect(buildingBtns.length).toBeGreaterThan(0);
-      // At least one should have a cost indicator
       const costLabels = document.querySelectorAll('.bp-cost');
       expect(costLabels.length).toBeGreaterThan(0);
     });
@@ -125,7 +137,6 @@ describe('BuildingPlacement', () => {
       const bp = new BuildingPlacement(economy, map, 1, canvas);
       bp.toggle();
 
-      // Find a building button and click it
       const btn = document.querySelector('.bp-building-btn') as HTMLElement;
       if (btn) {
         btn.click();
@@ -140,7 +151,6 @@ describe('BuildingPlacement', () => {
       const btn = document.querySelector('.bp-building-btn') as HTMLElement;
       if (btn) {
         btn.click();
-        // selectBuilding re-renders content, so re-query for the selected state
         const selectedBtn = document.querySelector('.bp-building-btn.selected');
         expect(selectedBtn).not.toBeNull();
       }
@@ -155,7 +165,6 @@ describe('BuildingPlacement', () => {
         btn.click();
         btn.click();
         expect(bp.getSelectedBuilding()).toBeNull();
-        expect(btn.classList.contains('selected')).toBe(false);
       }
     });
   });
@@ -163,14 +172,12 @@ describe('BuildingPlacement', () => {
   describe('canAffordBuilding', () => {
     it('should return true for affordable buildings', () => {
       const bp = new BuildingPlacement(economy, map, 1, canvas);
-      // Farm costs 3 wood - economy starts with 20 wood
       expect(bp.canAffordBuilding(BuildingType.Farm)).toBe(true);
     });
 
     it('should return false for unaffordable buildings', () => {
-      // Create economy with no resources
       const poorEconomy = new Economy();
-      poorEconomy.resources.fill(0); // Remove all resources
+      poorEconomy.resources.fill(0);
       const bp = new BuildingPlacement(poorEconomy, map, 1, canvas);
       expect(bp.canAffordBuilding(BuildingType.Castle)).toBe(false);
     });
@@ -191,6 +198,139 @@ describe('BuildingPlacement', () => {
       expect(buildings.includes(BuildingType.Farm)).toBe(true);
       expect(buildings.includes(BuildingType.Sawmill)).toBe(true);
       expect(buildings.includes(BuildingType.Woodcutter)).toBe(true);
+    });
+  });
+
+  describe('ghost preview', () => {
+    it('should start with ghost at (-1, -1) and inactive', () => {
+      const bp = new BuildingPlacement(economy, map, 1, canvas);
+      expect(bp.ghostX).toBe(-1);
+      expect(bp.ghostY).toBe(-1);
+      expect(bp.isGhostActive).toBe(false);
+    });
+
+    it('should track ghost position from pointer move when scene is provided', () => {
+      const scene = new MockScene() as any;
+      const bp = new BuildingPlacement(economy, map, 1, canvas, scene);
+
+      // Select a building first to activate ghost mode
+      bp.toggle();
+      const btn = document.querySelector('.bp-building-btn') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click();
+
+      // Simulate pointer move with mock scene
+      const pointerEvent = new PointerEvent('pointermove', { offsetX: 400, offsetY: 300 });
+      canvas.dispatchEvent(pointerEvent);
+
+      expect(bp.ghostX).toBe(31); // 30.5 rounded
+      expect(bp.ghostY).toBe(41); // 40.5 rounded
+      expect(bp.isGhostActive).toBe(true);
+    });
+
+    it('should reset ghost position when deselected', () => {
+      const scene = new MockScene() as any;
+      const bp = new BuildingPlacement(economy, map, 1, canvas, scene);
+
+      bp.toggle();
+      const btn = document.querySelector('.bp-building-btn') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click(); // select
+      btn.click(); // deselect
+
+      expect(bp.getSelectedBuilding()).toBeNull();
+      expect(bp.ghostX).toBe(-1);
+      expect(bp.ghostY).toBe(-1);
+      expect(bp.isGhostActive).toBe(false);
+    });
+
+    it('should reset ghost position when palette is closed', () => {
+      const scene = new MockScene() as any;
+      const bp = new BuildingPlacement(economy, map, 1, canvas, scene);
+
+      bp.toggle();
+      const btn = document.querySelector('.bp-building-btn') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click(); // select
+
+      // Move pointer to set ghost
+      const pointerEvent = new PointerEvent('pointermove', { offsetX: 400, offsetY: 300 });
+      canvas.dispatchEvent(pointerEvent);
+      expect(bp.ghostX).toBeGreaterThanOrEqual(0);
+
+      // Toggle palette off
+      bp.toggle();
+      expect(bp.ghostX).toBe(-1);
+      expect(bp.ghostY).toBe(-1);
+      expect(bp.isGhostActive).toBe(false);
+    });
+  });
+
+  describe('scene picking placement', () => {
+    it('should place building at picked tile when scene is provided', () => {
+      const scene = new MockScene() as any;
+      const bp = new BuildingPlacement(economy, map, 1, canvas, scene);
+
+      // Set terrain and territory for the picked location (31, 41) — mock scene returns x:30.5,z:40.5 → round to 31,41
+      const tile = map.get(31, 41);
+      if (tile) {
+        (tile as any).terrain = Terrain.Grass;
+        tile.territory = 1;
+      }
+
+      // Spy on economy.tryPlaceBuilding
+      const placeSpy = jest.spyOn(economy, 'tryPlaceBuilding');
+
+      // Listen for the custom event
+      let placedEvent: any = null;
+      const handler = (e: Event) => { placedEvent = (e as CustomEvent).detail; };
+      window.addEventListener('building-placed', handler);
+
+      bp.toggle();
+      const btn = document.querySelector('.bp-building-btn') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click(); // Select a building
+
+      // Click on canvas — should pick tile (31, 41) from mock scene
+      const downEvent = new PointerEvent('pointerdown', { offsetX: 400, offsetY: 300 });
+      canvas.dispatchEvent(downEvent);
+
+      // Verify building was placed at picked tile
+      expect(placeSpy).toHaveBeenCalled();
+      const callArgs = placeSpy.mock.calls[0];
+      // Verify building was placed at picked tile coordinates
+      expect(callArgs[1]).toBe(31);
+      expect(callArgs[2]).toBe(41);
+
+      // Verify custom event was dispatched with correct data
+      expect(placedEvent).not.toBeNull();
+      expect(placedEvent.x).toBe(31);
+      expect(placedEvent.y).toBe(41);
+
+      window.removeEventListener('building-placed', handler);
+      placeSpy.mockRestore();
+    });
+
+    it('should fallback to (50, 50) when no scene provided', () => {
+      const bp = new BuildingPlacement(economy, map, 1, canvas);
+
+      const placeSpy = jest.spyOn(economy, 'tryPlaceBuilding');
+
+      bp.toggle();
+      const btn = document.querySelector('.bp-building-btn') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click();
+
+      const downEvent = new PointerEvent('pointerdown', { offsetX: 400, offsetY: 300 });
+      canvas.dispatchEvent(downEvent);
+
+      expect(placeSpy).toHaveBeenCalled();
+      const callArgs = placeSpy.mock.calls[0];
+      // Without scene, should fallback to 50, 50
+      expect(callArgs[1]).toBe(50);
+      expect(callArgs[2]).toBe(50);
+
+      placeSpy.mockRestore();
     });
   });
 

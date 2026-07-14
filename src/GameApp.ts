@@ -129,6 +129,19 @@ export class GameApp {
     this.onEditorToggle = () => this.mapEditor?.toggle();
     window.addEventListener('ui-explorer-toggle', this.onExplorerToggle);
     window.addEventListener('ui-editor-toggle', this.onEditorToggle);
+
+    // Listen for building-placed events from BuildingPlacement UI
+    window.addEventListener('building-placed', ((e: CustomEvent) => {
+      const { kind, x, y } = e.detail;
+      if (this.buildingRenderer) {
+        const kindName = BuildingType[kind] || 'castle';
+        this.buildingRenderer.createBuilding(kindName, x, y, 2, 2, 2).then(mesh => {
+          if (mesh && this.shadowPipeline) {
+            this.shadowPipeline.addShadowCaster(mesh);
+          }
+        });
+      }
+    }) as EventListener);
   }
 
   private async initRendering(): Promise<void> {
