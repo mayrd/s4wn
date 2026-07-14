@@ -18,6 +18,7 @@ import {
   buildingInputs, buildingOutputs, requiredTool, requiresSettler,
   resourceName, buildingName, ResourceType, RESOURCE_COUNT,
 } from '../../economy/types';
+import { borderPostModelName, borderPostColor, borderPostNationName } from '../../game/BorderPost';
 
 export interface ExplorerObject {
   id: string;
@@ -406,9 +407,62 @@ export class ObjectExplorer {
 
 
   private loadDecorations(): void {
+    // Border posts placed by Pioneers
+    const borderPostEntries: ExplorerObject[] = [];
+    const bpCounts = this.gameLoop.territoryManager?.borderPosts?.getCountByNation();
+    if (bpCounts && bpCounts.size > 0) {
+      for (const [nationId, count] of bpCounts.entries()) {
+        const name = borderPostNationName(nationId);
+        const color = borderPostColor(nationId);
+        const model = borderPostModelName(nationId);
+        borderPostEntries.push({
+          id: `deco-borderpost-${nationId}`,
+          type: 'borderpost',
+          name: `${name} Border Post (${count})`,
+          _promptKey: `borderpost_${model.replace('borderpost_', '')}`,
+          _chain: {
+            mesh: `assets/models/${model}.obj`,
+            texture: `MTL→Kd→${color}`,
+            animation: 'static pennant'
+          },
+          properties: {
+            nation: name,
+            color: color,
+            model: `${model}.obj`,
+            placed: count,
+          }
+        } as ExplorerObject);
+      }
+    } else {
+      // Show all 5 nation variants as catalog entries even when none placed yet
+      for (let nId = 0; nId < 5; nId++) {
+        const name = borderPostNationName(nId);
+        const color = borderPostColor(nId);
+        const model = borderPostModelName(nId);
+        borderPostEntries.push({
+          id: `deco-borderpost-${nId}`,
+          type: 'borderpost',
+          name: `${name} Border Post`,
+          _promptKey: `borderpost_${model.replace('borderpost_', '')}`,
+          _chain: {
+            mesh: `assets/models/${model}.obj`,
+            texture: `MTL→Kd→${color}`,
+            animation: 'static pennant'
+          },
+          properties: {
+            nation: name,
+            color: color,
+            model: `${model}.obj`,
+            placed: 0,
+          }
+        } as ExplorerObject);
+      }
+    }
+
     this.objects = [
       { id:'d-water', type:'deco', name:'Water Plane', _promptKey:'', _chain:{ mesh:'CreateGround 100×100', texture:'Water normal + reflect 512px', animation:'UV scroll dt×0.01' }, properties:{} },
       { id:'d-debug', type:'deco', name:'Debug Marker', _promptKey:'', _chain:{ mesh:'CreateSphere d=1', texture:'Emissive red', animation:'none' }, properties:{} },
+      ...borderPostEntries,
       ...['Smoke','Fire','Explosion','Spark','Dust','Rain','Snow','Water Splash','Construction','Spawn','Death','Flash','Impact','Fog','Magic']
         .map(n => ({ id:`d-${n.toLowerCase().replace(' ','')}`, type:'particle', name:n,
           _promptKey:`particle_${n.toLowerCase().replace(' ','_')}`,

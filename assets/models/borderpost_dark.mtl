@@ -1,0 +1,18 @@
+# S4WN Border Post Material — Dark
+newmtl post
+Kd 0.2400 0.1000 0.3200
+Ka 0.1 0.1 0.1
+Ks 0.0 0.0 0.0
+Ns 0
+d 1.0
+illum 2
+# Post texture: Obsidian-black stake
+
+newmtl flag
+Kd 0.6000 0.2000 0.8000
+Ka 0.1 0.1 0.1
+Ks 0.1 0.1 0.1
+Ns 32
+d 1.0
+illum 2
+# Flag texture: purple ethereal pennant
