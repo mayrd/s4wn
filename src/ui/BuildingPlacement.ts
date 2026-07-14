@@ -11,7 +11,7 @@
 import { BuildingType, buildingName, buildCost, resourceName, VALID_BUILDING_DISCRIMINANTS } from '../economy/types';
 import { Map as GameMap } from '../game/Map';
 import { Economy } from '../game/Economy';
-import { Scene, Ray, Vector3, Color3 } from '@babylonjs/core';
+import { Scene } from '@babylonjs/core';
 
 // ── Building Categorisation ──────────────────────────────────────
 

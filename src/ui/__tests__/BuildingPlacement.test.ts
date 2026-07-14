@@ -12,10 +12,19 @@ import { Map as GameMap, Terrain } from '../../game/Map';
 import { Economy } from '../../game/Economy';
 
 // Polyfill PointerEvent for jsdom (not natively available in the test environment)
-if (typeof PointerEvent === 'undefined') {
-  (global as any).PointerEvent = class PointerEvent extends MouseEvent {
-    constructor(type: string, opts?: PointerEventInit) {
+// Use MouseEventInit + offsetX/offsetY since PointerEventInit is too strict for jsdom.
+if (typeof (globalThis as any).PointerEvent === 'undefined') {
+  (globalThis as any).PointerEvent = class PointerEvent extends MouseEvent {
+    constructor(type: string, opts?: Record<string, any>) {
       super(type, opts);
+      // offsetX/offsetY are read-only getters on MouseEvent in jsdom.
+      // Override them via Object.defineProperty.
+      if (opts?.offsetX !== undefined) {
+        Object.defineProperty(this, 'offsetX', { value: opts.offsetX, configurable: true });
+      }
+      if (opts?.offsetY !== undefined) {
+        Object.defineProperty(this, 'offsetY', { value: opts.offsetY, configurable: true });
+      }
     }
   };
 }
@@ -220,7 +229,7 @@ describe('BuildingPlacement', () => {
       btn.click();
 
       // Simulate pointer move with mock scene
-      const pointerEvent = new PointerEvent('pointermove', { offsetX: 400, offsetY: 300 });
+      const pointerEvent = new (PointerEvent as any)('pointermove', { offsetX: 400, offsetY: 300 });
       canvas.dispatchEvent(pointerEvent);
 
       expect(bp.ghostX).toBe(31); // 30.5 rounded
@@ -254,7 +263,7 @@ describe('BuildingPlacement', () => {
       btn.click(); // select
 
       // Move pointer to set ghost
-      const pointerEvent = new PointerEvent('pointermove', { offsetX: 400, offsetY: 300 });
+      const pointerEvent = new (PointerEvent as any)('pointermove', { offsetX: 400, offsetY: 300 });
       canvas.dispatchEvent(pointerEvent);
       expect(bp.ghostX).toBeGreaterThanOrEqual(0);
 
@@ -292,7 +301,7 @@ describe('BuildingPlacement', () => {
       btn.click(); // Select a building
 
       // Click on canvas — should pick tile (31, 41) from mock scene
-      const downEvent = new PointerEvent('pointerdown', { offsetX: 400, offsetY: 300 });
+      const downEvent = new (PointerEvent as any)('pointerdown', { offsetX: 400, offsetY: 300 });
       canvas.dispatchEvent(downEvent);
 
       // Verify building was placed at picked tile
@@ -321,7 +330,7 @@ describe('BuildingPlacement', () => {
       expect(btn).not.toBeNull();
       btn.click();
 
-      const downEvent = new PointerEvent('pointerdown', { offsetX: 400, offsetY: 300 });
+      const downEvent = new (PointerEvent as any)('pointerdown', { offsetX: 400, offsetY: 300 });
       canvas.dispatchEvent(downEvent);
 
       expect(placeSpy).toHaveBeenCalled();
