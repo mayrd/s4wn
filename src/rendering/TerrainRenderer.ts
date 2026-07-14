@@ -103,7 +103,17 @@ export class TerrainRenderer {
     return mat;
   }
 
-  async loadTerrainTextures(map: GameMap): Promise<void> {
+   /** Progress callback for loading status */
+   private progressCallback?: (msg: string, percent: number) => void;
+
+   /**
+    * Set a progress callback to receive loading updates.
+    */
+   setProgressCallback(cb: (msg: string, percent: number) => void): void {
+     this.progressCallback = cb;
+   }
+
+   async loadTerrainTextures(map: GameMap): Promise<void> {
     if (!this.terrainMesh) return;
     // Pick a per-tile cell size that keeps the full atlas within the GPU's
     // maximum texture size, so detail is preserved without exceeding limits.
@@ -111,6 +121,7 @@ export class TerrainRenderer {
     const cell = Math.max(8, Math.min(MAX_CELL_PX, Math.floor(maxTex / Math.max(map.width, map.height))));
     const atlasW = map.width * cell;
     const atlasH = map.height * cell;
+    this.progressCallback?.('Loading terrain textures...', 10);
     try {
       console.log(`🗺️ Building terrain atlas (${atlasW}×${atlasH}, cell=${cell}px) from /textures/...`);
       const names = [
@@ -122,9 +133,29 @@ export class TerrainRenderer {
         'terrain_water',
         'terrain_swamp',
       ];
-      const images = await Promise.all(
-        names.map((n) => this.loadImage(`/textures/${n}.png`))
-      );
+      
+      // Load textures sequentially with progress updates to avoid blocking the main thread
+      const images: HTMLImageElement[] = [];
+      const total = names.length;
+      for (let i = 0; i < names.length; i++) {
+        const n = names[i];
+        try {
+          const img = await this.loadImage(`/textures/${n}.png`);
+          images.push(img);
+        } catch {
+          // Use a 1×1 placeholder canvas as fallback
+          const canvas = document.createElement('canvas');
+          canvas.width = 1;
+          canvas.height = 1;
+          const ctx = canvas.getContext('2d')!;
+          ctx.fillStyle = '#55aa55';
+          ctx.fillRect(0, 0, 1, 1);
+          const img = new Image();
+          img.src = canvas.toDataURL();
+          images.push(img);
+        }
+        this.progressCallback?.(`Loading terrain texture ${i + 1}/${total}...`, 10 + (i / total) * 40);
+      }
       const c = document.createElement('canvas');
       c.width = atlasW;
       c.height = atlasH;

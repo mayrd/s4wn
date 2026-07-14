@@ -45,7 +45,9 @@ window.addEventListener('game-start', async (event: Event) => {
     try {
       const { GameApp } = await import('./GameApp');
       app = new GameApp('renderCanvas', mode);
-      // Hide the splash once the engine is up and rendering.
+      // Wait for critical assets (terrain textures) to load before hiding loading screen
+      // This prevents the canvas from being unresponsive for a few seconds while textures load
+      await app.readyPromise;
       menu.hideAll();
       // Open any panel the user requested from the menu (e.g. Object Explorer)
       // before the game had actually started.

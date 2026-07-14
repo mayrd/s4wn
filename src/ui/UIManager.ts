@@ -90,15 +90,16 @@ export class UIManager {
     }, 2000);
   }
 
-  private createSplashScreen(): void {
-    this.splashScreen = document.createElement('div');
-    this.splashScreen.className = 'ui-screen splash-screen active';
-    this.splashScreen.innerHTML = `
-      <div class="splash-loading">Checking your system...</div>
-      <div class="splash-note"></div>
-    `;
-    this.overlay.appendChild(this.splashScreen);
-  }
+   private createSplashScreen(): void {
+     this.splashScreen = document.createElement('div');
+     this.splashScreen.className = 'ui-screen splash-screen active';
+     this.splashScreen.innerHTML = `
+       <div class="splash-loading">Checking your system...</div>
+       <div class="splash-progress"><div class="splash-progress-bar"></div></div>
+       <div class="splash-note"></div>
+     `;
+     this.overlay.appendChild(this.splashScreen);
+   }
 
   private appendSplashNote(text: string, kind: 'warn' | 'error' = 'warn'): void {
     const note = this.splashScreen.querySelector('.splash-note') as HTMLElement | null;
@@ -241,5 +242,19 @@ export class UIManager {
   public hideAll(): void {
     this.splashScreen.classList.remove('active');
     this.mainMenu.classList.remove('active');
+  }
+
+  /**
+   * Update the loading progress bar and message.
+   * Called by GameApp during heavy asset loading.
+   */
+  public updateProgress(message: string, percent: number): void {
+    const loading = this.splashScreen.querySelector('.splash-loading') as HTMLElement | null;
+    if (loading) loading.textContent = message;
+    
+    const progressBar = this.splashScreen.querySelector('.splash-progress-bar') as HTMLElement | null;
+    if (progressBar) {
+      progressBar.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+    }
   }
 }

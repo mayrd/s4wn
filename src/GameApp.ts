@@ -53,6 +53,9 @@ export class GameApp {
   private onExplorerToggle!: () => void;
   private onEditorToggle!: () => void;
 
+  /** Promise that resolves when critical assets (terrain textures) are loaded. */
+  public readyPromise: Promise<void>;
+
   constructor(canvasId: string, mode: StartMode = 'new') {
     this.mode = mode;
 
@@ -63,10 +66,18 @@ export class GameApp {
 
     this.initEngine(canvas);
     this.initSystems();
-    this.initRendering();
+    // Start async initialization - render loop starts immediately but loading screen
+    // stays visible until readyPromise resolves (terrain textures loaded)
+    this.readyPromise = this.initRenderingAsync().catch((err) => {
+      console.error('GameApp initialization failed:', err);
+    });
     this.initCamera();
     this.initUI();
     this.initLoop();
+  }
+
+  private async initRenderingAsync(): Promise<void> {
+    await this.initRendering();
   }
 
   private initEngine(canvas: HTMLCanvasElement): void {
@@ -119,20 +130,26 @@ export class GameApp {
     window.addEventListener('ui-editor-toggle', this.onEditorToggle);
   }
 
-  private initRendering(): void {
+  private async initRendering(): Promise<void> {
     // Create terrain first - it needs to exist before the render loop starts
     this.terrainRenderer = new TerrainRenderer(this.scene, this.map);
+    this.terrainRenderer.setProgressCallback((msg, pct) => {
+      this.ui.updateProgress(msg, pct);
+    });
     this.terrainRenderer.createGround(this.map.width, this.map.height);
     const tm = this.terrainRenderer.getMesh();
     console.log(
       `🎨 Terrain mesh created: exists=${!!tm}, position=(${tm?.position?.x ?? 0}, ${tm?.position?.y ?? 0}, ${tm?.position?.z ?? 0})`
     );
-    // Load textures and log success/failure
-    this.terrainRenderer.loadTerrainTextures(this.map).then(() => {
+    this.ui.updateProgress('Loading terrain textures...', 15);
+    // Wait for textures to load before proceeding - this prevents the canvas
+    // from being unresponsive after showing the loading screen
+    try {
+      await this.terrainRenderer.loadTerrainTextures(this.map);
       console.log('✅ Terrain textures loaded successfully');
-    }).catch((e) => {
+    } catch (e) {
       console.error('❌ Terrain texture loading failed:', e);
-    });
+    }
 
     // Create grid overlay
     this.gridRenderer = new GridRenderer(this.scene, this.map.width, this.map.height);
@@ -155,23 +172,25 @@ export class GameApp {
       { kind: 'castle', x: 50, y: 50 },
     ];
 
-    (async () => {
-      for (const b of buildingData) {
-        const kind: BuildingType =
-          b.kind === 'castle' ? BuildingType.Castle : (BuildingType as any)[b.kind];
-        const buildingMesh = await this.buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2);
-        if (buildingMesh) {
-          this.gameLoop.economy.tryPlaceBuilding(kind, b.x, b.y, this.map, 0);
-          this.shadowPipeline.addShadowCaster(buildingMesh);
-        }
-      }
-      console.log('🏰 Building loaded');
-    })();
-
-    this.particleSystem = new ParticleSystem(this.scene);
+    // Building loading happens in background - non-critical for initial render
+    this.loadBuildings(buildingData);
 
     // Map editor needs the scene + terrain renderer.
+    // Note: particleSystem already created in initLoop() for immediate render availability
     this.mapEditor = new MapEditor(this.ui, this.gameLoop, this.scene, this.terrainRenderer);
+  }
+
+  private async loadBuildings(buildingData: Array<{ kind: string; x: number; y: number }>): Promise<void> {
+    for (const b of buildingData) {
+      const kind: BuildingType =
+        b.kind === 'castle' ? BuildingType.Castle : (BuildingType as any)[b.kind];
+      const buildingMesh = await this.buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2);
+      if (buildingMesh) {
+        this.gameLoop.economy.tryPlaceBuilding(kind, b.x, b.y, this.map, 0);
+        this.shadowPipeline.addShadowCaster(buildingMesh);
+      }
+    }
+    console.log('🏰 Building loaded');
   }
 
   private initCamera(): void {
@@ -203,10 +222,16 @@ export class GameApp {
   }
 
   private initLoop(): void {
+    // Initialize these early to avoid race condition with async initRendering
+    this.particleSystem = new ParticleSystem(this.scene);
+    this.waterRenderer = { dispose: () => {}, getMesh: () => null } as any;
+    
     this.engine.runRenderLoop(() => {
       const dt = this.engine.getDeltaTime() / 1000;
       this.gameLoop.update(dt);
-      this.particleSystem.update(dt);
+      if (this.particleSystem) {
+        this.particleSystem.update(dt);
+      }
       this.scene.render();
     });
   }
@@ -215,10 +240,10 @@ export class GameApp {
     window.removeEventListener('ui-explorer-toggle', this.onExplorerToggle);
     window.removeEventListener('ui-editor-toggle', this.onEditorToggle);
     this.mapEditor?.hide();
-    this.touchController.dispose();
-    this.waterRenderer.dispose();
-    this.shadowPipeline.dispose();
-    this.particleSystem.dispose();
+    this.touchController.dispose?.();
+    this.waterRenderer?.dispose?.();
+    this.shadowPipeline.dispose?.();
+    this.particleSystem.dispose?.();
     if (this.gridRenderer) {
       this.gridRenderer.dispose();
     }

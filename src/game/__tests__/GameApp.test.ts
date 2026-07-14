@@ -56,12 +56,13 @@ jest.mock('../../audio/SoundManager', () => ({
 }));
 
 jest.mock('../../rendering/TerrainRenderer', () => ({
-  TerrainRenderer: jest.fn(() => ({
-    createGround: jest.fn(),
-    loadTerrainTextures: jest.fn(() => Promise.resolve()),
-    getMesh: jest.fn(() => ({ position: { x: 50, y: 0, z: 50 } })),
-  })),
-}));
+   TerrainRenderer: jest.fn(() => ({
+     createGround: jest.fn(),
+     loadTerrainTextures: jest.fn(() => Promise.resolve()),
+     getMesh: jest.fn(() => ({ position: { x: 50, y: 0, z: 50 } })),
+     setProgressCallback: jest.fn(),
+   })),
+ }));
 
 jest.mock('../../rendering/BuildingMesh', () => ({
   BuildingMesh: jest.fn(() => ({
@@ -72,6 +73,7 @@ jest.mock('../../rendering/BuildingMesh', () => ({
 jest.mock('../../ui/UIManager', () => ({
   UIManager: jest.fn(() => ({
     setObjectExplorer: jest.fn(),
+    updateProgress: jest.fn(),
   })),
 }));
 
@@ -178,12 +180,19 @@ describe('GameApp Initialization', () => {
     document.body.innerHTML = '';
   });
 
-  it('should initialize the Babylon.js engine and scene on startup', () => {
+  it('should initialize the Babylon.js engine and scene on startup', async () => {
     const app = new GameApp('renderCanvas');
+    // Wait for async initialization to complete
+    await app.readyPromise;
     expect(app.engine).toBeDefined();
     expect(app.scene).toBeDefined();
     expect(app.map).toBeDefined();
     expect(app.gameLoop).toBeDefined();
+    expect(app.gridRenderer).toBeDefined();
+    expect(app.shadowPipeline).toBeDefined();
+    expect(app.particleSystem).toBeDefined();
+    expect(app.mapEditor).toBeDefined();
+    // Dispose after all properties are initialized
     app.dispose();
   });
 
