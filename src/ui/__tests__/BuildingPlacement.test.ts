@@ -29,6 +29,59 @@ if (typeof (globalThis as any).PointerEvent === 'undefined') {
   };
 }
 
+// ── Babylon.js Mocks (needed for ghost preview mesh) ──────────────
+
+/**
+ * Mock state bag.  jest.mock() factories are hoisted above all variable
+ * declarations, so the state object must be reachable through the mock
+ * module itself.  We write a tiny store onto `jest` (which IS available
+ * during hoisting) and read it back through `jest.requireMock`.
+ */
+(jest as any).__bpMockState = {
+  lastCreateBoxArgs: null as { name: string; size: { width: number; height: number; depth: number } } | null,
+  boxCreated: false,
+  materialCreated: false,
+  meshDisposed: false,
+};
+
+function resetMockState(): void {
+  const s = (jest as any).__bpMockState;
+  s.lastCreateBoxArgs = null;
+  s.boxCreated = false;
+  s.materialCreated = false;
+  s.meshDisposed = false;
+}
+
+const bpMock = () => (jest as any).__bpMockState;
+
+jest.mock('@babylonjs/core', () => ({
+  Scene: jest.fn(),
+  MeshBuilder: {
+    CreateBox: jest.fn((name: string, size: { width: number; height: number; depth: number }) => {
+      bpMock().boxCreated = true;
+      bpMock().lastCreateBoxArgs = { name, size };
+      return {
+        name,
+        position: { set: jest.fn() },
+        material: null,
+        isPickable: true,
+        dispose: jest.fn(() => { bpMock().meshDisposed = true; }),
+      };
+    }),
+  },
+  StandardMaterial: jest.fn(() => {
+    bpMock().materialCreated = true;
+    return {
+      diffuseColor: {},
+      alpha: 1,
+      wireframe: false,
+      dispose: jest.fn(),
+    };
+  }),
+  Color3: jest.fn(() => ({})),
+  Mesh: jest.fn(),
+}));
+
 // Mock Babylon.js Scene for picking tests
 class MockScene {
   pick(_x: number, _y: number): { hit: boolean; pickedPoint: { x: number; y: number; z: number } | null } | null {
@@ -72,6 +125,8 @@ describe('BuildingPlacement', () => {
         if (tile) tile.territory = 1;
       }
     }
+    resetMockState();
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
@@ -272,6 +327,101 @@ describe('BuildingPlacement', () => {
       expect(bp.ghostX).toBe(-1);
       expect(bp.ghostY).toBe(-1);
       expect(bp.isGhostActive).toBe(false);
+    });
+
+    it('should create 3D ghost mesh on pointer move with scene', () => {
+      const scene = new MockScene() as any;
+      const bp = new BuildingPlacement(economy, map, 1, canvas, scene);
+
+      bp.toggle();
+      const btn = document.querySelector('.bp-building-btn') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click(); // select farm
+
+      // First pointer move should trigger ghost mesh creation
+      const pointerEvent = new (PointerEvent as any)('pointermove', { offsetX: 400, offsetY: 300 });
+      canvas.dispatchEvent(pointerEvent);
+
+      expect(bpMock().boxCreated).toBe(true);
+      expect(bpMock().materialCreated).toBe(true);
+      expect(bpMock().lastCreateBoxArgs).not.toBeNull();
+      expect(bpMock().lastCreateBoxArgs!.name).toContain('ghost-');
+      expect(bpMock().lastCreateBoxArgs!.size.width).toBe(2);
+      expect(bpMock().lastCreateBoxArgs!.size.height).toBe(2);
+      expect(bpMock().lastCreateBoxArgs!.size.depth).toBe(2);
+    });
+
+    it('should NOT create ghost mesh without scene', () => {
+      const bp = new BuildingPlacement(economy, map, 1, canvas); // No scene
+
+      bp.toggle();
+      const btn = document.querySelector('.bp-building-btn') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click();
+
+      const pointerEvent = new (PointerEvent as any)('pointermove', { offsetX: 400, offsetY: 300 });
+      canvas.dispatchEvent(pointerEvent);
+
+      expect(bpMock().boxCreated).toBe(false);
+      expect(bpMock().materialCreated).toBe(false);
+    });
+
+    it('should dispose ghost mesh when building deselected', () => {
+      const scene = new MockScene() as any;
+      const bp = new BuildingPlacement(economy, map, 1, canvas, scene);
+
+      bp.toggle();
+      const btn = document.querySelector('.bp-building-btn') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click(); // select
+
+      // Move pointer to create ghost mesh
+      const moveEvent = new (PointerEvent as any)('pointermove', { offsetX: 400, offsetY: 300 });
+      canvas.dispatchEvent(moveEvent);
+      expect(bpMock().boxCreated).toBe(true);
+
+      // Deselect — should dispose ghost
+      btn.click();
+      expect(bpMock().meshDisposed).toBe(true);
+    });
+
+    it('should dispose ghost mesh when palette closed', () => {
+      const scene = new MockScene() as any;
+      const bp = new BuildingPlacement(economy, map, 1, canvas, scene);
+
+      bp.toggle();
+      const btn = document.querySelector('.bp-building-btn') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click(); // select
+
+      // Move pointer to create ghost mesh
+      const moveEvent = new (PointerEvent as any)('pointermove', { offsetX: 400, offsetY: 300 });
+      canvas.dispatchEvent(moveEvent);
+      expect(bpMock().boxCreated).toBe(true);
+      resetMockState(); // Reset for dispose check
+
+      // Close palette — should dispose ghost
+      bp.toggle();
+      expect(bpMock().meshDisposed).toBe(true);
+    });
+
+    it('should dispose ghost mesh on full dispose()', () => {
+      const scene = new MockScene() as any;
+      const bp = new BuildingPlacement(economy, map, 1, canvas, scene);
+
+      bp.toggle();
+      const btn = document.querySelector('.bp-building-btn') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click(); // select
+
+      // Move pointer to create ghost mesh
+      const moveEvent = new (PointerEvent as any)('pointermove', { offsetX: 400, offsetY: 300 });
+      canvas.dispatchEvent(moveEvent);
+      expect(bpMock().boxCreated).toBe(true);
+      resetMockState();
+
+      bp.dispose();
+      expect(bpMock().meshDisposed).toBe(true);
     });
   });
 

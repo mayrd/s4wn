@@ -11,7 +11,7 @@
 import { BuildingType, buildingName, buildCost, resourceName, VALID_BUILDING_DISCRIMINANTS } from '../economy/types';
 import { Map as GameMap } from '../game/Map';
 import { Economy } from '../game/Economy';
-import { Scene } from '@babylonjs/core';
+import { Scene, MeshBuilder, StandardMaterial, Color3, Mesh } from '@babylonjs/core';
 
 // ── Building Categorisation ──────────────────────────────────────
 
@@ -104,10 +104,14 @@ export class BuildingPlacement {
   private _ghostY: number = -1;
   private ghostActive: boolean = false;
 
-  /** Babylon.js scene for ray-casting pointer events. Optional — when set,
-   *  onPointerDown places buildings at the picked terrain location instead of
-   *  the fallback (50, 50). */
+  /** Babylon.js scene for ray-casting pointer events and 3D ghost preview.
+   *  Optional — when set, onPointerDown places buildings at the picked terrain
+   *  location instead of the fallback (50, 50), and a semi-transparent ghost
+   *  mesh previews the selected building at the cursor tile. */
   private scene: Scene | null = null;
+
+  /** Ghost preview mesh (semi-transparent box at cursor tile). */
+  private ghostMesh: Mesh | null = null;
 
   // Bound handlers for cleanup
   private boundPointerMove: (e: PointerEvent) => void;
@@ -155,6 +159,7 @@ export class BuildingPlacement {
       this.ghostActive = false;
       this._ghostX = -1;
       this._ghostY = -1;
+      this.destroyGhostMesh();
       this.detachPointerListeners();
     }
   }
@@ -280,9 +285,11 @@ export class BuildingPlacement {
       this.ghostActive = false;
       this._ghostX = -1;
       this._ghostY = -1;
+      this.destroyGhostMesh();
     } else {
       this.selectedBuilding = kind;
       this.ghostActive = true;
+      this.destroyGhostMesh(); // clear any previous ghost
     }
     this.renderCategory(this.activeCategory);
   }
@@ -322,15 +329,19 @@ export class BuildingPlacement {
   }
 
   private onPointerMove(e: PointerEvent): void {
-    if (!this.visible || !this.ghostActive || !this.selectedBuilding) return;
+    if (!this.visible || !this.ghostActive || !this.selectedBuilding) {
+      return;
+    }
 
     const tile = this.pickTile(e);
     if (tile) {
       this._ghostX = tile.x;
       this._ghostY = tile.y;
+      this.createOrUpdateGhost();
     } else {
       this._ghostX = -1;
       this._ghostY = -1;
+      this.destroyGhostMesh();
     }
   }
 
@@ -364,10 +375,53 @@ export class BuildingPlacement {
     this.renderCategory(this.activeCategory);
   }
 
-  // ── Cleanup ────────────────────────────────────────────────────
+  // ── Ghost Preview Mesh ─────────────────────────────────────────
+
+  /**
+   * Create or reposition the semi-transparent ghost mesh at the current
+   * ghost tile.  Called on pointer-move while a building is selected.
+   */
+  private createOrUpdateGhost(): void {
+    if (!this.scene || !this.ghostActive || this._ghostX < 0) {
+      return;
+    }
+
+    if (!this.ghostMesh) {
+      // Create a semi-transparent box that previews the building footprint
+      const kindName = this.selectedBuilding !== null
+        ? buildingName(this.selectedBuilding)
+        : 'building';
+
+      this.ghostMesh = MeshBuilder.CreateBox(
+        `ghost-${kindName}`,
+        { width: 2, height: 2, depth: 2 },
+        this.scene
+      );
+
+      const mat = new StandardMaterial('ghostMat', this.scene);
+      mat.diffuseColor = new Color3(0.3, 0.8, 0.3);   // Green tint
+      mat.alpha = 0.35;                                  // Semi-transparent
+      mat.wireframe = false;
+      this.ghostMesh.material = mat;
+      this.ghostMesh.isPickable = false;                 // Don't intercept picks
+    }
+
+    // Snap to tile centre at ground level (y=1 for half-box height).
+    this.ghostMesh.position.set(this._ghostX, 1, this._ghostY);
+  }
+
+  /** Dispose the ghost preview mesh and reset state. */
+  private destroyGhostMesh(): void {
+    if (this.ghostMesh) {
+      this.ghostMesh.material?.dispose();
+      this.ghostMesh.dispose();
+      this.ghostMesh = null;
+    }
+  }
 
   dispose(): void {
     this.detachPointerListeners();
+    this.destroyGhostMesh();
     this.panel.remove();
     this.toggleBtn.remove();
     const style = document.getElementById('building-palette-styles');
