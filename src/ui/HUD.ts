@@ -57,7 +57,7 @@ export class HUD {
         z-index: 20;
       }
       .hud-panel {
-        background: rgba(93, 64, 55, 0.8);
+        background: #5d4037;
         border: 2px solid #d2b48c;
         border-radius: 8px;
         padding: 10px;
@@ -91,7 +91,7 @@ export class HUD {
         gap: 6px;
       }
       .hud-btn {
-        background: rgba(93, 64, 55, 0.8);
+        background: #5d4037;
         border: 2px solid #d2b48c;
         border-radius: 6px;
         color: #f4e4bc;
@@ -106,14 +106,14 @@ export class HUD {
         transition: background 0.2s;
       }
       .hud-btn:hover {
-        background: rgba(139, 90, 43, 0.9);
+        background: #8b5a2b;
       }
       .toast {
         position: fixed;
         bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(0,0,0,0.85);
+        background: #281810;
         color: #f4e4bc;
         border: 1px solid #d2b48c;
         border-radius: 6px;
@@ -169,8 +169,14 @@ export class HUD {
       const newTicks = stats.ticks.toString();
       const newTime = Math.floor(stats.gameTime).toString() + 's';
       
-      if (ticksEl && ticksEl.textContent !== newTicks) ticksEl.textContent = newTicks;
-      if (timeEl && timeEl.textContent !== newTime) timeEl.textContent = newTime;
+      if (ticksEl && ticksEl.textContent !== newTicks) {
+        ticksEl.textContent = newTicks;
+        // console.log("HUD Ticks changed to:", newTicks);
+      }
+      if (timeEl && timeEl.textContent !== newTime) {
+        timeEl.textContent = newTime;
+        // console.log("HUD Time changed to:", newTime);
+      }
       
       requestAnimationFrame(update);
     };
