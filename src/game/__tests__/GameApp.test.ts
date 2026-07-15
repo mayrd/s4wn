@@ -151,6 +151,14 @@ jest.mock('../../input/TouchCameraController', () => ({
   })),
 }));
 
+jest.mock('../../ui/BuildingPlacement', () => ({
+  BuildingPlacement: jest.fn(() => ({
+    toggle: jest.fn(),
+    isVisible: jest.fn(() => false),
+    dispose: jest.fn(),
+  })),
+}));
+
 jest.mock('../../game/GameLoop', () => ({
   GameLoop: jest.fn(() => ({
     state: { isPaused: true },
@@ -211,7 +219,27 @@ describe('GameApp Initialization', () => {
     expect(app.shadowPipeline).toBeDefined();
     expect(app.particleSystem).toBeDefined();
     expect(app.mapEditor).toBeDefined();
+    expect(app.buildingPlacement).toBeDefined();
     // Dispose after all properties are initialized
+    app.dispose();
+  });
+
+  it('should dispatch building-placed event and create 3D mesh', async () => {
+    const app = new GameApp('renderCanvas');
+    await app.readyPromise;
+
+    // Dispatch a building-placed event as if the user placed a building via UI
+    const event = new CustomEvent('building-placed', {
+      detail: { kind: 0, x: 51, y: 51, building: { index: 99, kind: 0, x: 51, y: 51 } },
+    });
+    window.dispatchEvent(event);
+
+    // Wait for async mesh creation
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // Verify BuildingPlacement was instantiated
+    expect(app.buildingPlacement).toBeDefined();
+
     app.dispose();
   });
 

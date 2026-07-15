@@ -32,7 +32,9 @@ import { MapEditor } from './ui/editor/MapEditor';
 import { soundManager } from './audio/SoundManager';
 import { TouchCameraController } from './input/TouchCameraController';
 import { BuildingType } from './economy/types';
+import { buildingName } from './economy/types';
 import { NationType } from './game/Nation';
+import { BuildingPlacement } from './ui/BuildingPlacement';
 
 export class GameApp {
   public engine!: Engine;
@@ -49,10 +51,12 @@ export class GameApp {
   public gridRenderer!: GridRenderer;
   public ui!: UIManager;
   public mapEditor!: MapEditor;
+  public buildingPlacement!: BuildingPlacement;
 
   private mode: StartMode;
   private onExplorerToggle!: () => void;
   private onEditorToggle!: () => void;
+  private boundBuildingPlaced!: (e: Event) => void;
 
   /** Promise that resolves when critical assets (terrain textures) are loaded. */
   public readyPromise: Promise<void>;
@@ -108,6 +112,19 @@ export class GameApp {
     // UI manager (no engine dependency) used for save handling + splash screen.
     // ObjectExplorer is already created by UIManager in standalone mode.
     this.ui = new UIManager(this.gameLoop);
+
+    // Building placement UI — palette panel + "building-placed" event dispatch.
+    // The HUD (including .hud-actions bar) is not yet in the DOM, so the toggle
+    // button will attach to #ui-overlay as a fallback, but the event system and
+    // scene picking/placement integration work immediately.
+    this.buildingPlacement = new BuildingPlacement(
+      this.gameLoop.economy,
+      this.map,
+      0, // ownerId = player 0
+      this.engine.getRenderingCanvas() as HTMLCanvasElement,
+    );
+    this.boundBuildingPlaced = this.onBuildingPlaced.bind(this);
+    window.addEventListener('building-placed', this.boundBuildingPlaced);
 
     // Subscribe territory overlay to game ticks so territory changes are reflected
     this.gameLoop.onTick(() => {
@@ -259,6 +276,31 @@ export class GameApp {
     (window as any).debugPanel = debugPanel;
   }
 
+  /**
+   * Handle the 'building-placed' event from BuildingPlacement UI.
+   * Creates a 3D mesh for the placed building and adds it to the shadow pipeline.
+   */
+  private onBuildingPlaced(e: Event): void {
+    const detail = (e as CustomEvent).detail as {
+      kind: BuildingType;
+      x: number;
+      y: number;
+      building: any;
+    };
+    if (!detail || detail.kind === undefined) return;
+
+    const kindName = buildingName(detail.kind);
+    this.buildingRenderer.createBuilding(kindName, detail.x, detail.y, 2, 2, 2)
+      .then((mesh: any) => {
+        if (mesh) {
+          this.shadowPipeline.addShadowCaster(mesh);
+        }
+      })
+      .catch((err: any) => {
+        console.warn(`Failed to create 3D mesh for building ${kindName}:`, err);
+      });
+  }
+
   private initLoop(): void {
     // Initialize these early to avoid race condition with async initRendering
     this.particleSystem = new ParticleSystem(this.scene);
@@ -277,6 +319,8 @@ export class GameApp {
   public dispose(): void {
     window.removeEventListener('ui-explorer-toggle', this.onExplorerToggle);
     window.removeEventListener('ui-editor-toggle', this.onEditorToggle);
+    window.removeEventListener('building-placed', this.boundBuildingPlaced);
+    this.buildingPlacement?.dispose();
     this.mapEditor?.hide();
     this.touchController.dispose?.();
     this.waterRenderer?.dispose?.();
