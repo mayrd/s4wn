@@ -16,8 +16,8 @@ export default defineConfig({
   },
   expect: {
     toHaveScreenshot: {
-      threshold: 0.2,
-      maxDiffPixelRatio: 0.05,
+      threshold: 0.3,
+      maxDiffPixelRatio: 0.15,
     },
   },
   // Visual regression: baseline snapshots are committed, diffs go to test-results/

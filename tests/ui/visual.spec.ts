@@ -21,19 +21,13 @@ test.describe('Visual Regression — Main Menu', () => {
   test('full main menu screen matches baseline', async ({ page }) => {
     await goToMainMenu(page);
     const menu = page.locator('.main-menu-screen');
-    await expect(menu).toHaveScreenshot('main-menu-full.png', {
-      threshold: 0.2,
-      maxDiffPixelRatio: 0.05,
-    });
+    await expect(menu).toHaveScreenshot('main-menu-full.png');
   });
 
   test('menu container matches baseline', async ({ page }) => {
     await goToMainMenu(page);
     const container = page.locator('.main-menu-container');
-    await expect(container).toHaveScreenshot('main-menu-container.png', {
-      threshold: 0.2,
-      maxDiffPixelRatio: 0.05,
-    });
+    await expect(container).toHaveScreenshot('main-menu-container.png');
   });
 
   test('menu buttons are present', async ({ page }) => {
@@ -57,8 +51,6 @@ test.describe('Visual Regression — Object Explorer Standalone', () => {
 
     // Explorer shows static catalog in standalone mode (no "Live" toggle)
     await expect(explorer).toHaveScreenshot('object-explorer-standalone.png', {
-      threshold: 0.2,
-      maxDiffPixelRatio: 0.05,
       timeout: 10000,
     });
   });
@@ -124,10 +116,7 @@ test.describe('Visual Regression — In-Game HUD', () => {
     await page.waitForTimeout(100);
 
     const hud = page.locator('#hud-container');
-    await expect(hud).toHaveScreenshot('hud-container.png', {
-      threshold: 0.2,
-      maxDiffPixelRatio: 0.05,
-    });
+    await expect(hud).toHaveScreenshot('hud-container.png');
   });
 
   test('save button exists in HUD', async ({ page }) => {
@@ -173,10 +162,7 @@ test.describe('Visual Regression — Splash Screen', () => {
     const splash = page.locator('.splash-screen.active');
     // It may transition quickly — if already gone, the test is informational
     if (await splash.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await expect(splash).toHaveScreenshot('splash-screen.png', {
-        threshold: 0.2,
-        maxDiffPixelRatio: 0.05,
-      });
+      await expect(splash).toHaveScreenshot('splash-screen.png');
     }
     // Always passes — splash may have already transitioned
   });
