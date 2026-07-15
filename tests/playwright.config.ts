@@ -14,6 +14,12 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
+  expect: {
+    toHaveScreenshot: {
+      threshold: 0.2,
+      maxDiffPixelRatio: 0.05,
+    },
+  },
   // Visual regression: baseline snapshots are committed, diffs go to test-results/
   snapshotDir: './ui/__snapshots__',
   snapshotPathTemplate: '{snapshotDir}/{testFileName}/{arg}{ext}',

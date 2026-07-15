@@ -148,8 +148,13 @@ export class HUD {
       const stats = gameLoop.getStats();
       const ticksEl = document.getElementById('hud-ticks');
       const timeEl = document.getElementById('hud-time');
-      if (ticksEl) ticksEl.textContent = stats.ticks.toString();
-      if (timeEl) timeEl.textContent = Math.floor(stats.gameTime).toString() + 's';
+      
+      const newTicks = stats.ticks.toString();
+      const newTime = Math.floor(stats.gameTime).toString() + 's';
+      
+      if (ticksEl && ticksEl.textContent !== newTicks) ticksEl.textContent = newTicks;
+      if (timeEl && timeEl.textContent !== newTime) timeEl.textContent = newTime;
+      
       requestAnimationFrame(update);
     };
     requestAnimationFrame(update);

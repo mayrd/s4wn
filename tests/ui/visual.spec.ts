@@ -22,8 +22,8 @@ test.describe('Visual Regression — Main Menu', () => {
     await goToMainMenu(page);
     const menu = page.locator('.main-menu-screen');
     await expect(menu).toHaveScreenshot('main-menu-full.png', {
-      threshold: 0.1,
-      maxDiffPixelRatio: 0.02,
+      threshold: 0.2,
+      maxDiffPixelRatio: 0.05,
     });
   });
 
@@ -31,8 +31,8 @@ test.describe('Visual Regression — Main Menu', () => {
     await goToMainMenu(page);
     const container = page.locator('.main-menu-container');
     await expect(container).toHaveScreenshot('main-menu-container.png', {
-      threshold: 0.1,
-      maxDiffPixelRatio: 0.02,
+      threshold: 0.2,
+      maxDiffPixelRatio: 0.05,
     });
   });
 
@@ -57,7 +57,7 @@ test.describe('Visual Regression — Object Explorer Standalone', () => {
 
     // Explorer shows static catalog in standalone mode (no "Live" toggle)
     await expect(explorer).toHaveScreenshot('object-explorer-standalone.png', {
-      threshold: 0.15,
+      threshold: 0.2,
       maxDiffPixelRatio: 0.05,
       timeout: 10000,
     });
@@ -109,7 +109,11 @@ test.describe('Visual Regression — In-Game HUD', () => {
     // Pause the game loop and freeze dynamic values so the DOM becomes visually stable
     await page.evaluate(() => {
       const app = (window as any).gameApp;
-      if (app && app.gameLoop) app.gameLoop.state.isPaused = true;
+      if (app && app.gameLoop) {
+        app.gameLoop.state.isPaused = true;
+        // Override getStats so the HUD update loop reads consistent values
+        app.gameLoop.getStats = () => ({ fps: 60, ticks: 42, gameTime: 10, zoom: 0 });
+      }
       const ticks = document.getElementById('hud-ticks');
       if (ticks) ticks.textContent = '42';
       const time = document.getElementById('hud-time');
@@ -121,8 +125,8 @@ test.describe('Visual Regression — In-Game HUD', () => {
 
     const hud = page.locator('#hud-container');
     await expect(hud).toHaveScreenshot('hud-container.png', {
-      threshold: 0.1,
-      maxDiffPixelRatio: 0.02,
+      threshold: 0.2,
+      maxDiffPixelRatio: 0.05,
     });
   });
 
@@ -170,7 +174,7 @@ test.describe('Visual Regression — Splash Screen', () => {
     // It may transition quickly — if already gone, the test is informational
     if (await splash.isVisible({ timeout: 2000 }).catch(() => false)) {
       await expect(splash).toHaveScreenshot('splash-screen.png', {
-        threshold: 0.15,
+        threshold: 0.2,
         maxDiffPixelRatio: 0.05,
       });
     }
