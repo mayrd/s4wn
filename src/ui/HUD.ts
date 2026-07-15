@@ -26,7 +26,6 @@ export class HUD {
     hud.innerHTML = `
       <div class="hud-panel" id="stats-panel">
         <div class="hud-title">Game Stats</div>
-        <div class="hud-stat">Ticks: <span id="hud-ticks">0</span></div>
         <div class="hud-stat">Time: <span id="hud-time">0s</span></div>
       </div>
       <div class="hud-actions">
@@ -64,7 +63,7 @@ export class HUD {
         color: #f4e4bc;
         font-family: 'Georgia', serif;
         min-width: 150px;
-        height: 84px;
+        height: 66px;
         box-sizing: border-box;
         pointer-events: auto;
         margin-bottom: 6px;
@@ -163,16 +162,10 @@ export class HUD {
   private updateLoop(gameLoop: GameLoop): void {
     const update = () => {
       const stats = gameLoop.getStats();
-      const ticksEl = document.getElementById('hud-ticks');
       const timeEl = document.getElementById('hud-time');
       
-      const newTicks = stats.ticks.toString();
       const newTime = Math.floor(stats.gameTime).toString() + 's';
       
-      if (ticksEl && ticksEl.textContent !== newTicks) {
-        ticksEl.textContent = newTicks;
-        // console.log("HUD Ticks changed to:", newTicks);
-      }
       if (timeEl && timeEl.textContent !== newTime) {
         timeEl.textContent = newTime;
         // console.log("HUD Time changed to:", newTime);

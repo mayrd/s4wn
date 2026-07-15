@@ -47,6 +47,7 @@ export class DebugPanel {
       
       <div class="debug-stat-row"><span>FPS:</span> <span id="debug-fps" style="color:#8f8">0</span></div>
       <div class="debug-stat-row"><span>Game Time:</span> <span id="debug-time">0s</span></div>
+      <div class="debug-stat-row"><span>Ticks:</span> <span id="debug-ticks">0</span></div>
       
       <hr class="debug-divider" />
       
@@ -94,7 +95,8 @@ export class DebugPanel {
   private setupToggles(): void {
     // Grid toggle
     const gridBtn = this.container.querySelector('#debug-btn-grid') as HTMLButtonElement;
-    let gridVisible = true;
+    let gridVisible = false;
+    gridBtn.textContent = 'Grid: OFF';
     gridBtn.addEventListener('click', () => {
       gridVisible = !gridVisible;
       gridBtn.textContent = `Grid: ${gridVisible ? 'ON' : 'OFF'}`;
@@ -281,12 +283,14 @@ export class DebugPanel {
           if (savedEmissive !== undefined) {
             mat.emissiveColor = savedEmissive;
             this.originalEmissive.delete(mat);
-            this.originalTextures.delete(mat);
           }
+          this.originalTextures.delete(mat);
         } else {
           // Save original texture and emissive color before disabling
           this.originalTextures.set(mat, mat.diffuseTexture);
-          this.originalEmissive.set(mat, mat.emissiveColor.clone());
+          if (mat.emissiveColor) {
+            this.originalEmissive.set(mat, mat.emissiveColor.clone());
+          }
           mat.diffuseTexture = null;
           mat.emissiveColor = new Color3(1, 0, 1); // Magenta for debugging
         }
@@ -335,6 +339,7 @@ export class DebugPanel {
       const stats = gameLoop.getStats();
       const fpsElement = document.getElementById('debug-fps');
       const timeElement = document.getElementById('debug-time');
+      const ticksElement = document.getElementById('debug-ticks');
       const unitsTotal = document.getElementById('debug-units-total');
       const unitsWorkers = document.getElementById('debug-units-workers');
       const unitsArchers = document.getElementById('debug-units-archers');
@@ -345,6 +350,7 @@ export class DebugPanel {
 
       if (fpsElement) fpsElement.textContent = Math.round(engine.getFps()).toString();
       if (timeElement) timeElement.textContent = Math.floor(stats.gameTime).toString() + 's';
+      if (ticksElement) ticksElement.textContent = stats.ticks.toString();
 
       const units = gameLoop.unitManager.getAliveUnits();
       const buildings = gameLoop.economy.getCompleteBuildings();

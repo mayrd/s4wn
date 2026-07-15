@@ -17,6 +17,7 @@ import {
   StandardMaterial,
   Scene,
   Vector3,
+  Color3,
 } from '@babylonjs/core';
 import { Map as GameMap } from '../game/Map';
 import { NATION_INFO } from '../game/Nation';
@@ -111,9 +112,9 @@ export class TerritoryOverlay {
     (mat as any).hasVertexAlpha = true;
     mat.backFaceCulling = false;
     mat.useAlphaFromDiffuseTexture = false;
-    mat.diffuseColor = { r: 1, g: 1, b: 1 } as any;
-    mat.specularColor = { r: 0, g: 0, b: 0 } as any;
-    mat.emissiveColor = { r: 0, g: 0, b: 0 } as any;
+    mat.diffuseColor = new Color3(1, 1, 1);
+    mat.specularColor = new Color3(0, 0, 0);
+    mat.emissiveColor = new Color3(0, 0, 0);
     mat.alpha = 1.0;
     mesh.material = mat;
     mesh.isVisible = this._visible;

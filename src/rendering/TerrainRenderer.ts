@@ -181,7 +181,9 @@ export class TerrainRenderer {
         this.applySplatBlending(ctx, map, images, cell);
       }
 
-      const dt = new DynamicTexture('terrainAtlas', c, this.scene, false);
+      const dt = new DynamicTexture('terrainAtlas', { width: atlasW, height: atlasH }, this.scene, false);
+      const dtCtx = dt.getContext();
+      dtCtx.drawImage(c, 0, 0);
       // CRITICAL: the DynamicTexture constructor only ALLOCATES the GPU
       // texture — the canvas pixels are uploaded ONLY when update() is
       // called. Without this the terrain samples an empty (black) texture.
@@ -212,6 +214,15 @@ export class TerrainRenderer {
   ): void {
     const BLEND_WIDTH = Math.max(2, Math.floor(cell * 0.15)); // 15% of cell for blending
 
+    // Cache the average color of each terrain texture so we don't sample 50,000 times
+    const colorCache = new Map<number, string>();
+    const getCachedColor = (idx: number) => {
+      if (!colorCache.has(idx)) {
+        colorCache.set(idx, this.sampleTerrainColor(images[idx]));
+      }
+      return colorCache.get(idx)!;
+    };
+
     for (let ty = 0; ty < map.height; ty++) {
       for (let tx = 0; tx < map.width; tx++) {
         const centerTerrain = map.tiles[ty][tx].terrain;
@@ -221,7 +232,7 @@ export class TerrainRenderer {
         const offsetY = ty * cell;
 
         // Sample the tile center color for blending
-        const centerColor = this.sampleTerrainColor(images[centerIdx]);
+        const centerColor = getCachedColor(centerIdx);
 
         // Only check orthogonal (4-directional) neighbors - NOT diagonals
         // This prevents the "rotated/twisted" appearance where diagonals incorrectly blend
@@ -238,7 +249,7 @@ export class TerrainRenderer {
           const neighbor = map.get(nx, ny);
           if (neighbor && neighbor.terrain !== centerTerrain) {
             const neighborIdx = this.toIdx(String(neighbor.terrain));
-            const neighborColor = this.sampleTerrainColor(images[neighborIdx]);
+            const neighborColor = getCachedColor(neighborIdx);
             // Blend from neighbor's color (at edge) to center's color (away from edge)
             // This ensures the center is the primary color and edges smoothly transition to neighbors
             this.blendEdge(ctx, offsetX, offsetY, cell, cell, neighborColor, centerColor, BLEND_WIDTH, edge);
@@ -250,8 +261,11 @@ export class TerrainRenderer {
 
   /** Sample average color of a terrain texture */
   private sampleTerrainColor(img: HTMLImageElement): string {
+    if (!img.width || !img.height) return 'rgb(0,0,0)';
     // Create a small canvas to sample the center color
     const sampleCanvas = document.createElement('canvas');
+    sampleCanvas.width = 1;
+    sampleCanvas.height = 1;
     const sCtx = sampleCanvas.getContext('2d')!;
     sCtx.drawImage(img, img.width / 2 - 2, img.height / 2 - 2, 4, 4, 0, 0, 1, 1);
     const pixel = sCtx.getImageData(0, 0, 1, 1).data;
