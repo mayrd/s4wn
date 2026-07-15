@@ -104,6 +104,9 @@ export class BuildingPlacement {
   private _ghostY: number = -1;
   private ghostActive: boolean = false;
 
+  /** Whether the tile under the ghost cursor is a valid placement site. */
+  private _isValidGhostPlacement: boolean = false;
+
   /** Babylon.js scene for ray-casting pointer events and 3D ghost preview.
    *  Optional — when set, onPointerDown places buildings at the picked terrain
    *  location instead of the fallback (50, 50), and a semi-transparent ghost
@@ -145,6 +148,30 @@ export class BuildingPlacement {
   /** Whether ghost preview is currently active (building selected + hovering). */
   get isGhostActive(): boolean { return this.ghostActive && this.selectedBuilding !== null && this._ghostX >= 0; }
 
+  /** Whether the current ghost preview tile is a valid placement site. */
+  get isValidGhostPlacement(): boolean { return this._isValidGhostPlacement; }
+
+  /**
+   * Check all placement constraints for a tile:
+   * - Tile in bounds
+   * - Terrain is buildable (not water/swamp)
+   * - Owned by player's territory
+   * - No building already at that tile
+   * - Player can afford the building
+   */
+  isValidPlacement(kind: BuildingType, x: number, y: number): boolean {
+    if (x < 0 || y < 0 || x >= this.map.width || y >= this.map.height) return false;
+    if (!this.map.isBuildable(x, y)) return false;
+    const tile = this.map.get(x, y);
+    if (!tile || tile.territory !== this.ownerId) return false;
+    if (!this.canAffordBuilding(kind)) return false;
+    // Check for collision with existing buildings
+    for (const b of this.economy.buildings) {
+      if (b.x === x && b.y === y) return false;
+    }
+    return true;
+  }
+
   // ── Toggle ─────────────────────────────────────────────────────
 
   toggle(): void {
@@ -159,6 +186,7 @@ export class BuildingPlacement {
       this.ghostActive = false;
       this._ghostX = -1;
       this._ghostY = -1;
+      this._isValidGhostPlacement = false;
       this.destroyGhostMesh();
       this.detachPointerListeners();
     }
@@ -285,10 +313,12 @@ export class BuildingPlacement {
       this.ghostActive = false;
       this._ghostX = -1;
       this._ghostY = -1;
+      this._isValidGhostPlacement = false;
       this.destroyGhostMesh();
     } else {
       this.selectedBuilding = kind;
       this.ghostActive = true;
+      this._isValidGhostPlacement = false;
       this.destroyGhostMesh(); // clear any previous ghost
     }
     this.renderCategory(this.activeCategory);
@@ -337,10 +367,13 @@ export class BuildingPlacement {
     if (tile) {
       this._ghostX = tile.x;
       this._ghostY = tile.y;
+      // Evaluate placement validity for the current tile
+      this._isValidGhostPlacement = this.isValidPlacement(this.selectedBuilding, tile.x, tile.y);
       this.createOrUpdateGhost();
     } else {
       this._ghostX = -1;
       this._ghostY = -1;
+      this._isValidGhostPlacement = false;
       this.destroyGhostMesh();
     }
   }
@@ -362,6 +395,9 @@ export class BuildingPlacement {
       placeX = tile.x;
       placeY = tile.y;
     }
+
+    // Pre-validate placement (duplicated in tryPlaceBuilding for defense in depth)
+    if (!this.isValidPlacement(kind, placeX, placeY)) return;
 
     const placed = this.economy.tryPlaceBuilding(kind, placeX, placeY, this.map, this.ownerId);
     if (!placed) return;
@@ -399,11 +435,19 @@ export class BuildingPlacement {
       );
 
       const mat = new StandardMaterial('ghostMat', this.scene);
-      mat.diffuseColor = new Color3(0.3, 0.8, 0.3);   // Green tint
-      mat.alpha = 0.35;                                  // Semi-transparent
       mat.wireframe = false;
       this.ghostMesh.material = mat;
       this.ghostMesh.isPickable = false;                 // Don't intercept picks
+    }
+
+    // Update tint: green for valid placement, red for invalid
+    const mat = this.ghostMesh.material as StandardMaterial;
+    if (this._isValidGhostPlacement) {
+      mat.diffuseColor = new Color3(0.3, 0.8, 0.3);     // Green tint
+      mat.alpha = 0.35;
+    } else {
+      mat.diffuseColor = new Color3(0.9, 0.2, 0.2);     // Red tint
+      mat.alpha = 0.45;                                   // Slightly more opaque for visibility
     }
 
     // Snap to tile centre at ground level (y=1 for half-box height).

@@ -473,6 +473,13 @@ describe('BuildingPlacement', () => {
     it('should fallback to (50, 50) when no scene provided', () => {
       const bp = new BuildingPlacement(economy, map, 1, canvas);
 
+      // Ensure the fallback tile (50, 50) is buildable terrain in player territory
+      const fallbackTile = map.get(50, 50);
+      if (fallbackTile) {
+        (fallbackTile as any).terrain = Terrain.Grass;
+        fallbackTile.territory = 1;
+      }
+
       const placeSpy = jest.spyOn(economy, 'tryPlaceBuilding');
 
       bp.toggle();
@@ -490,6 +497,117 @@ describe('BuildingPlacement', () => {
       expect(callArgs[2]).toBe(50);
 
       placeSpy.mockRestore();
+    });
+  });
+
+  describe('placement validation', () => {
+    it('should return true for valid placement on grass in territory', () => {
+      const bp = new BuildingPlacement(economy, map, 1, canvas);
+      // Tile (30, 30) — set up as Grass, in territory 1
+      const tile = map.get(30, 30);
+      if (tile) {
+        (tile as any).terrain = Terrain.Grass;
+        tile.territory = 1;
+      }
+      expect(bp.isValidPlacement(BuildingType.Farm, 30, 30)).toBe(true);
+    });
+
+    it('should return false for water terrain', () => {
+      const bp = new BuildingPlacement(economy, map, 1, canvas);
+      const tile = map.get(30, 30);
+      if (tile) {
+        (tile as any).terrain = Terrain.Water;
+        tile.territory = 1;
+      }
+      expect(bp.isValidPlacement(BuildingType.Farm, 30, 30)).toBe(false);
+    });
+
+    it('should return false for enemy territory', () => {
+      const bp = new BuildingPlacement(economy, map, 1, canvas);
+      const tile = map.get(30, 30);
+      if (tile) {
+        (tile as any).terrain = Terrain.Grass;
+        tile.territory = 2; // Enemy nation
+      }
+      expect(bp.isValidPlacement(BuildingType.Farm, 30, 30)).toBe(false);
+    });
+
+    it('should return false for out-of-bounds coordinates', () => {
+      const bp = new BuildingPlacement(economy, map, 1, canvas);
+      expect(bp.isValidPlacement(BuildingType.Farm, -1, 0)).toBe(false);
+      expect(bp.isValidPlacement(BuildingType.Farm, 0, -1)).toBe(false);
+      expect(bp.isValidPlacement(BuildingType.Farm, 999, 0)).toBe(false);
+    });
+
+    it('should return false for collision with existing building', () => {
+      // Place a building at (30, 30) first
+      const tile = map.get(30, 30);
+      if (tile) {
+        (tile as any).terrain = Terrain.Grass;
+        tile.territory = 1;
+      }
+      economy.tryPlaceBuilding(BuildingType.Farm, 30, 30, map, 1);
+      const bp = new BuildingPlacement(economy, map, 1, canvas);
+      expect(bp.isValidPlacement(BuildingType.Sawmill, 30, 30)).toBe(false);
+    });
+
+    it('should return false when cannot afford', () => {
+      const poorEconomy = new Economy();
+      poorEconomy.resources.fill(0);
+      const bp = new BuildingPlacement(poorEconomy, map, 1, canvas);
+      const tile = map.get(30, 30);
+      if (tile) {
+        (tile as any).terrain = Terrain.Grass;
+        tile.territory = 1;
+      }
+      expect(bp.isValidPlacement(BuildingType.Fortress, 30, 30)).toBe(false);
+    });
+
+    it('isValidGhostPlacement starts false and updates on pointer move', () => {
+      const scene = new MockScene() as any;
+      const bp = new BuildingPlacement(economy, map, 1, canvas, scene);
+      expect(bp.isValidGhostPlacement).toBe(false);
+
+      bp.toggle();
+      const btn = document.querySelector('.bp-building-btn') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click(); // select building → ghost mode
+
+      // Default mock scene returns (31, 41), but tile isn't in territory
+      // Verify ghost validity is computed
+      expect(bp.isValidGhostPlacement).toBe(false); // Not yet on a tile
+
+      // Move pointer to activate ghost
+      const moveEvent = new (PointerEvent as any)('pointermove', { offsetX: 400, offsetY: 300 });
+      canvas.dispatchEvent(moveEvent);
+
+      // Ghost is at (31, 41) — depends on tile setup. By default not in territory
+      // so isValidGhostPlacement should be false.
+      expect(bp.isGhostActive).toBe(true);
+    });
+
+    it('should show valid ghost on buildable tile in territory', () => {
+      const scene = new MockScene() as any;
+      const bp = new BuildingPlacement(economy, map, 1, canvas, scene);
+
+      // Set up the tile the scene will pick (31, 41) as buildable + in territory
+      const tile = map.get(31, 41);
+      if (tile) {
+        (tile as any).terrain = Terrain.Grass;
+        tile.territory = 1;
+      }
+
+      bp.toggle();
+      const btn = document.querySelector('.bp-building-btn') as HTMLElement;
+      expect(btn).not.toBeNull();
+      btn.click(); // select building
+
+      // Move pointer — should compute valid placement
+      const moveEvent = new (PointerEvent as any)('pointermove', { offsetX: 400, offsetY: 300 });
+      canvas.dispatchEvent(moveEvent);
+
+      expect(bp.isGhostActive).toBe(true);
+      expect(bp.isValidGhostPlacement).toBe(true);
     });
   });
 
