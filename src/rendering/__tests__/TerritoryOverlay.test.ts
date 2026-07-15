@@ -45,6 +45,11 @@ jest.mock('@babylonjs/core', () => {
       dispose: jest.fn(),
     })),
     Scene: jest.fn(),
+    Color3: Object.assign(
+      function (r?: number, g?: number, b?: number) {
+        return { r: r ?? 0, g: g ?? 0, b: b ?? 0 };
+      }
+    ),
     Vector3: Object.assign(
       function (x?: number, y?: number, z?: number) {
         return { x: x ?? 0, y: y ?? 0, z: z ?? 0 };

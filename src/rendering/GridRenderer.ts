@@ -50,7 +50,7 @@ export class GridRenderer {
     const mat = new StandardMaterial('gridMat', this.scene);
     mat.emissiveColor = new Color3(0, 1, 0);
     this.gridMesh.material = mat;
-    this.gridMesh.isVisible = false;
+    this.gridMesh.isVisible = true;
 
     console.log(`📐 Grid created: ${this.mapWidth}×${this.mapHeight}, ${positions.length / 2} lines`);
   }
