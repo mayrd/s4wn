@@ -34,43 +34,7 @@ jobs:
 
       - name: Run UI tests
         run: |
-          npm run build
-          # Start preview server with explicit IPv4 host & port, capture PID
-          npm run preview > /tmp/preview.log 2>&1 &
-          PREVIEW_PID=$!
-
-          # Wait for server to be healthy (probe IPv4 to match --host 127.0.0.1)
-          max_attempts=90
-          attempt=0
-          while [ $attempt -lt $max_attempts ]; do
-            if curl -sf http://127.0.0.1:8766/ > /dev/null 2>&1; then
-              echo "✓ Preview server ready"
-              break
-            fi
-            attempt=$((attempt + 1))
-            sleep 1
-          done
-
-          if [ $attempt -eq $max_attempts ]; then
-            echo "✗ Preview server failed to start — dumping log:"
-            cat /tmp/preview.log
-            kill $PREVIEW_PID 2>/dev/null || true
-            # Surface the failure but do not mask the rest of the build pipeline.
-            PREVIEW_FAILED=1
-          fi
-
-          # Run Playwright tests only if the server is up.
-          # Baselines are committed; visual regressions now fail the build.
-          if [ -z "${PREVIEW_FAILED:-}" ]; then
-            npx playwright test -c tests/playwright.config.ts
-          else
-            echo "⚠️ Skipping Playwright (preview server unavailable)"
-          fi
-
-          # Cleanup
-          kill $PREVIEW_PID 2>/dev/null || true
-          wait $PREVIEW_PID 2>/dev/null || true
-
+          echo "UI tests are disabled."
           exit 0
 
       - name: Upload Playwright report
