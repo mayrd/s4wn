@@ -51,6 +51,8 @@ export class HUD {
         position: absolute;
         top: 10px;
         left: 10px;
+        width: 150px;
+        height: 130px;
         pointer-events: none;
         z-index: 20;
       }
@@ -62,6 +64,8 @@ export class HUD {
         color: #f4e4bc;
         font-family: 'Georgia', serif;
         min-width: 150px;
+        height: 84px;
+        box-sizing: border-box;
         pointer-events: auto;
         margin-bottom: 6px;
       }
@@ -71,12 +75,20 @@ export class HUD {
         border-bottom: 1px solid #d2b48c;
         margin-bottom: 5px;
         padding-bottom: 2px;
+        height: 22px;
+        box-sizing: border-box;
+        overflow: hidden;
       }
       .hud-stat {
         font-size: 0.9rem;
+        height: 18px;
+        box-sizing: border-box;
+        overflow: hidden;
       }
       .hud-actions {
         pointer-events: auto;
+        display: flex;
+        gap: 6px;
       }
       .hud-btn {
         background: rgba(93, 64, 55, 0.8);
@@ -84,7 +96,12 @@ export class HUD {
         border-radius: 6px;
         color: #f4e4bc;
         font-size: 1.2rem;
-        padding: 6px 10px;
+        width: 48px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
         cursor: pointer;
         transition: background 0.2s;
       }

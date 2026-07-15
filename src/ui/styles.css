@@ -70,6 +70,8 @@
   border-radius: 18px;
   padding: 44px 40px;
   width: var(--menu-width);
+  height: 720px;
+  box-sizing: border-box;
   box-shadow: 0 0 60px rgba(0, 0, 0, 0.85), inset 0 0 30px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
@@ -98,7 +100,12 @@
   background-position: center;
   border: none;
   border-radius: 6px;
-  padding: 15px 25px;
+  height: 64px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 25px;
   font-size: 1.2rem;
   font-weight: bold;
   font-family: 'Georgia', serif;
@@ -146,8 +153,9 @@
 }
 
 .menu-button.secondary {
+  height: 48px;
   font-size: 1rem;
-  padding: 10px 20px;
+  padding: 0 20px;
   background:
     linear-gradient(rgba(141, 110, 99, 0.94), rgba(141, 110, 99, 0.94)),
     url('/textures/ui_button.png');
@@ -703,8 +711,8 @@
 /* ── Mobile / Touch-Friendly Sizing ───────────────────────────── */
 
 @media (pointer: coarse) {
-  .menu-button { padding: 20px 30px; font-size: 1.4rem; min-height: 56px; }
-  .menu-button.secondary { padding: 14px 24px; font-size: 1.15rem; min-height: 48px; }
+  .menu-button { padding: 0 30px; height: 72px; font-size: 1.4rem; }
+  .menu-button.secondary { padding: 0 24px; height: 56px; font-size: 1.15rem; }
   .hud-btn { padding: 10px 16px; font-size: 1.5rem; min-width: 48px; min-height: 48px; }
   .hud-panel { padding: 12px; min-width: 180px; }
   .hud-title { font-size: 1.3rem; }
@@ -719,5 +727,5 @@
   :root { --menu-width: 90vw; }
   .main-menu-container { padding: 24px; gap: 16px; border-width: 6px; }
   .menu-logo { width: 180px; }
-  .menu-button { padding: 18px 24px; font-size: 1.2rem; min-height: 52px; }
+  .menu-button { padding: 0 24px; height: 60px; font-size: 1.2rem; }
 }
