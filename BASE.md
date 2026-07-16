@@ -2,6 +2,8 @@
 Use this file as base information and treat it with priority over own research.
 AI agents must not edit this file unless explicitly stated.
 
+**See [plans/](plans/) for task-specific implementation plans.**
+
 All Nations, Buildings, Resources and Settlers are taken from Siedler 4 History Edition. Do not use any items from other Siedler Editions.
 
 ## Buildings

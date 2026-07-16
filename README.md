@@ -111,3 +111,4 @@ Read in order: **BASE.md → AGENTS.md**
 - **[siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/)** — building/unit/production chain mechanics
 - **[BASE.md](BASE.md)** — building reference data (do not modify)
 - **[AGENTS.md](AGENTS.md)** — agent rules, tech choices, implementation plan
+- **[Implementation Plans](plans/)** — task-specific implementation plans

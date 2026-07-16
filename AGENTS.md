@@ -10,6 +10,7 @@
 ### Base Knowledge
 - **[siedlercommunity.de/siedler4](https://www.siedlercommunity.de/siedler4/)** — authoritative source for buildings, units, production chains, and game mechanics.
 - **BASE.md** contains building, resources and settlers reference data — always consult it before implementing any features.
+- **[plans/](plans/)** contains task-specific implementation plans — reference these when picking up new or existing features.
 
 ### Session Protocol
 **Start:** Read BASE.md → fetch open GitHub issues → read Next Session below.
@@ -188,7 +189,7 @@ The Object Explorer is a **standalone debugging tool** that can be instantiated 
 - Static catalog of all game assets (terrain, buildings, units, resources)
 - Runtime instance data when connected to a live GameLoop
 - Asset chain visualization (mesh → texture → animation)
-- Generation prompt excerpts from PROMPTS.md
+- Generation prompt excerpts from plans/asset_prompts.md
 
 ### Decoupled Mode
 The Object Explorer works in two modes:
