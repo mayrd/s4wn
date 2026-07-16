@@ -8,6 +8,7 @@ This folder contains architectural designs, audits, and step-by-step implementat
 - **[transport_and_specialists_plan.md](transport_and_specialists_plan.md)**: Pathfinding weights, unit collision, and user-controlled units (Pioneers, Geologists, Gardeners).
 - **[territory_expansion_plan.md](territory_expansion_plan.md)**: Border stones, pioneers digging borders, tower radial expansion.
 - **[military_combat_plan.md](military_combat_plan.md)**: Squad leaders, HP, projectile arcs, territory capturing.
+- **[nations_and_factions_plan.md](nations_and_factions_plan.md)**: Faction colors, unique buildings, exclusive units, and UI filtering.
 - **[magic_divine_plan.md](magic_divine_plan.md)**: Manabar, priests, sacrificial alcohols, and spellcasting.
 - **[dark_tribe_plan.md](dark_tribe_plan.md)**: The NPC antagonist faction spreading wasteland and mushroom farming.
 
