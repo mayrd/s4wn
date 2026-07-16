@@ -225,6 +225,34 @@ describe('SupplyChainRenderer', () => {
     });
   });
 
+  describe('filtering', () => {
+    test('resources are visible by default', () => {
+      expect(renderer.isResourceVisible(0)).toBe(true);
+    });
+
+    test('toggle resource visibility', () => {
+      renderer.setResourceVisible(0, false);
+      expect(renderer.isResourceVisible(0)).toBe(false);
+      renderer.setResourceVisible(0, true);
+      expect(renderer.isResourceVisible(0)).toBe(true);
+    });
+
+    test('computeLinks respects filters', () => {
+      addActiveBuilding(economy, BuildingType.Farm, 2, 3, 1);
+      addActiveBuilding(economy, BuildingType.Bakery, 6, 5, 1);
+      
+      // Filter out Grain (resource 7)
+      renderer.setResourceVisible(7, false);
+      const linksFiltered = renderer.computeLinks(economy);
+      expect(linksFiltered.length).toBe(0);
+
+      // Re-enable Grain
+      renderer.setResourceVisible(7, true);
+      const linksUnfiltered = renderer.computeLinks(economy);
+      expect(linksUnfiltered.length).toBe(1);
+    });
+  });
+
   describe('update', () => {
     test('does not throw with empty state', () => {
       expect(() => renderer.update(0.016)).not.toThrow();

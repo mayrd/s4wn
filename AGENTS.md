@@ -274,14 +274,15 @@ The inspector provides:
 | P33 | 2026-07-15 | **Building Placement Validation + Red/Green Ghost** — Added `isValidPlacement()` method to `BuildingPlacement` checking 5 constraints: tile bounds, terrain buildability (not water/swamp), territory ownership, building collision, and affordabilty. `isValidGhostPlacement` getter exposes current tile validity. Ghost mesh now uses green tint (0.35 alpha) for valid placement and red tint (0.45 alpha) for invalid — updated every pointer-move. `onPointerDown` validates before calling `tryPlaceBuilding` for defense-in-depth. Validity resets on deselect/close/dispose. Added 8 new unit tests covering all validation cases + ghost visibility. 306 total tests, all green. |
 | P34 | 2026-07-15 | **Fix UI Tests Flakiness** — Fixed visual mismatch error where Playwright threw "Timeout 5000ms exceeded" while waiting for HUD element to become stable. Modified HUD update loop to only write `textContent` when values actually change, avoiding constant DOM mutations when the game is paused. Mocked `getStats` in `visual.spec.ts` for deterministic time rendering. Relaxed pixel matching thresholds globally in `playwright.config.ts` (`maxDiffPixelRatio: 0.05`, `threshold: 0.2`) to better accommodate WebGL anti-aliasing variations on CI runners. Re-generated base snapshots. |
 | P35 | 2026-07-16 | **Supply Chain Renderer — Resource Transport Visualization** — New `SupplyChainRenderer` class computes producer→consumer links from Economy, renders colored `LinesMesh` connections with 15 resource-type→color mappings (wood brown, stone gray, water blue, etc.) and animated carrier dot spheres that travel along each path. Integrated into `GameApp`: created in `initRendering()`, animated in render loop, periodically recomputed (every 5s), cleaned up in `dispose()`. `DebugPanel` gains a 'Supply' toggle button to show/hide supply chain visualization. 15 unit tests covering link computation, mesh creation, visibility, and animation. Fixed TS6133 unused import errors. All 321 tests green. |
+| P36 | 2026-07-16 | **Supply Chain Filtering** — Added per-resource filtering to `SupplyChainRenderer` and `DebugPanel`. The debug panel now shows a row of colored buttons corresponding to each resource type, allowing players to toggle the visibility of individual supply chains. `computeLinks` now checks `isResourceVisible` before mapping producer-consumer paths. Added tests for filtering. All 324 tests green. |
 
 ### Next Session Priorities
 1. ~~**Building Placement — Click-on-Terrain Validation**~~ ✅ Done P33
-2. ~~**Resource Transport Visualization**~~ ✅ Done P35 — Render carriers (donkeys/porters) moving between buildings along computed paths.
-3. **Multi-Nation Game Setup** — Implement nation selection and multi-player map initialization with separate starting areas.
-4. **Territory Border Blending** — Add smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries.
-5. **Building Construction Animation** — Animate building placement with progressive scaffolding mesh before the final model appears.
-6. **Supply Chain Filtering** — Add per-resource filtering to SupplyChainRenderer so the player can toggle individual resource chain visibility.
+2. ~~**Resource Transport Visualization**~~ ✅ Done P35
+3. ~~**Supply Chain Filtering**~~ ✅ Done P36
+4. **Multi-Nation Game Setup** — Implement nation selection and multi-player map initialization with separate starting areas.
+5. **Territory Border Blending** — Add smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries.
+6. **Building Construction Animation** — Animate building placement with progressive scaffolding mesh before the final model appears.
 7. **Carrier Unit Models** — Replace the simple sphere carrier dots with animated donkey/porter glTF models (CC0 from Poly Pizza).
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*

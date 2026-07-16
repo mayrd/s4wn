@@ -43,7 +43,7 @@ export interface SupplyLink {
 }
 
 /** Map resource types to line colors. */
-const RESOURCE_COLORS: Record<number, [number, number, number]> = {
+export const RESOURCE_COLORS: Record<number, [number, number, number]> = {
   0:  [0.55, 0.27, 0.07],  // Wood → brown
   1:  [0.4,  0.5,  0.5],   // Iron Ore → steel blue
   2:  [0.2,  0.2,  0.2],   // Coal → dark gray
@@ -74,6 +74,7 @@ export class SupplyChainRenderer {
   /** Per-carrier: progress [0, 1] along its path. */
   private carrierProgress: number[] = [];
   private _visible: boolean = true;
+  private disabledResources: Set<number> = new Set();
 
   constructor(scene: Scene) {
     this.scene = scene;
@@ -87,6 +88,20 @@ export class SupplyChainRenderer {
     this._visible = v;
     for (const m of this.lineMeshes) m.isVisible = v;
     for (const m of this.carrierMeshes) m.isVisible = v;
+  }
+
+  /** Set visibility for a specific resource type. */
+  setResourceVisible(resource: number, visible: boolean): void {
+    if (visible) {
+      this.disabledResources.delete(resource);
+    } else {
+      this.disabledResources.add(resource);
+    }
+  }
+
+  /** Check if a specific resource type is visible. */
+  isResourceVisible(resource: number): boolean {
+    return !this.disabledResources.has(resource);
   }
 
   /** Compute supply links from the economy's building graph. */
@@ -109,6 +124,7 @@ export class SupplyChainRenderer {
     for (const b of buildings) {
       const inputs = buildingInputs(b.kind);
       for (const inp of inputs) {
+        if (!this.isResourceVisible(inp.resource as number)) continue;
         const prodList = producers.get(inp.resource as number);
         if (!prodList || prodList.length === 0) continue;
 
