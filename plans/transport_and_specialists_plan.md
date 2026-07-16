@@ -15,7 +15,7 @@ While carriers and production workers operate completely autonomously, Settlers 
 - **Pioneers**: 
   - *Action*: When directed to a tile near the border, they march there and begin a "digging" animation loop, pushing the border stones outward tile-by-tile.
 - **Geologists**: 
-  - *Action*: Commanded to mountainsides. They pathfind there, play a "tapping/investigating" animation, and periodically spawn a small 3D resource sign (coal, iron, gold, stone) based on the underlying map data.
+  - *Action*: Commanded to mountainsides. They pathfind there, play a "tapping/investigating" animation, and periodically spawn a small 3D resource sign flagging mineral deposits (coal, iron, gold, stone, sulfur) based on the underlying map data, matching the deposits listed in `BASE.md`.
 - **Gardeners**: 
   - *Action*: Commanded near Dark Wasteland. They pathfind to the edge and cast a "greening" animation, slowly reverting the corrupted tiles back into buildable grass.
 - **Thieves**:

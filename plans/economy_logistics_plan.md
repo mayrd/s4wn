@@ -8,6 +8,7 @@ The Settlers 4 uses a free-roaming logistics system. There are no flags or roads
 - **Carrier AI**: Idle settlers periodically scan for the closest high-priority demand and match it with the closest available supply.
 - **Resource Stacks**: Goods can be stacked up to 8 per tile at Storage Yards, or individually outside producer/consumer buildings.
 - **Specialized Transport**: Donkeys handle marketplace trade routes over land; trade ships handle maritime routes.
+- **Settler Spawning (Tools)**: As defined in `BASE.md`, creating a specialized worker requires an Idle Settler and a specific tool produced by the Toolsmith (e.g., Idle Settler + Pickaxe = Miner, Idle Settler + Axe = Woodcutter).
 
 [Implementation Steps]
 1. Define the `ResourceItem` entity (the physical 3D model of a good on the ground).

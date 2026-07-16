@@ -5,8 +5,8 @@ Territory in S4 is organic and dynamic. It is represented by border stones that 
 
 [Key Mechanics]
 - **Territory Ownership**: A grid mapping tile coordinates to a specific `NationType` or `Neutral`.
-- **Towers / Castles**: When constructed and garrisoned by a soldier, they exert a radial capture effect, instantly flipping neutral or enemy tiles to the player's nation.
-- **Pioneers**: Idle settlers equipped with shovels can be commanded to dig at the borders, moving the border stones outward tile-by-tile.
+- **Towers / Castles**: When constructed and garrisoned by a soldier, they exert a radial capture effect, instantly flipping neutral or enemy tiles to the player's nation. As per `BASE.md`, Small Towers, Big Towers, and Castles require specific planks/stones and support 1, 3, and 6 garrisoned soldiers respectively.
+- **Pioneers**: Idle settlers equipped with shovels can be commanded to dig at the borders, moving the border stones outward tile-by-tile, bypassing the need for military towers.
 - **Border Stones**: Small 3D assets that dynamically place themselves on the perimeter of owned territory and blend between adjacent tiles.
 
 [Implementation Steps]

@@ -1,7 +1,7 @@
 # Nations & Factions System Plan
 
 [Overview]
-Settlers 4 features four distinct playable nations (Romans, Vikings, Mayans, Trojans) and one NPC antagonist faction (Dark Tribe). While core systems like wood and stone gathering are shared, each nation has unique aesthetics, specialized production chains, and exclusive military units that require strict enforcement in the game logic and UI.
+Settlers 4 features four distinct playable nations (Romans, Vikings, Mayans, Trojans) and one NPC antagonist faction (Dark Tribe). While core systems like wood and stone gathering are shared, each nation has unique aesthetics, specialized production chains, and exclusive military units that require strict enforcement in the game logic and UI. All distinct names, buildings, and logic variants must perfectly reflect the constraints in `BASE.md`.
 
 [Key Mechanics]
 
