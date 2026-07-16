@@ -56,6 +56,7 @@ export class GameApp {
   public buildingPlacement!: BuildingPlacement;
 
   private mode: StartMode;
+  private playerNation: NationType = NationType.Romans;
   private onExplorerToggle!: () => void;
   private onEditorToggle!: () => void;
   private boundBuildingPlaced!: (e: Event) => void;
@@ -63,8 +64,9 @@ export class GameApp {
   /** Promise that resolves when critical assets (terrain textures) are loaded. */
   public readyPromise: Promise<void>;
 
-  constructor(canvasId: string, mode: StartMode = 'new') {
+  constructor(canvasId: string, mode: StartMode = 'new', playerNation: NationType = NationType.Romans) {
     this.mode = mode;
+    this.playerNation = playerNation;
 
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
     if (!canvas) {
@@ -240,8 +242,8 @@ export class GameApp {
   }
 
   private async loadBuildings(buildingData: Array<{ kind: string; x: number; y: number }>): Promise<void> {
-    // Default nation for initial buildings: Romans (player nation)
-    const playerNation = NationType.Romans;
+    // Default nation for initial buildings: the player's chosen nation
+    const playerNation = this.playerNation;
     for (const b of buildingData) {
       const kind: BuildingType =
         b.kind === 'castle' ? BuildingType.Castle : (BuildingType as any)[b.kind];
