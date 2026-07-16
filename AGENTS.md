@@ -279,15 +279,18 @@ The inspector provides:
 | P37 | 2026-07-16 | **GameSetup Module — Multi-Nation Foundation** — New `GameSetup` class (`src/game/GameSetup.ts`) with `PlayerSlot` interface and `GameConfig` for multi-player setup. Factory methods: `createSinglePlayer()` (Romans at center), `createTwoPlayer()` (Romans vs Vikings in opposite corners), `createThreePlayer()` (Romans/Vikings/Mayans in triangle). `createStartingArea()` carves a circular buildable grass area on the map and claims territory for a specific player. `applyToMap()` initializes all player starting areas at once. `GameApp` constructor now accepts optional `playerNation` parameter (defaults to Romans); `loadBuildings()` uses `this.playerNation` instead of hardcoded `NationType.Romans`. 12 unit tests covering configs, territory carving, multi-player application. 340/340 tests green, `tsc --noEmit` clean. |
 | P38 | 2026-07-16 | **Territory Border Blending** — Added smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries in TerritoryOverlay.ts. All 328 tests green. |
 | P39 | 2026-07-16 | **Nation Selection UI** — Implemented nation selection screen in UIManager. Added 3 unit tests. Passed nation parameter through game-start CustomEvent to GameApp. All 344 tests green. |
+| P40 | 2026-07-16 | **Building Construction Animation** — New `ConstructionAnimator` class: progressive scaffolding meshes (4 stages: poles → beams → walls → final model swap). Integrated into GameApp: `onBuildingPlaced` now triggers scaffolding, render loop drives progress-based visuals. 12 unit tests. All 356 tests green, `tsc --noEmit` clean. |
 
 ### Next Session Priorities
 1. ~~**Building Placement — Click-on-Terrain Validation**~~ ✅ Done P33
 2. ~~**Resource Transport Visualization**~~ ✅ Done P35
 3. ~~**Supply Chain Filtering**~~ ✅ Done P36
 4. ~~**Multi-Nation Game Setup**~~ ✅ Done P37 (foundation: GameSetup, player configs, starting areas, GameApp wiring)
-5. ~~**Nation Selection UI**~~ ✅ Done P39 — Added a nation picker screen between main menu and game start, passing the selected `playerNation` through the `game-start` CustomEvent to GameApp.
-6. ~~**Territory Border Blending**~~ ✅ Done P38 — Added smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries.
-7. **Building Construction Animation** — Animate building placement with progressive scaffolding mesh before the final model appears.
+5. ~~**Nation Selection UI**~~ ✅ Done P39
+6. ~~**Territory Border Blending**~~ ✅ Done P38
+7. ~~**Building Construction Animation**~~ ✅ Done P40 — Scaffolding mesh with progressive stages, final model swap on completion.
 8. **Carrier Unit Models** — Replace the simple sphere carrier dots with animated donkey/porter glTF models (CC0 from Poly Pizza).
+9. **Construction Sound Effects** — Play hammering/building sounds during construction animation phase.
+10. **Building Destruction Animation** — Animate building collapse/ruins when HP reaches 0 or destruction triggered.
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
