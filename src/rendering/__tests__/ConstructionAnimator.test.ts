@@ -5,6 +5,12 @@
  * Tests for construction scaffolding management and progress-based animation.
  */
 
+jest.mock('../../audio/SoundManager', () => ({
+  soundManager: {
+    play: jest.fn(),
+  },
+}));
+
 // Mock Babylon.js
 const mockScene = {
   meshes: [],

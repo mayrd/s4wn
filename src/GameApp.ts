@@ -37,6 +37,8 @@ import { NationType } from './game/Nation';
 import { BuildingPlacement } from './ui/BuildingPlacement';
 import { SupplyChainRenderer } from './rendering/SupplyChainRenderer';
 import { ConstructionAnimator } from './rendering/ConstructionAnimator';
+import { DestructionAnimator } from './rendering/DestructionAnimator';
+import { UnitRenderer } from './rendering/UnitRenderer';
 
 export class GameApp {
   public engine!: Engine;
@@ -49,10 +51,13 @@ export class GameApp {
   public buildingRenderer!: BuildingMesh;
   public shadowPipeline!: ShadowPipeline;
   public particleSystem!: ParticleSystem;
+  public unitRenderer!: UnitRenderer;
   public touchController!: TouchCameraController;
   public gridRenderer!: GridRenderer;
   public supplyChainRenderer!: SupplyChainRenderer;
   public constructionAnimator!: ConstructionAnimator;
+  public destructionAnimator!: DestructionAnimator;
+  public buildingMeshes: Map<number, any> = new Map();
   public ui!: UIManager;
   public mapEditor!: MapEditor;
   public buildingPlacement!: BuildingPlacement;
@@ -231,11 +236,27 @@ export class GameApp {
     // Construction animator — manages scaffolding for buildings under construction
     this.constructionAnimator = new ConstructionAnimator(this.scene);
     this.constructionAnimator.setShadowPipeline(this.shadowPipeline);
-    this.constructionAnimator.onConstructionComplete = (mesh) => {
+    this.constructionAnimator.onConstructionComplete = (mesh, building) => {
       if (mesh && this.shadowPipeline) {
         this.shadowPipeline.addShadowCaster(mesh);
       }
+      if (mesh && building) {
+        this.buildingMeshes.set(building.index, mesh);
+      }
     };
+
+    // Destruction animator
+    this.destructionAnimator = new DestructionAnimator(this.scene, this.particleSystem);
+
+    // Unit Renderer
+    this.unitRenderer = new UnitRenderer(this.scene);
+    this.unitRenderer.onMeshCreated = (mesh) => {
+      if (this.shadowPipeline) {
+        this.shadowPipeline.addShadowCaster(mesh);
+      }
+    };
+    await this.unitRenderer.init();
+
     const buildingData: Array<{ kind: string; x: number; y: number }> = [
       { kind: 'castle', x: 50, y: 50 },
     ];
@@ -262,8 +283,11 @@ export class GameApp {
         b.kind === 'castle' ? BuildingType.Castle : (BuildingType as any)[b.kind];
       const buildingMesh = await this.buildingRenderer.createBuilding(b.kind, b.x, b.y, 2, 2, 2, null, playerNation);
       if (buildingMesh) {
-        this.gameLoop.economy.tryPlaceBuilding(kind, b.x, b.y, this.map, 0);
+        const buildingObj = this.gameLoop.economy.tryPlaceBuilding(kind, b.x, b.y, this.map, 0);
         this.shadowPipeline.addShadowCaster(buildingMesh);
+        if (buildingObj) {
+          this.buildingMeshes.set(buildingObj.index, buildingMesh);
+        }
       }
     }
     console.log('🏰 Building loaded');
@@ -340,6 +364,14 @@ export class GameApp {
       if (this.constructionAnimator) {
         this.constructionAnimator.update(this.gameLoop.economy.buildings);
       }
+      // Animate building destruction
+      if (this.destructionAnimator) {
+        this.destructionAnimator.update(this.gameLoop.economy.buildings, this.buildingMeshes);
+      }
+      // Render and animate units
+      if (this.unitRenderer) {
+        this.unitRenderer.update(this.gameLoop.unitManager.units, dt);
+      }
       // Animate supply chain carrier dots
       if (this.supplyChainRenderer) {
         this.supplyChainRenderer.update(dt);
@@ -366,6 +398,17 @@ export class GameApp {
     this.shadowPipeline.dispose?.();
     this.particleSystem.dispose?.();
     this.constructionAnimator?.dispose();
+    this.destructionAnimator?.dispose();
+    this.unitRenderer?.dispose();
+    
+    // Dispose all building meshes
+    for (const [, mesh] of this.buildingMeshes) {
+      if (mesh && mesh.dispose) {
+        mesh.dispose();
+      }
+    }
+    this.buildingMeshes.clear();
+
     if (this.gridRenderer) {
       this.gridRenderer.dispose();
     }

@@ -4,7 +4,7 @@
  */
 
 jest.mock('@babylonjs/core', () => {
-  const createMesh = (name: string) => ({
+  const createMesh = (name: string): any => ({
     name,
     position: { x: 0, y: 0, z: 0 },
     rotation: { x: 0, y: 0, z: 0 },
@@ -53,7 +53,7 @@ jest.mock('@babylonjs/core', () => {
       }
     ),
     Vector3: Object.assign(
-      function (x?: number, y?: number, z?: number) {
+      function (x?: number, y?: number, z?: number): any {
         return { x: x ?? 0, y: y ?? 0, z: z ?? 0 };
       },
       { Zero: () => ({ x: 0, y: 0, z: 0 }) }
@@ -320,7 +320,7 @@ describe('SupplyChainRenderer', () => {
 
       // Carrier should now be a clone of the template, not a box
       const { MeshBuilder } = require('@babylonjs/core');
-      const boxCallsAfter = MeshBuilder.CreateBox.mock.calls.length;
+      // const boxCallsAfter = MeshBuilder.CreateBox.mock.calls.length; // REMOVED unused
 
       // Advance a frame — rotation should be set
       renderer.update(0.016);

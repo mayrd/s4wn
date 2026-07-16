@@ -22,6 +22,7 @@ import { buildingName } from '../economy/types';
 import { BuildingMesh } from './BuildingMesh';
 import { NationType } from '../game/Nation';
 import { ShadowPipeline } from './pipelines/ShadowPipeline';
+import { soundManager } from '../audio/SoundManager';
 
 interface ConstructionEntry {
   building: BuildingData;
@@ -31,6 +32,9 @@ interface ConstructionEntry {
   wallPlanks: Mesh[];
   completed: boolean;
   loadingFinal: boolean;
+  soundPlayedBeams: boolean;
+  soundPlayedWalls: boolean;
+  soundPlayedComplete: boolean;
 }
 
 /** Progress thresholds for visual stages. */
@@ -167,6 +171,9 @@ export class ConstructionAnimator {
       wallPlanks,
       completed: false,
       loadingFinal: false,
+      soundPlayedBeams: false,
+      soundPlayedWalls: false,
+      soundPlayedComplete: false,
     });
 
     // Store nation for final model creation
@@ -196,6 +203,16 @@ export class ConstructionAnimator {
       const wallPct = showWalls
         ? (progress - STAGE_WALLS) / (1.0 - STAGE_WALLS)
         : 0;
+
+      if (showBeams && !entry.soundPlayedBeams) {
+        entry.soundPlayedBeams = true;
+        soundManager.play('build', 0.5); // Wood hammering sound
+      }
+      
+      if (showWalls && !entry.soundPlayedWalls) {
+        entry.soundPlayedWalls = true;
+        soundManager.play('build', 0.5); // Wood hammering sound
+      }
 
       for (const beam of entry.horizontalBeams) {
         beam.isVisible = showBeams;
@@ -227,6 +244,11 @@ export class ConstructionAnimator {
 
     // Dispose scaffolding immediately — it's done its job
     this.disposeEntry(entry);
+
+    if (!entry.soundPlayedComplete) {
+      entry.soundPlayedComplete = true;
+      soundManager.play('complete', 0.6);
+    }
 
     try {
       const finalMesh = await this.buildingRenderer.createBuilding(

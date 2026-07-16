@@ -181,6 +181,21 @@ jest.mock('../../rendering/ConstructionAnimator', () => ({
   })),
 }));
 
+jest.mock('../../rendering/DestructionAnimator', () => ({
+  DestructionAnimator: jest.fn(() => ({
+    update: jest.fn(),
+    dispose: jest.fn(),
+  })),
+}));
+
+jest.mock('../../rendering/UnitRenderer', () => ({
+  UnitRenderer: jest.fn(() => ({
+    init: jest.fn().mockResolvedValue(true),
+    update: jest.fn(),
+    dispose: jest.fn(),
+  })),
+}));
+
 jest.mock('../../game/GameLoop', () => ({
   GameLoop: jest.fn(() => ({
     state: { isPaused: true },
@@ -244,6 +259,8 @@ describe('GameApp Initialization', () => {
     expect(app.buildingPlacement).toBeDefined();
     expect(app.supplyChainRenderer).toBeDefined();
     expect(app.constructionAnimator).toBeDefined();
+    expect(app.destructionAnimator).toBeDefined();
+    expect(app.unitRenderer).toBeDefined();
     // Dispose after all properties are initialized
     app.dispose();
   });
