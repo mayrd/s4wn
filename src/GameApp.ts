@@ -41,6 +41,8 @@ import { DestructionAnimator } from './rendering/DestructionAnimator';
 import { UnitRenderer } from './rendering/UnitRenderer';
 import { TutorialManager } from './game/TutorialManager';
 import { TutorialDialog } from './ui/TutorialDialog';
+import { Unit } from './game/Unit';
+import { UnitKind } from './game/types';
 
 export class GameApp {
   public engine!: Engine;
@@ -321,13 +323,195 @@ export class GameApp {
     if (this.mode === 'tutorial') {
       const dialog = new TutorialDialog();
       this.tutorialManager = new TutorialManager(this, this.ui, dialog);
-      // Example default steps - these should be configured per actual plan later
+      
+      let guardId: number | null = null;
+
       this.tutorialManager.setSteps([
         {
-          id: 'welcome',
-          narrative: 'Welcome to the tutorial! Try moving the camera.',
-          onStart: () => {},
-          isComplete: () => true // Replace with actual camera check
+          id: 'camera',
+          narrative: 'Welcome, Leader! Before we can build an empire, we must learn to survey our lands. Move the camera using your arrow keys or by dragging your mouse to the edges of the screen.',
+          onStart: (app, _ui) => {
+            app.gameLoop?.state && (app.gameLoop.state.isPaused = false);
+            const hud = document.getElementById('hud-container');
+            if (hud) {
+              hud.querySelectorAll('.hud-btn').forEach(btn => {
+                (btn as HTMLButtonElement).disabled = true;
+                (btn as HTMLElement).style.opacity = '0.5';
+                (btn as HTMLElement).style.pointerEvents = 'none';
+              });
+            }
+            const buildBtn = document.getElementById('btn-building-palette');
+            if (buildBtn) {
+              (buildBtn as HTMLButtonElement).disabled = true;
+              buildBtn.style.opacity = '0.5';
+              buildBtn.style.pointerEvents = 'none';
+            }
+          },
+          isComplete: (app) => {
+            const camera = app.scene?.activeCamera as any;
+            if (camera && camera.target) {
+              return Math.abs(camera.target.x - 50) > 2 || Math.abs(camera.target.z - 50) > 2;
+            }
+            return false;
+          }
+        },
+        {
+          id: 'wood',
+          narrative: "Wood is the foundation of all construction. Open the Construction Menu and place a Woodcutter's Hut near the forest, a Forest Ranger's Hut to replant trees, and a Sawmill to refine logs into planks.",
+          onStart: (app, _ui) => {
+            const buildBtn = document.getElementById('btn-building-palette');
+            if (buildBtn) {
+              (buildBtn as HTMLButtonElement).disabled = false;
+              buildBtn.style.opacity = '1';
+              buildBtn.style.pointerEvents = 'auto';
+              buildBtn.style.boxShadow = '0 0 10px 2px #fff';
+            }
+            app.buildingPlacement?.lockAllTabs();
+            app.buildingPlacement?.unlockSpecificTab('basic');
+            app.buildingPlacement?.lockAllBuildings();
+            app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Woodcutter);
+            app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Forester);
+            app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Sawmill);
+          },
+          isComplete: (app) => {
+            const econ = app.gameLoop.economy;
+            const hasWoodcutter = econ.buildings.some(b => b.kind === BuildingType.Woodcutter);
+            const hasRanger = econ.buildings.some(b => b.kind === BuildingType.Forester);
+            const hasSawmill = econ.buildings.some(b => b.kind === BuildingType.Sawmill);
+            return hasWoodcutter && hasRanger && hasSawmill;
+          }
+        },
+        {
+          id: 'food',
+          narrative: "Our future miners will require food to work. Let's build a basic food loop: a Grain Farm to grow wheat and a Bakery to bake bread.",
+          onStart: (app, _ui) => {
+            const buildBtn = document.getElementById('btn-building-palette');
+            if (buildBtn) {
+              buildBtn.style.boxShadow = '';
+            }
+            app.buildingPlacement?.lockAllTabs();
+            app.buildingPlacement?.unlockSpecificTab('food');
+            app.buildingPlacement?.lockAllBuildings();
+            app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Farm);
+            app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Bakery);
+          },
+          isComplete: (app) => {
+            const econ = app.gameLoop.economy;
+            const farm = econ.buildings.find(b => b.kind === BuildingType.Farm);
+            if (farm && farm.constructionProgress < 1.0) {
+              farm.constructionProgress = 1.0;
+              farm.isActive = true;
+            }
+            const bakery = econ.buildings.find(b => b.kind === BuildingType.Bakery);
+            if (bakery && bakery.constructionProgress < 1.0) {
+              bakery.constructionProgress = 1.0;
+              bakery.isActive = true;
+            }
+            return !!bakery && bakery.constructionProgress >= 1.0;
+          }
+        },
+        {
+          id: 'expansion',
+          narrative: 'See those red border stones? They limit our land. Build a Small Tower near the eastern border to push our frontier outward toward the mountains.',
+          onStart: (app, _ui) => {
+            app.buildingPlacement?.lockAllTabs();
+            app.buildingPlacement?.unlockSpecificTab('military');
+            app.buildingPlacement?.lockAllBuildings();
+            app.buildingPlacement?.unlockSpecificBuilding(BuildingType.GuardTower);
+          },
+          isComplete: (app) => {
+            const econ = app.gameLoop.economy;
+            const tower = econ.buildings.find(b => b.kind === BuildingType.GuardTower);
+            if (tower) {
+              if (tower.constructionProgress < 1.0) {
+                tower.constructionProgress = 1.0;
+                tower.isActive = true;
+                app.gameLoop.map.updateTerritory(1, [{ x: tower.x, y: tower.y, radius: 25 }]);
+                app.territoryOverlay?.refresh();
+              }
+              return true;
+            }
+            return false;
+          }
+        },
+        {
+          id: 'mining',
+          narrative: 'Now that the mountain is ours, we can extract resources. Build a Coal or Iron Ore Mine on the mountain, and a Smelting Works nearby to process the ore.',
+          onStart: (app, _ui) => {
+            app.buildingPlacement?.lockAllTabs();
+            app.buildingPlacement?.unlockSpecificTab('mining');
+            app.buildingPlacement?.lockAllBuildings();
+            app.buildingPlacement?.unlockSpecificBuilding(BuildingType.CoalMine);
+            app.buildingPlacement?.unlockSpecificBuilding(BuildingType.IronOreMine);
+            app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Smelter);
+          },
+          isComplete: (app) => {
+            const econ = app.gameLoop.economy;
+            const hasMine = econ.buildings.some(b => b.kind === BuildingType.CoalMine || b.kind === BuildingType.IronOreMine);
+            const smelter = econ.buildings.find(b => b.kind === BuildingType.Smelter);
+            if (hasMine && smelter) {
+              if (smelter.constructionProgress < 1.0) {
+                smelter.constructionProgress = 1.0;
+                smelter.isActive = true;
+              }
+              return true;
+            }
+            return false;
+          }
+        },
+        {
+          id: 'military',
+          narrative: 'Our scouts have located an enemy outpost in the far upper corner of the map. Build a Weaponsmith to forge swords, and a Barracks to train your first soldier.',
+          onStart: (app, _ui) => {
+            app.buildingPlacement?.lockAllTabs();
+            app.buildingPlacement?.unlockSpecificTab('military');
+            app.buildingPlacement?.lockAllBuildings();
+            app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Weaponsmith);
+            app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Barracks);
+          },
+          isComplete: (app) => {
+            const econ = app.gameLoop.economy;
+            const barracks = econ.buildings.find(b => b.kind === BuildingType.Barracks);
+            if (barracks) {
+              if (barracks.constructionProgress < 1.0) {
+                barracks.constructionProgress = 1.0;
+                barracks.isActive = true;
+                const soldier = new Unit(app.gameLoop.unitManager.nextUnitId++, UnitKind.Swordsman, 50, 50);
+                app.gameLoop.unitManager.units.push(soldier);
+              }
+              return true;
+            }
+            return false;
+          }
+        },
+        {
+          id: 'combat',
+          narrative: 'Our military is ready. Select your soldier, right-click the enemy castle in the upper corner of the map, and defeat their lone guard to claim the territory!',
+          onStart: (app, _ui) => {
+            app.buildingPlacement?.lockAllTabs();
+            app.buildingPlacement?.lockAllBuildings();
+            
+            // Set up enemy castle and enemy guard at upper-right corner
+            const mapWidth = app.gameLoop.map.width;
+            const mapHeight = app.gameLoop.map.height;
+            const enemyCastleX = mapWidth - 5;
+            const enemyCastleY = mapHeight - 5;
+            
+            const enemyCastle = app.gameLoop.economy.tryPlaceBuilding(BuildingType.Castle, enemyCastleX, enemyCastleY, app.gameLoop.map, 2);
+            if (enemyCastle) {
+              enemyCastle.constructionProgress = 1.0;
+              enemyCastle.isActive = true;
+            }
+            
+            const enemyGuard = new Unit(app.gameLoop.unitManager.nextUnitId++, UnitKind.Swordsman, enemyCastleX - 1, enemyCastleY - 1);
+            app.gameLoop.unitManager.units.push(enemyGuard);
+            guardId = enemyGuard.id;
+          },
+          isComplete: (app) => {
+            if (guardId === null) return false;
+            const guard = app.gameLoop.unitManager.units.find(u => u.id === guardId);
+            return !guard || guard.hp <= 0;
+          }
         }
       ]);
       this.tutorialManager.start();

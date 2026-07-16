@@ -281,7 +281,8 @@ The inspector provides:
 | P39 | 2026-07-16 | **Nation Selection UI** — Implemented nation selection screen in UIManager. Added 3 unit tests. Passed nation parameter through game-start CustomEvent to GameApp. All 344 tests green. |
 | P40 | 2026-07-16 | **Building Construction Animation** — New `ConstructionAnimator` class: progressive scaffolding meshes (4 stages: poles → beams → walls → final model swap). Integrated into GameApp: `onBuildingPlaced` now triggers scaffolding, render loop drives progress-based visuals. 12 unit tests. All 356 tests green, `tsc --noEmit` clean. |
 | P41 | 2026-07-16 | **Carrier Unit Models** — Replaced simple sphere carrier dots in SupplyChainRenderer with CC0 donkey.glb model from Poly Pizza. Donkey GLB loaded once as template in constructor; clones used per-carrier with direction-facing rotation (Math.atan2 in update loop). Procedural box fallback with resource-color material when GLB unavailable. Updated tests: CreateSphere→CreateBox, added donkey load/guard tests, updated GameApp mock. 358 tests green (31 suites). |
-
+| P42 | 2026-07-16 | **Interactive Tutorial Step Integration** — Implemented the 7 specific, state-driven, interactive tutorial steps in `GameApp.ts` as specified by the tutorial scenario config (Camera Basics, Wood Economy, Basic Food Economy, Territorial Expansion, Mining & Metallurgy, Military Recruitment, Combat & Victory Condition). Fully locked down and unlocked UI controls / menus programmatically. Successfully passed type checks and all 364 tests. |
+ 
 ### Next Session Priorities
 1. ~~**Building Placement — Click-on-Terrain Validation**~~ ✅ Done P33
 2. ~~**Resource Transport Visualization**~~ ✅ Done P35
