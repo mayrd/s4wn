@@ -128,6 +128,8 @@ export class GameApp {
       this.map,
       0, // ownerId = player 0
       this.engine.getRenderingCanvas() as HTMLCanvasElement,
+      undefined,
+      this.playerNation
     );
     this.boundBuildingPlaced = this.onBuildingPlaced.bind(this);
     window.addEventListener('building-placed', this.boundBuildingPlaced);

@@ -8,7 +8,7 @@
  * track the tile under the cursor for an external 3D ghost mesh.
  */
 
-import { BuildingType, buildingName, buildCost, resourceName, VALID_BUILDING_DISCRIMINANTS } from '../economy/types';
+import { BuildingType, buildingName, buildCost, resourceName, VALID_BUILDING_DISCRIMINANTS, nationForBuilding } from '../economy/types';
 import { Map as GameMap } from '../game/Map';
 import { Economy } from '../game/Economy';
 import { Scene, MeshBuilder, StandardMaterial, Color3, Mesh } from '@babylonjs/core';
@@ -92,6 +92,7 @@ export class BuildingPlacement {
   private map: GameMap;
   private ownerId: number;
   private canvas: HTMLCanvasElement;
+  private playerNation: number;
 
   private panel: HTMLElement;
   private toggleBtn: HTMLElement;
@@ -125,13 +126,15 @@ export class BuildingPlacement {
     map: GameMap,
     ownerId: number,
     canvas: HTMLCanvasElement,
-    scene?: Scene
+    scene?: Scene,
+    playerNation: number = 0
   ) {
     this.economy = economy;
     this.map = map;
     this.ownerId = ownerId;
     this.canvas = canvas;
     this.scene = scene ?? null;
+    this.playerNation = playerNation;
 
     this.panel = this.createPanel();
     this.toggleBtn = this.createToggleButton();
@@ -283,7 +286,12 @@ export class BuildingPlacement {
     const cat = categories.find(c => c.id === categoryId);
     if (!cat) return;
 
-    contentEl.innerHTML = cat.buildings.map(kind => {
+    const validBuildings = cat.buildings.filter(kind => {
+      const n = nationForBuilding(kind);
+      return n === null || n === this.playerNation;
+    });
+
+    contentEl.innerHTML = validBuildings.map(kind => {
       const cost = buildCost(kind);
       const name = buildingName(kind);
       const affordable = this.canAffordBuilding(kind);

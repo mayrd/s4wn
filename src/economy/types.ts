@@ -138,9 +138,10 @@ export enum BuildingType {
   LargeResidence = 84,
   SmallTemple = 85,
   LargeTemple = 86,
+  SheepRanch = 87,
 }
 
-export const BUILDING_COUNT = 87;
+export const BUILDING_COUNT = 88;
 
 // ── Valid Building Discriminants ────────────────────────────────────
 export const VALID_BUILDING_DISCRIMINANTS: number[] = [
@@ -148,7 +149,7 @@ export const VALID_BUILDING_DISCRIMINANTS: number[] = [
   18, 19, 20, 21, 22, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 39,
   40, 41, 42, 43, 44, 45, 46, 47, 50, 51, 52, 53, 54, 55, 56,
   57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
-  72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86,
+  72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87,
 ];
 
 // ── Building Names (indexed by discriminant) ───────────────────────
@@ -179,7 +180,7 @@ export const BUILDING_NAMES: string[] = [
   "Trojan Farm", "Marketplace", "Landing Dock", "Vineyard",
   "Storage Yard",
   "Small Residence", "Medium Residence", "Large Residence",
-  "Small Temple", "Large Temple",
+  "Small Temple", "Large Temple", "Sheep Ranch",
 ];
 
 // ── Utility Functions ──────────────────────────────────────────────
@@ -348,6 +349,7 @@ export function buildingOutputs(kind: BuildingType): ProdIO[] {
     case BuildingType.Forester: return [{ resource: ResourceType.Wood, amount: 1 }];
     case BuildingType.GoatRanch:
     case BuildingType.PigRanch:
+    case BuildingType.SheepRanch:
       return [{ resource: ResourceType.Meat, amount: 2 }];
     case BuildingType.GooseRanch:
     case BuildingType.DonkeyRanch:
@@ -421,6 +423,7 @@ export function productionInterval(kind: BuildingType): number {
     case BuildingType.GoatRanch:
     case BuildingType.PigRanch:
     case BuildingType.GooseRanch:
+    case BuildingType.SheepRanch:
     case BuildingType.DonkeyRanch:
       return 15;
     case BuildingType.TrojanFarm: return 15;
@@ -629,10 +632,10 @@ export function maxSettlers(kind: BuildingType): number {
 /** If building is nation-locked, return the required nation (0–4) */
 export function nationForBuilding(kind: BuildingType): number | null {
   const n = kind as number;
-  if ((n >= 31 && n <= 34)) return 0; // Roman
-  if ((n >= 35 && n <= 39)) return 1; // Viking
-  if ((n >= 40 && n <= 46)) return 2; // Maya
-  if (n === 47 || (n >= 50 && n <= 53)) return 3; // Trojan
+  if ((n >= 31 && n <= 34) || n === BuildingType.SheepRanch || n === BuildingType.Vineyard) return 0; // Roman
+  if ((n >= 35 && n <= 39) || n === BuildingType.PigRanch || n === BuildingType.Apiary || n === BuildingType.MeadMaker) return 1; // Viking
+  if ((n >= 40 && n <= 46) || n === BuildingType.GoatRanch || n === BuildingType.AgaveFarm || n === BuildingType.Distillery || n === BuildingType.PowderMill) return 2; // Maya
+  if (n === 47 || (n >= 50 && n <= 53) || n === BuildingType.GooseRanch || n === BuildingType.TrojanFarm || n === BuildingType.OilPress || n === BuildingType.WeaponFoundry) return 3; // Trojan
   if ((n >= 54 && n <= 60)) return 4; // Dark Tribe
   return null;
 }
