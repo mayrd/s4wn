@@ -291,8 +291,8 @@ The inspector provides:
 6. ~~**Territory Border Blending**~~ ✅ Done P38
 7. ~~**Building Construction Animation**~~ ✅ Done P40 — Scaffolding mesh with progressive stages, final model swap on completion.
 8. ~~**Carrier Unit Models**~~ ✅ Done P41 — Donkey GLB model replaces carrier spheres, direction-facing rotation
-9. **Construction Sound Effects** — Play hammering/building sounds during construction animation phase. Trigger sounds from ConstructionAnimator at each scaffolding stage transition.
-10. **Building Destruction Animation** — Animate building collapse/ruins when HP reaches 0 or destruction triggered. Particle burst + shrinking/falling mesh + debris.
-11. **Unit Animation States** — Implement idle/walk/attack/death animation states for units. Could reuse ConstructionAnimator pattern for state transitions.
+9. ~~**Construction Sound Effects**~~ ✅ Done P42 — Play hammering/building sounds during construction animation phase.
+10. ~~**Building Destruction Animation**~~ ✅ Done P42 — Animate building collapse/ruins when HP reaches 0 or destruction triggered.
+11. ~~**Unit Animation States**~~ ✅ Done P42 — Implement idle/walk/attack/death procedural animation states for units.
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*

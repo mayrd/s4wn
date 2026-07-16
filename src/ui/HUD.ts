@@ -129,6 +129,32 @@ export class HUD {
     document.head.appendChild(style);
   }
 
+  /* ── Tutorial Hooks ───────────────────────────────────────── */
+
+  lockAllMenus(): void {
+    this.container.querySelectorAll('.hud-btn').forEach(btn => {
+      (btn as HTMLButtonElement).disabled = true;
+      (btn as HTMLElement).style.opacity = '0.5';
+      (btn as HTMLElement).style.pointerEvents = 'none';
+    });
+  }
+
+  unlockSpecificMenu(menuId: string): void {
+    const btn = document.getElementById(menuId) as HTMLButtonElement;
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+    }
+  }
+
+  highlightButton(buttonId: string): void {
+    const btn = document.getElementById(buttonId) as HTMLElement;
+    if (btn) {
+      btn.style.boxShadow = '0 0 10px 2px #fff';
+    }
+  }
+
   /* ── Toast ───────────────────────────────────────────────── */
 
   private showToast(message: string): void {

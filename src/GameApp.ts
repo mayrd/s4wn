@@ -39,6 +39,8 @@ import { SupplyChainRenderer } from './rendering/SupplyChainRenderer';
 import { ConstructionAnimator } from './rendering/ConstructionAnimator';
 import { DestructionAnimator } from './rendering/DestructionAnimator';
 import { UnitRenderer } from './rendering/UnitRenderer';
+import { TutorialManager } from './game/TutorialManager';
+import { TutorialDialog } from './ui/TutorialDialog';
 
 export class GameApp {
   public engine!: Engine;
@@ -61,6 +63,7 @@ export class GameApp {
   public ui!: UIManager;
   public mapEditor!: MapEditor;
   public buildingPlacement!: BuildingPlacement;
+  public tutorialManager?: TutorialManager;
 
   private mode: StartMode;
   private playerNation: NationType = NationType.Romans;
@@ -314,6 +317,21 @@ export class GameApp {
     this.gameLoop.state.isPaused = false;
     new HUD(this.gameLoop);
     const debugPanel = new DebugPanel(document, this.engine, this.gameLoop, this.scene);
+
+    if (this.mode === 'tutorial') {
+      const dialog = new TutorialDialog();
+      this.tutorialManager = new TutorialManager(this, this.ui, dialog);
+      // Example default steps - these should be configured per actual plan later
+      this.tutorialManager.setSteps([
+        {
+          id: 'welcome',
+          narrative: 'Welcome to the tutorial! Try moving the camera.',
+          onStart: () => {},
+          isComplete: () => true // Replace with actual camera check
+        }
+      ]);
+      this.tutorialManager.start();
+    }
     // Wire renderers to debug panel for toggling
     debugPanel.setGridRenderer(this.gridRenderer);
     debugPanel.setTerrainRenderer(this.terrainRenderer);
@@ -382,6 +400,9 @@ export class GameApp {
           const links = this.supplyChainRenderer.computeLinks(this.gameLoop.economy);
           this.supplyChainRenderer.refresh(links);
         }
+      }
+      if (this.tutorialManager) {
+        this.tutorialManager.update();
       }
       this.scene.render();
     });

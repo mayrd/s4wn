@@ -175,6 +175,44 @@ export class BuildingPlacement {
     return true;
   }
 
+  // ── Tutorial Hooks ─────────────────────────────────────────────
+
+  lockAllTabs(): void {
+    const tabs = this.panel.querySelectorAll('.bp-category-tab');
+    tabs.forEach(tab => {
+      (tab as HTMLButtonElement).disabled = true;
+      (tab as HTMLElement).style.opacity = '0.5';
+      (tab as HTMLElement).style.pointerEvents = 'none';
+    });
+  }
+
+  unlockSpecificTab(categoryId: string): void {
+    const tab = this.panel.querySelector(`.bp-category-tab[data-category="${categoryId}"]`) as HTMLButtonElement;
+    if (tab) {
+      tab.disabled = false;
+      tab.style.opacity = '1';
+      tab.style.pointerEvents = 'auto';
+    }
+  }
+
+  lockAllBuildings(): void {
+    const btns = this.panel.querySelectorAll('.bp-building-btn');
+    btns.forEach(btn => {
+      (btn as HTMLButtonElement).disabled = true;
+      (btn as HTMLElement).style.opacity = '0.5';
+      (btn as HTMLElement).style.pointerEvents = 'none';
+    });
+  }
+
+  unlockSpecificBuilding(kind: BuildingType): void {
+    const btn = this.panel.querySelector(`.bp-building-btn[data-kind="${kind}"]`) as HTMLButtonElement;
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+    }
+  }
+
   // ── Toggle ─────────────────────────────────────────────────────
 
   toggle(): void {
