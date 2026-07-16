@@ -165,6 +165,7 @@ jest.mock('../../rendering/SupplyChainRenderer', () => ({
     computeLinks: jest.fn(() => []),
     refresh: jest.fn(),
     update: jest.fn(),
+    loadCarrierModel: jest.fn(() => Promise.resolve()),
     visible: true,
     dispose: jest.fn(),
   })),

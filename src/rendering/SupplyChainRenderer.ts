@@ -19,7 +19,10 @@ import {
   Color3,
   Vector3,
   Scene,
+  SceneLoader,
+  AbstractMesh,
 } from '@babylonjs/core';
+import '@babylonjs/loaders';
 import { buildingInputs, buildingOutputs, resourceName } from '../economy/types';
 import { Economy } from '../game/Economy';
 
@@ -75,9 +78,32 @@ export class SupplyChainRenderer {
   private carrierProgress: number[] = [];
   private _visible: boolean = true;
   private disabledResources: Set<number> = new Set();
+  /** Template mesh cloned for each carrier. Loaded from donkey.glb; null if not loaded. */
+  private carrierTemplate: AbstractMesh | null = null;
 
   constructor(scene: Scene) {
     this.scene = scene;
+    // Kick off async model load — non-blocking
+    this.loadCarrierModel();
+  }
+
+  /** Asynchronously load the donkey carrier model. Safe to call multiple times. */
+  async loadCarrierModel(): Promise<void> {
+    if (this.carrierTemplate) return; // Already loaded
+    try {
+      const result = await SceneLoader.ImportMeshAsync(
+        '', '/models/poly_pizza/', 'donkey.glb', this.scene
+      );
+      if (result.meshes.length > 0) {
+        this.carrierTemplate = result.meshes[0];
+        this.carrierTemplate.isVisible = false; // Hide template; clones are visible
+        this.carrierTemplate.isPickable = false;
+        // Scale model down to carrier size (~0.15 tile width)
+        this.carrierTemplate.scaling.setAll(0.15);
+      }
+    } catch {
+      // GLB load failed — carrierTemplate stays null; fall back to procedural box
+    }
   }
 
   get visible(): boolean {
@@ -157,7 +183,7 @@ export class SupplyChainRenderer {
     return links;
   }
 
-  /** Build line meshes and carrier dots for the given supply links. */
+  /** Build line meshes and carrier models for the given supply links. */
   refresh(links: SupplyLink[]): void {
     this.dispose();
 
@@ -172,21 +198,27 @@ export class SupplyChainRenderer {
       line.isVisible = this._visible;
       this.lineMeshes.push(line);
 
-      // Carrier dot mesh
-      const carrier = MeshBuilder.CreateSphere(
-        link.resourceName + '_carrier',
-        { diameter: CARRIER_RADIUS * 2, segments: 4 },
-        this.scene,
-      );
+      // Carrier model — prefer donkey GLB clone, fall back to procedural box
+      let carrier: Mesh;
+      if (this.carrierTemplate) {
+        carrier = this.carrierTemplate.clone(
+          link.resourceName + '_carrier', null
+        ) as Mesh;
+      } else {
+        // Procedural fallback: small box with resource color
+        carrier = MeshBuilder.CreateBox(
+          link.resourceName + '_carrier',
+          { size: CARRIER_RADIUS * 3 },
+          this.scene,
+        );
+        const mat = new StandardMaterial(link.resourceName + '_mat', this.scene);
+        mat.diffuseColor = new Color3(link.color[0], link.color[1], link.color[2]);
+        mat.emissiveColor = new Color3(link.color[0] * 0.4, link.color[1] * 0.4, link.color[2] * 0.4);
+        mat.specularColor = Color3.Black();
+        carrier.material = mat;
+      }
       carrier.isVisible = this._visible;
       carrier.isPickable = false;
-
-      // Material with the same color
-      const mat = new StandardMaterial(link.resourceName + '_mat', this.scene);
-      mat.diffuseColor = new Color3(link.color[0], link.color[1], link.color[2]);
-      mat.emissiveColor = new Color3(link.color[0] * 0.4, link.color[1] * 0.4, link.color[2] * 0.4);
-      mat.specularColor = Color3.Black();
-      carrier.material = mat;
 
       this.carrierMeshes.push(carrier);
       this.carrierPaths.push([link.fromX + 0.5, link.fromY + 0.5, link.toX + 0.5, link.toY + 0.5]);
@@ -194,7 +226,7 @@ export class SupplyChainRenderer {
     }
   }
 
-  /** Animate carrier dots along their paths. Call each frame with dt in seconds. */
+  /** Animate carrier models along their paths. Call each frame with dt in seconds. */
   update(dt: number): void {
     if (!this._visible) return;
 
@@ -208,6 +240,14 @@ export class SupplyChainRenderer {
       const x = sx + (ex - sx) * t;
       const z = sy + (ey - sy) * t;
       this.carrierMeshes[i].position = new Vector3(x, LINE_Y_OFFSET + 0.1, z);
+
+      // Rotate carrier to face travel direction (only for donkey model clones)
+      if (this.carrierTemplate) {
+        const dx = ex - sx;
+        const dz = ey - sy;
+        const angle = Math.atan2(dx, dz); // facing in XZ plane
+        this.carrierMeshes[i].rotation.y = angle;
+      }
     }
   }
 
@@ -215,12 +255,19 @@ export class SupplyChainRenderer {
   dispose(): void {
     for (const m of this.lineMeshes) m.dispose();
     for (const m of this.carrierMeshes) {
-      if (m.material) (m.material as StandardMaterial).dispose();
+      // Only dispose materials we created (procedural fallback); cloned meshes reuse template materials
+      if (m.material && !this.carrierTemplate) {
+        (m.material as StandardMaterial).dispose();
+      }
       m.dispose();
+    }
+    if (this.carrierTemplate) {
+      this.carrierTemplate.dispose();
     }
     this.lineMeshes = [];
     this.carrierMeshes = [];
     this.carrierPaths = [];
     this.carrierProgress = [];
+    this.carrierTemplate = null;
   }
 }
