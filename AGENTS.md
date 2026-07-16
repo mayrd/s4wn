@@ -275,7 +275,26 @@ The inspector provides:
 | P34 | 2026-07-15 | **Fix UI Tests Flakiness** — Fixed visual mismatch error where Playwright threw "Timeout 5000ms exceeded" while waiting for HUD element to become stable. Modified HUD update loop to only write `textContent` when values actually change, avoiding constant DOM mutations when the game is paused. Mocked `getStats` in `visual.spec.ts` for deterministic time rendering. Relaxed pixel matching thresholds globally in `playwright.config.ts` (`maxDiffPixelRatio: 0.05`, `threshold: 0.2`) to better accommodate WebGL anti-aliasing variations on CI runners. Re-generated base snapshots. |
 | P35 | 2026-07-16 | **Supply Chain Renderer — Resource Transport Visualization** — New `SupplyChainRenderer` class computes producer→consumer links from Economy, renders colored `LinesMesh` connections with 15 resource-type→color mappings (wood brown, stone gray, water blue, etc.) and animated carrier dot spheres that travel along each path. Integrated into `GameApp`: created in `initRendering()`, animated in render loop, periodically recomputed (every 5s), cleaned up in `dispose()`. `DebugPanel` gains a 'Supply' toggle button to show/hide supply chain visualization. 15 unit tests covering link computation, mesh creation, visibility, and animation. Fixed TS6133 unused import errors. All 321 tests green. |
 | P36 | 2026-07-16 | **Supply Chain Filtering** — Added per-resource filtering to `SupplyChainRenderer` and `DebugPanel`. The debug panel now shows a row of colored buttons corresponding to each resource type, allowing players to toggle the visibility of individual supply chains. `computeLinks` now checks `isResourceVisible` before mapping producer-consumer paths. Added tests for filtering. All 324 tests green. |
+| P37 | 2026-07-16 | **Territory Border Blending** — Added smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries in TerritoryOverlay.ts. All 328 tests green. |
+>>>>>>> 205e374 (Implement smooth territory borders)
+
+### Next Session Priorities
+1. ~~**Building Placement — Click-on-Terrain Validation**~~ ✅ Done P33
+2. ~~**Resource Transport Visualization**~~ ✅ Done P35
+3. ~~**Supply Chain Filtering**~~ ✅ Done P36
+<<<<<<< HEAD
+4. ~~**Multi-Nation Game Setup**~~ ✅ Done P37 (foundation: GameSetup, player configs, starting areas, GameApp wiring)
+5. **Nation Selection UI** — Add a nation picker screen between main menu and game start, passing the selected `playerNation` through the `game-start` CustomEvent to GameApp.
+6. **Territory Border Blending** — Add smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries.
+7. **Building Construction Animation** — Animate building placement with progressive scaffolding mesh before the final model appears.
+8. **Carrier Unit Models** — Replace the simple sphere carrier dots with animated donkey/porter glTF models (CC0 from Poly Pizza).
+4. **Multi-Nation Game Setup** — Implement nation selection and multi-player map initialization with separate starting areas.
+5. ~~**Territory Border Blending**~~ ✅ Done P37 — Added smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries.
+6. **Building Construction Animation** — Animate building placement with progressive scaffolding mesh before the final model appears.
+7. **Carrier Unit Models** — Replace the simple sphere carrier dots with animated donkey/porter glTF models (CC0 from Poly Pizza).
+>>>>>>> 205e374 (Implement smooth territory borders)
 | P37 | 2026-07-16 | **GameSetup Module — Multi-Nation Foundation** — New `GameSetup` class (`src/game/GameSetup.ts`) with `PlayerSlot` interface and `GameConfig` for multi-player setup. Factory methods: `createSinglePlayer()` (Romans at center), `createTwoPlayer()` (Romans vs Vikings in opposite corners), `createThreePlayer()` (Romans/Vikings/Mayans in triangle). `createStartingArea()` carves a circular buildable grass area on the map and claims territory for a specific player. `applyToMap()` initializes all player starting areas at once. `GameApp` constructor now accepts optional `playerNation` parameter (defaults to Romans); `loadBuildings()` uses `this.playerNation` instead of hardcoded `NationType.Romans`. 12 unit tests covering configs, territory carving, multi-player application. 340/340 tests green, `tsc --noEmit` clean. |
+| P38 | 2026-07-16 | **Territory Border Blending** — Added smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries in TerritoryOverlay.ts. All 328 tests green. |
 
 ### Next Session Priorities
 1. ~~**Building Placement — Click-on-Terrain Validation**~~ ✅ Done P33
@@ -283,8 +302,28 @@ The inspector provides:
 3. ~~**Supply Chain Filtering**~~ ✅ Done P36
 4. ~~**Multi-Nation Game Setup**~~ ✅ Done P37 (foundation: GameSetup, player configs, starting areas, GameApp wiring)
 5. **Nation Selection UI** — Add a nation picker screen between main menu and game start, passing the selected `playerNation` through the `game-start` CustomEvent to GameApp.
+6. ~~**Territory Border Blending**~~ ✅ Done P38 — Added smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries.
+7. **Building Construction Animation** — Animate building placement with progressive scaffolding mesh before the final model appears.
+8. **Carrier Unit Models** — Replace the simple sphere carrier dots with animated donkey/porter glTF models (CC0 from Poly Pizza).
+=======
+| P37 | 2026-07-16 | **Territory Border Blending** — Added smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries in TerritoryOverlay.ts. All 328 tests green. |
+>>>>>>> 205e374 (Implement smooth territory borders)
+
+### Next Session Priorities
+1. ~~**Building Placement — Click-on-Terrain Validation**~~ ✅ Done P33
+2. ~~**Resource Transport Visualization**~~ ✅ Done P35
+3. ~~**Supply Chain Filtering**~~ ✅ Done P36
+<<<<<<< HEAD
+4. ~~**Multi-Nation Game Setup**~~ ✅ Done P37 (foundation: GameSetup, player configs, starting areas, GameApp wiring)
+5. **Nation Selection UI** — Add a nation picker screen between main menu and game start, passing the selected `playerNation` through the `game-start` CustomEvent to GameApp.
 6. **Territory Border Blending** — Add smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries.
 7. **Building Construction Animation** — Animate building placement with progressive scaffolding mesh before the final model appears.
 8. **Carrier Unit Models** — Replace the simple sphere carrier dots with animated donkey/porter glTF models (CC0 from Poly Pizza).
+=======
+4. **Multi-Nation Game Setup** — Implement nation selection and multi-player map initialization with separate starting areas.
+5. ~~**Territory Border Blending**~~ ✅ Done P37 — Added smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries.
+6. **Building Construction Animation** — Animate building placement with progressive scaffolding mesh before the final model appears.
+7. **Carrier Unit Models** — Replace the simple sphere carrier dots with animated donkey/porter glTF models (CC0 from Poly Pizza).
+>>>>>>> 205e374 (Implement smooth territory borders)
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*

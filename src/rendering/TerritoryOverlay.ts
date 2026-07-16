@@ -74,6 +74,19 @@ export class TerritoryOverlay {
             const c = parseNationColor(info.color);
             r = c.r; g = c.g; b = c.b; a = TERRITORY_ALPHA;
           }
+        } else {
+          // Find adjacent territory to blend smoothly instead of fading to black
+          for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+            const neighbor = this.map.get(x + dx, y + dy);
+            if (neighbor && neighbor.territory > 0) {
+              const info = NATION_INFO[neighbor.territory - 1];
+              if (info) {
+                const c = parseNationColor(info.color);
+                r = c.r; g = c.g; b = c.b; a = 0; // Transparent, but color matches neighbor
+                break; // Just pick the first adjacent nation
+              }
+            }
+          }
         }
         colors.push(r, g, b, a);
       }
@@ -148,6 +161,19 @@ export class TerritoryOverlay {
           if (info) {
             const c = parseNationColor(info.color);
             r = c.r; g = c.g; b = c.b; a = TERRITORY_ALPHA;
+          }
+        } else {
+          // Find adjacent territory to blend smoothly instead of fading to black
+          for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+            const neighbor = this.map.get(x + dx, y + dy);
+            if (neighbor && neighbor.territory > 0) {
+              const info = NATION_INFO[neighbor.territory - 1];
+              if (info) {
+                const c = parseNationColor(info.color);
+                r = c.r; g = c.g; b = c.b; a = 0; // Transparent, but color matches neighbor
+                break; // Just pick the first adjacent nation
+              }
+            }
           }
         }
         newColors.push(r, g, b, a);
