@@ -21,8 +21,10 @@ export class UIManager {
   private overlay: HTMLElement;
   private splashScreen!: HTMLElement;
   private mainMenu!: HTMLElement;
+  private nationSelection!: HTMLElement;
   public objectExplorer: ObjectExplorer;
   private gameLoop: GameLoop | null = null;
+  private pendingMode: StartMode = 'new';
   /** Set when the user opens the Map Editor from the menu before a game is running. */
   private pendingEditorOpen = false;
 
@@ -59,6 +61,7 @@ export class UIManager {
   private init(): void {
     this.createSplashScreen();
     this.createMainMenu();
+    this.createNationSelection();
     this.showSplashScreen();
     // Fade in from black once the splash screen is visible.
     requestAnimationFrame(() => {
@@ -137,12 +140,12 @@ export class UIManager {
     this.overlay.appendChild(this.mainMenu);
 
     // Attach event listeners
-    this.mainMenu.querySelector('#btn-new-game')?.addEventListener('click', () => this.startGame('new'));
+    this.mainMenu.querySelector('#btn-new-game')?.addEventListener('click', () => this.showNationSelection('new'));
     this.mainMenu.querySelector('#btn-tutorial')?.addEventListener('click', () => this.startGame('tutorial'));
     this.mainMenu.querySelector('#btn-load-game')?.addEventListener('click', () => this.loadGame());
     this.mainMenu.querySelector('#btn-explorer')?.addEventListener('click', () => this.toggleExplorer());
     this.mainMenu.querySelector('#btn-editor')?.addEventListener('click', () => this.toggleEditor());
-    this.mainMenu.querySelector('#btn-multiplayer')?.addEventListener('click', () => this.startGame('new'));
+    this.mainMenu.querySelector('#btn-multiplayer')?.addEventListener('click', () => this.showNationSelection('new'));
 
     // Disable load button if no save exists
     if (!SaveManager.hasSave()) {
@@ -174,9 +177,60 @@ export class UIManager {
     this.mainMenu.classList.add('active');
   }
 
-  public startGame(mode: StartMode = 'new'): void {
+  private createNationSelection(): void {
+    this.nationSelection = document.createElement('div');
+    this.nationSelection.className = 'ui-screen main-menu-screen';
+    
+    // Import manually or we can hardcode for UI script simplicity
+    // However, it's better to construct HTML directly since UIManager avoids heavy imports.
+    const nations = [
+      { id: 0, name: "Romans", emoji: "🏛️" },
+      { id: 1, name: "Vikings", emoji: "⚔️" },
+      { id: 2, name: "Mayans", emoji: "🌿" },
+      { id: 3, name: "Trojans", emoji: "🐴" },
+      { id: 4, name: "Dark Tribe", emoji: "🌑" }
+    ];
+
+    let nationButtons = '';
+    for (const n of nations) {
+      nationButtons += `<button class="menu-button" data-nation="${n.id}">${n.emoji} ${n.name}</button>`;
+    }
+
+    this.nationSelection.innerHTML = `
+      <div class="main-menu-container">
+        <h2 class="menu-title">Select Your Nation</h2>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          ${nationButtons}
+        </div>
+        <button class="menu-button secondary" id="btn-nation-back" style="margin-top:20px;">Back</button>
+      </div>
+    `;
+    this.overlay.appendChild(this.nationSelection);
+
+    const buttons = this.nationSelection.querySelectorAll('.menu-button[data-nation]');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const nationStr = (e.currentTarget as HTMLElement).getAttribute('data-nation');
+        if (nationStr !== null) {
+          this.startGame(this.pendingMode, parseInt(nationStr, 10));
+        }
+      });
+    });
+
+    this.nationSelection.querySelector('#btn-nation-back')?.addEventListener('click', () => {
+      this.showMainMenu();
+    });
+  }
+
+  public showNationSelection(mode: StartMode = 'new'): void {
+    this.pendingMode = mode;
     this.hideAll();
-    window.dispatchEvent(new CustomEvent('game-start', { detail: { mode } }));
+    this.nationSelection.classList.add('active');
+  }
+
+  public startGame(mode: StartMode = 'new', nation?: number): void {
+    this.hideAll();
+    window.dispatchEvent(new CustomEvent('game-start', { detail: { mode, nation } }));
   }
 
   public loadGame(): void {
@@ -222,6 +276,9 @@ export class UIManager {
   public hideAll(): void {
     this.splashScreen.classList.remove('active');
     this.mainMenu.classList.remove('active');
+    if (this.nationSelection) {
+      this.nationSelection.classList.remove('active');
+    }
   }
 
   /**

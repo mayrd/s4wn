@@ -34,7 +34,9 @@ let app: GameAppType | null = null;
 
 // ── Lazily start the heavy game only when requested ──────────────────
 window.addEventListener('game-start', async (event: Event) => {
-  const mode = (event as CustomEvent).detail?.mode ?? 'new';
+  const detail = (event as CustomEvent).detail || {};
+  const mode = detail.mode ?? 'new';
+  const nation = detail.nation;
 
   // Bridge the (potentially heavy) engine initialization with the splash screen.
   menu.showLoading(mode === 'load' ? 'Restoring your world...' : 'Loading the world...');
@@ -44,7 +46,7 @@ window.addEventListener('game-start', async (event: Event) => {
   window.requestAnimationFrame(async () => {
     try {
       const { GameApp } = await import('./GameApp');
-      app = new GameApp('renderCanvas', mode);
+      app = new GameApp('renderCanvas', mode, nation);
       // Wait for critical assets (terrain textures) to load before hiding loading screen
       // This prevents the canvas from being unresponsive for a few seconds while textures load
       await app.readyPromise;

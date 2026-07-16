@@ -186,6 +186,30 @@ describe('TerritoryOverlay', () => {
     expect(a).toBeCloseTo(0.30, 2);
   });
 
+  it('neutral tiles adjacent to owned tiles blend smoothly', () => {
+    // Romans at (1,1), meaning (1,0) is neutral but adjacent to Romans
+    map = makeMap(withTerritory(10, 10, { 1: { 1: 1 } }));
+    overlay = new TerritoryOverlay({} as any, map);
+    overlay.createOverlay(10, 10);
+    const mesh = overlay.getMesh()!;
+    const colorCall = (mesh.setVerticesData as jest.Mock).mock.calls[0];
+    const colors = colorCall[1] as number[];
+
+    // Neutral tile at (1,0) should adopt Roman RGB with 0 alpha
+    const neutralIdx = (0 * 10 + 1) * 4;
+    expect(colors[neutralIdx]).toBeCloseTo(0.8, 1);     // R (Roman)
+    expect(colors[neutralIdx + 1]).toBeCloseTo(0.2, 1); // G
+    expect(colors[neutralIdx + 2]).toBeCloseTo(0.2, 1); // B
+    expect(colors[neutralIdx + 3]).toBe(0);             // Alpha = 0
+
+    // Distant neutral tile at (9,9) should still be black-transparent
+    const distantIdx = (9 * 10 + 9) * 4;
+    expect(colors[distantIdx]).toBe(0);
+    expect(colors[distantIdx + 1]).toBe(0);
+    expect(colors[distantIdx + 2]).toBe(0);
+    expect(colors[distantIdx + 3]).toBe(0);
+  });
+
   it('multiple nations get correct per-tile colors', () => {
     // Romans at (0,0), Vikings at (3,3)
     map = makeMap(withTerritory(10, 10, { 0: { 0: 1 }, 3: { 3: 2 } }));
