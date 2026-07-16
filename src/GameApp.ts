@@ -32,10 +32,11 @@ import { MapEditor } from './ui/editor/MapEditor';
 import { soundManager } from './audio/SoundManager';
 import { TouchCameraController } from './input/TouchCameraController';
 import { BuildingType } from './economy/types';
-import { buildingName } from './economy/types';
+import { BuildingData } from './game/Economy';
 import { NationType } from './game/Nation';
 import { BuildingPlacement } from './ui/BuildingPlacement';
 import { SupplyChainRenderer } from './rendering/SupplyChainRenderer';
+import { ConstructionAnimator } from './rendering/ConstructionAnimator';
 
 export class GameApp {
   public engine!: Engine;
@@ -51,6 +52,7 @@ export class GameApp {
   public touchController!: TouchCameraController;
   public gridRenderer!: GridRenderer;
   public supplyChainRenderer!: SupplyChainRenderer;
+  public constructionAnimator!: ConstructionAnimator;
   public ui!: UIManager;
   public mapEditor!: MapEditor;
   public buildingPlacement!: BuildingPlacement;
@@ -223,6 +225,15 @@ export class GameApp {
 
     // Step 5: Buildings (async)
     this.buildingRenderer = new BuildingMesh(this.scene);
+
+    // Construction animator — manages scaffolding for buildings under construction
+    this.constructionAnimator = new ConstructionAnimator(this.scene);
+    this.constructionAnimator.setShadowPipeline(this.shadowPipeline);
+    this.constructionAnimator.onConstructionComplete = (mesh) => {
+      if (mesh && this.shadowPipeline) {
+        this.shadowPipeline.addShadowCaster(mesh);
+      }
+    };
     const buildingData: Array<{ kind: string; x: number; y: number }> = [
       { kind: 'castle', x: 50, y: 50 },
     ];
@@ -288,27 +299,25 @@ export class GameApp {
 
   /**
    * Handle the 'building-placed' event from BuildingPlacement UI.
-   * Creates a 3D mesh for the placed building and adds it to the shadow pipeline.
+   * Creates scaffolding mesh via ConstructionAnimator — the final
+   * building model will appear once constructionProgress reaches 1.0.
    */
   private onBuildingPlaced(e: Event): void {
     const detail = (e as CustomEvent).detail as {
       kind: BuildingType;
       x: number;
       y: number;
-      building: any;
+      building: BuildingData;
     };
-    if (!detail || detail.kind === undefined) return;
+    if (!detail || detail.kind === undefined || !detail.building) return;
 
-    const kindName = buildingName(detail.kind);
-    this.buildingRenderer.createBuilding(kindName, detail.x, detail.y, 2, 2, 2)
-      .then((mesh: any) => {
-        if (mesh) {
-          this.shadowPipeline.addShadowCaster(mesh);
-        }
-      })
-      .catch((err: any) => {
-        console.warn(`Failed to create 3D mesh for building ${kindName}:`, err);
-      });
+    // Start construction animation (scaffolding) — final model loads on completion
+    if (this.constructionAnimator) {
+      this.constructionAnimator.startConstruction(
+        detail.building,
+        this.playerNation,
+      );
+    }
   }
 
   private initLoop(): void {
@@ -324,6 +333,10 @@ export class GameApp {
       this.gameLoop.update(dt);
       if (this.particleSystem) {
         this.particleSystem.update(dt);
+      }
+      // Animate construction scaffolding — checks economy building progress
+      if (this.constructionAnimator) {
+        this.constructionAnimator.update(this.gameLoop.economy.buildings);
       }
       // Animate supply chain carrier dots
       if (this.supplyChainRenderer) {
@@ -350,6 +363,7 @@ export class GameApp {
     this.waterRenderer?.dispose?.();
     this.shadowPipeline.dispose?.();
     this.particleSystem.dispose?.();
+    this.constructionAnimator?.dispose();
     if (this.gridRenderer) {
       this.gridRenderer.dispose();
     }

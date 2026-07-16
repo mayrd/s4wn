@@ -170,6 +170,16 @@ jest.mock('../../rendering/SupplyChainRenderer', () => ({
   })),
 }));
 
+jest.mock('../../rendering/ConstructionAnimator', () => ({
+  ConstructionAnimator: jest.fn(() => ({
+    setShadowPipeline: jest.fn(),
+    startConstruction: jest.fn(),
+    update: jest.fn(),
+    onConstructionComplete: null,
+    dispose: jest.fn(),
+  })),
+}));
+
 jest.mock('../../game/GameLoop', () => ({
   GameLoop: jest.fn(() => ({
     state: { isPaused: true },
@@ -232,25 +242,30 @@ describe('GameApp Initialization', () => {
     expect(app.mapEditor).toBeDefined();
     expect(app.buildingPlacement).toBeDefined();
     expect(app.supplyChainRenderer).toBeDefined();
+    expect(app.constructionAnimator).toBeDefined();
     // Dispose after all properties are initialized
     app.dispose();
   });
 
-  it('should dispatch building-placed event and create 3D mesh', async () => {
+  it('should dispatch building-placed event and trigger construction animation', async () => {
     const app = new GameApp('renderCanvas');
     await app.readyPromise;
 
     // Dispatch a building-placed event as if the user placed a building via UI
+    const building = { index: 99, kind: 0, x: 51, y: 51, constructionProgress: 0, isActive: false };
     const event = new CustomEvent('building-placed', {
-      detail: { kind: 0, x: 51, y: 51, building: { index: 99, kind: 0, x: 51, y: 51 } },
+      detail: { kind: 0, x: 51, y: 51, building },
     });
     window.dispatchEvent(event);
 
-    // Wait for async mesh creation
+    // Wait for async processing
     await new Promise(resolve => setTimeout(resolve, 50));
 
-    // Verify BuildingPlacement was instantiated
-    expect(app.buildingPlacement).toBeDefined();
+    // Verify construction animator was asked to start scaffolding
+    expect(app.constructionAnimator.startConstruction).toHaveBeenCalledWith(
+      building,
+      expect.any(Number),
+    );
 
     app.dispose();
   });
