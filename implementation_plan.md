@@ -46,7 +46,7 @@ No new npm dependencies are required. The system will rely purely on existing DO
 [Implementation Order]
 The development phases needed to fulfill the request.
 
-1. Implement `TutorialDialog` and the UI restriction hooks in `HUD` and `BuildingPlacement`.
+1. [x] Implement `TutorialDialog` and the UI restriction hooks in `HUD` and `BuildingPlacement`. (Partially done: TutorialDialog)
 2. Build the `TutorialManager` state engine and wire it into the `GameLoop` tick execution inside `GameApp`.
 3. Configure the 7 specific tutorial steps (Camera, Wood, Food, Expansion, Mining, Military, Combat) as defined in BASE.md.
 4. Enhance `Map.ts` to spawn the required enemy castle and guard at the corner of the map.
