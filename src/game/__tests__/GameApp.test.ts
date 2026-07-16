@@ -142,6 +142,7 @@ jest.mock('../../ui/panels/DebugPanel', () => ({
     setGridRenderer: jest.fn(),
     setTerrainRenderer: jest.fn(),
     setTerritoryOverlay: jest.fn(),
+    setSupplyChainRenderer: jest.fn(),
   })),
 }));
 
@@ -159,10 +160,20 @@ jest.mock('../../ui/BuildingPlacement', () => ({
   })),
 }));
 
+jest.mock('../../rendering/SupplyChainRenderer', () => ({
+  SupplyChainRenderer: jest.fn(() => ({
+    computeLinks: jest.fn(() => []),
+    refresh: jest.fn(),
+    update: jest.fn(),
+    visible: true,
+    dispose: jest.fn(),
+  })),
+}));
+
 jest.mock('../../game/GameLoop', () => ({
   GameLoop: jest.fn(() => ({
     state: { isPaused: true },
-    economy: { tryPlaceBuilding: jest.fn(() => true) },
+    economy: { tryPlaceBuilding: jest.fn(() => true), buildings: [] },
     viewCuller: { setCenter: jest.fn() },
     update: jest.fn(),
     onTick: jest.fn(),
@@ -220,6 +231,7 @@ describe('GameApp Initialization', () => {
     expect(app.particleSystem).toBeDefined();
     expect(app.mapEditor).toBeDefined();
     expect(app.buildingPlacement).toBeDefined();
+    expect(app.supplyChainRenderer).toBeDefined();
     // Dispose after all properties are initialized
     app.dispose();
   });

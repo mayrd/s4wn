@@ -18,6 +18,7 @@ export class DebugPanel {
   private gridRenderer: GridRenderer | null = null;
   private terrainRenderer: any; // TerrainRenderer reference for splatting toggle
   private territoryOverlay: any; // TerritoryOverlay reference for territory toggle
+  private supplyChainRenderer: any; // SupplyChainRenderer reference for supply chain toggle
   private pauseBtn: HTMLButtonElement | null = null;
   /** Store original textures to restore when toggling back on */
   private originalTextures: WeakMap<any, any> = new WeakMap();
@@ -78,6 +79,7 @@ export class DebugPanel {
        </div>
        <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
          <button id="debug-btn-pause" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Pause: OFF</button>
+        <button id="debug-btn-supplychain" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Supply: ON</button>
        </div>
       
       <hr class="debug-divider" />
@@ -153,6 +155,15 @@ export class DebugPanel {
       this.gameLoop.state.isPaused = !this.gameLoop.state.isPaused;
       this.updatePauseButton();
     });
+
+    // Supply chain toggle
+    const supplyBtn = this.container.querySelector('#debug-btn-supplychain') as HTMLButtonElement;
+    let supplyVisible = true;
+    supplyBtn.addEventListener('click', () => {
+      supplyVisible = !supplyVisible;
+      supplyBtn.textContent = `Supply: ${supplyVisible ? 'ON' : 'OFF'}`;
+      this.setSupplyChainVisibility(supplyVisible);
+    });
   }
 
   private updatePauseButton(): void {
@@ -187,6 +198,11 @@ export class DebugPanel {
   /** Set the territory overlay reference for territory toggle */
   public setTerritoryOverlay(overlay: any): void {
     this.territoryOverlay = overlay;
+  }
+
+  /** Set the supply chain renderer reference for supply chain toggle */
+  public setSupplyChainRenderer(renderer: any): void {
+    this.supplyChainRenderer = renderer;
   }
 
   /** Set up mouse tracking for tile inspection */
@@ -316,6 +332,12 @@ export class DebugPanel {
   private setFogVisibility(_enabled: boolean): void {
     // Fog of war would be controlled here
     // This is a placeholder for future fog rendering
+  }
+
+  private setSupplyChainVisibility(visible: boolean): void {
+    if (this.supplyChainRenderer) {
+      this.supplyChainRenderer.visible = visible;
+    }
   }
 
   private isStorageBuilding(kind: number): boolean {

@@ -35,6 +35,7 @@ import { BuildingType } from './economy/types';
 import { buildingName } from './economy/types';
 import { NationType } from './game/Nation';
 import { BuildingPlacement } from './ui/BuildingPlacement';
+import { SupplyChainRenderer } from './rendering/SupplyChainRenderer';
 
 export class GameApp {
   public engine!: Engine;
@@ -49,6 +50,7 @@ export class GameApp {
   public particleSystem!: ParticleSystem;
   public touchController!: TouchCameraController;
   public gridRenderer!: GridRenderer;
+  public supplyChainRenderer!: SupplyChainRenderer;
   public ui!: UIManager;
   public mapEditor!: MapEditor;
   public buildingPlacement!: BuildingPlacement;
@@ -207,6 +209,11 @@ export class GameApp {
     this.territoryOverlay = new TerritoryOverlay(this.scene, this.map);
     this.territoryOverlay.createOverlay(this.map.width, this.map.height);
 
+    // Create supply chain renderer (producer → consumer lines with carrier dots)
+    this.supplyChainRenderer = new SupplyChainRenderer(this.scene);
+    const initialLinks = this.supplyChainRenderer.computeLinks(this.gameLoop.economy);
+    this.supplyChainRenderer.refresh(initialLinks);
+
     this.ui.updateProgress('Loading buildings...', 65);
 
     // Yield to UI thread
@@ -272,6 +279,7 @@ export class GameApp {
     debugPanel.setGridRenderer(this.gridRenderer);
     debugPanel.setTerrainRenderer(this.terrainRenderer);
     debugPanel.setTerritoryOverlay(this.territoryOverlay);
+    debugPanel.setSupplyChainRenderer(this.supplyChainRenderer);
     // Expose debug panel for console access
     (window as any).debugPanel = debugPanel;
   }
@@ -306,11 +314,25 @@ export class GameApp {
     this.particleSystem = new ParticleSystem(this.scene);
     this.waterRenderer = { dispose: () => {}, getMesh: () => null } as any;
     
+    let supplyChainRefreshTimer = 0;
+    const SUPPLY_CHAIN_REFRESH_INTERVAL = 5; // seconds
+
     this.engine.runRenderLoop(() => {
       const dt = this.engine.getDeltaTime() / 1000;
       this.gameLoop.update(dt);
       if (this.particleSystem) {
         this.particleSystem.update(dt);
+      }
+      // Animate supply chain carrier dots
+      if (this.supplyChainRenderer) {
+        this.supplyChainRenderer.update(dt);
+        // Periodically recompute supply links (buildings may be added/removed)
+        supplyChainRefreshTimer += dt;
+        if (supplyChainRefreshTimer >= SUPPLY_CHAIN_REFRESH_INTERVAL) {
+          supplyChainRefreshTimer = 0;
+          const links = this.supplyChainRenderer.computeLinks(this.gameLoop.economy);
+          this.supplyChainRenderer.refresh(links);
+        }
       }
       this.scene.render();
     });
@@ -329,6 +351,7 @@ export class GameApp {
     if (this.gridRenderer) {
       this.gridRenderer.dispose();
     }
+    this.supplyChainRenderer?.dispose();
     this.engine.dispose();
     soundManager.dispose();
   }
