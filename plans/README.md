@@ -18,5 +18,6 @@ This folder contains architectural designs, audits, and step-by-step implementat
 
 ## Audits & Assets
 
+- **[animation_and_asset_detail_plan.md](animation_and_asset_detail_plan.md)**: Building interaction nodes, worker animation states, and detailed 3D asset requirements.
 - **[rendering_audit.md](rendering_audit.md)**: Analysis of the 3D pipeline, meshes, materials, and particles.
 - **[asset_prompts.md](asset_prompts.md)**: Prompt configurations for generative AI asset creation.
