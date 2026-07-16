@@ -5,8 +5,6 @@
 import { UIManager } from '../UIManager';
 
 describe('UIManager', () => {
-  let uiManager: UIManager;
-
   beforeEach(() => {
     // Reset singleton instance if we have one
     (UIManager as any).instance = null;
@@ -17,7 +15,7 @@ describe('UIManager', () => {
       <div id="fade-layer"></div>
     `;
     
-    uiManager = new UIManager();
+    new UIManager();
   });
 
   it('should render main menu initially', () => {

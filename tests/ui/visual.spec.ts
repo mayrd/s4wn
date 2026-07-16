@@ -114,6 +114,9 @@ test.describe('Visual Regression — In-Game HUD', () => {
         // Override getStats so the HUD update loop reads consistent values
         app.gameLoop.getStats = () => ({ fps: 60, ticks: 42, gameTime: 10, zoom: 0 });
       }
+      if (app && app.engine) {
+        app.engine.stopRenderLoop();
+      }
       const ticks = document.getElementById('hud-ticks');
       if (ticks) ticks.textContent = '42';
       const time = document.getElementById('hud-time');

@@ -27,7 +27,7 @@ test.describe('Initial UI Flow', () => {
     // Wait for splash to transition (3 seconds)
     await page.locator('#btn-new-game').waitFor({ state: 'visible', timeout: 5000 });
 
-    const mainMenu = page.locator('.main-menu-screen');
+    const mainMenu = page.locator('.main-menu-screen').first();
     await expect(mainMenu).toHaveClass(/active/);
     // The menu title is a transparent logo image (P15), not a .menu-title
     // text node — assert the logo element is present and carries the S4WN alt.
