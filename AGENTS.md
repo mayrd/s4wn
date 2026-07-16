@@ -280,6 +280,7 @@ The inspector provides:
 | P38 | 2026-07-16 | **Territory Border Blending** — Added smooth alpha-blended borders between adjacent territories using gradient vertex colors at nation boundaries in TerritoryOverlay.ts. All 328 tests green. |
 | P39 | 2026-07-16 | **Nation Selection UI** — Implemented nation selection screen in UIManager. Added 3 unit tests. Passed nation parameter through game-start CustomEvent to GameApp. All 344 tests green. |
 | P40 | 2026-07-16 | **Building Construction Animation** — New `ConstructionAnimator` class: progressive scaffolding meshes (4 stages: poles → beams → walls → final model swap). Integrated into GameApp: `onBuildingPlaced` now triggers scaffolding, render loop drives progress-based visuals. 12 unit tests. All 356 tests green, `tsc --noEmit` clean. |
+| P41 | 2026-07-16 | **Carrier Unit Models** — Replaced simple sphere carrier dots in SupplyChainRenderer with CC0 donkey.glb model from Poly Pizza. Donkey GLB loaded once as template in constructor; clones used per-carrier with direction-facing rotation (Math.atan2 in update loop). Procedural box fallback with resource-color material when GLB unavailable. Updated tests: CreateSphere→CreateBox, added donkey load/guard tests, updated GameApp mock. 358 tests green (31 suites). |
 
 ### Next Session Priorities
 1. ~~**Building Placement — Click-on-Terrain Validation**~~ ✅ Done P33
@@ -289,8 +290,9 @@ The inspector provides:
 5. ~~**Nation Selection UI**~~ ✅ Done P39
 6. ~~**Territory Border Blending**~~ ✅ Done P38
 7. ~~**Building Construction Animation**~~ ✅ Done P40 — Scaffolding mesh with progressive stages, final model swap on completion.
-8. **Carrier Unit Models** — Replace the simple sphere carrier dots with animated donkey/porter glTF models (CC0 from Poly Pizza).
-9. **Construction Sound Effects** — Play hammering/building sounds during construction animation phase.
-10. **Building Destruction Animation** — Animate building collapse/ruins when HP reaches 0 or destruction triggered.
+8. ~~**Carrier Unit Models**~~ ✅ Done P41 — Donkey GLB model replaces carrier spheres, direction-facing rotation
+9. **Construction Sound Effects** — Play hammering/building sounds during construction animation phase. Trigger sounds from ConstructionAnimator at each scaffolding stage transition.
+10. **Building Destruction Animation** — Animate building collapse/ruins when HP reaches 0 or destruction triggered. Particle burst + shrinking/falling mesh + debris.
+11. **Unit Animation States** — Implement idle/walk/attack/death animation states for units. Could reuse ConstructionAnimator pattern for state transitions.
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
