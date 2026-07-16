@@ -67,8 +67,8 @@ export class TerrainRenderer {
         // fall back to its (default black) groundColor and renders the
         // terrain completely black even though the mesh geometry/elevation
         // is correct.
-        indices.push(i0, i1, i2);
-        indices.push(i1, i3, i2);
+        indices.push(i0, i2, i1);
+        indices.push(i1, i2, i3);
       }
     }
 
