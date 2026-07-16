@@ -319,7 +319,7 @@ describe('SupplyChainRenderer', () => {
       renderer.refresh(links);
 
       // Carrier should now be a clone of the template, not a box
-      const { MeshBuilder } = require('@babylonjs/core');
+      // const { MeshBuilder } = require('@babylonjs/core');
       // const boxCallsAfter = MeshBuilder.CreateBox.mock.calls.length; // REMOVED unused
 
       // Advance a frame — rotation should be set

@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { TutorialManager, TutorialStep } from '../TutorialManager';
+import { TutorialManager } from '../TutorialManager';
 import { GameApp } from '../../GameApp';
 import { UIManager } from '../../ui/UIManager';
 import { TutorialDialog } from '../../ui/TutorialDialog';
@@ -10,7 +10,7 @@ import { TutorialDialog } from '../../ui/TutorialDialog';
 describe('TutorialManager', () => {
   let app: unknown;
   let ui: unknown;
-  let dialog: unknown;
+  let dialog: any;
   let manager: TutorialManager;
 
   beforeEach(() => {
