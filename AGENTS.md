@@ -282,18 +282,13 @@ The inspector provides:
 | P40 | 2026-07-16 | **Building Construction Animation** — New `ConstructionAnimator` class: progressive scaffolding meshes (4 stages: poles → beams → walls → final model swap). Integrated into GameApp: `onBuildingPlaced` now triggers scaffolding, render loop drives progress-based visuals. 12 unit tests. All 356 tests green, `tsc --noEmit` clean. |
 | P41 | 2026-07-16 | **Carrier Unit Models** — Replaced simple sphere carrier dots in SupplyChainRenderer with CC0 donkey.glb model from Poly Pizza. Donkey GLB loaded once as template in constructor; clones used per-carrier with direction-facing rotation (Math.atan2 in update loop). Procedural box fallback with resource-color material when GLB unavailable. Updated tests: CreateSphere→CreateBox, added donkey load/guard tests, updated GameApp mock. 358 tests green (31 suites). |
 | P42 | 2026-07-16 | **Interactive Tutorial Step Integration** — Implemented the 7 specific, state-driven, interactive tutorial steps in `GameApp.ts` as specified by the tutorial scenario config (Camera Basics, Wood Economy, Basic Food Economy, Territorial Expansion, Mining & Metallurgy, Military Recruitment, Combat & Victory Condition). Fully locked down and unlocked UI controls / menus programmatically. Successfully passed type checks and all 364 tests. |
+| P43 | 2026-07-17 | **LogisticsManager: Tests + Demand Tracking + Economy Integration** — Added 19 unit tests for LogisticsManager (spawn, remove, closest-unreserved-match, reservation flow). Added `ResourceDemand` interface with `registerDemand()`, `clearDemands()`, `getDemands()`, `matchDemand()` methods for carrier supply/demand matching. Integrated LogisticsManager into Economy: optional constructor param (backward-compat), spawns physical `ResourceItem` on map per-output when buildings produce, auto-registers demands for buildings with unfilled input buffers each tick. 383 tests (34 suites) green, `tsc --noEmit` clean. |
  
 ### Next Session Priorities
-1. ~~**Building Placement — Click-on-Terrain Validation**~~ ✅ Done P33
-2. ~~**Resource Transport Visualization**~~ ✅ Done P35
-3. ~~**Supply Chain Filtering**~~ ✅ Done P36
-4. ~~**Multi-Nation Game Setup**~~ ✅ Done P37 (foundation: GameSetup, player configs, starting areas, GameApp wiring)
-5. ~~**Nation Selection UI**~~ ✅ Done P39
-6. ~~**Territory Border Blending**~~ ✅ Done P38
-7. ~~**Building Construction Animation**~~ ✅ Done P40 — Scaffolding mesh with progressive stages, final model swap on completion.
-8. ~~**Carrier Unit Models**~~ ✅ Done P41 — Donkey GLB model replaces carrier spheres, direction-facing rotation
-9. ~~**Construction Sound Effects**~~ ✅ Done P42 — Play hammering/building sounds during construction animation phase.
-10. ~~**Building Destruction Animation**~~ ✅ Done P42 — Animate building collapse/ruins when HP reaches 0 or destruction triggered.
-11. ~~**Unit Animation States**~~ ✅ Done P42 — Implement idle/walk/attack/death procedural animation states for units.
+1. **Logistics Tick in GameApp** — Wire `logisticsTick()` into GameApp game loop so carriers can pick up and deliver items using pathfinding
+2. **Carrier AI (WorkerAI/Logistics)** — Implement carrier logic: scan demands, find matching supplies, pathfind, pick up item, deliver to building input buffer
+3. **StorageYard Mechanics** — Implement 8-stack limit, prioritize deliver-to-yard vs direct-to-building carrier routing
+4. **Resource Item 3D Rendering** — Render physical resource items on the ground (small colored box/sphere per ResourceType) that disappear when picked up
+5. **Marketplace & Trade Routes** — Implement donkey-based land trade between Marketplaces and ship-based maritime routes
 
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
