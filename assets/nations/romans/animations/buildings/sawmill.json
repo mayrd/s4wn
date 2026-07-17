@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "extends": "generic",
+  "clips": {
+    "production": {
+      "duration": 3.0,
+      "loop": true,
+      "frames": [
+        { "t": 0.0, "rotateY": 0 },
+        { "t": 1.5, "rotateY": 180, "particle": { "system": "wood_dust", "rate": 8 } },
+        { "t": 3.0, "rotateY": 360 }
+      ]
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "model": "models/units/worker.glb",
+  "clips": {
+    "idle": {
+      "duration": 2.0,
+      "loop": true,
+      "frames": [
+        { "t": 0.0, "bob": 0 },
+        { "t": 1.0, "bob": 0.05, "toolSwing": 0 },
+        { "t": 2.0, "bob": 0 }
+      ]
+    },
+    "walk": {
+      "duration": 1.0,
+      "loop": true,
+      "frames": [
+        { "t": 0.0, "bob": 0, "step": "left" },
+        { "t": 0.25, "bob": 0.08 },
+        { "t": 0.5, "bob": 0, "step": "right" },
+        { "t": 0.75, "bob": 0.08 },
+        { "t": 1.0, "bob": 0, "step": "left" }
+      ]
+    },
+    "work": {
+      "duration": 2.0,
+      "loop": true,
+      "frames": [
+        { "t": 0.0, "toolSwing": 0 },
+        { "t": 0.5, "toolSwing": 45 },
+        { "t": 1.0, "toolSwing": 90, "particle": { "system": "work_hit", "rate": 3 } },
+        { "t": 1.5, "toolSwing": 45 },
+        { "t": 2.0, "toolSwing": 0 }
+      ]
+    },
+    "carry": {
+      "duration": 1.2,
+      "loop": true,
+      "frames": [
+        { "t": 0.0, "bob": 0.02, "burden": 1.0 },
+        { "t": 0.6, "bob": 0.06, "burden": 1.0 },
+        { "t": 1.2, "bob": 0.02, "burden": 1.0 }
+      ]
+    }
+  },
+  "transitions": {
+    "idle->walk": { "duration": 0.3 },
+    "walk->idle": { "duration": 0.2 },
+    "idle->work": { "duration": 0.4 },
+    "work->idle": { "duration": 0.3 },
+    "walk->carry": { "duration": 0.3 },
+    "carry->walk": { "duration": 0.2 }
+  }
+}

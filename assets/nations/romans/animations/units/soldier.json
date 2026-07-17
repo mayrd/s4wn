@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "clips": {
+    "idle": {
+      "duration": 3.0,
+      "loop": true,
+      "frames": [
+        { "t": 0.0, "guardPose": "neutral" },
+        { "t": 1.5, "guardPose": "shift_weight", "shieldAdjust": 0.1 },
+        { "t": 3.0, "guardPose": "neutral" }
+      ]
+    },
+    "walk": {
+      "duration": 1.0,
+      "loop": true,
+      "frames": [
+        { "t": 0.0, "step": "left", "formationOffset": 0 },
+        { "t": 0.25, "formationOffset": 0.2 },
+        { "t": 0.5, "step": "right", "formationOffset": 0.5 },
+        { "t": 0.75, "formationOffset": 0.7 },
+        { "t": 1.0, "step": "left", "formationOffset": 1.0 }
+      ]
+    },
+    "combat_idle": {
+      "duration": 2.0,
+      "loop": true,
+      "frames": [
+        { "t": 0.0, "stance": "ready", "shieldUp": true },
+        { "t": 1.0, "stance": "anticipate", "shieldUp": true },
+        { "t": 2.0, "stance": "ready", "shieldUp": true }
+      ]
+    },
+    "attack": {
+      "duration": 1.5,
+      "loop": false,
+      "frames": [
+        { "t": 0.0, "stance": "windup", "weaponAngle": -60 },
+        { "t": 0.6, "stance": "strike", "weaponAngle": 30, "particle": { "system": "hit_spark", "rate": 5 } },
+        { "t": 1.0, "stance": "follow_through", "weaponAngle": 45 },
+        { "t": 1.5, "stance": "recover", "weaponAngle": 0 }
+      ]
+    },
+    "death": {
+      "duration": 2.0,
+      "loop": false,
+      "frames": [
+        { "t": 0.0, "scale": [1.0, 1.0, 1.0], "opacity": 1.0 },
+        { "t": 0.5, "scale": [1.0, 0.5, 1.0], "opacity": 0.8 },
+        { "t": 1.5, "scale": [0.1, 0.1, 0.1], "opacity": 0.3 },
+        { "t": 2.0, "scale": [0.0, 0.0, 0.0], "opacity": 0.0 }
+      ]
+    }
+  }
+}

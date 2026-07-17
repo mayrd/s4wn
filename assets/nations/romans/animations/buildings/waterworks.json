@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "extends": "generic",
+  "clips": {
+    "production": {
+      "duration": 5.0,
+      "loop": true,
+      "frames": [
+        { "t": 0.0, "rotateZ": 0 },
+        { "t": 2.5, "rotateZ": -180, "particle": { "system": "water_splash", "rate": 5 } },
+        { "t": 5.0, "rotateZ": -360 }
+      ]
+    }
+  }
+}

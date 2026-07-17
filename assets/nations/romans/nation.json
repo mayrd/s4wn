@@ -2,7 +2,10 @@
   "$schema": "https://s4wn.mayrd.org/schemas/nation/v1.json",
   "version": 1,
   "id": "romans",
-  "name": { "en": "Romans", "de": "Römer" },
+  "name": {
+    "en": "Romans",
+    "de": "Römer"
+  },
   "description": {
     "en": "The Roman Empire — masters of engineering and military discipline. Breed sheep, grow grapes for wine, and heal your troops with field medics.",
     "de": "Das Römische Reich — Meister der Baukunst und militärischen Disziplin. Züchtet Schafe, baut Wein an und heilt eure Truppen mit Feldärzten."
@@ -16,9 +19,21 @@
     "loadingBg": "icons/ui/loading_bg.png",
     "uiTheme": "stone",
     "particles": {
-      "dustColor": [0.6, 0.5, 0.4],
-      "magicColor": [0.8, 0.2, 0.2],
-      "constructionSpark": [1.0, 0.8, 0.2]
+      "dustColor": [
+        0.6,
+        0.5,
+        0.4
+      ],
+      "magicColor": [
+        0.8,
+        0.2,
+        0.2
+      ],
+      "constructionSpark": [
+        1.0,
+        0.8,
+        0.2
+      ]
     },
     "terrainModifiers": {}
   },
@@ -59,37 +74,65 @@
       "texture": "textures/units/worker.png",
       "animations": "animations/units/worker.json",
       "icon": "icons/units/worker.png",
-      "stats": { "hp": 50, "speed": 2.5, "carryCapacity": 10 }
+      "stats": {
+        "hp": 50,
+        "speed": 2.5,
+        "carryCapacity": 10
+      }
     },
     "soldier": {
       "model": "models/units/soldier.glb",
       "texture": "textures/units/soldier.png",
       "animations": "animations/units/soldier.json",
       "icon": "icons/units/soldier.png",
-      "stats": { "hp": 80, "speed": 3.0, "attack": 12, "defence": 8, "range": 1 }
+      "stats": {
+        "hp": 80,
+        "speed": 3.0,
+        "attack": 12,
+        "defence": 8,
+        "range": 1
+      }
     },
     "archer": {
       "model": "models/units/archer.glb",
       "texture": "textures/units/archer.png",
       "animations": "animations/units/archer.json",
       "icon": "icons/units/archer.png",
-      "stats": { "hp": 60, "speed": 2.8, "attack": 10, "defence": 4, "range": 6 }
+      "stats": {
+        "hp": 60,
+        "speed": 2.8,
+        "attack": 10,
+        "defence": 4,
+        "range": 6
+      }
     },
     "settler": {
       "model": "models/units/settler.glb",
       "texture": "textures/units/settler.png",
       "animations": "animations/units/settler.json",
       "icon": "icons/units/settler.png",
-      "stats": { "hp": 40, "speed": 2.0, "carryCapacity": 15 }
+      "stats": {
+        "hp": 40,
+        "speed": 2.0,
+        "carryCapacity": 15
+      }
     },
     "special": {
       "kind": "medic",
-      "displayName": { "en": "Medic", "de": "Feldarzt" },
+      "displayName": {
+        "en": "Medic",
+        "de": "Feldarzt"
+      },
       "model": "models/units/medic.glb",
       "texture": "textures/units/medic.png",
       "animations": "animations/units/medic.json",
       "icon": "icons/units/medic.png",
-      "stats": { "hp": 45, "speed": 2.5, "healRate": 3, "healRange": 3 },
+      "stats": {
+        "hp": 45,
+        "speed": 2.5,
+        "healRate": 3,
+        "healRange": 3
+      },
       "description": {
         "en": "Passively heals nearby allied infantry during combat.",
         "de": "Heilt nahe verbündete Infanterie passiv während des Kampfes."
@@ -98,28 +141,221 @@
   },
   "buildings": {
     "overrides": {
-      "keep": {
-        "model": "models/buildings/keep.glb",
-        "texture": "textures/buildings/stone.png",
-        "icon": "icons/buildings/keep.png",
-        "animations": "animations/buildings/keep.json"
+      "forester_hut": {
+        "model": "models/forester_hut.obj",
+        "texture": "textures/buildings/building_forester_hut.png",
+        "icon": "icons/buildings/forester_hut.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "woodcutter_hut": {
+        "model": "models/woodcutter_hut.obj",
+        "texture": "textures/buildings/building_woodcutter_hut.png",
+        "icon": "icons/buildings/woodcutter_hut.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "sawmill": {
+        "model": "models/sawmill.obj",
+        "texture": "textures/buildings/building_sawmill.png",
+        "icon": "icons/buildings/sawmill.png",
+        "animations": "animations/buildings/sawmill.json"
+      },
+      "stonecutter_hut": {
+        "model": "models/stonecutter_hut.obj",
+        "texture": "textures/buildings/building_stonecutter_hut.png",
+        "icon": "icons/buildings/stonecutter_hut.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "grain_farm": {
+        "model": "models/grain_farm.obj",
+        "texture": "textures/buildings/building_grain_farm.png",
+        "icon": "icons/buildings/grain_farm.png",
+        "animations": "animations/buildings/generic.json"
       },
       "sheep_ranch": {
-        "model": "models/buildings/sheep_ranch.glb",
-        "texture": "textures/buildings/thatch.png",
+        "model": "models/sheep_ranch.obj",
+        "texture": "textures/buildings/building_sheep_ranch.png",
         "icon": "icons/buildings/sheep_ranch.png",
-        "animations": "animations/buildings/sheep_ranch.json"
+        "animations": "animations/buildings/generic.json"
+      },
+      "grain_mill": {
+        "model": "models/grain_mill.obj",
+        "texture": "textures/buildings/building_grain_mill.png",
+        "icon": "icons/buildings/grain_mill.png",
+        "animations": "animations/buildings/sawmill.json"
+      },
+      "bakery": {
+        "model": "models/bakery.obj",
+        "texture": "textures/buildings/building_bakery.png",
+        "icon": "icons/buildings/bakery.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "slaughterhouse": {
+        "model": "models/slaughterhouse.obj",
+        "texture": "textures/buildings/building_slaughterhouse.png",
+        "icon": "icons/buildings/slaughterhouse.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "fisherman_hut": {
+        "model": "models/fisherman_hut.obj",
+        "texture": "textures/buildings/building_fisherman_hut.png",
+        "icon": "icons/buildings/fisherman_hut.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "waterworks": {
+        "model": "models/waterworks.obj",
+        "texture": "textures/buildings/building_waterworks.png",
+        "icon": "icons/buildings/waterworks.png",
+        "animations": "animations/buildings/waterworks.json"
+      },
+      "coal_mine": {
+        "model": "models/coal_mine.obj",
+        "texture": "textures/buildings/building_coal_mine.png",
+        "icon": "icons/buildings/coal_mine.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "iron_ore_mine": {
+        "model": "models/iron_ore_mine.obj",
+        "texture": "textures/buildings/building_iron_ore_mine.png",
+        "icon": "icons/buildings/iron_ore_mine.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "gold_mine": {
+        "model": "models/gold_mine.obj",
+        "texture": "textures/buildings/building_gold_mine.png",
+        "icon": "icons/buildings/gold_mine.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "sulfur_mine": {
+        "model": "models/sulfur_mine.obj",
+        "texture": "textures/buildings/building_sulfur_mine.png",
+        "icon": "icons/buildings/sulfur_mine.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "iron_smelter": {
+        "model": "models/iron_smelter.obj",
+        "texture": "textures/buildings/building_iron_smelter.png",
+        "icon": "icons/buildings/iron_smelter.png",
+        "animations": "animations/buildings/smelter.json"
+      },
+      "gold_smelter": {
+        "model": "models/gold_smelter.obj",
+        "texture": "textures/buildings/building_gold_smelter.png",
+        "icon": "icons/buildings/gold_smelter.png",
+        "animations": "animations/buildings/smelter.json"
+      },
+      "toolsmith": {
+        "model": "models/toolsmith.obj",
+        "texture": "textures/buildings/building_toolsmith.png",
+        "icon": "icons/buildings/toolsmith.png",
+        "animations": "animations/buildings/smelter.json"
+      },
+      "weaponsmith": {
+        "model": "models/weaponsmith.obj",
+        "texture": "textures/buildings/building_weaponsmith.png",
+        "icon": "icons/buildings/weaponsmith.png",
+        "animations": "animations/buildings/smelter.json"
+      },
+      "barracks": {
+        "model": "models/barracks.obj",
+        "texture": "textures/buildings/building_barracks.png",
+        "icon": "icons/buildings/barracks.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "small_tower": {
+        "model": "models/small_tower.obj",
+        "texture": "textures/buildings/building_small_tower.png",
+        "icon": "icons/buildings/small_tower.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "big_tower": {
+        "model": "models/big_tower.obj",
+        "texture": "textures/buildings/building_big_tower.png",
+        "icon": "icons/buildings/big_tower.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "castle": {
+        "model": "models/castle.obj",
+        "texture": "textures/buildings/building_castle.png",
+        "icon": "icons/buildings/castle.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "healer_hut": {
+        "model": "models/healer_hut.obj",
+        "texture": "textures/buildings/building_healer_hut.png",
+        "icon": "icons/buildings/healer_hut.png",
+        "animations": "animations/buildings/generic.json"
       },
       "vineyard": {
-        "model": "models/buildings/vineyard.glb",
-        "texture": "textures/buildings/timber.png",
-        "icon": "icons/buildings/vineyard.png"
+        "model": "models/vineyard.obj",
+        "texture": "textures/buildings/building_vineyard.png",
+        "icon": "icons/buildings/vineyard.png",
+        "animations": "animations/buildings/generic.json"
       },
       "wine_press": {
-        "model": "models/buildings/wine_press.glb",
-        "texture": "textures/buildings/stone.png",
+        "model": "models/wine_press.obj",
+        "texture": "textures/buildings/building_wine_press.png",
         "icon": "icons/buildings/wine_press.png",
-        "animations": "animations/buildings/wine_press.json"
+        "animations": "animations/buildings/generic.json"
+      },
+      "small_temple": {
+        "model": "models/small_temple.obj",
+        "texture": "textures/buildings/building_small_temple.png",
+        "icon": "icons/buildings/small_temple.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "large_temple": {
+        "model": "models/large_temple.obj",
+        "texture": "textures/buildings/building_large_temple.png",
+        "icon": "icons/buildings/large_temple.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "small_residence": {
+        "model": "models/small_residence.obj",
+        "texture": "textures/buildings/building_small_residence.png",
+        "icon": "icons/buildings/small_residence.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "medium_residence": {
+        "model": "models/medium_residence.obj",
+        "texture": "textures/buildings/building_medium_residence.png",
+        "icon": "icons/buildings/medium_residence.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "large_residence": {
+        "model": "models/large_residence.obj",
+        "texture": "textures/buildings/building_large_residence.png",
+        "icon": "icons/buildings/large_residence.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "storage_yard": {
+        "model": "models/storage_yard.obj",
+        "texture": "textures/buildings/building_storage_yard.png",
+        "icon": "icons/buildings/storage_yard.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "marketplace": {
+        "model": "models/marketplace.obj",
+        "texture": "textures/buildings/building_marketplace.png",
+        "icon": "icons/buildings/marketplace.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "shipyard": {
+        "model": "models/shipyard.obj",
+        "texture": "textures/buildings/building_shipyard.png",
+        "icon": "icons/buildings/shipyard.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "landing_dock": {
+        "model": "models/landing_dock.obj",
+        "texture": "textures/buildings/building_landing_dock.png",
+        "icon": "icons/buildings/landing_dock.png",
+        "animations": "animations/buildings/generic.json"
+      },
+      "donkey_ranch": {
+        "model": "models/donkey_ranch.obj",
+        "texture": "textures/buildings/building_donkey_ranch.png",
+        "icon": "icons/buildings/donkey_ranch.png",
+        "animations": "animations/buildings/generic.json"
       }
     }
   },
@@ -137,11 +373,16 @@
     }
   },
   "specialResources": {},
-  "techTree": { "nodes": [] },
+  "techTree": {
+    "nodes": []
+  },
   "ai": {
     "aggression": 0.5,
     "expansionism": 0.7,
     "economyFocus": 0.6,
-    "preferredUnits": ["soldier", "archer"]
+    "preferredUnits": [
+      "soldier",
+      "archer"
+    ]
   }
 }

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "extends": "generic",
+  "clips": {
+    "production": {
+      "duration": 4.0,
+      "loop": true,
+      "frames": [
+        { "t": 0.0, "emissive": [1.0, 0.3, 0.1] },
+        { "t": 1.0, "emissive": [1.0, 0.8, 0.2], "particle": { "system": "sparks", "rate": 15 } },
+        { "t": 2.0, "emissive": [1.0, 0.3, 0.1] },
+        { "t": 3.0, "emissive": [1.0, 0.8, 0.2], "particle": { "system": "sparks", "rate": 15 } },
+        { "t": 4.0, "emissive": [1.0, 0.3, 0.1] }
+      ]
+    }
+  }
+}
