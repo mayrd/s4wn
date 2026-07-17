@@ -4,9 +4,8 @@
  * Implements a hybrid menu system combining:
  * 1. Anno 1800 Style Bottom Build Bar (Quick access to common buildings)
  * 2. Settlers 4 Style Deep Category Panel (Economy, Military, Specialists, Stats)
- * 3. Mobile/Touch responsiveness (Bottom sheets & radial context menus)
- * 4. Custom context triggers (Right-click on Desktop, Long-press on Mobile)
- * 5. Full-width page layout containing Construction, Statistics, In-Game Menu (Save, Pause, Exit), and Debug Menu.
+ * 3. All building construction categories in the left Build menu
+ * 4. Full-width page layout containing Construction, Statistics, In-Game Menu (Save, Pause, Exit), and Debug Menu.
  */
 
 import { BuildingType, buildingName, buildCost, resourceName } from '../economy/types';
@@ -27,7 +26,6 @@ export class InGameMenu {
   // UI Elements
   private buildBarEl!: HTMLElement;
   private deepPanelEl!: HTMLElement;
-  private radialMenuEl!: HTMLElement;
   private tooltipEl!: HTMLElement;
   private toggleBtnEl!: HTMLElement;
 
@@ -37,14 +35,9 @@ export class InGameMenu {
   private activeMainTab: 'construction' | 'units' | 'specialists' | 'statistics' | 'ingamemenu' | 'settings' | 'debug' | 'tutorial' | 'campaign' = 'construction';
   private constructionSubTab: string = 'basic'; // Sub-tabs for building categories in Construction
   private deepPanelVisible: boolean = false;
-  private radialActive: boolean = false;
   private isCollapsed: boolean = false;
-  private radialX: number = 0;
-  private radialY: number = 0;
 
   // Touch / Context state
-  private touchTimeout: any = null;
-  private longPressDuration: number = 500; // ms
 
   // Renderers for Debug toggling
   private gridRenderer: any = null;
@@ -123,12 +116,6 @@ export class InGameMenu {
     this.renderDeepPanel();
     this.container.appendChild(this.deepPanelEl);
 
-    // 4. Mobile/Touch Radial Context Menu
-    this.radialMenuEl = document.createElement('div');
-    this.radialMenuEl.id = 'radial-context-menu';
-    this.radialMenuEl.className = 'radial-context-menu hidden';
-    this.renderRadialMenu();
-    this.container.appendChild(this.radialMenuEl);
   }
 
   private renderBuildBar(): void {
@@ -136,42 +123,42 @@ export class InGameMenu {
     const stats = typeof this.gameLoop?.getStats === 'function' ? this.gameLoop.getStats() : { gameTime: 0, ticks: 0 };
 
     if (this.activeMainTab === 'construction') {
-      // Building categories as subtabs
-      const categories = getBuildingCategories();
-      const catTabsHtml = categories.map(cat => {
-        const active = cat.id === this.constructionSubTab ? 'active' : '';
-        return `<button class="build-subtab-btn ${active}" data-construction-subtab="${cat.id}">${cat.label}</button>`;
-      }).join('');
+          // Building categories as subtabs
+          const categories = getBuildingCategories();
+          const catTabsHtml = categories.map(cat => {
+            const active = cat.id === this.constructionSubTab ? 'active' : '';
+            return `<button class="build-subtab-btn ${active}" data-construction-subtab="${cat.id}">${cat.label}</button>`;
+          }).join('');
 
-      // Buildings in the active category
-      const activeCat = categories.find(c => c.id === this.constructionSubTab);
-      let buildingsHtml = '';
+          // Buildings in the active category
+          const activeCat = categories.find(c => c.id === this.constructionSubTab);
+          let buildingsHtml = '';
       
-      if (activeCat) {
-        // Show all buildings (nation filtering handled by BuildingPlacement)
-        const validBuildings = activeCat.buildings;
+          if (activeCat) {
+            // Show all buildings (nation filtering handled by BuildingPlacement)
+            const validBuildings = activeCat.buildings;
         
-        buildingsHtml = validBuildings.map(kind => {
-          const name = buildingName(kind);
-          const cost = buildCost(kind);
-          const costStr = cost.map(c => `${c.amount} ${resourceName(c.resource)}`).join(', ');
-          return `
-            <button class="build-bar-item" data-kind="${kind}" data-cost="${costStr}">
-              <span class="item-icon">🏗️</span>
-              <span class="item-label">${name}</span>
-            </button>
-          `;
-        }).join('');
-      }
+            buildingsHtml = validBuildings.map(kind => {
+              const name = buildingName(kind);
+              const cost = buildCost(kind);
+              const costStr = cost.map(c => `${c.amount} ${resourceName(c.resource)}`).join(', ');
+              return `
+                <button class="build-bar-item" data-kind="${kind}" data-cost="${costStr}">
+                  <span class="item-icon">🏗️</span>
+                  <span class="item-label">${name}</span>
+                </button>
+              `;
+            }).join('');
+          }
 
-      contentHtml = `
-        <div class="build-subtabs-row">
-          ${catTabsHtml}
-        </div>
-        <div class="build-bar-items">
-          ${buildingsHtml}
-        </div>
-      `;
+          contentHtml = `
+            <div class="build-subtabs-row">
+              ${catTabsHtml}
+            </div>
+            <div class="build-bar-items">
+              ${buildingsHtml}
+            </div>
+          `;
     } else if (this.activeMainTab === 'units') {
       contentHtml = `
         <div class="deep-specialists-section">
@@ -777,30 +764,6 @@ export class InGameMenu {
     }
   }
 
-  private renderRadialMenu(): void {
-    const actions = [
-      { id: 'radial-cancel', label: '❌ Cancel', desc: 'Dismiss menu' },
-      { id: 'radial-wood', label: '🪓 Woodcutter', desc: 'Build Woodcutter' },
-      { id: 'radial-stone', label: '🪨 Stonecutter', desc: 'Build Stonecutter' },
-      { id: 'radial-military', label: '🛡️ Barracks', desc: 'Build Barracks' }
-    ];
-
-    this.radialMenuEl.innerHTML = `
-      <div class="radial-center">⚙️</div>
-      ${actions.map((act, index) => {
-        const angle = (index * 2 * Math.PI) / actions.length;
-        const radius = 64; // px
-        const x = Math.round(Math.cos(angle) * radius);
-        const y = Math.round(Math.sin(angle) * radius);
-        return `
-          <button class="radial-item" id="${act.id}" style="transform: translate(${x}px, ${y}px);" title="${act.desc}">
-            ${act.label}
-          </button>
-        `;
-      }).join('')}
-    `;
-  }
-
   private setupEvents(): void {
     // Bottom integrated bar clicks (Construction select / Tab selection)
     this.buildBarEl.addEventListener('click', (e) => {
@@ -876,64 +839,6 @@ export class InGameMenu {
     this.buildBarEl.addEventListener('mouseout', handleMouseOut);
     this.deepPanelEl.addEventListener('mouseover', handleMouseOver);
     this.deepPanelEl.addEventListener('mouseout', handleMouseOut);
-
-    // Context Radial Menu Triggers
-    const canvas = this.scene?.getEngine?.()?.getRenderingCanvas?.() || document.getElementById('renderCanvas');
-    if (canvas) {
-      canvas.addEventListener('contextmenu', (e: MouseEvent) => {
-        e.preventDefault();
-        this.showRadialMenu(e.clientX, e.clientY);
-      });
-
-      canvas.addEventListener('touchstart', (e: TouchEvent) => {
-        if (e.touches.length === 1) {
-          const touch = e.touches[0];
-          const x = touch.clientX;
-          const y = touch.clientY;
-          this.touchTimeout = setTimeout(() => {
-            this.showRadialMenu(x, y);
-          }, this.longPressDuration);
-        }
-      });
-
-      canvas.addEventListener('touchend', () => {
-        if (this.touchTimeout) {
-          clearTimeout(this.touchTimeout);
-          this.touchTimeout = null;
-        }
-      });
-
-      canvas.addEventListener('touchmove', () => {
-        if (this.touchTimeout) {
-          clearTimeout(this.touchTimeout);
-          this.touchTimeout = null;
-        }
-      });
-    }
-
-    // Radial actions
-    this.radialMenuEl.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      if (target.id === 'radial-cancel') {
-        this.hideRadialMenu();
-      } else if (target.id === 'radial-wood') {
-        this.handleBuildingSelection(BuildingType.Woodcutter);
-        this.hideRadialMenu();
-      } else if (target.id === 'radial-stone') {
-        this.handleBuildingSelection(BuildingType.Stonecutter);
-        this.hideRadialMenu();
-      } else if (target.id === 'radial-military') {
-        this.handleBuildingSelection(BuildingType.Barracks);
-        this.hideRadialMenu();
-      }
-    });
-
-    // Close radial menu on click outside
-    document.addEventListener('mousedown', (e) => {
-      if (this.radialActive && !this.radialMenuEl.contains(e.target as Node)) {
-        this.hideRadialMenu();
-      }
-    });
 
     // Close button for deep panel (for unit test)
     this.deepPanelEl.querySelector('.deep-panel-close')?.addEventListener('click', () => {
@@ -1128,26 +1033,8 @@ export class InGameMenu {
     }
   }
 
-  public showRadialMenu(x: number, y: number): void {
-    this.radialActive = true;
-    this.radialX = x;
-    this.radialY = y;
-    this.radialMenuEl.style.left = `${x}px`;
-    this.radialMenuEl.style.top = `${y}px`;
-    this.radialMenuEl.classList.remove('hidden');
-  }
-
-  public hideRadialMenu(): void {
-    this.radialActive = false;
-    this.radialMenuEl.classList.add('hidden');
-  }
-
   public isDeepPanelVisible(): boolean {
     return this.deepPanelVisible;
-  }
-
-  public isRadialActive(): boolean {
-    return this.radialActive;
   }
 
   public getActiveTab(): string {
@@ -1160,10 +1047,6 @@ export class InGameMenu {
 
   public getPlayerNation(): number {
     return this.playerNation;
-  }
-
-  public getRadialCoords(): { x: number; y: number } {
-    return { x: this.radialX, y: this.radialY };
   }
 
   public toggleMenu(): void {
@@ -1190,7 +1073,6 @@ export class InGameMenu {
   public dispose(): void {
     this.buildBarEl.remove();
     this.deepPanelEl.remove();
-    this.radialMenuEl.remove();
     this.tooltipEl.remove();
     this.toggleBtnEl.remove();
   }

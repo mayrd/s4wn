@@ -1,6 +1,6 @@
 /**
  * S4WN - InGameMenu UI Tests
- * Tests for the hybrid bottom build bar, deep panel, and radial context menu.
+ * Tests for the hybrid bottom build bar, deep panel, and categorized construction menu.
  *
  * @jest-environment jsdom
  */
@@ -38,7 +38,6 @@ jest.mock('../../rendering/SupplyChainRenderer', () => ({
 
 import { InGameMenu } from '../InGameMenu';
 import { BuildingPlacement } from '../BuildingPlacement';
-import { BuildingType } from '../../economy/types';
 import { Map as GameMap } from '../../game/Map';
 import { Economy } from '../../game/Economy';
 
@@ -110,16 +109,13 @@ describe('InGameMenu', () => {
   it('should initialize DOM elements', () => {
     const buildBar = document.getElementById('anno-build-bar');
     const deepPanel = document.getElementById('s4-deep-panel');
-    const radialMenu = document.getElementById('radial-context-menu');
     const tooltip = document.querySelector('.menu-tooltip');
 
     expect(buildBar).not.toBeNull();
     expect(deepPanel).not.toBeNull();
-    expect(radialMenu).not.toBeNull();
     expect(tooltip).not.toBeNull();
 
     expect(deepPanel!.classList.contains('hidden')).toBe(true);
-    expect(radialMenu!.classList.contains('hidden')).toBe(true);
   });
 
   it('should select building when build bar item is clicked', () => {
@@ -163,33 +159,6 @@ describe('InGameMenu', () => {
     const specialistsTabBtn = document.querySelector('.deep-tab-btn[data-tab="specialists"]') as HTMLElement;
     specialistsTabBtn.click();
     expect(menu.getActiveTab()).toBe('specialists');
-  });
-
-  it('should show and hide radial context menu', () => {
-    menu.showRadialMenu(200, 300);
-    expect(menu.isRadialActive()).toBe(true);
-
-    const radialMenu = document.getElementById('radial-context-menu')!;
-    expect(radialMenu.classList.contains('hidden')).toBe(false);
-    expect(radialMenu.style.left).toBe('200px');
-    expect(radialMenu.style.top).toBe('300px');
-
-    menu.hideRadialMenu();
-    expect(menu.isRadialActive()).toBe(false);
-    expect(radialMenu.classList.contains('hidden')).toBe(true);
-  });
-
-  it('should select building on radial option click', () => {
-    menu.showRadialMenu(100, 100);
-
-    const woodcutterOption = document.getElementById('radial-wood') as HTMLElement;
-    expect(woodcutterOption).not.toBeNull();
-
-    woodcutterOption.click();
-
-    expect(bp.isVisible()).toBe(true);
-    expect(bp.getSelectedBuilding()).toBe(BuildingType.Woodcutter);
-    expect(menu.isRadialActive()).toBe(false);
   });
 
   it('should support collapsing and expanding the menu via toggle button', () => {

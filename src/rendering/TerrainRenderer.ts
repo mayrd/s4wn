@@ -205,35 +205,33 @@ export class TerrainRenderer {
     }
   }
 
-  /** Apply smooth blending at ALL tile boundaries to eliminate the visible grid.
-   *  Every tile's 4 edges and 4 corners are blended into neighbours — even
-   *  between tiles with the same terrain — so no hard cell borders remain. */
+  /** Apply smooth blending at tile boundaries to eliminate checkered look.
+   *  Only blends different-terrain boundaries. Same-terrain neighbors tile perfectly,
+   *  so skipping same-terrain blends preserves maximum texture detail and performance.
+   *  Transitions are blended using the actual neighbor's high-quality texture (faded
+   *  via transparency gradient) rather than flat solid colors, preventing a grid look. */
   private applySplatBlending(
     ctx: CanvasRenderingContext2D,
     map: GameMap,
     images: HTMLImageElement[],
     cell: number
   ): void {
-    const BLEND_WIDTH = Math.max(3, Math.floor(cell * 0.18)); // 18% of cell
-    const CORNER_RADIUS = Math.max(3, Math.floor(cell * 0.12)); // 12% for corners
+    const BLEND_WIDTH = Math.max(3, Math.floor(cell * 0.20)); // 20% of cell for soft blending
+    const CORNER_RADIUS = Math.max(3, Math.floor(cell * 0.15)); // 15% for corner blending
 
-    // Pre-compute average colour per terrain index so we don't sample 100k times.
-    const colorCache = new Map<number, string>();
-    const getCachedColor = (idx: number): string => {
-      if (!colorCache.has(idx)) {
-        colorCache.set(idx, this.sampleTerrainColor(images[idx]));
-      }
-      return colorCache.get(idx)!;
-    };
+    // Reusable temporary canvas for drawing the neighbor's texture with transparency masks
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = cell;
+    tempCanvas.height = cell;
+    const tempCtx = tempCanvas.getContext('2d')!;
 
     for (let ty = 0; ty < map.height; ty++) {
       for (let tx = 0; tx < map.width; tx++) {
         const centerIdx = this.toIdx(String(map.tiles[ty][tx].terrain));
-        const centerColor = getCachedColor(centerIdx);
         const ox = tx * cell;
         const oy = ty * cell;
 
-        // ── 4 EDGES (always blend, even same-terrain) ──
+        // ── 4 EDGES ──
         const edges: Array<{ dx: number; dy: number; edge: 'left' | 'right' | 'top' | 'bottom' }> = [
           { dx: -1, dy:  0, edge: 'left'   },
           { dx:  1, dy:  0, edge: 'right'  },
@@ -244,13 +242,16 @@ export class TerrainRenderer {
           const nx = tx + dx;
           const ny = ty + dy;
           const neighbor = map.get(nx, ny);
-          const neighborIdx = neighbor ? this.toIdx(String(neighbor.terrain)) : centerIdx;
-          const neighborColor = getCachedColor(neighborIdx);
-          // Blend from neighbour colour (at tile border) → own colour (inward).
-          this.blendEdge(ctx, ox, oy, cell, cell, neighborColor, centerColor, BLEND_WIDTH, edge);
+          if (!neighbor) continue;
+          
+          const neighborIdx = this.toIdx(String(neighbor.terrain));
+          if (neighborIdx === centerIdx) continue; // Skip same-terrain to keep details crisp
+
+          // Blend the neighbor's actual texture into the center tile
+          this.blendEdgeTexture(ctx, tempCanvas, tempCtx, ox, oy, cell, images[neighborIdx], BLEND_WIDTH, edge);
         }
 
-        // ── 4 CORNERS (always blend, even same-terrain) ──
+        // ── 4 CORNERS ──
         const corners: Array<{ dx: number; dy: number; position: 'tl' | 'tr' | 'bl' | 'br' }> = [
           { dx: -1, dy: -1, position: 'tl' }, // top-left
           { dx:  1, dy: -1, position: 'tr' }, // top-right
@@ -261,83 +262,101 @@ export class TerrainRenderer {
           const nx = tx + dx;
           const ny = ty + dy;
           const neighbor = map.get(nx, ny);
-          const neighborIdx = neighbor ? this.toIdx(String(neighbor.terrain)) : centerIdx;
-          const neighborColor = getCachedColor(neighborIdx);
-          this.blendCorner(ctx, ox, oy, cell, cell, neighborColor, centerColor, CORNER_RADIUS, position);
+          if (!neighbor) continue;
+
+          const neighborIdx = this.toIdx(String(neighbor.terrain));
+          if (neighborIdx === centerIdx) continue; // Skip same-terrain to keep details crisp
+
+          // Blend the neighbor's actual texture into the corner
+          this.blendCornerTexture(ctx, tempCanvas, tempCtx, ox, oy, cell, images[neighborIdx], CORNER_RADIUS, position);
         }
       }
     }
   }
 
-  /** Sample average color of a terrain texture */
-  private sampleTerrainColor(img: HTMLImageElement): string {
-    if (!img.width || !img.height) return 'rgb(0,0,0)';
-    // Create a small canvas to sample the center color
-    const sampleCanvas = document.createElement('canvas');
-    sampleCanvas.width = 1;
-    sampleCanvas.height = 1;
-    const sCtx = sampleCanvas.getContext('2d')!;
-    sCtx.drawImage(img, img.width / 2 - 2, img.height / 2 - 2, 4, 4, 0, 0, 1, 1);
-    const pixel = sCtx.getImageData(0, 0, 1, 1).data;
-    return `rgb(${pixel[0]},${pixel[1]},${pixel[2]})`;
-  }
-
-  /** Blend colors along a tile edge */
-  private blendEdge(
+  /** Blends neighbor's texture into the tile edge using an opacity gradient mask */
+  private blendEdgeTexture(
     ctx: CanvasRenderingContext2D,
-    x: number, y: number,
-    width: number, height: number,
-    colorA: string, colorB: string,
+    tempCanvas: HTMLCanvasElement,
+    tempCtx: CanvasRenderingContext2D,
+    ox: number, oy: number,
+    cell: number,
+    neighborImg: HTMLImageElement,
     blendWidth: number,
     edge: 'left' | 'right' | 'top' | 'bottom'
   ): void {
-    const grad = ctx.createLinearGradient(
-      edge === 'left' ? x - blendWidth : x,
-      edge === 'top' ? y - blendWidth : y,
-      edge === 'left' ? x : x + blendWidth,
-      edge === 'top' ? y : y + blendWidth
-    );
+    // 1. Clear temp canvas
+    tempCtx.clearRect(0, 0, cell, cell);
 
-    grad.addColorStop(0, colorA);
-    grad.addColorStop(1, colorB);
+    // 2. Draw neighbor's full texture onto temp canvas
+    tempCtx.globalCompositeOperation = 'source-over';
+    tempCtx.drawImage(neighborImg, 0, 0, neighborImg.width, neighborImg.height, 0, 0, cell, cell);
 
-    ctx.fillStyle = grad;
-
+    // 3. Create linear transparency gradient (opaque at tile border -> fully transparent inward)
+    let grad: CanvasGradient;
     if (edge === 'left') {
-      ctx.fillRect(x - blendWidth, y, blendWidth, height);
+      grad = tempCtx.createLinearGradient(0, 0, blendWidth, 0);
     } else if (edge === 'right') {
-      ctx.fillRect(x, y, blendWidth, height);
+      grad = tempCtx.createLinearGradient(cell, 0, cell - blendWidth, 0);
     } else if (edge === 'top') {
-      ctx.fillRect(x, y - blendWidth, width, blendWidth);
+      grad = tempCtx.createLinearGradient(0, 0, 0, blendWidth);
     } else {
-      ctx.fillRect(x, y, width, blendWidth);
+      grad = tempCtx.createLinearGradient(0, cell, 0, cell - blendWidth);
     }
+    grad.addColorStop(0, 'rgba(0,0,0,1.0)'); // Opaque neighbor texture at boundary
+    grad.addColorStop(1, 'rgba(0,0,0,0.0)'); // Fades out completely inward
+
+    // 4. Crop temp canvas to only the blended edge with destination-in
+    tempCtx.globalCompositeOperation = 'destination-in';
+    tempCtx.fillStyle = grad;
+    if (edge === 'left') {
+      tempCtx.fillRect(0, 0, blendWidth, cell);
+    } else if (edge === 'right') {
+      tempCtx.fillRect(cell - blendWidth, 0, blendWidth, cell);
+    } else if (edge === 'top') {
+      tempCtx.fillRect(0, 0, cell, blendWidth);
+    } else {
+      tempCtx.fillRect(0, cell - blendWidth, cell, blendWidth);
+    }
+
+    // 5. Draw the faded edge onto the main atlas canvas
+    ctx.drawImage(tempCanvas, ox, oy);
   }
 
-  /** Blend colours at a tile corner using a radial gradient.
-   *  Gradient goes from the diagonal neighbour's colour (at the corner tip)
-   *  to the tile's own colour (inward). The gradient centre sits at the
-   *  corner point touching the diagonal neighbour. */
-  private blendCorner(
+  /** Blends neighbor's texture into the tile corner using a radial opacity gradient mask */
+  private blendCornerTexture(
     ctx: CanvasRenderingContext2D,
-    x: number, y: number,
-    width: number, height: number,
-    neighborColor: string, ownColor: string,
+    tempCanvas: HTMLCanvasElement,
+    tempCtx: CanvasRenderingContext2D,
+    ox: number, oy: number,
+    cell: number,
+    neighborImg: HTMLImageElement,
     radius: number,
     position: 'tl' | 'tr' | 'bl' | 'br'
   ): void {
-    // Gradient centre at the outer corner (touching diagonal neighbour).
-    const gx = position === 'tr' || position === 'br' ? x + width : x;
-    const gy = position === 'bl' || position === 'br' ? y + height : y;
-    const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, radius);
-    grad.addColorStop(0, neighborColor);  // outer corner → neighbour colour
-    grad.addColorStop(1, ownColor);       // inward → tile's own colour
-    ctx.fillStyle = grad;
+    // 1. Clear temp canvas
+    tempCtx.clearRect(0, 0, cell, cell);
 
-    // Rectangle covering just the corner region.
-    const rx = position === 'tr' || position === 'br' ? x + width - radius : x;
-    const ry = position === 'bl' || position === 'br' ? y + height - radius : y;
-    ctx.fillRect(rx, ry, radius, radius);
+    // 2. Draw neighbor's full texture onto temp canvas
+    tempCtx.globalCompositeOperation = 'source-over';
+    tempCtx.drawImage(neighborImg, 0, 0, neighborImg.width, neighborImg.height, 0, 0, cell, cell);
+
+    // 3. Create radial transparency gradient centered at outer corner tip
+    const gx = position === 'tr' || position === 'br' ? cell : 0;
+    const gy = position === 'bl' || position === 'br' ? cell : 0;
+    const grad = tempCtx.createRadialGradient(gx, gy, 0, gx, gy, radius);
+    grad.addColorStop(0, 'rgba(0,0,0,1.0)'); // Opaque neighbor texture at corner tip
+    grad.addColorStop(1, 'rgba(0,0,0,0.0)'); // Fades out completely inward
+
+    // 4. Crop temp canvas to the corner region with destination-in
+    tempCtx.globalCompositeOperation = 'destination-in';
+    tempCtx.fillStyle = grad;
+    const rx = position === 'tr' || position === 'br' ? cell - radius : 0;
+    const ry = position === 'bl' || position === 'br' ? cell - radius : 0;
+    tempCtx.fillRect(rx, ry, radius, radius);
+
+    // 5. Draw the faded corner onto the main atlas canvas
+    ctx.drawImage(tempCanvas, ox, oy);
   }
 
   private toIdx(t: string): number {
