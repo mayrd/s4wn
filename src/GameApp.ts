@@ -284,6 +284,15 @@ export class GameApp {
     // (if it hasn't already) and any pending panels can be opened.
     this.ui.onGameReady();
 
+    // Wire renderers to in-game menu for debug toggling (must happen AFTER renderers exist)
+    this.inGameMenu.setGridRenderer(this.gridRenderer);
+    this.inGameMenu.setTerrainRenderer(this.terrainRenderer);
+    this.inGameMenu.setTerritoryOverlay(this.territoryOverlay);
+    this.inGameMenu.setSupplyChainRenderer(this.supplyChainRenderer);
+
+    // Expose in-game menu for console access (debug tab)
+    (window as any).debugPanel = this.inGameMenu;
+
     this.ui.updateProgress('Ready!', 100);
   }
 
@@ -523,13 +532,6 @@ export class GameApp {
       ]);
       this.tutorialManager.start();
     }
-    // Wire renderers to in-game menu for debug toggling
-    this.inGameMenu.setGridRenderer(this.gridRenderer);
-    this.inGameMenu.setTerrainRenderer(this.terrainRenderer);
-    this.inGameMenu.setTerritoryOverlay(this.territoryOverlay);
-    this.inGameMenu.setSupplyChainRenderer(this.supplyChainRenderer);
-    // Expose in-game menu for console access (debug tab)
-    (window as any).debugPanel = this.inGameMenu;
   }
 
   /**

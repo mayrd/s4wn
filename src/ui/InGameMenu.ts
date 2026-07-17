@@ -12,7 +12,7 @@
 import { BuildingType, buildingName, buildCost, resourceName } from '../economy/types';
 import { GameLoop } from '../game/GameLoop';
 import { Scene, ArcRotateCamera, Color3 } from '@babylonjs/core';
-import { BuildingPlacement } from './BuildingPlacement';
+import { BuildingPlacement, getBuildingCategories } from './BuildingPlacement';
 import { UnitKind } from '../game/types';
 import { soundManager } from '../audio/SoundManager';
 import { RESOURCE_COLORS } from '../rendering/SupplyChainRenderer';
@@ -35,6 +35,7 @@ export class InGameMenu {
   private activeTab: string = 'economy';
   private activeSubTab: string = 'raw';
   private activeMainTab: 'construction' | 'units' | 'specialists' | 'statistics' | 'ingamemenu' | 'settings' | 'debug' | 'tutorial' | 'campaign' = 'construction';
+  private constructionSubTab: string = 'basic'; // Sub-tabs for building categories in Construction
   private deepPanelVisible: boolean = false;
   private radialActive: boolean = false;
   private isCollapsed: boolean = false;
@@ -45,18 +46,18 @@ export class InGameMenu {
   private touchTimeout: any = null;
   private longPressDuration: number = 500; // ms
 
-   // Renderers for Debug toggling
-   private gridRenderer: any = null;
-   private terrainRenderer: any = null;
-   private territoryOverlay: any = null;
-   private supplyChainRenderer: any = null;
-   
-   // Camera for mouse tracking
-   private camera: ArcRotateCamera | null = null;
-   
-   // Texture state for toggle
-   private originalTextures: WeakMap<any, any> = new WeakMap();
-   private originalEmissive: WeakMap<any, any> = new WeakMap();
+  // Renderers for Debug toggling
+  private gridRenderer: any = null;
+  private terrainRenderer: any = null;
+  private territoryOverlay: any = null;
+  private supplyChainRenderer: any = null;
+  
+  // Camera for mouse tracking
+  private camera: ArcRotateCamera | null = null;
+  
+  // Texture state for toggle
+  private originalTextures: WeakMap<any, any> = new WeakMap();
+  private originalEmissive: WeakMap<any, any> = new WeakMap();
 
   constructor(
     gameLoop: GameLoop,
@@ -135,32 +136,40 @@ export class InGameMenu {
     const stats = typeof this.gameLoop?.getStats === 'function' ? this.gameLoop.getStats() : { gameTime: 0, ticks: 0 };
 
     if (this.activeMainTab === 'construction') {
-      const quickBuildings = [
-        BuildingType.Woodcutter,
-        BuildingType.Forester,
-        BuildingType.Sawmill,
-        BuildingType.Stonecutter,
-        BuildingType.Farm,
-        BuildingType.Bakery,
-        BuildingType.Barracks,
-        BuildingType.GuardTower
-      ];
-
-      const itemsHtml = quickBuildings.map(kind => {
-        const name = buildingName(kind);
-        const cost = buildCost(kind);
-        const costStr = cost.map(c => `${c.amount} ${resourceName(c.resource)}`).join(', ');
-        return `
-          <button class="build-bar-item" data-kind="${kind}" data-cost="${costStr}">
-            <span class="item-icon">🏗️</span>
-            <span class="item-label">${name}</span>
-          </button>
-        `;
+      // Building categories as subtabs
+      const categories = getBuildingCategories();
+      const catTabsHtml = categories.map(cat => {
+        const active = cat.id === this.constructionSubTab ? 'active' : '';
+        return `<button class="build-subtab-btn ${active}" data-construction-subtab="${cat.id}">${cat.label}</button>`;
       }).join('');
 
+      // Buildings in the active category
+      const activeCat = categories.find(c => c.id === this.constructionSubTab);
+      let buildingsHtml = '';
+      
+      if (activeCat) {
+        // Show all buildings (nation filtering handled by BuildingPlacement)
+        const validBuildings = activeCat.buildings;
+        
+        buildingsHtml = validBuildings.map(kind => {
+          const name = buildingName(kind);
+          const cost = buildCost(kind);
+          const costStr = cost.map(c => `${c.amount} ${resourceName(c.resource)}`).join(', ');
+          return `
+            <button class="build-bar-item" data-kind="${kind}" data-cost="${costStr}">
+              <span class="item-icon">🏗️</span>
+              <span class="item-label">${name}</span>
+            </button>
+          `;
+        }).join('');
+      }
+
       contentHtml = `
+        <div class="build-subtabs-row">
+          ${catTabsHtml}
+        </div>
         <div class="build-bar-items">
-          ${itemsHtml}
+          ${buildingsHtml}
         </div>
       `;
     } else if (this.activeMainTab === 'units') {
@@ -361,6 +370,19 @@ export class InGameMenu {
   }
 
   private attachBuildBarEvents(): void {
+    // Construction category subtabs
+    if (this.activeMainTab === 'construction') {
+      this.buildBarEl.querySelectorAll('.build-subtab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const subtab = (e.target as HTMLElement).dataset.constructionSubtab;
+          if (subtab) {
+            this.constructionSubTab = subtab;
+            this.renderBuildBar();
+          }
+        });
+      });
+    }
+
     // Spawners under Units Tab
     if (this.activeMainTab === 'units') {
       this.buildBarEl.querySelector('#btn-recruit-worker')?.addEventListener('click', () => {
