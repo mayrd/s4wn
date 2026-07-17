@@ -189,12 +189,15 @@ export class HUD {
     const update = () => {
       const stats = gameLoop.getStats();
       const timeEl = document.getElementById('hud-time');
+      const menuTimeEl = document.getElementById('menu-time');
       
       const newTime = Math.floor(stats.gameTime).toString() + 's';
       
       if (timeEl && timeEl.textContent !== newTime) {
         timeEl.textContent = newTime;
-        // console.log("HUD Time changed to:", newTime);
+      }
+      if (menuTimeEl && menuTimeEl.textContent !== `Time: ${newTime}`) {
+        menuTimeEl.textContent = `Time: ${newTime}`;
       }
       
       requestAnimationFrame(update);

@@ -6,7 +6,7 @@ export class TutorialDialog {
         this.container = this.document.createElement('div');
         this.container.id = 'tutorial-dialog';
         this.container.style.position = 'absolute';
-        this.container.style.bottom = '20px';
+        this.container.style.bottom = '140px';
         this.container.style.left = '50%';
         this.container.style.transform = 'translateX(-50%)';
         this.container.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';

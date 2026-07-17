@@ -109,8 +109,9 @@ export class InGameMenu {
 
     this.buildBarEl.innerHTML = `
       <div class="build-bar-header">
-        <span class="build-bar-title">Quick Build (Anno Style)</span>
-        <button class="build-bar-toggle-deep" id="btn-toggle-deep-menu" title="Deep S4 Menu">📜 Management</button>
+        <span class="build-bar-title">Construction</span>
+        <span class="build-bar-stats" id="menu-time">Time: 0s</span>
+        <button class="build-bar-toggle-deep" id="btn-toggle-deep-menu" title="Deep Menu">📜 Management</button>
       </div>
       <div class="build-bar-items">
         ${itemsHtml}
@@ -133,7 +134,7 @@ export class InGameMenu {
 
     this.deepPanelEl.innerHTML = `
       <div class="deep-panel-header">
-        <span class="deep-panel-title">Settlers IV Deep Menu</span>
+        <span class="deep-panel-title">Management</span>
         <button class="deep-panel-close">&times;</button>
       </div>
       <div class="deep-tabs-row">

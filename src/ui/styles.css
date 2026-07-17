@@ -1117,3 +1117,15 @@
     font-size: 0.75rem;
   }
 }
+
+/* Integrate stats directly into the build bar and hide the old floating panel */
+#stats-panel {
+  display: none !important;
+}
+.build-bar-stats {
+  font-size: 0.85rem;
+  color: #fff;
+  opacity: 0.9;
+  font-weight: normal;
+  text-shadow: 0 1px 1px #000;
+}
