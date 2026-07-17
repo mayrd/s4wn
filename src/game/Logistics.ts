@@ -8,9 +8,18 @@ export interface ResourceItem {
   isReserved: boolean; // True if a carrier is on the way to pick this up
 }
 
+export interface ResourceDemand {
+  buildingIndex: number;
+  type: ResourceType;
+  amount: number;
+  x: number;
+  y: number;
+}
+
 export class LogisticsManager {
   private items: ResourceItem[] = [];
-  private nextItemId: number = 1;
+  private nextItemId: number = 1; // Changed from nextItemId
+  private demands: ResourceDemand[] = [];
 
   spawnItem(type: ResourceType, x: number, y: number): ResourceItem {
     const item = {
@@ -18,14 +27,14 @@ export class LogisticsManager {
       type,
       x,
       y,
-      isReserved: false
+      isReserved: false,
     };
     this.items.push(item);
     return item;
   }
 
   removeItem(id: number): boolean {
-    const idx = this.items.findIndex(i => i.id === id);
+    const idx = this.items.findIndex((i) => i.id === id);
     if (idx !== -1) {
       this.items.splice(idx, 1);
       return true;
@@ -38,7 +47,6 @@ export class LogisticsManager {
   }
 
   getUnreservedItem(type: ResourceType, nearX: number, nearY: number): ResourceItem | null {
-    // Simple closest match
     let bestItem: ResourceItem | null = null;
     let bestDistSq = Infinity;
 
@@ -54,5 +62,30 @@ export class LogisticsManager {
       }
     }
     return bestItem;
+  }
+
+  // ── Demand Tracking ──────────────────────────────────
+
+  registerDemand(buildingIndex: number, type: ResourceType, amount: number, x: number, y: number): void {
+    this.demands.push({ buildingIndex, type, amount, x, y });
+  }
+
+  clearDemands(): void {
+    this.demands = [];
+  }
+
+  getDemands(): ResourceDemand[] {
+    return this.demands;
+  }
+
+  /** Find an unreserved item that matches any demand and return both */
+  matchDemand(): { demand: ResourceDemand; item: ResourceItem } | null {
+    for (const demand of this.demands) {
+      const item = this.getUnreservedItem(demand.type, demand.x, demand.y);
+      if (item) {
+        return { demand, item };
+      }
+    }
+    return null;
   }
 }

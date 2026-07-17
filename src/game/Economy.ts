@@ -7,6 +7,7 @@
 
 import { BuildingType, ResourceType, RESOURCE_COUNT, buildCost, buildingInputs, buildingOutputs, productionInterval, requiresSettler, buildTime, maxHp, maxSettlers, CostItem } from '../economy/types';
 import { Map as GameMap } from './Map';
+import { LogisticsManager } from './Logistics';
 
 export interface BuildingData {
   index: number;
@@ -35,11 +36,13 @@ export class Economy {
   storageCapacity: number = 100;
   constructionCompletions: number = 0;
   resourcePickups: number = 0;
+  logistics: LogisticsManager;
 
-  constructor() {
+  constructor(logistics?: LogisticsManager) {
     // Start with some initial resources
     this.resources[ResourceType.Wood] = 20;
     this.resources[ResourceType.Stone] = 10;
+    this.logistics = logistics || new LogisticsManager();
   }
 
   // ── Resource Management ──────────────────────────────────────────
@@ -175,6 +178,9 @@ export class Economy {
     this.constructionCompletions = 0;
     this.resourcePickups = 0;
 
+    // Clear and rebuild demand registry each tick
+    this.logistics.clearDemands();
+
     for (const building of this.buildings) {
       // Construction progress
       if (building.constructionProgress < 1.0) {
@@ -219,6 +225,23 @@ export class Economy {
           return building.inputBuffer[disc] >= inp.amount;
         });
 
+        // Register demands for missing inputs
+        if (!canProduce) {
+          for (const inp of inputs) {
+            const disc = inp.resource as number;
+            const needed = inp.amount - building.inputBuffer[disc];
+            if (needed > 0) {
+              this.logistics.registerDemand(
+                building.index,
+                disc as ResourceType,
+                needed,
+                building.x,
+                building.y,
+              );
+            }
+          }
+        }
+
         if (canProduce) {
           // Consume inputs
           for (const inp of inputs) {
@@ -233,13 +256,15 @@ export class Economy {
             building.outputBuffer[disc] += out.amount;
           }
 
-          // Transfer outputs to global storage
+          // Transfer outputs to global storage AND spawn physical world items
           for (const out of outputs) {
             const disc = out.resource as number;
             while (building.outputBuffer[disc] > 0) {
               const transferred = this.addResource(disc as ResourceType, 1);
               if (transferred > 0) {
                 building.outputBuffer[disc]--;
+                // Spawn a physical item on the map for carriers to pick up
+                this.logistics.spawnItem(disc as ResourceType, building.x, building.y);
               } else {
                 break; // Storage full
               }
