@@ -11,10 +11,11 @@
 
 import { BuildingType, buildingName, buildCost, resourceName } from '../economy/types';
 import { GameLoop } from '../game/GameLoop';
-import { Scene } from '@babylonjs/core';
+import { Scene, ArcRotateCamera, Color3 } from '@babylonjs/core';
 import { BuildingPlacement } from './BuildingPlacement';
 import { UnitKind } from '../game/types';
 import { soundManager } from '../audio/SoundManager';
+import { RESOURCE_COLORS } from '../rendering/SupplyChainRenderer';
 
 export class InGameMenu {
   private gameLoop: GameLoop;
@@ -44,11 +45,18 @@ export class InGameMenu {
   private touchTimeout: any = null;
   private longPressDuration: number = 500; // ms
 
-  // Renderers for Debug toggling
-  private gridRenderer: any = null;
-  private terrainRenderer: any = null;
-  private territoryOverlay: any = null;
-  private supplyChainRenderer: any = null;
+   // Renderers for Debug toggling
+   private gridRenderer: any = null;
+   private terrainRenderer: any = null;
+   private territoryOverlay: any = null;
+   private supplyChainRenderer: any = null;
+   
+   // Camera for mouse tracking
+   private camera: ArcRotateCamera | null = null;
+   
+   // Texture state for toggle
+   private originalTextures: WeakMap<any, any> = new WeakMap();
+   private originalEmissive: WeakMap<any, any> = new WeakMap();
 
   constructor(
     gameLoop: GameLoop,
@@ -232,18 +240,57 @@ export class InGameMenu {
         </div>
       `;
     } else if (this.activeMainTab === 'debug') {
-      // Inline the debug panel toggles beautifully
+      // Full debug panel with stats and toggles
       const isGrid = this.gridRenderer?.getMesh()?.isVisible ?? false;
       const isTerritory = this.territoryOverlay?.isVisible ?? false;
       const isSupply = this.supplyChainRenderer?.visible ?? false;
       const isSplat = this.terrainRenderer?.isSplattingEnabled() ?? true;
 
       contentHtml = `
-        <div class="menu-debug-row">
-          <button id="menu-debug-grid" class="debug-toggle-btn">${isGrid ? 'Grid: ON' : 'Grid: OFF'}</button>
-          <button id="menu-debug-splat" class="debug-toggle-btn">${isSplat ? 'Splat: ON' : 'Splat: OFF'}</button>
-          <button id="menu-debug-territory" class="debug-toggle-btn">${isTerritory ? 'Territory: ON' : 'Territory: OFF'}</button>
-          <button id="menu-debug-supply" class="debug-toggle-btn">${isSupply ? 'Supply: ON' : 'Supply: OFF'}</button>
+        <div class="menu-debug-content">
+          <div class="debug-stats-section">
+            <div class="debug-stat-row"><span>FPS:</span> <span id="debug-fps" class="debug-stat-value">0</span></div>
+            <div class="debug-stat-row"><span>Game Time:</span> <span id="debug-time" class="debug-stat-value">0s</span></div>
+            <div class="debug-stat-row"><span>Ticks:</span> <span id="debug-ticks" class="debug-stat-value">0</span></div>
+            <hr class="debug-divider" />
+            <div class="debug-section-title">Units</div>
+            <div class="debug-stat-row"><span>Total:</span> <span id="debug-units-total" class="debug-stat-value">0</span></div>
+            <div class="debug-stat-row"><span>Workers:</span> <span id="debug-units-workers" class="debug-stat-value">0</span></div>
+            <div class="debug-stat-row"><span>Archers:</span> <span id="debug-units-archers" class="debug-stat-value">0</span></div>
+            <div class="debug-stat-row"><span>Soldiers:</span> <span id="debug-units-soldiers" class="debug-stat-value">0</span></div>
+            <hr class="debug-divider" />
+            <div class="debug-section-title">Buildings</div>
+            <div class="debug-stat-row"><span>Total:</span> <span id="debug-buildings-total" class="debug-stat-value">0</span></div>
+            <div class="debug-stat-row"><span>Storage:</span> <span id="debug-buildings-storage" class="debug-stat-value">0</span></div>
+            <div class="debug-stat-row"><span>Production:</span> <span id="debug-buildings-prod" class="debug-stat-value">0</span></div>
+          </div>
+          <hr class="debug-divider" />
+          <div class="debug-controls-section">
+            <div class="debug-controls-row">
+              <button id="menu-debug-grid" class="debug-toggle-btn">${isGrid ? 'Grid: ON' : 'Grid: OFF'}</button>
+              <button id="menu-debug-textures" class="debug-toggle-btn">Textures: ON</button>
+              <button id="menu-debug-wireframe" class="debug-toggle-btn">Wire: OFF</button>
+            </div>
+            <div class="debug-controls-row">
+              <button id="menu-debug-splat" class="debug-toggle-btn">${isSplat ? 'Splat: ON' : 'Splat: OFF'}</button>
+              <button id="menu-debug-territory" class="debug-toggle-btn">${isTerritory ? 'Territory: ON' : 'Territory: OFF'}</button>
+              <button id="menu-debug-fog" class="debug-toggle-btn">Fog: ON</button>
+            </div>
+            <div class="debug-controls-row">
+              <button id="menu-debug-pause" class="debug-toggle-btn">Pause: OFF</button>
+              <button id="menu-debug-supply" class="debug-toggle-btn">${isSupply ? 'Supply: ON' : 'Supply: OFF'}</button>
+              <button id="menu-debug-inspector" class="debug-toggle-btn">Inspect</button>
+            </div>
+            <div id="debug-supply-filters" class="debug-supply-filters">
+              <span style="font-size:0.75rem; color:var(--parchment-border);">Supply Filters:</span>
+            </div>
+          </div>
+          <hr class="debug-divider" />
+          <div class="debug-tile-section">
+            <div class="debug-section-title">Mouse Tile</div>
+            <div class="debug-stat-row" style="font-size:0.75rem"><span>Coords:</span> <span id="debug-mouse-coords" class="debug-stat-value">(-,-)</span></div>
+            <div id="debug-tile-result" class="debug-tile-result" style="font-size:0.7rem;line-height:1.4;max-height:120px;overflow-y:auto;margin-top:4px"></div>
+          </div>
         </div>
       `;
     } else if (this.activeMainTab === 'tutorial') {
@@ -422,6 +469,11 @@ export class InGameMenu {
       const splatBtn = this.buildBarEl.querySelector('#menu-debug-splat') as HTMLButtonElement;
       const terrBtn = this.buildBarEl.querySelector('#menu-debug-territory') as HTMLButtonElement;
       const supplyBtn = this.buildBarEl.querySelector('#menu-debug-supply') as HTMLButtonElement;
+      const texBtn = this.buildBarEl.querySelector('#menu-debug-textures') as HTMLButtonElement;
+      const wireBtn = this.buildBarEl.querySelector('#menu-debug-wireframe') as HTMLButtonElement;
+      const fogBtn = this.buildBarEl.querySelector('#menu-debug-fog') as HTMLButtonElement;
+      const pauseBtn = this.buildBarEl.querySelector('#menu-debug-pause') as HTMLButtonElement;
+      const inspectorBtn = this.buildBarEl.querySelector('#menu-debug-inspector') as HTMLButtonElement;
 
       gridBtn?.addEventListener('click', () => {
         const isVisible = !(this.gridRenderer?.getMesh()?.isVisible ?? false);
@@ -448,7 +500,138 @@ export class InGameMenu {
         }
         supplyBtn.textContent = visible ? 'Supply: ON' : 'Supply: OFF';
       });
+
+      // Textures toggle
+      let texturesEnabled = true;
+      texBtn?.addEventListener('click', () => {
+        texturesEnabled = !texturesEnabled;
+        texBtn.textContent = `Textures: ${texturesEnabled ? 'ON' : 'OFF'}`;
+        this.setTextureMode(texturesEnabled);
+      });
+
+      // Wireframe toggle
+      let wireframeMode = false;
+      wireBtn?.addEventListener('click', () => {
+        wireframeMode = !wireframeMode;
+        wireBtn.textContent = `Wire: ${wireframeMode ? 'ON' : 'OFF'}`;
+        this.setWireframe(wireframeMode);
+      });
+
+      // Fog toggle (placeholder)
+      let fogEnabled = true;
+      fogBtn?.addEventListener('click', () => {
+        fogEnabled = !fogEnabled;
+        fogBtn.textContent = `Fog: ${fogEnabled ? 'ON' : 'OFF'}`;
+        this.setFogVisibility(fogEnabled);
+      });
+
+      // Pause toggle
+      pauseBtn?.addEventListener('click', () => {
+        this.gameLoop.state.isPaused = !this.gameLoop.state.isPaused;
+        this.updatePauseButton(pauseBtn);
+      });
+
+      // Babylon Inspector
+      inspectorBtn?.addEventListener('click', () => {
+        this.showBabylonInspector();
+      });
+
+      // Populate supply chain filters
+      this.populateSupplyFilters();
     }
+  }
+
+  private populateSupplyFilters(): void {
+    const filterContainer = this.buildBarEl.querySelector('#debug-supply-filters') as HTMLDivElement;
+    if (!filterContainer) return;
+
+    for (const [resIdStr, color] of Object.entries(RESOURCE_COLORS)) {
+      const resId = parseInt(resIdStr, 10);
+      const name = resourceName(resId);
+      const btn = document.createElement('button');
+      btn.className = 'debug-supply-filter-btn';
+      btn.title = `Toggle ${name}`;
+      btn.style.width = '20px';
+      btn.style.height = '20px';
+      btn.style.padding = '0';
+      btn.style.margin = '0 2px';
+      btn.style.border = '1px solid #444';
+      btn.style.cursor = 'pointer';
+      btn.style.borderRadius = '3px';
+      // Convert RGB [0-1] to CSS hex
+      const toHex = (c: number) => Math.round(c * 255).toString(16).padStart(2, '0');
+      const hexColor = `#${toHex(color[0])}${toHex(color[1])}${toHex(color[2])}`;
+      btn.style.backgroundColor = hexColor;
+      
+      let enabled = true;
+      btn.addEventListener('click', () => {
+        enabled = !enabled;
+        btn.style.opacity = enabled ? '1' : '0.3';
+        if (this.supplyChainRenderer) {
+          this.supplyChainRenderer.setResourceVisible(resId, enabled);
+          // Recompute immediately
+          this.supplyChainRenderer.refresh(this.supplyChainRenderer.computeLinks(this.gameLoop.economy));
+        }
+      });
+      filterContainer.appendChild(btn);
+    }
+  }
+
+  private updatePauseButton(btn: HTMLButtonElement): void {
+    btn.textContent = `Pause: ${this.gameLoop.state.isPaused ? 'ON' : 'OFF'}`;
+  }
+
+  private setTextureMode(enabled: boolean): void {
+    if (!this.scene) return;
+    this.scene.meshes.forEach((mesh) => {
+      if (mesh.material) {
+        const mat = mesh.material as any;
+        if (enabled) {
+          const saved = this.originalTextures.get(mat);
+          if (saved !== undefined) {
+            mat.diffuseTexture = saved;
+          }
+          const savedEmissive = this.originalEmissive.get(mat);
+          if (savedEmissive !== undefined) {
+            mat.emissiveColor = savedEmissive;
+            this.originalEmissive.delete(mat);
+          }
+          this.originalTextures.delete(mat);
+        } else {
+          this.originalTextures.set(mat, mat.diffuseTexture);
+          if (mat.emissiveColor) {
+            this.originalEmissive.set(mat, mat.emissiveColor.clone());
+          }
+          mat.diffuseTexture = null;
+          mat.emissiveColor = new Color3(1, 0, 1); // Magenta for debugging
+        }
+      }
+    });
+  }
+
+  private setWireframe(enabled: boolean): void {
+    if (!this.scene) return;
+    this.scene.meshes.forEach((mesh) => {
+      if (mesh.material) {
+        const mat = mesh.material as any;
+        mat.wireframe = enabled;
+      }
+    });
+  }
+
+  private setFogVisibility(_enabled: boolean): void {
+    // Fog of war - placeholder for future implementation
+  }
+
+  /** Launch Babylon.js Inspector for advanced scene debugging */
+  private showBabylonInspector(): void {
+    import('@babylonjs/inspector' as any).then((mod: any) => {
+      if (mod && mod.Inspector && this.scene) {
+        mod.Inspector.Show(this.scene, { embedMode: true, enableClose: true });
+      }
+    }).catch(() => {
+      // Package not installed - silently fail for production
+    });
   }
 
   private renderDeepPanel(): void {
@@ -751,8 +934,43 @@ export class InGameMenu {
   }
 
   private startUpdateLoop(): void {
+    // Initialize camera for mouse tracking
+    if (this.scene) {
+      this.camera = this.scene.activeCamera as ArcRotateCamera | null;
+      this.setupMouseTracking();
+    }
+
     const update = () => {
       const stats = typeof this.gameLoop?.getStats === 'function' ? this.gameLoop.getStats() : { gameTime: 0, ticks: 0 };
+      
+      // Debug stats update
+      if (this.activeMainTab === 'debug') {
+        const units = this.gameLoop.unitManager.getAliveUnits();
+        const buildings = this.gameLoop.economy.getCompleteBuildings();
+
+        const fpsEl = document.getElementById('debug-fps');
+        const timeEl = document.getElementById('debug-time');
+        const ticksEl = document.getElementById('debug-ticks');
+        const unitsTotalEl = document.getElementById('debug-units-total');
+        const unitsWorkersEl = document.getElementById('debug-units-workers');
+        const unitsArchersEl = document.getElementById('debug-units-archers');
+        const unitsSoldiersEl = document.getElementById('debug-units-soldiers');
+        const buildingsTotalEl = document.getElementById('debug-buildings-total');
+        const buildingsStorageEl = document.getElementById('debug-buildings-storage');
+        const buildingsProdEl = document.getElementById('debug-buildings-prod');
+
+        if (fpsEl) fpsEl.textContent = Math.round(this.scene?.getEngine?.().getFps() ?? 0).toString();
+        if (timeEl) timeEl.textContent = `${Math.floor(stats.gameTime)}s`;
+        if (ticksEl) ticksEl.textContent = stats.ticks.toString();
+        if (unitsTotalEl) unitsTotalEl.textContent = units.length.toString();
+        if (unitsWorkersEl) unitsWorkersEl.textContent = units.filter(u => u.kind === UnitKind.Worker).length.toString();
+        if (unitsArchersEl) unitsArchersEl.textContent = units.filter(u => u.kind === UnitKind.Bowman).length.toString();
+        if (unitsSoldiersEl) unitsSoldiersEl.textContent = units.filter(u => u.kind === UnitKind.Swordsman).length.toString();
+        if (buildingsTotalEl) buildingsTotalEl.textContent = buildings.length.toString();
+        if (buildingsStorageEl) buildingsStorageEl.textContent = buildings.filter(b => this.isStorageBuilding(b.kind)).length.toString();
+        if (buildingsProdEl) buildingsProdEl.textContent = buildings.filter(b => this.isProductionBuilding(b.kind)).length.toString();
+      }
+      
       // Periodic stats update under statistics tab
       if (this.activeMainTab === 'statistics') {
         const units = this.gameLoop.unitManager.getAliveUnits();
@@ -782,6 +1000,89 @@ export class InGameMenu {
       requestAnimationFrame(update);
     };
     requestAnimationFrame(update);
+  }
+
+  private isStorageBuilding(kind: number): boolean {
+    return kind === BuildingType.Storehouse ||
+           kind === BuildingType.StorageYard ||
+           kind === BuildingType.LandingDock;
+  }
+
+  private isProductionBuilding(kind: number): boolean {
+    return kind !== BuildingType.Castle &&
+           kind !== BuildingType.Barracks &&
+           kind !== BuildingType.Storehouse &&
+           kind !== BuildingType.StorageYard &&
+           kind !== BuildingType.LandingDock;
+  }
+
+  private setupMouseTracking(): void {
+    if (!this.scene || !this.camera) return;
+    
+    const canvas = this.scene.getEngine().getRenderingCanvas();
+    if (!canvas) return;
+
+    canvas.addEventListener('pointermove', (evt) => {
+      this.updateMouseCoords(evt);
+    });
+
+    canvas.addEventListener('pointerleave', () => {
+      const coordsEl = document.getElementById('debug-mouse-coords');
+      if (coordsEl) coordsEl.textContent = '(-,-)';
+    });
+  }
+
+  private updateMouseCoords(evt: PointerEvent): void {
+    if (!this.camera) return;
+
+    const coordsEl = document.getElementById('debug-mouse-coords');
+    if (!coordsEl) return;
+
+    const pick = this.scene?.pick(evt.clientX, evt.clientY);
+    if (!pick || !pick.pickedPoint) {
+      coordsEl.textContent = '(-,-)';
+      return;
+    }
+
+    const x = Math.floor(pick.pickedPoint.x);
+    const y = Math.floor(pick.pickedPoint.z);
+
+    if (x < 0 || x >= this.gameLoop.map.width || y < 0 || y >= this.gameLoop.map.height) {
+      coordsEl.textContent = '(-,-)';
+      return;
+    }
+
+    coordsEl.textContent = `(${x},${y})`;
+    
+    const tile = this.gameLoop.map.get(x, y);
+    let html = '';
+    if (tile) {
+      html += `<div><b>${tile.terrain}</b> (${x},${y})</div>
+        <div>Elevation: ${tile.elevation.toFixed(2)}</div>
+        <div>Resource: ${tile.resource?.toString() ?? 'none'}</div>
+        <div style="font-size:0.6rem;opacity:0.6">Visibility: ${tile.visibility.toFixed(2)} · Territory: ${tile.territory}</div>`;
+    }
+
+    // Check for buildings at this tile
+    const building = this.gameLoop.economy.getBuildingAt(x, y);
+    if (building) {
+      html += `<hr class="debug-divider" style="margin:3px 0" />
+        <div style="color:#8f8">🏰 <b>Building</b></div>
+        <div>Kind: ${BuildingType[building.kind] ?? building.kind}</div>`;
+    }
+
+    // Check for units at this tile
+    const unitsHere = this.gameLoop.unitManager.getAliveUnits()
+      .filter(u => Math.floor(u.x) === x && Math.floor(u.y) === y);
+    if (unitsHere.length > 0) {
+      html += `<hr class="debug-divider" style="margin:3px 0" />`;
+      for (const u of unitsHere) {
+        html += `<div style="color:#ff8">👤 <b>${UnitKind[u.kind] ?? 'Unit'} #${u.id}</b></div>
+          <div>HP: ${u.hp.toFixed(0)} · State: ${u.state}</div>`;
+      }
+    }
+
+    document.getElementById('debug-tile-result')!.innerHTML = html || '—';
   }
 
   private showToast(msg: string): void {

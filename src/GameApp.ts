@@ -27,7 +27,7 @@ import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
 import { ParticleSystem } from './game/particles/ParticleSystem';
 import { GridRenderer } from './rendering/GridRenderer';
 import { HUD } from './ui/HUD';
-import { DebugPanel } from './ui/panels/DebugPanel';
+ // DebugPanel removed - debug functionality now integrated into InGameMenu
 import { MapEditor } from './ui/editor/MapEditor';
 import { soundManager } from './audio/SoundManager';
 import { TouchCameraController } from './input/TouchCameraController';
@@ -321,11 +321,10 @@ export class GameApp {
     });
   }
 
-  /** Wire HUD + debug panel now that the game (and canvas) exist. */
+  /** Wire HUD + in-game menu now that the game (and canvas) exist. */
   private initUI(): void {
     this.gameLoop.state.isPaused = false;
     new HUD(this.gameLoop);
-    const debugPanel = new DebugPanel(document, this.engine, this.gameLoop, this.scene);
     this.inGameMenu = new InGameMenu(this.gameLoop, this.scene, this.playerNation, this.buildingPlacement);
 
     if (this.mode === 'tutorial') {
@@ -524,13 +523,13 @@ export class GameApp {
       ]);
       this.tutorialManager.start();
     }
-    // Wire renderers to debug panel for toggling
-    debugPanel.setGridRenderer(this.gridRenderer);
-    debugPanel.setTerrainRenderer(this.terrainRenderer);
-    debugPanel.setTerritoryOverlay(this.territoryOverlay);
-    debugPanel.setSupplyChainRenderer(this.supplyChainRenderer);
-    // Expose debug panel for console access
-    (window as any).debugPanel = debugPanel;
+    // Wire renderers to in-game menu for debug toggling
+    this.inGameMenu.setGridRenderer(this.gridRenderer);
+    this.inGameMenu.setTerrainRenderer(this.terrainRenderer);
+    this.inGameMenu.setTerritoryOverlay(this.territoryOverlay);
+    this.inGameMenu.setSupplyChainRenderer(this.supplyChainRenderer);
+    // Expose in-game menu for console access (debug tab)
+    (window as any).debugPanel = this.inGameMenu;
   }
 
   /**

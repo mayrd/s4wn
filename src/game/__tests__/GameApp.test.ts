@@ -16,9 +16,13 @@ jest.mock('@babylonjs/core', () => ({
   Scene: jest.fn(() => ({
     render: jest.fn(),
     meshes: [],
-    getEngine: jest.fn(),
+    getEngine: jest.fn(() => ({
+      getRenderingCanvas: jest.fn(() => null),
+      getFps: jest.fn(() => 60),
+    })),
     clearColor: { set: jest.fn() },
     activeCamera: null,
+    pick: jest.fn(() => ({ hit: false, pickedPoint: null })),
   })),
   ArcRotateCamera: jest.fn(() => ({
     setTarget: jest.fn(),
@@ -137,12 +141,32 @@ jest.mock('../../ui/HUD', () => ({
   HUD: jest.fn(),
 }));
 
-jest.mock('../../ui/panels/DebugPanel', () => ({
-  DebugPanel: jest.fn(() => ({
+// DebugPanel removed - debug functionality now integrated into InGameMenu
+jest.mock('../../ui/InGameMenu', () => ({
+  InGameMenu: jest.fn(() => ({
     setGridRenderer: jest.fn(),
     setTerrainRenderer: jest.fn(),
     setTerritoryOverlay: jest.fn(),
     setSupplyChainRenderer: jest.fn(),
+    dispose: jest.fn(),
+  })),
+}));
+
+jest.mock('../../rendering/SupplyChainRenderer', () => ({
+  RESOURCE_COLORS: {
+    0: [0.8, 0.6, 0.2],
+    1: [0.5, 0.5, 0.5],
+    2: [0.2, 0.4, 0.8],
+    3: [0.3, 0.7, 0.3],
+    4: [0.1, 0.1, 0.1],
+  },
+  SupplyChainRenderer: jest.fn(() => ({
+    computeLinks: jest.fn(() => []),
+    refresh: jest.fn(),
+    update: jest.fn(),
+    loadCarrierModel: jest.fn(() => Promise.resolve()),
+    visible: true,
+    dispose: jest.fn(),
   })),
 }));
 
@@ -156,17 +180,6 @@ jest.mock('../../ui/BuildingPlacement', () => ({
   BuildingPlacement: jest.fn(() => ({
     toggle: jest.fn(),
     isVisible: jest.fn(() => false),
-    dispose: jest.fn(),
-  })),
-}));
-
-jest.mock('../../rendering/SupplyChainRenderer', () => ({
-  SupplyChainRenderer: jest.fn(() => ({
-    computeLinks: jest.fn(() => []),
-    refresh: jest.fn(),
-    update: jest.fn(),
-    loadCarrierModel: jest.fn(() => Promise.resolve()),
-    visible: true,
     dispose: jest.fn(),
   })),
 }));

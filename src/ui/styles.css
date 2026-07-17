@@ -1290,9 +1290,86 @@ body.menu-collapsed .hud-container {
 }
 
 /* Integrate stats directly into the build bar and hide the old floating panel */
-#stats-panel {
+#stats-panel, .debug-panel {
   display: none !important;
 }
+
+/* Debug Menu Styles (integrated into build bar) */
+.menu-debug-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+.debug-stats-section,
+.debug-controls-section,
+.debug-tile-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.debug-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  padding: 2px 0;
+}
+
+.debug-stat-value {
+  font-weight: bold;
+  color: #8f8;
+}
+
+.debug-section-title {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--accent-color);
+  margin: 6px 0 2px 0;
+}
+
+.debug-controls-row {
+  display: flex;
+  gap: 4px;
+  margin: 2px 0;
+  flex-wrap: wrap;
+}
+
+.debug-toggle-btn {
+  flex: 1;
+  min-width: 70px;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  background: rgba(93, 64, 55, 0.8);
+  border: 1px solid var(--parchment-border);
+  border-radius: 4px;
+  color: var(--parchment-bg);
+}
+
+.debug-toggle-btn:hover {
+  background: var(--accent-color);
+  color: var(--text-color);
+}
+
+.debug-supply-filters {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(210, 180, 140, 0.3);
+}
+
+.debug-tile-result {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 4px;
+  margin-top: 2px;
+}
+
 .build-bar-stats {
   font-size: 0.85rem;
   color: #fff;

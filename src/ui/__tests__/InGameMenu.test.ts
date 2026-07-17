@@ -26,6 +26,16 @@ jest.mock('@babylonjs/core', () => ({
   Mesh: jest.fn(),
 }));
 
+jest.mock('../../rendering/SupplyChainRenderer', () => ({
+  RESOURCE_COLORS: {
+    0: [0.8, 0.6, 0.2],
+    1: [0.5, 0.5, 0.5],
+    2: [0.2, 0.4, 0.8],
+    3: [0.3, 0.7, 0.3],
+    4: [0.1, 0.1, 0.1],
+  },
+}));
+
 import { InGameMenu } from '../InGameMenu';
 import { BuildingPlacement } from '../BuildingPlacement';
 import { BuildingType } from '../../economy/types';
