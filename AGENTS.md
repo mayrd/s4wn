@@ -174,6 +174,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [ ] Create nation-specific textures via Gemini (tinted uniforms, building materials per nation)
 - [ ] Add decoration models: trees, rocks, plants, props → `assets/models/decorations/`
 - [ ] Texture the existing OBJ buildings (44 building types already modeled)
+- [ ] Implement nation pack system → [`plans/nation_pack_system_plan.md`](plans/nation_pack_system_plan.md)
 - [ ] Implement theme system: S4 Classic, Siedler 3 Retro, Dark Fantasy, Winter
 
 ### Visual Themes (Phase 7)

@@ -1,0 +1,171 @@
+{
+  "$schema": "https://s4wn.mayrd.org/schemas/nation/v1.json",
+  "version": 1,
+  "id": "mayans",
+  "name": { "en": "Mayans", "de": "Maya" },
+  "description": {
+    "en": "Maya Civilization — masters of agriculture, astronomy, and gunpowder. Breed goats, farm agave for tequila, and paralyze enemies with blowgunners.",
+    "de": "Maya-Zivilisation — Meister der Landwirtschaft, Astronomie und des Schießpulvers. Züchtet Ziegen, baut Agaven für Tequila an und lähmt Feinde mit Blasrohrschützen."
+  },
+  "visuals": {
+    "color": "#33cc33",
+    "secondary": "#66ff66",
+    "emoji": "🌿",
+    "flag": "models/decorations/flag_mayan.glb",
+    "emblem": "icons/ui/emblem.png",
+    "loadingBg": "icons/ui/loading_bg.png",
+    "uiTheme": "gold",
+    "particles": {
+      "dustColor": [0.55, 0.6, 0.4],
+      "magicColor": [0.2, 0.8, 0.2],
+      "constructionSpark": [0.3, 1.0, 0.3]
+    },
+    "terrainModifiers": {
+      "grassHue": 5,
+      "desertSaturation": 1.1
+    }
+  },
+  "economy": {
+    "livestock": {
+      "kind": "goat",
+      "building": "goat_ranch",
+      "product": "meat"
+    },
+    "divine": {
+      "crop": "agave",
+      "rawResource": "agave",
+      "processedInto": "tequila",
+      "building": "agave_farm",
+      "processor": "tequila_distillery"
+    },
+    "munitions": {
+      "kind": "gunpowder",
+      "building": "powder_mill",
+      "inputs": { "sulfur": 2, "coal": 1 },
+      "outputs": { "gunpowder": 1 }
+    },
+    "startingResources": {
+      "wood": 40,
+      "stone": 25,
+      "food": 25,
+      "gold": 0,
+      "iron": 0,
+      "coal": 10,
+      "sulfur": 5
+    },
+    "resourceBonuses": {
+      "wood": 1.0,
+      "stone": 1.0,
+      "food": 1.15,
+      "gold": 1.0,
+      "iron": 0.9,
+      "coal": 1.2,
+      "sulfur": 1.2
+    }
+  },
+  "units": {
+    "worker": {
+      "model": "models/units/worker.glb",
+      "texture": "textures/units/worker.png",
+      "animations": "animations/units/worker.json",
+      "icon": "icons/units/worker.png",
+      "stats": { "hp": 50, "speed": 2.5, "carryCapacity": 10 }
+    },
+    "soldier": {
+      "model": "models/units/soldier.glb",
+      "texture": "textures/units/soldier.png",
+      "animations": "animations/units/soldier.json",
+      "icon": "icons/units/soldier.png",
+      "stats": { "hp": 75, "speed": 3.2, "attack": 10, "defence": 7, "range": 1 }
+    },
+    "archer": {
+      "model": "models/units/archer.glb",
+      "texture": "textures/units/archer.png",
+      "animations": "animations/units/archer.json",
+      "icon": "icons/units/archer.png",
+      "stats": { "hp": 60, "speed": 2.8, "attack": 10, "defence": 4, "range": 6 }
+    },
+    "settler": {
+      "model": "models/units/settler.glb",
+      "texture": "textures/units/settler.png",
+      "animations": "animations/units/settler.json",
+      "icon": "icons/units/settler.png",
+      "stats": { "hp": 40, "speed": 2.0, "carryCapacity": 15 }
+    },
+    "special": {
+      "kind": "blowgunner",
+      "displayName": { "en": "Blowgunner", "de": "Blasrohrschütze" },
+      "model": "models/units/blowgunner.glb",
+      "texture": "textures/units/blowgunner.png",
+      "animations": "animations/units/blowgunner.json",
+      "icon": "icons/units/blowgunner.png",
+      "stats": { "hp": 50, "speed": 3.0, "attack": 6, "defence": 3, "range": 5, "paralyzeDuration": 3.0 },
+      "description": {
+        "en": "Ranged unit that fires paralytic darts, temporarily freezing enemy movement.",
+        "de": "Fernkampfeinheit, die lähmende Pfeile verschießt und Feinde kurzzeitig bewegungsunfähig macht."
+      }
+    }
+  },
+  "buildings": {
+    "overrides": {
+      "keep": {
+        "model": "models/buildings/keep.glb",
+        "texture": "textures/buildings/adobe.png",
+        "icon": "icons/buildings/keep.png",
+        "animations": "animations/buildings/keep.json"
+      },
+      "goat_ranch": {
+        "model": "models/buildings/goat_ranch.glb",
+        "texture": "textures/buildings/thatch.png",
+        "icon": "icons/buildings/goat_ranch.png",
+        "animations": "animations/buildings/goat_ranch.json"
+      },
+      "agave_farm": {
+        "model": "models/buildings/agave_farm.glb",
+        "texture": "textures/buildings/adobe.png",
+        "icon": "icons/buildings/agave_farm.png"
+      },
+      "tequila_distillery": {
+        "model": "models/buildings/tequila_distillery.glb",
+        "texture": "textures/buildings/stone.png",
+        "icon": "icons/buildings/tequila_distillery.png",
+        "animations": "animations/buildings/tequila_distillery.json"
+      },
+      "powder_mill": {
+        "model": "models/buildings/powder_mill.glb",
+        "texture": "textures/buildings/metal.png",
+        "icon": "icons/buildings/powder_mill.png",
+        "animations": "animations/buildings/powder_mill.json"
+      }
+    }
+  },
+  "balancing": {
+    "buildSpeedMultiplier": 1.0,
+    "unitTrainSpeedMultiplier": 1.0,
+    "resourceGatherMultiplier": 1.05,
+    "combatDamageMultiplier": 0.9,
+    "territoryExpansionRate": 1.1,
+    "populationGrowthRate": 1.0,
+    "startingUnits": {
+      "worker": 7,
+      "soldier": 3,
+      "settler": 3
+    }
+  },
+  "specialResources": {
+    "gunpowder": {
+      "displayName": { "en": "Gunpowder", "de": "Schießpulver" },
+      "craftedAt": "powder_mill",
+      "inputs": { "sulfur": 2, "coal": 1 },
+      "outputs": { "gunpowder": 1 },
+      "icon": "icons/resources/gunpowder.png"
+    }
+  },
+  "techTree": { "nodes": [] },
+  "ai": {
+    "aggression": 0.3,
+    "expansionism": 0.8,
+    "economyFocus": 0.8,
+    "preferredUnits": ["blowgunner", "archer"]
+  }
+}

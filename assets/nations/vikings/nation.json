@@ -1,0 +1,149 @@
+{
+  "$schema": "https://s4wn.mayrd.org/schemas/nation/v1.json",
+  "version": 1,
+  "id": "vikings",
+  "name": { "en": "Vikings", "de": "Wikinger" },
+  "description": {
+    "en": "Viking Raiders — masters of the sea and mead brewing. Breed pigs, cultivate honey for mead, and crush enemies with axe warriors.",
+    "de": "Wikinger — Meister der See und des Metbrauens. Züchtet Schweine, produziert Honig für Met und zerschmettert Feinde mit Axkriegern."
+  },
+  "visuals": {
+    "color": "#3366cc",
+    "secondary": "#6699ff",
+    "emoji": "⚔️",
+    "flag": "models/decorations/flag_viking.glb",
+    "emblem": "icons/ui/emblem.png",
+    "loadingBg": "icons/ui/loading_bg.png",
+    "uiTheme": "wood",
+    "particles": {
+      "dustColor": [0.5, 0.5, 0.55],
+      "magicColor": [0.3, 0.3, 0.9],
+      "constructionSpark": [0.6, 0.7, 1.0]
+    },
+    "terrainModifiers": {
+      "snowOpacity": 1.1
+    }
+  },
+  "economy": {
+    "livestock": {
+      "kind": "pig",
+      "building": "pig_ranch",
+      "product": "meat"
+    },
+    "divine": {
+      "crop": "honey",
+      "rawResource": "honey",
+      "processedInto": "mead",
+      "building": "apiary",
+      "processor": "mead_maker"
+    },
+    "munitions": null,
+    "startingResources": {
+      "wood": 40,
+      "stone": 30,
+      "food": 25,
+      "gold": 0,
+      "iron": 5,
+      "coal": 0,
+      "sulfur": 0
+    },
+    "resourceBonuses": {
+      "wood": 1.1,
+      "stone": 1.0,
+      "food": 1.0,
+      "gold": 1.0,
+      "iron": 1.1
+    }
+  },
+  "units": {
+    "worker": {
+      "model": "models/units/worker.glb",
+      "texture": "textures/units/worker.png",
+      "animations": "animations/units/worker.json",
+      "icon": "icons/units/worker.png",
+      "stats": { "hp": 50, "speed": 2.5, "carryCapacity": 10 }
+    },
+    "soldier": {
+      "model": "models/units/soldier.glb",
+      "texture": "textures/units/soldier.png",
+      "animations": "animations/units/soldier.json",
+      "icon": "icons/units/soldier.png",
+      "stats": { "hp": 80, "speed": 3.0, "attack": 12, "defence": 8, "range": 1 }
+    },
+    "archer": {
+      "model": "models/units/archer.glb",
+      "texture": "textures/units/archer.png",
+      "animations": "animations/units/archer.json",
+      "icon": "icons/units/archer.png",
+      "stats": { "hp": 60, "speed": 2.8, "attack": 10, "defence": 4, "range": 6 }
+    },
+    "settler": {
+      "model": "models/units/settler.glb",
+      "texture": "textures/units/settler.png",
+      "animations": "animations/units/settler.json",
+      "icon": "icons/units/settler.png",
+      "stats": { "hp": 40, "speed": 2.0, "carryCapacity": 15 }
+    },
+    "special": {
+      "kind": "axe_warrior",
+      "displayName": { "en": "Axe Warrior", "de": "Axtkämpfer" },
+      "model": "models/units/axe_warrior.glb",
+      "texture": "textures/units/axe_warrior.png",
+      "animations": "animations/units/axe_warrior.json",
+      "icon": "icons/units/axe_warrior.png",
+      "stats": { "hp": 100, "speed": 2.8, "attack": 20, "defence": 10, "range": 1 },
+      "description": {
+        "en": "High-damage shock troop. Elite melee unit that crushes enemy lines.",
+        "de": "Schadensintensive Stoßtruppe. Elite-Nahkämpfer, die feindliche Linien durchbrechen."
+      }
+    }
+  },
+  "buildings": {
+    "overrides": {
+      "keep": {
+        "model": "models/buildings/keep.glb",
+        "texture": "textures/buildings/timber.png",
+        "icon": "icons/buildings/keep.png",
+        "animations": "animations/buildings/keep.json"
+      },
+      "pig_ranch": {
+        "model": "models/buildings/pig_ranch.glb",
+        "texture": "textures/buildings/thatch.png",
+        "icon": "icons/buildings/pig_ranch.png",
+        "animations": "animations/buildings/pig_ranch.json"
+      },
+      "apiary": {
+        "model": "models/buildings/apiary.glb",
+        "texture": "textures/buildings/timber.png",
+        "icon": "icons/buildings/apiary.png"
+      },
+      "mead_maker": {
+        "model": "models/buildings/mead_maker.glb",
+        "texture": "textures/buildings/stone.png",
+        "icon": "icons/buildings/mead_maker.png",
+        "animations": "animations/buildings/mead_maker.json"
+      }
+    }
+  },
+  "balancing": {
+    "buildSpeedMultiplier": 1.0,
+    "unitTrainSpeedMultiplier": 1.0,
+    "resourceGatherMultiplier": 1.0,
+    "combatDamageMultiplier": 1.05,
+    "territoryExpansionRate": 1.0,
+    "populationGrowthRate": 1.0,
+    "startingUnits": {
+      "worker": 6,
+      "soldier": 5,
+      "settler": 2
+    }
+  },
+  "specialResources": {},
+  "techTree": { "nodes": [] },
+  "ai": {
+    "aggression": 0.8,
+    "expansionism": 0.6,
+    "economyFocus": 0.4,
+    "preferredUnits": ["axe_warrior", "soldier"]
+  }
+}

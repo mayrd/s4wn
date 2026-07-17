@@ -1,0 +1,169 @@
+{
+  "$schema": "https://s4wn.mayrd.org/schemas/nation/v1.json",
+  "version": 1,
+  "id": "trojans",
+  "name": { "en": "Trojans", "de": "Trojaner" },
+  "description": {
+    "en": "Trojan Warriors — masters of defense, trade, and siege warfare. Breed geese, grow sunflowers for oil, and rain destruction with backpack catapults.",
+    "de": "Trojanische Krieger — Meister der Verteidigung, des Handels und der Belagerungskunst. Züchtet Gänse, baut Sonnenblumen für Öl an und lässt mit Rucksackkatapulten Zerstörung regnen."
+  },
+  "visuals": {
+    "color": "#cc9933",
+    "secondary": "#ffcc66",
+    "emoji": "🐴",
+    "flag": "models/decorations/flag_trojan.glb",
+    "emblem": "icons/ui/emblem.png",
+    "loadingBg": "icons/ui/loading_bg.png",
+    "uiTheme": "gold",
+    "particles": {
+      "dustColor": [0.7, 0.6, 0.4],
+      "magicColor": [1.0, 0.9, 0.3],
+      "constructionSpark": [1.0, 0.9, 0.4]
+    },
+    "terrainModifiers": {
+      "desertSaturation": 1.2
+    }
+  },
+  "economy": {
+    "livestock": {
+      "kind": "geese",
+      "building": "goose_ranch",
+      "product": "meat"
+    },
+    "divine": {
+      "crop": "sunflowers",
+      "rawResource": "sunflowers",
+      "processedInto": "sunflower_oil",
+      "building": "sunflower_field",
+      "processor": "oil_press"
+    },
+    "munitions": {
+      "kind": "explosive_arrows",
+      "building": "weapon_foundry",
+      "inputs": { "sulfur": 1, "iron": 2, "wood": 1 },
+      "outputs": { "explosive_arrows": 5 }
+    },
+    "startingResources": {
+      "wood": 35,
+      "stone": 35,
+      "food": 20,
+      "gold": 5,
+      "iron": 5,
+      "coal": 0,
+      "sulfur": 0
+    },
+    "resourceBonuses": {
+      "wood": 1.0,
+      "stone": 1.1,
+      "food": 1.0,
+      "gold": 1.1,
+      "iron": 1.1,
+      "sulfur": 1.0
+    }
+  },
+  "units": {
+    "worker": {
+      "model": "models/units/worker.glb",
+      "texture": "textures/units/worker.png",
+      "animations": "animations/units/worker.json",
+      "icon": "icons/units/worker.png",
+      "stats": { "hp": 50, "speed": 2.5, "carryCapacity": 10 }
+    },
+    "soldier": {
+      "model": "models/units/soldier.glb",
+      "texture": "textures/units/soldier.png",
+      "animations": "animations/units/soldier.json",
+      "icon": "icons/units/soldier.png",
+      "stats": { "hp": 85, "speed": 2.8, "attack": 11, "defence": 10, "range": 1 }
+    },
+    "archer": {
+      "model": "models/units/archer.glb",
+      "texture": "textures/units/archer.png",
+      "animations": "animations/units/archer.json",
+      "icon": "icons/units/archer.png",
+      "stats": { "hp": 60, "speed": 2.8, "attack": 10, "defence": 4, "range": 6 }
+    },
+    "settler": {
+      "model": "models/units/settler.glb",
+      "texture": "textures/units/settler.png",
+      "animations": "animations/units/settler.json",
+      "icon": "icons/units/settler.png",
+      "stats": { "hp": 40, "speed": 2.0, "carryCapacity": 15 }
+    },
+    "special": {
+      "kind": "backpack_catapult",
+      "displayName": { "en": "Backpack Catapult", "de": "Rucksackkatapult" },
+      "model": "models/units/backpack_catapult.glb",
+      "texture": "textures/units/backpack_catapult.png",
+      "animations": "animations/units/backpack_catapult.json",
+      "icon": "icons/units/backpack_catapult.png",
+      "stats": { "hp": 35, "speed": 1.5, "attack": 30, "defence": 2, "range": 8, "splashRadius": 1 },
+      "description": {
+        "en": "Long-range light artillery dealing massive damage. Extremely vulnerable in close combat.",
+        "de": "Weitreichende leichte Artillerie mit massivem Schaden. Im Nahkampf extrem verwundbar."
+      }
+    }
+  },
+  "buildings": {
+    "overrides": {
+      "keep": {
+        "model": "models/buildings/keep.glb",
+        "texture": "textures/buildings/marble.png",
+        "icon": "icons/buildings/keep.png",
+        "animations": "animations/buildings/keep.json"
+      },
+      "goose_ranch": {
+        "model": "models/buildings/goose_ranch.glb",
+        "texture": "textures/buildings/thatch.png",
+        "icon": "icons/buildings/goose_ranch.png",
+        "animations": "animations/buildings/goose_ranch.json"
+      },
+      "sunflower_field": {
+        "model": "models/buildings/sunflower_field.glb",
+        "texture": "textures/buildings/adobe.png",
+        "icon": "icons/buildings/sunflower_field.png"
+      },
+      "oil_press": {
+        "model": "models/buildings/oil_press.glb",
+        "texture": "textures/buildings/stone.png",
+        "icon": "icons/buildings/oil_press.png",
+        "animations": "animations/buildings/oil_press.json"
+      },
+      "weapon_foundry": {
+        "model": "models/buildings/weapon_foundry.glb",
+        "texture": "textures/buildings/metal.png",
+        "icon": "icons/buildings/weapon_foundry.png",
+        "animations": "animations/buildings/weapon_foundry.json"
+      }
+    }
+  },
+  "balancing": {
+    "buildSpeedMultiplier": 1.05,
+    "unitTrainSpeedMultiplier": 1.0,
+    "resourceGatherMultiplier": 1.0,
+    "combatDamageMultiplier": 1.0,
+    "territoryExpansionRate": 0.9,
+    "populationGrowthRate": 1.0,
+    "startingUnits": {
+      "worker": 6,
+      "soldier": 4,
+      "settler": 2
+    }
+  },
+  "specialResources": {
+    "explosive_arrows": {
+      "displayName": { "en": "Explosive Arrows", "de": "Explosivpfeile" },
+      "craftedAt": "weapon_foundry",
+      "inputs": { "sulfur": 1, "iron": 2, "wood": 1 },
+      "outputs": { "explosive_arrows": 5 },
+      "icon": "icons/resources/explosive_arrows.png"
+    }
+  },
+  "techTree": { "nodes": [] },
+  "ai": {
+    "aggression": 0.4,
+    "expansionism": 0.5,
+    "economyFocus": 0.6,
+    "preferredUnits": ["backpack_catapult", "soldier"]
+  }
+}

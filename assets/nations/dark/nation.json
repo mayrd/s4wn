@@ -1,0 +1,158 @@
+{
+  "$schema": "https://s4wn.mayrd.org/schemas/nation/v1.json",
+  "version": 1,
+  "id": "dark",
+  "name": { "en": "Dark Tribe", "de": "Dunkler Stamm" },
+  "description": {
+    "en": "The Dark Tribe — an NPC antagonist faction wielding dark magic, obsidian fortresses, and demonic forces.",
+    "de": "Der Dunkle Stamm — eine NPC-Antagonisten-Fraktion, die dunkle Magie, Obsidianfestungen und dämonische Kräfte einsetzt."
+  },
+  "visuals": {
+    "color": "#9933cc",
+    "secondary": "#cc66ff",
+    "emoji": "🌑",
+    "flag": "models/decorations/flag_dark.glb",
+    "emblem": "icons/ui/emblem.png",
+    "loadingBg": "icons/ui/loading_bg.png",
+    "uiTheme": "dark",
+    "particles": {
+      "dustColor": [0.3, 0.2, 0.3],
+      "magicColor": [0.6, 0.2, 0.8],
+      "constructionSpark": [0.5, 0.1, 0.5]
+    },
+    "terrainModifiers": {
+      "grassOpacity": 0.6,
+      "desaturation": 0.4
+    }
+  },
+  "economy": {
+    "livestock": {
+      "kind": "dark_beast",
+      "building": "dark_beast_pen",
+      "product": "dark_meat"
+    },
+    "divine": {
+      "crop": "dark_herbs",
+      "rawResource": "dark_herbs",
+      "processedInto": "dark_elixir",
+      "building": "dark_garden",
+      "processor": "dark_cauldron"
+    },
+    "munitions": null,
+    "startingResources": {
+      "wood": 50,
+      "stone": 50,
+      "food": 15,
+      "gold": 10,
+      "iron": 10,
+      "coal": 5,
+      "sulfur": 5
+    },
+    "resourceBonuses": {
+      "wood": 1.2,
+      "stone": 1.2,
+      "food": 1.0,
+      "gold": 1.0,
+      "iron": 1.0
+    }
+  },
+  "units": {
+    "worker": {
+      "model": "models/units/worker.glb",
+      "texture": "textures/units/worker.png",
+      "animations": "animations/units/worker.json",
+      "icon": "icons/units/worker.png",
+      "stats": { "hp": 55, "speed": 2.3, "carryCapacity": 12 }
+    },
+    "soldier": {
+      "model": "models/units/soldier.glb",
+      "texture": "textures/units/soldier.png",
+      "animations": "animations/units/soldier.json",
+      "icon": "icons/units/soldier.png",
+      "stats": { "hp": 90, "speed": 3.0, "attack": 14, "defence": 6, "range": 1 }
+    },
+    "archer": {
+      "model": "models/units/archer.glb",
+      "texture": "textures/units/archer.png",
+      "animations": "animations/units/archer.json",
+      "icon": "icons/units/archer.png",
+      "stats": { "hp": 65, "speed": 2.8, "attack": 12, "defence": 3, "range": 6 }
+    },
+    "settler": {
+      "model": "models/units/settler.glb",
+      "texture": "textures/units/settler.png",
+      "animations": "animations/units/settler.json",
+      "icon": "icons/units/settler.png",
+      "stats": { "hp": 45, "speed": 2.0, "carryCapacity": 15 }
+    },
+    "special": {
+      "kind": "dark_mage",
+      "displayName": { "en": "Dark Mage", "de": "Dunkler Magier" },
+      "model": "models/units/dark_mage.glb",
+      "texture": "textures/units/dark_mage.png",
+      "animations": "animations/units/dark_mage.json",
+      "icon": "icons/units/dark_mage.png",
+      "stats": { "hp": 40, "speed": 2.2, "attack": 18, "defence": 3, "range": 5, "lifesteal": 0.3 },
+      "description": {
+        "en": "Ranged spellcaster that drains life force from enemies.",
+        "de": "Fernkampfzauberer, der seinen Feinden Lebenskraft entzieht."
+      }
+    }
+  },
+  "buildings": {
+    "overrides": {
+      "keep": {
+        "model": "models/buildings/keep.glb",
+        "texture": "textures/buildings/darkstone.png",
+        "icon": "icons/buildings/keep.png",
+        "animations": "animations/buildings/keep.json"
+      },
+      "dark_beast_pen": {
+        "model": "models/buildings/dark_beast_pen.glb",
+        "texture": "textures/buildings/darkstone.png",
+        "icon": "icons/buildings/dark_beast_pen.png"
+      },
+      "dark_garden": {
+        "model": "models/buildings/dark_garden.glb",
+        "texture": "textures/buildings/darkstone.png",
+        "icon": "icons/buildings/dark_garden.png",
+        "animations": "animations/buildings/dark_garden.json"
+      },
+      "dark_cauldron": {
+        "model": "models/buildings/dark_cauldron.glb",
+        "texture": "textures/buildings/metal.png",
+        "icon": "icons/buildings/dark_cauldron.png",
+        "animations": "animations/buildings/dark_cauldron.json"
+      }
+    }
+  },
+  "balancing": {
+    "buildSpeedMultiplier": 1.2,
+    "unitTrainSpeedMultiplier": 1.1,
+    "resourceGatherMultiplier": 1.1,
+    "combatDamageMultiplier": 1.1,
+    "territoryExpansionRate": 0.8,
+    "populationGrowthRate": 0.9,
+    "startingUnits": {
+      "worker": 8,
+      "soldier": 6,
+      "settler": 1
+    }
+  },
+  "specialResources": {
+    "dark_elixir": {
+      "displayName": { "en": "Dark Elixir", "de": "Dunkles Elixier" },
+      "craftedAt": "dark_cauldron",
+      "inputs": { "dark_herbs": 3 },
+      "outputs": { "dark_elixir": 1 },
+      "icon": "icons/resources/dark_elixir.png"
+    }
+  },
+  "techTree": { "nodes": [] },
+  "ai": {
+    "aggression": 0.9,
+    "expansionism": 0.3,
+    "economyFocus": 0.3,
+    "preferredUnits": ["dark_mage", "soldier"]
+  }
+}

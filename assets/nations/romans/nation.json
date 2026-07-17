@@ -1,0 +1,147 @@
+{
+  "$schema": "https://s4wn.mayrd.org/schemas/nation/v1.json",
+  "version": 1,
+  "id": "romans",
+  "name": { "en": "Romans", "de": "Römer" },
+  "description": {
+    "en": "The Roman Empire — masters of engineering and military discipline. Breed sheep, grow grapes for wine, and heal your troops with field medics.",
+    "de": "Das Römische Reich — Meister der Baukunst und militärischen Disziplin. Züchtet Schafe, baut Wein an und heilt eure Truppen mit Feldärzten."
+  },
+  "visuals": {
+    "color": "#cc3333",
+    "secondary": "#ff6644",
+    "emoji": "🏛️",
+    "flag": "models/decorations/flag_roman.glb",
+    "emblem": "icons/ui/emblem.png",
+    "loadingBg": "icons/ui/loading_bg.png",
+    "uiTheme": "stone",
+    "particles": {
+      "dustColor": [0.6, 0.5, 0.4],
+      "magicColor": [0.8, 0.2, 0.2],
+      "constructionSpark": [1.0, 0.8, 0.2]
+    },
+    "terrainModifiers": {}
+  },
+  "economy": {
+    "livestock": {
+      "kind": "sheep",
+      "building": "sheep_ranch",
+      "product": "meat"
+    },
+    "divine": {
+      "crop": "grapes",
+      "rawResource": "grapes",
+      "processedInto": "wine",
+      "building": "vineyard",
+      "processor": "wine_press"
+    },
+    "munitions": null,
+    "startingResources": {
+      "wood": 40,
+      "stone": 30,
+      "food": 20,
+      "gold": 0,
+      "iron": 0,
+      "coal": 0,
+      "sulfur": 0
+    },
+    "resourceBonuses": {
+      "wood": 1.0,
+      "stone": 1.1,
+      "food": 1.0,
+      "gold": 1.0,
+      "iron": 1.0
+    }
+  },
+  "units": {
+    "worker": {
+      "model": "models/units/worker.glb",
+      "texture": "textures/units/worker.png",
+      "animations": "animations/units/worker.json",
+      "icon": "icons/units/worker.png",
+      "stats": { "hp": 50, "speed": 2.5, "carryCapacity": 10 }
+    },
+    "soldier": {
+      "model": "models/units/soldier.glb",
+      "texture": "textures/units/soldier.png",
+      "animations": "animations/units/soldier.json",
+      "icon": "icons/units/soldier.png",
+      "stats": { "hp": 80, "speed": 3.0, "attack": 12, "defence": 8, "range": 1 }
+    },
+    "archer": {
+      "model": "models/units/archer.glb",
+      "texture": "textures/units/archer.png",
+      "animations": "animations/units/archer.json",
+      "icon": "icons/units/archer.png",
+      "stats": { "hp": 60, "speed": 2.8, "attack": 10, "defence": 4, "range": 6 }
+    },
+    "settler": {
+      "model": "models/units/settler.glb",
+      "texture": "textures/units/settler.png",
+      "animations": "animations/units/settler.json",
+      "icon": "icons/units/settler.png",
+      "stats": { "hp": 40, "speed": 2.0, "carryCapacity": 15 }
+    },
+    "special": {
+      "kind": "medic",
+      "displayName": { "en": "Medic", "de": "Feldarzt" },
+      "model": "models/units/medic.glb",
+      "texture": "textures/units/medic.png",
+      "animations": "animations/units/medic.json",
+      "icon": "icons/units/medic.png",
+      "stats": { "hp": 45, "speed": 2.5, "healRate": 3, "healRange": 3 },
+      "description": {
+        "en": "Passively heals nearby allied infantry during combat.",
+        "de": "Heilt nahe verbündete Infanterie passiv während des Kampfes."
+      }
+    }
+  },
+  "buildings": {
+    "overrides": {
+      "keep": {
+        "model": "models/buildings/keep.glb",
+        "texture": "textures/buildings/stone.png",
+        "icon": "icons/buildings/keep.png",
+        "animations": "animations/buildings/keep.json"
+      },
+      "sheep_ranch": {
+        "model": "models/buildings/sheep_ranch.glb",
+        "texture": "textures/buildings/thatch.png",
+        "icon": "icons/buildings/sheep_ranch.png",
+        "animations": "animations/buildings/sheep_ranch.json"
+      },
+      "vineyard": {
+        "model": "models/buildings/vineyard.glb",
+        "texture": "textures/buildings/timber.png",
+        "icon": "icons/buildings/vineyard.png"
+      },
+      "wine_press": {
+        "model": "models/buildings/wine_press.glb",
+        "texture": "textures/buildings/stone.png",
+        "icon": "icons/buildings/wine_press.png",
+        "animations": "animations/buildings/wine_press.json"
+      }
+    }
+  },
+  "balancing": {
+    "buildSpeedMultiplier": 1.0,
+    "unitTrainSpeedMultiplier": 1.0,
+    "resourceGatherMultiplier": 1.0,
+    "combatDamageMultiplier": 1.0,
+    "territoryExpansionRate": 1.0,
+    "populationGrowthRate": 1.0,
+    "startingUnits": {
+      "worker": 6,
+      "soldier": 4,
+      "settler": 2
+    }
+  },
+  "specialResources": {},
+  "techTree": { "nodes": [] },
+  "ai": {
+    "aggression": 0.5,
+    "expansionism": 0.7,
+    "economyFocus": 0.6,
+    "preferredUnits": ["soldier", "archer"]
+  }
+}
