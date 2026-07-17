@@ -181,4 +181,24 @@ describe('InGameMenu', () => {
     expect(bp.getSelectedBuilding()).toBe(BuildingType.Woodcutter);
     expect(menu.isRadialActive()).toBe(false);
   });
+
+  it('should support collapsing and expanding the menu via toggle button', () => {
+    const toggleBtn = document.getElementById('menu-toggle-btn') as HTMLButtonElement;
+    expect(toggleBtn).not.toBeNull();
+    expect(menu.isMenuCollapsed()).toBe(false);
+
+    // Click to collapse
+    toggleBtn.click();
+    expect(menu.isMenuCollapsed()).toBe(true);
+    expect(document.getElementById('anno-build-bar')!.classList.contains('collapsed')).toBe(true);
+    expect(document.body.classList.contains('menu-collapsed')).toBe(true);
+    expect(toggleBtn.textContent).toBe('▶');
+
+    // Click to expand
+    toggleBtn.click();
+    expect(menu.isMenuCollapsed()).toBe(false);
+    expect(document.getElementById('anno-build-bar')!.classList.contains('collapsed')).toBe(false);
+    expect(document.body.classList.contains('menu-collapsed')).toBe(false);
+    expect(toggleBtn.textContent).toBe('◀');
+  });
 });

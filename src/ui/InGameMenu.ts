@@ -27,6 +27,7 @@ export class InGameMenu {
   private deepPanelEl!: HTMLElement;
   private radialMenuEl!: HTMLElement;
   private tooltipEl!: HTMLElement;
+  private toggleBtnEl!: HTMLElement;
 
   // State Preservation
   private activeTab: string = 'economy';
@@ -34,6 +35,7 @@ export class InGameMenu {
   private activeMainTab: 'construction' | 'statistics' | 'ingamemenu' | 'debug' = 'construction';
   private deepPanelVisible: boolean = false;
   private radialActive: boolean = false;
+  private isCollapsed: boolean = false;
   private radialX: number = 0;
   private radialY: number = 0;
 
@@ -86,6 +88,15 @@ export class InGameMenu {
     this.tooltipEl = document.createElement('div');
     this.tooltipEl.className = 'menu-tooltip hidden';
     this.container.appendChild(this.tooltipEl);
+
+    // 1.5. Toggle Button Element (Top-left collapsible toggle)
+    this.toggleBtnEl = document.createElement('button');
+    this.toggleBtnEl.id = 'menu-toggle-btn';
+    this.toggleBtnEl.className = 'menu-toggle-btn';
+    this.toggleBtnEl.innerHTML = '◀'; // Pointing left as it is expanded initially
+    this.toggleBtnEl.title = 'Collapse Menu';
+    this.toggleBtnEl.addEventListener('click', () => this.toggleMenu());
+    this.container.appendChild(this.toggleBtnEl);
 
     // 2. Anno-style Bottom Build Bar (Now restructured as the full-width integrated footer)
     this.buildBarEl = document.createElement('div');
@@ -665,10 +676,32 @@ export class InGameMenu {
     return { x: this.radialX, y: this.radialY };
   }
 
+  public toggleMenu(): void {
+    this.isCollapsed = !this.isCollapsed;
+    if (this.isCollapsed) {
+      this.buildBarEl.classList.add('collapsed');
+      this.toggleBtnEl.classList.add('collapsed');
+      this.toggleBtnEl.innerHTML = '▶'; // Pointing right to expand
+      this.toggleBtnEl.title = 'Expand Menu';
+      document.body.classList.add('menu-collapsed');
+    } else {
+      this.buildBarEl.classList.remove('collapsed');
+      this.toggleBtnEl.classList.remove('collapsed');
+      this.toggleBtnEl.innerHTML = '◀'; // Pointing left to collapse
+      this.toggleBtnEl.title = 'Collapse Menu';
+      document.body.classList.remove('menu-collapsed');
+    }
+  }
+
+  public isMenuCollapsed(): boolean {
+    return this.isCollapsed;
+  }
+
   public dispose(): void {
     this.buildBarEl.remove();
     this.deepPanelEl.remove();
     this.radialMenuEl.remove();
     this.tooltipEl.remove();
+    this.toggleBtnEl.remove();
   }
 }

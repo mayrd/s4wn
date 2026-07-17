@@ -169,9 +169,14 @@
 .hud-container {
   position: absolute;
   top: 10px;
-  left: 10px;
+  left: 290px;
   pointer-events: none;
   z-index: 20;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+
+body.menu-collapsed .hud-container {
+  left: 60px;
 }
 .hud-panel {
   background:
@@ -732,53 +737,90 @@
 
 /* ── In-Game Menu Hybrid (Anno + S4) ────────────────────────── */
 
-/* Bottom full-width build bar (Anno style) */
+/* Vertical left-side full-height build bar */
 .anno-build-bar {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
-  width: 100vw;
-  height: 160px;
+  width: 280px;
+  height: 100vh;
   background: linear-gradient(rgba(40, 24, 16, 0.95), rgba(40, 24, 16, 0.98)), url('/textures/ui_panel.png');
   background-size: cover, 128px 128px;
-  border-top: 4px solid var(--parchment-border);
+  border-right: 4px solid var(--parchment-border);
   color: var(--parchment-bg);
   font-family: 'Georgia', serif;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.7);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.7);
   z-index: 25;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.anno-build-bar.collapsed {
+  transform: translateX(-100%);
+}
+
+.menu-toggle-btn {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(rgba(141, 110, 99, 0.94), rgba(141, 110, 99, 0.94)), url('/textures/ui_button.png');
+  background-size: cover;
+  border: 2px solid var(--parchment-border);
+  border-radius: 6px;
+  color: var(--parchment-bg);
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s, background 0.2s;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+}
+
+.menu-toggle-btn:hover {
+  background: var(--accent-color);
+  color: var(--text-color);
+  transform: scale(1.05);
 }
 
 .build-bar-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 16px;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 56px 12px 10px 12px; /* Leaves perfect space for floating top-left toggle btn */
   background: rgba(0, 0, 0, 0.45);
   border-bottom: 2px solid var(--parchment-border);
-  height: 38px;
+  height: auto;
   box-sizing: border-box;
+  gap: 10px;
 }
 
 .build-bar-tabs {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
 }
 
 .build-bar-tab-btn {
   background: var(--wood-dark);
   border: 1px solid var(--parchment-border);
-  border-bottom: none;
-  border-radius: 4px 4px 0 0;
+  border-radius: 4px;
   color: var(--parchment-bg);
-  padding: 4px 12px;
+  padding: 8px 12px;
   font-size: 0.85rem;
   cursor: pointer;
   font-family: 'Georgia', serif;
   transition: all 0.2s;
+  text-align: left;
+  width: 100%;
 }
 
 .build-bar-tab-btn:hover {
@@ -794,21 +836,22 @@
 
 .build-bar-content {
   flex: 1;
-  padding: 8px 16px;
+  padding: 12px;
   overflow-y: auto;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
 }
 
-/* Statistics view styling inside bottom menu */
+/* Statistics view styling inside vertical menu */
 .menu-stats-grid {
   display: flex;
-  gap: 40px;
+  flex-direction: column;
+  gap: 16px;
   width: 100%;
 }
 
 .stats-col {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -822,10 +865,12 @@
   padding-bottom: 2px;
 }
 
-/* Action buttons styling inside bottom menu (Save/Pause/Exit) */
+/* Action buttons styling inside vertical menu (Save/Pause/Exit) */
 .menu-actions-row {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
 }
 
 .menu-action-btn {
@@ -833,12 +878,14 @@
   border: 2px solid var(--parchment-border);
   border-radius: 6px;
   color: var(--parchment-bg);
-  padding: 10px 24px;
+  padding: 10px 16px;
   font-size: 0.95rem;
   font-weight: bold;
   cursor: pointer;
   font-family: 'Georgia', serif;
   transition: all 0.2s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .menu-action-btn:hover {
@@ -855,11 +902,12 @@
   box-shadow: 0 4px 12px rgba(198, 40, 40, 0.4);
 }
 
-/* Debug toggles styling inside bottom menu */
+/* Debug toggles styling inside vertical menu */
 .menu-debug-row {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
 }
 
 .debug-toggle-btn {
@@ -867,11 +915,14 @@
   border: 1px solid var(--parchment-border);
   border-radius: 4px;
   color: var(--parchment-bg);
-  padding: 6px 16px;
+  padding: 8px 16px;
   font-size: 0.85rem;
   cursor: pointer;
   font-family: 'Georgia', serif;
   transition: all 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
 }
 
 .debug-toggle-btn:hover {
@@ -901,17 +952,17 @@
 }
 
 .build-bar-items {
-  display: flex;
-  gap: 8px;
-  padding: 8px;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 8px 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .build-bar-item {
-  flex: 0 0 64px;
-  width: 64px;
-  height: 64px;
+  width: 100%;
+  height: 72px;
   background: rgba(93, 64, 55, 0.5);
   border: 2px solid rgba(210, 180, 140, 0.5);
   border-radius: 6px;
@@ -923,7 +974,7 @@
   cursor: pointer;
   transition: all 0.2s;
   box-sizing: border-box;
-  padding: 2px;
+  padding: 4px;
 }
 
 .build-bar-item:hover {
@@ -1187,29 +1238,33 @@
   transform: translate(inherit) scale(1.1) !important;
 }
 
-/* Responsive bottom sheet for mobile viewport */
-@media (max-width: 768px) {
-  .s4-deep-panel {
-    top: auto;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60vh;
-    border-radius: 12px 12px 0 0;
-    border-bottom: none;
-    transform: translateY(0);
-  }
-  .s4-deep-panel.hidden {
-    display: none;
-  }
+/* Responsive & Portrait Viewports */
+@media (max-width: 768px), (orientation: portrait) {
   .anno-build-bar {
-    width: 100%;
-    max-width: 100vw;
-    bottom: 0;
-    border-radius: 0;
-    border-left: none;
+    width: 100vw;
+    max-width: 100%;
+    height: 100vh;
     border-right: none;
-    border-bottom: none;
+    box-shadow: none;
+    top: 0;
+    left: 0;
+    bottom: auto;
+  }
+  
+  .anno-build-bar.collapsed {
+    transform: translateX(-100%);
+  }
+
+  /* In portrait/mobile, hide HUD overlay when menu is open to save screen real estate */
+  body:not(.menu-collapsed) .hud-container {
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  body.menu-collapsed .hud-container {
+    left: 60px;
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 
