@@ -9,6 +9,7 @@
  */
 
 import { NationRegistry, NationManifest } from './NationRegistry';
+import { NationValidator } from './NationValidator';
 
 /** Built-in fallback manifests used when nation.json can't be loaded. */
 const BUILT_IN_MANIFESTS: NationManifest[] = [
@@ -127,9 +128,14 @@ export class NationLoader {
     const registry = NationRegistry.instance;
     registry.reset();
 
-    // 1. Register built-in fallbacks — always available.
+    // 1. Register built-in fallbacks — always available (validated inline).
     for (const m of BUILT_IN_MANIFESTS) {
-      registry.register(m, `nations/${m.id}/`);
+      const report = NationValidator.validateManifest(m);
+      if (report.valid) {
+        registry.register(m, `nations/${m.id}/`);
+      } else {
+        console.warn(`[NationLoader] Built-in "${m.id}" failed validation:`, report.errors);
+      }
     }
 
     // 2. Try to load external nation packs from /nations/ directory.
@@ -182,7 +188,12 @@ export class NationLoader {
         specialResources: {}, techTree: { nodes: [] },
         ai: { aggression: 0.9, expansionism: 0.3, economyFocus: 0.3, preferredUnits: ['dark_mage', 'soldier'] },
       };
-      registry.register(darkManifest, 'nations/dark/');
+      const darkReport = NationValidator.validateManifest(darkManifest);
+      if (darkReport.valid) {
+        registry.register(darkManifest, 'nations/dark/');
+      } else {
+        console.warn('[NationLoader] Dark Tribe fallback failed validation:', darkReport.errors);
+      }
     }
   }
 
