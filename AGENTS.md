@@ -106,6 +106,7 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 | 4 — UI Migration | ✅ | Main menu, editor, HUD panels |
 | 5 — Integration | ✅ | Audio, save/load, mobile, performance |
 | 6 — Testing | ✅ | Jest (Unit), Playwright (UI/E2E), visual regression, deployment |
+| 7 — 3D Assets & Themes | 🚧 | Nation models, CC0 assets, Gemini textures, theme system |
 
 #### Detailed Phase Breakdown
 
@@ -166,6 +167,36 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [x] Integration tests (keep Playwright — UI tests running in CI)
 - [x] Update Dockerfile for static serving
 - [x] Update CI/CD pipeline (Playwright UI tests, snapshot enforcement, artifact upload)
+
+##### Phase 7 — 3D Assets & Visual Themes 🚧
+- [ ] Download CC0 3D models (Kenney Fantasy Town Kit, Castle Kit) → `assets/models/buildings/`
+- [ ] Generate nation-specific unit variants (Roman, Viking, Mayan, Trojan, Dark) → `assets/models/nations/`
+- [ ] Create nation-specific textures via Gemini (tinted uniforms, building materials per nation)
+- [ ] Add decoration models: trees, rocks, plants, props → `assets/models/decorations/`
+- [ ] Texture the existing OBJ buildings (44 building types already modeled)
+- [ ] Implement theme system: S4 Classic, Siedler 3 Retro, Dark Fantasy, Winter
+
+### Visual Themes (Phase 7)
+
+S4WN supports multiple visual themes — each a complete asset override set:
+
+| Theme | Status | Description |
+|-------|--------|-------------|
+| **S4 Classic** | 🚧 `default` | Medieval European — the Siedler 4 History Edition look: timber-framed houses, stone castles, green valleys |
+| **S3 Retro** | 📋 Planned | Siedler 3 nostalgia edition: darker color palette, Egyptian/Asian/Roman cultures, palm trees, desert temples |
+| **Dark Fantasy** | 📋 Planned | Gothic/occult: obsidian buildings, purple magic glow, dead trees, lava rivers |
+| **Winter** | 📋 Planned | Snow-covered everything: ice-blue palette, fur-clad settlers, frozen lakes, northern lights |
+
+**Theme architecture:**
+```
+assets/themes/{theme_name}/
+├── textures/          # Theme-specific overrides
+├── models/            # Theme-specific 3D models
+├── ui/                # Theme-specific UI skins
+└── theme.json         # Palette, lighting, fog, ambient sound
+```
+
+Theme switching at runtime via `GameConfig.theme`. Each theme overrides the base `assets/` files with its own variants. Fallback to `default` for missing assets.
 
 ### File Migration Map
 
