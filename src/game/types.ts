@@ -74,4 +74,5 @@ export interface WorkOrder {
 }
 
 // Forward declaration for Nation (referenced by AI types)
-export type Nation = any; // Will be replaced with proper import from './Nation'
+export type { NationInfo } from './NationRegistry';
+export type { Nation } from './Nation';

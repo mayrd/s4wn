@@ -14,18 +14,56 @@ import {
 } from '@babylonjs/core';
 import '@babylonjs/loaders';
 import { NationType } from '../game/Nation';
+import { NationRegistry } from '../game/NationRegistry';
 
 /**
  * Nation accent colors for material tinting and flag meshes.
- * Each nation gets a distinct color from NATION_INFO.
+ * Resolved from NationRegistry — falls back to defaults.
  */
-const NATION_COLORS: Record<number, Color3> = {
-  [NationType.Romans]:    new Color3(0.80, 0.20, 0.20),  // Crimson red
-  [NationType.Vikings]:   new Color3(0.20, 0.40, 0.80),  // Navy blue
-  [NationType.Mayans]:    new Color3(0.20, 0.80, 0.20),  // Emerald green
-  [NationType.Trojans]:   new Color3(0.80, 0.60, 0.20),  // Golden tan
-  [NationType.DarkTribe]: new Color3(0.60, 0.20, 0.80),  // Dark purple
-};
+function getNationColor(nationType: NationType): Color3 {
+  const rn = NationRegistry.instance.getByNumber(nationType);
+  if (rn) {
+    const hex = rn.info.color.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+    return new Color3(r, g, b);
+  }
+  // Fallback colors
+  const fallbacks: Record<number, Color3> = {
+    [NationType.Romans]:    new Color3(0.80, 0.20, 0.20),
+    [NationType.Vikings]:   new Color3(0.20, 0.40, 0.80),
+    [NationType.Mayans]:    new Color3(0.20, 0.80, 0.20),
+    [NationType.Trojans]:   new Color3(0.80, 0.60, 0.20),
+    [NationType.DarkTribe]: new Color3(0.60, 0.20, 0.80),
+  };
+  return fallbacks[nationType] ?? new Color3(0.50, 0.50, 0.50);
+}
+
+/**
+ * Resolve the model path for a building, checking nation-specific paths first.
+ * Fallback chain: nation/models/ → assets/models/ → procedural mesh
+ */
+export function resolveBuildingModel(buildingKind: string, nationType: NationType): string {
+  const rn = NationRegistry.instance.getByNumber(nationType);
+  if (rn) {
+    const nationPath = `/nations/${rn.info.id}/models/buildings/${buildingKind}.glb`;
+    return nationPath; // Fallback handled at load time by OBJ loader
+  }
+  return `/models/${buildingKind}.obj`;
+}
+
+/**
+ * Resolve texture path with nation fallback chain.
+ */
+export function resolveBuildingTexture(textureName: string, nationType: NationType): string {
+  const rn = NationRegistry.instance.getByNumber(nationType);
+  if (rn) {
+    return `/nations/${rn.info.id}/textures/buildings/${textureName}`;
+  }
+  return `/textures/${textureName}`;
+}
+
 
 /**
  * Get the nation-specific texture suffix for unit textures.
@@ -122,7 +160,7 @@ export class BuildingMesh {
    * Apply nation-specific visual variant: tint material and add a small flag mesh.
    */
   private applyNationVariant(root: any, nation: NationType, _kind: string): void {
-    const nationColor = NATION_COLORS[nation];
+    const nationColor = getNationColor(nation);
     if (!nationColor) return;
 
     // Tint all child meshes with the nation color

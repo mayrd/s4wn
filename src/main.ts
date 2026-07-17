@@ -13,6 +13,8 @@
 
 import { errorHandler } from './core/ErrorHandler';
 import { UIManager } from './ui/UIManager';
+import { NationLoader } from './game/NationLoader';
+import { rebuildLegacyConstants, NATION_NAMES } from './game/Nation';
 import './ui/styles.css';
 
 // NOTE: GameApp (and the entire Babylon.js engine) is intentionally NOT imported
@@ -25,6 +27,13 @@ errorHandler.init();
 
 // ── Lightweight Menu Bootstrap (no engine, no map) ──────────────────
 const menu = new UIManager();
+
+// ── Bootstrap Nation Registry (loads nation packs, rebuilds legacy constants) ──
+// This runs early so all game logic sees the registry populated.
+NationLoader.discover().then(() => {
+  rebuildLegacyConstants();
+  console.log(`[NationLoader] ${NATION_NAMES.length} nations registered.`);
+});
 
 // Type-only reference used for the lazily-loaded app instance.
 type GameAppType = import('./GameApp').GameApp;

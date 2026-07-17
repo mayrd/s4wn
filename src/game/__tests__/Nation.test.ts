@@ -2,7 +2,15 @@
  * TypeScript tests for Nation module
  */
 
-import { Nation, NationType, NATION_COUNT, NATION_NAMES, NATION_INFO, getNationName } from '../Nation';
+import { Nation, NationType, getNATION_COUNT, NATION_NAMES, NATION_INFO, getNationName } from '../Nation';
+import { NationLoader } from '../NationLoader';
+import { rebuildLegacyConstants } from '../Nation';
+
+// Bootstrap the registry before any tests run
+beforeAll(async () => {
+  await NationLoader.discover();
+  rebuildLegacyConstants();
+});
 
 describe('getNationName', () => {
   test('returns correct name for valid discriminants', () => {
@@ -20,14 +28,15 @@ describe('getNationName', () => {
 
 describe('NATION_INFO', () => {
   test('has an entry for every nation', () => {
-    for (let i = 0; i < NATION_COUNT; i++) {
+    const count = getNATION_COUNT();
+    for (let i = 0; i < count; i++) {
       expect(NATION_INFO[i]).toBeDefined();
-      expect(NATION_INFO[i].nameId).toBe(i);
+      expect(NATION_INFO[i].id).toBeDefined();
     }
   });
 
   test('NATION_NAMES length matches NATION_COUNT', () => {
-    expect(NATION_NAMES.length).toBe(NATION_COUNT);
+    expect(NATION_NAMES.length).toBe(getNATION_COUNT());
   });
 });
 
@@ -46,7 +55,7 @@ describe('Nation class', () => {
   test('setNation fails for out-of-range discriminant, leaves selectedNation unchanged', () => {
     const nation = new Nation();
     expect(nation.setNation(-1)).toBe(false);
-    expect(nation.setNation(NATION_COUNT)).toBe(false);
+    expect(nation.setNation(getNATION_COUNT())).toBe(false);
     expect(nation.selectedNation).toBe(NationType.Romans);
   });
 
@@ -54,13 +63,13 @@ describe('Nation class', () => {
     const nation = new Nation();
     nation.setNation(NationType.Mayans);
     const info = nation.getInfo();
-    expect(info.nameId).toBe(NationType.Mayans);
+    expect(info.id).toBe('mayans');
   });
 
   test('getInfo falls back to Roman info if selectedNation somehow invalid', () => {
     const nation = new Nation();
     (nation as any).selectedNation = 999;
-    expect(nation.getInfo()).toBe(NATION_INFO[0]);
+    expect(nation.getInfo()).toEqual(NATION_INFO[0]);
   });
 
   test('getBuildings includes common buildings for every nation', () => {

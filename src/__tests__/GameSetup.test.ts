@@ -5,6 +5,14 @@ import { GameSetup, GameConfig } from '../game/GameSetup';
 import { Map as GameMap } from '../game/Map';
 import { NationType } from '../game/Nation';
 import { Terrain } from '../game/types';
+import { NationLoader } from '../game/NationLoader';
+import { rebuildLegacyConstants } from '../game/Nation';
+
+// Bootstrap the registry before any tests run
+beforeAll(async () => {
+  await NationLoader.discover();
+  rebuildLegacyConstants();
+});
 
 describe('GameSetup', () => {
   describe('createSinglePlayer', () => {
