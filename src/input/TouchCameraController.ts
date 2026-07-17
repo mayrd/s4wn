@@ -34,6 +34,11 @@ export class TouchCameraController {
     c.lowerRadiusLimit = 8;          // Allow closer zoom on mobile
     c.upperRadiusLimit = 120;
 
+    // Prevent camera from going underneath the terrain plane.
+    // beta=0 is top-down, beta=PI/2 is horizontal, beta>PI/2 looks up from below.
+    // Clamp upperBetaLimit to prevent seeing the underside of the terrain.
+    c.upperBetaLimit = Math.PI / 2 - 0.1;
+
     // Touch pan: two-finger drag moves the camera target
     c.panningSensibility = 50;       // Pan speed for touch
     c.panningAxis = new Vector3(1, 1, 0); // Pan in X/Y plane (follow terrain)
