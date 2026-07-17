@@ -8,6 +8,7 @@
 import { BuildingType, ResourceType, RESOURCE_COUNT, buildCost, buildingInputs, buildingOutputs, productionInterval, requiresSettler, buildTime, maxHp, maxSettlers, CostItem } from '../economy/types';
 import { Map as GameMap } from './Map';
 import { LogisticsManager } from './Logistics';
+import { TradeRouteManager } from './TradeRouteManager';
 
 export interface BuildingData {
   index: number;
@@ -37,6 +38,7 @@ export class Economy {
   constructionCompletions: number = 0;
   resourcePickups: number = 0;
   logistics: LogisticsManager;
+  tradeRoutes: TradeRouteManager;
 
   /** Base storage capacity without any StorageYard buildings. */
   static readonly BASE_STORAGE = 50;
@@ -48,6 +50,7 @@ export class Economy {
     this.resources[ResourceType.Wood] = 20;
     this.resources[ResourceType.Stone] = 10;
     this.logistics = logistics || new LogisticsManager();
+    this.tradeRoutes = new TradeRouteManager();
   }
 
   // ── Resource Management ──────────────────────────────────────────
@@ -284,6 +287,21 @@ export class Economy {
       this.buildings
         .filter(b => b.kind === BuildingType.StorageYard && b.constructionProgress >= 1.0)
         .length * Economy.STORAGE_PER_YARD;
+
+    // Process trade routes for Marketplace buildings
+    const tradeResult = this.tradeRoutes.tickMarketplaces(
+      this.buildings, this.resources, speedMult
+    );
+
+    // Apply resource removals from trade exports
+    for (const r of tradeResult.resourcesToRemove) {
+      this.removeResource(r.type, r.amount);
+    }
+
+    // Add gold from completed trade missions
+    if (tradeResult.goldToAdd > 0) {
+      this.addResource(ResourceType.Gold, tradeResult.goldToAdd);
+    }
   }
 
   // ── Building Damage / Destruction ────────────────────────────────
@@ -340,6 +358,7 @@ export class Economy {
       })),
       nextBuildingIndex: this.nextBuildingIndex,
       storageCapacity: this.storageCapacity,
+      tradeRoutes: this.tradeRoutes.toJSON(),
     };
   }
 
@@ -347,6 +366,9 @@ export class Economy {
     this.resources = [...data.resources];
     this.nextBuildingIndex = data.nextBuildingIndex;
     this.storageCapacity = data.storageCapacity;
+    if (data.tradeRoutes) {
+      this.tradeRoutes.restoreFromJSON(data.tradeRoutes);
+    }
     this.buildings = (data.buildings || []).map((b: any) => ({
       index: b.index,
       kind: b.kind,
