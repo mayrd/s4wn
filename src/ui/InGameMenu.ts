@@ -9,11 +9,10 @@
  * 5. Full-width page layout containing Construction, Statistics, In-Game Menu (Save, Pause, Exit), and Debug Menu.
  */
 
-import { BuildingType, buildingName, buildCost, resourceName, nationForBuilding } from '../economy/types';
+import { BuildingType, buildingName, buildCost, resourceName } from '../economy/types';
 import { GameLoop } from '../game/GameLoop';
-import { Scene, Color3 } from '@babylonjs/core';
+import { Scene } from '@babylonjs/core';
 import { BuildingPlacement } from './BuildingPlacement';
-import { RESOURCE_COLORS } from '../rendering/SupplyChainRenderer';
 import { UnitKind } from '../game/types';
 
 export class InGameMenu {
@@ -47,8 +46,6 @@ export class InGameMenu {
   private terrainRenderer: any = null;
   private territoryOverlay: any = null;
   private supplyChainRenderer: any = null;
-  private originalTextures: WeakMap<any, any> = new WeakMap();
-  private originalEmissive: WeakMap<any, any> = new WeakMap();
 
   constructor(
     gameLoop: GameLoop,
@@ -152,11 +149,9 @@ export class InGameMenu {
 
       const totalUnits = units.length;
       const workers = units.filter(u => u.kind === UnitKind.Worker).length;
-      const archers = units.filter(u => u.kind === UnitKind.Bowman).length;
       const soldiers = units.filter(u => u.kind === UnitKind.Swordsman).length;
 
       const totalBuildings = buildings.length;
-      const prodBuildings = buildings.filter(b => b.kind !== BuildingType.Castle && b.kind !== BuildingType.Barracks && b.kind !== BuildingType.Storehouse && b.kind !== BuildingType.StorageYard).length;
 
       contentHtml = `
         <div class="menu-stats-grid">

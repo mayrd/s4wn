@@ -7,19 +7,16 @@
 
 import { GameLoop } from '../game/GameLoop';
 
-const TOAST_DURATION = 2000;
-
 export class HUD {
   private container: HTMLElement;
-  private toastEl: HTMLElement | null = null;
 
   constructor(gameLoop: GameLoop) {
     this.container = document.getElementById('ui-overlay')!;
-    this.createHUD(gameLoop);
+    this.createHUD();
     this.updateLoop(gameLoop);
   }
 
-  private createHUD(gameLoop: GameLoop): void {
+  private createHUD(): void {
     const hud = document.createElement('div');
     hud.id = 'hud-container';
     hud.className = 'hud-container';
@@ -141,34 +138,6 @@ export class HUD {
     if (btn) {
       btn.style.boxShadow = '0 0 10px 2px #fff';
     }
-  }
-
-  /* ── Toast ───────────────────────────────────────────────── */
-
-  private showToast(message: string): void {
-    if (this.toastEl) {
-      this.toastEl.remove();
-    }
-    this.toastEl = document.createElement('div');
-    this.toastEl.className = 'toast';
-    this.toastEl.textContent = message;
-    document.body.appendChild(this.toastEl);
-
-    requestAnimationFrame(() => {
-      if (this.toastEl) this.toastEl.classList.add('show');
-    });
-
-    setTimeout(() => {
-      if (this.toastEl) {
-        this.toastEl.classList.remove('show');
-        setTimeout(() => {
-          if (this.toastEl) {
-            this.toastEl.remove();
-            this.toastEl = null;
-          }
-        }, 300);
-      }
-    }, TOAST_DURATION);
   }
 
   /* ── Update Loop ──────────────────────────────────────────── */
