@@ -402,6 +402,21 @@ Gabled roof slopes use triangular UVs:
 ## Building Textures
 
 > **All building textures: 512×512 pixels, seamless/tileable, PNG format.**
+> Output path per nation: `assets/nations/{nation}/textures/buildings/building_<name>.png`
+> Generic fallback: `assets/textures/building_<name>.png`
+> Applied via Babylon.js `StandardMaterial.diffuseTexture` in `BuildingMesh.ts`.
+> Each prompt below targets one material category; run separately for each nation variant.
+
+### Nation Variant Note
+Generate each building texture once per nation with subtle color/tone variations:
+- **Romans**: warm limestone with reddish undertones (RGB +5R)
+- **Vikings**: darker, cooler stone with blue-grey moss (RGB +5B)
+- **Mayans**: sun-baked sandstone, lighter golden hue (RGB +5G, -5B)
+- **Trojans**: polished cream marble, brighter (RGB +10R, +10G)
+- **Dark Tribe**: obsidian-black with purple veins (RGB -60R, -60G, +40B)
+
+
+> **All building textures: 512×512 pixels, seamless/tileable, PNG format.**
 > Output path: `assets/textures/building_<name>.png`
 > Applied via Babylon.js `StandardMaterial.diffuseTexture` in `BuildingMesh.ts`.
 > Each prompt below targets one material category; run separately for each.

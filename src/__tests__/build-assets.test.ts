@@ -18,6 +18,10 @@ const REQUIRED_ASSETS = [
   'textures/terrain_grass.png', 'textures/terrain_forest.png', 'textures/terrain_desert.png',
   'textures/terrain_mountain.png', 'textures/terrain_snow.png', 'textures/terrain_water.png', 'textures/terrain_swamp.png',
   'textures/building_stone.png',
+  'nations/romans/nation.json',
+  'nations/vikings/nation.json',
+  'nations/mayans/nation.json',
+  'nations/trojans/nation.json',
   'models/castle.obj', 'models/castle.mtl',
 ];
 
