@@ -5,7 +5,8 @@
  * Unit kinds, states, stances, and stats.
  */
 
-import { UnitKind, UnitState, UnitStance, ResourceType } from './types';
+import { UnitKind, UnitState, UnitStance } from './types';
+import { ResourceType as EconomyResourceType } from '../economy/types';
 import { Path } from './Pathfinder';
 
 export interface UnitStats {
@@ -83,7 +84,9 @@ export class Unit {
   attackCooldown: number = 0;
   attackTargetId: number | null = null;
   dyingTimer: number | null = null;
-  carrying: { resource: ResourceType; amount: number } | null = null;
+  carrying: { resource: EconomyResourceType; amount: number } | null = null;
+  logisticsTargetItemId: number | null = null;
+  logisticsTargetBuildingIndex: number | null = null;
 
   constructor(id: number, kind: UnitKind, x: number, y: number) {
     this.id = id;

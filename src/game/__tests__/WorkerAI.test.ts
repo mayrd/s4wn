@@ -7,7 +7,7 @@ import { Economy } from '../Economy';
 import { UnitManager } from '../UnitManager';
 import { Map as GameMap } from '../Map';
 import { UnitKind, UnitState, Terrain } from '../types';
-import { BuildingType } from '../../economy/types';
+import { BuildingType, ResourceType } from '../../economy/types';
 
 function makeOpenMap(w: number, h: number, ownerId = 1): GameMap {
   const map = new GameMap(w, h);
@@ -133,5 +133,68 @@ describe('WorkerAI — movement toward assigned building', () => {
     ai.tick();
 
     expect(settler.assignedBuilding).toBeNull();
+  });
+});
+
+describe('WorkerAI — Logistics Carrier AI', () => {
+  test('assigns free carrier, picks up item, and delivers it to demanding building', () => {
+    const map = makeOpenMap(20, 20);
+    const economy = new Economy();
+    const um = new UnitManager();
+
+    // Spawn a free settler (carrier)
+    const carrier = um.spawnUnit(UnitKind.Settler, 2, 2);
+
+    // Place a building that has demands (e.g., Sawmill needs Wood)
+    const sawmill = economy.tryPlaceBuilding(BuildingType.Sawmill, 10, 10, map, 1)!;
+    // Force complete sawmill
+    for (let i = 0; i < 35; i++) economy.tick(1.0);
+    expect(sawmill.constructionProgress).toBeCloseTo(1.0);
+
+    // Assign a settler to the sawmill so it performs production tick
+    sawmill.assignedSettlers.push(999);
+    sawmill.productionCounter = 1000; // Force production trigger on next tick
+
+    // Clear resources to ensure demand is triggered
+    economy.removeResource(0 as any, economy.getResourceByDiscriminant(0));
+
+    // Clear outputs, trigger demand registration via economy tick
+    economy.tick(1.0);
+    expect(economy.logistics.getDemands()).toHaveLength(1);
+
+    // Spawn a resource item in the world
+    const item = economy.logistics.spawnItem(ResourceType.Wood, 5, 5);
+
+    const ai = new WorkerAI(economy, um, map);
+
+    // 1. First tick runs logisticsTick: matches demand and assigns carrier to walk to the item
+    ai.logisticsTick();
+    expect(item.isReserved).toBe(true);
+    expect(carrier.logisticsTargetItemId).toBe(item.id);
+    expect(carrier.logisticsTargetBuildingIndex).toBe(sawmill.index);
+    expect(carrier.state).toBe(UnitState.Moving);
+
+    // Teleport carrier close to the item to simulate arrival
+    carrier.x = 5;
+    carrier.y = 5;
+
+    // 2. Second tick runs logisticsTick: carrier picks up the item
+    ai.logisticsTick();
+    expect(carrier.carrying).toEqual({ resource: ResourceType.Wood, amount: 1 });
+    expect(carrier.logisticsTargetItemId).toBeNull();
+    // Item is removed from the logistics registry
+    expect(economy.logistics.getItems().find(i => i.id === item.id)).toBeUndefined();
+
+    // Teleport carrier close to the sawmill
+    carrier.x = 10;
+    carrier.y = 10;
+
+    // 3. Third tick runs logisticsTick: carrier delivers the item to sawmill
+    const initialInput = sawmill.inputBuffer[ResourceType.Wood as any] || 0;
+    ai.logisticsTick();
+    expect(sawmill.inputBuffer[ResourceType.Wood as any]).toBe(initialInput + 1);
+    expect(carrier.carrying).toBeNull();
+    expect(carrier.logisticsTargetBuildingIndex).toBeNull();
+    expect(carrier.state).toBe(UnitState.Idle);
   });
 });

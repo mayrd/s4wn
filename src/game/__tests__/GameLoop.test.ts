@@ -30,6 +30,7 @@ jest.mock('../../game/Nation', () => ({
 jest.mock('../../game/WorkerAI', () => ({
   WorkerAI: jest.fn(() => ({
     tick: jest.fn(),
+    logisticsTick: jest.fn(),
   })),
 }));
 

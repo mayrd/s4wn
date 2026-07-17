@@ -103,6 +103,7 @@ export class GameLoop {
 
     // Worker AI
     this.workerAI.tick();
+    this.workerAI.logisticsTick();
 
     // Combat AI
     this.combatAI.tick();

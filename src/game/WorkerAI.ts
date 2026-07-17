@@ -34,6 +34,122 @@ export class WorkerAI {
     this.moveSettlersToBuildings();
   }
 
+  logisticsTick(): void {
+    // 1. Process active carriers (either moving to pick up an item or moving to deliver it)
+    for (const unit of this.unitManager.getAliveUnits()) {
+      if (unit.kind !== UnitKind.Settler) continue;
+      // If they are assigned to a building, they are handled by processWorkerTasks, not global logistics
+      if (unit.assignedBuilding !== null) continue;
+
+      // Case A: Moving to pick up an item
+      if (unit.logisticsTargetItemId !== null) {
+        const items = this.economy.logistics.getItems();
+        const item = items.find(i => i.id === unit.logisticsTargetItemId);
+        if (!item) {
+          // Item got lost/removed, reset state
+          unit.logisticsTargetItemId = null;
+          unit.logisticsTargetBuildingIndex = null;
+          unit.state = UnitState.Idle;
+          unit.path = null;
+          continue;
+        }
+
+        const dist = Math.sqrt((unit.x - item.x) ** 2 + (unit.y - item.y) ** 2);
+        if (dist < 1.5) {
+          // Pick up item
+          this.economy.logistics.removeItem(item.id);
+          unit.carrying = { resource: item.type, amount: 1 };
+          unit.logisticsTargetItemId = null;
+          unit.state = UnitState.Idle; // Let next tick start the journey or handle below
+          unit.path = null;
+        } else {
+          // Continue moving/pathfinding to item
+          if (!unit.path || unit.path.len() === 0 || unit.state !== UnitState.Moving) {
+            const path = Pathfinder.findPath(
+              this.map,
+              { x: Math.floor(unit.x), y: Math.floor(unit.y) },
+              { x: item.x, y: item.y }
+            );
+            if (path) {
+              unit.moveAlong(path);
+              unit.state = UnitState.Moving;
+            }
+          }
+        }
+      }
+
+      // Case B: Carrying item to a building
+      if (unit.carrying && unit.logisticsTargetBuildingIndex !== null) {
+        const building = this.economy.getBuilding(unit.logisticsTargetBuildingIndex);
+        if (!building) {
+          // Building was destroyed, drop/discard the item
+          unit.carrying = null;
+          unit.logisticsTargetBuildingIndex = null;
+          unit.state = UnitState.Idle;
+          unit.path = null;
+          continue;
+        }
+
+        const dist = Math.sqrt((unit.x - building.x) ** 2 + (unit.y - building.y) ** 2);
+        if (dist < 1.5) {
+          // Deliver resource
+          const res = unit.carrying.resource;
+          building.inputBuffer[res as number] += unit.carrying.amount;
+          unit.carrying = null;
+          unit.logisticsTargetBuildingIndex = null;
+          unit.state = UnitState.Idle;
+          unit.path = null;
+        } else {
+          // Continue moving/pathfinding to building
+          if (!unit.path || unit.path.len() === 0 || unit.state !== UnitState.Moving) {
+            const path = Pathfinder.findPath(
+              this.map,
+              { x: Math.floor(unit.x), y: Math.floor(unit.y) },
+              { x: building.x, y: building.y }
+            );
+            if (path) {
+              unit.moveAlong(path);
+              unit.state = UnitState.Moving;
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Assign idle carriers to unmatched demands
+    const idleCarriers = this.unitManager.getAliveUnits().filter(
+      u => u.kind === UnitKind.Settler &&
+           u.assignedBuilding === null &&
+           u.logisticsTargetItemId === null &&
+           u.carrying === null &&
+           u.isIdle()
+    );
+
+    if (idleCarriers.length === 0) return;
+
+    for (const carrier of idleCarriers) {
+      const match = this.economy.logistics.matchDemand();
+      if (!match) break; // No more matched demands
+
+      const { demand, item } = match;
+      // Reserve item so another carrier doesn't target it
+      item.isReserved = true;
+
+      carrier.logisticsTargetItemId = item.id;
+      carrier.logisticsTargetBuildingIndex = demand.buildingIndex;
+      carrier.state = UnitState.Moving;
+
+      const path = Pathfinder.findPath(
+        this.map,
+        { x: Math.floor(carrier.x), y: Math.floor(carrier.y) },
+        { x: item.x, y: item.y }
+      );
+      if (path) {
+        carrier.moveAlong(path);
+      }
+    }
+  }
+
   private processWorkerTasks(): void {
     for (const unit of this.unitManager.getAliveUnits()) {
       if (unit.kind !== UnitKind.Settler) continue;
