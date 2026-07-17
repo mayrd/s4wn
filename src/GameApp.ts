@@ -36,6 +36,7 @@ import { BuildingData } from './game/Economy';
 import { NationType } from './game/Nation';
 import { BuildingPlacement } from './ui/BuildingPlacement';
 import { SupplyChainRenderer } from './rendering/SupplyChainRenderer';
+import { ResourceItemRenderer } from './rendering/ResourceItemRenderer';
 import { ConstructionAnimator } from './rendering/ConstructionAnimator';
 import { DestructionAnimator } from './rendering/DestructionAnimator';
 import { UnitRenderer } from './rendering/UnitRenderer';
@@ -60,6 +61,7 @@ export class GameApp {
   public touchController!: TouchCameraController;
   public gridRenderer!: GridRenderer;
   public supplyChainRenderer!: SupplyChainRenderer;
+  public resourceItemRenderer!: ResourceItemRenderer;
   public constructionAnimator!: ConstructionAnimator;
   public destructionAnimator!: DestructionAnimator;
   public buildingMeshes: Map<number, any> = new Map();
@@ -231,6 +233,9 @@ export class GameApp {
     this.supplyChainRenderer = new SupplyChainRenderer(this.scene);
     const initialLinks = this.supplyChainRenderer.computeLinks(this.gameLoop.economy);
     this.supplyChainRenderer.refresh(initialLinks);
+
+    // Create resource item renderer (physical items on ground from LogisticsManager)
+    this.resourceItemRenderer = new ResourceItemRenderer(this.scene, this.gameLoop.economy.logistics);
 
     this.ui.updateProgress('Loading buildings...', 65);
 
@@ -588,6 +593,10 @@ export class GameApp {
           this.supplyChainRenderer.refresh(links);
         }
       }
+      // Sync resource item 3D meshes with LogisticsManager (items spawned/removed)
+      if (this.resourceItemRenderer) {
+        this.resourceItemRenderer.sync();
+      }
       if (this.tutorialManager) {
         this.tutorialManager.update();
       }
@@ -622,6 +631,7 @@ export class GameApp {
       this.gridRenderer.dispose();
     }
     this.supplyChainRenderer?.dispose();
+    this.resourceItemRenderer?.dispose();
     this.engine.dispose();
     soundManager.dispose();
   }

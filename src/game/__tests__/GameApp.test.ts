@@ -171,6 +171,14 @@ jest.mock('../../rendering/SupplyChainRenderer', () => ({
   })),
 }));
 
+jest.mock('../../rendering/ResourceItemRenderer', () => ({
+  ResourceItemRenderer: jest.fn(() => ({
+    sync: jest.fn(),
+    visible: true,
+    dispose: jest.fn(),
+  })),
+}));
+
 jest.mock('../../rendering/ConstructionAnimator', () => ({
   ConstructionAnimator: jest.fn(() => ({
     setShadowPipeline: jest.fn(),
