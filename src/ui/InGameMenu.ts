@@ -14,6 +14,7 @@ import { GameLoop } from '../game/GameLoop';
 import { Scene } from '@babylonjs/core';
 import { BuildingPlacement } from './BuildingPlacement';
 import { UnitKind } from '../game/types';
+import { soundManager } from '../audio/SoundManager';
 
 export class InGameMenu {
   private gameLoop: GameLoop;
@@ -32,7 +33,7 @@ export class InGameMenu {
   // State Preservation
   private activeTab: string = 'economy';
   private activeSubTab: string = 'raw';
-  private activeMainTab: 'construction' | 'statistics' | 'ingamemenu' | 'debug' = 'construction';
+  private activeMainTab: 'construction' | 'units' | 'specialists' | 'statistics' | 'ingamemenu' | 'settings' | 'debug' = 'construction';
   private deepPanelVisible: boolean = false;
   private radialActive: boolean = false;
   private isCollapsed: boolean = false;
@@ -154,6 +155,29 @@ export class InGameMenu {
           ${itemsHtml}
         </div>
       `;
+    } else if (this.activeMainTab === 'units') {
+      contentHtml = `
+        <div class="deep-specialists-section">
+          <h3>👥 Civilian & Military Settlers</h3>
+          <div class="deep-specialist-actions">
+            <button class="spec-action-btn" id="btn-recruit-worker">👷 Recruit Worker</button>
+            <button class="spec-action-btn" id="btn-recruit-swordsman">⚔️ Recruit Swordsman</button>
+            <button class="spec-action-btn" id="btn-recruit-archer">🏹 Recruit Archer</button>
+          </div>
+        </div>
+      `;
+    } else if (this.activeMainTab === 'specialists') {
+      contentHtml = `
+        <div class="deep-specialists-section">
+          <h3>🧙 Specialists Command</h3>
+          <p>Deploy Geologists, Pioneers, and Thieves to explore and claim territory.</p>
+          <div class="deep-specialist-actions">
+            <button class="spec-action-btn" id="btn-recruit-geologist">⛏️ Recruit Geologist</button>
+            <button class="spec-action-btn" id="btn-recruit-pioneer">🚩 Recruit Pioneer</button>
+            <button class="spec-action-btn" id="btn-recruit-thief">👥 Recruit Thief</button>
+          </div>
+        </div>
+      `;
     } else if (this.activeMainTab === 'statistics') {
       const units = this.gameLoop.unitManager.getAliveUnits();
       const buildings = this.gameLoop.economy.getCompleteBuildings();
@@ -186,6 +210,27 @@ export class InGameMenu {
           <button class="menu-action-btn exit" id="menu-btn-exit">🚪 Exit to Menu</button>
         </div>
       `;
+    } else if (this.activeMainTab === 'settings') {
+      const isMuted = soundManager.muted;
+      contentHtml = `
+        <div class="deep-stats-section" style="gap:15px;">
+          <h3>🔊 Audio Settings</h3>
+          <div class="stats-row" style="border:none;">
+            <span>Mute Sound</span>
+            <button id="settings-audio-mute" class="deep-subtab-btn ${isMuted ? 'active' : ''}">${isMuted ? 'Muted: ON' : 'Muted: OFF'}</button>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:0.8rem; color:var(--parchment-border);">Volume Level</span>
+            <input type="range" id="settings-audio-volume" min="0" max="1" step="0.1" value="${isMuted ? '0' : '1'}" style="width:100%; cursor:pointer;">
+          </div>
+          
+          <h3 style="margin-top:10px;">🖥️ Graphics Settings</h3>
+          <div class="stats-row" style="border:none;">
+            <span>Render Resolution</span>
+            <button id="settings-gfx-perf" class="deep-subtab-btn">Quality: High</button>
+          </div>
+        </div>
+      `;
     } else if (this.activeMainTab === 'debug') {
       // Inline the debug panel toggles beautifully
       const isGrid = this.gridRenderer?.getMesh()?.isVisible ?? false;
@@ -206,9 +251,12 @@ export class InGameMenu {
     this.buildBarEl.innerHTML = `
       <div class="build-bar-header">
         <div class="build-bar-tabs">
-          <button class="build-bar-tab-btn ${this.activeMainTab === 'construction' ? 'active' : ''}" data-main-tab="construction">🏗️ Construction</button>
+          <button class="build-bar-tab-btn ${this.activeMainTab === 'construction' ? 'active' : ''}" data-main-tab="construction">🏗️ Build</button>
+          <button class="build-bar-tab-btn ${this.activeMainTab === 'units' ? 'active' : ''}" data-main-tab="units">👥 Units</button>
+          <button class="build-bar-tab-btn ${this.activeMainTab === 'specialists' ? 'active' : ''}" data-main-tab="specialists">🧙 Specialists</button>
           <button class="build-bar-tab-btn ${this.activeMainTab === 'statistics' ? 'active' : ''}" data-main-tab="statistics">📊 Statistics</button>
           <button class="build-bar-tab-btn ${this.activeMainTab === 'ingamemenu' ? 'active' : ''}" data-main-tab="ingamemenu">⚙️ Game Menu</button>
+          <button class="build-bar-tab-btn ${this.activeMainTab === 'settings' ? 'active' : ''}" data-main-tab="settings">🛠️ Settings</button>
           <button class="build-bar-tab-btn ${this.activeMainTab === 'debug' ? 'active' : ''}" data-main-tab="debug">🐞 Debug Menu</button>
         </div>
         <span class="build-bar-stats" id="menu-time">Time: ${Math.floor(stats.gameTime)}s</span>
@@ -223,6 +271,44 @@ export class InGameMenu {
   }
 
   private attachBuildBarEvents(): void {
+    // Spawners under Units Tab
+    if (this.activeMainTab === 'units') {
+      this.buildBarEl.querySelector('#btn-recruit-worker')?.addEventListener('click', () => {
+        this.gameLoop.unitManager.spawnUnit(UnitKind.Worker, 25, 25);
+        this.showToast('Spawned 1 Worker!');
+        this.renderBuildBar();
+      });
+      this.buildBarEl.querySelector('#btn-recruit-swordsman')?.addEventListener('click', () => {
+        this.gameLoop.unitManager.spawnUnit(UnitKind.Swordsman, 25, 25);
+        this.showToast('Spawned 1 Swordsman!');
+        this.renderBuildBar();
+      });
+      this.buildBarEl.querySelector('#btn-recruit-archer')?.addEventListener('click', () => {
+        this.gameLoop.unitManager.spawnUnit(UnitKind.Bowman, 25, 25);
+        this.showToast('Spawned 1 Archer!');
+        this.renderBuildBar();
+      });
+    }
+
+    // Spawners under Specialists Tab
+    if (this.activeMainTab === 'specialists') {
+      this.buildBarEl.querySelector('#btn-recruit-geologist')?.addEventListener('click', () => {
+        this.gameLoop.unitManager.spawnUnit(UnitKind.Settler, 25, 25);
+        this.showToast('Spawned 1 Geologist!');
+        this.renderBuildBar();
+      });
+      this.buildBarEl.querySelector('#btn-recruit-pioneer')?.addEventListener('click', () => {
+        this.gameLoop.unitManager.spawnUnit(UnitKind.Pioneer, 25, 25);
+        this.showToast('Spawned 1 Pioneer!');
+        this.renderBuildBar();
+      });
+      this.buildBarEl.querySelector('#btn-recruit-thief')?.addEventListener('click', () => {
+        this.gameLoop.unitManager.spawnUnit(UnitKind.Settler, 25, 25);
+        this.showToast('Spawned 1 Thief!');
+        this.renderBuildBar();
+      });
+    }
+
     // Save, Pause, Exit actions under Menu Tab
     if (this.activeMainTab === 'ingamemenu') {
       const saveBtn = this.buildBarEl.querySelector('#menu-btn-save');
@@ -245,6 +331,44 @@ export class InGameMenu {
       exitBtn?.addEventListener('click', () => {
         if (confirm('Are you sure you want to exit? Unsaved progress will be lost.')) {
           location.reload();
+        }
+      });
+    }
+
+    // Settings actions under Settings Tab
+    if (this.activeMainTab === 'settings') {
+      const muteBtn = this.buildBarEl.querySelector('#settings-audio-mute') as HTMLButtonElement;
+      const volSlider = this.buildBarEl.querySelector('#settings-audio-volume') as HTMLInputElement;
+      const perfBtn = this.buildBarEl.querySelector('#settings-gfx-perf') as HTMLButtonElement;
+
+      muteBtn?.addEventListener('click', () => {
+        const isMuted = soundManager.toggleMute();
+        muteBtn.textContent = isMuted ? 'Muted: ON' : 'Muted: OFF';
+        if (isMuted) {
+          muteBtn.classList.add('active');
+          volSlider.value = '0';
+        } else {
+          muteBtn.classList.remove('active');
+          volSlider.value = '1';
+        }
+      });
+
+      volSlider?.addEventListener('input', (e) => {
+        const vol = parseFloat((e.target as HTMLInputElement).value);
+        soundManager.setVolume(vol);
+      });
+
+      perfBtn?.addEventListener('click', () => {
+        const engine = this.scene?.getEngine?.();
+        if (engine) {
+          const level = engine.getHardwareScalingLevel();
+          if (level === 1) {
+            engine.setHardwareScalingLevel(2);
+            perfBtn.textContent = 'Quality: Medium';
+          } else {
+            engine.setHardwareScalingLevel(1);
+            perfBtn.textContent = 'Quality: High';
+          }
         }
       });
     }

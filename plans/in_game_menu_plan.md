@@ -1,59 +1,75 @@
-# In-Game Menu Implementation Plan: Settlers 4 & Anno 1800 Hybrid
+# In-Game Menu Implementation Plan: Single Integrated Vertical Left-Side Menu
 
 ## Overview
-The goal is to create a modern, responsive, and touch-friendly in-game menu system that leverages the deep, organized structural advantages of the original *Settlers 4* navigation, while incorporating the intuitive, visually rich, and quick-access construction paradigms seen in *Anno 1800*.
+The goal is to provide a single, comprehensive, and integrated in-game menu system anchored on the left side of the screen. This system replaces the split horizontal bottom bar and separate floating statistics panel with a unified full-height vertical panel. The menu is fully collapsible via a top-left toggle and optimized for portrait/mobile use.
 
-## 1. Core Paradigms
+## 1. Unified Left-Side Architecture
 
-### Settlers 4 Navigation (The Backbone)
-- **Categorized Deep Tabs**: Clear separation of concerns (Economy, Military, Specialists, Statistics).
-- **Sub-Menus**: Drill-down menus for specific tasks (e.g., Economy -> Food Production, Raw Materials).
-- **State Preservation**: Menus remember their last opened state so players don't lose context when quickly checking the map.
+The left-side vertical panel (width: `280px` or full width on portrait mode) is organized into several distinct tab categories depending on the active game mode:
 
-### Anno 1800 Style Construction (The Frontend)
-- **Visual Build Bar**: A horizontal or contextual lower bar (or radial menu on mobile) for rapid access to commonly used buildings.
-- **Drag-and-Drop / Ghost Placement**: Smooth, grid-based ghosting for building placement with immediate visual feedback (valid/invalid terrain, resources).
-- **Quick Menus**: Right-click (or long-press on mobile) context menus for immediate actions without traversing the full tab hierarchy.
+### A. General Single Player Mode Tabs:
+1. **🏗️ Construction**: Quick access to commonly built infrastructure (Woodcutter, Forester, Sawmill, Stonecutter, Farm, Bakery, Barracks, GuardTower).
+2. **👥 Units**: Recruitment and management of core civilian and military settlers (Workers, Swordsmen, Archers).
+3. **🧙 Specialists**: Command center for recruiting specialists (Geologists, Pioneers, Thieves).
+4. **📊 Statistics**: Real-time kingdom ledger showing game duration, tick counter, active buildings, total settlers, worker ratios, and military strength.
+5. **⚙️ Game Menu**: Practical in-game actions including save game, pause/resume, and exit.
+6. **🛠️ Settings**: Audio toggles (master volume, mute/unmute) and Graphics options (wireframe, resolution, performance caps).
+7. **🐞 Debug Menu**: Advanced debugging toggles (Grid, Splat, Territory, Supply chains) and Babylon Inspector controls.
 
-## 2. Responsive & Touch-First Design
+### B. Map Editor Mode Tools:
+When active in the Map Editor mode, the left-side menu transforms to house all creative tools, eliminating floating palettes:
+- **⛰️ Elevation Brush**: Raise, lower, smooth, or flatten terrain elevation.
+- **🎨 Texture Splatting Brush**: Paint textures (grass, desert, mountain, swamp, water) onto tiles.
+- **🌲 Object Spawner**: Place trees, rocks, decoration items, and starting points.
+- **💾 Map Actions**: Export sample maps, test paths, and clear map data.
 
-### Desktop Experience
-- Bottom-center build bar with hotkeys for fast access.
-- Side panels for deep statistics and Settlers 4 style categorization that can be collapsed.
-- Mouse hover tooltips with detailed building costs, upkeep, and production chains.
+### C. Multiplayer Mode Integrations:
+When connecting to a Multiplayer session, the left-side menu integrates a communication hub:
+- **💬 Chat Option**: Inline chat client directly within the left menu panel.
+  - **Player List**: See connected players and latency.
+  - **Message Window**: Scrollable historical log of text chats.
+  - **Message Input**: Keyboard input box with quick shout options.
+  - **Channels**: Toggle between global chat, alliance chat, or private whispers.
 
-### Mobile / Touch Experience
-- **Radial Context Menus**: Tap and hold on a unit or empty terrain to open a radial menu (removes the need for right-clicks and tiny buttons).
-- **Bottom Sheet Navigation**: The deep categorization tabs (Economy, Military) slide up as bottom sheets rather than side panels, making them easily reachable with thumbs.
-- **Pinch to Zoom & Two-Finger Pan**: Smooth camera controls that don't conflict with UI touches.
-- **Large Hit Targets**: Minimum 44x44px touch targets for all icons and buttons.
+### D. Campaign & Tutorial/Mission Integration:
+During Campaign and Tutorial missions, the left-side menu provides narrative context and mission guidance:
+- **📖 Campaign Tab**: Mission briefing, objective tracking, and campaign progression.
+  - **Story Log**: Chronological storyline events and journal entries.
+  - **Objectives**: Current primary and secondary goals with completion indicators.
+  - **Rewards**: Preview of unlockables, achievements, and resource bonuses.
+- **🎓 Tutorial Tab**: Step-by-step mission guidance.
+  - **Hints System**: Contextual tooltips based on current tutorial step.
+  - **Skip/Reset Options**: Allow players to skip tutorial or reset current step.
+  - **Knowledge Base**: Quick links to mechanics explained in the BASE.md reference.
 
-## 3. Implementation Steps
+## 2. Integrated Collapsible Layout
 
-1. **Architecture & State Management**
-   - Create a `MenuManager` to handle UI state (open panels, current active tool, contextual selection).
-   - Define data structures mapping buildings to their Anno-style quick-access categories and Settlers 4 deep-hierarchy categories.
+### Floating Toggle Button
+- Stays fixed at `top: 10px; left: 10px;` (z-index: 1000).
+- Dynamically swaps icon from `◀` (to collapse menu) to `▶` (to expand menu).
+- Shifts HUD panel dynamically (`left: 290px` when menu is open, `left: 60px` when collapsed) to guarantee zero overlapping.
 
-2. **Component Development (UI Framework)**
-   - **Quick Action Bar (Bottom)**: Horizontal scrollable list of buildings for the active tier or category.
-   - **Contextual Radial Menu**: For mobile/touch interactions on the map.
-   - **Deep Hierarchy Panel (Side/Bottom Sheet)**: For full Settlers 4 style navigation.
-   - **Building Ghost/Placement Tool**: Refine the 3D ghost mesh logic to integrate with the new menu selections.
+### Responsive Design
+- On screens under `768px` or portrait orientations, the menu spans `100vw` (full screen) when expanded.
+- Overlay components like HUD are cleanly hidden when the menu is open on portrait devices to optimize touch target interaction.
 
-3. **Responsive Layouts (CSS/HTML)**
-   - Use CSS Grid and Flexbox with media queries.
-   - `@media (max-width: 768px)`: Switch from side panels to bottom sheets and enable radial menus over standard right-click context menus.
-   - Ensure UI elements scale correctly on high-DPI displays.
+## 3. UI Implementation Details
 
-4. **Integration & Testing**
-   - Wire UI events to the `GameLoop` and `UIManager`.
-   - Test placement logic, ensuring the menu gracefully closes or minimizes during active placement mode (like Anno).
-   - Write Playwright visual regression tests for both Desktop and Mobile viewport sizes.
+### HTML / Component Structure
+- `InGameMenu` manages the unified state and renders the main container `#anno-build-bar` with the new categories.
+- Left-side menu items are organized vertically, with construction options arranged in a beautiful, responsive 2-column grid.
+- Tab selection uses high-contrast buttons styled in the S4 wood/parchment aesthetic.
 
-## 4. Acceptance Criteria
-- [ ] UI provides a quick-access bottom bar for construction (Anno style).
-- [ ] UI provides deep, tabbed categorization for complex management (S4 style).
-- [ ] UI seamlessly adapts to mobile screens using bottom sheets and radial menus.
-- [ ] Touch targets are adequately sized, preventing accidental misclicks on devices.
-- [ ] Right-click (desktop) and Long-press (mobile) trigger context-sensitive actions.
-- [ ] Building placement allows for seamless transition from menu selection to map interaction.
+### Settings Control Options
+- **Audio Control**: Sliders and mute buttons that connect directly to `SoundManager`.
+- **Graphics Control**: Checkboxes/toggles for scene settings, rendering quality, or wireframe.
+
+## Acceptance Criteria
+- [x] Unified left-side vertical menu covers Construction, Units, Specialists, Stats, Actions, Settings, and Debugging.
+- [x] Menu is fully collapsible via top-left toggle button with smooth CSS translation.
+- [x] HUD positions shift seamlessly or hide in mobile portrait mode to prevent overlap.
+- [x] Settings tab correctly integrates audio/graphics settings.
+- [x] Map Editor integration specifies elevation, texture, and spawner tools fully housed on the left menu.
+- [x] Multiplayer integration outlines chat panels, input logs, and player list directly within the left-side menu.
+- [x] Campaign & Tutorial integration provides Story Log, Objectives tracking, and Knowledge Base within the left menu.
+- [x] All menu modes (General, Map Editor, Multiplayer, Campaign/Tutorial) integrate cleanly without overlap.
