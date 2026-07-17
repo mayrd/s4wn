@@ -43,6 +43,7 @@ import { TutorialManager } from './game/TutorialManager';
 import { TutorialDialog } from './ui/TutorialDialog';
 import { Unit } from './game/Unit';
 import { UnitKind } from './game/types';
+import { InGameMenu } from './ui/InGameMenu';
 
 export class GameApp {
   public engine!: Engine;
@@ -65,6 +66,7 @@ export class GameApp {
   public ui!: UIManager;
   public mapEditor!: MapEditor;
   public buildingPlacement!: BuildingPlacement;
+  public inGameMenu!: InGameMenu;
   public tutorialManager?: TutorialManager;
 
   private mode: StartMode;
@@ -319,6 +321,7 @@ export class GameApp {
     this.gameLoop.state.isPaused = false;
     new HUD(this.gameLoop);
     const debugPanel = new DebugPanel(document, this.engine, this.gameLoop, this.scene);
+    this.inGameMenu = new InGameMenu(this.gameLoop, this.scene, this.playerNation, this.buildingPlacement);
 
     if (this.mode === 'tutorial') {
       const dialog = new TutorialDialog();
@@ -596,6 +599,7 @@ export class GameApp {
     window.removeEventListener('ui-explorer-toggle', this.onExplorerToggle);
     window.removeEventListener('ui-editor-toggle', this.onEditorToggle);
     window.removeEventListener('building-placed', this.boundBuildingPlaced);
+    this.inGameMenu?.dispose();
     this.buildingPlacement?.dispose();
     this.mapEditor?.hide();
     this.touchController.dispose?.();

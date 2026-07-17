@@ -1,0 +1,184 @@
+/**
+ * S4WN - InGameMenu UI Tests
+ * Tests for the hybrid bottom build bar, deep panel, and radial context menu.
+ *
+ * @jest-environment jsdom
+ */
+
+jest.mock('@babylonjs/core', () => ({
+  Scene: jest.fn(),
+  MeshBuilder: {
+    CreateBox: jest.fn(() => ({
+      name: 'ghost',
+      position: { set: jest.fn() },
+      material: null,
+      isPickable: true,
+      dispose: jest.fn(),
+    })),
+  },
+  StandardMaterial: jest.fn(() => ({
+    diffuseColor: {},
+    alpha: 1,
+    wireframe: false,
+    dispose: jest.fn(),
+  })),
+  Color3: jest.fn(() => ({})),
+  Mesh: jest.fn(),
+}));
+
+import { InGameMenu } from '../InGameMenu';
+import { BuildingPlacement } from '../BuildingPlacement';
+import { BuildingType } from '../../economy/types';
+import { Map as GameMap } from '../../game/Map';
+import { Economy } from '../../game/Economy';
+
+// Mock Babylon.js Scene for picking tests
+class MockEngine {
+  getRenderingCanvas(): HTMLCanvasElement | null {
+    return document.getElementById('renderCanvas') as HTMLCanvasElement;
+  }
+}
+class MockScene {
+  private engine = new MockEngine();
+  getEngine() {
+    return this.engine;
+  }
+  pick() {
+    return { hit: true, pickedPoint: { x: 50, y: 0, z: 50 } };
+  }
+}
+
+// Mock GameLoop for stats
+class MockGameLoop {
+  public economy = new Economy();
+  public state = { isPaused: false };
+  getStats() {
+    return { ticks: 123, gameTime: 45.6, zoom: 1 };
+  }
+}
+
+function createMockOverlay(): HTMLElement {
+  const overlay = document.createElement('div');
+  overlay.id = 'ui-overlay';
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function createMockCanvas(): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.id = 'renderCanvas';
+  document.body.appendChild(canvas);
+  return canvas;
+}
+
+describe('InGameMenu', () => {
+  let canvas: HTMLCanvasElement;
+  let map: GameMap;
+  let gameLoop: any;
+  let scene: any;
+  let bp: any;
+  let menu: InGameMenu;
+
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    createMockOverlay();
+    canvas = createMockCanvas();
+    map = new GameMap(100, 100, 'demo');
+    gameLoop = new MockGameLoop();
+    scene = new MockScene();
+    
+    bp = new BuildingPlacement(gameLoop.economy, map, 0, canvas, scene as any);
+    menu = new InGameMenu(gameLoop, scene as any, 0, bp);
+  });
+
+  afterEach(() => {
+    menu.dispose();
+    bp.dispose();
+    document.body.innerHTML = '';
+  });
+
+  it('should initialize DOM elements', () => {
+    const buildBar = document.getElementById('anno-build-bar');
+    const deepPanel = document.getElementById('s4-deep-panel');
+    const radialMenu = document.getElementById('radial-context-menu');
+    const tooltip = document.querySelector('.menu-tooltip');
+
+    expect(buildBar).not.toBeNull();
+    expect(deepPanel).not.toBeNull();
+    expect(radialMenu).not.toBeNull();
+    expect(tooltip).not.toBeNull();
+
+    expect(deepPanel!.classList.contains('hidden')).toBe(true);
+    expect(radialMenu!.classList.contains('hidden')).toBe(true);
+  });
+
+  it('should select building when build bar item is clicked', () => {
+    const item = document.querySelector('.build-bar-item[data-kind]') as HTMLElement;
+    expect(item).not.toBeNull();
+
+    // Trigger click on a build bar item
+    item.click();
+
+    // Building placement should become visible and select the building
+    expect(bp.isVisible()).toBe(true);
+    expect(bp.getSelectedBuilding()).toBe(parseInt(item.dataset.kind!));
+  });
+
+  it('should toggle deep panel visibility', () => {
+    const toggleBtn = document.getElementById('btn-toggle-deep-menu');
+    expect(toggleBtn).not.toBeNull();
+
+    // Click to open
+    toggleBtn!.click();
+    expect(menu.isDeepPanelVisible()).toBe(true);
+    const deepPanel = document.getElementById('s4-deep-panel');
+    expect(deepPanel!.classList.contains('hidden')).toBe(false);
+
+    // Click to close via close button
+    const closeBtn = deepPanel!.querySelector('.deep-panel-close') as HTMLElement;
+    closeBtn.click();
+    expect(menu.isDeepPanelVisible()).toBe(false);
+    expect(deepPanel!.classList.contains('hidden')).toBe(true);
+  });
+
+  it('should change active tab inside deep panel', () => {
+    menu.toggleDeepPanel();
+
+    const militaryTabBtn = document.querySelector('.deep-tab-btn[data-tab="military"]') as HTMLElement;
+    expect(militaryTabBtn).not.toBeNull();
+
+    militaryTabBtn.click();
+    expect(menu.getActiveTab()).toBe('military');
+
+    const specialistsTabBtn = document.querySelector('.deep-tab-btn[data-tab="specialists"]') as HTMLElement;
+    specialistsTabBtn.click();
+    expect(menu.getActiveTab()).toBe('specialists');
+  });
+
+  it('should show and hide radial context menu', () => {
+    menu.showRadialMenu(200, 300);
+    expect(menu.isRadialActive()).toBe(true);
+
+    const radialMenu = document.getElementById('radial-context-menu')!;
+    expect(radialMenu.classList.contains('hidden')).toBe(false);
+    expect(radialMenu.style.left).toBe('200px');
+    expect(radialMenu.style.top).toBe('300px');
+
+    menu.hideRadialMenu();
+    expect(menu.isRadialActive()).toBe(false);
+    expect(radialMenu.classList.contains('hidden')).toBe(true);
+  });
+
+  it('should select building on radial option click', () => {
+    menu.showRadialMenu(100, 100);
+
+    const woodcutterOption = document.getElementById('radial-wood') as HTMLElement;
+    expect(woodcutterOption).not.toBeNull();
+
+    woodcutterOption.click();
+
+    expect(bp.isVisible()).toBe(true);
+    expect(bp.getSelectedBuilding()).toBe(BuildingType.Woodcutter);
+    expect(menu.isRadialActive()).toBe(false);
+  });
+});

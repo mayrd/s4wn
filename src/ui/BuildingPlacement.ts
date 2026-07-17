@@ -353,7 +353,7 @@ export class BuildingPlacement {
     });
   }
 
-  private selectBuilding(kind: BuildingType): void {
+  public selectBuilding(kind: BuildingType): void {
     if (this.selectedBuilding === kind) {
       this.selectedBuilding = null;
       this.ghostActive = false;
