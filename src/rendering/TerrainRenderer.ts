@@ -205,18 +205,21 @@ export class TerrainRenderer {
     }
   }
 
-  /** Apply smooth blending at tile boundaries to eliminate checkered look */
+  /** Apply smooth blending at ALL tile boundaries to eliminate the visible grid.
+   *  Every tile's 4 edges and 4 corners are blended into neighbours — even
+   *  between tiles with the same terrain — so no hard cell borders remain. */
   private applySplatBlending(
     ctx: CanvasRenderingContext2D,
     map: GameMap,
     images: HTMLImageElement[],
     cell: number
   ): void {
-    const BLEND_WIDTH = Math.max(2, Math.floor(cell * 0.15)); // 15% of cell for blending
+    const BLEND_WIDTH = Math.max(3, Math.floor(cell * 0.18)); // 18% of cell
+    const CORNER_RADIUS = Math.max(3, Math.floor(cell * 0.12)); // 12% for corners
 
-    // Cache the average color of each terrain texture so we don't sample 50,000 times
+    // Pre-compute average colour per terrain index so we don't sample 100k times.
     const colorCache = new Map<number, string>();
-    const getCachedColor = (idx: number) => {
+    const getCachedColor = (idx: number): string => {
       if (!colorCache.has(idx)) {
         colorCache.set(idx, this.sampleTerrainColor(images[idx]));
       }
@@ -225,35 +228,42 @@ export class TerrainRenderer {
 
     for (let ty = 0; ty < map.height; ty++) {
       for (let tx = 0; tx < map.width; tx++) {
-        const centerTerrain = map.tiles[ty][tx].terrain;
-        const centerIdx = this.toIdx(String(centerTerrain));
-
-        const offsetX = tx * cell;
-        const offsetY = ty * cell;
-
-        // Sample the tile center color for blending
+        const centerIdx = this.toIdx(String(map.tiles[ty][tx].terrain));
         const centerColor = getCachedColor(centerIdx);
+        const ox = tx * cell;
+        const oy = ty * cell;
 
-        // Only check orthogonal (4-directional) neighbors - NOT diagonals
-        // This prevents the "rotated/twisted" appearance where diagonals incorrectly blend
-        const directions = [
-          { dx: -1, dy: 0, edge: 'left' as const },   // Left neighbor
-          { dx: 1, dy: 0, edge: 'right' as const },    // Right neighbor
-          { dx: 0, dy: -1, edge: 'top' as const },    // Top neighbor
-          { dx: 0, dy: 1, edge: 'bottom' as const },   // Bottom neighbor
+        // ── 4 EDGES (always blend, even same-terrain) ──
+        const edges: Array<{ dx: number; dy: number; edge: 'left' | 'right' | 'top' | 'bottom' }> = [
+          { dx: -1, dy:  0, edge: 'left'   },
+          { dx:  1, dy:  0, edge: 'right'  },
+          { dx:  0, dy: -1, edge: 'top'    },
+          { dx:  0, dy:  1, edge: 'bottom' },
         ];
-
-        for (const { dx, dy, edge } of directions) {
+        for (const { dx, dy, edge } of edges) {
           const nx = tx + dx;
           const ny = ty + dy;
           const neighbor = map.get(nx, ny);
-          if (neighbor && neighbor.terrain !== centerTerrain) {
-            const neighborIdx = this.toIdx(String(neighbor.terrain));
-            const neighborColor = getCachedColor(neighborIdx);
-            // Blend from neighbor's color (at edge) to center's color (away from edge)
-            // This ensures the center is the primary color and edges smoothly transition to neighbors
-            this.blendEdge(ctx, offsetX, offsetY, cell, cell, neighborColor, centerColor, BLEND_WIDTH, edge);
-          }
+          const neighborIdx = neighbor ? this.toIdx(String(neighbor.terrain)) : centerIdx;
+          const neighborColor = getCachedColor(neighborIdx);
+          // Blend from neighbour colour (at tile border) → own colour (inward).
+          this.blendEdge(ctx, ox, oy, cell, cell, neighborColor, centerColor, BLEND_WIDTH, edge);
+        }
+
+        // ── 4 CORNERS (always blend, even same-terrain) ──
+        const corners: Array<{ dx: number; dy: number; position: 'tl' | 'tr' | 'bl' | 'br' }> = [
+          { dx: -1, dy: -1, position: 'tl' }, // top-left
+          { dx:  1, dy: -1, position: 'tr' }, // top-right
+          { dx: -1, dy:  1, position: 'bl' }, // bottom-left
+          { dx:  1, dy:  1, position: 'br' }, // bottom-right
+        ];
+        for (const { dx, dy, position } of corners) {
+          const nx = tx + dx;
+          const ny = ty + dy;
+          const neighbor = map.get(nx, ny);
+          const neighborIdx = neighbor ? this.toIdx(String(neighbor.terrain)) : centerIdx;
+          const neighborColor = getCachedColor(neighborIdx);
+          this.blendCorner(ctx, ox, oy, cell, cell, neighborColor, centerColor, CORNER_RADIUS, position);
         }
       }
     }
@@ -302,6 +312,32 @@ export class TerrainRenderer {
     } else {
       ctx.fillRect(x, y, width, blendWidth);
     }
+  }
+
+  /** Blend colours at a tile corner using a radial gradient.
+   *  Gradient goes from the diagonal neighbour's colour (at the corner tip)
+   *  to the tile's own colour (inward). The gradient centre sits at the
+   *  corner point touching the diagonal neighbour. */
+  private blendCorner(
+    ctx: CanvasRenderingContext2D,
+    x: number, y: number,
+    width: number, height: number,
+    neighborColor: string, ownColor: string,
+    radius: number,
+    position: 'tl' | 'tr' | 'bl' | 'br'
+  ): void {
+    // Gradient centre at the outer corner (touching diagonal neighbour).
+    const gx = position === 'tr' || position === 'br' ? x + width : x;
+    const gy = position === 'bl' || position === 'br' ? y + height : y;
+    const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, radius);
+    grad.addColorStop(0, neighborColor);  // outer corner → neighbour colour
+    grad.addColorStop(1, ownColor);       // inward → tile's own colour
+    ctx.fillStyle = grad;
+
+    // Rectangle covering just the corner region.
+    const rx = position === 'tr' || position === 'br' ? x + width - radius : x;
+    const ry = position === 'bl' || position === 'br' ? y + height - radius : y;
+    ctx.fillRect(rx, ry, radius, radius);
   }
 
   private toIdx(t: string): number {
