@@ -241,6 +241,174 @@ function uiResources() {
   return c;
 }
 
+// ── Decorative UI Textures ────────────────────────────────────────────
+
+function uiMenuBg() {
+  const c = makeCanvas(256, 256);
+  const rnd = mulberry32(888);
+  // Base parchment color
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    setPx(c, x, y, 240, 220, 180);
+  }
+  // Add aging variations and wear marks
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    const v = (rnd() - 0.5) * 30;
+    const [r, g, b] = getPx(c, x, y);
+    setPx(c, x, y, clamp(r + v), clamp(g + v * 0.9), clamp(b + v * 0.7));
+  }
+  // Subtle corner motifs (very faint)
+  for (let i = 0; i < 100; i++) {
+    const t = i / 100;
+    const cx = 28 + Math.sin(t * 7) * 16;
+    const cy = 28 + Math.cos(t * 5) * 16;
+    const alpha = 40 + rnd() * 30;
+    setPx(c, cx, cy, 200, 160, 90, alpha);
+  }
+  // Edge wear (darker edges)
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    const dx = Math.min(x, c.w - 1 - x) / 64;
+    const dy = Math.min(y, c.h - 1 - y) / 64;
+    const edge = Math.min(dx, dy);
+    const e = Math.max(0, 1 - edge * 2);
+    const [r, g, b, a] = getPx(c, x, y);
+    setPx(c, x, y, clamp(r * (0.8 + 0.2 * e)), clamp(g * (0.8 + 0.2 * e)), clamp(b * (0.75 + 0.25 * e)), a);
+  }
+  return c;
+}
+
+function uiFrame() {
+  const c = makeCanvas(256, 256);
+  // Transparent center (32px transparent border area)
+  const borderWidth = 32;
+  // Fill transparent
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    setPx(c, x, y, 0, 0, 0, 0);
+  }
+  // Draw ornate gold border
+  const rnd = mulberry32(99);
+  // Top edge
+  for (let y = 0; y < borderWidth; y++) for (let x = 0; x < c.w; x++) {
+    const t = y / borderWidth;
+    setPx(c, x, y, 220 - t * 30, 180 - t * 20, 90 + t * 20, 220);
+  }
+  // Bottom edge
+  for (let y = c.h - borderWidth; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    const t = (c.h - 1 - y) / borderWidth;
+    setPx(c, x, y, 220 - t * 30, 180 - t * 20, 90 + t * 20, 220);
+  }
+  // Left edge
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < borderWidth; x++) {
+    const t = x / borderWidth;
+    setPx(c, x, y, 220 - t * 30, 180 - t * 20, 90 + t * 20, 220);
+  }
+  // Right edge
+  for (let y = 0; y < c.h; y++) for (let x = c.w - borderWidth; x < c.w; x++) {
+    const t = (c.w - 1 - x) / borderWidth;
+    setPx(c, x, y, 220 - t * 30, 180 - t * 20, 90 + t * 20, 220);
+  }
+  // Add decorative scrollwork on corners
+  for (let i = 0; i < 180; i++) {
+    const t = i / 180;
+    const x = 12 + Math.sin(t * 12) * 14;
+    const y = 12 + Math.cos(t * 12) * 14;
+    setPx(c, x, y, 245, 210, 120, 200);
+  }
+  return c;
+}
+
+function uiTabOrnament() {
+  const c = makeCanvas(200, 32);
+  const wood = woodPanel(200, 32, [60, 40, 26], 101);
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    const [r, g, b] = getPx(wood, x, y);
+    setPx(c, x, y, r, g, b);
+  }
+  // Gold borders
+  for (let x = 0; x < c.w; x++) {
+    for (let i = 0; i < 3; i++) {
+      setPx(c, x, i, 200, 160, 70);
+      setPx(c, x, c.h - 1 - i, 200, 160, 70);
+    }
+  }
+  // Lighter center
+  for (let y = 8; y < c.h - 8; y++) for (let x = 0; x < c.w; x++) {
+    const [r, g, b] = getPx(c, x, y);
+    setPx(c, x, y, clamp(r + 18), clamp(g + 14), clamp(b + 8));
+  }
+  return c;
+}
+
+function uiMedals() {
+  const c = makeCanvas(384, 64); // 6 icons × 64px
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) setPx(c, x, y, 0, 0, 0, 0);
+  const medalColors = [
+    [150, 80, 50],   // basic - axe (wood/metal)
+    [180, 160, 70],  // food - wheat (golden)
+    [170, 170, 180], // mining - ore (silver)
+    [120, 180, 100], // military - green/steel
+    [200, 180, 80],  // logistics - gold/amber
+    [160, 100, 200], // specialists - mystic purple
+  ];
+  const symbols = ['🪓', '🌾', '⛏️', '🛡️', '🏠', '🧙'];
+  for (let i = 0; i < 6; i++) {
+    const mx = i * 64 + 32;
+    const my = 32;
+    const [r, g, b] = medalColors[i];
+    // Draw circular medallion
+    for (let dy = -26; dy <= 26; dy++) for (let dx = -26; dx <= 26; dx++) {
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d <= 26) {
+        // Gold rim
+        if (d > 20) setPx(c, mx + dx, my + dy, 215, 175, 85, 255);
+        else setPx(c, mx + dx, my + dy, clamp(r * (1 - (d - 20) / 20)), clamp(g * (1 - (d - 20) / 20)), clamp(b * (1 - (d - 20) / 20)), 255);
+      }
+    }
+    // Center highlight
+    for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) {
+      if (dx * dx + dy * dy <= 64) {
+        setPx(c, mx + dx, my + dy, clamp(r + 40), clamp(g + 40), clamp(b + 40), 255);
+      }
+    }
+  }
+  return c;
+}
+
+function uiProgressBg() {
+  const c = makeCanvas(200, 20);
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    const v = (Math.random() - 0.5) * 20;
+    setPx(c, x, y, clamp(90 + v), clamp(70 + v), clamp(55 + v));
+  }
+  return c;
+}
+
+function uiProgressFill() {
+  const c = makeCanvas(200, 16);
+  for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) {
+    const t = x / c.w;
+    setPx(c, x, y,
+      clamp(180 + t * 20),
+      clamp(140 + t * 20),
+      clamp(60 + t * 20)
+    );
+  }
+  return c;
+}
+
+function uiSeparatorDecor() {
+  const c = makeCanvas(400, 16);
+  for (let x = 0; x < c.w; x++) for (let y = 0; y < c.h; y++) setPx(c, x, y, 210, 170, 80, 200);
+  // Decorative elements - repeating pattern
+  for (let x = 0; x < c.w; x += 40) {
+    for (let dy = -6; dy <= 6; dy++) for (let dx = -2; dx <= 2; dx++) {
+      if (Math.abs(dx) + Math.abs(dy) <= 6) {
+        setPx(c, x + dx, 8 + dy, 240, 210, 120, 255);
+      }
+    }
+  }
+  return c;
+}
+
 // ── Emit ────────────────────────────────────────────────────────────────
 const OUT = path.join(__dirname, '..', 'assets', 'textures');
 fs.mkdirSync(OUT, { recursive: true });
@@ -254,6 +422,14 @@ const jobs = [
   ['ui_corner.png', uiCorner()],
   ['ui_divider.png', uiDivider()],
   ['ui_resources.png', uiResources()],
+  // New decorative textures
+  ['ui_menu_bg.png', uiMenuBg()],
+  ['ui_frame.png', uiFrame()],
+  ['ui_tab_ornament.png', uiTabOrnament()],
+  ['ui_medals.png', uiMedals()],
+  ['ui_progress_bg.png', uiProgressBg()],
+  ['ui_progress_fill.png', uiProgressFill()],
+  ['ui_separator_decor.png', uiSeparatorDecor()],
 ];
 
 for (const [name, canvas] of jobs) {

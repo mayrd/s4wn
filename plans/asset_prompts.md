@@ -159,6 +159,82 @@ Each icon: clean, simple, readable at 32×32. Siedler 4 style.
 > For now, OBJ thumbnail renders can serve this purpose once textures exist.
 
 ---
+## UI / In-Game Menu Decorations
+
+> **Additional ornate UI textures for enhanced in-game menu aesthetics. These provide**
+> **the distinctive Siedler 4 medieval parchment-and-gold decorative elements.**
+> **Output path: `assets/textures/ui_<name>.png`**
+
+### Menu Background Texture (`assets/textures/ui_menu_bg.png`)
+**Used by:** Main menu panel background, in-game deep panels
+```
+Seamless tileable ornate parchment/scroll background texture, 256×256 pixels.
+Aged cream parchment with warm amber tones (RGB 240, 220, 180), subtle
+edge wear and aging marks. Very faint wax seal impressions and medieval
+decorative corner motifs. Soft fabric-like texture with organic irregularities.
+No hard edges, evenly lit. Photorealistic game UI texture.
+```
+
+### Decorative Border Frame (`assets/textures/ui_frame.png`)
+**Used by:** Panel borders, decorative overlays
+```
+Seamless tileable ornate golden border frame texture, 256×256 pixels.
+Intricate gold filigree pattern with medieval scrollwork along the edges.
+Subtle vine motifs and small decorative rivets. Transparent center with
+ornate border only (32px wide). Gold with amber highlights (RGB 220, 180, 90).
+Used as decorative frame overlay for UI panels.
+```
+
+### Tab Ornament Background (`assets/textures/ui_tab_ornament.png`)
+**Used by:** Category tab headers in build bar
+```
+Horizontal ornamental tab header bar, 200×32 pixels. Rich dark wood base
+with carved gold border top and bottom, small gold rivets at corners.
+Slight bevel giving 3D raised appearance. Center slightly lighter for text.
+Medieval Siedler 4 style panel header. No text embedded. Flat view.
+```
+
+### Category Medal Icons (`assets/textures/ui_medals.png`)
+**Used by:** Building category tab buttons
+```
+Sprite sheet of 6 medieval category medal icons arranged horizontally, each
+64×64 pixels (total 384×64). Each icon is a circular gold-rimmed medallion
+on dark wood background. Left-to-right:
+1. Basic (wood/textile) — axe symbol
+2. Food (agriculture) — wheat sheaf symbol  
+3. Mining (ore/metals) — pickaxe symbol
+4. Military (combat) — sword+shield symbol
+5. Logistics (housing/storage) — house symbol
+6. Specialists (magic/divine) — mystic staff symbol
+Each icon: clean, simple, readable at 64×64. Siedler 4 style.
+```
+
+### Progress Bar Background (`assets/textures/ui_progress_bg.png`)
+**Used by:** Building construction, health bars
+```
+Seamless tileable medieval progress bar background texture, 200×20 pixels.
+Dark stained wood with subtle grain. Slightly lighter center, darker edges.
+No fill indicator — this is the empty track only. Flat view, evenly lit.
+```
+
+### Progress Bar Fill (`assets/textures/ui_progress_fill.png`)
+**Used by:** Progress indicator overlay
+```
+Seamless tileable medieval progress bar fill texture, 200×16 pixels.
+Warm gold/amber material (RGB 220, 180, 80) with subtle gradient.
+Slight sheen suggesting precious metal. Used as overlay on progress track.
+Flat view, evenly lit.
+```
+
+### Ornamental Separator (`assets/textures/ui_separator_decor.png`)
+**Used by:** Section dividers in menus
+```
+Horizontal decorative separator line, 400×16 pixels. Ornate carved gold
+pattern with repeated medieval motifs — small diamonds, fleur-de-lis, and
+scroll elements. Semi-transparent background. Siedler 4 UI element. Flat view.
+```
+
+---
 
 ## Terrain Textures
 

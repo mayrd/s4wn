@@ -309,9 +309,10 @@ export class BuildingPlacement {
 
     const tabsEl = this.panel.querySelector('#bp-tabs')!;
     const categories = getBuildingCategories();
+    // Include medal icon span for each category tab
     tabsEl.innerHTML = categories.map(cat => {
       const active = cat.id === categoryId ? ' active' : '';
-      return `<button class="bp-category-tab${active}" data-category="${cat.id}">${cat.label}</button>`;
+      return `<button class="bp-category-tab${active}" data-category="${cat.id}"><span class="bp-medal-icon"></span><span class="bp-category-label">${cat.label}</span></button>`;
     }).join('');
 
     tabsEl.querySelectorAll('.bp-category-tab').forEach(tab => {
@@ -578,10 +579,13 @@ export class BuildingPlacement {
         border: 1px solid #8b5a2b;
         border-radius: 3px;
         color: #d2b48c;
-        padding: 4px 2px;
-        font-size: 0.7rem;
+        padding: 4px 6px;
+        font-size: 0.75rem;
         cursor: pointer;
         font-family: 'Georgia', serif;
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
       .bp-category-tab.active {
         background: rgba(210, 180, 140, 0.3);
@@ -589,6 +593,19 @@ export class BuildingPlacement {
         color: #fff;
       }
       .bp-category-tab:hover { background: rgba(210, 180, 140, 0.2); }
+
+      .bp-medal-icon {
+        width: 16px;
+        height: 16px;
+        background: url('/textures/ui_medals.png') 0 0 / 192px 32px;
+        flex: 0 0 auto;
+        opacity: 0.9;
+      }
+      .bp-category-tab[data-category="basic"] .bp-medal-icon { background-position: 0 0; }
+      .bp-category-tab[data-category="food"] .bp-medal-icon { background-position: -32px 0; }
+      .bp-category-tab[data-category="mining"] .bp-medal-icon { background-position: -64px 0; }
+      .bp-category-tab[data-category="military"] .bp-medal-icon { background-position: -96px 0; }
+      .bp-category-tab[data-category="logistics"] .bp-medal-icon { background-position: -128px 0; }
 
       .bp-content {
         flex: 1;
