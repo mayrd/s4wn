@@ -117,24 +117,31 @@ test.describe('Visual Regression — In-Game HUD', () => {
       if (app && app.engine) {
         app.engine.stopRenderLoop();
       }
-      const ticks = document.getElementById('hud-ticks');
-      if (ticks) ticks.textContent = '42';
-      const time = document.getElementById('hud-time');
-      if (time) time.textContent = '10s';
     });
 
     // Short wait to ensure any pending requestAnimationFrame frames execute
     await page.waitForTimeout(100);
 
-    const hud = page.locator('#hud-container');
-    await expect(hud).toHaveScreenshot('hud-container.png', {
+    // The anno-build-bar is the main in-game menu now (vertical left panel)
+    // The old #hud-container is hidden (#stats-panel is display:none)
+    // We test the main build bar which contains all the in-game UI
+    const menu = page.locator('#anno-build-bar');
+    await expect(menu).toHaveScreenshot('hud-container.png', {
       maxDiffPixelRatio: 0.20,
       threshold: 0.30,
     });
   });
 
   test('save button exists in HUD', async ({ page }) => {
-    const saveBtn = page.locator('#btn-save-game');
+    // Save button is now in the Game Menu tab (⚙️) of the anno-build-bar
+    const buildBar = page.locator('#anno-build-bar');
+    await buildBar.waitFor({ state: 'visible', timeout: 5000 });
+
+    // Click the Game Menu tab to reveal save/pause/exit buttons
+    await page.click('.build-bar-tab-btn[data-main-tab="ingamemenu"]');
+    await page.waitForTimeout(200);
+
+    const saveBtn = page.locator('#menu-btn-save');
     await expect(saveBtn).toBeVisible({ timeout: 5000 });
   });
 

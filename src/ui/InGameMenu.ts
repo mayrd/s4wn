@@ -33,7 +33,7 @@ export class InGameMenu {
   // State Preservation
   private activeTab: string = 'economy';
   private activeSubTab: string = 'raw';
-  private activeMainTab: 'construction' | 'units' | 'specialists' | 'statistics' | 'ingamemenu' | 'settings' | 'debug' = 'construction';
+  private activeMainTab: 'construction' | 'units' | 'specialists' | 'statistics' | 'ingamemenu' | 'settings' | 'debug' | 'tutorial' | 'campaign' = 'construction';
   private deepPanelVisible: boolean = false;
   private radialActive: boolean = false;
   private isCollapsed: boolean = false;
@@ -246,6 +246,47 @@ export class InGameMenu {
           <button id="menu-debug-supply" class="debug-toggle-btn">${isSupply ? 'Supply: ON' : 'Supply: OFF'}</button>
         </div>
       `;
+    } else if (this.activeMainTab === 'tutorial') {
+      contentHtml = `
+        <div class="deep-stats-section" style="gap: 12px;">
+          <h3>🎓 Tutorial Guidance</h3>
+          <p>Follow step-by-step instructions to master the game mechanics.</p>
+          <div class="stats-row" style="border: none;">
+            <span>Current Step:</span>
+            <span style="font-weight: bold; color: var(--accent-color);">Building Placement</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+            <button id="tutorial-skip-btn" class="deep-subtab-btn">⏭️ Skip Tutorial</button>
+            <button id="tutorial-reset-btn" class="deep-subtab-btn">🔄 Reset Tutorial</button>
+          </div>
+          <div style="margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; font-size: 0.8rem;">
+            Hint: Select buildings from the Construction tab to place them on flat terrain.
+          </div>
+        </div>
+      `;
+    } else if (this.activeMainTab === 'campaign') {
+      contentHtml = `
+        <div class="deep-stats-section" style="gap: 12px;">
+          <h3>📖 Campaign Missions</h3>
+          <div class="stats-row" style="border: none;">
+            <span>Story Log:</span>
+            <span style="font-weight: bold; color: var(--accent-color);">Mission 1 Active</span>
+          </div>
+          <div class="stats-row" style="border: none;">
+            <span>Primary Objective:</span>
+            <span style="font-size: 0.9rem;">Build 5 Woodcutters</span>
+          </div>
+          <div class="stats-row" style="border: none;">
+            <span>Secondary Objective:</span>
+            <span style="font-size: 0.9rem;">Upgrade to Barracks</span>
+          </div>
+          <div style="margin-top: 10px; font-size: 0.8rem; opacity: 0.8;">
+            <strong>Rewards:</strong><br>
+            - Unlock: Advanced Buildings<br>
+            - Bonus: +500 Gold
+          </div>
+        </div>
+      `;
     }
 
     this.buildBarEl.innerHTML = `
@@ -258,6 +299,8 @@ export class InGameMenu {
           <button class="build-bar-tab-btn ${this.activeMainTab === 'ingamemenu' ? 'active' : ''}" data-main-tab="ingamemenu">⚙️ Game Menu</button>
           <button class="build-bar-tab-btn ${this.activeMainTab === 'settings' ? 'active' : ''}" data-main-tab="settings">🛠️ Settings</button>
           <button class="build-bar-tab-btn ${this.activeMainTab === 'debug' ? 'active' : ''}" data-main-tab="debug">🐞 Debug Menu</button>
+          <button class="build-bar-tab-btn ${this.activeMainTab === 'tutorial' ? 'active' : ''}" data-main-tab="tutorial">🎓 Tutorial</button>
+          <button class="build-bar-tab-btn ${this.activeMainTab === 'campaign' ? 'active' : ''}" data-main-tab="campaign">📖 Campaign</button>
         </div>
         <span class="build-bar-stats" id="menu-time">Time: ${Math.floor(stats.gameTime)}s</span>
         <button class="build-bar-toggle-deep" id="btn-toggle-deep-menu" style="display: none;">📜 Management</button>

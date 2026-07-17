@@ -201,4 +201,27 @@ describe('InGameMenu', () => {
     expect(document.body.classList.contains('menu-collapsed')).toBe(false);
     expect(toggleBtn.textContent).toBe('◀');
   });
+
+  it('should switch to tutorial tab and render tutorial content', () => {
+    const tutorialTab = document.querySelector('.build-bar-tab-btn[data-main-tab="tutorial"]') as HTMLButtonElement;
+    expect(tutorialTab).not.toBeNull();
+    tutorialTab.click();
+
+    expect(document.querySelector('.build-bar-tab-btn.active')?.textContent).toContain('🎓 Tutorial');
+    expect(document.querySelector('.deep-stats-section h3')?.textContent).toContain('Tutorial Guidance');
+    expect(document.getElementById('tutorial-skip-btn')).not.toBeNull();
+    expect(document.getElementById('tutorial-reset-btn')).not.toBeNull();
+  });
+
+  it('should switch to campaign tab and render campaign content', () => {
+    const campaignTab = document.querySelector('.build-bar-tab-btn[data-main-tab="campaign"]') as HTMLButtonElement;
+    expect(campaignTab).not.toBeNull();
+    campaignTab.click();
+
+    expect(document.querySelector('.build-bar-tab-btn.active')?.textContent).toContain('📖 Campaign');
+    expect(document.querySelector('.deep-stats-section h3')?.textContent).toContain('Campaign Missions');
+    // Check that there are multiple stats rows (story log, objectives)
+    const statsRows = document.querySelectorAll('.stats-row');
+    expect(statsRows.length).toBeGreaterThan(0);
+  });
 });
