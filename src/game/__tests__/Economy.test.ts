@@ -332,3 +332,41 @@ describe('Economy — save/load round-trip', () => {
     expect(restored.buildings[0].y).toBe(5);
   });
 });
+
+describe('Economy — StorageYard capacity', () => {
+  test('base storage capacity is 50 without StorageYards', () => {
+    const economy = new Economy();
+    expect(economy.storageCapacity).toBe(50);
+  });
+
+  test('StorageYard increases capacity to 100 after tick', () => {
+    const economy = new Economy();
+    const map = makeBuildableMap(10, 10, 1);
+    // StorageYard builds instantly (buildTime=0 in types.ts)
+    economy.tryPlaceBuilding(BuildingType.StorageYard, 3, 3, map, 1)!;
+    economy.tick(1.0); // triggers recalculation
+    expect(economy.storageCapacity).toBe(Economy.BASE_STORAGE + Economy.STORAGE_PER_YARD);
+  });
+
+  test('multiple StorageYards stack capacity', () => {
+    const economy = new Economy();
+    const map = makeBuildableMap(10, 10, 1);
+    economy.tryPlaceBuilding(BuildingType.StorageYard, 3, 3, map, 1)!;
+    economy.tryPlaceBuilding(BuildingType.StorageYard, 4, 4, map, 1)!;
+    economy.tick(1.0);
+    expect(economy.storageCapacity).toBe(Economy.BASE_STORAGE + 2 * Economy.STORAGE_PER_YARD);
+  });
+
+  test('addResource respects dynamic capacity from StorageYards', () => {
+    const economy = new Economy();
+    const map = makeBuildableMap(10, 10, 1);
+    // One StorageYard → cap = 50 + 50 = 100
+    economy.tryPlaceBuilding(BuildingType.StorageYard, 3, 3, map, 1)!;
+    economy.tick(1.0);
+
+    economy.addResource(ResourceType.Gold, 90);
+    const added = economy.addResource(ResourceType.Gold, 20);
+    expect(added).toBe(10); // 100 - 90 = 10 room
+    expect(economy.getResource(ResourceType.Gold)).toBe(100);
+  });
+});

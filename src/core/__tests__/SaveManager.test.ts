@@ -41,8 +41,8 @@ describe('SaveManager', () => {
   describe('Economy serialization', () => {
     it('should round-trip economy state', () => {
       const economy = new Economy();
+      economy.storageCapacity = 200; // Must set before addResource — base capacity is now 50
       economy.addResource(EconResource.Wood, 50);
-      economy.storageCapacity = 200;
 
       // Place a "building" via direct push (skip territory check)
       economy.buildings.push({

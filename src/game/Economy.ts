@@ -33,10 +33,15 @@ export class Economy {
   resources: number[] = new Array(RESOURCE_COUNT).fill(0);
   buildings: BuildingData[] = [];
   nextBuildingIndex: number = 1;
-  storageCapacity: number = 100;
+  storageCapacity: number = 50;
   constructionCompletions: number = 0;
   resourcePickups: number = 0;
   logistics: LogisticsManager;
+
+  /** Base storage capacity without any StorageYard buildings. */
+  static readonly BASE_STORAGE = 50;
+  /** Additional storage capacity per completed StorageYard building. */
+  static readonly STORAGE_PER_YARD = 50;
 
   constructor(logistics?: LogisticsManager) {
     // Start with some initial resources
@@ -273,6 +278,12 @@ export class Economy {
         }
       }
     }
+
+    // Recalculate storage capacity based on completed StorageYard buildings
+    this.storageCapacity = Economy.BASE_STORAGE +
+      this.buildings
+        .filter(b => b.kind === BuildingType.StorageYard && b.constructionProgress >= 1.0)
+        .length * Economy.STORAGE_PER_YARD;
   }
 
   // ── Building Damage / Destruction ────────────────────────────────
