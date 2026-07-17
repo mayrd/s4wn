@@ -732,34 +732,150 @@
 
 /* ── In-Game Menu Hybrid (Anno + S4) ────────────────────────── */
 
-/* Bottom-center build bar (Anno style) */
+/* Bottom full-width build bar (Anno style) */
 .anno-build-bar {
   position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 600px;
-  max-width: 90vw;
-  background: linear-gradient(rgba(40, 24, 16, 0.9), rgba(40, 24, 16, 0.95)), url('/textures/ui_panel.png');
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 160px;
+  background: linear-gradient(rgba(40, 24, 16, 0.95), rgba(40, 24, 16, 0.98)), url('/textures/ui_panel.png');
   background-size: cover, 128px 128px;
-  border: 4px solid var(--parchment-border);
-  border-radius: 8px;
+  border-top: 4px solid var(--parchment-border);
   color: var(--parchment-bg);
   font-family: 'Georgia', serif;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.7);
   z-index: 25;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 .build-bar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 12px;
-  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 16px;
+  background: rgba(0, 0, 0, 0.45);
   border-bottom: 2px solid var(--parchment-border);
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.build-bar-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.build-bar-tab-btn {
+  background: var(--wood-dark);
+  border: 1px solid var(--parchment-border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  color: var(--parchment-bg);
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: 'Georgia', serif;
+  transition: all 0.2s;
+}
+
+.build-bar-tab-btn:hover {
+  background: var(--wood-light);
+}
+
+.build-bar-tab-btn.active {
+  background: var(--parchment-bg);
+  color: var(--text-color);
+  border-color: var(--parchment-border);
+  font-weight: bold;
+}
+
+.build-bar-content {
+  flex: 1;
+  padding: 8px 16px;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+}
+
+/* Statistics view styling inside bottom menu */
+.menu-stats-grid {
+  display: flex;
+  gap: 40px;
+  width: 100%;
+}
+
+.stats-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  border-bottom: 1px dotted rgba(210, 180, 140, 0.3);
+  padding-bottom: 2px;
+}
+
+/* Action buttons styling inside bottom menu (Save/Pause/Exit) */
+.menu-actions-row {
+  display: flex;
+  gap: 16px;
+}
+
+.menu-action-btn {
+  background: var(--wood-dark);
+  border: 2px solid var(--parchment-border);
+  border-radius: 6px;
+  color: var(--parchment-bg);
+  padding: 10px 24px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: 'Georgia', serif;
+  transition: all 0.2s;
+}
+
+.menu-action-btn:hover {
+  background: var(--accent-color);
+  color: var(--text-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 171, 64, 0.4);
+}
+
+.menu-action-btn.exit:hover {
+  background: #c62828;
+  color: white;
+  border-color: #ff8a80;
+  box-shadow: 0 4px 12px rgba(198, 40, 40, 0.4);
+}
+
+/* Debug toggles styling inside bottom menu */
+.menu-debug-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.debug-toggle-btn {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--parchment-border);
+  border-radius: 4px;
+  color: var(--parchment-bg);
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: 'Georgia', serif;
+  transition: all 0.2s;
+}
+
+.debug-toggle-btn:hover {
+  background: var(--wood-light);
 }
 
 .build-bar-title {

@@ -28,20 +28,8 @@ export class HUD {
         <div class="hud-title">Game Stats</div>
         <div class="hud-stat">Time: <span id="hud-time">0s</span></div>
       </div>
-      <div class="hud-actions">
-        <button class="hud-btn" id="btn-save-game" title="Save Game">💾</button>
-      </div>
     `;
     this.container.appendChild(hud);
-
-    // Save button
-    hud.querySelector('#btn-save-game')?.addEventListener('click', () => {
-      if (gameLoop.save()) {
-        this.showToast('Game saved!');
-      } else {
-        this.showToast('Save failed');
-      }
-    });
 
     // Styles
     const style = document.createElement('style');

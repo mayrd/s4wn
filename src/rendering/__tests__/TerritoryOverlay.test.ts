@@ -112,10 +112,10 @@ describe('TerritoryOverlay', () => {
     expect(overlay.getMesh()).toBeNull();
   });
 
-  it('mesh is visible by default after creation', () => {
+  it('mesh is hidden by default after creation', () => {
     overlay.createOverlay(10, 10);
-    expect(overlay.isVisible).toBe(true);
-    expect(overlay.getMesh()!.isVisible).toBe(true);
+    expect(overlay.isVisible).toBe(false);
+    expect(overlay.getMesh()!.isVisible).toBe(false);
   });
 
   it('setVisible toggles mesh visibility', () => {

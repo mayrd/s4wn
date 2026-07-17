@@ -39,7 +39,7 @@ export class TerritoryOverlay {
   private scene: Scene;
   private map: GameMap;
   private overlayMesh: Mesh | null = null;
-  private _visible: boolean = true;
+  private _visible: boolean = false;
 
   constructor(scene: Scene, map: GameMap) {
     this.scene = scene;

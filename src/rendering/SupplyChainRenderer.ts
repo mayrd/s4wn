@@ -76,7 +76,7 @@ export class SupplyChainRenderer {
   private carrierPaths: Array<[number, number, number, number]> = [];
   /** Per-carrier: progress [0, 1] along its path. */
   private carrierProgress: number[] = [];
-  private _visible: boolean = true;
+  private _visible: boolean = false;
   private disabledResources: Set<number> = new Set();
   /** Template mesh cloned for each carrier. Loaded from donkey.glb; null if not loaded. */
   private carrierTemplate: AbstractMesh | null = null;

@@ -29,7 +29,7 @@ export class DebugPanel {
     this.gameLoop = gameLoop;
     this.scene = scene;
     this.container = document.createElement('div');
-    this.container.className = 'debug-panel';
+    this.container.className = 'debug-panel debug-collapsed';
     // Make the title bar the trigger for double-click expand/collapse
     this.container.addEventListener('dblclick', (e) => {
       // Only trigger from title bar area (not from child buttons/links)
@@ -73,17 +73,17 @@ export class DebugPanel {
          <button id="debug-btn-textures" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Textures: ON</button>
          <button id="debug-btn-wireframe" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Wire: OFF</button>
        </div>
-       <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
-         <button id="debug-btn-splat" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Splat: ON</button>
-         <button id="debug-btn-territory" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Territory: ON</button>
-         <button id="debug-btn-fog" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Fog: ON</button>
-       </div>
-       <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
-         <button id="debug-btn-pause" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Pause: OFF</button>
-        <button id="debug-btn-supplychain" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Supply: ON</button>
-       </div>
-       <div id="debug-supply-filters" style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0;">
-       </div>
+        <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
+          <button id="debug-btn-splat" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Splat: ON</button>
+          <button id="debug-btn-territory" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Territory: OFF</button>
+          <button id="debug-btn-fog" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Fog: ON</button>
+        </div>
+        <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
+          <button id="debug-btn-pause" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Pause: OFF</button>
+         <button id="debug-btn-supplychain" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Supply: OFF</button>
+        </div>
+        <div id="debug-supply-filters" style="display:none;gap:4px;flex-wrap:wrap;margin:4px 0;">
+        </div>
       
       <hr class="debug-divider" />
       
@@ -128,7 +128,7 @@ export class DebugPanel {
 
     // Territory toggle
     const terrBtn = this.container.querySelector('#debug-btn-territory') as HTMLButtonElement;
-    let territoryVisible = true;
+    let territoryVisible = false;
     terrBtn.addEventListener('click', () => {
       territoryVisible = !territoryVisible;
       terrBtn.textContent = `Territory: ${territoryVisible ? 'ON' : 'OFF'}`;
@@ -162,7 +162,7 @@ export class DebugPanel {
     // Supply chain toggle
     const supplyBtn = this.container.querySelector('#debug-btn-supplychain') as HTMLButtonElement;
     const filterContainer = this.container.querySelector('#debug-supply-filters') as HTMLDivElement;
-    let supplyVisible = true;
+    let supplyVisible = false;
     supplyBtn.addEventListener('click', () => {
       supplyVisible = !supplyVisible;
       supplyBtn.textContent = `Supply: ${supplyVisible ? 'ON' : 'OFF'}`;

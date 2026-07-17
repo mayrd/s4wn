@@ -230,8 +230,8 @@ describe('SupplyChainRenderer', () => {
   });
 
   describe('visibility', () => {
-    test('default visible is true', () => {
-      expect(renderer.visible).toBe(true);
+    test('default visible is false', () => {
+      expect(renderer.visible).toBe(false);
     });
 
     test('toggle visibility', () => {

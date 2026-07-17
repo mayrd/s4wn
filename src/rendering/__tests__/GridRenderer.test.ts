@@ -31,7 +31,7 @@ jest.mock('@babylonjs/core', () => ({
 describe('GridRenderer', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockMesh.isVisible = true;
+    mockMesh.isVisible = false;
   });
 
   it('should create a grid with correct line count', () => {
@@ -46,11 +46,11 @@ describe('GridRenderer', () => {
     expect(linesCall.mock.calls[0][1].points.length).toBe(44);
   });
 
-  it('should set grid visibility to true initially', () => {
+  it('should set grid visibility to false initially', () => {
     const renderer = new GridRenderer(mockScene as any, 10, 10);
     renderer.createGrid();
 
-    expect(mockMesh.isVisible).toBe(true);
+    expect(mockMesh.isVisible).toBe(false);
   });
 
   it('should toggle grid visibility with setVisible', () => {

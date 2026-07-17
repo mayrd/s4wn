@@ -262,6 +262,7 @@ export class BuildingPlacement {
     btn.className = 'hud-btn';
     btn.title = 'Building Palette';
     btn.textContent = '🏗️';
+    btn.style.display = 'none'; // Hidden from top-left, integrated into bottom menu
     btn.addEventListener('click', () => this.toggle());
 
     const actions = document.querySelector('.hud-actions');
