@@ -281,7 +281,7 @@ export class UnitManager {
   }
 
   /** Tick garrisoned units: they can attack from their building */
-  tickGarrisons(economy: import('./Economy').Economy, map: import('./Map').Map): void {
+  tickGarrisons(economy: import('./Economy').Economy): void {
     const garrisoned = this.getGarrisonedUnits();
     for (const { unitId, buildingIndex } of garrisoned) {
       const unit = this.getUnit(unitId);
