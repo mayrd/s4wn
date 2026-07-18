@@ -60,7 +60,11 @@ export enum UnitStance {
   Passive,
 }
 
-// Forward declaration for Unit (referenced by AI types)
+export interface Task {
+  kind: 'move' | 'work' | 'attack' | 'gather';
+  target: { x: number, y: number };
+  buildingId?: number;
+}
 export type Unit = any; // Will be replaced with proper import from './Unit'
 
 /**

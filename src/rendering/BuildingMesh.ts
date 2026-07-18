@@ -102,8 +102,11 @@ function kindToObjName(kind: string): string {
 export class BuildingMesh {
   private scene: Scene;
   
+  public constructionAnimator: ConstructionAnimator;
+
   constructor(scene: Scene) {
     this.scene = scene;
+    this.constructionAnimator = new ConstructionAnimator(this.scene);
   }
 
 /**

@@ -28,7 +28,7 @@ export class MapEditor {
     this._scene = scene;
     this._terrainRenderer = terrainRenderer;
     this.container = document.createElement('div');
-    this.container.className = 'ui-screen editor-panel hidden';
+    this.container.className = 'ui-screen editor-panel game-menu-container hidden';
     
     this.init();
   }

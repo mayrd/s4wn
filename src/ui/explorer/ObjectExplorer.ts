@@ -145,7 +145,7 @@ export class ObjectExplorer {
     this.gameLoop = null;
     this.isMobile = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 768px)').matches === true;
     this.container = document.createElement('div');
-    this.container.className = 'ui-screen explorer-panel hidden';
+    this.container.className = 'ui-screen explorer-panel game-menu-container hidden';
     this.build();
   }
 

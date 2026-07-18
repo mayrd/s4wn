@@ -162,7 +162,7 @@ export class UIManager {
 
   private createMainMenu(): void {
     this.mainMenu = document.createElement('div');
-    this.mainMenu.className = 'ui-screen main-menu-screen';
+    this.mainMenu.className = 'ui-screen main-menu-screen game-menu-container';
     this.mainMenu.innerHTML = `
       <div class="main-menu-container">
         <img class="menu-logo" src="/images/logo-1024.png" alt="S4WN" />
@@ -216,7 +216,7 @@ export class UIManager {
 
   private createNationSelection(): void {
     this.nationSelection = document.createElement('div');
-    this.nationSelection.className = 'ui-screen main-menu-screen';
+    this.nationSelection.className = 'ui-screen main-menu-screen game-menu-container';
     
     // Import manually or we can hardcode for UI script simplicity
     // However, it's better to construct HTML directly since UIManager avoids heavy imports.

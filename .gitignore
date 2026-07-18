@@ -25,4 +25,4 @@ node_modules
 # test results (diffs, traces, videos — baseline snapshots ARE committed)
 test-results/
 playwright-report/
-*.js.map
+*.js.map.hermes/
