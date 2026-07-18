@@ -227,7 +227,7 @@ describe('TutorialManager — 7-step game integration', () => {
         onStart: jest.fn(),
         isComplete: () => {
           // Mirror the real tutorial: the lone enemy guard must be defeated.
-          const guard = unitManager.units.find(u => u.kind === UnitKind.Swordsman && u.ownerId === 2);
+          const guard = unitManager.units.find((u: any) => u.kind === UnitKind.Swordsman && u.ownerId === 2);
           return !guard || guard.hp <= 0;
         },
       },

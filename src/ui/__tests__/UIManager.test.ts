@@ -62,7 +62,7 @@ describe('UIManager', () => {
   });
 
   it('marks tutorial finished and returns to main menu on tutorial-complete', () => {
-    const ui = new UIManager();
+    new UIManager();
     let exitDispatched = false;
     window.addEventListener('game-exit', () => { exitDispatched = true; }, { once: true });
 
