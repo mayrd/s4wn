@@ -5,7 +5,7 @@
  * Fully migrated from engine/src/economy.rs
  */
 
-import { BuildingType, ResourceType, RESOURCE_COUNT, buildCost, buildingInputs, buildingOutputs, productionInterval, requiresSettler, buildTime, maxHp, maxSettlers, CostItem, garrisonCapacity } from '../economy/types';
+import { BuildingType, ResourceType, RESOURCE_COUNT, buildCost, buildingInputs, buildingOutputs, productionInterval, requiresSettler, buildTime, maxHp, maxSettlers, CostItem, garrisonCapacity, buildingCategory, BuildingCategory } from '../economy/types';
 import { Map as GameMap } from './Map';
 import { LogisticsManager } from './Logistics';
 import { TradeRouteManager } from './TradeRouteManager';
@@ -382,39 +382,9 @@ export class Economy {
   /** Recalculate global Combat Strength from gold bars and monuments */
   private recalculateCombatStrength(): void {
     const goldBars = this.getResource(ResourceType.Gold);
-    const monuments = this.buildings.filter(b => {
-      switch (b.kind) {
-        case BuildingType.Bust:
-        case BuildingType.Monument:
-        case BuildingType.Standard:
-        case BuildingType.Obelisk:
-        case BuildingType.Bench:
-        case BuildingType.Archways:
-        case BuildingType.FeatherOrnament:
-        case BuildingType.JaguarStatue:
-        case BuildingType.Stela:
-        case BuildingType.StonePillar:
-        case BuildingType.FlowerBed:
-        case BuildingType.SunWheel:
-        case BuildingType.SmallAxeStatue:
-        case BuildingType.LargeAxeStatue:
-        case BuildingType.StandingStone:
-        case BuildingType.Throne:
-        case BuildingType.WoodCarving:
-        case BuildingType.ShipProw:
-        case BuildingType.SmallEagleStatue:
-        case BuildingType.LargeEagleStatue:
-        case BuildingType.TrojanHorse:
-        case BuildingType.Pillar:
-        case BuildingType.RoundWell:
-        case BuildingType.TriumphalArch:
-          return true;
-        default:
-          return false;
-      }
-    }).length;
+    const monumentCount = this.buildings.filter(b => buildingCategory(b.kind) === BuildingCategory.Unique).length;
 
-    this.combatStrength = Math.floor(goldBars / 10) + monuments * 2;
+    this.combatStrength = Math.floor(goldBars / 10) + monumentCount * 2;
   }
 
   /* ── Save / Load ─────────────────────────────────────────── */
