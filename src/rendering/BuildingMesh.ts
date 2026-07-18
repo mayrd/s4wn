@@ -1,3 +1,4 @@
+import { ConstructionAnimator } from "./ConstructionAnimator";
 /**
  * S4WN Babylon.js/TypeScript - Building Mesh Renderer
  * 

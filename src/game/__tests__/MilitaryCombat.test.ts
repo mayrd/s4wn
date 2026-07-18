@@ -136,7 +136,7 @@ describe('Military & Combat System', () => {
       economy.resources[ResourceType.Gold] = 50; // bypass capacity
       // Place two monuments via direct push
       economy.buildings.push({
-        index: 1, kind: BuildingType.Bust as any, x: 0, y: 0,
+        index: 1, kind: BuildingType.Marketplace as any, x: 0, y: 0,
         hp: 100, maxHp: 100, constructionProgress: 1.0, isActive: true,
         productionProgress: 0, productionCounter: 0,
         inputBuffer: new Array(20).fill(0), outputBuffer: new Array(20).fill(0),
@@ -145,7 +145,7 @@ describe('Military & Combat System', () => {
         garrisonUnitIds: [],
       });
       economy.buildings.push({
-        index: 2, kind: BuildingType.Monument as any, x: 1, y: 0,
+        index: 2, kind: BuildingType.Marketplace as any, x: 1, y: 0,
         hp: 100, maxHp: 100, constructionProgress: 1.0, isActive: true,
         productionProgress: 0, productionCounter: 0,
         inputBuffer: new Array(20).fill(0), outputBuffer: new Array(20).fill(0),

@@ -71,6 +71,7 @@ function makeBuilding(overrides: Partial<BuildingData> = {}): BuildingData {
     hp: 100,
     maxHp: 100,
     constructionProgress: 0,
+      garrisonUnitIds: [],
     isActive: false,
     productionProgress: 0,
     productionCounter: 0,

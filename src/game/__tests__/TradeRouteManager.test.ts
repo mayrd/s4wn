@@ -10,6 +10,7 @@ function mkMarketplace(
   return {
     index,
     kind: BuildingType.Marketplace,
+    garrisonUnitIds: [],
     x, y,
     hp: 20, maxHp: 20,
     constructionProgress: 1.0,
