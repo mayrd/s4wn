@@ -559,6 +559,18 @@ export class GameApp {
         this.playerNation,
       );
     }
+
+    // Register construction site with ConstructionManager for digger/materials/builder phases
+    if (this.gameLoop?.constructionManager) {
+      this.gameLoop.constructionManager.registerSite(
+        detail.building.index,
+        detail.kind,
+        detail.x,
+        detail.y,
+        detail.building.ownerId,
+        this.map,
+      );
+    }
   }
 
   private initLoop(): void {

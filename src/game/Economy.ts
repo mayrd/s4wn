@@ -182,7 +182,7 @@ export class Economy {
 
   // ── Production Tick ──────────────────────────────────────────────
 
-  tick(speedMult: number): void {
+  tick(speedMult: number, skipConstructionIndices?: Set<number>): void {
     this.constructionCompletions = 0;
     this.resourcePickups = 0;
 
@@ -190,8 +190,12 @@ export class Economy {
     this.logistics.clearDemands();
 
     for (const building of this.buildings) {
-      // Construction progress
+      // Construction progress — skip buildings managed by ConstructionManager
       if (building.constructionProgress < 1.0) {
+        if (skipConstructionIndices && skipConstructionIndices.has(building.index)) {
+          // ConstructionManager handles this building's progress via digger/materials/builder phases
+          continue;
+        }
         const bt = buildTime(building.kind);
         if (bt > 0) {
           building.constructionProgress += (1.0 / bt) * speedMult;

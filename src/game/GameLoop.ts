@@ -14,6 +14,7 @@ import { CombatAI } from './CombatAI';
 import { TerritoryManager } from './TerritoryManager';
 import { SaveManager } from '../core/SaveManager';
 import { ViewCuller } from '../core/ViewCuller';
+import { ConstructionManager } from './ConstructionManager';
 
 export interface GameState {
   gameTime: number;
@@ -32,6 +33,7 @@ export class GameLoop {
   territoryManager: TerritoryManager;
   workerAI: WorkerAI;
   combatAI: CombatAI;
+  constructionManager: ConstructionManager;
 
   state: GameState = {
     gameTime: 0,
@@ -64,6 +66,7 @@ export class GameLoop {
     this.workerAI = new WorkerAI(this.economy, this.unitManager, this.map);
     this.combatAI = new CombatAI(this.unitManager);
     this.territoryManager = new TerritoryManager(map, this.unitManager, this.economy);
+    this.constructionManager = new ConstructionManager();
   }
 
   update(dt: number): void {
@@ -85,7 +88,13 @@ export class GameLoop {
     this.state.ticks++;
 
     // Economy always runs (production is global)
-    this.economy.tick(1.0);
+    // Pass construction site indices so Economy skips auto-advancing progress
+    // for buildings managed by ConstructionManager
+    const skipIndices = new Set(this.constructionManager.sites.keys());
+    this.economy.tick(1.0, skipIndices);
+
+    // Construction manager — handles digger, materials, builder phases
+    this.constructionManager.tick(this.unitManager, this.economy, this.map);
 
     // Notify external subscribers (UI panels, debug tools)
     for (const fn of this.tickSubscribers) {

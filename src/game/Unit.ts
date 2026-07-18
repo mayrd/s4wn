@@ -88,6 +88,11 @@ export class Unit {
   logisticsTargetItemId: number | null = null;
   logisticsTargetBuildingIndex: number | null = null;
 
+  /** Construction role if this unit is assigned to a construction site. */
+  constructionRole: 'digger' | 'builder' | 'carrier' | null = null;
+  /** Index of the ConstructionSite this unit is working on. */
+  constructionTargetSite: number | null = null;
+
   constructor(id: number, kind: UnitKind, x: number, y: number) {
     this.id = id;
     this.kind = kind;
