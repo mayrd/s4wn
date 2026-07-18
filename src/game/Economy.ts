@@ -5,7 +5,7 @@
  * Fully migrated from engine/src/economy.rs
  */
 
-import { BuildingType, ResourceType, RESOURCE_COUNT, buildCost, buildingInputs, buildingOutputs, productionInterval, requiresSettler, buildTime, maxHp, maxSettlers, CostItem } from '../economy/types';
+import { BuildingType, ResourceType, RESOURCE_COUNT, buildCost, buildingInputs, buildingOutputs, productionInterval, requiresSettler, buildTime, maxHp, maxSettlers, CostItem, garrisonCapacity } from '../economy/types';
 import { Map as GameMap } from './Map';
 import { LogisticsManager } from './Logistics';
 import { TradeRouteManager } from './TradeRouteManager';
@@ -28,6 +28,8 @@ export interface BuildingData {
   destructionTimer: number | null;
   destructionProgress: number | null;
   ownerId: number;
+  /** Garrisoned military unit IDs */
+  garrisonUnitIds: number[];
 }
 
 export class Economy {
@@ -39,6 +41,9 @@ export class Economy {
   resourcePickups: number = 0;
   logistics: LogisticsManager;
   tradeRoutes: TradeRouteManager;
+
+  /** Global Combat Strength (Kampfkraft) modifier derived from gold bars + monuments */
+  combatStrength: number = 0;
 
   /** Base storage capacity without any StorageYard buildings. */
   static readonly BASE_STORAGE = 50;
@@ -137,6 +142,7 @@ export class Economy {
       destructionTimer: null,
       destructionProgress: null,
       ownerId,
+      garrisonUnitIds: [],
     };
 
     this.buildings.push(building);
@@ -178,6 +184,40 @@ export class Economy {
     if (idx === -1) return false;
     this.buildings.splice(idx, 1);
     return true;
+  }
+
+  // ── Garrison / Defender Logic ────────────────────────────────────
+
+  getGarrisonCapacity(kind: BuildingType): number {
+    return garrisonCapacity(kind);
+  }
+
+  getGarrisonCount(buildingIndex: number): number {
+    const building = this.getBuilding(buildingIndex);
+    return building?.garrisonUnitIds.length ?? 0;
+  }
+
+  garrisonUnit(buildingIndex: number, unitId: number): boolean {
+    const building = this.getBuilding(buildingIndex);
+    if (!building) return false;
+    if (building.garrisonUnitIds.length >= garrisonCapacity(building.kind)) return false;
+    if (building.garrisonUnitIds.includes(unitId)) return false;
+    building.garrisonUnitIds.push(unitId);
+    return true;
+  }
+
+  ungarrisonUnit(buildingIndex: number, unitId: number): boolean {
+    const building = this.getBuilding(buildingIndex);
+    if (!building) return false;
+    const idx = building.garrisonUnitIds.indexOf(unitId);
+    if (idx === -1) return false;
+    building.garrisonUnitIds.splice(idx, 1);
+    return true;
+  }
+
+  getGarrisonUnits(buildingIndex: number): number[] {
+    const building = this.getBuilding(buildingIndex);
+    return building ? [...building.garrisonUnitIds] : [];
   }
 
   // ── Production Tick ──────────────────────────────────────────────
@@ -306,6 +346,9 @@ export class Economy {
     if (tradeResult.goldToAdd > 0) {
       this.addResource(ResourceType.Gold, tradeResult.goldToAdd);
     }
+
+    // Recalculate combat strength each tick
+    this.recalculateCombatStrength();
   }
 
   // ── Building Damage / Destruction ────────────────────────────────
@@ -336,6 +379,44 @@ export class Economy {
     return this.resourcePickups;
   }
 
+  /** Recalculate global Combat Strength from gold bars and monuments */
+  private recalculateCombatStrength(): void {
+    const goldBars = this.getResource(ResourceType.Gold);
+    const monuments = this.buildings.filter(b => {
+      switch (b.kind) {
+        case BuildingType.Bust:
+        case BuildingType.Monument:
+        case BuildingType.Standard:
+        case BuildingType.Obelisk:
+        case BuildingType.Bench:
+        case BuildingType.Archways:
+        case BuildingType.FeatherOrnament:
+        case BuildingType.JaguarStatue:
+        case BuildingType.Stela:
+        case BuildingType.StonePillar:
+        case BuildingType.FlowerBed:
+        case BuildingType.SunWheel:
+        case BuildingType.SmallAxeStatue:
+        case BuildingType.LargeAxeStatue:
+        case BuildingType.StandingStone:
+        case BuildingType.Throne:
+        case BuildingType.WoodCarving:
+        case BuildingType.ShipProw:
+        case BuildingType.SmallEagleStatue:
+        case BuildingType.LargeEagleStatue:
+        case BuildingType.TrojanHorse:
+        case BuildingType.Pillar:
+        case BuildingType.RoundWell:
+        case BuildingType.TriumphalArch:
+          return true;
+        default:
+          return false;
+      }
+    }).length;
+
+    this.combatStrength = Math.floor(goldBars / 10) + monuments * 2;
+  }
+
   /* ── Save / Load ─────────────────────────────────────────── */
 
   toJSON(): object {
@@ -359,9 +440,11 @@ export class Economy {
         destructionTimer: b.destructionTimer,
         destructionProgress: b.destructionProgress,
         ownerId: b.ownerId,
+        garrisonUnitIds: [...b.garrisonUnitIds],
       })),
       nextBuildingIndex: this.nextBuildingIndex,
       storageCapacity: this.storageCapacity,
+      combatStrength: this.combatStrength,
       tradeRoutes: this.tradeRoutes.toJSON(),
     };
   }
@@ -370,6 +453,7 @@ export class Economy {
     this.resources = [...data.resources];
     this.nextBuildingIndex = data.nextBuildingIndex;
     this.storageCapacity = data.storageCapacity;
+    this.combatStrength = data.combatStrength ?? 0;
     if (data.tradeRoutes) {
       this.tradeRoutes.restoreFromJSON(data.tradeRoutes);
     }
@@ -391,6 +475,7 @@ export class Economy {
       destructionTimer: b.destructionTimer,
       destructionProgress: b.destructionProgress,
       ownerId: b.ownerId,
+      garrisonUnitIds: [...(b.garrisonUnitIds || [])],
     }));
   }
 }

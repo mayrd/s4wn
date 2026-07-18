@@ -63,6 +63,7 @@ describe('SaveManager', () => {
         destructionTimer: null,
         destructionProgress: null,
         ownerId: 1,
+        garrisonUnitIds: [],
       });
 
       const json = economy.toJSON();

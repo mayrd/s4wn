@@ -249,4 +249,75 @@ export class UnitManager {
   getRecentCombatCount(): number {
     return this.combatCount;
   }
+
+  // ── Garrison Logic ──────────────────────────────────────────────
+
+  /** Get all garrisoned units across all buildings */
+  getGarrisonedUnits(): Array<{ unitId: number; buildingIndex: number }> {
+    const result: Array<{ unitId: number; buildingIndex: number }> = [];
+    for (const unit of this.units) {
+      if (unit.isGarrisoned() && unit.isAlive()) {
+        result.push({ unitId: unit.id, buildingIndex: unit.garrisonBuildingIndex! });
+      }
+    }
+    return result;
+  }
+
+  /** Garrison a unit inside a building */
+  garrisonUnit(unitId: number, buildingIndex: number): boolean {
+    const unit = this.getUnit(unitId);
+    if (!unit || !unit.isAlive()) return false;
+    if (!unit.canFight()) return false; // Only military units can garrison
+    unit.garrison(buildingIndex);
+    return true;
+  }
+
+  /** Force a unit out of its garrison (e.g., building destroyed) */
+  ungarrisonUnit(unitId: number): void {
+    const unit = this.getUnit(unitId);
+    if (unit) {
+      unit.ungarrison();
+    }
+  }
+
+  /** Tick garrisoned units: they can attack from their building */
+  tickGarrisons(economy: import('./Economy').Economy, map: import('./Map').Map): void {
+    const garrisoned = this.getGarrisonedUnits();
+    for (const { unitId, buildingIndex } of garrisoned) {
+      const unit = this.getUnit(unitId);
+      const building = economy.getBuilding(buildingIndex);
+      if (!unit || !building || !unit.isAlive()) continue;
+
+      // If building is destroyed, force unit out
+      if (building.destructionTimer !== null || building.hp <= 0) {
+        this.ungarrisonUnit(unitId);
+        continue;
+      }
+
+      // Garrisoned units only attack if they have no existing combat target
+      if (unit.attackTargetId !== null) continue;
+
+      // Find enemies within building's territory radius + 2 tiles
+      const searchRadius = 6;
+      for (const other of this.getAliveUnits()) {
+        if (other.id === unit.id) continue;
+        if (!other.canFight()) continue;
+
+        const dist = Math.sqrt(
+          (building.x - other.x) ** 2 + (building.y - other.y) ** 2
+        );
+
+        if (dist <= searchRadius) {
+          // Garrisoned unit attacks from within the building
+          this.attackUnit(unit.id, other.id);
+          // Set projectile target for Bowman
+          if (unit.kind === UnitKind.Bowman) {
+            unit.projectileTargetX = other.x;
+            unit.projectileTargetY = other.y;
+          }
+          break;
+        }
+      }
+    }
+  }
 }

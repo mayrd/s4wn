@@ -6,7 +6,7 @@
  */
 
 import { UnitManager } from './UnitManager';
-import { UnitStance } from './types';
+import { UnitKind, UnitStance } from './types';
 
 export class CombatAI {
   constructor(
@@ -70,6 +70,17 @@ export class CombatAI {
 
     if (bestTarget) {
       this.unitManager.attackUnit(unit.id, bestTarget.id);
+      // For Bowman, set projectile target for visual arrow arc rendering
+      if (unit.kind === UnitKind.Bowman && bestTarget) {
+        unit.projectileTargetX = bestTarget.x;
+        unit.projectileTargetY = bestTarget.y;
+      }
+    } else {
+      // Clear projectile target when no target
+      if (unit.kind === UnitKind.Bowman) {
+        unit.projectileTargetX = null;
+        unit.projectileTargetY = null;
+      }
     }
   }
 
@@ -84,6 +95,11 @@ export class CombatAI {
 
       if (dist <= unit.getAttackRange()) {
         this.unitManager.attackUnit(unit.id, other.id);
+        // For Bowman, update projectile target for arrow arc visuals
+        if (unit.kind === UnitKind.Bowman) {
+          unit.projectileTargetX = other.x;
+          unit.projectileTargetY = other.y;
+        }
         return;
       }
     }

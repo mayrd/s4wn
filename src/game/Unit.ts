@@ -84,6 +84,11 @@ export class Unit {
   attackCooldown: number = 0;
   attackTargetId: number | null = null;
   dyingTimer: number | null = null;
+  /** Current projectile/target tile for Bowman arrow arcs */
+  projectileTargetX: number | null = null;
+  projectileTargetY: number | null = null;
+  /** If garrisoned, the building index this unit is defending */
+  garrisonBuildingIndex: number | null = null;
   carrying: { resource: EconomyResourceType; amount: number } | null = null;
   logisticsTargetItemId: number | null = null;
   logisticsTargetBuildingIndex: number | null = null;
@@ -101,6 +106,9 @@ export class Unit {
     this.hp = this.getMaxHp();
     this.state = UnitState.Idle;
     this.stance = UnitStance.Aggressive;
+    this.projectileTargetX = null;
+    this.projectileTargetY = null;
+    this.garrisonBuildingIndex = null;
   }
 
   getMaxHp(): number {
@@ -144,6 +152,23 @@ export class Unit {
   assignTo(buildingIndex: number): void {
     this.assignedBuilding = buildingIndex;
     this.path = null;
+  }
+
+  /** Enter a building as a garrison defender */
+  garrison(buildingIndex: number): void {
+    this.garrisonBuildingIndex = buildingIndex;
+    this.path = null;
+    this.state = UnitState.Idle;
+  }
+
+  /** Leave garrison */
+  ungarrison(): void {
+    this.garrisonBuildingIndex = null;
+  }
+
+  /** Whether this unit is currently garrisoned inside a building */
+  isGarrisoned(): boolean {
+    return this.garrisonBuildingIndex !== null;
   }
 
   unassign(): void {
