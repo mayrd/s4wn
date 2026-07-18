@@ -71,6 +71,15 @@ window.addEventListener('game-start', async (event: Event) => {
   });
 });
 
+// ── Return to Main Menu (e.g. tutorial completion) ──────────────────
+window.addEventListener('game-exit', () => {
+  if (app) {
+    app.dispose();
+    app = null;
+  }
+  (window as any).gameApp = null;
+});
+
 // ── Cleanup on Unload ───────────────────────────────────────────────
 window.addEventListener('beforeunload', () => {
   if (app) {

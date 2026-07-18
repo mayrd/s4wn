@@ -58,6 +58,34 @@ describe('UIManager', () => {
     
     expect(eventDispatched).toBe(true);
     expect(dispatchedMode).toBe('new');
-    expect(dispatchedNation).toBe(1); // Vikings
+    expect(dispatchedNation).toBe(1);
+  });
+
+  it('marks tutorial finished and returns to main menu on tutorial-complete', () => {
+    const ui = new UIManager();
+    let exitDispatched = false;
+    window.addEventListener('game-exit', () => { exitDispatched = true; }, { once: true });
+
+    // Simulate tutorial completion
+    window.dispatchEvent(new CustomEvent('tutorial-complete'));
+
+    expect(exitDispatched).toBe(true);
+    expect(UIManager.isTutorialFinished()).toBe(true);
+
+    // Main menu should be visible again
+    const mainMenu = document.querySelector('.main-menu-screen') as HTMLElement;
+    expect(mainMenu.classList.contains('active')).toBe(true);
+  });
+
+  it('returnToMenu dispatches game-exit and shows main menu', () => {
+    const ui = new UIManager();
+    let exitDispatched = false;
+    window.addEventListener('game-exit', () => { exitDispatched = true; }, { once: true });
+
+    ui.returnToMenu();
+
+    expect(exitDispatched).toBe(true);
+    const mainMenu = document.querySelector('.main-menu-screen') as HTMLElement;
+    expect(mainMenu.classList.contains('active')).toBe(true);
   });
 });

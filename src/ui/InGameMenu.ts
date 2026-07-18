@@ -15,6 +15,7 @@ import { BuildingPlacement, getBuildingCategories } from './BuildingPlacement';
 import { UnitKind } from '../game/types';
 import { soundManager } from '../audio/SoundManager';
 import { RESOURCE_COLORS } from '../rendering/SupplyChainRenderer';
+import { TutorialManager } from '../game/TutorialManager';
 
 export class InGameMenu {
   private gameLoop: GameLoop;
@@ -22,6 +23,8 @@ export class InGameMenu {
   private playerNation: number;
   private buildingPlacement: BuildingPlacement | null;
   private container: HTMLElement;
+  /** Optional TutorialManager, set when the game runs in tutorial mode. */
+  private tutorialManager: TutorialManager | null = null;
 
   // UI Elements
   private buildBarEl!: HTMLElement;
@@ -548,6 +551,35 @@ export class InGameMenu {
       // Populate supply chain filters
       this.populateSupplyFilters();
     }
+
+    // Tutorial tab actions (skip / reset)
+    if (this.activeMainTab === 'tutorial') {
+      const skipBtn = this.buildBarEl.querySelector('#tutorial-skip-btn') as HTMLButtonElement;
+      const resetBtn = this.buildBarEl.querySelector('#tutorial-reset-btn') as HTMLButtonElement;
+
+      skipBtn?.addEventListener('click', () => {
+        if (this.tutorialManager) {
+          this.tutorialManager.skip();
+        } else {
+          // Fallback: dispatch so GameApp can handle if manager not directly held
+          window.dispatchEvent(new CustomEvent('tutorial-skip'));
+        }
+      });
+
+      resetBtn?.addEventListener('click', () => {
+        if (this.tutorialManager) {
+          this.tutorialManager.reset();
+          this.renderBuildBar(); // refresh step display
+        } else {
+          window.dispatchEvent(new CustomEvent('tutorial-reset'));
+        }
+      });
+    }
+  }
+
+  /** Provide the TutorialManager so the in-game Tutorial tab can drive it. */
+  setTutorialManager(manager: TutorialManager | null): void {
+    this.tutorialManager = manager;
   }
 
   private populateSupplyFilters(): void {

@@ -56,6 +56,43 @@ export class UIManager {
       this.objectExplorer.connectGame(this.gameLoop);
     }
     this.init();
+
+    // Listen for tutorial completion so we can route the player back to the
+    // main menu and mark the tutorial as finished.
+    window.addEventListener('tutorial-complete', this.onTutorialComplete);
+  }
+
+  /** Marks the tutorial as finished and returns the player to the main menu. */
+  private onTutorialComplete = (): void => {
+    this.markTutorialFinished();
+    this.returnToMenu();
+  };
+
+  /** Persist that the tutorial has been completed (localStorage flag). */
+  markTutorialFinished(): void {
+    try {
+      localStorage.setItem('s4wn-tutorial-finished', 'true');
+    } catch {
+      /* localStorage may be unavailable (private mode) — non-fatal */
+    }
+  }
+
+  /** Whether the tutorial has been completed at least once. */
+  static isTutorialFinished(): boolean {
+    try {
+      return localStorage.getItem('s4wn-tutorial-finished') === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Tear down the running game and return to the main menu. Dispatches a
+   * `game-exit` event that main.ts handles to dispose the heavy GameApp.
+   */
+  returnToMenu(): void {
+    window.dispatchEvent(new CustomEvent('game-exit'));
+    this.showMainMenu();
   }
 
   private init(): void {

@@ -5,6 +5,11 @@
  */
 
 import { Terrain, ResourceType } from './types';
+import { BuildingType } from '../economy/types';
+import { UnitKind } from './types';
+import { Economy } from './Economy';
+import { UnitManager } from './UnitManager';
+import { Unit } from './Unit';
 
 export type MapKind = 'demo' | 'tutorial';
 
@@ -331,6 +336,34 @@ export class Map {
         this.tiles[y][x] = this.makeTile(terrain, elevation);
       }
     }
+  }
+
+  /**
+   * Spawn the enemy outpost required by the tutorial's final combat step.
+   * Places an enemy castle and a lone guard in the far upper corner of the
+   * map and claims a small patch of enemy territory around it. The tutorial's
+   * combat step references these pre-placed entities rather than creating them
+   * at runtime, so the enemy is visible from the start of the mission.
+   *
+   * @returns the id of the spawned enemy guard unit (or -1 if spawn failed).
+   */
+  spawnTutorialEnemies(economy: Economy, unitManager: UnitManager): number {
+    const ex = this.width - 5;
+    const ey = this.height - 5;
+
+    // Claim a small enemy territory patch around the outpost BEFORE placing
+    // the castle, since tryPlaceBuilding requires the tile to be owned.
+    this.updateTerritory(2, [{ x: ex, y: ey, radius: 8 }]);
+
+    const enemyCastle = economy.tryPlaceBuilding(BuildingType.Castle, ex, ey, this, 2);
+    if (enemyCastle) {
+      enemyCastle.constructionProgress = 1.0;
+      enemyCastle.isActive = true;
+    }
+
+    const guard = new Unit(unitManager.nextUnitId++, UnitKind.Swordsman, ex - 1, ey - 1);
+    unitManager.units.push(guard);
+    return guard.id;
   }
 
   /* ── Save / Load ─────────────────────────────────────────── */

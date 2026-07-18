@@ -28,11 +28,59 @@ export class TutorialManager {
     this.steps = steps;
   }
 
+  /** Whether the tutorial is currently running. */
+  get active(): boolean {
+    return this.isActive;
+  }
+
+  /** The id of the currently active step, or null if inactive. */
+  get currentStepId(): string | null {
+    if (!this.isActive || this.currentStepIndex >= this.steps.length) return null;
+    return this.steps[this.currentStepIndex].id;
+  }
+
+  /** Total number of steps in the tutorial. */
+  get totalSteps(): number {
+    return this.steps.length;
+  }
+
+  /** 1-based index of the current step (for UI display), or 0 if inactive. */
+  get currentStepNumber(): number {
+    return this.isActive ? this.currentStepIndex + 1 : 0;
+  }
+
   start(): void {
     if (this.steps.length === 0) return;
     this.isActive = true;
     this.currentStepIndex = 0;
     this.executeCurrentStep();
+    this.emitProgress();
+  }
+
+  /** Restart the tutorial from the first step. */
+  reset(): void {
+    if (this.steps.length === 0) return;
+    this.isActive = true;
+    this.currentStepIndex = 0;
+    this.executeCurrentStep();
+    this.emitProgress();
+  }
+
+  /** Skip the entire tutorial and mark it as finished. */
+  skip(): void {
+    if (!this.isActive) return;
+    this.complete();
+  }
+
+  private emitProgress(): void {
+    window.dispatchEvent(new CustomEvent('tutorial-progress', {
+      detail: {
+        stepIndex: this.currentStepIndex,
+        stepId: this.currentStepId,
+        stepNumber: this.currentStepNumber,
+        totalSteps: this.totalSteps,
+      },
+    }));
   }
 
   private executeCurrentStep(): void {
@@ -60,6 +108,7 @@ export class TutorialManager {
     this.currentStepIndex++;
     if (this.currentStepIndex < this.steps.length) {
       this.executeCurrentStep();
+      this.emitProgress();
     } else {
       this.complete();
     }

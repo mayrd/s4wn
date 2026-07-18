@@ -9,8 +9,10 @@ import { GameLoop } from '../game/GameLoop';
 
 export class HUD {
   private container: HTMLElement;
+  private gameLoop: GameLoop;
 
   constructor(gameLoop: GameLoop) {
+    this.gameLoop = gameLoop;
     this.container = document.getElementById('ui-overlay')!;
     this.createHUD();
     this.updateLoop(gameLoop);
@@ -142,9 +144,9 @@ export class HUD {
 
   /* ── Update Loop ──────────────────────────────────────────── */
 
-  private updateLoop(gameLoop: GameLoop): void {
+  private updateLoop(_gameLoop: GameLoop): void {
     const update = () => {
-      const stats = gameLoop.getStats();
+      const stats = this.gameLoop.getStats();
       const timeEl = document.getElementById('hud-time');
       const menuTimeEl = document.getElementById('menu-time');
       

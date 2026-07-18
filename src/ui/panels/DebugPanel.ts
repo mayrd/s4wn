@@ -7,9 +7,8 @@
 import { Engine, Scene, Color3, ArcRotateCamera } from '@babylonjs/core';
 import { GameLoop } from '../../game/GameLoop';
 import { GridRenderer } from '../../rendering/GridRenderer';
-import { BuildingType, resourceName } from '../../economy/types';
+import { BuildingType } from '../../economy/types';
 import { UnitKind } from '../../game/types';
-import { RESOURCE_COLORS } from '../../rendering/SupplyChainRenderer';
 
 export class DebugPanel {
   private container: HTMLElement;
@@ -19,8 +18,6 @@ export class DebugPanel {
   private gridRenderer: GridRenderer | null = null;
   private terrainRenderer: any; // TerrainRenderer reference for splatting toggle
   private territoryOverlay: any; // TerritoryOverlay reference for territory toggle
-  private supplyChainRenderer: any; // SupplyChainRenderer reference for supply chain toggle
-  private pauseBtn: HTMLButtonElement | null = null;
   /** Store original textures to restore when toggling back on */
   private originalTextures: WeakMap<any, any> = new WeakMap();
   private originalEmissive: WeakMap<any, any> = new WeakMap();
@@ -77,12 +74,6 @@ export class DebugPanel {
           <button id="debug-btn-splat" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Splat: ON</button>
           <button id="debug-btn-territory" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Territory: OFF</button>
           <button id="debug-btn-fog" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Fog: ON</button>
-        </div>
-        <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
-          <button id="debug-btn-pause" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Pause: OFF</button>
-         <button id="debug-btn-supplychain" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Supply: OFF</button>
-        </div>
-        <div id="debug-supply-filters" style="display:none;gap:4px;flex-wrap:wrap;margin:4px 0;">
         </div>
       
       <hr class="debug-divider" />
@@ -152,59 +143,6 @@ export class DebugPanel {
       this.setFogVisibility(fogEnabled);
     });
 
-    // Pause toggle
-    this.pauseBtn = this.container.querySelector('#debug-btn-pause') as HTMLButtonElement;
-    this.pauseBtn.addEventListener('click', () => {
-      this.gameLoop.state.isPaused = !this.gameLoop.state.isPaused;
-      this.updatePauseButton();
-    });
-
-    // Supply chain toggle
-    const supplyBtn = this.container.querySelector('#debug-btn-supplychain') as HTMLButtonElement;
-    const filterContainer = this.container.querySelector('#debug-supply-filters') as HTMLDivElement;
-    let supplyVisible = false;
-    supplyBtn.addEventListener('click', () => {
-      supplyVisible = !supplyVisible;
-      supplyBtn.textContent = `Supply: ${supplyVisible ? 'ON' : 'OFF'}`;
-      filterContainer.style.display = supplyVisible ? 'flex' : 'none';
-      this.setSupplyChainVisibility(supplyVisible);
-    });
-
-    // Populate supply chain filters
-    for (const [resIdStr, color] of Object.entries(RESOURCE_COLORS)) {
-      const resId = parseInt(resIdStr, 10);
-      const name = resourceName(resId);
-      const btn = document.createElement('button');
-      btn.className = 'debug-btn';
-      btn.title = `Toggle ${name}`;
-      btn.style.width = '20px';
-      btn.style.height = '20px';
-      btn.style.padding = '0';
-      btn.style.border = '1px solid #444';
-      btn.style.cursor = 'pointer';
-      // Convert RGB [0-1] to CSS hex
-      const toHex = (c: number) => Math.round(c * 255).toString(16).padStart(2, '0');
-      const hexColor = `#${toHex(color[0])}${toHex(color[1])}${toHex(color[2])}`;
-      btn.style.backgroundColor = hexColor;
-      
-      let enabled = true;
-      btn.addEventListener('click', () => {
-        enabled = !enabled;
-        btn.style.opacity = enabled ? '1' : '0.3';
-        if (this.supplyChainRenderer) {
-          this.supplyChainRenderer.setResourceVisible(resId, enabled);
-          // Recompute immediately
-          this.supplyChainRenderer.refresh(this.supplyChainRenderer.computeLinks(this.gameLoop.economy));
-        }
-      });
-      filterContainer.appendChild(btn);
-    }
-  }
-
-  private updatePauseButton(): void {
-    if (this.pauseBtn) {
-      this.pauseBtn.textContent = `Pause: ${this.gameLoop.state.isPaused ? 'ON' : 'OFF'}`;
-    }
   }
 
   private setGridVisibility(visible: boolean): void {
@@ -235,9 +173,9 @@ export class DebugPanel {
     this.territoryOverlay = overlay;
   }
 
-  /** Set the supply chain renderer reference for supply chain toggle */
-  public setSupplyChainRenderer(renderer: any): void {
-    this.supplyChainRenderer = renderer;
+  /** Set the supply chain renderer reference (kept for API compatibility). */
+  public setSupplyChainRenderer(_renderer: any): void {
+    // Supply chain toggling was migrated to the in-game menu; no-op here.
   }
 
   /** Set up mouse tracking for tile inspection */
@@ -367,12 +305,6 @@ export class DebugPanel {
   private setFogVisibility(_enabled: boolean): void {
     // Fog of war would be controlled here
     // This is a placeholder for future fog rendering
-  }
-
-  private setSupplyChainVisibility(visible: boolean): void {
-    if (this.supplyChainRenderer) {
-      this.supplyChainRenderer.visible = visible;
-    }
   }
 
   private isStorageBuilding(kind: number): boolean {

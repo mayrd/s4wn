@@ -120,6 +120,12 @@ export class GameApp {
     this.map = new GameMap(MAP_WIDTH, MAP_HEIGHT, mapKind);
     this.gameLoop = new GameLoop(this.map);
 
+    // In tutorial mode, pre-place the enemy outpost + lone guard so they are
+    // visible from the start (the combat step references these entities).
+    if (this.mode === 'tutorial') {
+      this.map.spawnTutorialEnemies(this.gameLoop.economy, this.gameLoop.unitManager);
+    }
+
     // If a saved game was requested, restore it BEFORE building the renderer
     // (the terrain mesh is generated from the restored map).
     if (this.mode === 'load') {
@@ -342,6 +348,8 @@ export class GameApp {
       
       let guardId: number | null = null;
 
+      this.inGameMenu.setTutorialManager(this.tutorialManager);
+
       this.tutorialManager.setSteps([
         {
           id: 'camera',
@@ -506,22 +514,18 @@ export class GameApp {
           onStart: (app, _ui) => {
             app.buildingPlacement?.lockAllTabs();
             app.buildingPlacement?.lockAllBuildings();
-            
-            // Set up enemy castle and enemy guard at upper-right corner
+
+            // The enemy outpost + lone guard were pre-placed by
+            // Map.spawnTutorialEnemies() at game start. Locate the guard so we
+            // can detect when it has been defeated.
             const mapWidth = app.gameLoop.map.width;
             const mapHeight = app.gameLoop.map.height;
             const enemyCastleX = mapWidth - 5;
             const enemyCastleY = mapHeight - 5;
-            
-            const enemyCastle = app.gameLoop.economy.tryPlaceBuilding(BuildingType.Castle, enemyCastleX, enemyCastleY, app.gameLoop.map, 2);
-            if (enemyCastle) {
-              enemyCastle.constructionProgress = 1.0;
-              enemyCastle.isActive = true;
-            }
-            
-            const enemyGuard = new Unit(app.gameLoop.unitManager.nextUnitId++, UnitKind.Swordsman, enemyCastleX - 1, enemyCastleY - 1);
-            app.gameLoop.unitManager.units.push(enemyGuard);
-            guardId = enemyGuard.id;
+            const enemyGuard = app.gameLoop.unitManager.units.find(
+              u => Math.floor(u.x) === enemyCastleX - 1 && Math.floor(u.y) === enemyCastleY - 1
+            );
+            guardId = enemyGuard ? enemyGuard.id : null;
           },
           isComplete: (app) => {
             if (guardId === null) return false;
