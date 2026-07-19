@@ -89,6 +89,7 @@ function addActiveBuilding(economy: Economy, kind: BuildingType, x: number, y: n
     destructionTimer: null,
     destructionProgress: null,
     ownerId,
+    garrisonUnitIds: [],
   };
   economy.buildings.push(building);
 }

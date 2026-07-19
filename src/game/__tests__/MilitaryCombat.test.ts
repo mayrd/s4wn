@@ -81,7 +81,7 @@ describe('Military & Combat System', () => {
     test('projectile target is set when engaging enemy', () => {
       const um = new UnitManager();
       const bowman = um.spawnUnit(UnitKind.Bowman, 0, 0);
-      const enemy = um.spawnUnit(UnitKind.Swordsman, 4, 0); // in range
+      um.spawnUnit(UnitKind.Swordsman, 4, 0); // in range
       bowman.stance = UnitStance.Aggressive;
 
       const ai = new CombatAI(um);
@@ -107,7 +107,7 @@ describe('Military & Combat System', () => {
     test('Swordsman does not track projectile targets', () => {
       const um = new UnitManager();
       const sword = um.spawnUnit(UnitKind.Swordsman, 0, 0);
-      const enemy = um.spawnUnit(UnitKind.Swordsman, 1, 0);
+      um.spawnUnit(UnitKind.Swordsman, 1, 0);
       sword.stance = UnitStance.Aggressive;
 
       const ai = new CombatAI(um);
@@ -216,7 +216,7 @@ describe('Military & Combat System', () => {
       um.garrisonUnit(garrisoned.id, tower.index);
       const enemy = um.spawnUnit(UnitKind.Swordsman, 8, 5); // within range
 
-      um.tickGarrisons(economy, makeBuildableMap(10, 10, 1));
+      um.tickGarrisons(economy);
 
       expect(garrisoned.attackTargetId).toBe(enemy.id);
     });
@@ -231,7 +231,7 @@ describe('Military & Combat System', () => {
       um.garrisonUnit(garrisoned.id, tower.index);
       economy.damageBuilding(tower.index, 9999); // destroy
 
-      um.tickGarrisons(economy, makeBuildableMap(10, 10, 1));
+      um.tickGarrisons(economy);
 
       expect(garrisoned.isGarrisoned()).toBe(false);
     });

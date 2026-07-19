@@ -45,6 +45,7 @@ function makeBuilding(overrides: Partial<BuildingData> = {}): BuildingData {
     destructionTimer: 5.0,
     destructionProgress: 0,
     ownerId: 0,
+    garrisonUnitIds: [],
     ...overrides,
   };
 }
