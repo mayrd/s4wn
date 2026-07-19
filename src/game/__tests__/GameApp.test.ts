@@ -194,6 +194,7 @@ jest.mock('../../rendering/ResourceItemRenderer', () => ({
 
 jest.mock('../../rendering/ConstructionAnimator', () => ({
   ConstructionAnimator: jest.fn(() => ({
+    setBuildingRenderer: jest.fn(),
     setShadowPipeline: jest.fn(),
     startConstruction: jest.fn(),
     update: jest.fn(),

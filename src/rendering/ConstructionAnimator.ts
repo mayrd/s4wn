@@ -43,7 +43,7 @@ const STAGE_WALLS = 0.66;
 
 export class ConstructionAnimator {
   private scene: Scene;
-  private buildingRenderer: BuildingMesh;
+  private buildingRenderer: BuildingMesh | null = null;
   private shadowPipeline: ShadowPipeline | null = null;
   private entries: Map<number, ConstructionEntry> = new Map();
 
@@ -54,7 +54,15 @@ export class ConstructionAnimator {
 
   constructor(scene: Scene) {
     this.scene = scene;
-    this.buildingRenderer = new BuildingMesh(scene);
+  }
+
+  /**
+   * Set the BuildingMesh instance for creating final building models.
+   * Broken out from constructor to avoid circular dependency
+   * (BuildingMesh → ConstructionAnimator → BuildingMesh).
+   */
+  setBuildingRenderer(renderer: BuildingMesh): void {
+    this.buildingRenderer = renderer;
   }
 
   setShadowPipeline(pipeline: ShadowPipeline): void {
@@ -248,6 +256,11 @@ export class ConstructionAnimator {
     if (!entry.soundPlayedComplete) {
       entry.soundPlayedComplete = true;
       soundManager.play('complete', 0.6);
+    }
+
+    if (!this.buildingRenderer) {
+      console.warn('ConstructionAnimator: no buildingRenderer set, cannot create final model');
+      return;
     }
 
     try {

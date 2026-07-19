@@ -253,6 +253,7 @@ export class GameApp {
 
     // Construction animator — manages scaffolding for buildings under construction
     this.constructionAnimator = new ConstructionAnimator(this.scene);
+    this.constructionAnimator.setBuildingRenderer(this.buildingRenderer);
     this.constructionAnimator.setShadowPipeline(this.shadowPipeline);
     this.constructionAnimator.onConstructionComplete = (mesh, building) => {
       if (mesh && this.shadowPipeline) {

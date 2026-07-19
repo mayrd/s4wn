@@ -92,6 +92,10 @@ describe('ConstructionAnimator', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     animator = new ConstructionAnimator(mockScene as any);
+    // Set a mock buildingRenderer so swapToFinalModel can proceed
+    (animator as any).buildingRenderer = {
+      createBuilding: jest.fn(() => Promise.resolve({ dispose: jest.fn() })),
+    };
   });
 
   it('should create scaffolding when startConstruction is called', () => {
