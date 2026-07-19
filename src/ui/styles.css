@@ -862,6 +862,45 @@ body.menu-collapsed .hud-container {
   transform: scale(1.05);
 }
 
+.speed-toggle-btn {
+  position: fixed;
+  top: 10px;
+  left: 56px;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(rgba(93, 64, 55, 0.94), rgba(93, 64, 55, 0.94)), url('/textures/ui_button.png');
+  background-size: cover;
+  border: 2px solid var(--parchment-border);
+  border-radius: 6px;
+  color: var(--parchment-bg);
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s, background 0.2s;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+}
+
+.speed-toggle-btn:hover {
+  background: var(--accent-color);
+  color: var(--text-color);
+  transform: scale(1.05);
+}
+
+/* Move both buttons when menu is collapsed */
+body.menu-collapsed .menu-toggle-btn,
+.menu-toggle-btn.collapsed {
+  left: 10px;
+}
+
+body.menu-collapsed .speed-toggle-btn,
+.speed-toggle-btn.collapsed {
+  left: 56px;
+}
+
 .build-bar-header {
   display: flex;
   flex-direction: column;

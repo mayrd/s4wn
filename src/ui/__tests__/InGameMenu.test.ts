@@ -60,7 +60,7 @@ class MockScene {
 // Mock GameLoop for stats
 class MockGameLoop {
   public economy = new Economy();
-  public state = { isPaused: false };
+  public state = { isPaused: false, gameSpeed: 1 };
   getStats() {
     return { ticks: 123, gameTime: 45.6, zoom: 1 };
   }
@@ -202,5 +202,59 @@ describe('InGameMenu', () => {
     // Check that there are multiple stats rows (story log, objectives)
     const statsRows = document.querySelectorAll('.stats-row');
     expect(statsRows.length).toBeGreaterThan(0);
+  });
+
+  it('should create speed toggle button', () => {
+    const speedBtn = document.getElementById('speed-toggle-btn') as HTMLButtonElement;
+    expect(speedBtn).not.toBeNull();
+    expect(speedBtn.textContent).toBe('1x');
+    expect(speedBtn.title).toBe('1x Speed');
+  });
+
+  it('should cycle through pause and game speeds', () => {
+    const speedBtn = document.getElementById('speed-toggle-btn') as HTMLButtonElement;
+    expect(speedBtn).not.toBeNull();
+
+    // Initial: unpaused at 1x speed
+    expect(gameLoop.state.isPaused).toBe(false);
+    expect(gameLoop.state.gameSpeed).toBe(1);
+    expect(speedBtn.textContent).toBe('1x');
+
+    // Click 1: 1x → 2x
+    speedBtn.click();
+    expect(gameLoop.state.isPaused).toBe(false);
+    expect(gameLoop.state.gameSpeed).toBe(2);
+    expect(speedBtn.textContent).toBe('2x');
+
+    // Click 2: 2x → 4x
+    speedBtn.click();
+    expect(gameLoop.state.isPaused).toBe(false);
+    expect(gameLoop.state.gameSpeed).toBe(4);
+    expect(speedBtn.textContent).toBe('4x');
+
+    // Click 3: 4x → pause
+    speedBtn.click();
+    expect(gameLoop.state.isPaused).toBe(true);
+    expect(gameLoop.state.gameSpeed).toBe(1);
+    expect(speedBtn.textContent).toBe('⏸️');
+
+    // Click 4: paused → 1x
+    speedBtn.click();
+    expect(gameLoop.state.isPaused).toBe(false);
+    expect(gameLoop.state.gameSpeed).toBe(1);
+    expect(speedBtn.textContent).toBe('1x');
+  });
+
+  it('should move speed button when menu is collapsed', () => {
+    const toggleBtn = document.getElementById('menu-toggle-btn') as HTMLButtonElement;
+    const speedBtn = document.getElementById('speed-toggle-btn') as HTMLElement;
+
+    // Collapse menu
+    toggleBtn.click();
+    expect(speedBtn.classList.contains('collapsed')).toBe(true);
+
+    // Expand menu
+    toggleBtn.click();
+    expect(speedBtn.classList.contains('collapsed')).toBe(false);
   });
 });

@@ -31,6 +31,7 @@ export class InGameMenu {
   private deepPanelEl!: HTMLElement;
   private tooltipEl!: HTMLElement;
   private toggleBtnEl!: HTMLElement;
+  private speedBtnEl!: HTMLElement;
 
   // State Preservation
   private activeTab: string = 'economy';
@@ -103,6 +104,15 @@ export class InGameMenu {
     this.toggleBtnEl.title = 'Collapse Menu';
     this.toggleBtnEl.addEventListener('click', () => this.toggleMenu());
     this.container.appendChild(this.toggleBtnEl);
+
+    // 1.6. Speed Toggle Button (Pause/Play/Speed control)
+    this.speedBtnEl = document.createElement('button');
+    this.speedBtnEl.id = 'speed-toggle-btn';
+    this.speedBtnEl.className = 'speed-toggle-btn';
+    this.speedBtnEl.innerHTML = '1x';
+    this.speedBtnEl.title = '1x Speed';
+    this.speedBtnEl.addEventListener('click', () => this.toggleSpeed());
+    this.container.appendChild(this.speedBtnEl);
 
     // 2. Anno-style Bottom Build Bar (Now restructured as the full-width integrated footer)
     this.buildBarEl = document.createElement('div');
@@ -1086,16 +1096,49 @@ export class InGameMenu {
     if (this.isCollapsed) {
       this.buildBarEl.classList.add('collapsed');
       this.toggleBtnEl.classList.add('collapsed');
+      this.speedBtnEl.classList.add('collapsed');
       this.toggleBtnEl.innerHTML = '▶'; // Pointing right to expand
       this.toggleBtnEl.title = 'Expand Menu';
       document.body.classList.add('menu-collapsed');
     } else {
       this.buildBarEl.classList.remove('collapsed');
       this.toggleBtnEl.classList.remove('collapsed');
+      this.speedBtnEl.classList.remove('collapsed');
       this.toggleBtnEl.innerHTML = '◀'; // Pointing left to collapse
       this.toggleBtnEl.title = 'Collapse Menu';
       document.body.classList.remove('menu-collapsed');
     }
+  }
+
+  /** Speed cycle: pause → 1x → 2x → 4x → repeat */
+  public toggleSpeed(): void {
+    const state = this.gameLoop.state;
+    
+    // Determine next state
+    if (state.isPaused) {
+      // Paused → unpause at 1x
+      state.isPaused = false;
+      state.gameSpeed = 1;
+      this.speedBtnEl.innerHTML = '1x';
+      this.speedBtnEl.title = '1x Speed';
+    } else if (state.gameSpeed === 1) {
+      state.isPaused = false;
+      state.gameSpeed = 2;
+      this.speedBtnEl.innerHTML = '2x';
+      this.speedBtnEl.title = '2x Speed';
+    } else if (state.gameSpeed === 2) {
+      state.isPaused = false;
+      state.gameSpeed = 4;
+      this.speedBtnEl.innerHTML = '4x';
+      this.speedBtnEl.title = '4x Speed';
+    } else {
+      // 4x → pause
+      state.isPaused = true;
+      state.gameSpeed = 1;
+      this.speedBtnEl.innerHTML = '⏸️';
+      this.speedBtnEl.title = 'Paused';
+    }
+    this.renderBuildBar();
   }
 
   public isMenuCollapsed(): boolean {
@@ -1107,5 +1150,6 @@ export class InGameMenu {
     this.deepPanelEl.remove();
     this.tooltipEl.remove();
     this.toggleBtnEl.remove();
+    this.speedBtnEl.remove();
   }
 }
