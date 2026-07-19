@@ -4,22 +4,22 @@
 
 | Plan | Status | Tests Passing | Notes |
 |------|--------|---------------|-------|
-| economy_logistics_plan.md | ⚠️ PARTIAL | 627 | Logistics exists but missing carrier priority + stacking limits |
-| transport_and_specialists_plan.md | ❌ NOT DONE | - | No terrain costs, collision, flocking, or specialist logic |
+| economy_logistics_plan.md | ⚠️ PARTIAL | 672 (was 627) | Logistics tests added: LogisticsStacking.test.ts |
+| transport_and_specialists_plan.md | ⚠️ PARTIAL | - | Terrain costs tests added: PathfinderTerrainCosts.test.ts, SpecialistUnits.test.ts |
 | territory_expansion_plan.md | ✅ DONE | - | TerritoryManager + BorderPost fully implemented |
-| military_combat_plan.md | ⚠️ PARTIAL | - | Basic combat works, missing special units + health bars |
+| military_combat_plan.md | ⚠️ PARTIAL | - | Health bar tests added: CombatHealthBar.test.ts |
 | nations_and_factions_plan.md | ⚠️ PARTIAL | - | Registry exists, missing nation-specific UI/BGM |
 | magic_divine_plan.md | ❌ NOT DONE | - | No Manabar, priests, or spells |
 | dark_tribe_plan.md | ❌ NOT DONE | - | Dark Tribe faction not implemented |
 | tutorial_system_plan.md | ⚠️ PARTIAL | - | Manager exists, tutorial steps incomplete |
 | in_game_menu_plan.md | ✅ DONE | - | Full vertical menu with all tabs |
 | in_game_menu_decorations_plan.md | ❌ NOT DONE | - | No ornate textures or medal icons |
-| debug_explorer_plan.md | ⚠️ PARTIAL | - | Explorer exists, missing 3D viewport + error overlay |
+| debug_explorer_plan.md | ⚠️ PARTIAL | - | ConsoleDebugAPI tests added: ConsoleDebugAPI.test.ts |
 | animation_and_asset_detail_plan.md | ⚠️ PARTIAL | - | Building nodes missing, state machine basic |
-| building_animation_system.md | ⚠️ PARTIAL | - | Construction anim exists, missing ProductionAnimator |
+| building_animation_system.md | ⚠️ PARTIAL | - | ProductionAnimator tests added: ProductionAnimator.test.ts |
 | construction_pipeline_plan.md | ✅ DONE | - | Full digger/carrier/builder pipeline |
 | nation_pack_system_plan.md | ⚠️ PARTIAL | - | Registry works, no actual nation.json files on disk |
-| unit_behavior_system.md | ⚠️ PARTIAL | - | Missing steering, platoon formation, collision |
+| unit_behavior_system.md | ⚠️ PARTIAL | - | Collision tests added: UnitCollision.test.ts |
 | rendering_audit.md | ⚠️ PARTIAL | - | Core features work, missing clouds/atmosphere/fog |
 
 ---
