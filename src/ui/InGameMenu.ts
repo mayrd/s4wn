@@ -38,8 +38,9 @@ export class InGameMenu {
   private activeTab: string = 'economy';
   private activeSubTab: string = 'raw';
   private activeMainTab: 'construction' | 'units' | 'specialists' | 'statistics' | 'ingamemenu' | 'settings' | 'debug' | 'tutorial' | 'campaign' = 'construction';
-  private constructionSubTab: string = 'basic'; // Sub-tabs for building categories in Construction
-  private deepPanelVisible: boolean = false;
+   private constructionSubTab: string = 'basic'; // Sub-tabs for building categories in Construction
+   private deepPanelVisible: boolean = false;
+   private selectedBuildingKind: BuildingType | null = null; // Track selected building for UI highlighting
   private isCollapsed: boolean = false;
 
   // Touch / Context state
@@ -165,8 +166,9 @@ export class InGameMenu {
               const name = buildingName(kind);
               const cost = buildCost(kind);
               const costStr = cost.map(c => `${c.amount} ${resourceName(c.resource)}`).join(', ');
+              const selected = kind === this.selectedBuildingKind ? ' selected' : '';
               return `
-                <button class="build-bar-item" data-kind="${kind}" data-cost="${costStr}">
+                <button class="build-bar-item${selected}" data-kind="${kind}" data-cost="${costStr}">
                   <span class="item-icon">🏗️</span>
                   <span class="item-label">${name}</span>
                 </button>
@@ -900,16 +902,24 @@ export class InGameMenu {
 
   private handleBuildingSelection(kind: BuildingType): void {
     if (this.buildingPlacement) {
-      if (!this.buildingPlacement.isVisible()) {
-        this.buildingPlacement.toggle();
-      }
+      // Track selected building for UI highlighting
+      this.selectedBuildingKind = kind;
+      // Directly select the building for placement - no separate panel toggle
+      // The construction tab already shows buildings, so we just need to enter placement mode
       if (typeof (this.buildingPlacement as any).selectBuilding === 'function') {
         (this.buildingPlacement as any).selectBuilding(kind);
-      } else {
-        const btn = document.querySelector(`.bp-building-btn[data-kind="${kind}"]`) as HTMLElement;
-        if (btn) btn.click();
       }
     }
+  }
+
+  public getSelectedBuildingKind(): BuildingType | null {
+    return this.selectedBuildingKind;
+  }
+
+  public exitPlacementMode(): void {
+    this.selectedBuildingKind = null;
+    this.buildingPlacement?.exitPlacementMode();
+    this.renderBuildBar();
   }
 
   private startUpdateLoop(): void {

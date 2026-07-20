@@ -118,17 +118,21 @@ describe('InGameMenu', () => {
     expect(deepPanel!.classList.contains('hidden')).toBe(true);
   });
 
-  it('should select building when build bar item is clicked', () => {
-    const item = document.querySelector('.build-bar-item[data-kind]') as HTMLElement;
-    expect(item).not.toBeNull();
+   it('should select building for placement when build bar item is clicked (without showing separate panel)', () => {
+     const item = document.querySelector('.build-bar-item[data-kind]') as HTMLElement;
+     expect(item).not.toBeNull();
+     const kind = parseInt(item.dataset.kind!);
 
-    // Trigger click on a build bar item
-    item.click();
+     // Trigger click on a build bar item
+     item.click();
 
-    // Building placement should become visible and select the building
-    expect(bp.isVisible()).toBe(true);
-    expect(bp.getSelectedBuilding()).toBe(parseInt(item.dataset.kind!));
-  });
+     // Building placement should NOT show separate panel (isVisible = false)
+     // but the building should be selected for placement mode
+     expect(bp.isVisible()).toBe(false);
+     expect(bp.getSelectedBuilding()).toBe(kind);
+     // InGameMenu should track the selected building for UI highlighting
+     expect(menu.getSelectedBuildingKind()).toBe(kind);
+   });
 
   it('should toggle deep panel visibility', () => {
     const toggleBtn = document.getElementById('btn-toggle-deep-menu');

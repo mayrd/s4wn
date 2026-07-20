@@ -96,8 +96,9 @@ export class BuildingPlacement {
 
   private panel: HTMLElement;
   private toggleBtn: HTMLElement;
-  private visible: boolean = false;
-  private selectedBuilding: BuildingType | null = null;
+   private visible: boolean = false;
+   private selectedBuilding: BuildingType | null = null;
+   private pointerAttached: boolean = false;
   private activeCategory: string = 'basic';
 
   /** Ghost preview position (tile coords the cursor is hovering over). */
@@ -281,28 +282,27 @@ export class BuildingPlacement {
     return btn;
   }
 
-  private createPanel(): HTMLElement {
-    const panel = document.createElement('div');
-    panel.id = 'building-palette';
-    panel.className = 'building-palette-panel hidden';
-    panel.innerHTML = `
-      <div class="bp-header">
-        <span class="bp-title">Buildings</span>
-        <button class="bp-close">&times;</button>
-      </div>
-      <div class="bp-tabs" id="bp-tabs"></div>
-      <div class="bp-content" id="bp-content"></div>
-    `;
+   private createPanel(): HTMLElement {
+     const panel = document.createElement('div');
+     panel.id = 'building-palette';
+     panel.className = 'building-palette-panel hidden';
+     // Panel is managed by InGameMenu - just keep it in DOM for structure
+     panel.innerHTML = `
+       <div class="bp-header">
+         <span class="bp-title">Buildings</span>
+         <button class="bp-close">&times;</button>
+       </div>
+       <div class="bp-tabs" id="bp-tabs"></div>
+       <div class="bp-content" id="bp-content"></div>
+     `;
 
-    panel.querySelector('.bp-close')?.addEventListener('click', () => this.toggle());
+     const overlay = document.getElementById('ui-overlay');
+     if (overlay) {
+       overlay.appendChild(panel);
+     }
 
-    const overlay = document.getElementById('ui-overlay');
-    if (overlay) {
-      overlay.appendChild(panel);
-    }
-
-    return panel;
-  }
+     return panel;
+   }
 
   private renderCategory(categoryId: string): void {
     this.activeCategory = categoryId;
@@ -357,19 +357,46 @@ export class BuildingPlacement {
 
   public selectBuilding(kind: BuildingType): void {
     if (this.selectedBuilding === kind) {
+      // Deselect - exit placement mode
       this.selectedBuilding = null;
       this.ghostActive = false;
       this._ghostX = -1;
       this._ghostY = -1;
       this._isValidGhostPlacement = false;
       this.destroyGhostMesh();
+      if (this.pointerAttached) {
+        this.detachPointerListeners();
+        this.pointerAttached = false;
+      }
     } else {
+      // Select - enter placement mode
       this.selectedBuilding = kind;
       this.ghostActive = true;
       this._isValidGhostPlacement = false;
       this.destroyGhostMesh(); // clear any previous ghost
+      if (!this.pointerAttached) {
+        this.attachPointerListeners();
+        this.pointerAttached = true;
+      }
     }
     this.renderCategory(this.activeCategory);
+  }
+
+  public exitPlacementMode(): void {
+    this.selectedBuilding = null;
+    this.ghostActive = false;
+    this._ghostX = -1;
+    this._ghostY = -1;
+    this._isValidGhostPlacement = false;
+    this.destroyGhostMesh();
+    if (this.pointerAttached) {
+      this.detachPointerListeners();
+      this.pointerAttached = false;
+    }
+  }
+
+  public isPlacementMode(): boolean {
+    return this.ghostActive && this.selectedBuilding !== null;
   }
 
   // ── Pointer Interaction (Scene Picking) ─────────────────────────
@@ -407,7 +434,7 @@ export class BuildingPlacement {
   }
 
   private onPointerMove(e: PointerEvent): void {
-    if (!this.visible || !this.ghostActive || !this.selectedBuilding) {
+    if (!this.ghostActive || !this.selectedBuilding) {
       return;
     }
 
@@ -427,7 +454,7 @@ export class BuildingPlacement {
   }
 
   private onPointerDown(e: PointerEvent): void {
-    if (!this.visible || !this.selectedBuilding) return;
+    if (!this.selectedBuilding) return;
 
     const kind = this.selectedBuilding;
     const cost = buildCost(kind);
