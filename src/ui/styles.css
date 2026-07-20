@@ -834,27 +834,28 @@ body.menu-collapsed .hud-container {
   transform: translateX(-100%);
 }
 
-.menu-toggle-btn {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(rgba(141, 110, 99, 0.94), rgba(141, 110, 99, 0.94)), url('/textures/ui_button.png');
-  background-size: cover;
-  border: 2px solid var(--parchment-border);
-  border-radius: 6px;
-  color: var(--parchment-bg);
-  font-size: 1.2rem;
-  font-weight: bold;
-  cursor: pointer;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s, background 0.2s;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.5);
-}
+ .menu-toggle-btn {
+   position: fixed;
+   top: 10px;
+   left: 10px;
+   width: 40px;
+   height: 40px;
+   background: linear-gradient(rgba(141, 110, 99, 0.94), rgba(141, 110, 99, 0.94)), url('/textures/ui_button.png');
+   background-size: cover;
+   border: 2px solid var(--parchment-border);
+   border-radius: 6px;
+   color: var(--parchment-bg);
+   font-size: 1.2rem;
+   font-weight: bold;
+   cursor: pointer;
+   z-index: 1000;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s, background 0.2s;
+   box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+   pointer-events: auto;
+ }
 
 .menu-toggle-btn:hover {
   background: var(--accent-color);
@@ -882,6 +883,7 @@ body.menu-collapsed .hud-container {
   justify-content: center;
   transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s, background 0.2s;
   box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+  pointer-events: auto;
 }
 
 .speed-toggle-btn:hover {

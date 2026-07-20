@@ -90,29 +90,31 @@ export class InGameMenu {
     this.supplyChainRenderer = renderer;
   }
 
-  private initHTML(): void {
-    // 1. Tooltip Element
-    this.tooltipEl = document.createElement('div');
-    this.tooltipEl.className = 'menu-tooltip hidden';
-    this.container.appendChild(this.tooltipEl);
+   private initHTML(): void {
+     // 1. Tooltip Element
+     this.tooltipEl = document.createElement('div');
+     this.tooltipEl.className = 'menu-tooltip hidden';
+     this.container.appendChild(this.tooltipEl);
 
-    // 1.5. Toggle Button Element (Top-left collapsible toggle)
-    this.toggleBtnEl = document.createElement('button');
-    this.toggleBtnEl.id = 'menu-toggle-btn';
-    this.toggleBtnEl.className = 'menu-toggle-btn';
-    this.toggleBtnEl.innerHTML = '◀'; // Pointing left as it is expanded initially
-    this.toggleBtnEl.title = 'Collapse Menu';
-    this.toggleBtnEl.addEventListener('click', () => this.toggleMenu());
-    this.container.appendChild(this.toggleBtnEl);
+     // 1.5. Toggle Button Element (Top-left collapsible toggle)
+     this.toggleBtnEl = document.createElement('button');
+     this.toggleBtnEl.id = 'menu-toggle-btn';
+     this.toggleBtnEl.className = 'menu-toggle-btn';
+     this.toggleBtnEl.innerHTML = '◀'; // Pointing left as it is expanded initially
+     this.toggleBtnEl.title = 'Collapse Menu';
+     this.toggleBtnEl.style.pointerEvents = 'auto';
+     this.toggleBtnEl.addEventListener('click', () => this.toggleMenu());
+     this.container.appendChild(this.toggleBtnEl);
 
-    // 1.6. Speed Toggle Button (Pause/Play/Speed control)
-    this.speedBtnEl = document.createElement('button');
-    this.speedBtnEl.id = 'speed-toggle-btn';
-    this.speedBtnEl.className = 'speed-toggle-btn';
-    this.speedBtnEl.innerHTML = '1x';
-    this.speedBtnEl.title = '1x Speed';
-    this.speedBtnEl.addEventListener('click', () => this.toggleSpeed());
-    this.container.appendChild(this.speedBtnEl);
+     // 1.6. Speed Toggle Button (Pause/Play/Speed control)
+     this.speedBtnEl = document.createElement('button');
+     this.speedBtnEl.id = 'speed-toggle-btn';
+     this.speedBtnEl.className = 'speed-toggle-btn';
+     this.speedBtnEl.innerHTML = '1x';
+     this.speedBtnEl.title = '1x Speed';
+     this.speedBtnEl.style.pointerEvents = 'auto';
+     this.speedBtnEl.addEventListener('click', () => this.toggleSpeed());
+     this.container.appendChild(this.speedBtnEl);
 
     // 2. Anno-style Bottom Build Bar (Now restructured as the full-width integrated footer)
     this.buildBarEl = document.createElement('div');
