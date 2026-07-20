@@ -323,6 +323,7 @@ The inspector provides:
 | P49 | 2026-07-18 | Fix CI Build — Resolve TypeScript errors in tests (missing garrisonUnitIds, unused variables, invalid property access in MilitaryCombat tests) and enable full CI compliance. 41/41 test suites green. |
 | P50 | 2026-07-20 | **UI Cleanup** — Removed duplicate game time display from in-game menu header (after campaign button) since time already shows in top-left counter next to the left arrow. Removed the `<span id="menu-time">` element and its update loop logic. All tests pass. |
 | P51 | 2026-07-20 | **Main Menu Splash Background** — Main menu now uses splash.png as full-page background image. Menu panel (280px wide) on the left contains the UI with a semi-transparent brown background container. The right side of the screen (splash image area) is now visible. All 771 tests pass, TypeScript compiles clean. Pushed to GitHub.
+| P52 | 2026-07-20 | **Fix Main Menu CSS Background Override** — Removed conflicting `.main-menu-screen.game-menu-container` CSS rule in `src/ui/styles.css` that was overriding the `index.html` background styles with `width: 350px`. The splash background now properly shows on the full page behind the left menu panel overlay. TypeScript clean, 771 unit tests green.
 
 ### Next Session Priorities
 ```
