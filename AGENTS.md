@@ -319,16 +319,17 @@ The inspector provides:
 | P45 | 2026-07-17 | **Vertical In-Game Menu Redesign** — Transformed horizontal bottom menu bar to vertical left-side full-height panel (280px width, 100vh height) with collapsible toggle button (◀/▶) on top-left. Added responsive portrait mode support. Integrated Units tab (Worker/Swordsman/Archer recruitment), Settings tab (audio mute/volume, quality toggle), Tutorial tab (step info, skip/reset buttons), and Campaign tab (mission log, objectives, rewards). Updated visual regression tests to match new `#anno-build-bar` structure. All 396 unit tests + 14 Playwright UI tests green. Pushed to GitHub. |
 | P46 | 2026-07-17 | **Resource Item 3D Rendering** — Created `ResourceItemRenderer` class (`src/rendering/ResourceItemRenderer.ts`): renders physical resource items from `LogisticsManager` as small colored box meshes on the terrain (0.12 half-extent, 0.15 Y offset). Uses same `RESOURCE_COLORS` palette as `SupplyChainRenderer` for visual consistency. `sync()` method creates/disposes/updates meshes to track `ResourceItem` lifecycle (spawned on production → removed on carrier pickup). Integrated into `GameApp`: created in `initRendering()`, synced each frame in render loop, cleaned up in `dispose()`. 18 unit tests covering sync, visibility, dispose, edge cases (100+ items, unknown resource types). 415/415 tests green, `tsc --noEmit` clean. |
 | P47 | 2026-07-17 | **Marketplace & Trade Routes** — Created `TradeRouteManager` class (`src/game/TradeRouteManager.ts`): manages donkey-based land trade routes between completed Marketplace buildings. `findTradePartner()` locates nearest Marketplace ≥5 tiles away (same owner, completed). `tryStartMission()` dispatches a trade mission carrying a random non-zero resource (up to 2 units) between partner Marketplaces, with configurable cooldown (100 ticks). `tick()` progresses missions linearly from source→destination→return; generates `GOLD_PER_TRIP=3` gold on arrival at destination. `tickMarketplaces()` combines mission ticking with auto-starting new missions from all active Marketplaces. Integrated into `Economy.tick()`: after production+storage recalc, trade routes remove exported resources and add gold to global storage. Full save/load support via `toJSON()`/`restoreFromJSON()`. Trade routes accessible at `gameLoop.economy.tradeRoutes`. 15 unit tests covering partner finding, mission lifecycle, cooldowns, gold generation, round-trip completion, and serialization. 574 total tests (39 suites), `tsc --noEmit` clean. |
-|| P48 | 2026-07-17 | Fix Camera — Prevent Perspective Change Underneath Terrain Plane |
-||| P49 | 2026-07-18 | Fix CI Build — Resolve TypeScript errors in tests (missing garrisonUnitIds, unused variables, invalid property access in MilitaryCombat tests) and enable full CI compliance. 41/41 test suites green. |
-324|323|
-325|324|### Next Session Priorities
-326|325|```
-327|326|1. **Trade Route Visual Rendering** — Render trade mission donkeys on the map: small 3D models traveling between Marketplaces with cargo, directional facing, and arrival/departure animations.
-328|327|2. **LandingDock & Maritime Trade** — Implement ship-based maritime trade routes via LandingDock/Shipyard: cargo ships carrying larger quantities between docks, water pathfinding.
-329|328|3. **StorageYard Carrier Routing Priority** — Carriers should prioritize delivering resources to StorageYards (central storage) over delivering directly to consumer buildings, enabling the 8-stack logistics pattern from BASE.md.
-330|329|4. **Refine Production Chains** — Ensure all building production chains from BASE.md are fully modeled (input requirements, output rates, settler assignments per nation variant).
-331|330|5. **Tutorial Polish** — Add visual indicators (pulsing highlights, arrow pointers) to tutorial step UI elements; add camera pan animation for Step 1 (Camera Basics).
-332|331|6. **Asset Pipeline Integrity** — Verify all assets in `assets/` against generation scripts in `scripts/`.
-333|332|```
-332|*All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
+| P48 | 2026-07-17 | Fix Camera — Prevent Perspective Change Underneath Terrain Plane |
+| P49 | 2026-07-18 | Fix CI Build — Resolve TypeScript errors in tests (missing garrisonUnitIds, unused variables, invalid property access in MilitaryCombat tests) and enable full CI compliance. 41/41 test suites green. |
+| P50 | 2026-07-20 | **UI Cleanup** — Removed duplicate game time display from in-game menu header (after campaign button) since time already shows in top-left counter next to the left arrow. Removed the `<span id="menu-time">` element and its update loop logic. All tests pass. |
+
+### Next Session Priorities
+```
+1. **Trade Route Visual Rendering** — Render trade mission donkeys on the map: small 3D models traveling between Marketplaces with cargo, directional facing, and arrival/departure animations.
+2. **LandingDock & Maritime Trade** — Implement ship-based maritime trade routes via LandingDock/Shipyard: cargo ships carrying larger quantities between docks, water pathfinding.
+3. **StorageYard Carrier Routing Priority** — Carriers should prioritize delivering resources to StorageYards (central storage) over delivering directly to consumer buildings, enabling the 8-stack logistics pattern from BASE.md.
+4. **Refine Production Chains** — Ensure all building production chains from BASE.md are fully modeled (input requirements, output rates, settler assignments per nation variant).
+5. **Tutorial Polish** — Add visual indicators (pulsing highlights, arrow pointers) to tutorial step UI elements; add camera pan animation for Step 1 (Camera Basics).
+6. **Asset Pipeline Integrity** — Verify all assets in `assets/` against generation scripts in `scripts/`.
+```
+*All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
