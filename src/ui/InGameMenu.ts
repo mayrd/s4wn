@@ -370,10 +370,9 @@ export class InGameMenu {
           <button class="build-bar-tab-btn ${this.activeMainTab === 'tutorial' ? 'active' : ''}" data-main-tab="tutorial">🎓 Tutorial</button>
           <button class="build-bar-tab-btn ${this.activeMainTab === 'campaign' ? 'active' : ''}" data-main-tab="campaign">📖 Campaign</button>
         </div>
-        <span class="build-bar-stats" id="menu-time">Time: ${Math.floor(stats.gameTime)}s</span>
-        <button class="build-bar-toggle-deep" id="btn-toggle-deep-menu" style="display: none;">📜 Management</button>
-      </div>
-      <div class="build-bar-content">
+       <button class="build-bar-toggle-deep" id="btn-toggle-deep-menu" style="display: none;">📜 Management</button>
+       </div>
+       <div class="build-bar-content">
         ${contentHtml}
       </div>
     `;
@@ -978,12 +977,6 @@ export class InGameMenu {
         if (unitsEl) unitsEl.textContent = units.length.toString();
         if (workersEl) workersEl.textContent = units.filter(u => u.kind === UnitKind.Worker).length.toString();
         if (soldiersEl) soldiersEl.textContent = units.filter(u => u.kind === UnitKind.Swordsman).length.toString();
-      }
-
-      // Time counter in header
-      const menuTimeEl = document.getElementById('menu-time');
-      if (menuTimeEl) {
-        menuTimeEl.textContent = `Time: ${Math.floor(stats.gameTime)}s`;
       }
 
       // Game time display in top-left (mmmm:ss format)
