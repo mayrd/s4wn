@@ -896,8 +896,9 @@ body.menu-collapsed .hud-container {
  .game-time-display {
    position: fixed;
    top: 10px;
-   left: 100px;
+   left: 105px;
    height: 40px;
+   min-width: 80px;
    padding: 0 12px;
    background: linear-gradient(rgba(93, 64, 55, 0.94), rgba(93, 64, 55, 0.94)), url('/textures/ui_button.png');
    background-size: cover;
@@ -913,12 +914,12 @@ body.menu-collapsed .hud-container {
    z-index: 1000;
    pointer-events: auto;
    box-shadow: 0 3px 6px rgba(0,0,0,0.5);
-   transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+   box-sizing: border-box;
  }
 
- /* Move time display when menu is collapsed */
+ /* Timer stays fixed - no position change on menu collapse */
  body.menu-collapsed .game-time-display {
-   left: 60px;
+   left: 105px;
  }
 
  /* Move both buttons when menu is collapsed */

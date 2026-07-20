@@ -984,7 +984,7 @@ export class InGameMenu {
         const totalSeconds = Math.floor(stats.gameTime);
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
-        this.timeDisplayEl.textContent = `${minutes.toString().padStart(4, '0')}:${seconds.toString().padStart(2, '0')}`;
+        this.timeDisplayEl.textContent = `${minutes.toString().padStart(4)}:${seconds.toString().padStart(2, '0')}`;
       }
 
       requestAnimationFrame(update);
