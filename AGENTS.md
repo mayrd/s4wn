@@ -323,7 +323,6 @@ The inspector provides:
 | P49 | 2026-07-18 | Fix CI Build — Resolve TypeScript errors in tests (missing garrisonUnitIds, unused variables, invalid property access in MilitaryCombat tests) and enable full CI compliance. 41/41 test suites green. |
 | P50 | 2026-07-20 | **UI Cleanup** — Removed duplicate game time display from in-game menu header (after campaign button) since time already shows in top-left counter next to the left arrow. Removed the `<span id="menu-time">` element and its update loop logic. All tests pass. |
 | P51 | 2026-07-20 | **Main Menu Split View** — Added splash image to the right side of the menu. Replaced centered menu container with a flex layout having a left panel (280px) for buttons/logo and a right panel displaying the splash background image. Updated both main menu and nation selection screens. All 771 tests pass, TypeScript compiles clean. Pushed to GitHub. |
-| P51 | 2026-07-20 | **Main Menu Split View** — Added splash image to the right side of the menu. Replaced centered menu container with a flex layout () having a left panel (280px) for buttons/logo and a right panel () displaying the splash background image. Updated both main menu and nation selection screens. All 771 tests pass, TypeScript compiles clean. Pushed to GitHub. |
 
 ### Next Session Priorities
 ```
