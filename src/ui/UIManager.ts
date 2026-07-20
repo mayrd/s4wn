@@ -164,17 +164,14 @@ export class UIManager {
     this.mainMenu = document.createElement('div');
     this.mainMenu.className = 'ui-screen main-menu-screen game-menu-container';
     this.mainMenu.innerHTML = `
-      <div class="main-menu-layout">
-        <div class="main-menu-left">
-          <img class="menu-logo" src="/images/logo-1024.png" alt="S4WN" />
-          <button class="menu-button" id="btn-tutorial">Start Tutorial</button>
-          <button class="menu-button" id="btn-new-game">Start New Game</button>
-          <button class="menu-button" id="btn-load-game">Load Game</button>
-          <button class="menu-button secondary" id="btn-explorer">Object Explorer</button>
-          <button class="menu-button secondary" id="btn-editor">Map Editor</button>
-          <button class="menu-button secondary" id="btn-multiplayer">Multiplayer</button>
-        </div>
-        <div class="main-menu-right"></div>
+      <div class="main-menu-left">
+        <img class="menu-logo" src="/images/logo-1024.png" alt="S4WN" />
+        <button class="menu-button" id="btn-tutorial">Start Tutorial</button>
+        <button class="menu-button" id="btn-new-game">Start New Game</button>
+        <button class="menu-button" id="btn-load-game">Load Game</button>
+        <button class="menu-button secondary" id="btn-explorer">Object Explorer</button>
+        <button class="menu-button secondary" id="btn-editor">Map Editor</button>
+        <button class="menu-button secondary" id="btn-multiplayer">Multiplayer</button>
       </div>
     `;
     this.overlay.appendChild(this.mainMenu);
@@ -237,15 +234,12 @@ export class UIManager {
     }
 
     this.nationSelection.innerHTML = `
-      <div class="main-menu-layout">
-        <div class="main-menu-left">
-          <h2 class="menu-title">Select Your Nation</h2>
-          <div style="display:flex; flex-direction:column; gap:10px;">
-            ${nationButtons}
-          </div>
-          <button class="menu-button secondary" id="btn-nation-back" style="margin-top:20px;">Back</button>
+      <div class="main-menu-left">
+        <h2 class="menu-title">Select Your Nation</h2>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          ${nationButtons}
         </div>
-        <div class="main-menu-right"></div>
+        <button class="menu-button secondary" id="btn-nation-back" style="margin-top:20px;">Back</button>
       </div>
     `;
     this.overlay.appendChild(this.nationSelection);
