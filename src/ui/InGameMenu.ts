@@ -26,12 +26,13 @@ export class InGameMenu {
   /** Optional TutorialManager, set when the game runs in tutorial mode. */
   private tutorialManager: TutorialManager | null = null;
 
-  // UI Elements
-  private buildBarEl!: HTMLElement;
-  private deepPanelEl!: HTMLElement;
-  private tooltipEl!: HTMLElement;
-  private toggleBtnEl!: HTMLElement;
-  private speedBtnEl!: HTMLElement;
+   // UI Elements
+   private buildBarEl!: HTMLElement;
+   private deepPanelEl!: HTMLElement;
+   private tooltipEl!: HTMLElement;
+   private toggleBtnEl!: HTMLElement;
+   private speedBtnEl!: HTMLElement;
+   private timeDisplayEl!: HTMLElement;
 
   // State Preservation
   private activeTab: string = 'economy';
@@ -115,6 +116,13 @@ export class InGameMenu {
      this.speedBtnEl.style.pointerEvents = 'auto';
      this.speedBtnEl.addEventListener('click', () => this.toggleSpeed());
      this.container.appendChild(this.speedBtnEl);
+
+     // 1.7. Game Time Display (mmmm:ss format)
+     this.timeDisplayEl = document.createElement('span');
+     this.timeDisplayEl.id = 'game-time-display';
+     this.timeDisplayEl.className = 'game-time-display';
+     this.timeDisplayEl.textContent = '0000:00';
+     this.container.appendChild(this.timeDisplayEl);
 
     // 2. Anno-style Bottom Build Bar (Now restructured as the full-width integrated footer)
     this.buildBarEl = document.createElement('div');
@@ -968,6 +976,14 @@ export class InGameMenu {
         menuTimeEl.textContent = `Time: ${Math.floor(stats.gameTime)}s`;
       }
 
+      // Game time display in top-left (mmmm:ss format)
+      if (this.timeDisplayEl) {
+        const totalSeconds = Math.floor(stats.gameTime);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        this.timeDisplayEl.textContent = `${minutes.toString().padStart(4, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+
       requestAnimationFrame(update);
     };
     requestAnimationFrame(update);
@@ -1153,5 +1169,6 @@ export class InGameMenu {
     this.tooltipEl.remove();
     this.toggleBtnEl.remove();
     this.speedBtnEl.remove();
+    this.timeDisplayEl.remove();
   }
 }

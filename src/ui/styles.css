@@ -886,17 +886,46 @@ body.menu-collapsed .hud-container {
   pointer-events: auto;
 }
 
-.speed-toggle-btn:hover {
-  background: var(--accent-color);
-  color: var(--text-color);
-  transform: scale(1.05);
-}
+ .speed-toggle-btn:hover {
+   background: var(--accent-color);
+   color: var(--text-color);
+   transform: scale(1.05);
+ }
 
-/* Move both buttons when menu is collapsed */
-body.menu-collapsed .menu-toggle-btn,
-.menu-toggle-btn.collapsed {
-  left: 10px;
-}
+ /* Game Time Display in top-left */
+ .game-time-display {
+   position: fixed;
+   top: 10px;
+   left: 100px;
+   height: 40px;
+   padding: 0 12px;
+   background: linear-gradient(rgba(93, 64, 55, 0.94), rgba(93, 64, 55, 0.94)), url('/textures/ui_button.png');
+   background-size: cover;
+   border: 2px solid var(--parchment-border);
+   border-radius: 6px;
+   color: var(--parchment-bg);
+   font-size: 0.95rem;
+   font-family: 'Georgia', serif;
+   font-weight: bold;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   z-index: 1000;
+   pointer-events: auto;
+   box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+   transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+ }
+
+ /* Move time display when menu is collapsed */
+ body.menu-collapsed .game-time-display {
+   left: 60px;
+ }
+
+ /* Move both buttons when menu is collapsed */
+ body.menu-collapsed .menu-toggle-btn,
+ .menu-toggle-btn.collapsed {
+   left: 10px;
+ }
 
 body.menu-collapsed .speed-toggle-btn,
 .speed-toggle-btn.collapsed {
