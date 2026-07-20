@@ -1,16 +1,8 @@
 /* Siedler 4 Inspired UI Styles - Unified */
 
-.main-menu-screen.game-menu-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  width: 350px;
-  position: absolute;
-  left: 0;
-  top: 0;
-  border-radius: 0;
-  border-left: none;
+/* Main Menu Screen - background-image is set in index.html to splash.png */
+.main-menu-screen {
+  /* Inherits background from index.html: splash.png full-page */
 }
 
 :root {
@@ -22,7 +14,7 @@
   --s4-btn-hover: #a8a6a3;
 }
 
-/* Base Panel Styling - Natural Stone */
+/* Base Panel Styling - Natural Stone (used for in-game deep panels) */
 .game-menu-container {
   background: var(--s4-stone-bg);
   border: 4px solid var(--s4-stone-border);
