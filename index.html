@@ -85,67 +85,6 @@
       color: #ff6b6b;
       font-weight: bold;
     }
-    .main-menu-left {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 280px;
-      height: 100%;
-      padding: 40px 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 20px;
-      pointer-events: auto;
-    }
-    .main-menu-container {
-      background: #5d4037;
-      border: 10px solid #8d6e63;
-      border-radius: 15px;
-      padding: 40px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .menu-title {
-      font-size: 2.5rem;
-      color: #f4e4bc;
-      text-align: center;
-      margin-bottom: 20px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-      font-family: 'Georgia', serif;
-    }
-    .menu-logo {
-      display: block;
-      margin: 0 auto 20px auto;
-      max-width: 200px;
-      height: auto;
-    }
-    .menu-button {
-      background: #f4e4bc;
-      border: 3px solid #5d4037;
-      padding: 15px 25px;
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #3e2723;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-      border-radius: 5px;
-      box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-    }
-    .menu-button.secondary {
-      font-size: 1rem;
-      padding: 10px 20px;
-      background: #8d6e63;
-      color: white;
-    }
-    .ui-screen.active {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-    }
-    /* Black fade layer used for fade-in from black on boot */
     #fade-layer {
       position: absolute;
       inset: 0;
@@ -159,6 +98,7 @@
       opacity: 0;
     }
   </style>
+  <script type="module" src="/src/main.ts"></script>
 </head>
 <body>
   <div id="game-container">
@@ -166,6 +106,5 @@
     <div id="ui-overlay"></div>
     <div id="fade-layer"></div>
   </div>
-  <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

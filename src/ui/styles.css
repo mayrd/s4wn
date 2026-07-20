@@ -66,7 +66,7 @@
   --text-color: #3e2723;
   --accent-color: #ffab40;
   --gold: #ffab40;
-  --menu-width: 400px;
+  --menu-width: 280px;
 }
 
 /* Splash Screen - background-image is set in index.html */
@@ -115,6 +115,20 @@
   opacity: 0.85;
 }
 .splash-note.warn { color: #ffd479; }
+
+.main-menu-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100%;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+  pointer-events: auto;
+}
 .splash-note.error { color: #ff6b6b; font-weight: bold; }
 
 /* ── Main Menu ─────────────────────────────────────────────── */
