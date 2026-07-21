@@ -324,14 +324,14 @@ The inspector provides:
 | P50 | 2026-07-20 | **UI Cleanup** — Removed duplicate game time display from in-game menu header (after campaign button) since time already shows in top-left counter next to the left arrow. Removed the `<span id="menu-time">` element and its update loop logic. All tests pass. |
 | P51 | 2026-07-20 | **Main Menu Splash Background** — Main menu now uses splash.png as full-page background image. Menu panel (280px wide) on the left contains the UI with a semi-transparent brown background container. The right side of the screen (splash image area) is now visible. All 771 tests pass, TypeScript compiles clean. Pushed to GitHub.
 | P52 | 2026-07-20 | **Fix Main Menu CSS Background Override** — Removed conflicting `.main-menu-screen.game-menu-container` CSS rule in `src/ui/styles.css` that was overriding the `index.html` background styles with `width: 350px`. The splash background now properly shows on the full page behind the left menu panel overlay. TypeScript clean, 771 unit tests green.
-
+| P53 | 2026-07-21 | **Trade Route Visual Rendering** — Implemented TradeRouteRenderer to visualize donkey trade missions on the map. Donkey meshes are positioned along the path between Marketplaces, with directional rotation for travel. Integrated into GameApp render loop with syncMissions() and updatePositions(). 14 unit tests. All 785 tests pass, TypeScript clean. |
+ 
 ### Next Session Priorities
 ```
-1. **Trade Route Visual Rendering** — Render trade mission donkeys on the map: small 3D models traveling between Marketplaces with cargo, directional facing, and arrival/departure animations.
-2. **LandingDock & Maritime Trade** — Implement ship-based maritime trade routes via LandingDock/Shipyard: cargo ships carrying larger quantities between docks, water pathfinding.
+1. **LandingDock & Maritime Trade** — Implement ship-based maritime trade routes via LandingDock/Shipyard: cargo ships carrying larger quantities between docks, water pathfinding, boat.glb model.
+2. **Trade Route Toggle** — Add toggle button in Debug menu to show/hide trade route donkeys.
 3. **StorageYard Carrier Routing Priority** — Carriers should prioritize delivering resources to StorageYards (central storage) over delivering directly to consumer buildings, enabling the 8-stack logistics pattern from BASE.md.
 4. **Refine Production Chains** — Ensure all building production chains from BASE.md are fully modeled (input requirements, output rates, settler assignments per nation variant).
 5. **Tutorial Polish** — Add visual indicators (pulsing highlights, arrow pointers) to tutorial step UI elements; add camera pan animation for Step 1 (Camera Basics).
-6. **Asset Pipeline Integrity** — Verify all assets in `assets/` against generation scripts in `scripts/`.
 ```
 *All building, resources and settlers data must match BASE.md. Never modify BASE.md.*
