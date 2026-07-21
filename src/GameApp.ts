@@ -37,6 +37,7 @@ import { NationType } from './game/Nation';
 import { BuildingPlacement } from './ui/BuildingPlacement';
 import { SupplyChainRenderer } from './rendering/SupplyChainRenderer';
 import { ResourceItemRenderer } from './rendering/ResourceItemRenderer';
+import { TradeRouteRenderer } from './rendering/TradeRouteRenderer';
 import { ConstructionAnimator } from './rendering/ConstructionAnimator';
 import { DestructionAnimator } from './rendering/DestructionAnimator';
 import { UnitRenderer } from './rendering/UnitRenderer';
@@ -62,6 +63,7 @@ export class GameApp {
   public gridRenderer!: GridRenderer;
   public supplyChainRenderer!: SupplyChainRenderer;
   public resourceItemRenderer!: ResourceItemRenderer;
+  public tradeRouteRenderer!: TradeRouteRenderer;
   public constructionAnimator!: ConstructionAnimator;
   public destructionAnimator!: DestructionAnimator;
   public buildingMeshes: Map<number, any> = new Map();
@@ -240,6 +242,9 @@ export class GameApp {
 
     // Create resource item renderer (physical items on ground from LogisticsManager)
     this.resourceItemRenderer = new ResourceItemRenderer(this.scene, this.gameLoop.economy.logistics);
+
+    // Create trade route renderer (donkey missions between Marketplaces)
+    this.tradeRouteRenderer = new TradeRouteRenderer(this.scene);
 
     this.ui.updateProgress('Loading buildings...', 65);
 
@@ -613,6 +618,12 @@ export class GameApp {
       if (this.resourceItemRenderer) {
         this.resourceItemRenderer.sync();
       }
+      // Update trade route donkey positions
+      if (this.tradeRouteRenderer) {
+        const missions = this.gameLoop.economy.tradeRoutes.getMissions();
+        this.tradeRouteRenderer.syncMissions(missions);
+        this.tradeRouteRenderer.updatePositions(missions);
+      }
       if (this.tutorialManager) {
         this.tutorialManager.update();
       }
@@ -648,6 +659,7 @@ export class GameApp {
     }
     this.supplyChainRenderer?.dispose();
     this.resourceItemRenderer?.dispose();
+    this.tradeRouteRenderer?.dispose();
     this.engine.dispose();
     soundManager.dispose();
   }
