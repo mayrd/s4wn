@@ -27,8 +27,6 @@ import { ShadowPipeline } from './rendering/pipelines/ShadowPipeline';
 import { ParticleSystem } from './game/particles/ParticleSystem';
 import { GridRenderer } from './rendering/GridRenderer';
 import { HUD } from './ui/HUD';
- // DebugPanel removed - debug functionality now integrated into InGameMenu
-import { MapEditor } from './ui/editor/MapEditor';
 import { soundManager } from './audio/SoundManager';
 import { TouchCameraController } from './input/TouchCameraController';
 import { BuildingType } from './economy/types';
@@ -68,7 +66,6 @@ export class GameApp {
   public destructionAnimator!: DestructionAnimator;
   public buildingMeshes: Map<number, any> = new Map();
   public ui!: UIManager;
-  public mapEditor!: MapEditor;
   public buildingPlacement!: BuildingPlacement;
   public inGameMenu!: InGameMenu;
   public tutorialManager?: TutorialManager;
@@ -76,7 +73,6 @@ export class GameApp {
   private mode: StartMode;
   private playerNation: NationType = NationType.Romans;
   private onExplorerToggle!: () => void;
-  private onEditorToggle!: () => void;
   private boundBuildingPlaced!: (e: Event) => void;
 
   /** Promise that resolves when critical assets (terrain textures) are loaded. */
@@ -172,9 +168,7 @@ export class GameApp {
 
     // Forward menu-driven toggles to the in-game tools.
     this.onExplorerToggle = () => this.ui.objectExplorer.toggle();
-    this.onEditorToggle = () => this.mapEditor?.toggle();
     window.addEventListener('ui-explorer-toggle', this.onExplorerToggle);
-    window.addEventListener('ui-editor-toggle', this.onEditorToggle);
 
     // Listen for building-placed events from BuildingPlacement UI
     window.addEventListener('building-placed', ((e: CustomEvent) => {
@@ -288,7 +282,6 @@ export class GameApp {
 
     // Step 6: Map editor
     this.ui.updateProgress('Finalizing...', 85);
-    this.mapEditor = new MapEditor(this.ui, this.gameLoop, this.scene, this.terrainRenderer);
 
     // Notify UI manager that game is ready so ObjectExplorer can connect
     // (if it hasn't already) and any pending panels can be opened.
@@ -633,11 +626,9 @@ export class GameApp {
 
   public dispose(): void {
     window.removeEventListener('ui-explorer-toggle', this.onExplorerToggle);
-    window.removeEventListener('ui-editor-toggle', this.onEditorToggle);
     window.removeEventListener('building-placed', this.boundBuildingPlaced);
     this.inGameMenu?.dispose();
     this.buildingPlacement?.dispose();
-    this.mapEditor?.hide();
     this.touchController.dispose?.();
     this.waterRenderer?.dispose?.();
     this.shadowPipeline.dispose?.();

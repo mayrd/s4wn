@@ -99,12 +99,6 @@ jest.mock('../../ui/explorer/ObjectExplorer', () => ({
   })),
 }));
 
-jest.mock('../../ui/editor/MapEditor', () => ({
-  MapEditor: jest.fn(() => ({
-    toggle: jest.fn(),
-    hide: jest.fn(),
-  })),
-}));
 
 jest.mock('../../core/SaveManager', () => ({
   SaveManager: {
@@ -277,7 +271,6 @@ describe('GameApp Initialization', () => {
     expect(app.gridRenderer).toBeDefined();
     expect(app.shadowPipeline).toBeDefined();
     expect(app.particleSystem).toBeDefined();
-    expect(app.mapEditor).toBeDefined();
     expect(app.buildingPlacement).toBeDefined();
     expect(app.supplyChainRenderer).toBeDefined();
     expect(app.constructionAnimator).toBeDefined();
