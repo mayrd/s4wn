@@ -142,6 +142,8 @@ jest.mock('../../ui/InGameMenu', () => ({
     setTerrainRenderer: jest.fn(),
     setTerritoryOverlay: jest.fn(),
     setSupplyChainRenderer: jest.fn(),
+    setMaritimeTradeRenderer: jest.fn(),
+    setTutorialManager: jest.fn(),
     dispose: jest.fn(),
   })),
 }));
@@ -186,6 +188,22 @@ jest.mock('../../rendering/ResourceItemRenderer', () => ({
   })),
 }));
 
+jest.mock('../../rendering/TradeRouteRenderer', () => ({
+  TradeRouteRenderer: jest.fn(() => ({
+    syncMissions: jest.fn(),
+    updatePositions: jest.fn(),
+    visible: true,
+    dispose: jest.fn(),
+  })),
+}));
+
+jest.mock('../../rendering/MaritimeTradeRenderer', () => ({
+  MaritimeTradeRenderer: jest.fn(() => ({
+    visible: true,
+    dispose: jest.fn(),
+  })),
+}));
+
 jest.mock('../../rendering/ConstructionAnimator', () => ({
   ConstructionAnimator: jest.fn(() => ({
     setBuildingRenderer: jest.fn(),
@@ -215,10 +233,26 @@ jest.mock('../../rendering/UnitRenderer', () => ({
 jest.mock('../../game/GameLoop', () => ({
   GameLoop: jest.fn(() => ({
     state: { isPaused: true },
-    economy: { tryPlaceBuilding: jest.fn(() => true), buildings: [] },
+    economy: {
+      tryPlaceBuilding: jest.fn(() => true),
+      buildings: [],
+      getCompleteBuildings: jest.fn(() => []),
+      tradeRoutes: { getMissions: jest.fn(() => []) },
+      maritimeTrade: { getMissions: jest.fn(() => []) },
+      load: jest.fn(() => null),
+      save: jest.fn(() => true),
+    },
     viewCuller: { setCenter: jest.fn() },
     update: jest.fn(),
     onTick: jest.fn(),
+    load: jest.fn(() => false),
+    save: jest.fn(() => true),
+    getStats: jest.fn(() => ({ gameTime: 0, ticks: 0 })),
+    unitManager: {
+      getAliveUnits: jest.fn(() => []),
+      spawnUnit: jest.fn(),
+      units: [],
+    },
   })),
 }));
 
@@ -242,9 +276,26 @@ jest.mock('../../game/Map', () => ({
         return tiles[y]?.[x];
       },
       setAllVisible: jest.fn(),
+      spawnTutorialEnemies: jest.fn(),
     };
   }),
   Terrain: { Grass: 'Grass', Water: 'Water', DeepWater: 'DeepWater' },
+}));
+
+jest.mock('../../game/TutorialManager', () => ({
+  TutorialManager: jest.fn(() => ({
+    start: jest.fn(),
+    skip: jest.fn(),
+    reset: jest.fn(),
+    update: jest.fn(),
+  })),
+}));
+
+jest.mock('../../ui/TutorialDialog', () => ({
+  TutorialDialog: jest.fn(() => ({
+    show: jest.fn(),
+    hide: jest.fn(),
+  })),
 }));
 
 import { GameApp } from '../../GameApp';

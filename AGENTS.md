@@ -169,13 +169,20 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [x] Update CI/CD pipeline (Playwright UI tests, snapshot enforcement, artifact upload)
 
 ##### Phase 7 — 3D Assets & Visual Themes 🚧
-- [ ] Download CC0 3D models (Kenney Fantasy Town Kit, Castle Kit) → `assets/models/buildings/`
-- [ ] Generate nation-specific unit variants (Roman, Viking, Mayan, Trojan, Dark) → `assets/models/nations/`
-- [ ] Create nation-specific textures via Gemini (tinted uniforms, building materials per nation)
-- [ ] Add decoration models: trees, rocks, plants, props → `assets/models/decorations/`
-- [ ] Texture the existing OBJ buildings (44 building types already modeled)
-- [ ] Implement nation pack system → [`plans/nation_pack_system_plan.md`](plans/nation_pack_system_plan.md)
-- [ ] Implement theme system: S4 Classic, Siedler 3 Retro, Dark Fantasy, Winter
+ - [ ] Download CC0 3D models (Kenney Fantasy Town Kit, Castle Kit) → `assets/models/buildings/`
+ - [ ] Generate nation-specific unit variants (Roman, Viking, Mayan, Trojan, Dark) → `assets/models/nations/`
+ - [ ] Create nation-specific textures via Gemini (tinted uniforms, building materials per nation)
+ - [ ] Add decoration models: trees, rocks, plants, props → `assets/models/decorations/`
+ - [ ] Texture the existing OBJ buildings (44 building types already modeled)
+ - [ ] Implement nation pack system → [`plans/nation_pack_system_plan.md`](plans/nation_pack_system_plan.md)
+ - [ ] Implement theme system: S4 Classic, Siedler 3 Retro, Dark Fantasy, Winter
+
+##### 3D Asset Pipeline Best Practices
+ - [ ] Use `@babylonjs/core` ESM modules with `SceneLoader.LoadAssetContainerAsync` for glTF/GLB models
+ - [ ] Instantiate entities using `container.instantiateModelsToScene()` for reusable prefabs
+ - [ ] For repeating environmental assets (grid tiles, trees, debris), always use ThinInstance for low draw calls
+ - [ ] Target animations via `scene.getAnimationGroupByName('anim_name')` or instantiated animation groups
+ - [ ] Keep file paths in `manifest.json` and refer to assets exclusively by string keys
 
 ### Visual Themes (Phase 7)
 
