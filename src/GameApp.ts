@@ -39,6 +39,7 @@ import { TradeRouteRenderer } from './rendering/TradeRouteRenderer';
 import { ConstructionAnimator } from './rendering/ConstructionAnimator';
 import { DestructionAnimator } from './rendering/DestructionAnimator';
 import { UnitRenderer } from './rendering/UnitRenderer';
+import { MaritimeTradeRenderer } from './rendering/MaritimeTradeRenderer';
 import { TutorialManager } from './game/TutorialManager';
 import { TutorialDialog } from './ui/TutorialDialog';
 import { Unit } from './game/Unit';
@@ -62,6 +63,7 @@ export class GameApp {
   public supplyChainRenderer!: SupplyChainRenderer;
   public resourceItemRenderer!: ResourceItemRenderer;
   public tradeRouteRenderer!: TradeRouteRenderer;
+  public maritimeTradeRenderer!: MaritimeTradeRenderer;
   public constructionAnimator!: ConstructionAnimator;
   public destructionAnimator!: DestructionAnimator;
   public buildingMeshes: Map<number, any> = new Map();
@@ -240,6 +242,9 @@ export class GameApp {
     // Create trade route renderer (donkey missions between Marketplaces)
     this.tradeRouteRenderer = new TradeRouteRenderer(this.scene);
 
+    // Create maritime trade route renderer (ship missions between LandingDocks)
+    this.maritimeTradeRenderer = new MaritimeTradeRenderer(this.scene);
+
     this.ui.updateProgress('Loading buildings...', 65);
 
     // Yield to UI thread
@@ -292,6 +297,7 @@ export class GameApp {
     this.inGameMenu.setTerrainRenderer(this.terrainRenderer);
     this.inGameMenu.setTerritoryOverlay(this.territoryOverlay);
     this.inGameMenu.setSupplyChainRenderer(this.supplyChainRenderer);
+     this.inGameMenu.setMaritimeTradeRenderer(this.maritimeTradeRenderer);
 
     // Expose in-game menu for console access (debug tab)
     (window as any).debugPanel = this.inGameMenu;
@@ -617,6 +623,13 @@ export class GameApp {
         this.tradeRouteRenderer.syncMissions(missions);
         this.tradeRouteRenderer.updatePositions(missions);
       }
+
+      // Update maritime trade route ship positions
+      if (this.maritimeTradeRenderer) {
+        const maritimeMissions = this.gameLoop.economy.maritimeTrade.getMissions();
+        this.maritimeTradeRenderer.syncMissions(maritimeMissions);
+        this.maritimeTradeRenderer.updatePositions(maritimeMissions);
+      }
       if (this.tutorialManager) {
         this.tutorialManager.update();
       }
@@ -651,6 +664,7 @@ export class GameApp {
     this.supplyChainRenderer?.dispose();
     this.resourceItemRenderer?.dispose();
     this.tradeRouteRenderer?.dispose();
+    this.maritimeTradeRenderer?.dispose();
     this.engine.dispose();
     soundManager.dispose();
   }

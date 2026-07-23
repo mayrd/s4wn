@@ -9,6 +9,7 @@ import { BuildingType, ResourceType, RESOURCE_COUNT, buildCost, buildingInputs, 
 import { Map as GameMap } from './Map';
 import { LogisticsManager } from './Logistics';
 import { TradeRouteManager } from './TradeRouteManager';
+import { MaritimeTradeManager } from './MaritimeTradeManager';
 
 export interface BuildingData {
   index: number;
@@ -41,6 +42,7 @@ export class Economy {
   resourcePickups: number = 0;
   logistics: LogisticsManager;
   tradeRoutes: TradeRouteManager;
+  maritimeTrade: MaritimeTradeManager;
 
   /** Global Combat Strength (Kampfkraft) modifier derived from gold bars + monuments */
   combatStrength: number = 0;
@@ -56,6 +58,7 @@ export class Economy {
     this.resources[ResourceType.Stone] = 10;
     this.logistics = logistics || new LogisticsManager();
     this.tradeRoutes = new TradeRouteManager();
+    this.maritimeTrade = new MaritimeTradeManager();
   }
 
   // ── Resource Management ──────────────────────────────────────────
@@ -334,19 +337,34 @@ export class Economy {
         .filter(b => b.kind === BuildingType.StorageYard && b.constructionProgress >= 1.0)
         .length * Economy.STORAGE_PER_YARD;
 
-    // Process trade routes for Marketplace buildings
+    // Process land trade routes for Marketplace buildings
     const tradeResult = this.tradeRoutes.tickMarketplaces(
       this.buildings, this.resources, speedMult
     );
 
-    // Apply resource removals from trade exports
+    // Apply resource removals from land trade exports
     for (const r of tradeResult.resourcesToRemove) {
       this.removeResource(r.type, r.amount);
     }
 
-    // Add gold from completed trade missions
+    // Add gold from completed land trade missions
     if (tradeResult.goldToAdd > 0) {
       this.addResource(ResourceType.Gold, tradeResult.goldToAdd);
+    }
+
+    // Process maritime trade routes for LandingDock buildings
+    const maritimeResult = this.maritimeTrade.tickLandingDocks(
+      this.buildings, this.resources, speedMult
+    );
+
+    // Apply resource removals from maritime trade exports
+    for (const r of maritimeResult.resourcesToRemove) {
+      this.removeResource(r.type, r.amount);
+    }
+
+    // Add gold from completed maritime trade missions
+    if (maritimeResult.goldToAdd > 0) {
+      this.addResource(ResourceType.Gold, maritimeResult.goldToAdd);
     }
 
     // Recalculate combat strength each tick
@@ -418,6 +436,7 @@ export class Economy {
       storageCapacity: this.storageCapacity,
       combatStrength: this.combatStrength,
       tradeRoutes: this.tradeRoutes.toJSON(),
+      maritimeTrade: this.maritimeTrade.toJSON(),
     };
   }
 
@@ -428,6 +447,9 @@ export class Economy {
     this.combatStrength = data.combatStrength ?? 0;
     if (data.tradeRoutes) {
       this.tradeRoutes.restoreFromJSON(data.tradeRoutes);
+    }
+    if (data.maritimeTrade) {
+      this.maritimeTrade.restoreFromJSON(data.maritimeTrade);
     }
     this.buildings = (data.buildings || []).map((b: any) => ({
       index: b.index,

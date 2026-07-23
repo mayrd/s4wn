@@ -50,6 +50,7 @@ export class InGameMenu {
   private terrainRenderer: any = null;
   private territoryOverlay: any = null;
   private supplyChainRenderer: any = null;
+  private maritimeTradeRenderer: any = null;
   
   // Camera for mouse tracking
   private camera: ArcRotateCamera | null = null;
@@ -86,6 +87,10 @@ export class InGameMenu {
 
   public setTerritoryOverlay(overlay: any): void {
     this.territoryOverlay = overlay;
+  }
+
+  public setMaritimeTradeRenderer(renderer: any): void {
+    this.maritimeTradeRenderer = renderer;
   }
 
   public setSupplyChainRenderer(renderer: any): void {
@@ -264,7 +269,8 @@ export class InGameMenu {
       // Full debug panel with stats and toggles
       const isGrid = this.gridRenderer?.getMesh()?.isVisible ?? false;
       const isTerritory = this.territoryOverlay?.isVisible ?? false;
-      const isSupply = this.supplyChainRenderer?.visible ?? false;
+      const isMaritime = this.maritimeTradeRenderer?.visible ?? false;
+       const isSupply = this.supplyChainRenderer?.visible ?? false;
       const isSplat = this.terrainRenderer?.isSplattingEnabled() ?? true;
 
       contentHtml = `
@@ -299,7 +305,8 @@ export class InGameMenu {
             </div>
             <div class="debug-controls-row">
               <button id="menu-debug-pause" class="debug-toggle-btn">Pause: OFF</button>
-              <button id="menu-debug-supply" class="debug-toggle-btn">${isSupply ? 'Supply: ON' : 'Supply: OFF'}</button>
+              <button id="menu-debug-maritime" class="debug-toggle-btn">${isMaritime ? 'Maritime: ON' : 'Maritime: OFF'}</button>
+               <button id="menu-debug-supply" class="debug-toggle-btn">${isSupply ? 'Supply: ON' : 'Supply: OFF'}</button>
               <button id="menu-debug-inspector" class="debug-toggle-btn">Inspect</button>
             </div>
             <div id="debug-supply-filters" class="debug-supply-filters">
@@ -501,6 +508,7 @@ export class InGameMenu {
       const gridBtn = this.buildBarEl.querySelector('#menu-debug-grid') as HTMLButtonElement;
       const splatBtn = this.buildBarEl.querySelector('#menu-debug-splat') as HTMLButtonElement;
       const terrBtn = this.buildBarEl.querySelector('#menu-debug-territory') as HTMLButtonElement;
+      const maritimeBtn = this.buildBarEl.querySelector('#menu-debug-maritime') as HTMLButtonElement;
       const supplyBtn = this.buildBarEl.querySelector('#menu-debug-supply') as HTMLButtonElement;
       const texBtn = this.buildBarEl.querySelector('#menu-debug-textures') as HTMLButtonElement;
       const wireBtn = this.buildBarEl.querySelector('#menu-debug-wireframe') as HTMLButtonElement;
@@ -524,6 +532,14 @@ export class InGameMenu {
         const visible = !this.territoryOverlay?.isVisible;
         this.territoryOverlay?.setVisible(visible);
         terrBtn.textContent = visible ? 'Territory: ON' : 'Territory: OFF';
+      });
+
+      maritimeBtn?.addEventListener('click', () => {
+        const visible = !this.maritimeTradeRenderer?.visible;
+        if (this.maritimeTradeRenderer) {
+          this.maritimeTradeRenderer.visible = visible;
+        }
+        maritimeBtn.textContent = visible ? 'Maritime: ON' : 'Maritime: OFF';
       });
 
       supplyBtn?.addEventListener('click', () => {
