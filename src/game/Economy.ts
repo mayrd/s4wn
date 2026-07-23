@@ -28,8 +28,8 @@ export interface BuildingData {
   destructionTimer: number | null;
   destructionProgress: number | null;
   ownerId: number;
-  /** Garrisoned military unit IDs */
-  garrisonUnitIds: number[];
+  /** Garrisoned military unit IDs (optional for mock objects) */
+  garrisonUnitIds?: number[];
 }
 
 export class Economy {
