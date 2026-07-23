@@ -194,12 +194,13 @@ export class Economy {
 
   getGarrisonCount(buildingIndex: number): number {
     const building = this.getBuilding(buildingIndex);
-    return building?.garrisonUnitIds.length ?? 0;
+    return building?.garrisonUnitIds?.length ?? 0;
   }
 
   garrisonUnit(buildingIndex: number, unitId: number): boolean {
     const building = this.getBuilding(buildingIndex);
     if (!building) return false;
+    if (!building.garrisonUnitIds) building.garrisonUnitIds = [];
     if (building.garrisonUnitIds.length >= garrisonCapacity(building.kind)) return false;
     if (building.garrisonUnitIds.includes(unitId)) return false;
     building.garrisonUnitIds.push(unitId);
@@ -209,6 +210,7 @@ export class Economy {
   ungarrisonUnit(buildingIndex: number, unitId: number): boolean {
     const building = this.getBuilding(buildingIndex);
     if (!building) return false;
+    if (!building.garrisonUnitIds) building.garrisonUnitIds = [];
     const idx = building.garrisonUnitIds.indexOf(unitId);
     if (idx === -1) return false;
     building.garrisonUnitIds.splice(idx, 1);
@@ -217,7 +219,7 @@ export class Economy {
 
   getGarrisonUnits(buildingIndex: number): number[] {
     const building = this.getBuilding(buildingIndex);
-    return building ? [...building.garrisonUnitIds] : [];
+    return building ? [...(building.garrisonUnitIds ?? [])] : [];
   }
 
   // ── Production Tick ──────────────────────────────────────────────
@@ -410,7 +412,7 @@ export class Economy {
         destructionTimer: b.destructionTimer,
         destructionProgress: b.destructionProgress,
         ownerId: b.ownerId,
-        garrisonUnitIds: [...b.garrisonUnitIds],
+        garrisonUnitIds: [...(b.garrisonUnitIds ?? [])],
       })),
       nextBuildingIndex: this.nextBuildingIndex,
       storageCapacity: this.storageCapacity,
