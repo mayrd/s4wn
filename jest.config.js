@@ -22,6 +22,7 @@ module.exports = {
   },
   // Provide import.meta polyfill for Vite/Babel compatibility
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
-  // Transform @babylonjs/loaders (ESM package) so Jest can parse it
-  transformIgnorePatterns: ['/node_modules/(?!@babylonjs/loaders)'],
+  // Exclude node_modules from transformation — @babylonjs/loaders is ESM-only
+  // and is already mocked with jest.mock(..., { virtual: true }) in tests.
+  transformIgnorePatterns: ['/node_modules/'],
 };
