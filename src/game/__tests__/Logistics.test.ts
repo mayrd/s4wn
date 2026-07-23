@@ -12,18 +12,18 @@ describe('LogisticsManager', () => {
   describe('spawnItem', () => {
     test('creates a resource item with assigned id, type, and position', () => {
       const item = log.spawnItem(ResourceType.Wood, 10, 5);
-      expect(item.id).toBe(1);
-      expect(item.type).toBe(ResourceType.Wood);
-      expect(item.x).toBe(10);
-      expect(item.y).toBe(5);
-      expect(item.isReserved).toBe(false);
+      expect(item!.id).toBe(1);
+      expect(item!.type).toBe(ResourceType.Wood);
+      expect(item!.x).toBe(10);
+      expect(item!.y).toBe(5);
+      expect(item!.isReserved).toBe(false);
     });
 
     test('increments id for each new item', () => {
       const a = log.spawnItem(ResourceType.Wood, 0, 0);
       const b = log.spawnItem(ResourceType.Stone, 1, 1);
-      expect(a.id).toBe(1);
-      expect(b.id).toBe(2);
+      expect(a!.id).toBe(1);
+      expect(b!.id).toBe(2);
     });
 
     test('adds item to getItems list', () => {
@@ -35,7 +35,7 @@ describe('LogisticsManager', () => {
   describe('removeItem', () => {
     test('removes an existing item and returns true', () => {
       const item = log.spawnItem(ResourceType.Wood, 0, 0);
-      expect(log.removeItem(item.id)).toBe(true);
+      expect(log.removeItem(item!.id)).toBe(true);
       expect(log.getItems()).toHaveLength(0);
     });
 
@@ -46,9 +46,9 @@ describe('LogisticsManager', () => {
     test('only removes the targeted item', () => {
       const a = log.spawnItem(ResourceType.Wood, 0, 0);
       const b = log.spawnItem(ResourceType.Stone, 1, 1);
-      log.removeItem(a.id);
+      log.removeItem(a!.id);
       expect(log.getItems()).toHaveLength(1);
-      expect(log.getItems()[0].id).toBe(b.id);
+      expect(log.getItems()[0].id).toBe(b!.id);
     });
   });
 
@@ -71,7 +71,7 @@ describe('LogisticsManager', () => {
 
     test('returns null when all items of type are reserved', () => {
       const item = log.spawnItem(ResourceType.Wood, 0, 0);
-      item.isReserved = true;
+      item!.isReserved = true;
       expect(log.getUnreservedItem(ResourceType.Wood, 0, 0)).toBeNull();
     });
 
@@ -128,7 +128,7 @@ describe('LogisticsManager', () => {
       expect(log.getUnreservedItem(ResourceType.Planks, 100, 100)).toBeNull();
 
       // Carrier delivers it, remove from world
-      expect(log.removeItem(item.id)).toBe(true);
+      expect(log.removeItem(item!.id)).toBe(true);
       expect(log.getItems()).toHaveLength(0);
     });
   });
@@ -167,7 +167,7 @@ describe('LogisticsManager', () => {
 
     test('matchDemand returns null when item is reserved', () => {
       const item = log.spawnItem(ResourceType.Wood, 0, 0);
-      item.isReserved = true;
+      item!.isReserved = true;
       log.registerDemand(1, ResourceType.Wood, 1, 0, 0);
       expect(log.matchDemand()).toBeNull();
     });

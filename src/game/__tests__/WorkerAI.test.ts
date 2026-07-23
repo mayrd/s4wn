@@ -169,8 +169,8 @@ describe('WorkerAI — Logistics Carrier AI', () => {
 
     // 1. First tick runs logisticsTick: matches demand and assigns carrier to walk to the item
     ai.logisticsTick();
-    expect(item.isReserved).toBe(true);
-    expect(carrier.logisticsTargetItemId).toBe(item.id);
+    expect(item!.isReserved).toBe(true);
+    expect(carrier.logisticsTargetItemId).toBe(item!.id);
     expect(carrier.logisticsTargetBuildingIndex).toBe(sawmill.index);
     expect(carrier.state).toBe(UnitState.Moving);
 
@@ -183,7 +183,7 @@ describe('WorkerAI — Logistics Carrier AI', () => {
     expect(carrier.carrying).toEqual({ resource: ResourceType.Wood, amount: 1 });
     expect(carrier.logisticsTargetItemId).toBeNull();
     // Item is removed from the logistics registry
-    expect(economy.logistics.getItems().find(i => i.id === item.id)).toBeUndefined();
+    expect(economy.logistics.getItems().find(i => i.id === item!.id)).toBeUndefined();
 
     // Teleport carrier close to the sawmill
     carrier.x = 10;

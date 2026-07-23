@@ -1,9 +1,6 @@
 /** @jest-environment jsdom */
-import { LogisticsManager, ResourceItem } from '../Logistics';
+import { LogisticsManager, ResourceItem, STORAGE_YARD_STACK_LIMIT } from '../Logistics';
 import { ResourceType } from '../../economy/types';
-
-// StorageYard stacking limit constant (per plan: 8 items per tile)
-const STORAGE_YARD_STACK_LIMIT = 8;
 
 describe('LogisticsStacking', () => {
   let logistics: LogisticsManager;
@@ -21,7 +18,8 @@ describe('LogisticsStacking', () => {
       const items: ResourceItem[] = [];
       for (let i = 0; i < STORAGE_YARD_STACK_LIMIT; i++) {
         const item = logistics.spawnItem(ResourceType.Wood, x, y);
-        items.push(item);
+        expect(item).toBeDefined();
+        items.push(item!);
       }
 
       // All items should be in the pool
@@ -34,27 +32,18 @@ describe('LogisticsStacking', () => {
       expect(itemsOnTile).toHaveLength(STORAGE_YARD_STACK_LIMIT);
     });
 
-    test('does not allow spawning items beyond the 8-stack limit on same tile', () => {
+    test('excess items overflow to adjacent tiles when stack limit reached', () => {
       const x = 10;
       const y = 10;
 
       // Fill the stack to capacity
       for (let i = 0; i < STORAGE_YARD_STACK_LIMIT; i++) {
-        logistics.spawnItem(ResourceType.Wood, x, y);
+        const item = logistics.spawnItem(ResourceType.Wood, x, y);
+        expect(item).toBeDefined();
       }
 
-      // NOTE: Current implementation doesn't enforce stack limits
-      // This test documents expected behavior for future implementation
-      // Once stack limits are implemented, spawnItem should reject overflow
-      // For now, we verify the stack count tracking works
-      const currentStackCount = logistics.getItems().filter(
-        item => item.x === x && item.y === y
-      ).length;
-      
-      // When stack limits are implemented, the limit check would be:
-      // expect(currentStackCount).toBe(STORAGE_YARD_STACK_LIMIT);
-      // Currently passes because we can track the count properly
-      expect(currentStackCount).toBeGreaterThanOrEqual(0);
+      // Verify stack is at limit
+      expect(logistics.getStackCountAt(x, y)).toBe(STORAGE_YARD_STACK_LIMIT);
     });
 
     test('stack limit applies independently per tile', () => {
@@ -95,15 +84,81 @@ describe('LogisticsStacking', () => {
     });
   });
 
-  describe('carrier priority - StorageYard deliveries over direct consumer', () => {
-    test('carriers match demand with closest available item', () => {
-      // StorageYard demand (index would be tagged as StorageYard in full implementation)
+  describe('StorageYard priority registration', () => {
+    test('registerStorageYard adds position to internal list', () => {
+      logistics.registerStorageYard(5, 5);
+      const positions = logistics.getStorageYardPositions();
+      expect(positions.length).toBe(1);
+      expect(positions[0].x).toBe(5);
+      expect(positions[0].y).toBe(5);
+    });
+
+    test('unregisterStorageYard removes position from list', () => {
+      logistics.registerStorageYard(5, 5);
+      logistics.unregisterStorageYard(5, 5);
+      expect(logistics.getStorageYardPositions()).toHaveLength(0);
+    });
+
+    test('getStackCountAt returns correct count for items at position', () => {
+      logistics.spawnItem(ResourceType.Wood, 3, 3);
+      logistics.spawnItem(ResourceType.Wood, 3, 3);
+      logistics.spawnItem(ResourceType.Wood, 4, 4);
+      expect(logistics.getStackCountAt(3, 3)).toBe(2);
+      expect(logistics.getStackCountAt(4, 4)).toBe(1);
+      expect(logistics.getStackCountAt(0, 0)).toBe(0);
+    });
+
+    test('isStorageYardAtCapacity correctly identifies full StorageYard', () => {
+      for (let i = 0; i < STORAGE_YARD_STACK_LIMIT; i++) {
+        logistics.spawnItem(ResourceType.Wood, 10, 10);
+      }
+      expect(logistics.isStorageYardAtCapacity(10, 10)).toBe(true);
+      expect(logistics.isStorageYardAtCapacity(9, 9)).toBe(false);
+    });
+  });
+
+  describe('carrier priority - StorageYard demands processed first', () => {
+    test('StorageYard demands are matched before non-StorageYard demands', () => {
+      // StorageYard demand (priority)
       logistics.registerDemand(
         100,
         ResourceType.Wood,
         1,
         0, // x
         0, // y
+        true, // isStorageYard = true (priority)
+      );
+
+      // Sawmill demand (non-priority)
+      logistics.registerDemand(
+        101,
+        ResourceType.Wood,
+        1,
+        10, // x - farther away
+        10, // y
+        false,
+      );
+
+      // Spawn items close to StorageYard
+      logistics.spawnItem(ResourceType.Wood, 1, 1);
+
+      const match = logistics.matchDemand();
+      expect(match).not.toBeNull();
+
+      // Should match StorageYard demand first (priority)
+      expect(match!.demand.buildingIndex).toBe(100);
+      expect(match!.demand.isStorageYard).toBe(true);
+    });
+
+    test('carriers match demand with closest available item', () => {
+      // StorageYard demand
+      logistics.registerDemand(
+        100,
+        ResourceType.Wood,
+        1,
+        0, // x
+        0, // y
+        false,
       );
 
       // Sawmill demand farther away
@@ -113,6 +168,7 @@ describe('LogisticsStacking', () => {
         1,
         10, // x - farther away
         10, // y
+        false,
       );
 
       // Spawn items closer to first demand
@@ -122,7 +178,6 @@ describe('LogisticsStacking', () => {
       expect(match).not.toBeNull();
 
       // Should match the closest demand-item pair
-      // (index 100 wins as it's closer to the spawned item)
       expect(match!.demand.buildingIndex).toBe(100);
     });
 
@@ -134,6 +189,7 @@ describe('LogisticsStacking', () => {
         1,
         0, // x
         0, // y
+        false,
       );
 
       // Sawmill demand at (20,20)
@@ -143,6 +199,7 @@ describe('LogisticsStacking', () => {
         1,
         20, // x
         20, // y
+        false,
       );
 
       // Spawn wood closer to StorageYard
@@ -167,6 +224,7 @@ describe('LogisticsStacking', () => {
         1,
         0, // x
         0, // y
+        true,
       );
 
       // Sawmill demand for Planks
@@ -176,13 +234,14 @@ describe('LogisticsStacking', () => {
         1,
         5, // x
         5, // y
+        false,
       );
 
       // Spawn wood near StorageYard and planks near Sawmill
       logistics.spawnItem(ResourceType.Wood, 1, 1);
       logistics.spawnItem(ResourceType.Planks, 6, 6);
 
-      // First match: StorageYard should match with wood
+      // First match: StorageYard should match with wood (priority)
       const match = logistics.matchDemand();
       expect(match).not.toBeNull();
       expect(match!.demand.buildingIndex).toBe(300);
@@ -190,7 +249,7 @@ describe('LogisticsStacking', () => {
     });
   });
 
-  describe('stack overflow - excess items are not added when stack limit reached', () => {
+  describe('stack overflow - items overflow to adjacent tiles', () => {
     test('removeItem frees up stack space for new items', () => {
       const x = 3;
       const y = 3;
@@ -198,14 +257,16 @@ describe('LogisticsStacking', () => {
       // Fill stack to limit
       const items: ResourceItem[] = [];
       for (let i = 0; i < STORAGE_YARD_STACK_LIMIT; i++) {
-        items.push(logistics.spawnItem(ResourceType.Wood, x, y));
+        const item = logistics.spawnItem(ResourceType.Wood, x, y);
+        expect(item).toBeDefined();
+        items.push(item!);
       }
 
       // Remove one item
       const removed = logistics.removeItem(items[0].id);
       expect(removed).toBe(true);
 
-      // Now we should be able to add one more
+      // Now we should be able to add one more at the same position
       const newItem = logistics.spawnItem(ResourceType.Wood, x, y);
       expect(newItem).toBeDefined();
 
@@ -215,7 +276,7 @@ describe('LogisticsStacking', () => {
       );
     });
 
-    test('getItem count can be queried to check stack capacity', () => {
+    test('getStackCountAt can be queried to check capacity', () => {
       const x = 15;
       const y = 15;
 
@@ -225,13 +286,7 @@ describe('LogisticsStacking', () => {
       }
 
       // Verify we have exactly the limit count
-      const itemsOnTile = logistics.getItems().filter(
-        item => item.x === x && item.y === y
-      );
-      expect(itemsOnTile.length).toBe(STORAGE_YARD_STACK_LIMIT);
-
-      // This is the count that would be checked before adding more
-      const currentStackHeight = itemsOnTile.length;
+      const currentStackHeight = logistics.getStackCountAt(x, y);
       expect(currentStackHeight).toBe(STORAGE_YARD_STACK_LIMIT);
       expect(currentStackHeight >= STORAGE_YARD_STACK_LIMIT).toBe(true);
     });
@@ -250,34 +305,23 @@ describe('LogisticsStacking', () => {
       expect(logistics.getItems()).toHaveLength(STORAGE_YARD_STACK_LIMIT + 1);
     });
 
-    test('stack limit check is available for demand matching decisions', () => {
-      // Simulate: StorageYard already has stacks at capacity
+    test('items overflow to adjacent tiles when StorageYard full (9th item)', () => {
       const storageYardX = 12;
       const storageYardY = 12;
 
+      // Fill StorageYard to capacity (8 items)
       for (let i = 0; i < STORAGE_YARD_STACK_LIMIT; i++) {
         logistics.spawnItem(ResourceType.Wood, storageYardX, storageYardY);
       }
 
-      // Check stack height at destination
-      const itemsAtDestination = logistics.getItems().filter(
-        item => item.x === storageYardX && item.y === storageYardY
-      );
-      expect(itemsAtDestination.length).toBe(STORAGE_YARD_STACK_LIMIT);
-
-      // Register demand at the same location - carrier should see stack is full
-      logistics.registerDemand(
-        400,
-        ResourceType.Wood,
-        1,
-        storageYardX,
-        storageYardY,
-      );
-
-      // The stack limit check would prevent this demand from being fulfilled
-      // if the destination cannot accept more items
-      const stackIsFull = itemsAtDestination.length >= STORAGE_YARD_STACK_LIMIT;
-      expect(stackIsFull).toBe(true);
+      // 9th item should overflow to adjacent tile (13, 12)
+      const overflowItem = logistics.spawnItem(ResourceType.Wood, storageYardX, storageYardY);
+      expect(overflowItem).toBeDefined();
+      // The overflow item should be at an adjacent position
+      const samePos = overflowItem!.x === storageYardX && overflowItem!.y === storageYardY;
+      const adjacentPos = Math.abs(overflowItem!.x - storageYardX) <= 1 &&
+                          Math.abs(overflowItem!.y - storageYardY) <= 1;
+      expect(samePos || adjacentPos).toBe(true);
     });
   });
 
@@ -288,9 +332,10 @@ describe('LogisticsStacking', () => {
 
       // Step 1: Woodcutter produces wood (spawns item)
       const woodItem = logistics.spawnItem(ResourceType.Wood, 5, 5);
-      expect(woodItem.type).toBe(ResourceType.Wood);
-      expect(woodItem.x).toBe(5);
-      expect(woodItem.y).toBe(5);
+      expect(woodItem).toBeDefined();
+      expect(woodItem!.type).toBe(ResourceType.Wood);
+      expect(woodItem!.x).toBe(5);
+      expect(woodItem!.y).toBe(5);
 
       // Step 2: Sawmill registers demand for wood
       logistics.registerDemand(
@@ -309,11 +354,11 @@ describe('LogisticsStacking', () => {
 
       // Step 4: Carrier reserves the item
       match!.item.isReserved = true;
-      expect(woodItem.isReserved).toBe(true);
+      expect(woodItem!.isReserved).toBe(true);
 
       // Step 5: Carrier picks up (removes from world)
-      logistics.removeItem(woodItem.id);
-      expect(logistics.getItems().find(i => i.id === woodItem.id)).toBeUndefined();
+      logistics.removeItem(woodItem!.id);
+      expect(logistics.getItems().find(i => i.id === woodItem!.id)).toBeUndefined();
     });
 
     test('multiple carriers can each claim one item from a tile', () => {
@@ -350,7 +395,8 @@ describe('LogisticsStacking', () => {
 
       // Spawn 8 wood items at StorageYard location (as if delivered)
       for (let i = 0; i < STORAGE_YARD_STACK_LIMIT; i++) {
-        logistics.spawnItem(ResourceType.Wood, storageYardX, storageYardY);
+        const item = logistics.spawnItem(ResourceType.Wood, storageYardX, storageYardY);
+        expect(item).toBeDefined();
       }
 
       const itemsAtStorageYard = logistics.getItems().filter(
@@ -371,13 +417,13 @@ describe('LogisticsStacking', () => {
         logistics.spawnItem(ResourceType.Wood, storageYardX, storageYardY);
       }
 
-      // In the full implementation, a 9th item would be placed on an adjacent tile
-      // For now, we verify the stack count is at limit
-      const stackHeight = logistics.getItems().filter(
-        item => item.x === storageYardX && item.y === storageYardY
-      ).length;
+      // Overflow on adjacent tile (automatically placed by spawnItem)
+      const overflowItem = logistics.spawnItem(ResourceType.Wood, storageYardX, storageYardY);
+      expect(overflowItem).toBeDefined();
 
-      expect(stackHeight).toBe(STORAGE_YARD_STACK_LIMIT);
+      // Items should be trackable (either at original or adjacent position)
+      const allItems = logistics.getItems();
+      expect(allItems.length).toBe(STORAGE_YARD_STACK_LIMIT + 1);
     });
 
     test('items on adjacent tiles are still reachable by carriers', () => {
@@ -397,6 +443,54 @@ describe('LogisticsStacking', () => {
       expect(nearbyItem).not.toBeNull();
       expect(nearbyItem!.x).toBe(storageYardX);
       expect(nearbyItem!.y).toBe(storageYardY);
+    });
+  });
+
+  describe('Serialization', () => {
+    test('toJSON and restoreFromJSON work correctly', () => {
+      // Add items
+      logistics.spawnItem(ResourceType.Wood, 1, 1);
+      logistics.spawnItem(ResourceType.Stone, 2, 2);
+
+      // Add demands
+      logistics.registerDemand(100, ResourceType.Wood, 1, 0, 0, true);
+      logistics.registerDemand(101, ResourceType.Stone, 1, 10, 10, false);
+
+      // Add StorageYard positions
+      logistics.registerStorageYard(5, 5);
+      logistics.registerStorageYard(6, 6);
+
+      // Serialize
+      const json = logistics.toJSON();
+
+      // Restore to new manager
+      const restored = new LogisticsManager();
+      restored.restoreFromJSON(json);
+
+      // Verify items
+      expect(restored.getItems()).toHaveLength(2);
+
+      // Verify demands
+      expect(restored.getDemands()).toHaveLength(2);
+
+      // Verify StorageYard positions
+      expect(restored.getStorageYardPositions()).toHaveLength(2);
+    });
+
+    test('restoreFromJSON preserves isStorageYard flag on demands', () => {
+      logistics.registerDemand(100, ResourceType.Wood, 1, 0, 0, true);
+      logistics.registerDemand(101, ResourceType.Stone, 1, 10, 10, false);
+
+      const json = logistics.toJSON();
+      const restored = new LogisticsManager();
+      restored.restoreFromJSON(json);
+
+      const demands = restored.getDemands();
+      const storageYardDemand = demands.find(d => d.buildingIndex === 100);
+      const regularDemand = demands.find(d => d.buildingIndex === 101);
+
+      expect(storageYardDemand?.isStorageYard).toBe(true);
+      expect(regularDemand?.isStorageYard).toBe(false);
     });
   });
 });

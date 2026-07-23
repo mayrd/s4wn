@@ -185,8 +185,42 @@ export class Economy {
   removeBuilding(index: number): boolean {
     const idx = this.buildings.findIndex(b => b.index === index);
     if (idx === -1) return false;
+    // Unregister StorageYard if one was removed
+    const building = this.buildings[idx];
+    if (building.kind === BuildingType.StorageYard) {
+      this.logistics.unregisterStorageYard(building.x, building.y);
+    }
     this.buildings.splice(idx, 1);
     return true;
+  }
+
+  /** Register StorageYard positions for priority routing when built completes */
+  registerStorageYards(): void {
+    for (const building of this.buildings) {
+      if (building.kind === BuildingType.StorageYard && building.constructionProgress >= 1.0) {
+        this.logistics.registerStorageYard(building.x, building.y);
+      }
+    }
+  }
+
+  /** Register demand for all resource types at StorageYards (accept items) */
+  registerStorageYardDemands(): void {
+    for (const building of this.buildings) {
+      if (building.kind === BuildingType.StorageYard && building.constructionProgress >= 1.0) {
+        // StorageYards accept any resource type (for centralized storage)
+        // We register a demand for each resource type with amount 1 to signal "accept items"
+        for (let r = 0; r < RESOURCE_COUNT; r++) {
+          this.logistics.registerDemand(
+            building.index,
+            r as ResourceType,
+            1,
+            building.x,
+            building.y,
+            true // isStorageYard = true (priority)
+          );
+        }
+      }
+    }
   }
 
   // ── Garrison / Defender Logic ────────────────────────────────────
@@ -336,6 +370,10 @@ export class Economy {
       this.buildings
         .filter(b => b.kind === BuildingType.StorageYard && b.constructionProgress >= 1.0)
         .length * Economy.STORAGE_PER_YARD;
+
+    // Register StorageYard positions and demands for priority routing
+    this.registerStorageYards();
+    this.registerStorageYardDemands();
 
     // Process land trade routes for Marketplace buildings
     const tradeResult = this.tradeRoutes.tickMarketplaces(

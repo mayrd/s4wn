@@ -124,7 +124,7 @@ describe('ResourceItemRenderer', () => {
     });
 
     test('disposes mesh when item is removed', () => {
-      const item = logistics.spawnItem(ResourceType.Wood, 10, 5);
+      const item = logistics.spawnItem(ResourceType.Wood, 10, 5)!;
       renderer.sync();
       expect(renderer.itemCount).toBe(1);
 
@@ -134,7 +134,7 @@ describe('ResourceItemRenderer', () => {
     });
 
     test('handles mixed add and remove in same sync', () => {
-      const item1 = logistics.spawnItem(ResourceType.Wood, 10, 5);
+      const item1 = logistics.spawnItem(ResourceType.Wood, 10, 5)!;
       renderer.sync();
       expect(renderer.itemCount).toBe(1);
 
@@ -146,7 +146,7 @@ describe('ResourceItemRenderer', () => {
     });
 
     test('updates item positions on sync', () => {
-      const item = logistics.spawnItem(ResourceType.Wood, 10, 5);
+      const item = logistics.spawnItem(ResourceType.Wood, 10, 5)!;
       renderer.sync();
 
       // Position is set in createItemMesh
@@ -190,7 +190,7 @@ describe('ResourceItemRenderer', () => {
 
   describe('visibility', () => {
     test('toggle visibility propagates to meshes', () => {
-      const item = logistics.spawnItem(ResourceType.Wood, 10, 5);
+      const item = logistics.spawnItem(ResourceType.Wood, 10, 5)!;
       renderer.sync();
 
       renderer.visible = false;
