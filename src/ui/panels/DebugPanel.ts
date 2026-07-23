@@ -65,15 +65,18 @@ export class DebugPanel {
       
       <hr class="debug-divider" />
       
-       <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
-         <button id="debug-btn-grid" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Grid: ON</button>
-         <button id="debug-btn-textures" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Textures: ON</button>
-         <button id="debug-btn-wireframe" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Wire: OFF</button>
-       </div>
+        <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
+          <button id="debug-btn-grid" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Grid: ON</button>
+          <button id="debug-btn-textures" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Textures: ON</button>
+          <button id="debug-btn-wireframe" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Wire: OFF</button>
+        </div>
         <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
           <button id="debug-btn-splat" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Splat: ON</button>
           <button id="debug-btn-territory" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Territory: OFF</button>
           <button id="debug-btn-fog" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Fog: ON</button>
+        </div>
+        <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
+          <button id="debug-btn-inspector" class="debug-btn" style="flex:1;min-width:100px;padding:4px 8px;font-size:0.7rem;cursor:pointer;background:#644;border-color:#c88">🔍 Inspector</button>
         </div>
       
       <hr class="debug-divider" />
@@ -141,6 +144,12 @@ export class DebugPanel {
       fogEnabled = !fogEnabled;
       fogBtn.textContent = `Fog: ${fogEnabled ? 'ON' : 'OFF'}`;
       this.setFogVisibility(fogEnabled);
+    });
+
+    // Babylon.js Inspector toggle
+    const inspectorBtn = this.container.querySelector('#debug-btn-inspector') as HTMLButtonElement;
+    inspectorBtn.addEventListener('click', () => {
+      this.showBabylonInspector();
     });
 
   }
