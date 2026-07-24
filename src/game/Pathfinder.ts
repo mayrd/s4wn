@@ -2,10 +2,11 @@
  * S4WN Babylon.js/TypeScript - Pathfinding Module
  *
  * Migrated from engine/src/pathfinding.rs
- * A* algorithm for unit movement.
+ * A* algorithm for unit movement with terrain traversal costs.
  */
 
 import { Map as GameMap } from './Map';
+import { UnitKind, Terrain } from './types';
 
 export interface PathPoint {
   x: number;
@@ -50,13 +51,37 @@ export class Path {
 
 type CameFromMap = Map<number, PathPoint>;
 
+/**
+ * Unit kinds that can traverse Mountain terrain (geologists, miners).
+ * Other units treat mountains as impassable.
+ */
+const MOUNTAIN_TRAVERSABLE_UNITS = new Set<UnitKind>([
+  UnitKind.Pioneer, // Pioneers can dig through terrain
+]);
+
 export class Pathfinder {
   /**
-   * Find path using A* algorithm
+   * Find path using A* algorithm with terrain traversal costs.
+   * Movement cost is derived from map.speedMultiplier() — difficult
+   * terrain (swamp, desert, forest) costs more to traverse.
    */
   static findPath(map: GameMap, start: PathPoint, goal: PathPoint): Path | undefined {
+    return Pathfinder.findPathForUnit(map, start, goal, null);
+  }
+
+  /**
+   * Find path for a specific unit kind. Units that can traverse mountains
+   * (geologists, miners) will path through mountain terrain.
+   */
+  static findPathForUnit(
+    map: GameMap,
+    start: PathPoint,
+    goal: PathPoint,
+    unitKind: UnitKind | null
+  ): Path | undefined {
     // Check if start/goal are valid
-    if (!map.isPassable(start.x, start.y) || !map.isPassable(goal.x, goal.y)) {
+    if (!Pathfinder.isPassableFor(map, start.x, start.y, unitKind) ||
+        !Pathfinder.isPassableFor(map, goal.x, goal.y, unitKind)) {
       return undefined;
     }
 
@@ -117,9 +142,19 @@ export class Pathfinder {
         const neighborIdx = neighbor.y * width + neighbor.x;
 
         if (closedSet[neighborIdx]) continue;
-        if (!map.isPassable(neighbor.x, neighbor.y)) continue;
+        if (!Pathfinder.isPassableFor(map, neighbor.x, neighbor.y, unitKind)) continue;
 
-        const tentativeG = gScore[currentIdx] + 1;
+        // Terrain traversal cost: speedMultiplier gives 0.5-1.0 for difficult terrain.
+        // Cost = 1 / speedMultiplier, so slower terrain costs more.
+        const speedMult = map.speedMultiplier(neighbor.x, neighbor.y);
+        const terrainCost = 1.0 / Math.max(speedMult, 0.1);
+
+        // Diagonal moves cost slightly more (sqrt(2) factor)
+        const dx = neighbor.x - currentX;
+        const dy = neighbor.y - currentY;
+        const moveCost = (dx !== 0 && dy !== 0) ? Math.SQRT2 : 1.0;
+
+        const tentativeG = gScore[currentIdx] + terrainCost * moveCost;
 
         const inOpenSet = openSet.includes(neighborIdx);
         if (!inOpenSet || tentativeG < gScore[neighborIdx]) {
@@ -135,6 +170,37 @@ export class Pathfinder {
     }
 
     return undefined; // No path found
+  }
+
+  /**
+   * Check if a tile is passable for a given unit kind.
+   * Geologists/miners can traverse mountains; other units cannot.
+   */
+  static isPassableFor(map: GameMap, x: number, y: number, unitKind: UnitKind | null): boolean {
+    const tile = map.get(x, y);
+    if (!tile) return false;
+
+    // Mountains are impassable for most units, but traversable for specialists
+    if (tile.terrain === Terrain.Mountain) {
+      if (unitKind === null) return false;
+      return MOUNTAIN_TRAVERSABLE_UNITS.has(unitKind);
+    }
+
+    // Snow is impassable for standard units
+    if (tile.terrain === Terrain.Snow) {
+      if (unitKind === null) return false;
+      return MOUNTAIN_TRAVERSABLE_UNITS.has(unitKind);
+    }
+
+    // Water and DeepWater are impassable for ground units
+    return tile.terrain !== Terrain.Water && tile.terrain !== Terrain.DeepWater;
+  }
+
+  /**
+   * Check if a tile is passable for standard units (backward-compatible).
+   */
+  static isPassable(map: GameMap, x: number, y: number): boolean {
+    return Pathfinder.isPassableFor(map, x, y, null);
   }
 
   private static heuristic(a: PathPoint, b: PathPoint): number {

@@ -167,8 +167,7 @@ describe('Terrain cost integration - Pathfinder uses Map.speedMultiplier()', () 
   });
 
   test('pathfinder prefers grass over desert/swamp when choosing routes', () => {
-    // This test will validate the integration of speedMultiplier once implemented
-    // Currently Pathfinder uses cost of 1 for all tiles
+    // This test validates the integration of speedMultiplier
     const map = makeOpenMap(10, 10);
 
     // Create two equal-length parallel paths:
@@ -185,8 +184,7 @@ describe('Terrain cost integration - Pathfinder uses Map.speedMultiplier()', () 
     const path = Pathfinder.findPath(map, { x: 0, y: 0 }, { x: 9, y: 0 });
     expect(path).toBeDefined();
 
-    // For now, just verify that desert tiles aren't used when grass is available
-    // (this is implicitly true due to path length - both paths have same tile count)
+    // Verify that desert tiles aren't used when grass is available
     const tiles = path!.getTiles();
     // All tiles should be on y=0 (grass), not y=9 (desert)
     expect(tiles.every(t => t.y === 0)).toBe(true);
@@ -224,18 +222,50 @@ describe('Terrain traversal costs - Desert', () => {
 
   test('pathfinder finds route through desert when necessary', () => {
     const map = makeOpenMap(5, 5);
-    // Block the direct route, force path through desert
+    // Block all routes except through desert
+    // Mountains block the direct y=2 route and the y=0 route
     map.setTerrain(1, 2, Terrain.Mountain);
     map.setTerrain(2, 2, Terrain.Mountain);
     map.setTerrain(3, 2, Terrain.Mountain);
+    map.setTerrain(2, 0, Terrain.Mountain);
+    // Also block y=3 and y=4 to force path through desert at (2,1)
+    map.setTerrain(2, 3, Terrain.Mountain);
+    map.setTerrain(2, 4, Terrain.Mountain);
 
-    // Desert provides an alternate path
+    // Desert provides the only alternate path
     map.setTerrain(2, 1, Terrain.Desert);
 
     const path = Pathfinder.findPath(map, { x: 0, y: 2 }, { x: 4, y: 2 });
     expect(path).toBeDefined();
-    // Path should go through desert
+    // Path should go through desert at (2,1) since it's the only route
     const tiles = path!.getTiles();
     expect(tiles.some(t => t.x === 2 && t.y === 1)).toBe(true);
+  });
+
+  test('pathfinder prefers grass over desert when both are available', () => {
+    // With terrain costs, the pathfinder should prefer grass (cost 1.0)
+    // over desert (cost 1/0.7 ≈ 1.43) when both routes are available
+    const map = makeOpenMap(7, 7);
+
+    // Block the direct route at y=3 with mountains
+    map.setTerrain(1, 3, Terrain.Mountain);
+    map.setTerrain(2, 3, Terrain.Mountain);
+    map.setTerrain(3, 3, Terrain.Mountain);
+    map.setTerrain(4, 3, Terrain.Mountain);
+    map.setTerrain(5, 3, Terrain.Mountain);
+
+    // Desert at y=2 provides a route
+    map.setTerrain(3, 2, Terrain.Desert);
+
+    // Grass at y=4 provides an alternative route
+    // (y=4 is grass, no terrain change needed)
+
+    const path = Pathfinder.findPath(map, { x: 0, y: 3 }, { x: 6, y: 3 });
+    expect(path).toBeDefined();
+
+    // Path should prefer the grass route (y=4) over the desert route (y=2)
+    const tiles = path!.getTiles();
+    // Should NOT go through the desert tile
+    expect(tiles.some(t => t.x === 3 && t.y === 2)).toBe(false);
   });
 });
