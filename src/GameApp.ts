@@ -120,9 +120,9 @@ export class GameApp {
     this.map = new GameMap(MAP_WIDTH, MAP_HEIGHT, mapKind);
     this.gameLoop = new GameLoop(this.map);
 
-    // In tutorial mode, pre-place the enemy outpost + lone guard so they are
-    // visible from the start (the combat step references these entities).
+    // In tutorial mode, set up player starting conditions + enemy outpost.
     if (this.mode === 'tutorial') {
+      this.map.setupTutorialPlayer(this.gameLoop.economy, this.gameLoop.unitManager);
       this.map.spawnTutorialEnemies(this.gameLoop.economy, this.gameLoop.unitManager);
     }
 

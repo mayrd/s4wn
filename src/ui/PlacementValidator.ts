@@ -30,7 +30,7 @@ export class PlacementValidator {
     if (this.economy.buildings.some((b: any) => b.x === x && b.y === y)) return false;
 
     // 4. Resource Check (Cannot place on top of fixed resources)
-    if (tile.resource && tile.resource !== 'None') return false;
+    if (tile.resource !== null) return false;
 
     return true;
   }

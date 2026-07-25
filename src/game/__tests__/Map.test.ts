@@ -6,6 +6,10 @@
 
 import { Map } from '../Map';
 import { Terrain } from '../types';
+import { ResourceType } from '../../economy/types';
+import { UnitKind } from '../types';
+import { UnitManager } from '../UnitManager';
+import { Economy } from '../Economy';
 
 describe('Map', () => {
   test('map creation has correct dimensions', () => {
@@ -57,5 +61,39 @@ describe('Map', () => {
         expect(map.getVisibility(x, y)).toBe(1.0);
       }
     }
+  });
+
+  test('tutorial map spawns player settlers and initializes resources', () => {
+    const map = new Map(100, 100, 'tutorial');
+    const unitManager = new UnitManager();
+    const economy = new Economy();
+
+    map.setupTutorialPlayer(economy, unitManager);
+
+    // Verify resources were initialized
+    expect(economy.getResource(ResourceType.Wood)).toBe(50);
+    expect(economy.getResource(ResourceType.Stone)).toBe(30);
+    expect(economy.getResource(ResourceType.Grain)).toBe(20);
+    expect(economy.getResource(ResourceType.Fish)).toBe(10);
+
+    // Verify settlers were spawned
+    expect(unitManager.units.length).toBe(3);
+    expect(unitManager.units[0].kind).toBe(UnitKind.Settler);
+  });
+
+  test('setupTutorialPlayer claims territory around center', () => {
+    const map = new Map(100, 100, 'tutorial');
+    const unitManager = new UnitManager();
+    const economy = new Economy();
+
+    map.setupTutorialPlayer(economy, unitManager);
+
+    // Center tiles should be claimed by player (nation 1)
+    const centerTile = map.get(50, 50)!;
+    expect(centerTile.territory).toBe(1);
+
+    // Tiles far from center should remain neutral
+    const farTile = map.get(90, 90)!;
+    expect(farTile.territory).toBe(0);
   });
 });

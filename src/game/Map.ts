@@ -4,8 +4,8 @@
  * Migrated from engine/src/map.rs terrain data.
  */
 
-import { Terrain, ResourceType } from './types';
-import { BuildingType } from '../economy/types';
+import { Terrain } from './types';
+import { BuildingType, ResourceType } from '../economy/types';
 import { UnitKind } from './types';
 import { Economy } from './Economy';
 import { UnitManager } from './UnitManager';
@@ -364,6 +364,45 @@ export class Map {
     const guard = new Unit(unitManager.nextUnitId++, UnitKind.Swordsman, ex - 1, ey - 1);
     unitManager.units.push(guard);
     return guard.id;
+  }
+
+   /**
+    * Initialize player starting conditions for the tutorial:
+    * - Claims territory around the starting castle position
+    * - Spawns initial settlers to work buildings
+    * - Adds starting resource stock for building construction
+    */
+   setupTutorialPlayer(economy: Economy, unitManager: UnitManager): void {
+    const cx = Math.floor(this.width / 2);
+    const cy = Math.floor(this.height / 2);
+    // Claim player territory around the starting castle (without wiping enemy territory)
+    const r = 15;
+    const startX = Math.max(0, Math.floor(cx - r));
+    const endX = Math.min(this.width - 1, Math.ceil(cx + r));
+    const startY = Math.max(0, Math.floor(cy - r));
+    const endY = Math.min(this.height - 1, Math.ceil(cy + r));
+    for (let y = startY; y <= endY; y++) {
+      for (let x = startX; x <= endX; x++) {
+        const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+        if (dist <= r) {
+          if (this.tiles[y][x].territory === 0) {
+            this.tiles[y][x].territory = 1;
+          }
+        }
+      }
+    }
+
+    // Initialize starting resources (more than default for tutorial)
+    economy.resources[ResourceType.Wood] = 50;
+    economy.resources[ResourceType.Stone] = 30;
+    economy.resources[ResourceType.Grain] = 20;
+    economy.resources[ResourceType.Fish] = 10;
+
+    // Spawn 3 initial settlers at the castle location for the tutorial
+    for (let i = 0; i < 3; i++) {
+      const settler = new Unit(unitManager.nextUnitId++, UnitKind.Settler, cx + (i % 2), cy + Math.floor(i / 2));
+      unitManager.units.push(settler);
+    }
   }
 
   /* ── Save / Load ─────────────────────────────────────────── */
