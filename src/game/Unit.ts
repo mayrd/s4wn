@@ -75,6 +75,7 @@ export class Unit {
   hp: number;
   state: UnitState;
   stance: UnitStance;
+  ownerId: number = 0;
   path: Path | null = null;
   targetX: number | null = null;
   targetY: number | null = null;
