@@ -720,8 +720,16 @@ export class GameApp {
           const u = this.gameLoop.unitManager.units.find((u: any) => u.id === meta.id);
           if (u) {
             const stateName = UnitState[u.state] ?? 'Unknown';
-            let html = `<strong>${UnitKind[u.kind] ?? 'Unit'}</strong><br>`;
+            const kindName = UnitKind[u.kind] ?? 'Unit';
+            let html = `<strong>${kindName}</strong><br>`;
             html += `<span style="opacity:0.85">#${u.id} · ${stateName}</span>`;
+            if (u.ownerId !== undefined) {
+              html += `<br><span style="opacity:0.8;">Owner: Player ${u.ownerId}</span>`;
+            }
+            if (u.rank > 0) {
+              html += `<br><span style="opacity:0.8;">Rank: ${u.rank}</span>`;
+            }
+            html += `<br><span style="opacity:0.8;">HP: ${u.hp.toFixed(0)} / ${u.getMaxHp?.() ?? u.hp}</span>`;
             if (u.carrying) {
               html += `<br><span style="opacity:0.75;">Carrying: ${u.carrying.amount}x ${resourceName(u.carrying.resource)}</span>`;
             }
