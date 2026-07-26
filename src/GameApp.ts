@@ -196,18 +196,6 @@ export class GameApp {
     this.onExplorerToggle = () => this.ui.objectExplorer.toggle();
     window.addEventListener('ui-explorer-toggle', this.onExplorerToggle);
 
-    // Listen for building-placed events from BuildingPlacement UI
-    window.addEventListener('building-placed', ((e: CustomEvent) => {
-      const { kind, x, y } = e.detail;
-      if (this.buildingRenderer) {
-        const kindName = BuildingType[kind] || 'castle';
-        this.buildingRenderer.createBuilding(kindName, x, y, 2, 2, 2).then(mesh => {
-          if (mesh && this.shadowPipeline) {
-            this.shadowPipeline.addShadowCaster(mesh);
-          }
-        });
-      }
-    }) as EventListener);
   }
 
   private async initRendering(): Promise<void> {
@@ -613,6 +601,18 @@ export class GameApp {
         this.map,
       );
     }
+
+    // Create the final building mesh immediately for hover/click/selection
+    if (this.buildingRenderer) {
+      const kindName = BuildingType[detail.kind] || 'castle';
+      this.buildingRenderer.createBuilding(kindName, detail.x, detail.y, 2, 2, 2, null, this.playerNation).then((mesh: any) => {
+        if (mesh) {
+          this.shadowPipeline?.addShadowCaster(mesh);
+          this.buildingMeshes.set(detail.building.index, mesh);
+          try { mesh.metadata = { entityType: 'building', entityId: detail.building.index }; } catch {}
+        }
+      });
+    }
   }
 
   private initLoop(): void {
@@ -766,16 +766,28 @@ export class GameApp {
 
   private meshEntityMeta(mesh: any): { type: 'building' | 'unit'; id: number } | null {
     const m = mesh as any;
-    if (m.metadata && m.metadata.entityType === 'building' && typeof m.metadata.entityId === 'number') {
-      return { type: 'building', id: m.metadata.entityId };
+    if (m.metadata && typeof m.metadata.entityId === 'number') {
+      if (m.metadata.entityType === 'building') {
+        return { type: 'building', id: m.metadata.entityId };
+      }
+      if (m.metadata.entityType === 'unit') {
+        return { type: 'unit', id: m.metadata.entityId };
+      }
     }
-    // Walk up to parents for root transform
-    let root = m;
-    while (root && root.parent) root = root.parent;
-    if (root && root.metadata && root.metadata.entityType === 'unit' && typeof root.metadata.entityId === 'number') {
-      return { type: 'unit', id: root.metadata.entityId };
+    // Walk up parents to find metadata (OBJ/GLB imports often hit child meshes)
+    let current: any = m;
+    while (current) {
+      if (current.metadata && typeof current.metadata.entityId === 'number') {
+        if (current.metadata.entityType === 'building') {
+          return { type: 'building', id: current.metadata.entityId };
+        }
+        if (current.metadata.entityType === 'unit') {
+          return { type: 'unit', id: current.metadata.entityId };
+        }
+      }
+      current = current.parent;
     }
-    // Fallback: parse name
+    // Fallback: parse common naming conventions
     if (m.id) {
       const bMatch = m.id.match(/building-(\d+)/);
       if (bMatch) return { type: 'building', id: parseInt(bMatch[1], 10) };
