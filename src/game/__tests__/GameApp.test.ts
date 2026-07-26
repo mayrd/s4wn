@@ -144,6 +144,7 @@ jest.mock('../../ui/InGameMenu', () => ({
     setSupplyChainRenderer: jest.fn(),
     setMaritimeTradeRenderer: jest.fn(),
     setTutorialManager: jest.fn(),
+    setEntityDetailCallbacks: jest.fn(),
     dispose: jest.fn(),
   })),
 }));
@@ -334,6 +335,13 @@ describe('GameApp Initialization', () => {
   it('should dispatch building-placed event and trigger construction animation', async () => {
     const app = new GameApp('renderCanvas');
     await app.readyPromise;
+
+    // Provide the detail panel callbacks the InGameMenu now expects
+    app.inGameMenu.setEntityDetailCallbacks(
+      () => {},
+      () => {},
+      () => {}
+    );
 
     // Dispatch a building-placed event as if the user placed a building via UI
     const building = { index: 99, kind: 0, x: 51, y: 51, constructionProgress: 0, isActive: false };

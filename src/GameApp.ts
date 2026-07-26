@@ -370,6 +370,13 @@ export class GameApp {
     new HUD(this.gameLoop);
     this.inGameMenu = new InGameMenu(this.gameLoop, this.scene, this.playerNation, this.buildingPlacement);
 
+    // Wire in-game menu detail panel callbacks (after inGameMenu exists)
+    this.inGameMenu.setEntityDetailCallbacks(
+      (idx) => { this.detailPanel.onTogglePause?.(idx); },
+      (idx) => { this.detailPanel.onDestroy?.(idx); },
+      (buildingIdx, unitId) => { this.detailPanel.onUngarrison?.(buildingIdx, unitId); }
+    );
+
     if (this.mode === 'tutorial') {
       const dialog = new TutorialDialog();
       this.tutorialManager = new TutorialManager(this, this.ui, dialog);
@@ -724,7 +731,7 @@ export class GameApp {
 
       const pick = this.scene.pick(evt.clientX, evt.clientY);
       if (!pick || !pick.hit || !pick.pickedMesh) {
-        this.detailPanel.select(null);
+        this.inGameMenu.selectEntity(null);
         return;
       }
 
@@ -732,12 +739,12 @@ export class GameApp {
       const meta = this.meshEntityMeta(mesh);
       if (meta) {
         if (meta.type === 'building') {
-          this.detailPanel.select({ type: 'building', index: meta.id });
+          this.inGameMenu.selectEntity({ type: 'building', index: meta.id });
         } else if (meta.type === 'unit') {
-          this.detailPanel.select({ type: 'unit', id: meta.id });
+          this.inGameMenu.selectEntity({ type: 'unit', id: meta.id });
         }
       } else {
-        this.detailPanel.select(null);
+        this.inGameMenu.selectEntity(null);
       }
     });
   }

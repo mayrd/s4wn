@@ -162,17 +162,24 @@ export class UIManager {
 
   private createMainMenu(): void {
     this.mainMenu = document.createElement('div');
-    this.mainMenu.className = 'ui-screen main-menu-screen game-menu-container';
+    this.mainMenu.className = 'ui-screen main-menu-screen';
     this.mainMenu.innerHTML = `
-      <div class="main-menu-left">
-        <div class="main-menu-container">
-          <img class="menu-logo" src="/images/logo-1024.png" alt="S4WN" />
-          <button class="menu-button" id="btn-tutorial">Start Tutorial</button>
-          <button class="menu-button" id="btn-new-game">Start New Game</button>
-          <button class="menu-button" id="btn-load-game">Load Game</button>
-          <button class="menu-button secondary" id="btn-explorer">Object Explorer</button>
-          <button class="menu-button secondary" id="btn-editor">Map Editor</button>
-          <button class="menu-button secondary" id="btn-multiplayer">Multiplayer</button>
+      <div class="anno-build-bar main-menu-build-bar">
+        <div class="build-bar-header">
+          <div class="build-bar-tabs">
+            <button class="build-bar-tab-btn active" data-main-tab="main">🏠 Main Menu</button>
+          </div>
+        </div>
+        <div class="build-bar-content">
+          <div style="display: flex; flex-direction: column; gap: 12px; align-items: center; padding: 20px 0;">
+            <img class="menu-logo" src="/images/logo-1024.png" alt="S4WN" />
+            <button class="menu-button" id="btn-tutorial">Start Tutorial</button>
+            <button class="menu-button" id="btn-new-game">Start New Game</button>
+            <button class="menu-button" id="btn-load-game">Load Game</button>
+            <button class="menu-button secondary" id="btn-explorer">Object Explorer</button>
+            <button class="menu-button secondary" id="btn-editor">Map Editor</button>
+            <button class="menu-button secondary" id="btn-multiplayer">Multiplayer</button>
+          </div>
         </div>
       </div>
     `;
@@ -218,10 +225,10 @@ export class UIManager {
 
   private createNationSelection(): void {
     this.nationSelection = document.createElement('div');
-    this.nationSelection.className = 'ui-screen main-menu-screen game-menu-container';
+    this.nationSelection.className = 'ui-screen main-menu-screen';
     
     // Import manually or we can hardcode for UI script simplicity
-    // However, it's better to construct HTML directly since UIManager avoids heavy imports.
+    // However, it is better to construct HTML directly since UIManager avoids heavy imports.
     const nations = [
       { id: 0, name: "Romans", emoji: "🏛️" },
       { id: 1, name: "Vikings", emoji: "⚔️" },
@@ -236,13 +243,20 @@ export class UIManager {
     }
 
     this.nationSelection.innerHTML = `
-      <div class="main-menu-left">
-        <div class="main-menu-container">
-          <h2 class="menu-title">Select Your Nation</h2>
-          <div style="display:flex; flex-direction:column; gap:10px;">
-            ${nationButtons}
+      <div class="anno-build-bar main-menu-build-bar">
+        <div class="build-bar-header">
+          <div class="build-bar-tabs">
+            <button class="build-bar-tab-btn active" data-main-tab="nation">🏛️ Choose Nation</button>
           </div>
-          <button class="menu-button secondary" id="btn-nation-back" style="margin-top:20px;">Back</button>
+        </div>
+        <div class="build-bar-content">
+          <div style="display: flex; flex-direction: column; gap: 12px; align-items: center; padding: 20px 0;">
+            <h2 class="menu-title" style="font-size: 2rem; margin-bottom: 10px;">Select Your Nation</h2>
+            <div style="display:flex; flex-direction:column; gap:10px; width: 100%; max-width: 260px;">
+              ${nationButtons}
+            </div>
+            <button class="menu-button secondary" id="btn-nation-back" style="margin-top: 20px;">Back</button>
+          </div>
         </div>
       </div>
     `;

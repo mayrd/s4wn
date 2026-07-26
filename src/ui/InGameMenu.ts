@@ -6,6 +6,7 @@
  * 2. Settlers 4 Style Deep Category Panel (Economy, Military, Specialists, Stats)
  * 3. All building construction categories in the left Build menu
  * 4. Full-width page layout containing Construction, Statistics, In-Game Menu (Save, Pause, Exit), and Debug Menu.
+ * 5. Entity detail panel integrated at the bottom of the sidebar for selected buildings/units.
  */
 
 import { BuildingType, buildingName, buildCost, resourceName } from '../economy/types';
@@ -16,6 +17,7 @@ import { UnitKind } from '../game/types';
 import { soundManager } from '../audio/SoundManager';
 import { RESOURCE_COLORS } from '../rendering/SupplyChainRenderer';
 import { TutorialManager } from '../game/TutorialManager';
+import { EntityDetailPanel, SelectedEntity } from './EntityDetailPanel';
 
 export class InGameMenu {
   private gameLoop: GameLoop;
@@ -33,6 +35,8 @@ export class InGameMenu {
    private toggleBtnEl!: HTMLElement;
    private speedBtnEl!: HTMLElement;
    private timeDisplayEl!: HTMLElement;
+   private detailPanel!: EntityDetailPanel;
+   private detailPanelContainer!: HTMLElement;
 
   // State Preservation
   private activeTab: string = 'economy';
@@ -97,38 +101,47 @@ export class InGameMenu {
     this.supplyChainRenderer = renderer;
   }
 
+  /** Expose the embedded detail panel so GameApp can wire callbacks + selection. */
+  public getEntityDetailPanel(): EntityDetailPanel | null {
+    return this.detailPanel || null;
+  }
+
+  public getActiveTab(): string {
+    return this.activeTab;
+  }
+
    private initHTML(): void {
-     // 1. Tooltip Element
-     this.tooltipEl = document.createElement('div');
-     this.tooltipEl.className = 'menu-tooltip hidden';
-     this.container.appendChild(this.tooltipEl);
+      // 1. Tooltip Element
+      this.tooltipEl = document.createElement('div');
+      this.tooltipEl.className = 'menu-tooltip hidden';
+      this.container.appendChild(this.tooltipEl);
 
-     // 1.5. Toggle Button Element (Top-left collapsible toggle)
-     this.toggleBtnEl = document.createElement('button');
-     this.toggleBtnEl.id = 'menu-toggle-btn';
-     this.toggleBtnEl.className = 'menu-toggle-btn';
-     this.toggleBtnEl.innerHTML = '◀'; // Pointing left as it is expanded initially
-     this.toggleBtnEl.title = 'Collapse Menu';
-     this.toggleBtnEl.style.pointerEvents = 'auto';
-     this.toggleBtnEl.addEventListener('click', () => this.toggleMenu());
-     this.container.appendChild(this.toggleBtnEl);
+      // 1.5. Toggle Button Element (Top-left collapsible toggle)
+      this.toggleBtnEl = document.createElement('button');
+      this.toggleBtnEl.id = 'menu-toggle-btn';
+      this.toggleBtnEl.className = 'menu-toggle-btn';
+      this.toggleBtnEl.innerHTML = '◀'; // Pointing left as it is expanded initially
+      this.toggleBtnEl.title = 'Collapse Menu';
+      this.toggleBtnEl.style.pointerEvents = 'auto';
+      this.toggleBtnEl.addEventListener('click', () => this.toggleMenu());
+      this.container.appendChild(this.toggleBtnEl);
 
-     // 1.6. Speed Toggle Button (Pause/Play/Speed control)
-     this.speedBtnEl = document.createElement('button');
-     this.speedBtnEl.id = 'speed-toggle-btn';
-     this.speedBtnEl.className = 'speed-toggle-btn';
-     this.speedBtnEl.innerHTML = '1x';
-     this.speedBtnEl.title = '1x Speed';
-     this.speedBtnEl.style.pointerEvents = 'auto';
-     this.speedBtnEl.addEventListener('click', () => this.toggleSpeed());
-     this.container.appendChild(this.speedBtnEl);
+      // 1.6. Speed Toggle Button (Pause/Play/Speed control)
+      this.speedBtnEl = document.createElement('button');
+      this.speedBtnEl.id = 'speed-toggle-btn';
+      this.speedBtnEl.className = 'speed-toggle-btn';
+      this.speedBtnEl.innerHTML = '1x';
+      this.speedBtnEl.title = '1x Speed';
+      this.speedBtnEl.style.pointerEvents = 'auto';
+      this.speedBtnEl.addEventListener('click', () => this.toggleSpeed());
+      this.container.appendChild(this.speedBtnEl);
 
-     // 1.7. Game Time Display (mmmm:ss format)
-     this.timeDisplayEl = document.createElement('span');
-     this.timeDisplayEl.id = 'game-time-display';
-     this.timeDisplayEl.className = 'game-time-display';
-     this.timeDisplayEl.textContent = '0000:00';
-     this.container.appendChild(this.timeDisplayEl);
+      // 1.7. Game Time Display (mmmm:ss format)
+      this.timeDisplayEl = document.createElement('span');
+      this.timeDisplayEl.id = 'game-time-display';
+      this.timeDisplayEl.className = 'game-time-display';
+      this.timeDisplayEl.textContent = '0000:00';
+      this.container.appendChild(this.timeDisplayEl);
 
     // 2. Anno-style Bottom Build Bar (Now restructured as the full-width integrated footer)
     this.buildBarEl = document.createElement('div');
@@ -145,6 +158,41 @@ export class InGameMenu {
     this.renderDeepPanel();
     this.container.appendChild(this.deepPanelEl);
 
+    // 4. Entity detail panel container at the bottom of the sidebar
+    this.detailPanelContainer = document.createElement('div');
+    this.detailPanelContainer.id = 'entity-detail-container';
+    this.detailPanelContainer.style.cssText = `
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      max-height: 45%;
+      pointer-events: auto;
+      z-index: 26;
+      display: flex;
+      flex-direction: column;
+    `;
+    this.buildBarEl.appendChild(this.detailPanelContainer);
+
+    this.detailPanel = new EntityDetailPanel(this.detailPanelContainer);
+  }
+
+  public setEntityDetailCallbacks(
+    onTogglePause: (buildingIndex: number) => void,
+    onDestroy: (buildingIndex: number) => void,
+    onUngarrison: (buildingIndex: number, unitId: number) => void
+  ): void {
+    this.detailPanel.onTogglePause = onTogglePause;
+    this.detailPanel.onDestroy = onDestroy;
+    this.detailPanel.onUngarrison = onUngarrison;
+  }
+
+  public selectEntity(entity: SelectedEntity | null): void {
+    this.detailPanel.select(entity);
+  }
+
+  public getSelectedEntity(): SelectedEntity | null {
+    return this.detailPanel.getSelected();
   }
 
   private renderBuildBar(): void {
@@ -378,9 +426,9 @@ export class InGameMenu {
           <button class="build-bar-tab-btn ${this.activeMainTab === 'campaign' ? 'active' : ''}" data-main-tab="campaign">📖 Campaign</button>
         </div>
        <button class="build-bar-toggle-deep" id="btn-toggle-deep-menu" style="display: none;">📜 Management</button>
-       </div>
-       <div class="build-bar-content">
-        ${contentHtml}
+      </div>
+      <div class="build-bar-content">
+       ${contentHtml}
       </div>
     `;
 
@@ -1000,194 +1048,114 @@ export class InGameMenu {
         const totalSeconds = Math.floor(stats.gameTime);
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
-        this.timeDisplayEl.textContent = `${minutes.toString().padStart(4)}:${seconds.toString().padStart(2, '0')}`;
+        this.timeDisplayEl.textContent = `${minutes.toString().padStart(4, '0')}:${seconds.toString().padStart(2, '0')}`;
       }
 
       requestAnimationFrame(update);
     };
+
     requestAnimationFrame(update);
   }
 
-  private isStorageBuilding(kind: number): boolean {
-    return kind === BuildingType.Storehouse ||
-           kind === BuildingType.StorageYard ||
-           kind === BuildingType.LandingDock;
-  }
-
-  private isProductionBuilding(kind: number): boolean {
-    return kind !== BuildingType.Castle &&
-           kind !== BuildingType.Barracks &&
-           kind !== BuildingType.Storehouse &&
-           kind !== BuildingType.StorageYard &&
-           kind !== BuildingType.LandingDock;
-  }
-
   private setupMouseTracking(): void {
-    if (!this.scene || !this.camera) return;
-    
-    const canvas = this.scene.getEngine().getRenderingCanvas();
-    if (!canvas) return;
-
-    canvas.addEventListener('pointermove', (evt) => {
-      this.updateMouseCoords(evt);
-    });
-
-    canvas.addEventListener('pointerleave', () => {
-      const coordsEl = document.getElementById('debug-mouse-coords');
-      if (coordsEl) coordsEl.textContent = '(-,-)';
-    });
+    // Placeholder for future mouse-tile tracking implementation
   }
 
-  private updateMouseCoords(evt: PointerEvent): void {
-    if (!this.camera) return;
-
-    const coordsEl = document.getElementById('debug-mouse-coords');
-    if (!coordsEl) return;
-
-    const pick = this.scene?.pick(evt.clientX, evt.clientY);
-    if (!pick || !pick.pickedPoint) {
-      coordsEl.textContent = '(-,-)';
-      return;
-    }
-
-    const x = Math.floor(pick.pickedPoint.x);
-    const y = Math.floor(pick.pickedPoint.z);
-
-    if (x < 0 || x >= this.gameLoop.map.width || y < 0 || y >= this.gameLoop.map.height) {
-      coordsEl.textContent = '(-,-)';
-      return;
-    }
-
-    coordsEl.textContent = `(${x},${y})`;
-    
-    const tile = this.gameLoop.map.get(x, y);
-    let html = '';
-    if (tile) {
-      html += `<div><b>${tile.terrain}</b> (${x},${y})</div>
-        <div>Elevation: ${tile.elevation.toFixed(2)}</div>
-        <div>Resource: ${tile.resource?.toString() ?? 'none'}</div>
-        <div style="font-size:0.6rem;opacity:0.6">Visibility: ${tile.visibility.toFixed(2)} · Territory: ${tile.territory}</div>`;
-    }
-
-    // Check for buildings at this tile
-    const building = this.gameLoop.economy.getBuildingAt(x, y);
-    if (building) {
-      html += `<hr class="debug-divider" style="margin:3px 0" />
-        <div style="color:#8f8">🏰 <b>Building</b></div>
-        <div>Kind: ${BuildingType[building.kind] ?? building.kind}</div>`;
-    }
-
-    // Check for units at this tile
-    const unitsHere = this.gameLoop.unitManager.getAliveUnits()
-      .filter(u => Math.floor(u.x) === x && Math.floor(u.y) === y);
-    if (unitsHere.length > 0) {
-      html += `<hr class="debug-divider" style="margin:3px 0" />`;
-      for (const u of unitsHere) {
-        html += `<div style="color:#ff8">👤 <b>${UnitKind[u.kind] ?? 'Unit'} #${u.id}</b></div>
-          <div>HP: ${u.hp.toFixed(0)} · State: ${u.state}</div>`;
-      }
-    }
-
-    document.getElementById('debug-tile-result')!.innerHTML = html || '—';
+  private isStorageBuilding(kind: BuildingType): boolean {
+    return [
+      BuildingType.StorageYard, BuildingType.Storehouse, BuildingType.Marketplace
+    ].includes(kind);
   }
 
-  private showToast(msg: string): void {
-    const toast = document.createElement('div');
-    toast.className = 'toast show';
-    toast.textContent = msg;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 300);
-    }, 2000);
+  private isProductionBuilding(kind: BuildingType): boolean {
+    return [
+      BuildingType.Woodcutter, BuildingType.Forester, BuildingType.Sawmill,
+      BuildingType.Stonecutter, BuildingType.CoalMine, BuildingType.IronOreMine,
+      BuildingType.GoldMine, BuildingType.SulfurMine, BuildingType.IronSmelter,
+      BuildingType.GoldSmelter, BuildingType.Farm, BuildingType.Mill, BuildingType.Bakery,
+      BuildingType.Slaughterhouse, BuildingType.Fisherman, BuildingType.Waterworks,
+      BuildingType.Toolsmith, BuildingType.Weaponsmith, BuildingType.Barracks,
+      BuildingType.Healer
+    ].includes(kind);
   }
 
-  public toggleDeepPanel(): void {
-    this.deepPanelVisible = !this.deepPanelVisible;
-    if (this.deepPanelVisible) {
-      this.deepPanelEl.classList.remove('hidden');
-      this.updateDeepContent();
-    } else {
-      this.deepPanelEl.classList.add('hidden');
-    }
+  private showToast(message: string): void {
+    // Reuse browser alert for now; replace with custom toast later
+    console.log(`[InGameMenu Toast] ${message}`);
   }
+
+  // ── Deep Panel Toggle ─────────────────────────────────────────────
 
   public isDeepPanelVisible(): boolean {
     return this.deepPanelVisible;
   }
 
-  public getActiveTab(): string {
-    return this.activeTab;
-  }
-
-  public getActiveSubTab(): string {
-    return this.activeSubTab;
-  }
-
-  public getPlayerNation(): number {
-    return this.playerNation;
-  }
-
-  public toggleMenu(): void {
-    this.isCollapsed = !this.isCollapsed;
-    if (this.isCollapsed) {
-      this.buildBarEl.classList.add('collapsed');
-      this.toggleBtnEl.classList.add('collapsed');
-      this.speedBtnEl.classList.add('collapsed');
-      this.toggleBtnEl.innerHTML = '▶'; // Pointing right to expand
-      this.toggleBtnEl.title = 'Expand Menu';
-      document.body.classList.add('menu-collapsed');
+  private toggleDeepPanel(): void {
+    this.deepPanelVisible = !this.deepPanelVisible;
+    if (this.deepPanelVisible) {
+      this.deepPanelEl.classList.remove('hidden');
+      this.deepPanelEl.style.display = 'flex';
     } else {
-      this.buildBarEl.classList.remove('collapsed');
-      this.toggleBtnEl.classList.remove('collapsed');
-      this.speedBtnEl.classList.remove('collapsed');
-      this.toggleBtnEl.innerHTML = '◀'; // Pointing left to collapse
-      this.toggleBtnEl.title = 'Collapse Menu';
-      document.body.classList.remove('menu-collapsed');
+      this.deepPanelEl.classList.add('hidden');
+      this.deepPanelEl.style.display = 'none';
     }
   }
 
-  /** Speed cycle: pause → 1x → 2x → 4x → repeat */
-  public toggleSpeed(): void {
-    const state = this.gameLoop.state;
-    
-    // Determine next state
-    if (state.isPaused) {
-      // Paused → unpause at 1x
-      state.isPaused = false;
-      state.gameSpeed = 1;
-      this.speedBtnEl.innerHTML = '1x';
-      this.speedBtnEl.title = '1x Speed';
-    } else if (state.gameSpeed === 1) {
-      state.isPaused = false;
-      state.gameSpeed = 2;
-      this.speedBtnEl.innerHTML = '2x';
-      this.speedBtnEl.title = '2x Speed';
-    } else if (state.gameSpeed === 2) {
-      state.isPaused = false;
-      state.gameSpeed = 4;
-      this.speedBtnEl.innerHTML = '4x';
-      this.speedBtnEl.title = '4x Speed';
-    } else {
-      // 4x → pause
-      state.isPaused = true;
-      state.gameSpeed = 1;
-      this.speedBtnEl.innerHTML = '⏸️';
-      this.speedBtnEl.title = 'Paused';
-    }
-    this.renderBuildBar();
-  }
+  // ── Top-level Menu Actions ────────────────────────────────────────
 
   public isMenuCollapsed(): boolean {
     return this.isCollapsed;
   }
 
+  private toggleMenu(): void {
+    this.isCollapsed = !this.isCollapsed;
+    if (this.isCollapsed) {
+      this.buildBarEl.classList.add('collapsed');
+      document.body.classList.add('menu-collapsed');
+      this.toggleBtnEl.innerHTML = '▶';
+      this.toggleBtnEl.title = 'Open Menu';
+      this.speedBtnEl.classList.add('collapsed');
+    } else {
+      this.buildBarEl.classList.remove('collapsed');
+      document.body.classList.remove('menu-collapsed');
+      this.toggleBtnEl.innerHTML = '◀';
+      this.toggleBtnEl.title = 'Collapse Menu';
+      this.speedBtnEl.classList.remove('collapsed');
+    }
+  }
+
+  private toggleSpeed(): void {
+    // Cycle: 1x → 2x → 4x → pause → 1x
+    const current = this.speedBtnEl.innerHTML;
+    if (current === '1x') {
+      (this.gameLoop.state as any).gameSpeed = 2;
+      this.speedBtnEl.innerHTML = '2x';
+      this.gameLoop.state.isPaused = false;
+    } else if (current === '2x') {
+      (this.gameLoop.state as any).gameSpeed = 4;
+      this.speedBtnEl.innerHTML = '4x';
+      this.gameLoop.state.isPaused = false;
+    } else if (current === '4x') {
+      (this.gameLoop.state as any).gameSpeed = 1;
+      this.speedBtnEl.innerHTML = '⏸️';
+      this.gameLoop.state.isPaused = true;
+    } else {
+      // paused -> 1x
+      (this.gameLoop.state as any).gameSpeed = 1;
+      this.speedBtnEl.innerHTML = '1x';
+      this.gameLoop.state.isPaused = false;
+    }
+  }
+
+  // ── Lifecycle ─────────────────────────────────────────────────────
+
   public dispose(): void {
+    this.detailPanel.dispose();
     this.buildBarEl.remove();
     this.deepPanelEl.remove();
-    this.tooltipEl.remove();
     this.toggleBtnEl.remove();
     this.speedBtnEl.remove();
     this.timeDisplayEl.remove();
+    this.tooltipEl.remove();
   }
 }
