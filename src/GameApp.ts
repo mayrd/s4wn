@@ -368,7 +368,7 @@ export class GameApp {
   private initUI(): void {
     this.gameLoop.state.isPaused = false;
     new HUD(this.gameLoop);
-    this.inGameMenu = new InGameMenu(this.gameLoop, this.scene, this.playerNation, this.buildingPlacement);
+    this.inGameMenu = new InGameMenu(this.gameLoop, this.scene, this.buildingPlacement);
 
     // Wire in-game menu detail panel callbacks (after inGameMenu exists)
     this.inGameMenu.setEntityDetailCallbacks(

@@ -11,7 +11,7 @@
 
 import { BuildingType, buildingName, buildCost, resourceName } from '../economy/types';
 import { GameLoop } from '../game/GameLoop';
-import { Scene, ArcRotateCamera, Color3 } from '@babylonjs/core';
+import { Scene, Color3 } from '@babylonjs/core';
 import { BuildingPlacement, getBuildingCategories } from './BuildingPlacement';
 import { UnitKind } from '../game/types';
 import { soundManager } from '../audio/SoundManager';
@@ -22,7 +22,6 @@ import { EntityDetailPanel, SelectedEntity } from './EntityDetailPanel';
 export class InGameMenu {
   private gameLoop: GameLoop;
   private scene: Scene | null;
-  private playerNation: number;
   private buildingPlacement: BuildingPlacement | null;
   private container: HTMLElement;
   /** Optional TutorialManager, set when the game runs in tutorial mode. */
@@ -56,9 +55,6 @@ export class InGameMenu {
   private supplyChainRenderer: any = null;
   private maritimeTradeRenderer: any = null;
   
-  // Camera for mouse tracking
-  private camera: ArcRotateCamera | null = null;
-  
   // Texture state for toggle
   private originalTextures: WeakMap<any, any> = new WeakMap();
   private originalEmissive: WeakMap<any, any> = new WeakMap();
@@ -66,12 +62,10 @@ export class InGameMenu {
   constructor(
     gameLoop: GameLoop,
     scene: Scene | null = null,
-    playerNation: number = 0,
     buildingPlacement: BuildingPlacement | null = null
   ) {
     this.gameLoop = gameLoop;
     this.scene = scene;
-    this.playerNation = playerNation;
     this.buildingPlacement = buildingPlacement;
     
     this.container = document.getElementById('ui-overlay') || document.body;
@@ -988,7 +982,6 @@ export class InGameMenu {
   private startUpdateLoop(): void {
     // Initialize camera for mouse tracking
     if (this.scene) {
-      this.camera = this.scene.activeCamera as ArcRotateCamera | null;
       this.setupMouseTracking();
     }
 

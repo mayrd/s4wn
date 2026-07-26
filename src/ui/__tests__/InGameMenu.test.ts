@@ -97,7 +97,7 @@ describe('InGameMenu', () => {
     scene = new MockScene();
     
     bp = new BuildingPlacement(gameLoop.economy, map, 0, canvas, scene as any);
-    menu = new InGameMenu(gameLoop, scene as any, 0, bp);
+    menu = new InGameMenu(gameLoop, scene as any, bp);
   });
 
   afterEach(() => {
@@ -152,7 +152,9 @@ describe('InGameMenu', () => {
   });
 
   it('should change active tab inside deep panel', () => {
-    menu.toggleDeepPanel();
+    // Open deep panel via the toggle button
+    const toggleBtn = document.getElementById('btn-toggle-deep-menu');
+    toggleBtn!.click();
 
     const militaryTabBtn = document.querySelector('.deep-tab-btn[data-tab="military"]') as HTMLElement;
     expect(militaryTabBtn).not.toBeNull();
