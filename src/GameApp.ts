@@ -29,7 +29,7 @@ import { GridRenderer } from './rendering/GridRenderer';
 import { HUD } from './ui/HUD';
 import { soundManager } from './audio/SoundManager';
 import { TouchCameraController } from './input/TouchCameraController';
-import { BuildingType } from './economy/types';
+import { BuildingType, buildingName, resourceName } from './economy/types';
 import { BuildingData } from './game/Economy';
 import { NationType } from './game/Nation';
 import { BuildingPlacement } from './ui/BuildingPlacement';
@@ -43,8 +43,10 @@ import { MaritimeTradeRenderer } from './rendering/MaritimeTradeRenderer';
 import { TutorialManager } from './game/TutorialManager';
 import { TutorialDialog } from './ui/TutorialDialog';
 import { Unit } from './game/Unit';
-import { UnitKind } from './game/types';
+import { UnitKind, UnitState } from './game/types';
 import { InGameMenu } from './ui/InGameMenu';
+import { EntityInfoTooltip } from './ui/EntityInfoTooltip';
+import { EntityDetailPanel } from './ui/EntityDetailPanel';
 
 export class GameApp {
   public engine!: Engine;
@@ -67,10 +69,13 @@ export class GameApp {
   public constructionAnimator!: ConstructionAnimator;
   public destructionAnimator!: DestructionAnimator;
   public buildingMeshes: Map<number, any> = new Map();
+  public unitMeshes: Map<number, any> = new Map();
   public ui!: UIManager;
   public buildingPlacement!: BuildingPlacement;
   public inGameMenu!: InGameMenu;
   public tutorialManager?: TutorialManager;
+  public tooltip!: EntityInfoTooltip;
+  public detailPanel!: EntityDetailPanel;
 
   private mode: StartMode;
   private playerNation: NationType = NationType.Romans;
@@ -138,6 +143,25 @@ export class GameApp {
     // UI manager (no engine dependency) used for save handling + splash screen.
     // ObjectExplorer is already created by UIManager in standalone mode.
     this.ui = new UIManager(this.gameLoop);
+    this.tooltip = new EntityInfoTooltip();
+    this.detailPanel = new EntityDetailPanel();
+    this.detailPanel.setGameApp(this);
+    this.detailPanel.onTogglePause = (idx) => {
+      const b = this.gameLoop.economy.getBuilding(idx);
+      if (b) {
+        b.isActive = !b.isActive;
+      }
+    };
+    this.detailPanel.onDestroy = (idx) => {
+      this.gameLoop.economy.damageBuilding(idx, this.gameLoop.economy.getBuilding(idx)?.hp || 9999);
+    };
+    this.detailPanel.onUngarrison = (buildingIdx, unitId) => {
+      this.gameLoop.economy.ungarrisonUnit(buildingIdx, unitId);
+      const unit = this.gameLoop.unitManager.units.find(u => u.id === unitId);
+      if (unit) {
+        unit.ungarrison();
+      }
+    };
 
      // Building placement UI — integrated with InGameMenu's Construction tab.
      // The scene is passed for ghost preview mesh creation on terrain.
@@ -317,6 +341,7 @@ export class GameApp {
         this.shadowPipeline.addShadowCaster(buildingMesh);
         if (buildingObj) {
           this.buildingMeshes.set(buildingObj.index, buildingMesh);
+          try { (buildingMesh as any).metadata = { entityType: 'building', entityId: buildingObj.index }; } catch {}
         }
       }
     }
@@ -584,6 +609,8 @@ export class GameApp {
     let supplyChainRefreshTimer = 0;
     const SUPPLY_CHAIN_REFRESH_INTERVAL = 5; // seconds
 
+    this.setupEntityPicking();
+
     this.engine.runRenderLoop(() => {
       const dt = this.engine.getDeltaTime() / 1000;
       this.gameLoop.update(dt);
@@ -601,6 +628,7 @@ export class GameApp {
       // Render and animate units
       if (this.unitRenderer) {
         this.unitRenderer.update(this.gameLoop.unitManager.units, dt);
+        this.syncUnitMeshMeta();
       }
       // Animate supply chain carrier dots
       if (this.supplyChainRenderer) {
@@ -637,11 +665,111 @@ export class GameApp {
     });
   }
 
+  private syncUnitMeshMeta(): void {
+    for (const [id, visual] of this.unitMeshes) {
+      const root = visual.root as any;
+      if (root && !root.metadata) {
+        try { root.metadata = { entityType: 'unit', entityId: id }; } catch {}
+      }
+    }
+  }
+
+  private setupEntityPicking(): void {
+    const canvas = this.scene.getEngine().getRenderingCanvas();
+    if (!canvas) return;
+
+    canvas.addEventListener('pointermove', (evt: PointerEvent) => {
+      if (this.buildingPlacement?.getSelectedBuilding() !== null) return;
+
+      const pick = this.scene.pick(evt.clientX, evt.clientY);
+      if (!pick || !pick.hit || !pick.pickedMesh) {
+        this.tooltip.hide();
+        return;
+      }
+
+      const mesh = pick.pickedMesh as any;
+      const meta = this.meshEntityMeta(mesh);
+      if (meta) {
+        if (meta.type === 'building') {
+          const b = this.gameLoop.economy.getBuilding(meta.id);
+          if (b) {
+            const status = b.constructionProgress < 1.0 ? 'Under Construction' : (b.isActive ? (b.destructionTimer !== null ? 'Destroying' : 'Producing') : 'Idle');
+            let html = `<strong>${buildingName(b.kind)}</strong><br>`;
+            html += `<span style="opacity:0.85">#${b.index} · ${status}</span>`;
+            if (b.constructionProgress >= 1.0) {
+              html += `<br><span style="opacity:0.75;">Input: ${b.inputBuffer.filter((v:number)=>v>0).map((v:number,i:number)=>`${resourceName(i)}:${v}`).join(', ') || '—'}</span>`;
+              html += `<br><span style="opacity:0.75;">Output: ${b.outputBuffer.filter((v:number)=>v>0).map((v:number,i:number)=>`${resourceName(i)}:${v}`).join(', ') || '—'}</span>`;
+            }
+            this.tooltip.show(html, evt.clientX, evt.clientY);
+          }
+        } else if (meta.type === 'unit') {
+          const u = this.gameLoop.unitManager.units.find((u: any) => u.id === meta.id);
+          if (u) {
+            const stateName = UnitState[u.state] ?? 'Unknown';
+            let html = `<strong>${UnitKind[u.kind] ?? 'Unit'}</strong><br>`;
+            html += `<span style="opacity:0.85">#${u.id} · ${stateName}</span>`;
+            if (u.carrying) {
+              html += `<br><span style="opacity:0.75;">Carrying: ${u.carrying.amount}x ${resourceName(u.carrying.resource)}</span>`;
+            }
+            this.tooltip.show(html, evt.clientX, evt.clientY);
+          }
+        }
+      } else {
+        this.tooltip.hide();
+      }
+    });
+
+    canvas.addEventListener('pointerdown', (evt: PointerEvent) => {
+      if (this.buildingPlacement?.getSelectedBuilding() !== null) return;
+
+      const pick = this.scene.pick(evt.clientX, evt.clientY);
+      if (!pick || !pick.hit || !pick.pickedMesh) {
+        this.detailPanel.select(null);
+        return;
+      }
+
+      const mesh = pick.pickedMesh as any;
+      const meta = this.meshEntityMeta(mesh);
+      if (meta) {
+        if (meta.type === 'building') {
+          this.detailPanel.select({ type: 'building', index: meta.id });
+        } else if (meta.type === 'unit') {
+          this.detailPanel.select({ type: 'unit', id: meta.id });
+        }
+      } else {
+        this.detailPanel.select(null);
+      }
+    });
+  }
+
+  private meshEntityMeta(mesh: any): { type: 'building' | 'unit'; id: number } | null {
+    const m = mesh as any;
+    if (m.metadata && m.metadata.entityType === 'building' && typeof m.metadata.entityId === 'number') {
+      return { type: 'building', id: m.metadata.entityId };
+    }
+    // Walk up to parents for root transform
+    let root = m;
+    while (root && root.parent) root = root.parent;
+    if (root && root.metadata && root.metadata.entityType === 'unit' && typeof root.metadata.entityId === 'number') {
+      return { type: 'unit', id: root.metadata.entityId };
+    }
+    // Fallback: parse name
+    if (m.id) {
+      const bMatch = m.id.match(/building-(\d+)/);
+      if (bMatch) return { type: 'building', id: parseInt(bMatch[1], 10) };
+      const uMatch = m.id.match(/unit-(?:mesh|root)-(\d+)/);
+      if (uMatch) return { type: 'unit', id: parseInt(uMatch[1], 10) };
+    }
+    return null;
+  }
+
   public dispose(): void {
     window.removeEventListener('ui-explorer-toggle', this.onExplorerToggle);
     window.removeEventListener('building-placed', this.boundBuildingPlaced);
     this.inGameMenu?.dispose();
     this.buildingPlacement?.dispose();
+    this.tooltip.dispose();
+    this.detailPanel.dispose();
     this.touchController.dispose?.();
     this.waterRenderer?.dispose?.();
     this.shadowPipeline.dispose?.();
@@ -657,6 +785,14 @@ export class GameApp {
       }
     }
     this.buildingMeshes.clear();
+
+    // Dispose all unit mesh records
+    for (const [, mesh] of this.unitMeshes) {
+      if (mesh?.mesh?.dispose) {
+        mesh.mesh.dispose();
+      }
+    }
+    this.unitMeshes.clear();
 
     if (this.gridRenderer) {
       this.gridRenderer.dispose();
