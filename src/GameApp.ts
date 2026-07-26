@@ -531,15 +531,22 @@ export class GameApp {
           isComplete: (app) => {
             const econ = app.gameLoop.economy;
             const barracks = econ.buildings.find(b => b.kind === BuildingType.Barracks);
-            if (barracks) {
-              if (barracks.constructionProgress < 1.0) {
-                barracks.constructionProgress = 1.0;
-                barracks.isActive = true;
-                const soldier = new Unit(app.gameLoop.unitManager.nextUnitId++, UnitKind.Swordsman, 50, 50);
-                app.gameLoop.unitManager.units.push(soldier);
+              if (barracks) {
+                if (barracks.constructionProgress < 1.0) {
+                  barracks.constructionProgress = 1.0;
+                  barracks.isActive = true;
+                  // Spawn the tutorial soldier NE of the castle, offset from the
+                  // building footprint so it doesn't collide with the castle.
+                  const soldier = new Unit(
+                    app.gameLoop.unitManager.nextUnitId++,
+                    UnitKind.Swordsman,
+                    barracks.x + 3,
+                    barracks.y - 1
+                  );
+                  app.gameLoop.unitManager.units.push(soldier);
+                }
+                return true;
               }
-              return true;
-            }
             return false;
           }
         },

@@ -398,9 +398,14 @@ export class Map {
     economy.resources[ResourceType.Grain] = 20;
     economy.resources[ResourceType.Fish] = 10;
 
-    // Spawn 3 initial settlers at the castle location for the tutorial
+    // Spawn 3 initial settlers NE of the castle (offset so they don't share
+    // the castle's 2×2 tile footprint).
+    const settlerSpawnX = cx + 2;
+    const settlerSpawnY = cy - 2;
     for (let i = 0; i < 3; i++) {
-      const settler = new Unit(unitManager.nextUnitId++, UnitKind.Settler, cx + (i % 2), cy + Math.floor(i / 2));
+      const sx = settlerSpawnX + (i % 2);
+      const sy = settlerSpawnY + Math.floor(i / 2);
+      const settler = new Unit(unitManager.nextUnitId++, UnitKind.Settler, sx, sy);
       unitManager.units.push(settler);
     }
   }
