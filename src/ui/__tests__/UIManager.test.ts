@@ -52,7 +52,7 @@ describe('UIManager', () => {
       dispatchedNation = detail.nation;
     }, { once: true });
     
-    const nationBtn = document.querySelector('.menu-button[data-nation="1"]') as HTMLButtonElement;
+    const nationBtn = document.querySelector('.menu-action-btn[data-nation="1"]') as HTMLButtonElement;
     expect(nationBtn).not.toBeNull();
     nationBtn.click();
     

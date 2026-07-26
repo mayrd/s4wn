@@ -171,14 +171,14 @@ export class UIManager {
           </div>
         </div>
         <div class="build-bar-content">
-          <div style="display: flex; flex-direction: column; gap: 12px; align-items: center; padding: 20px 0;">
+          <div class="menu-actions-row">
             <img class="menu-logo" src="/images/logo-1024.png" alt="S4WN" />
-            <button class="menu-button" id="btn-tutorial">Start Tutorial</button>
-            <button class="menu-button" id="btn-new-game">Start New Game</button>
-            <button class="menu-button" id="btn-load-game">Load Game</button>
-            <button class="menu-button secondary" id="btn-explorer">Object Explorer</button>
-            <button class="menu-button secondary" id="btn-editor">Map Editor</button>
-            <button class="menu-button secondary" id="btn-multiplayer">Multiplayer</button>
+            <button class="menu-action-btn" id="btn-tutorial">🎓 Start Tutorial</button>
+            <button class="menu-action-btn" id="btn-new-game">⚔️ Start New Game</button>
+            <button class="menu-action-btn" id="btn-load-game">📂 Load Game</button>
+            <button class="menu-action-btn" id="btn-explorer">🔍 Object Explorer</button>
+            <button class="menu-action-btn" id="btn-editor">🗺️ Map Editor</button>
+            <button class="menu-action-btn" id="btn-multiplayer">🌐 Multiplayer</button>
           </div>
         </div>
       </div>
@@ -239,7 +239,7 @@ export class UIManager {
 
     let nationButtons = '';
     for (const n of nations) {
-      nationButtons += `<button class="menu-button" data-nation="${n.id}">${n.emoji} ${n.name}</button>`;
+      nationButtons += `<button class="menu-action-btn" data-nation="${n.id}">${n.emoji} ${n.name}</button>`;
     }
 
     this.nationSelection.innerHTML = `
@@ -250,19 +250,19 @@ export class UIManager {
           </div>
         </div>
         <div class="build-bar-content">
-          <div style="display: flex; flex-direction: column; gap: 12px; align-items: center; padding: 20px 0;">
+          <div class="menu-actions-row">
             <h2 class="menu-title" style="font-size: 2rem; margin-bottom: 10px;">Select Your Nation</h2>
             <div style="display:flex; flex-direction:column; gap:10px; width: 100%; max-width: 260px;">
               ${nationButtons}
             </div>
-            <button class="menu-button secondary" id="btn-nation-back" style="margin-top: 20px;">Back</button>
+            <button class="menu-action-btn" id="btn-nation-back" style="margin-top: 20px;">⬅️ Back</button>
           </div>
         </div>
       </div>
     `;
     this.overlay.appendChild(this.nationSelection);
 
-    const buttons = this.nationSelection.querySelectorAll('.menu-button[data-nation]');
+    const buttons = this.nationSelection.querySelectorAll('.menu-action-btn[data-nation]');
     buttons.forEach(btn => {
       btn.addEventListener('click', (e) => {
         const nationStr = (e.currentTarget as HTMLElement).getAttribute('data-nation');
