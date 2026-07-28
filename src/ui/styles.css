@@ -1436,6 +1436,45 @@ body.menu-collapsed .speed-toggle-btn,
   color: var(--text-color);
 }
 
+/* Unit listing in Units tab */
+.unit-listing {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.unit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(93, 64, 55, 0.35);
+  border: 1px solid rgba(210, 180, 140, 0.35);
+  border-radius: 4px;
+}
+
+.unit-row .unit-icon {
+  font-size: 1.2rem;
+  width: 28px;
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.unit-row .unit-name {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--parchment-bg);
+}
+
+.unit-row .unit-count {
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: var(--accent-color);
+  min-width: 24px;
+  text-align: right;
+}
+
 .deep-stats-section {
   display: flex;
   flex-direction: column;

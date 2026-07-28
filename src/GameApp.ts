@@ -87,7 +87,8 @@ export class GameApp {
 
   constructor(canvasId: string, mode: StartMode = 'new', playerNation: NationType = NationType.Romans) {
     this.mode = mode;
-    this.playerNation = playerNation;
+    // Tutorial always uses Romans regardless of passed nation (Romans are the tutorial nation)
+    this.playerNation = mode === 'tutorial' ? NationType.Romans : playerNation;
 
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
     if (!canvas) {
@@ -129,6 +130,7 @@ export class GameApp {
     if (this.mode === 'tutorial') {
       this.map.setupTutorialPlayer(this.gameLoop.economy, this.gameLoop.unitManager);
       this.map.spawnTutorialEnemies(this.gameLoop.economy, this.gameLoop.unitManager);
+      console.log('📜 Tutorial mode: Player nation set to Romans');
     }
 
     // If a saved game was requested, restore it BEFORE building the renderer

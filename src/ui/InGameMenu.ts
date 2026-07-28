@@ -232,13 +232,49 @@ export class InGameMenu {
             </div>
           `;
     } else if (this.activeMainTab === 'units') {
+      const units = this.gameLoop.unitManager.getAliveUnits();
+      const workers = units.filter(u => u.kind === UnitKind.Worker);
+      const swordsmen = units.filter(u => u.kind === UnitKind.Swordsman);
+      const archers = units.filter(u => u.kind === UnitKind.Bowman);
+      const settlers = units.filter(u => u.kind === UnitKind.Settler);
+      const pioneers = units.filter(u => u.kind === UnitKind.Pioneer);
+
       contentHtml = `
         <div class="deep-specialists-section">
           <h3>👥 Civilian & Military Settlers</h3>
-          <div class="deep-specialist-actions">
+          <div class="unit-listing">
+            <div class="unit-row">
+              <span class="unit-icon">👷</span>
+              <span class="unit-name">Workers</span>
+              <span class="unit-count">${workers.length}</span>
+            </div>
+            <div class="unit-row">
+              <span class="unit-icon">⚔️</span>
+              <span class="unit-name">Swordsmen</span>
+              <span class="unit-count">${swordsmen.length}</span>
+            </div>
+            <div class="unit-row">
+              <span class="unit-icon">🏹</span>
+              <span class="unit-name">Archers</span>
+              <span class="unit-count">${archers.length}</span>
+            </div>
+            <div class="unit-row">
+              <span class="unit-icon">🚩</span>
+              <span class="unit-name">Settlers</span>
+              <span class="unit-count">${settlers.length}</span>
+            </div>
+            <div class="unit-row">
+              <span class="unit-icon">⛏️</span>
+              <span class="unit-name">Pioneers</span>
+              <span class="unit-count">${pioneers.length}</span>
+            </div>
+          </div>
+          <div class="deep-specialist-actions" style="margin-top: 10px;">
             <button class="spec-action-btn" id="btn-recruit-worker">👷 Recruit Worker</button>
             <button class="spec-action-btn" id="btn-recruit-swordsman">⚔️ Recruit Swordsman</button>
             <button class="spec-action-btn" id="btn-recruit-archer">🏹 Recruit Archer</button>
+            <button class="spec-action-btn" id="btn-recruit-settler">🚩 Recruit Settler</button>
+            <button class="spec-action-btn" id="btn-recruit-pioneer">⛏️ Recruit Pioneer</button>
           </div>
         </div>
       `;
@@ -458,6 +494,16 @@ export class InGameMenu {
       this.buildBarEl.querySelector('#btn-recruit-archer')?.addEventListener('click', () => {
         this.gameLoop.unitManager.spawnUnit(UnitKind.Bowman, 25, 25);
         this.showToast('Spawned 1 Archer!');
+        this.renderBuildBar();
+      });
+      this.buildBarEl.querySelector('#btn-recruit-settler')?.addEventListener('click', () => {
+        this.gameLoop.unitManager.spawnUnit(UnitKind.Settler, 25, 25);
+        this.showToast('Spawned 1 Settler!');
+        this.renderBuildBar();
+      });
+      this.buildBarEl.querySelector('#btn-recruit-pioneer')?.addEventListener('click', () => {
+        this.gameLoop.unitManager.spawnUnit(UnitKind.Pioneer, 25, 25);
+        this.showToast('Spawned 1 Pioneer!');
         this.renderBuildBar();
       });
     }
