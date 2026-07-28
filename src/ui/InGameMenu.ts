@@ -18,6 +18,7 @@ import { soundManager } from '../audio/SoundManager';
 import { RESOURCE_COLORS } from '../rendering/SupplyChainRenderer';
 import { TutorialManager } from '../game/TutorialManager';
 import { EntityDetailPanel, SelectedEntity } from './EntityDetailPanel';
+import { NationRegistry } from '../game/NationRegistry';
 
 export class InGameMenu {
   private gameLoop: GameLoop;
@@ -40,7 +41,7 @@ export class InGameMenu {
   // State Preservation
   private activeTab: string = 'economy';
   private activeSubTab: string = 'raw';
-  private activeMainTab: 'construction' | 'units' | 'specialists' | 'statistics' | 'ingamemenu' | 'settings' | 'debug' | 'tutorial' | 'campaign' = 'construction';
+    private activeMainTab: 'construction' | 'units' | 'specialists' | 'statistics' | 'ingamemenu' | 'settings' | 'debug' | 'campaign' = 'construction';
    private constructionSubTab: string = 'basic'; // Sub-tabs for building categories in Construction
    private deepPanelVisible: boolean = false;
    private selectedBuildingKind: BuildingType | null = null; // Track selected building for UI highlighting
@@ -399,48 +400,10 @@ export class InGameMenu {
           </div>
         </div>
       `;
-    } else if (this.activeMainTab === 'tutorial') {
-      contentHtml = `
-        <div class="deep-stats-section" style="gap: 12px;">
-          <h3>🎓 Tutorial Guidance</h3>
-          <p>Follow step-by-step instructions to master the game mechanics.</p>
-          <div class="stats-row" style="border: none;">
-            <span>Current Step:</span>
-            <span style="font-weight: bold; color: var(--accent-color);">Building Placement</span>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-            <button id="tutorial-skip-btn" class="deep-subtab-btn">⏭️ Skip Tutorial</button>
-            <button id="tutorial-reset-btn" class="deep-subtab-btn">🔄 Reset Tutorial</button>
-          </div>
-          <div style="margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; font-size: 0.8rem;">
-            Hint: Select buildings from the Construction tab to place them on flat terrain.
-          </div>
-        </div>
-      `;
-    } else if (this.activeMainTab === 'campaign') {
-      contentHtml = `
-        <div class="deep-stats-section" style="gap: 12px;">
-          <h3>📖 Campaign Missions</h3>
-          <div class="stats-row" style="border: none;">
-            <span>Story Log:</span>
-            <span style="font-weight: bold; color: var(--accent-color);">Mission 1 Active</span>
-          </div>
-          <div class="stats-row" style="border: none;">
-            <span>Primary Objective:</span>
-            <span style="font-size: 0.9rem;">Build 5 Woodcutters</span>
-          </div>
-          <div class="stats-row" style="border: none;">
-            <span>Secondary Objective:</span>
-            <span style="font-size: 0.9rem;">Upgrade to Barracks</span>
-          </div>
-          <div style="margin-top: 10px; font-size: 0.8rem; opacity: 0.8;">
-            <strong>Rewards:</strong><br>
-            - Unlock: Advanced Buildings<br>
-            - Bonus: +500 Gold
-          </div>
-        </div>
-      `;
-    }
+     } else if (this.activeMainTab === 'campaign') {
+       // Combined Campaign + Tutorial content
+       contentHtml = this.renderCampaignContent();
+     }
 
     this.buildBarEl.innerHTML = `
       <div class="build-bar-header">
@@ -452,8 +415,7 @@ export class InGameMenu {
           <button class="build-bar-tab-btn ${this.activeMainTab === 'ingamemenu' ? 'active' : ''}" data-main-tab="ingamemenu">⚙️ Game Menu</button>
           <button class="build-bar-tab-btn ${this.activeMainTab === 'settings' ? 'active' : ''}" data-main-tab="settings">🛠️ Settings</button>
           <button class="build-bar-tab-btn ${this.activeMainTab === 'debug' ? 'active' : ''}" data-main-tab="debug">🐞 Debug Menu</button>
-          <button class="build-bar-tab-btn ${this.activeMainTab === 'tutorial' ? 'active' : ''}" data-main-tab="tutorial">🎓 Tutorial</button>
-          <button class="build-bar-tab-btn ${this.activeMainTab === 'campaign' ? 'active' : ''}" data-main-tab="campaign">📖 Campaign</button>
+          <button class="build-bar-tab-btn ${this.activeMainTab === 'campaign' ? 'active' : ''}" data-main-tab="campaign">📜 Campaign</button>
         </div>
        <button class="build-bar-toggle-deep" id="btn-toggle-deep-menu" style="display: none;">📜 Management</button>
       </div>
@@ -677,8 +639,8 @@ export class InGameMenu {
       this.populateSupplyFilters();
     }
 
-    // Tutorial tab actions (skip / reset)
-    if (this.activeMainTab === 'tutorial') {
+    // Campaign / Tutorial actions (skip / reset)
+    if (this.activeMainTab === 'campaign') {
       const skipBtn = this.buildBarEl.querySelector('#tutorial-skip-btn') as HTMLButtonElement;
       const resetBtn = this.buildBarEl.querySelector('#tutorial-reset-btn') as HTMLButtonElement;
 
@@ -686,7 +648,6 @@ export class InGameMenu {
         if (this.tutorialManager) {
           this.tutorialManager.skip();
         } else {
-          // Fallback: dispatch so GameApp can handle if manager not directly held
           window.dispatchEvent(new CustomEvent('tutorial-skip'));
         }
       });
@@ -694,7 +655,7 @@ export class InGameMenu {
       resetBtn?.addEventListener('click', () => {
         if (this.tutorialManager) {
           this.tutorialManager.reset();
-          this.renderBuildBar(); // refresh step display
+          this.renderBuildBar();
         } else {
           window.dispatchEvent(new CustomEvent('tutorial-reset'));
         }
@@ -702,9 +663,108 @@ export class InGameMenu {
     }
   }
 
-  /** Provide the TutorialManager so the in-game Tutorial tab can drive it. */
+  /** Provide the TutorialManager so the in-game Campaign tab can drive tutorial actions. */
   setTutorialManager(manager: TutorialManager | null): void {
     this.tutorialManager = manager;
+  }
+
+  /** Render the combined Campaign + Tutorial content. */
+  private renderCampaignContent(): string {
+    const fallbackNation = { id: 'romans', name: 'Romans', displayName: { en: 'Romans' } };
+    const rawNation = this.gameLoop.nation?.getInfo?.();
+    const playerNation = (rawNation ?? fallbackNation) as any;
+    const playerNationName = playerNation.displayName?.en || playerNation.name || 'Romans';
+
+    // Collect opponent nations (all registered nations except the player's)
+    const allNations = NationRegistry.instance.list();
+    const playerNationId = (playerNation as any).id || fallbackNation.id;
+    const opponents = allNations.filter(n => n.info.id !== playerNationId);
+
+    // Campaign / tutorial state
+    const isTutorial = this.tutorialManager?.active ?? false;
+    const tutorialManager = this.tutorialManager;
+    const currentStep = isTutorial && tutorialManager ? tutorialManager.currentStepNumber : 0;
+    const totalSteps = isTutorial && tutorialManager ? tutorialManager.totalSteps : 0;
+    const currentStepId = tutorialManager?.currentStepId ?? null;
+
+    // Territory stats
+    const territoryCount = this.gameLoop.territoryManager.borderPosts.getPosts().length;
+
+    return `
+      <div class="deep-stats-section" style="gap: 12px;">
+        <h3>📜 Campaign Overview</h3>
+
+        <!-- Campaign Goal -->
+        <div class="stats-row" style="border: none;">
+          <span>Campaign Goal:</span>
+          <span style="font-weight: bold; color: var(--accent-color);">${isTutorial ? '🎓 Tutorial' : '🏆 Domination'}</span>
+        </div>
+
+        <!-- Current Progress / Tutorial Step -->
+        ${isTutorial ? `
+        <div class="stats-row" style="border: none;">
+          <span>Tutorial Step:</span>
+          <span style="font-size: 0.9rem;">${currentStep} / ${totalSteps}</span>
+        </div>
+        <div class="stats-row" style="border: none;">
+          <span>Current Task:</span>
+          <span style="font-size: 0.85rem; color: var(--accent-color);">${currentStepId ?? 'Inactive'}</span>
+        </div>
+        ` : `
+        <div class="stats-row" style="border: none;">
+          <span>Your Empire:</span>
+          <span style="font-size: 0.9rem;">${playerNationName}</span>
+        </div>
+        <div class="stats-row" style="border: none;">
+          <span>Territory Posts:</span>
+          <span style="font-size: 0.9rem;">${territoryCount}</span>
+        </div>
+        `}
+
+        <!-- Next Steps -->
+        <div style="margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; font-size: 0.8rem;">
+          <strong>Next Steps:</strong><br>
+          ${isTutorial
+            ? (currentStepId === 'camera-basics' ? '→ Move the camera with arrow keys or edge-drag.'
+             : currentStepId === 'wood-economy' ? '→ Place Woodcutter, Forester, and Sawmill near the forest.'
+             : currentStepId === 'food-economy' ? '→ Build a Grain Farm and Bakery for your miners.'
+             : currentStepId === 'territory-expansion' ? '→ Construct a Small Tower at the border to claim more land.'
+             : currentStepId === 'mining-metallurgy' ? '→ Build a Coal/Iron Mine and Smelter for metal bars.'
+             : currentStepId === 'military-recruitment' ? '→ Build a Weaponsmith and Barracks, then recruit soldiers.'
+             : currentStepId === 'combat-victory' ? '→ Select your soldier and defeat the enemy guard in the upper corner.'
+             : 'Follow the tutorial guidance prompts.')
+            : ('→ Expand your territory with border posts and towers.<br>→ Grow your economy and train an army.<br>→ Trade via caravans or ships to gain gold.')}
+        </div>
+
+        <!-- Opponents / Other Players -->
+        <div style="margin-top: 10px;">
+          <strong>Other Players:</strong>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+            ${opponents.length === 0
+              ? '<span style="font-size:0.8rem; opacity:0.7;">No opponents registered yet.</span>'
+              : opponents.map(n => `
+                  <span class="nation-chip" style="
+                    background: ${n.info.color || '#888'};
+                    color: #fff;
+                    padding: 3px 8px;
+                    border-radius: 4px;
+                    font-size: 0.75rem;
+                    font-weight: bold;
+                    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+                  ">${n.info.emoji || ''} ${n.info.displayName?.en || n.info.name}</span>
+                `).join('')}
+          </div>
+        </div>
+
+        <!-- Tutorial Actions (only when tutorial active) -->
+        ${isTutorial ? `
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+          <button id="tutorial-skip-btn" class="deep-subtab-btn">⏭️ Skip Tutorial</button>
+          <button id="tutorial-reset-btn" class="deep-subtab-btn">🔄 Reset Tutorial</button>
+        </div>
+        ` : ''}
+      </div>
+    `;
   }
 
   private populateSupplyFilters(): void {

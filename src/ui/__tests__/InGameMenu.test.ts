@@ -61,6 +61,14 @@ class MockScene {
 class MockGameLoop {
   public economy = new Economy();
   public state = { isPaused: false, gameSpeed: 1 };
+  public nation = {
+    getInfo: () => ({ id: 'romans', name: 'Romans', displayName: { en: 'Romans' } }),
+  };
+  public territoryManager = {
+    borderPosts: {
+      getPosts: () => [],
+    },
+  };
   getStats() {
     return { ticks: 123, gameTime: 45.6, zoom: 1 };
   }
@@ -187,25 +195,17 @@ describe('InGameMenu', () => {
     expect(toggleBtn.textContent).toBe('◀');
   });
 
-  it('should switch to tutorial tab and render tutorial content', () => {
-    const tutorialTab = document.querySelector('.build-bar-tab-btn[data-main-tab="tutorial"]') as HTMLButtonElement;
-    expect(tutorialTab).not.toBeNull();
-    tutorialTab.click();
-
-    expect(document.querySelector('.build-bar-tab-btn.active')?.textContent).toContain('🎓 Tutorial');
-    expect(document.querySelector('.deep-stats-section h3')?.textContent).toContain('Tutorial Guidance');
-    expect(document.getElementById('tutorial-skip-btn')).not.toBeNull();
-    expect(document.getElementById('tutorial-reset-btn')).not.toBeNull();
-  });
-
-  it('should switch to campaign tab and render campaign content', () => {
+  it('should switch to campaign tab and render combined campaign/tutorial content', () => {
     const campaignTab = document.querySelector('.build-bar-tab-btn[data-main-tab="campaign"]') as HTMLButtonElement;
     expect(campaignTab).not.toBeNull();
     campaignTab.click();
 
-    expect(document.querySelector('.build-bar-tab-btn.active')?.textContent).toContain('📖 Campaign');
-    expect(document.querySelector('.deep-stats-section h3')?.textContent).toContain('Campaign Missions');
-    // Check that there are multiple stats rows (story log, objectives)
+    expect(document.querySelector('.build-bar-tab-btn.active')?.textContent).toContain('📜 Campaign');
+    const heading = document.querySelector('.deep-stats-section h3')?.textContent;
+    expect(heading).toContain('Campaign Overview');
+
+    // Because no TutorialManager is wired in this test, tutorial-specific
+    // controls (skip/reset) are not rendered, but the overview still renders.
     const statsRows = document.querySelectorAll('.stats-row');
     expect(statsRows.length).toBeGreaterThan(0);
   });
