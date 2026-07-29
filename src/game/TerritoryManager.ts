@@ -24,6 +24,7 @@ export class TerritoryManager {
   private unitManager: UnitManager;
   private economy: Economy;
   public borderPosts: BorderPostManager;
+  public currentNationId: number = 1;
 
   // Influence radii
   private static readonly PIONEER_RADIUS = 5;
@@ -44,8 +45,8 @@ export class TerritoryManager {
   updateTerritory(): void {
     const influencePoints: Array<{ x: number; y: number; radius: number }> = [];
     
-    // In a real game, we'd have multiple nations. For now, we assume nationId = 1.
-    const currentNationId = 1;
+    // Use the configured nation ID for this player
+    const currentNationId = this.currentNationId;
 
     // 1. Collect influence from Pioneers
     const pioneers = this.unitManager.getAliveUnits().filter(u => u.kind === UnitKind.Pioneer);

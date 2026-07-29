@@ -165,16 +165,17 @@ export class GameApp {
       }
     };
 
-     // Building placement UI — integrated with InGameMenu's Construction tab.
-     // The scene is passed for ghost preview mesh creation on terrain.
-     this.buildingPlacement = new BuildingPlacement(
-       this.gameLoop.economy,
-       this.map,
-       0, // ownerId = player 0
-       this.engine.getRenderingCanvas() as HTMLCanvasElement,
-       this.scene,
-       this.playerNation
-     );
+      // Building placement UI — integrated with InGameMenu's Construction tab.
+      // The scene is passed for ghost preview mesh creation on terrain.
+      // NOTE: TerritoryManager uses currentNationId=1 for single-player (matches tutorial setup).
+      this.buildingPlacement = new BuildingPlacement(
+        this.gameLoop.economy,
+        this.map,
+        1, // ownerId = player 1 (matches TerritoryManager.defaultNationId)
+        this.engine.getRenderingCanvas() as HTMLCanvasElement,
+        this.scene,
+        this.playerNation
+      );
     this.boundBuildingPlaced = this.onBuildingPlaced.bind(this);
     window.addEventListener('building-placed', this.boundBuildingPlaced);
 
