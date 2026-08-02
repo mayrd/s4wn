@@ -100,481 +100,479 @@
     }
   },
   "buildings": {
-    "overrides": {
-      "castle": {
-        "model": "models/castle.obj",
-        "texture": "textures/buildings/building_castle.png",
-        "icon": "icons/buildings/castle.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sawmill": {
-        "model": "models/sawmill.obj",
-        "texture": "textures/buildings/building_sawmill.png",
-        "icon": "icons/buildings/sawmill.png",
-        "animations": "animations/buildings/sawmill.json"
-      },
-      "stonecutter": {
-        "model": "models/stonecutter_hut.obj",
-        "texture": "textures/buildings/building_stonecutter_hut.png",
-        "icon": "icons/buildings/stonecutter_hut.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "mine": {
-        "model": "models/mine.obj",
-        "texture": "textures/buildings/building_stone.png",
-        "icon": "icons/buildings/mine.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "toolsmith": {
-        "model": "models/toolsmith.obj",
-        "texture": "textures/buildings/building_toolsmith.png",
-        "icon": "icons/buildings/toolsmith.png",
-        "animations": "animations/buildings/smelter.json"
-      },
-      "weaponsmith": {
-        "model": "models/weaponsmith.obj",
-        "texture": "textures/buildings/building_weaponsmith.png",
-        "icon": "icons/buildings/weaponsmith.png",
-        "animations": "animations/buildings/smelter.json"
-      },
-      "bakery": {
-        "model": "models/bakery.obj",
-        "texture": "textures/buildings/building_bakery.png",
-        "icon": "icons/buildings/bakery.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "butcher": {
-        "model": "models/butcher.obj",
-        "texture": "textures/buildings/building_slaughterhouse.png",
-        "icon": "icons/buildings/butcher.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "mill": {
-        "model": "models/mill.obj",
-        "texture": "textures/buildings/building_grain_mill.png",
-        "icon": "icons/buildings/mill.png",
-        "animations": "animations/buildings/sawmill.json"
-      },
-      "farm": {
-        "model": "models/farm.obj",
-        "texture": "textures/buildings/building_grain_farm.png",
-        "icon": "icons/buildings/farm.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "fisherman": {
-        "model": "models/fisherman.obj",
-        "texture": "textures/buildings/building_fisherman_hut.png",
-        "icon": "icons/buildings/fisherman_hut.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "woodcutter": {
-        "model": "models/woodcutter_hut.obj",
-        "texture": "textures/buildings/building_woodcutter_hut.png",
-        "icon": "icons/buildings/woodcutter_hut.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "storehouse": {
-        "model": "models/storehouse.obj",
-        "texture": "textures/buildings/building_storage_yard.png",
-        "icon": "icons/buildings/storehouse.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "waterworks": {
-        "model": "models/waterworks.obj",
-        "texture": "textures/buildings/building_waterworks.png",
-        "icon": "icons/buildings/waterworks.png",
-        "animations": "animations/buildings/waterworks.json"
-      },
-      "smelter": {
-        "model": "models/iron_smelter.obj",
-        "texture": "textures/buildings/building_iron_smelter.png",
-        "icon": "icons/buildings/smelter.png",
-        "animations": "animations/buildings/smelter.json"
-      },
-      "barracks": {
-        "model": "models/barracks.obj",
-        "texture": "textures/buildings/building_barracks.png",
-        "icon": "icons/buildings/barracks.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "guard_tower": {
-        "model": "models/guard_tower.obj",
-        "texture": "textures/buildings/building_small_tower.png",
-        "icon": "icons/buildings/guard_tower.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "fortress": {
-        "model": "models/fortress.obj",
-        "texture": "textures/buildings/building_big_tower.png",
-        "icon": "icons/buildings/fortress.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "siege_workshop": {
-        "model": "models/siege_workshop.obj",
-        "texture": "textures/buildings/building_timber.png",
-        "icon": "icons/buildings/siege_workshop.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "shipyard": {
-        "model": "models/shipyard.obj",
-        "texture": "textures/buildings/building_shipyard.png",
-        "icon": "icons/buildings/shipyard.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "road_layer": {
-        "model": "models/road.obj",
-        "texture": "textures/buildings/building_stone.png",
-        "icon": "icons/buildings/road.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "apiary": {
-        "model": "models/apiary.obj",
-        "texture": "textures/buildings/building_timber.png",
-        "icon": "icons/buildings/apiary.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "mead_maker": {
-        "model": "models/mead_maker.obj",
-        "texture": "textures/buildings/building_stone.png",
-        "icon": "icons/buildings/mead_maker.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "temple_of_bacchus": {
-        "model": "models/small_temple.obj",
-        "texture": "textures/buildings/building_small_temple.png",
-        "icon": "icons/buildings/temple_of_bacchus.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "colosseum": {
-        "model": "models/colosseum.obj",
-        "texture": "textures/buildings/building_marble.png",
-        "icon": "icons/buildings/colosseum.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_minerva": {
-        "model": "models/sanctuary_of_minerva.obj",
-        "texture": "textures/buildings/building_marble.png",
-        "icon": "icons/buildings/sanctuary_of_minerva.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_vulcan": {
-        "model": "models/sanctuary_of_vulcan.obj",
-        "texture": "textures/buildings/building_stone.png",
-        "icon": "icons/buildings/sanctuary_of_vulcan.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "vineyard": {
-        "model": "models/vineyard.obj",
-        "texture": "textures/buildings/building_vineyard.png",
-        "icon": "icons/buildings/vineyard.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "small_temple": {
-        "model": "models/small_temple.obj",
-        "texture": "textures/buildings/building_small_temple.png",
-        "icon": "icons/buildings/small_temple.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "large_temple": {
-        "model": "models/large_temple.obj",
-        "texture": "textures/buildings/building_large_temple.png",
-        "icon": "icons/buildings/large_temple.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "small_residence": {
-        "model": "models/small_residence.obj",
-        "texture": "textures/buildings/building_small_residence.png",
-        "icon": "icons/buildings/small_residence.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "medium_residence": {
-        "model": "models/medium_residence.obj",
-        "texture": "textures/buildings/building_medium_residence.png",
-        "icon": "icons/buildings/medium_residence.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "large_residence": {
-        "model": "models/large_residence.obj",
-        "texture": "textures/buildings/building_large_residence.png",
-        "icon": "icons/buildings/large_residence.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "storage_yard": {
-        "model": "models/storage_yard.obj",
-        "texture": "textures/buildings/building_storage_yard.png",
-        "icon": "icons/buildings/storage_yard.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "marketplace": {
-        "model": "models/marketplace.obj",
-        "texture": "textures/buildings/building_marketplace.png",
-        "icon": "icons/buildings/marketplace.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "landing_dock": {
-        "model": "models/landing_dock.obj",
-        "texture": "textures/buildings/building_landing_dock.png",
-        "icon": "icons/buildings/landing_dock.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "forester": {
-        "model": "models/forester.obj",
-        "texture": "textures/buildings/building_forester_hut.png",
-        "icon": "icons/buildings/forester_hut.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "healer": {
-        "model": "models/healer.obj",
-        "texture": "textures/buildings/building_healer_hut.png",
-        "icon": "icons/buildings/healer_hut.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sheep_ranch": {
-        "model": "models/sheep_ranch.obj",
-        "texture": "textures/buildings/building_sheep_ranch.png",
-        "icon": "icons/buildings/sheep_ranch.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "pig_ranch": {
-        "model": "models/pig_ranch.obj",
-        "texture": "textures/buildings/building_thatched.png",
-        "icon": "icons/buildings/pig_ranch.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "goat_ranch": {
-        "model": "models/goat_ranch.obj",
-        "texture": "textures/buildings/building_thatched.png",
-        "icon": "icons/buildings/goat_ranch.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "goose_ranch": {
-        "model": "models/goose_ranch.obj",
-        "texture": "textures/buildings/building_thatched.png",
-        "icon": "icons/buildings/goose_ranch.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "donkey_ranch": {
-        "model": "models/donkey_ranch.obj",
-        "texture": "textures/buildings/building_donkey_ranch.png",
-        "icon": "icons/buildings/donkey_ranch.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "gold_mine": {
-        "model": "models/gold_mine.obj",
-        "texture": "textures/buildings/building_gold_mine.png",
-        "icon": "icons/buildings/gold_mine.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "coal_mine": {
-        "model": "models/coal_mine.obj",
-        "texture": "textures/buildings/building_coal_mine.png",
-        "icon": "icons/buildings/coal_mine.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "iron_ore_mine": {
-        "model": "models/iron_ore_mine.obj",
-        "texture": "textures/buildings/building_iron_ore_mine.png",
-        "icon": "icons/buildings/iron_ore_mine.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sulfur_mine": {
-        "model": "models/sulfur_mine.obj",
-        "texture": "textures/buildings/building_sulfur_mine.png",
-        "icon": "icons/buildings/sulfur_mine.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "gold_smelter": {
-        "model": "models/gold_smelter.obj",
-        "texture": "textures/buildings/building_gold_smelter.png",
-        "icon": "icons/buildings/gold_smelter.png",
-        "animations": "animations/buildings/smelter.json"
-      },
-      "iron_smelter": {
-        "model": "models/iron_smelter.obj",
-        "texture": "textures/buildings/building_iron_smelter.png",
-        "icon": "icons/buildings/iron_smelter.png",
-        "animations": "animations/buildings/smelter.json"
-      },
-      "slaughterhouse": {
-        "model": "models/slaughterhouse.obj",
-        "texture": "textures/buildings/building_slaughterhouse.png",
-        "icon": "icons/buildings/slaughterhouse.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "oil_press": {
-        "model": "models/oil_press.obj",
-        "texture": "textures/buildings/building_stone.png",
-        "icon": "icons/buildings/oil_press.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "powder_mill": {
-        "model": "models/powder_mill.obj",
-        "texture": "textures/buildings/building_timber.png",
-        "icon": "icons/buildings/powder_mill.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "weapon_foundry": {
-        "model": "models/weapon_foundry.obj",
-        "texture": "textures/buildings/building_metal.png",
-        "icon": "icons/buildings/weapon_foundry.png",
-        "animations": "animations/buildings/smelter.json"
-      },
-      "agave_farm": {
-        "model": "models/agave_farm.obj",
-        "texture": "textures/buildings/building_thatched.png",
-        "icon": "icons/buildings/agave_farm.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "distillery": {
-        "model": "models/distillery.obj",
-        "texture": "textures/buildings/building_stone.png",
-        "icon": "icons/buildings/distillery.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "trojan_farm": {
-        "model": "models/farm.obj",
-        "texture": "textures/buildings/building_thatched.png",
-        "icon": "icons/buildings/trojan_farm.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "wine_press": {
-        "model": "models/distillery.obj",
-        "texture": "textures/buildings/building_stone.png",
-        "icon": "icons/buildings/wine_press.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "dark_temple": {
-        "model": "models/dark_temple.obj",
-        "texture": "textures/buildings/building_darkstone.png",
-        "icon": "icons/buildings/dark_temple.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "dark_garden": {
-        "model": "models/dark_garden.obj",
-        "texture": "textures/buildings/building_darkstone.png",
-        "icon": "icons/buildings/dark_garden.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "mushroom_farm": {
-        "model": "models/mushroom_farm.obj",
-        "texture": "textures/buildings/building_darkstone.png",
-        "icon": "icons/buildings/mushroom_farm.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "dark_fortress": {
-        "model": "models/dark_fortress.obj",
-        "texture": "textures/buildings/building_darkstone.png",
-        "icon": "icons/buildings/dark_fortress.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "demon_gate": {
-        "model": "models/demon_gate.obj",
-        "texture": "textures/buildings/building_darkstone.png",
-        "icon": "icons/buildings/demon_gate.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_morbus": {
-        "model": "models/sanctuary_of_morbus.obj",
-        "texture": "textures/buildings/building_darkstone.png",
-        "icon": "icons/buildings/sanctuary_of_morbus.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_pestilence": {
-        "model": "models/sanctuary_of_pestilence.obj",
-        "texture": "textures/buildings/building_darkstone.png",
-        "icon": "icons/buildings/sanctuary_of_pestilence.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "temple_of_chac": {
-        "model": "models/sanctuary_of_kukulkan.obj",
-        "texture": "textures/buildings/building_adobe.png",
-        "icon": "icons/buildings/temple_of_chac.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_kukulkan": {
-        "model": "models/sanctuary_of_kukulkan.obj",
-        "texture": "textures/buildings/building_adobe.png",
-        "icon": "icons/buildings/sanctuary_of_kukulkan.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_quetzalcoatl": {
-        "model": "models/sanctuary_of_quetzalcoatl.obj",
-        "texture": "textures/buildings/building_adobe.png",
-        "icon": "icons/buildings/sanctuary_of_quetzalcoatl.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_huitzilopochtli": {
-        "model": "models/sanctuary_of_huitzilopochtli.obj",
-        "texture": "textures/buildings/building_adobe.png",
-        "icon": "icons/buildings/sanctuary_of_huitzilopochtli.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "observatory": {
-        "model": "models/observatory.obj",
-        "texture": "textures/buildings/building_adobe.png",
-        "icon": "icons/buildings/observatory.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "oracle_of_apollo": {
-        "model": "models/oracle_of_apollo.obj",
-        "texture": "textures/buildings/building_marble.png",
-        "icon": "icons/buildings/oracle_of_apollo.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_artemis": {
-        "model": "models/sanctuary_of_artemis.obj",
-        "texture": "textures/buildings/building_marble.png",
-        "icon": "icons/buildings/sanctuary_of_artemis.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_poseidon": {
-        "model": "models/sanctuary_of_poseidon.obj",
-        "texture": "textures/buildings/building_marble.png",
-        "icon": "icons/buildings/sanctuary_of_poseidon.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_apollo": {
-        "model": "models/sanctuary_of_apollo.obj",
-        "texture": "textures/buildings/building_marble.png",
-        "icon": "icons/buildings/sanctuary_of_apollo.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "amphitheater": {
-        "model": "models/amphitheater.obj",
-        "texture": "textures/buildings/building_marble.png",
-        "icon": "icons/buildings/amphitheater.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "mead_hall": {
-        "model": "models/mead_hall.obj",
-        "texture": "textures/buildings/building_timber.png",
-        "icon": "icons/buildings/mead_hall.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_odin": {
-        "model": "models/sanctuary_of_odin.obj",
-        "texture": "textures/buildings/building_timber.png",
-        "icon": "icons/buildings/sanctuary_of_odin.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_thor": {
-        "model": "models/sanctuary_of_thor.obj",
-        "texture": "textures/buildings/building_timber.png",
-        "icon": "icons/buildings/sanctuary_of_thor.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "sanctuary_of_freya": {
-        "model": "models/sanctuary_of_freya.obj",
-        "texture": "textures/buildings/building_timber.png",
-        "icon": "icons/buildings/sanctuary_of_freya.png",
-        "animations": "animations/buildings/generic.json"
-      },
-      "runestone": {
-        "model": "models/runestone.obj",
-        "texture": "textures/buildings/building_stone.png",
-        "icon": "icons/buildings/runestone.png",
-        "animations": "animations/buildings/generic.json"
-      }
+    "castle": {
+      "model": "models/castle.obj",
+      "texture": "textures/buildings/building_castle.png",
+      "icon": "icons/buildings/castle.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sawmill": {
+      "model": "models/sawmill.obj",
+      "texture": "textures/buildings/building_sawmill.png",
+      "icon": "icons/buildings/sawmill.png",
+      "animations": "animations/buildings/sawmill.json"
+    },
+    "stonecutter": {
+      "model": "models/stonecutter_hut.obj",
+      "texture": "textures/buildings/building_stonecutter_hut.png",
+      "icon": "icons/buildings/stonecutter_hut.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "mine": {
+      "model": "models/mine.obj",
+      "texture": "textures/buildings/building_stone.png",
+      "icon": "icons/buildings/mine.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "toolsmith": {
+      "model": "models/toolsmith.obj",
+      "texture": "textures/buildings/building_toolsmith.png",
+      "icon": "icons/buildings/toolsmith.png",
+      "animations": "animations/buildings/smelter.json"
+    },
+    "weaponsmith": {
+      "model": "models/weaponsmith.obj",
+      "texture": "textures/buildings/building_weaponsmith.png",
+      "icon": "icons/buildings/weaponsmith.png",
+      "animations": "animations/buildings/smelter.json"
+    },
+    "bakery": {
+      "model": "models/bakery.obj",
+      "texture": "textures/buildings/building_bakery.png",
+      "icon": "icons/buildings/bakery.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "butcher": {
+      "model": "models/butcher.obj",
+      "texture": "textures/buildings/building_slaughterhouse.png",
+      "icon": "icons/buildings/butcher.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "mill": {
+      "model": "models/mill.obj",
+      "texture": "textures/buildings/building_grain_mill.png",
+      "icon": "icons/buildings/mill.png",
+      "animations": "animations/buildings/sawmill.json"
+    },
+    "farm": {
+      "model": "models/farm.obj",
+      "texture": "textures/buildings/building_grain_farm.png",
+      "icon": "icons/buildings/farm.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "fisherman": {
+      "model": "models/fisherman.obj",
+      "texture": "textures/buildings/building_fisherman_hut.png",
+      "icon": "icons/buildings/fisherman_hut.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "woodcutter": {
+      "model": "models/woodcutter_hut.obj",
+      "texture": "textures/buildings/building_woodcutter_hut.png",
+      "icon": "icons/buildings/woodcutter_hut.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "storehouse": {
+      "model": "models/storehouse.obj",
+      "texture": "textures/buildings/building_storage_yard.png",
+      "icon": "icons/buildings/storehouse.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "waterworks": {
+      "model": "models/waterworks.obj",
+      "texture": "textures/buildings/building_waterworks.png",
+      "icon": "icons/buildings/waterworks.png",
+      "animations": "animations/buildings/waterworks.json"
+    },
+    "smelter": {
+      "model": "models/iron_smelter.obj",
+      "texture": "textures/buildings/building_iron_smelter.png",
+      "icon": "icons/buildings/smelter.png",
+      "animations": "animations/buildings/smelter.json"
+    },
+    "barracks": {
+      "model": "models/barracks.obj",
+      "texture": "textures/buildings/building_barracks.png",
+      "icon": "icons/buildings/barracks.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "guard_tower": {
+      "model": "models/guard_tower.obj",
+      "texture": "textures/buildings/building_small_tower.png",
+      "icon": "icons/buildings/guard_tower.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "fortress": {
+      "model": "models/fortress.obj",
+      "texture": "textures/buildings/building_big_tower.png",
+      "icon": "icons/buildings/fortress.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "siege_workshop": {
+      "model": "models/siege_workshop.obj",
+      "texture": "textures/buildings/building_timber.png",
+      "icon": "icons/buildings/siege_workshop.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "shipyard": {
+      "model": "models/shipyard.obj",
+      "texture": "textures/buildings/building_shipyard.png",
+      "icon": "icons/buildings/shipyard.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "road_layer": {
+      "model": "models/road.obj",
+      "texture": "textures/buildings/building_stone.png",
+      "icon": "icons/buildings/road.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "apiary": {
+      "model": "models/apiary.obj",
+      "texture": "textures/buildings/building_timber.png",
+      "icon": "icons/buildings/apiary.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "mead_maker": {
+      "model": "models/mead_maker.obj",
+      "texture": "textures/buildings/building_stone.png",
+      "icon": "icons/buildings/mead_maker.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "temple_of_bacchus": {
+      "model": "models/small_temple.obj",
+      "texture": "textures/buildings/building_small_temple.png",
+      "icon": "icons/buildings/temple_of_bacchus.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "colosseum": {
+      "model": "models/colosseum.obj",
+      "texture": "textures/buildings/building_marble.png",
+      "icon": "icons/buildings/colosseum.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_minerva": {
+      "model": "models/sanctuary_of_minerva.obj",
+      "texture": "textures/buildings/building_marble.png",
+      "icon": "icons/buildings/sanctuary_of_minerva.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_vulcan": {
+      "model": "models/sanctuary_of_vulcan.obj",
+      "texture": "textures/buildings/building_stone.png",
+      "icon": "icons/buildings/sanctuary_of_vulcan.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "vineyard": {
+      "model": "models/vineyard.obj",
+      "texture": "textures/buildings/building_vineyard.png",
+      "icon": "icons/buildings/vineyard.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "small_temple": {
+      "model": "models/small_temple.obj",
+      "texture": "textures/buildings/building_small_temple.png",
+      "icon": "icons/buildings/small_temple.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "large_temple": {
+      "model": "models/large_temple.obj",
+      "texture": "textures/buildings/building_large_temple.png",
+      "icon": "icons/buildings/large_temple.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "small_residence": {
+      "model": "models/small_residence.obj",
+      "texture": "textures/buildings/building_small_residence.png",
+      "icon": "icons/buildings/small_residence.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "medium_residence": {
+      "model": "models/medium_residence.obj",
+      "texture": "textures/buildings/building_medium_residence.png",
+      "icon": "icons/buildings/medium_residence.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "large_residence": {
+      "model": "models/large_residence.obj",
+      "texture": "textures/buildings/building_large_residence.png",
+      "icon": "icons/buildings/large_residence.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "storage_yard": {
+      "model": "models/storage_yard.obj",
+      "texture": "textures/buildings/building_storage_yard.png",
+      "icon": "icons/buildings/storage_yard.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "marketplace": {
+      "model": "models/marketplace.obj",
+      "texture": "textures/buildings/building_marketplace.png",
+      "icon": "icons/buildings/marketplace.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "landing_dock": {
+      "model": "models/landing_dock.obj",
+      "texture": "textures/buildings/building_landing_dock.png",
+      "icon": "icons/buildings/landing_dock.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "forester": {
+      "model": "models/forester.obj",
+      "texture": "textures/buildings/building_forester_hut.png",
+      "icon": "icons/buildings/forester_hut.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "healer": {
+      "model": "models/healer.obj",
+      "texture": "textures/buildings/building_healer_hut.png",
+      "icon": "icons/buildings/healer_hut.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sheep_ranch": {
+      "model": "models/sheep_ranch.obj",
+      "texture": "textures/buildings/building_sheep_ranch.png",
+      "icon": "icons/buildings/sheep_ranch.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "pig_ranch": {
+      "model": "models/pig_ranch.obj",
+      "texture": "textures/buildings/building_thatched.png",
+      "icon": "icons/buildings/pig_ranch.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "goat_ranch": {
+      "model": "models/goat_ranch.obj",
+      "texture": "textures/buildings/building_thatched.png",
+      "icon": "icons/buildings/goat_ranch.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "goose_ranch": {
+      "model": "models/goose_ranch.obj",
+      "texture": "textures/buildings/building_thatched.png",
+      "icon": "icons/buildings/goose_ranch.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "donkey_ranch": {
+      "model": "models/donkey_ranch.obj",
+      "texture": "textures/buildings/building_donkey_ranch.png",
+      "icon": "icons/buildings/donkey_ranch.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "gold_mine": {
+      "model": "models/gold_mine.obj",
+      "texture": "textures/buildings/building_gold_mine.png",
+      "icon": "icons/buildings/gold_mine.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "coal_mine": {
+      "model": "models/coal_mine.obj",
+      "texture": "textures/buildings/building_coal_mine.png",
+      "icon": "icons/buildings/coal_mine.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "iron_ore_mine": {
+      "model": "models/iron_ore_mine.obj",
+      "texture": "textures/buildings/building_iron_ore_mine.png",
+      "icon": "icons/buildings/iron_ore_mine.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sulfur_mine": {
+      "model": "models/sulfur_mine.obj",
+      "texture": "textures/buildings/building_sulfur_mine.png",
+      "icon": "icons/buildings/sulfur_mine.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "gold_smelter": {
+      "model": "models/gold_smelter.obj",
+      "texture": "textures/buildings/building_gold_smelter.png",
+      "icon": "icons/buildings/gold_smelter.png",
+      "animations": "animations/buildings/smelter.json"
+    },
+    "iron_smelter": {
+      "model": "models/iron_smelter.obj",
+      "texture": "textures/buildings/building_iron_smelter.png",
+      "icon": "icons/buildings/iron_smelter.png",
+      "animations": "animations/buildings/smelter.json"
+    },
+    "slaughterhouse": {
+      "model": "models/slaughterhouse.obj",
+      "texture": "textures/buildings/building_slaughterhouse.png",
+      "icon": "icons/buildings/slaughterhouse.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "oil_press": {
+      "model": "models/oil_press.obj",
+      "texture": "textures/buildings/building_stone.png",
+      "icon": "icons/buildings/oil_press.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "powder_mill": {
+      "model": "models/powder_mill.obj",
+      "texture": "textures/buildings/building_timber.png",
+      "icon": "icons/buildings/powder_mill.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "weapon_foundry": {
+      "model": "models/weapon_foundry.obj",
+      "texture": "textures/buildings/building_metal.png",
+      "icon": "icons/buildings/weapon_foundry.png",
+      "animations": "animations/buildings/smelter.json"
+    },
+    "agave_farm": {
+      "model": "models/agave_farm.obj",
+      "texture": "textures/buildings/building_thatched.png",
+      "icon": "icons/buildings/agave_farm.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "distillery": {
+      "model": "models/distillery.obj",
+      "texture": "textures/buildings/building_stone.png",
+      "icon": "icons/buildings/distillery.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "trojan_farm": {
+      "model": "models/farm.obj",
+      "texture": "textures/buildings/building_thatched.png",
+      "icon": "icons/buildings/trojan_farm.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "wine_press": {
+      "model": "models/distillery.obj",
+      "texture": "textures/buildings/building_stone.png",
+      "icon": "icons/buildings/wine_press.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "dark_temple": {
+      "model": "models/dark_temple.obj",
+      "texture": "textures/buildings/building_darkstone.png",
+      "icon": "icons/buildings/dark_temple.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "dark_garden": {
+      "model": "models/dark_garden.obj",
+      "texture": "textures/buildings/building_darkstone.png",
+      "icon": "icons/buildings/dark_garden.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "mushroom_farm": {
+      "model": "models/mushroom_farm.obj",
+      "texture": "textures/buildings/building_darkstone.png",
+      "icon": "icons/buildings/mushroom_farm.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "dark_fortress": {
+      "model": "models/dark_fortress.obj",
+      "texture": "textures/buildings/building_darkstone.png",
+      "icon": "icons/buildings/dark_fortress.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "demon_gate": {
+      "model": "models/demon_gate.obj",
+      "texture": "textures/buildings/building_darkstone.png",
+      "icon": "icons/buildings/demon_gate.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_morbus": {
+      "model": "models/sanctuary_of_morbus.obj",
+      "texture": "textures/buildings/building_darkstone.png",
+      "icon": "icons/buildings/sanctuary_of_morbus.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_pestilence": {
+      "model": "models/sanctuary_of_pestilence.obj",
+      "texture": "textures/buildings/building_darkstone.png",
+      "icon": "icons/buildings/sanctuary_of_pestilence.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "temple_of_chac": {
+      "model": "models/sanctuary_of_kukulkan.obj",
+      "texture": "textures/buildings/building_adobe.png",
+      "icon": "icons/buildings/temple_of_chac.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_kukulkan": {
+      "model": "models/sanctuary_of_kukulkan.obj",
+      "texture": "textures/buildings/building_adobe.png",
+      "icon": "icons/buildings/sanctuary_of_kukulkan.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_quetzalcoatl": {
+      "model": "models/sanctuary_of_quetzalcoatl.obj",
+      "texture": "textures/buildings/building_adobe.png",
+      "icon": "icons/buildings/sanctuary_of_quetzalcoatl.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_huitzilopochtli": {
+      "model": "models/sanctuary_of_huitzilopochtli.obj",
+      "texture": "textures/buildings/building_adobe.png",
+      "icon": "icons/buildings/sanctuary_of_huitzilopochtli.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "observatory": {
+      "model": "models/observatory.obj",
+      "texture": "textures/buildings/building_adobe.png",
+      "icon": "icons/buildings/observatory.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "oracle_of_apollo": {
+      "model": "models/oracle_of_apollo.obj",
+      "texture": "textures/buildings/building_marble.png",
+      "icon": "icons/buildings/oracle_of_apollo.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_artemis": {
+      "model": "models/sanctuary_of_artemis.obj",
+      "texture": "textures/buildings/building_marble.png",
+      "icon": "icons/buildings/sanctuary_of_artemis.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_poseidon": {
+      "model": "models/sanctuary_of_poseidon.obj",
+      "texture": "textures/buildings/building_marble.png",
+      "icon": "icons/buildings/sanctuary_of_poseidon.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_apollo": {
+      "model": "models/sanctuary_of_apollo.obj",
+      "texture": "textures/buildings/building_marble.png",
+      "icon": "icons/buildings/sanctuary_of_apollo.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "amphitheater": {
+      "model": "models/amphitheater.obj",
+      "texture": "textures/buildings/building_marble.png",
+      "icon": "icons/buildings/amphitheater.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "mead_hall": {
+      "model": "models/mead_hall.obj",
+      "texture": "textures/buildings/building_timber.png",
+      "icon": "icons/buildings/mead_hall.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_odin": {
+      "model": "models/sanctuary_of_odin.obj",
+      "texture": "textures/buildings/building_timber.png",
+      "icon": "icons/buildings/sanctuary_of_odin.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_thor": {
+      "model": "models/sanctuary_of_thor.obj",
+      "texture": "textures/buildings/building_timber.png",
+      "icon": "icons/buildings/sanctuary_of_thor.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "sanctuary_of_freya": {
+      "model": "models/sanctuary_of_freya.obj",
+      "texture": "textures/buildings/building_timber.png",
+      "icon": "icons/buildings/sanctuary_of_freya.png",
+      "animations": "animations/buildings/generic.json"
+    },
+    "runestone": {
+      "model": "models/runestone.obj",
+      "texture": "textures/buildings/building_stone.png",
+      "icon": "icons/buildings/runestone.png",
+      "animations": "animations/buildings/generic.json"
     }
   },
   "balancing": {
