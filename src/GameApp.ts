@@ -32,6 +32,7 @@ import { TouchCameraController } from './input/TouchCameraController';
 import { BuildingType, buildingName, resourceName } from './economy/types';
 import { BuildingData } from './game/Economy';
 import { NationType } from './game/Nation';
+import { NationRegistry } from './game/NationRegistry';
 import { BuildingPlacement } from './ui/BuildingPlacement';
 import { SupplyChainRenderer } from './rendering/SupplyChainRenderer';
 import { ResourceItemRenderer } from './rendering/ResourceItemRenderer';
@@ -125,6 +126,16 @@ export class GameApp {
     const mapKind = this.mode === 'tutorial' ? 'tutorial' : 'demo';
     this.map = new GameMap(MAP_WIDTH, MAP_HEIGHT, mapKind);
     this.gameLoop = new GameLoop(this.map);
+
+    // Apply nation-specific starting resources from nation.json
+    const nationId = this.playerNation === NationType.Romans ? 'romans' :
+                     this.playerNation === NationType.Vikings ? 'vikings' :
+                     this.playerNation === NationType.Mayans ? 'mayans' :
+                     this.playerNation === NationType.Trojans ? 'trojans' : 'romans';
+    const registeredNation = NationRegistry.instance.get(nationId);
+    if (registeredNation?.manifest?.economy?.startingResources) {
+      this.gameLoop.economy.applyStartingResources(registeredNation.manifest.economy.startingResources);
+    }
 
     // In tutorial mode, set up player starting conditions + enemy outpost.
     if (this.mode === 'tutorial') {

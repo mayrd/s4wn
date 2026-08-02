@@ -53,12 +53,40 @@ export class Economy {
   static readonly STORAGE_PER_YARD = 50;
 
   constructor(logistics?: LogisticsManager) {
-    // Start with initial construction materials (Planks for building, per BASE.md)
+    // Default starting resources (overridden by nation.json via applyStartingResources)
     this.resources[ResourceType.Planks] = 20;
     this.resources[ResourceType.Stone] = 10;
     this.logistics = logistics || new LogisticsManager();
     this.tradeRoutes = new TradeRouteManager();
     this.maritimeTrade = new MaritimeTradeManager();
+  }
+
+  /** Apply starting resources from a nation manifest (e.g., assets/nations/romans/nation.json). */
+  applyStartingResources(starting: Record<string, number>): void {
+    // Map nation.json resource keys to internal ResourceType discriminants
+    const mapping: Record<string, number> = {
+      wood: ResourceType.Wood,
+      stone: ResourceType.Stone,
+      food: ResourceType.Grain,   // nation.json "food" maps to Grain internally
+      gold: ResourceType.Gold,
+      iron: ResourceType.IronOre,
+      coal: ResourceType.Coal,
+      sulfur: ResourceType.Sulfur,
+    };
+    for (const [key, amount] of Object.entries(starting)) {
+      const disc = mapping[key];
+      if (disc !== undefined) {
+        this.resources[disc] = Math.max(0, Math.floor(amount));
+      }
+    }
+    // Default Planks: if nation provides Wood, convert half to Planks (sawmill simulation)
+    // Otherwise default to 20 Planks so the player can place basic buildings.
+    const woodAmount = this.resources[ResourceType.Wood] || 0;
+    if (woodAmount > 0) {
+      this.resources[ResourceType.Planks] = Math.floor(woodAmount / 2) + 10;
+    } else {
+      this.resources[ResourceType.Planks] = 20;
+    }
   }
 
   // ── Resource Management ──────────────────────────────────────────
