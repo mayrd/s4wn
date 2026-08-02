@@ -26,7 +26,7 @@ export interface ExplorerObject {
   properties: Record<string, any>;
 }
 
-type CatalogTab = 'terrain' | 'buildings' | 'units' | 'resources' | 'decorations' | 'misc';
+type CatalogTab = 'terrain' | 'buildings' | 'units' | 'resources' | 'decorations' | 'nations' | 'misc';
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -182,7 +182,7 @@ export class ObjectExplorer {
   // ── Build DOM ────────────────────────────────────────────────────
 
   private build(): void {
-    const tabs: CatalogTab[] = ['terrain','buildings','units','resources','decorations','misc'];
+    const tabs: CatalogTab[] = ['terrain','buildings','units','resources','decorations','nations','misc'];
     // "Live" toggle only shown when connected to a GameLoop
     const liveToggle = this.gameLoop ? '<label class="explorer-autorefresh-toggle" title="Auto-refresh live data every tick"><input type="checkbox" id="explorer-autorefresh" checked /> Live</label>' : '';
      this.container.innerHTML = `<div class="explorer-container">
@@ -265,6 +265,7 @@ export class ObjectExplorer {
       case 'terrain': this.loadTerrain(); break; case 'buildings': this.loadBuildings(); break;
       case 'units': this.loadUnits(); break; case 'resources': this.loadResources(); break;
       case 'decorations': this.loadDecorations(); break;
+      case 'nations': this.loadNations(); break;
       case 'misc': this.loadMisc(); break;
     }
   }
@@ -489,6 +490,46 @@ export class ObjectExplorer {
     ].map(d => ({ ...d, _instances:[] }));
   }
 
+  private loadNations(): void {
+    const nationIds = ['romans','vikings','mayans','trojans','dark'];
+    const nationNames: Record<string,string> = {
+      romans:'Romans', vikings:'Vikings', mayans:'Mayans', trojans:'Trojans', dark:'Dark Tribe'
+    };
+    this.objects = nationIds.map(id => {
+      const overrides = Object.keys(this.buildingOverridesForNation(id));
+      const units = ['worker','soldier','archer','settler','special'];
+      const nationLabel = nationNames[id] || id;
+      return {
+        id: `nation-${id}`, type: 'nation', name: `${nationLabel} (${overrides.length} buildings)`,
+        _nationId: id,
+        _chain: {
+          mesh: `assets/nations/${id}/models/...`,
+          texture: `assets/nations/${id}/textures/...`,
+          animation: `assets/nations/${id}/animations/...`
+        },
+        properties: {
+          id,
+          name: nationLabel,
+          buildingOverrides: overrides.length,
+          unitTypes: units.length,
+          assetsRoot: `assets/nations/${id}/`
+        }
+      } as ExplorerObject;
+    });
+  }
+
+  private buildingOverridesForNation(nationId: string): Record<string, any> {
+    const MAP: Record<string, string[]> = {
+      romans: ['castle','sawmill','stonecutter','mine','toolsmith','weaponsmith','bakery','butcher','mill','farm','fisherman','woodcutter','storehouse','waterworks','smelter','barracks','guard_tower','fortress','siege_workshop','shipyard','road_layer','apiary','mead_maker','temple_of_bacchus','colosseum','sanctuary_of_minerva','sanctuary_of_vulcan','vineyard','small_temple','large_temple','small_residence','medium_residence','large_residence','storage_yard','marketplace','landing_dock','forester','healer','sheep_ranch','pig_ranch','goat_ranch','goose_ranch','donkey_ranch','gold_mine','coal_mine','iron_ore_mine','sulfur_mine','gold_smelter','iron_smelter','slaughterhouse','oil_press','powder_mill','weapon_foundry','agave_farm','distillery','trojan_farm','wine_press','dark_temple','dark_garden','mushroom_farm','dark_fortress','demon_gate','sanctuary_of_morbus','sanctuary_of_pestilence','temple_of_chac','sanctuary_of_kukulkan','sanctuary_of_quetzalcoatl','sanctuary_of_huitzilopochtli','observatory','oracle_of_apollo','sanctuary_of_artemis','sanctuary_of_poseidon','sanctuary_of_apollo','amphitheater','mead_hall','sanctuary_of_odin','sanctuary_of_thor','sanctuary_of_freya','runestone'],
+      vikings: ['castle','sawmill','stonecutter','mine','toolsmith','weaponsmith','bakery','butcher','mill','farm','fisherman','woodcutter','storehouse','waterworks','smelter','barracks','guard_tower','fortress','siege_workshop','shipyard','road_layer','apiary','mead_maker','temple_of_bacchus','colosseum','sanctuary_of_minerva','sanctuary_of_vulcan','vineyard','small_temple','large_temple','small_residence','medium_residence','large_residence','storage_yard','marketplace','landing_dock','forester','healer','sheep_ranch','pig_ranch','goat_ranch','goose_ranch','donkey_ranch','gold_mine','coal_mine','iron_ore_mine','sulfur_mine','gold_smelter','iron_smelter','slaughterhouse','oil_press','powder_mill','weapon_foundry','agave_farm','distillery','trojan_farm','wine_press','dark_temple','dark_garden','mushroom_farm','dark_fortress','demon_gate','sanctuary_of_morbus','sanctuary_of_pestilence','temple_of_chac','sanctuary_of_kukulkan','sanctuary_of_quetzalcoatl','sanctuary_of_huitzilopochtli','observatory','oracle_of_apollo','sanctuary_of_artemis','sanctuary_of_poseidon','sanctuary_of_apollo','amphitheater','mead_hall','sanctuary_of_odin','sanctuary_of_thor','sanctuary_of_freya','runestone'],
+      mayans: ['castle','sawmill','stonecutter','mine','toolsmith','weaponsmith','bakery','butcher','mill','farm','fisherman','woodcutter','storehouse','waterworks','smelter','barracks','guard_tower','fortress','siege_workshop','shipyard','road_layer','apiary','mead_maker','temple_of_bacchus','colosseum','sanctuary_of_minerva','sanctuary_of_vulcan','vineyard','small_temple','large_temple','small_residence','medium_residence','large_residence','storage_yard','marketplace','landing_dock','forester','healer','sheep_ranch','pig_ranch','goat_ranch','goose_ranch','donkey_ranch','gold_mine','coal_mine','iron_ore_mine','sulfur_mine','gold_smelter','iron_smelter','slaughterhouse','oil_press','powder_mill','weapon_foundry','agave_farm','distillery','trojan_farm','wine_press','dark_temple','dark_garden','mushroom_farm','dark_fortress','demon_gate','sanctuary_of_morbus','sanctuary_of_pestilence','temple_of_chac','sanctuary_of_kukulkan','sanctuary_of_quetzalcoatl','sanctuary_of_huitzilopochtli','observatory','oracle_of_apollo','sanctuary_of_artemis','sanctuary_of_poseidon','sanctuary_of_apollo','amphitheater','mead_hall','sanctuary_of_odin','sanctuary_of_thor','sanctuary_of_freya','runestone'],
+      trojans: ['castle','sawmill','stonecutter','mine','toolsmith','weaponsmith','bakery','butcher','mill','farm','fisherman','woodcutter','storehouse','waterworks','smelter','barracks','guard_tower','fortress','siege_workshop','shipyard','road_layer','apiary','mead_maker','temple_of_bacchus','colosseum','sanctuary_of_minerva','sanctuary_of_vulcan','vineyard','small_temple','large_temple','small_residence','medium_residence','large_residence','storage_yard','marketplace','landing_dock','forester','healer','sheep_ranch','pig_ranch','goat_ranch','goose_ranch','donkey_ranch','gold_mine','coal_mine','iron_ore_mine','sulfur_mine','gold_smelter','iron_smelter','slaughterhouse','oil_press','powder_mill','weapon_foundry','agave_farm','distillery','trojan_farm','wine_press','dark_temple','dark_garden','mushroom_farm','dark_fortress','demon_gate','sanctuary_of_morbus','sanctuary_of_pestilence','temple_of_chac','sanctuary_of_kukulkan','sanctuary_of_quetzalcoatl','sanctuary_of_huitzilopochtli','observatory','oracle_of_apollo','sanctuary_of_artemis','sanctuary_of_poseidon','sanctuary_of_apollo','amphitheater','mead_hall','sanctuary_of_odin','sanctuary_of_thor','sanctuary_of_freya','runestone'],
+      dark: ['castle','sawmill','stonecutter','mine','toolsmith','weaponsmith','bakery','butcher','mill','farm','fisherman','woodcutter','storehouse','waterworks','smelter','barracks','guard_tower','fortress','siege_workshop','shipyard','road_layer','apiary','mead_maker','temple_of_bacchus','colosseum','sanctuary_of_minerva','sanctuary_of_vulcan','vineyard','small_temple','large_temple','small_residence','medium_residence','large_residence','storage_yard','marketplace','landing_dock','forester','healer','sheep_ranch','pig_ranch','goat_ranch','goose_ranch','donkey_ranch','gold_mine','coal_mine','iron_ore_mine','sulfur_mine','gold_smelter','iron_smelter','slaughterhouse','oil_press','powder_mill','weapon_foundry','agave_farm','distillery','trojan_farm','wine_press','dark_temple','dark_garden','mushroom_farm','dark_fortress','demon_gate','sanctuary_of_morbus','sanctuary_of_pestilence','temple_of_chac','sanctuary_of_kukulkan','sanctuary_of_quetzalcoatl','sanctuary_of_huitzilopochtli','observatory','oracle_of_apollo','sanctuary_of_artemis','sanctuary_of_poseidon','sanctuary_of_apollo','amphitheater','mead_hall','sanctuary_of_odin','sanctuary_of_thor','sanctuary_of_freya','runestone']
+    };
+    const list = MAP[nationId] ?? [];
+    return list.reduce((acc, key) => ({ ...acc, [key]: {} }), {} as Record<string, any>);
+  }
+
   private loadMisc(): void {
     this.objects = [
       { id:'m-splash',type:'ui',name:'Splash',_promptKey:'splash',_instances:[],_chain:{mesh:'CSS bg-image',texture:'/images/splash.png',animation:'Fade 0.3s'},properties:{file:'splash.png',format:'4K responsive center-safe'}},
@@ -532,6 +573,28 @@ export class ObjectExplorer {
      const chain = x._chain;
      const instances: any[] = x._instances ?? [];
      const kind = x._kind as BuildingType | undefined;
+     const nationId = (x as any)._nationId as string | undefined;
+
+     // Nation asset listing
+     let nationAssetsHtml = '';
+     if (nationId && obj.type === 'nation') {
+       const bOverrides = Object.keys(this.buildingOverridesForNation(nationId));
+       const unitKeys = ['worker','soldier','archer','settler','special'];
+       const rows = (items: string[], label: string) => items.map(it =>
+         `<div class="explorer-prop-row"><span class="prop-key">${label}:</span><span class="prop-val">${it}</span></div>`
+       ).join('');
+       nationAssetsHtml = `
+         <div class="explorer-section">
+           <div class="explorer-section-title">🧩 Assets</div>
+           <div class="explorer-section-body">
+             ${rows(unitKeys, 'unit')}
+             ${rows(bOverrides, 'building')}
+             <div class="explorer-prop-row"><span class="prop-key">textures:</span><span class="prop-val">assets/nations/${nationId}/textures/{buildings,units}/</span></div>
+             <div class="explorer-prop-row"><span class="prop-key">models:</span><span class="prop-val">assets/nations/${nationId}/models/{buildings,units,decorations}/</span></div>
+             <div class="explorer-prop-row"><span class="prop-key">animations:</span><span class="prop-val">assets/nations/${nationId}/animations/{buildings,units}/</span></div>
+           </div>
+         </div>`;
+     }
 
      // Statics
      const statics = Object.entries(obj.properties as Record<string,any>)
@@ -569,6 +632,8 @@ export class ObjectExplorer {
      }
 
      const parts: string[] = [];
+
+     if (nationAssetsHtml) parts.push(nationAssetsHtml);
 
      if (chain) {
        // ── Texture preview — show raw image for ANY asset type ──
