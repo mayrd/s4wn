@@ -191,14 +191,12 @@ export class BuildingMesh {
       { height: 0.8, diameter: 0.06 },
       this.scene
     );
-    flag.position.set(root.position.x, root.position.y + 2.5, root.position.z);
 
     const flagCloth = MeshBuilder.CreatePlane(
       `flag-cloth-${nation}`,
       { width: 0.4, height: 0.25 },
       this.scene
     );
-    flagCloth.position.set(root.position.x + 0.22, root.position.y + 2.8, root.position.z);
 
     const flagMat = new StandardMaterial(`flagMat-${nation}`, this.scene);
     flagMat.diffuseColor = nationColor;
@@ -206,9 +204,18 @@ export class BuildingMesh {
     flagMat.specularColor = new Color3(0, 0, 0);
     flagCloth.material = flagMat;
 
-    // Parent flag to root so it moves with the building
+    // Parent flag to root so it moves with the building.
+    // IMPORTANT: Parent BEFORE setting position — in Babylon.js, a child's
+    // position is relative to its parent. Setting world coordinates before
+    // parenting causes the flag to appear at double the offset (e.g., at
+    // (100, 2.5, 100) instead of (50, 2.5, 50) when root is at (50, 0, 50)).
     flag.parent = root;
     flagCloth.parent = root;
+
+    // Set LOCAL position (relative to root) — must be done AFTER parenting
+    // so the coordinates are interpreted as local, not world.
+    flag.position.set(0, 2.5, 0);
+    flagCloth.position.set(0.22, 2.8, 0);
   }
 
   /**
