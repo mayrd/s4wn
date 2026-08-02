@@ -53,8 +53,8 @@ export class Economy {
   static readonly STORAGE_PER_YARD = 50;
 
   constructor(logistics?: LogisticsManager) {
-    // Start with some initial resources
-    this.resources[ResourceType.Wood] = 20;
+    // Start with initial construction materials (Planks for building, per BASE.md)
+    this.resources[ResourceType.Planks] = 20;
     this.resources[ResourceType.Stone] = 10;
     this.logistics = logistics || new LogisticsManager();
     this.tradeRoutes = new TradeRouteManager();

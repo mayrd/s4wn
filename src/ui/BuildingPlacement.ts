@@ -43,6 +43,7 @@ export function getBuildingCategories(): BuildingCategory[] {
         BuildingType.Slaughterhouse,
         BuildingType.Fisherman,
         BuildingType.Waterworks,
+        BuildingType.SheepRanch,
       ],
     },
     {
@@ -70,6 +71,15 @@ export function getBuildingCategories(): BuildingCategory[] {
       ],
     },
     {
+      id: 'divine',
+      label: 'Divine',
+      buildings: [
+        BuildingType.Vineyard,
+        BuildingType.SmallTemple,
+        BuildingType.LargeTemple,
+      ],
+    },
+    {
       id: 'logistics',
       label: 'Logistics',
       buildings: [
@@ -80,6 +90,7 @@ export function getBuildingCategories(): BuildingCategory[] {
         BuildingType.Storehouse,
         BuildingType.Marketplace,
         BuildingType.Shipyard,
+        BuildingType.LandingDock,
       ],
     },
   ];
@@ -633,6 +644,7 @@ export class BuildingPlacement {
       .bp-category-tab[data-category="mining"] .bp-medal-icon { background-position: -64px 0; }
       .bp-category-tab[data-category="military"] .bp-medal-icon { background-position: -96px 0; }
       .bp-category-tab[data-category="logistics"] .bp-medal-icon { background-position: -128px 0; }
+      .bp-category-tab[data-category="divine"] .bp-medal-icon { background-position: -160px 0; }
 
       .bp-content {
         flex: 1;

@@ -70,7 +70,7 @@ describe('SaveManager', () => {
       const restored = new Economy();
       restored.restoreFromJSON(json);
 
-      expect(restored.getResource(EconResource.Wood)).toBe(70); // 20 initial + 50 added
+      expect(restored.getResource(EconResource.Wood)).toBe(50); // 0 initial (starts with Planks) + 50 added
       expect(restored.storageCapacity).toBe(200);
       expect(restored.buildings.length).toBe(1);
       expect(restored.buildings[0].index).toBe(5);

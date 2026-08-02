@@ -76,8 +76,8 @@ describe('WorkerAI — idle settler assignment', () => {
     const sawmill = economy.tryPlaceBuilding(BuildingType.Sawmill, 5, 5, map, 1)!;
     for (let i = 0; i < 35; i++) economy.tick(1.0); // buildTime=30
     expect(sawmill.constructionProgress).toBeCloseTo(1.0);
-    // Sawmill needs Wood input in global storage; Economy starts with Wood=20 by default,
-    // so remove it to simulate the input-gated "not affordable" case.
+    // Sawmill needs Wood input; Economy starts with Planks (not Wood) so Wood=0 by default.
+    // The removeResource call is a no-op but kept for clarity.
     economy.removeResource(0 as any, economy.getResourceByDiscriminant(0));
 
     const settler = um.spawnUnit(UnitKind.Settler, 0, 0);

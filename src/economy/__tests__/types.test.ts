@@ -69,27 +69,66 @@ describe('resourceName', () => {
 });
 
 describe('buildCost', () => {
-  test('Castle costs wood and stone', () => {
+  test('Castle costs 8 Planks + 7 Stone (Roman per BASE.md)', () => {
     const cost = buildCost(BuildingType.Castle);
     expect(cost).toEqual([
-      { resource: ResourceType.Wood, amount: 10 },
-      { resource: ResourceType.Stone, amount: 5 },
+      { resource: ResourceType.Planks, amount: 8 },
+      { resource: ResourceType.Stone, amount: 7 },
     ]);
   });
 
-  test('Woodcutter is cheap (wood only)', () => {
+  test('Woodcutter costs 2 Planks + 1 Stone', () => {
     const cost = buildCost(BuildingType.Woodcutter);
-    expect(cost).toEqual([{ resource: ResourceType.Wood, amount: 2 }]);
+    expect(cost).toEqual([
+      { resource: ResourceType.Planks, amount: 2 },
+      { resource: ResourceType.Stone, amount: 1 },
+    ]);
   });
 
-  test('unknown/default building kind has empty cost', () => {
-    // Marketplace has no explicit case in buildCost's switch → default []
-    expect(buildCost(BuildingType.Marketplace)).toEqual([]);
+  test('Forester costs 2 Planks + 1 Stone (NOT free!)', () => {
+    const cost = buildCost(BuildingType.Forester);
+    expect(cost).toEqual([
+      { resource: ResourceType.Planks, amount: 2 },
+      { resource: ResourceType.Stone, amount: 1 },
+    ]);
+  });
+
+  test('Marketplace costs 4 Planks + 2 Stone', () => {
+    const cost = buildCost(BuildingType.Marketplace);
+    expect(cost).toEqual([
+      { resource: ResourceType.Planks, amount: 4 },
+      { resource: ResourceType.Stone, amount: 2 },
+    ]);
+  });
+
+  test('all Roman buildings have non-empty construction cost using Planks', () => {
+    const romanBuildings: BuildingType[] = [
+      BuildingType.Forester, BuildingType.Woodcutter, BuildingType.Sawmill,
+      BuildingType.Stonecutter, BuildingType.Farm, BuildingType.Mill,
+      BuildingType.Bakery, BuildingType.Slaughterhouse, BuildingType.Fisherman,
+      BuildingType.Waterworks, BuildingType.CoalMine, BuildingType.IronOreMine,
+      BuildingType.GoldMine, BuildingType.SulfurMine, BuildingType.IronSmelter,
+      BuildingType.GoldSmelter, BuildingType.Toolsmith, BuildingType.Weaponsmith,
+      BuildingType.Barracks, BuildingType.GuardTower, BuildingType.Fortress,
+      BuildingType.Castle, BuildingType.Healer, BuildingType.Vineyard,
+      BuildingType.SmallTemple, BuildingType.LargeTemple,
+      BuildingType.SmallResidence, BuildingType.MediumResidence,
+      BuildingType.LargeResidence, BuildingType.StorageYard,
+      BuildingType.Marketplace, BuildingType.Shipyard, BuildingType.LandingDock,
+      BuildingType.SheepRanch,
+    ];
+    for (const kind of romanBuildings) {
+      const cost = buildCost(kind);
+      expect(cost.length).toBeGreaterThan(0);
+      // All construction costs should use Planks (not Wood logs)
+      const hasPlanks = cost.some(c => c.resource === ResourceType.Planks);
+      expect(hasPlanks).toBe(true);
+    }
   });
 });
 
 describe('buildingInputs / buildingOutputs', () => {
-  test('Sawmill takes wood and produces planks', () => {
+  test('Sawmill takes wood logs and produces planks', () => {
     expect(buildingInputs(BuildingType.Sawmill)).toEqual([{ resource: ResourceType.Wood, amount: 2 }]);
     expect(buildingOutputs(BuildingType.Sawmill)).toEqual([{ resource: ResourceType.Planks, amount: 1 }]);
   });
@@ -99,12 +138,115 @@ describe('buildingInputs / buildingOutputs', () => {
     expect(buildingOutputs(BuildingType.Woodcutter)).toEqual([{ resource: ResourceType.Wood, amount: 2 }]);
   });
 
-  test('Weaponsmith requires iron ore, coal, and tools', () => {
+  test('Weaponsmith requires iron ingots and coal (not iron ore + tools)', () => {
     const inputs = buildingInputs(BuildingType.Weaponsmith);
     expect(inputs).toEqual([
+      { resource: ResourceType.IronIngots, amount: 1 },
+      { resource: ResourceType.Coal, amount: 1 },
+    ]);
+  });
+
+  test('Toolsmith requires iron ingots and coal (not iron ore)', () => {
+    const inputs = buildingInputs(BuildingType.Toolsmith);
+    expect(inputs).toEqual([
+      { resource: ResourceType.IronIngots, amount: 1 },
+      { resource: ResourceType.Coal, amount: 1 },
+    ]);
+  });
+
+  test('Bakery requires flour and water (not grain)', () => {
+    expect(buildingInputs(BuildingType.Bakery)).toEqual([
+      { resource: ResourceType.Flour, amount: 1 },
+      { resource: ResourceType.Water, amount: 1 },
+    ]);
+  });
+
+  test('Coal Mine requires bread (food for miners)', () => {
+    expect(buildingInputs(BuildingType.CoalMine)).toEqual([
+      { resource: ResourceType.Bread, amount: 1 },
+    ]);
+  });
+
+  test('Iron Ore Mine requires meat (food for miners)', () => {
+    expect(buildingInputs(BuildingType.IronOreMine)).toEqual([
+      { resource: ResourceType.Meat, amount: 1 },
+    ]);
+  });
+
+  test('Gold Mine requires fish (food for miners)', () => {
+    expect(buildingInputs(BuildingType.GoldMine)).toEqual([
+      { resource: ResourceType.Fish, amount: 1 },
+    ]);
+  });
+
+  test('Sulfur Mine requires fish (food for miners)', () => {
+    expect(buildingInputs(BuildingType.SulfurMine)).toEqual([
+      { resource: ResourceType.Fish, amount: 1 },
+    ]);
+  });
+
+  test('Iron Smelter requires iron ore and coal', () => {
+    expect(buildingInputs(BuildingType.IronSmelter)).toEqual([
       { resource: ResourceType.IronOre, amount: 1 },
       { resource: ResourceType.Coal, amount: 1 },
-      { resource: ResourceType.Tools, amount: 1 },
+    ]);
+  });
+
+  test('Gold Smelter requires gold ore and coal', () => {
+    expect(buildingInputs(BuildingType.GoldSmelter)).toEqual([
+      { resource: ResourceType.Gold, amount: 1 },
+      { resource: ResourceType.Coal, amount: 1 },
+    ]);
+  });
+
+  test('Sheep Ranch requires grain and water', () => {
+    expect(buildingInputs(BuildingType.SheepRanch)).toEqual([
+      { resource: ResourceType.Grain, amount: 1 },
+      { resource: ResourceType.Water, amount: 1 },
+    ]);
+  });
+
+  test('Small Temple requires wine (Roman mana source)', () => {
+    expect(buildingInputs(BuildingType.SmallTemple)).toEqual([
+      { resource: ResourceType.Wine, amount: 1 },
+    ]);
+  });
+
+  test('Powder Mill requires sulfur and coal', () => {
+    expect(buildingInputs(BuildingType.PowderMill)).toEqual([
+      { resource: ResourceType.Sulfur, amount: 1 },
+      { resource: ResourceType.Coal, amount: 1 },
+    ]);
+  });
+
+  test('Weapon Foundry requires iron ingots and sulfur', () => {
+    expect(buildingInputs(BuildingType.WeaponFoundry)).toEqual([
+      { resource: ResourceType.IronIngots, amount: 1 },
+      { resource: ResourceType.Sulfur, amount: 1 },
+    ]);
+  });
+
+  test('Mead Maker requires honey', () => {
+    expect(buildingInputs(BuildingType.MeadMaker)).toEqual([
+      { resource: ResourceType.Honey, amount: 1 },
+    ]);
+  });
+
+  test('Apiary produces honey', () => {
+    expect(buildingOutputs(BuildingType.Apiary)).toEqual([
+      { resource: ResourceType.Honey, amount: 1 },
+    ]);
+  });
+
+  test('Mead Maker produces mead', () => {
+    expect(buildingOutputs(BuildingType.MeadMaker)).toEqual([
+      { resource: ResourceType.Mead, amount: 1 },
+    ]);
+  });
+
+  test('Vineyard produces wine (not grain)', () => {
+    expect(buildingOutputs(BuildingType.Vineyard)).toEqual([
+      { resource: ResourceType.Wine, amount: 1 },
     ]);
   });
 

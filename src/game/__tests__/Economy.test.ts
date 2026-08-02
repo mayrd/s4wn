@@ -23,9 +23,9 @@ function makeBuildableMap(w: number, h: number, ownerId: number = 1): GameMap {
 }
 
 describe('Economy — resource management', () => {
-  test('starts with initial Wood=20, Stone=10', () => {
+  test('starts with initial Planks=20, Stone=10', () => {
     const economy = new Economy();
-    expect(economy.getResource(ResourceType.Wood)).toBe(20);
+    expect(economy.getResource(ResourceType.Planks)).toBe(20);
     expect(economy.getResource(ResourceType.Stone)).toBe(10);
     expect(economy.getResource(ResourceType.Gold)).toBe(0);
   });
@@ -48,34 +48,34 @@ describe('Economy — resource management', () => {
 
   test('removeResource succeeds when sufficient and fails when not', () => {
     const economy = new Economy();
-    expect(economy.removeResource(ResourceType.Wood, 5)).toBe(true);
-    expect(economy.getResource(ResourceType.Wood)).toBe(15);
-    expect(economy.removeResource(ResourceType.Wood, 1000)).toBe(false);
-    expect(economy.getResource(ResourceType.Wood)).toBe(15); // unchanged
+    expect(economy.removeResource(ResourceType.Planks, 5)).toBe(true);
+    expect(economy.getResource(ResourceType.Planks)).toBe(15);
+    expect(economy.removeResource(ResourceType.Planks, 1000)).toBe(false);
+    expect(economy.getResource(ResourceType.Planks)).toBe(15); // unchanged
   });
 
   test('canAfford / spendResources', () => {
     const economy = new Economy();
-    const cost = [{ resource: ResourceType.Wood, amount: 10 }, { resource: ResourceType.Stone, amount: 5 }];
+    const cost = [{ resource: ResourceType.Planks, amount: 10 }, { resource: ResourceType.Stone, amount: 5 }];
     expect(economy.canAfford(cost)).toBe(true);
     expect(economy.spendResources(cost)).toBe(true);
-    expect(economy.getResource(ResourceType.Wood)).toBe(10);
+    expect(economy.getResource(ResourceType.Planks)).toBe(10);
     expect(economy.getResource(ResourceType.Stone)).toBe(5);
   });
 
   test('spendResources fails and does not partially deduct if unaffordable', () => {
     const economy = new Economy();
-    const cost = [{ resource: ResourceType.Wood, amount: 5 }, { resource: ResourceType.Gold, amount: 100 }];
+    const cost = [{ resource: ResourceType.Planks, amount: 5 }, { resource: ResourceType.Gold, amount: 100 }];
     expect(economy.spendResources(cost)).toBe(false);
-    // Wood should remain untouched since canAfford check happens first
-    expect(economy.getResource(ResourceType.Wood)).toBe(20);
+    // Planks should remain untouched since canAfford check happens first
+    expect(economy.getResource(ResourceType.Planks)).toBe(20);
   });
 
   test('getResourceCounts returns a defensive copy', () => {
     const economy = new Economy();
     const counts = economy.getResourceCounts();
-    counts[ResourceType.Wood] = 999;
-    expect(economy.getResource(ResourceType.Wood)).toBe(20);
+    counts[ResourceType.Planks] = 999;
+    expect(economy.getResource(ResourceType.Planks)).toBe(20);
   });
 });
 
@@ -95,16 +95,17 @@ describe('Economy — building placement', () => {
   test('tryPlaceBuilding deducts cost from resources', () => {
     const economy = new Economy();
     const map = makeBuildableMap(10, 10, 1);
-    // Woodcutter costs 2 wood
+    // Woodcutter costs 2 Planks + 1 Stone (per BASE.md)
     economy.tryPlaceBuilding(BuildingType.Woodcutter, 5, 5, map, 1);
-    expect(economy.getResource(ResourceType.Wood)).toBe(18);
+    expect(economy.getResource(ResourceType.Planks)).toBe(18);
+    expect(economy.getResource(ResourceType.Stone)).toBe(9);
   });
 
   test('tryPlaceBuilding fails when resources insufficient', () => {
     const economy = new Economy();
     const map = makeBuildableMap(10, 10, 1);
-    // Fortress costs 20 stone + 12 planks + 8 iron ore -- way more than starting resources
-    const building = economy.tryPlaceBuilding(BuildingType.Fortress, 5, 5, map, 1);
+    // Observatory costs 25 Stone + 10 Gold -- player has no Gold
+    const building = economy.tryPlaceBuilding(BuildingType.Observatory, 5, 5, map, 1);
     expect(building).toBeNull();
     expect(economy.buildings.length).toBe(0);
   });
@@ -201,7 +202,7 @@ describe('Economy — production tick', () => {
   test('Castle has 0 buildTime and is immediately active', () => {
     const economy = new Economy();
     const map = makeBuildableMap(10, 10, 1);
-    // Castle costs 10 wood + 5 stone, within starting resources
+    // Castle costs 8 Planks + 7 Stone, within starting resources (20P + 10S)
     const castle = economy.tryPlaceBuilding(BuildingType.Castle, 5, 5, map, 1)!;
     economy.tick(1.0);
     expect(castle.constructionProgress).toBe(1.0);
@@ -246,13 +247,14 @@ describe('Economy — production tick', () => {
     sawmill.assignedSettlers.push(1);
 
     // No inputBuffer stocked -> no planks produced even after interval elapses
+    const planksBefore = economy.getResource(ResourceType.Planks);
     for (let i = 0; i < 20; i++) economy.tick(1.0);
-    expect(economy.getResource(ResourceType.Planks)).toBe(0);
+    expect(economy.getResource(ResourceType.Planks)).toBe(planksBefore); // unchanged
 
     // Stock the input buffer directly (simulating delivered wood) and tick again
     sawmill.inputBuffer[ResourceType.Wood] = 10;
     for (let i = 0; i < 20; i++) economy.tick(1.0);
-    expect(economy.getResource(ResourceType.Planks)).toBeGreaterThan(0);
+    expect(economy.getResource(ResourceType.Planks)).toBeGreaterThan(planksBefore);
   });
 });
 

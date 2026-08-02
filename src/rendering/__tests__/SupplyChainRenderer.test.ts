@@ -120,9 +120,9 @@ describe('SupplyChainRenderer', () => {
       expect(links).toEqual([]);
     });
 
-    test('connects a farm (producer) to a bakery (consumer)', () => {
+    test('connects a farm (producer) to a mill (consumer)', () => {
       addActiveBuilding(economy, BuildingType.Farm, 2, 3, 1);
-      addActiveBuilding(economy, BuildingType.Bakery, 6, 5, 1);
+      addActiveBuilding(economy, BuildingType.Mill, 6, 5, 1);
 
       const links = renderer.computeLinks(economy);
       expect(links.length).toBe(1);
@@ -130,7 +130,7 @@ describe('SupplyChainRenderer', () => {
       expect(links[0].fromY).toBe(3);
       expect(links[0].toX).toBe(6);
       expect(links[0].toY).toBe(5);
-      expect(links[0].consumerKind).toBe(BuildingType.Bakery);
+      expect(links[0].consumerKind).toBe(BuildingType.Mill);
       expect(links[0].resourceName).toBe('Grain');
     });
 
@@ -138,7 +138,7 @@ describe('SupplyChainRenderer', () => {
       addActiveBuilding(economy, BuildingType.Woodcutter, 1, 1, 1);
       addActiveBuilding(economy, BuildingType.Sawmill, 4, 2, 1);
       addActiveBuilding(economy, BuildingType.Farm, 2, 5, 1);
-      addActiveBuilding(economy, BuildingType.Bakery, 6, 6, 1);
+      addActiveBuilding(economy, BuildingType.Mill, 6, 6, 1);
 
       const links = renderer.computeLinks(economy);
       expect(links.length).toBe(2);
@@ -189,7 +189,7 @@ describe('SupplyChainRenderer', () => {
 
     test('resource colors are assigned correctly', () => {
       addActiveBuilding(economy, BuildingType.Farm, 2, 3, 1);
-      addActiveBuilding(economy, BuildingType.Bakery, 6, 5, 1);
+      addActiveBuilding(economy, BuildingType.Mill, 6, 5, 1);
 
       const links = renderer.computeLinks(economy);
       expect(links[0].color).toBeDefined();
@@ -202,7 +202,7 @@ describe('SupplyChainRenderer', () => {
   describe('refresh / dispose', () => {
     test('refresh creates meshes for each link', () => {
       addActiveBuilding(economy, BuildingType.Farm, 2, 3, 1);
-      addActiveBuilding(economy, BuildingType.Bakery, 6, 5, 1);
+      addActiveBuilding(economy, BuildingType.Mill, 6, 5, 1);
       const links = renderer.computeLinks(economy);
 
       renderer.refresh(links);
@@ -213,7 +213,7 @@ describe('SupplyChainRenderer', () => {
 
     test('dispose clears all meshes, re-refresh is clean', () => {
       addActiveBuilding(economy, BuildingType.Farm, 2, 3, 1);
-      addActiveBuilding(economy, BuildingType.Bakery, 6, 5, 1);
+      addActiveBuilding(economy, BuildingType.Mill, 6, 5, 1);
       const links = renderer.computeLinks(economy);
       renderer.refresh(links);
 
@@ -257,7 +257,7 @@ describe('SupplyChainRenderer', () => {
 
     test('computeLinks respects filters', () => {
       addActiveBuilding(economy, BuildingType.Farm, 2, 3, 1);
-      addActiveBuilding(economy, BuildingType.Bakery, 6, 5, 1);
+      addActiveBuilding(economy, BuildingType.Mill, 6, 5, 1);
       
       // Filter out Grain (resource 7)
       renderer.setResourceVisible(7, false);
@@ -278,7 +278,7 @@ describe('SupplyChainRenderer', () => {
 
     test('advances carrier position each frame', () => {
       addActiveBuilding(economy, BuildingType.Farm, 2, 3, 1);
-      addActiveBuilding(economy, BuildingType.Bakery, 6, 5, 1);
+      addActiveBuilding(economy, BuildingType.Mill, 6, 5, 1);
       const links = renderer.computeLinks(economy);
       renderer.refresh(links);
 
@@ -297,7 +297,7 @@ describe('SupplyChainRenderer', () => {
 
     test('carrier wraps around at path end', () => {
       addActiveBuilding(economy, BuildingType.Farm, 2, 3, 1);
-      addActiveBuilding(economy, BuildingType.Bakery, 6, 5, 1);
+      addActiveBuilding(economy, BuildingType.Mill, 6, 5, 1);
       const links = renderer.computeLinks(economy);
       renderer.refresh(links);
 
@@ -315,7 +315,7 @@ describe('SupplyChainRenderer', () => {
       await renderer.loadCarrierModel();
 
       addActiveBuilding(economy, BuildingType.Farm, 2, 3, 1);
-      addActiveBuilding(economy, BuildingType.Bakery, 6, 5, 1);
+      addActiveBuilding(economy, BuildingType.Mill, 6, 5, 1);
       const links = renderer.computeLinks(economy);
       renderer.refresh(links);
 

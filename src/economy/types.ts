@@ -210,65 +210,98 @@ export interface CostItem {
   amount: number;
 }
 
-/** Resource cost to construct a building */
+/** Resource cost to construct a building (Roman costs from BASE.md) */
 export function buildCost(kind: BuildingType): CostItem[] {
   switch (kind) {
-    case BuildingType.Castle: return [{ resource: ResourceType.Wood, amount: 10 }, { resource: ResourceType.Stone, amount: 5 }];
-    case BuildingType.Sawmill: return [{ resource: ResourceType.Wood, amount: 5 }, { resource: ResourceType.Stone, amount: 2 }];
-    case BuildingType.Stonecutter: return [{ resource: ResourceType.Wood, amount: 5 }];
-    case BuildingType.Mine: return [{ resource: ResourceType.Wood, amount: 8 }, { resource: ResourceType.Stone, amount: 3 }];
-    case BuildingType.Toolsmith: return [
-      { resource: ResourceType.Wood, amount: 5 }, { resource: ResourceType.Stone, amount: 5 },
-      { resource: ResourceType.IronOre, amount: 2 },
-    ];
-    case BuildingType.Weaponsmith: return [
-      { resource: ResourceType.Wood, amount: 5 }, { resource: ResourceType.Stone, amount: 5 },
-      { resource: ResourceType.Tools, amount: 3 },
-    ];
-    case BuildingType.Bakery: return [{ resource: ResourceType.Wood, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
-    case BuildingType.Butcher: return [{ resource: ResourceType.Wood, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
-    case BuildingType.Mill: return [{ resource: ResourceType.Wood, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
-    case BuildingType.Farm: return [{ resource: ResourceType.Wood, amount: 3 }];
-    case BuildingType.Fisherman: return [{ resource: ResourceType.Wood, amount: 3 }];
-    case BuildingType.Woodcutter: return [{ resource: ResourceType.Wood, amount: 2 }];
-    case BuildingType.Storehouse: return [{ resource: ResourceType.Wood, amount: 8 }, { resource: ResourceType.Stone, amount: 4 }];
-    case BuildingType.Waterworks: return [{ resource: ResourceType.Wood, amount: 4 }, { resource: ResourceType.Stone, amount: 3 }];
-    case BuildingType.Smelter: return [{ resource: ResourceType.Wood, amount: 5 }, { resource: ResourceType.Stone, amount: 5 }];
-    case BuildingType.Barracks: return [{ resource: ResourceType.Wood, amount: 6 }, { resource: ResourceType.Stone, amount: 6 }];
-    case BuildingType.GuardTower: return [{ resource: ResourceType.Stone, amount: 8 }, { resource: ResourceType.Planks, amount: 6 }];
-    case BuildingType.Fortress: return [
-      { resource: ResourceType.Stone, amount: 20 }, { resource: ResourceType.Planks, amount: 12 },
-      { resource: ResourceType.IronOre, amount: 8 },
-    ];
-    case BuildingType.SiegeWorkshop: return [
-      { resource: ResourceType.Wood, amount: 10 }, { resource: ResourceType.Stone, amount: 8 },
-      { resource: ResourceType.Tools, amount: 3 },
-    ];
-    case BuildingType.Shipyard: return [
-      { resource: ResourceType.Wood, amount: 10 }, { resource: ResourceType.Stone, amount: 6 },
-      { resource: ResourceType.Planks, amount: 6 },
-    ];
-    case BuildingType.RoadLayer: return [{ resource: ResourceType.Wood, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
-    case BuildingType.TempleOfChac: return [{ resource: ResourceType.Stone, amount: 20 }, { resource: ResourceType.Gold, amount: 5 }];
-    case BuildingType.AgaveFarm: return [{ resource: ResourceType.Wood, amount: 3 }];
-    case BuildingType.Distillery: return [{ resource: ResourceType.Wood, amount: 5 }, { resource: ResourceType.Stone, amount: 3 }];
+    // ── Basic Economy (Roman) ──
+    case BuildingType.Forester: return [{ resource: ResourceType.Planks, amount: 2 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.Woodcutter: return [{ resource: ResourceType.Planks, amount: 2 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.Sawmill: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.Stonecutter: return [{ resource: ResourceType.Planks, amount: 2 }, { resource: ResourceType.Stone, amount: 1 }];
+    // ── Food Production (Roman) ──
+    case BuildingType.Farm: return [{ resource: ResourceType.Planks, amount: 5 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.Mill: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.Bakery: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.Slaughterhouse: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.Butcher: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.Fisherman: return [{ resource: ResourceType.Planks, amount: 2 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.Waterworks: return [{ resource: ResourceType.Planks, amount: 3 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.SheepRanch: return [{ resource: ResourceType.Planks, amount: 5 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.PigRanch: return [{ resource: ResourceType.Planks, amount: 5 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.GoatRanch: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 3 }];
+    case BuildingType.GooseRanch: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 4 }];
+    case BuildingType.DonkeyRanch: return [{ resource: ResourceType.Planks, amount: 5 }, { resource: ResourceType.Stone, amount: 6 }];
+    // ── Mining & Smelting (Roman) ──
+    case BuildingType.CoalMine: return [{ resource: ResourceType.Planks, amount: 3 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.IronOreMine: return [{ resource: ResourceType.Planks, amount: 3 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.GoldMine: return [{ resource: ResourceType.Planks, amount: 3 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.SulfurMine: return [{ resource: ResourceType.Planks, amount: 3 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.IronSmelter: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.GoldSmelter: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.Mine: return [{ resource: ResourceType.Planks, amount: 3 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.Smelter: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    // ── Military & Tools (Roman) ──
+    case BuildingType.Toolsmith: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.Weaponsmith: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 3 }];
+    case BuildingType.Barracks: return [{ resource: ResourceType.Planks, amount: 5 }, { resource: ResourceType.Stone, amount: 4 }];
+    case BuildingType.GuardTower: return [{ resource: ResourceType.Planks, amount: 3 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.Fortress: return [{ resource: ResourceType.Planks, amount: 5 }, { resource: ResourceType.Stone, amount: 4 }];
+    case BuildingType.Castle: return [{ resource: ResourceType.Planks, amount: 8 }, { resource: ResourceType.Stone, amount: 7 }];
+    case BuildingType.Healer: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.SiegeWorkshop: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 3 }];
+    case BuildingType.WeaponFoundry: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 4 }];
+    // ── Divine & Special (Roman) ──
+    case BuildingType.Vineyard: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.SmallTemple: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 5 }];
+    case BuildingType.LargeTemple: return [{ resource: ResourceType.Planks, amount: 6 }, { resource: ResourceType.Stone, amount: 8 }];
+    case BuildingType.TempleOfBacchus: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 5 }];
+    case BuildingType.Colosseum: return [{ resource: ResourceType.Planks, amount: 6 }, { resource: ResourceType.Stone, amount: 8 }];
+    case BuildingType.SanctuaryOfMinerva: return [{ resource: ResourceType.Planks, amount: 6 }, { resource: ResourceType.Stone, amount: 8 }];
+    case BuildingType.SanctuaryOfVulcan: return [{ resource: ResourceType.Planks, amount: 6 }, { resource: ResourceType.Stone, amount: 8 }];
+    // ── Logistics (Roman) ──
+    case BuildingType.SmallResidence: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.MediumResidence: return [{ resource: ResourceType.Planks, amount: 7 }, { resource: ResourceType.Stone, amount: 4 }];
+    case BuildingType.LargeResidence: return [{ resource: ResourceType.Planks, amount: 10 }, { resource: ResourceType.Stone, amount: 6 }];
+    case BuildingType.StorageYard: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.Storehouse: return [{ resource: ResourceType.Planks, amount: 8 }, { resource: ResourceType.Stone, amount: 4 }];
+    case BuildingType.Marketplace: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.Shipyard: return [{ resource: ResourceType.Planks, amount: 5 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.LandingDock: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    case BuildingType.RoadLayer: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 2 }];
+    // ── Viking Divine ──
+    case BuildingType.Apiary: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.MeadMaker: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 1 }];
+    case BuildingType.MeadHall: return [{ resource: ResourceType.Planks, amount: 8 }, { resource: ResourceType.Stone, amount: 4 }];
+    case BuildingType.SanctuaryOfOdin: return [{ resource: ResourceType.Planks, amount: 6 }, { resource: ResourceType.Stone, amount: 8 }];
+    case BuildingType.SanctuaryOfThor: return [{ resource: ResourceType.Planks, amount: 6 }, { resource: ResourceType.Stone, amount: 8 }];
+    case BuildingType.SanctuaryOfFreya: return [{ resource: ResourceType.Planks, amount: 6 }, { resource: ResourceType.Stone, amount: 8 }];
+    case BuildingType.Runestone: return [{ resource: ResourceType.Planks, amount: 2 }, { resource: ResourceType.Stone, amount: 3 }];
+    // ── Mayan Divine ──
+    case BuildingType.AgaveFarm: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 3 }];
+    case BuildingType.Distillery: return [{ resource: ResourceType.Planks, amount: 3 }, { resource: ResourceType.Stone, amount: 3 }];
+    case BuildingType.PowderMill: return [{ resource: ResourceType.Planks, amount: 3 }, { resource: ResourceType.Stone, amount: 3 }];
+    case BuildingType.TempleOfChac: return [{ resource: ResourceType.Planks, amount: 3 }, { resource: ResourceType.Stone, amount: 6 }];
     case BuildingType.SanctuaryOfKukulkan:
     case BuildingType.SanctuaryOfQuetzalcoatl:
     case BuildingType.SanctuaryOfHuitzilopochtli:
-      return [{ resource: ResourceType.Stone, amount: 15 }, { resource: ResourceType.Gold, amount: 5 }];
+      return [{ resource: ResourceType.Planks, amount: 5 }, { resource: ResourceType.Stone, amount: 9 }];
     case BuildingType.Observatory: return [{ resource: ResourceType.Stone, amount: 25 }, { resource: ResourceType.Gold, amount: 10 }];
-    case BuildingType.OracleOfApollo: return [{ resource: ResourceType.Stone, amount: 20 }, { resource: ResourceType.Gold, amount: 10 }];
+    // ── Trojan Divine ──
+    case BuildingType.TrojanFarm: return [{ resource: ResourceType.Planks, amount: 4 }, { resource: ResourceType.Stone, amount: 4 }];
+    case BuildingType.OilPress: return [{ resource: ResourceType.Planks, amount: 3 }, { resource: ResourceType.Stone, amount: 3 }];
+    case BuildingType.OracleOfApollo: return [{ resource: ResourceType.Planks, amount: 5 }, { resource: ResourceType.Stone, amount: 5 }];
     case BuildingType.SanctuaryOfArtemis:
     case BuildingType.SanctuaryOfPoseidon:
     case BuildingType.SanctuaryOfApollo:
-      return [{ resource: ResourceType.Stone, amount: 15 }, { resource: ResourceType.Gold, amount: 5 }];
+      return [{ resource: ResourceType.Planks, amount: 5 }, { resource: ResourceType.Stone, amount: 5 }];
     case BuildingType.Amphitheater: return [{ resource: ResourceType.Stone, amount: 30 }, { resource: ResourceType.Gold, amount: 15 }];
-    case BuildingType.DarkTemple: return [{ resource: ResourceType.Stone, amount: 20 }, { resource: ResourceType.Gold, amount: 10 }];
-    case BuildingType.DarkGarden: return [{ resource: ResourceType.Wood, amount: 5 }, { resource: ResourceType.Stone, amount: 3 }];
-    case BuildingType.MushroomFarm: return [{ resource: ResourceType.Wood, amount: 8 }, { resource: ResourceType.Stone, amount: 4 }];
+    // ── Dark Tribe ──
+    case BuildingType.DarkTemple: return [];
+    case BuildingType.DarkGarden: return [];
+    case BuildingType.MushroomFarm: return [];
     case BuildingType.SanctuaryOfMorbus:
     case BuildingType.SanctuaryOfPestilence:
-      return [{ resource: ResourceType.Stone, amount: 15 }, { resource: ResourceType.Gold, amount: 5 }];
+      return [];
     case BuildingType.DarkFortress: return [
       { resource: ResourceType.Stone, amount: 25 }, { resource: ResourceType.Planks, amount: 15 },
       { resource: ResourceType.IronOre, amount: 10 },
@@ -289,19 +322,53 @@ export interface ProdIO {
 
 export function buildingInputs(kind: BuildingType): ProdIO[] {
   switch (kind) {
+    // ── Basic Economy ──
     case BuildingType.Sawmill: return [{ resource: ResourceType.Wood, amount: 2 }];
+    // ── Food Production ──
+    case BuildingType.Bakery: return [
+      { resource: ResourceType.Flour, amount: 1 }, { resource: ResourceType.Water, amount: 1 },
+    ];
+    case BuildingType.Mill: return [{ resource: ResourceType.Grain, amount: 3 }];
+    // ── Mining (requires food per BASE.md) ──
+    case BuildingType.CoalMine: return [{ resource: ResourceType.Bread, amount: 1 }];
+    case BuildingType.IronOreMine: return [{ resource: ResourceType.Meat, amount: 1 }];
+    case BuildingType.GoldMine: return [{ resource: ResourceType.Fish, amount: 1 }];
+    case BuildingType.SulfurMine: return [{ resource: ResourceType.Fish, amount: 1 }];
+    // ── Smelting (ore + coal) ──
+    case BuildingType.IronSmelter:
+    case BuildingType.Smelter:
+      return [
+        { resource: ResourceType.IronOre, amount: 1 }, { resource: ResourceType.Coal, amount: 1 },
+      ];
+    case BuildingType.GoldSmelter: return [
+      { resource: ResourceType.Gold, amount: 1 }, { resource: ResourceType.Coal, amount: 1 },
+    ];
+    // ── Military & Tools (iron ingots + coal per BASE.md) ──
     case BuildingType.Toolsmith: return [
-      { resource: ResourceType.IronOre, amount: 1 }, { resource: ResourceType.Coal, amount: 1 },
+      { resource: ResourceType.IronIngots, amount: 1 }, { resource: ResourceType.Coal, amount: 1 },
     ];
     case BuildingType.Weaponsmith: return [
-      { resource: ResourceType.IronOre, amount: 1 }, { resource: ResourceType.Coal, amount: 1 },
-      { resource: ResourceType.Tools, amount: 1 },
+      { resource: ResourceType.IronIngots, amount: 1 }, { resource: ResourceType.Coal, amount: 1 },
     ];
-    case BuildingType.Bakery: return [{ resource: ResourceType.Grain, amount: 2 }];
-    case BuildingType.Mill: return [{ resource: ResourceType.Grain, amount: 3 }];
-    case BuildingType.Smelter: return [
-      { resource: ResourceType.IronOre, amount: 1 }, { resource: ResourceType.Coal, amount: 1 },
+    case BuildingType.WeaponFoundry: return [
+      { resource: ResourceType.IronIngots, amount: 1 }, { resource: ResourceType.Sulfur, amount: 1 },
     ];
+    // ── Ranches (grain + water per BASE.md) ──
+    case BuildingType.SheepRanch:
+    case BuildingType.PigRanch:
+    case BuildingType.GoatRanch:
+    case BuildingType.GooseRanch:
+    case BuildingType.DonkeyRanch:
+      return [
+        { resource: ResourceType.Grain, amount: 1 }, { resource: ResourceType.Water, amount: 1 },
+      ];
+    // ── Divine & Special ──
+    case BuildingType.SmallTemple: return [{ resource: ResourceType.Wine, amount: 1 }];
+    case BuildingType.PowderMill: return [
+      { resource: ResourceType.Sulfur, amount: 1 }, { resource: ResourceType.Coal, amount: 1 },
+    ];
+    case BuildingType.MeadMaker: return [{ resource: ResourceType.Honey, amount: 1 }];
+    // ── Other ──
     case BuildingType.SiegeWorkshop: return [
       { resource: ResourceType.IronIngots, amount: 2 }, { resource: ResourceType.Wood, amount: 3 },
     ];
@@ -356,8 +423,10 @@ export function buildingOutputs(kind: BuildingType): ProdIO[] {
       return [{ resource: ResourceType.Meat, amount: 1 }];
     case BuildingType.TrojanFarm:
     case BuildingType.Farm:
-    case BuildingType.Vineyard:
       return [{ resource: ResourceType.Grain, amount: 2 }];
+    case BuildingType.Vineyard: return [{ resource: ResourceType.Wine, amount: 1 }];
+    case BuildingType.Apiary: return [{ resource: ResourceType.Honey, amount: 1 }];
+    case BuildingType.MeadMaker: return [{ resource: ResourceType.Mead, amount: 1 }];
     default: return [];
   }
 }

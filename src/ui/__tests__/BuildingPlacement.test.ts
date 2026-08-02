@@ -117,7 +117,7 @@ describe('BuildingPlacement', () => {
     canvas = createMockCanvas();
     map = new GameMap(100, 100, 'demo');
     economy = new Economy();
-    economy.addResource(ResourceType.Wood, 200);
+    economy.addResource(ResourceType.Planks, 200);
     economy.addResource(ResourceType.Stone, 200);
     for (let dx = -5; dx <= 5; dx++) {
       for (let dy = -5; dy <= 5; dy++) {
