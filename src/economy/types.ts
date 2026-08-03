@@ -368,6 +368,7 @@ export function buildingInputs(kind: BuildingType): ProdIO[] {
       { resource: ResourceType.Sulfur, amount: 1 }, { resource: ResourceType.Coal, amount: 1 },
     ];
     case BuildingType.MeadMaker: return [{ resource: ResourceType.Honey, amount: 1 }];
+    case BuildingType.Distillery: return [{ resource: ResourceType.Water, amount: 1 }]; // Tequila: Agave + Water
     // ── Other ──
     case BuildingType.SiegeWorkshop: return [
       { resource: ResourceType.IronIngots, amount: 2 }, { resource: ResourceType.Wood, amount: 3 },
@@ -375,12 +376,14 @@ export function buildingInputs(kind: BuildingType): ProdIO[] {
     case BuildingType.Shipyard: return [
       { resource: ResourceType.Wood, amount: 3 }, { resource: ResourceType.Planks, amount: 2 },
     ];
+    case BuildingType.OilPress: return [{ resource: ResourceType.Water, amount: 1 }]; // Sunflower Oil
     default: return [];
   }
 }
 
 export function buildingOutputs(kind: BuildingType): ProdIO[] {
   switch (kind) {
+    // ── Basic Economy ──
     case BuildingType.Sawmill: return [{ resource: ResourceType.Planks, amount: 1 }];
     case BuildingType.Stonecutter: return [{ resource: ResourceType.Stone, amount: 1 }];
     case BuildingType.Mine: return [{ resource: ResourceType.IronOre, amount: 1 }];
@@ -395,24 +398,28 @@ export function buildingOutputs(kind: BuildingType): ProdIO[] {
     case BuildingType.Waterworks: return [{ resource: ResourceType.Water, amount: 1 }];
     case BuildingType.Smelter: return [{ resource: ResourceType.IronIngots, amount: 1 }];
     case BuildingType.SiegeWorkshop: return [{ resource: ResourceType.Weapons, amount: 1 }];
-    case BuildingType.Shipyard: return [{ resource: ResourceType.Weapons, amount: 1 }];
+    case BuildingType.Shipyard: return [{ resource: ResourceType.Weapons, amount: 1 }]; // Ships simplified to weapons for now
+    // ── Divine & Special (Mana-producing temples) ──
     case BuildingType.TempleOfBacchus:
-    case BuildingType.OracleOfApollo:
-    case BuildingType.DarkTemple:
-      return [{ resource: ResourceType.Wine, amount: 1 }];
-    case BuildingType.TempleOfChac: return [{ resource: ResourceType.Water, amount: 2 }];
-    case BuildingType.MushroomFarm: return [{ resource: ResourceType.Grain, amount: 2 }];
+    case BuildingType.TempleOfChac:
+    case BuildingType.SmallTemple:
+    case BuildingType.LargeTemple:
+      return [{ resource: ResourceType.Wine, amount: 1 }]; // Mana simplified to wine
+    case BuildingType.MushroomFarm: return [{ resource: ResourceType.Grain, amount: 2 }]; // Mushrooms
     case BuildingType.DemonGate: return [{ resource: ResourceType.Weapons, amount: 1 }];
+    // ── Mining ──
     case BuildingType.GoldMine: return [{ resource: ResourceType.Gold, amount: 2 }];
     case BuildingType.CoalMine: return [{ resource: ResourceType.Coal, amount: 2 }];
     case BuildingType.IronOreMine: return [{ resource: ResourceType.IronOre, amount: 2 }];
     case BuildingType.SulfurMine: return [{ resource: ResourceType.Sulfur, amount: 2 }];
     case BuildingType.GoldSmelter: return [{ resource: ResourceType.Gold, amount: 1 }];
     case BuildingType.IronSmelter: return [{ resource: ResourceType.IronIngots, amount: 1 }];
+    // ── Food Processing ──
     case BuildingType.Slaughterhouse: return [{ resource: ResourceType.Meat, amount: 1 }];
-    case BuildingType.OilPress: return [{ resource: ResourceType.Water, amount: 1 }];
-    case BuildingType.PowderMill: return [{ resource: ResourceType.Sulfur, amount: 1 }];
+    case BuildingType.OilPress: return [{ resource: ResourceType.Water, amount: 1 }]; // Sunflower Oil simplified
+    case BuildingType.PowderMill: return [{ resource: ResourceType.Sulfur, amount: 1 }]; // Gunpowder simplified
     case BuildingType.WeaponFoundry: return [{ resource: ResourceType.Weapons, amount: 1 }];
+    // ── Ranches ──
     case BuildingType.Forester: return [{ resource: ResourceType.Wood, amount: 1 }];
     case BuildingType.GoatRanch:
     case BuildingType.PigRanch:
@@ -422,11 +429,15 @@ export function buildingOutputs(kind: BuildingType): ProdIO[] {
     case BuildingType.DonkeyRanch:
       return [{ resource: ResourceType.Meat, amount: 1 }];
     case BuildingType.TrojanFarm:
-    case BuildingType.Farm:
-      return [{ resource: ResourceType.Grain, amount: 2 }];
+      return [{ resource: ResourceType.Grain, amount: 2 }]; // Sunflowers
     case BuildingType.Vineyard: return [{ resource: ResourceType.Wine, amount: 1 }];
     case BuildingType.Apiary: return [{ resource: ResourceType.Honey, amount: 1 }];
     case BuildingType.MeadMaker: return [{ resource: ResourceType.Mead, amount: 1 }];
+    case BuildingType.Distillery: return [{ resource: ResourceType.Water, amount: 1 }]; // Tequila simplified
+    // ── Other ──
+    case BuildingType.DarkGarden:
+    case BuildingType.AgaveFarm:
+      return [{ resource: ResourceType.Grain, amount: 2 }]; // Agaves
     default: return [];
   }
 }
