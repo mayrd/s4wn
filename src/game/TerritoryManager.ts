@@ -123,4 +123,41 @@ export class TerritoryManager {
   clearBorderPosts(nationId: number): void {
     this.borderPosts.clearNation(nationId);
   }
+
+  /**
+   * Place border posts around the perimeter of a circular territory area.
+   * Used by the tutorial to mark the initial territory edge without requiring Pioneers.
+   */
+  placeBorderPostsForArea(nationId: number, cx: number, cy: number, radius: number): void {
+    const r = Math.floor(radius);
+    for (let dx = -r; dx <= r; dx++) {
+      for (let dy = -r; dy <= r; dy++) {
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > r) continue;
+
+        const tx = cx + dx;
+        const ty = cy + dy;
+
+        const tile = this.map.get(tx, ty);
+        if (!tile || tile.territory !== nationId) continue;
+
+        // Only place posts on tiles near the perimeter (outer 2 rings)
+        if (dist < r - 2) continue;
+
+        // Check if at least one neighbor is unclaimed — that makes it a border tile
+        let isBorderTile = false;
+        for (const [ndx, ndy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const neighbor = this.map.get(tx + ndx, ty + ndy);
+          if (!neighbor || neighbor.territory !== nationId) {
+            isBorderTile = true;
+            break;
+          }
+        }
+
+        if (isBorderTile) {
+          this.borderPosts.placePost(tx, ty, nationId);
+        }
+      }
+    }
+  }
 }

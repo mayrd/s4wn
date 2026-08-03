@@ -137,11 +137,21 @@ export class GameApp {
       this.gameLoop.economy.applyStartingResources(registeredNation.manifest.economy.startingResources);
     }
 
+    // Wire nation manifest to Economy for per-nation building overrides (costs, inputs, outputs, etc.)
+    if (registeredNation?.manifest) {
+      this.gameLoop.economy.setNationManifest(registeredNation.manifest);
+    }
+
     // In tutorial mode, set up player starting conditions + enemy outpost.
     if (this.mode === 'tutorial') {
       this.map.setupTutorialPlayer(this.gameLoop.economy, this.gameLoop.unitManager);
       this.map.spawnTutorialEnemies(this.gameLoop.economy, this.gameLoop.unitManager);
-      console.log('📜 Tutorial mode: Player nation set to Romans');
+      // Place border posts around the player's starting territory so they're
+      // visible from the first "expansion" tutorial step onward.
+      const cx = Math.floor(this.map.width / 2);
+      const cy = Math.floor(this.map.height / 2);
+      this.gameLoop.territoryManager.placeBorderPostsForArea(1, cx, cy, 15);
+      console.log('📜 Tutorial mode: Player nation set to Romans, border posts placed');
     }
 
     // If a saved game was requested, restore it BEFORE building the renderer
@@ -323,7 +333,15 @@ export class GameApp {
     this.inGameMenu.setTerrainRenderer(this.terrainRenderer);
     this.inGameMenu.setTerritoryOverlay(this.territoryOverlay);
     this.inGameMenu.setSupplyChainRenderer(this.supplyChainRenderer);
-     this.inGameMenu.setMaritimeTradeRenderer(this.maritimeTradeRenderer);
+    this.inGameMenu.setMaritimeTradeRenderer(this.maritimeTradeRenderer);
+
+    // Wire debug panel toggles for trade route renderers
+    const debugPanel = (window as any).debugPanel;
+    if (debugPanel) {
+      debugPanel.setSupplyChainRenderer(this.supplyChainRenderer);
+      debugPanel.setTradeRouteRenderer(this.tradeRouteRenderer);
+      debugPanel.setMaritimeTradeRenderer(this.maritimeTradeRenderer);
+    }
 
     // Expose in-game menu for console access (debug tab)
     (window as any).debugPanel = this.inGameMenu;
@@ -433,6 +451,8 @@ export class GameApp {
             app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Woodcutter);
             app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Forester);
             app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Sawmill);
+            // Visual highlight
+            (app.ui as any).tutorialDialog?.highlightElement('#btn-building-palette', 'top');
           },
           isComplete: (app) => {
             const econ = app.gameLoop.economy;
@@ -475,10 +495,16 @@ export class GameApp {
           id: 'expansion',
           narrative: 'See those red border stones? They limit our land. Build a Small Tower near the eastern border to push our frontier outward toward the mountains.',
           onStart: (app, _ui) => {
+            // Pan camera to eastern border to show the frontier
+            const cam = app.scene?.activeCamera;
+            if (cam) {
+              TutorialDialog.panCamera(cam, 80, 50, 1.5);
+            }
             app.buildingPlacement?.lockAllTabs();
             app.buildingPlacement?.unlockSpecificTab('military');
             app.buildingPlacement?.lockAllBuildings();
             app.buildingPlacement?.unlockSpecificBuilding(BuildingType.GuardTower);
+            (app.ui as any).tutorialDialog?.highlightElement('#btn-building-palette', 'top');
           },
           isComplete: (app) => {
             const econ = app.gameLoop.economy;
@@ -505,6 +531,7 @@ export class GameApp {
             app.buildingPlacement?.unlockSpecificBuilding(BuildingType.CoalMine);
             app.buildingPlacement?.unlockSpecificBuilding(BuildingType.IronOreMine);
             app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Smelter);
+            (app.ui as any).tutorialDialog?.highlightElement('#btn-building-palette', 'top');
           },
           isComplete: (app) => {
             const econ = app.gameLoop.economy;
@@ -524,11 +551,17 @@ export class GameApp {
           id: 'military',
           narrative: 'Our scouts have located an enemy outpost in the far upper corner of the map. Build a Weaponsmith to forge swords, and a Barracks to train your first soldier.',
           onStart: (app, _ui) => {
+            // Pan camera to upper corner where enemy outpost is
+            const cam = app.scene?.activeCamera;
+            if (cam) {
+              TutorialDialog.panCamera(cam, 90, 90, 1.8);
+            }
             app.buildingPlacement?.lockAllTabs();
             app.buildingPlacement?.unlockSpecificTab('military');
             app.buildingPlacement?.lockAllBuildings();
             app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Weaponsmith);
             app.buildingPlacement?.unlockSpecificBuilding(BuildingType.Barracks);
+            (app.ui as any).tutorialDialog?.highlightElement('#btn-building-palette', 'top');
           },
           isComplete: (app) => {
             const econ = app.gameLoop.economy;

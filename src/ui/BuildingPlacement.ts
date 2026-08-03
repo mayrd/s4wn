@@ -12,6 +12,7 @@ import { BuildingType, buildingName, buildCost, resourceName, VALID_BUILDING_DIS
 import { Map as GameMap } from '../game/Map';
 import { Economy } from '../game/Economy';
 import { Scene, MeshBuilder, StandardMaterial, Color3, Mesh } from '@babylonjs/core';
+import { NationRegistry } from '../game/NationRegistry';
 
 // ── Building Categorisation ──────────────────────────────────────
 
@@ -21,7 +22,24 @@ export interface BuildingCategory {
   buildings: BuildingType[];
 }
 
-export function getBuildingCategories(): BuildingCategory[] {
+/** Get building categories from the active nation manifest or fallback to defaults */
+export function getBuildingCategories(playerNation: number = 0): BuildingCategory[] {
+  const registry = NationRegistry.instance;
+  const nation = registry.getByNumber(playerNation);
+  const manifest = nation?.manifest;
+
+  // If nation has categories defined, use them
+  if (manifest?.buildings?.categories && Array.isArray(manifest.buildings.categories)) {
+    return manifest.buildings.categories.map(cat => ({
+      id: cat.id,
+      label: cat.label,
+      buildings: cat.buildings
+        .map(name => buildingNameToType(name))
+        .filter((type): type is BuildingType => type !== null),
+    }));
+  }
+
+  // Fallback to hardcoded defaults
   return [
     {
       id: 'basic',
@@ -96,6 +114,35 @@ export function getBuildingCategories(): BuildingCategory[] {
   ];
 }
 
+/** Convert building name string from nation.json to BuildingType enum (reverse of buildingTypeToName) */
+function buildingNameToType(name: string): BuildingType | null {
+  const reverseMap: Record<string, number> = {
+    'castle': 0, 'sawmill': 1, 'stonecutter': 2, 'mine': 3, 'toolsmith': 4,
+    'weaponsmith': 5, 'bakery': 7, 'butcher': 8, 'mill': 9, 'farm': 10,
+    'fisherman': 11, 'woodcutter': 12, 'storehouse': 13, 'waterworks': 14,
+    'smelter': 15, 'barracks': 16, 'guard_tower': 18, 'fortress': 19,
+    'siege_workshop': 20, 'shipyard': 21, 'road_layer': 22, 'apiary': 27,
+    'mead_maker': 28, 'temple_of_bacchus': 31, 'colosseum': 32,
+    'sanctuary_of_minerva': 33, 'sanctuary_of_vulcan': 34, 'mead_hall': 35,
+    'sanctuary_of_odin': 36, 'sanctuary_of_thor': 37, 'sanctuary_of_freya': 38,
+    'runestone': 39, 'temple_of_chac': 40, 'agave_farm': 41, 'distillery': 42,
+    'sanctuary_of_kukulkan': 43, 'sanctuary_of_quetzalcoatl': 44,
+    'sanctuary_of_huitzilopochtli': 45, 'observatory': 46, 'oracle_of_apollo': 47,
+    'sanctuary_of_artemis': 50, 'sanctuary_of_poseidon': 51, 'sanctuary_of_apollo': 52,
+    'amphitheater': 53, 'dark_temple': 54, 'dark_garden': 55, 'mushroom_farm': 56,
+    'sanctuary_of_morbus': 57, 'sanctuary_of_pestilence': 58, 'dark_fortress': 59,
+    'demon_gate': 60, 'gold_mine': 61, 'coal_mine': 62, 'iron_ore_mine': 63,
+    'sulfur_mine': 64, 'gold_smelter': 65, 'iron_smelter': 66, 'slaughterhouse': 67,
+    'oil_press': 68, 'powder_mill': 69, 'weapon_foundry': 70, 'forester': 71,
+    'healer': 72, 'goat_ranch': 73, 'pig_ranch': 74, 'goose_ranch': 75,
+    'donkey_ranch': 76, 'trojan_farm': 77, 'marketplace': 78, 'landing_dock': 79,
+    'vineyard': 80, 'storage_yard': 81, 'small_residence': 82, 'medium_residence': 83,
+    'large_residence': 84, 'small_temple': 85, 'large_temple': 86, 'sheep_ranch': 87,
+  };
+  const disc = reverseMap[name];
+  return disc !== undefined ? (disc as BuildingType) : null;
+}
+
 // ── Building Placement UI ────────────────────────────────────────
 
 export class BuildingPlacement {
@@ -111,6 +158,7 @@ export class BuildingPlacement {
    private selectedBuilding: BuildingType | null = null;
    private pointerAttached: boolean = false;
   private activeCategory: string = 'basic';
+  private cachedCategories: BuildingCategory[] = [];
 
   /** Ghost preview position (tile coords the cursor is hovering over). */
   private _ghostX: number = -1;

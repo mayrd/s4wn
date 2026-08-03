@@ -86,14 +86,41 @@ export interface SpecialUnitDef extends UnitDef {
 }
 
 export interface NationBuildings {
+  categories: BuildingCategory[];
   overrides: Record<string, BuildingOverride>;
 }
 
+export interface BuildingCategory {
+  id: string;
+  label: string;
+  buildings: string[];
+}
+
 export interface BuildingOverride {
+  category?: string;
   model?: string;
   texture?: string;
   icon?: string;
   animations?: string;
+  cost?: CostItem[];
+  inputs?: ProdIO[];
+  outputs?: ProdIO[];
+  productionInterval?: number;
+  buildTime?: number;
+  requiredTool?: string | null;
+  garrisonCapacity?: number;
+  maxHp?: number;
+  maxSettlers?: number;
+}
+
+export interface CostItem {
+  resource: string;
+  amount: number;
+}
+
+export interface ProdIO {
+  resource: string;
+  amount: number;
 }
 
 export interface NationBalancing {

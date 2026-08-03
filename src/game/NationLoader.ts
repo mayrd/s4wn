@@ -144,6 +144,13 @@ export class NationLoader {
     await this.discoverExternal(registry);
   }
 
+  /** Get the manifest for a specific nation ID */
+  static getManifest(id: string): NationManifest | undefined {
+    const registry = NationRegistry.instance;
+    const nation = registry.get(id);
+    return nation?.manifest;
+  }
+
   /** Scan for external nation packs. */
   private static async discoverExternal(registry: NationRegistry): Promise<void> {
     const knownIds = ['dark']; // Additional built-in not in base 4

@@ -7,6 +7,9 @@
 import { Engine, Scene, Color3, ArcRotateCamera } from '@babylonjs/core';
 import { GameLoop } from '../../game/GameLoop';
 import { GridRenderer } from '../../rendering/GridRenderer';
+import { SupplyChainRenderer } from '../../rendering/SupplyChainRenderer';
+import { TradeRouteRenderer } from '../../rendering/TradeRouteRenderer';
+import { MaritimeTradeRenderer } from '../../rendering/MaritimeTradeRenderer';
 import { BuildingType } from '../../economy/types';
 import { UnitKind } from '../../game/types';
 
@@ -18,6 +21,9 @@ export class DebugPanel {
   private gridRenderer: GridRenderer | null = null;
   private terrainRenderer: any; // TerrainRenderer reference for splatting toggle
   private territoryOverlay: any; // TerritoryOverlay reference for territory toggle
+  private supplyChainRenderer: SupplyChainRenderer | null = null;
+  private tradeRouteRenderer: TradeRouteRenderer | null = null;
+  private maritimeTradeRenderer: MaritimeTradeRenderer | null = null;
   /** Store original textures to restore when toggling back on */
   private originalTextures: WeakMap<any, any> = new WeakMap();
   private originalEmissive: WeakMap<any, any> = new WeakMap();
@@ -74,6 +80,11 @@ export class DebugPanel {
           <button id="debug-btn-splat" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Splat: ON</button>
           <button id="debug-btn-territory" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Territory: OFF</button>
           <button id="debug-btn-fog" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Fog: ON</button>
+        </div>
+        <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
+          <button id="debug-btn-supply" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Supply: OFF</button>
+          <button id="debug-btn-trade" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Trade: OFF</button>
+          <button id="debug-btn-maritime" class="debug-btn" style="flex:1;min-width:70px;padding:4px 8px;font-size:0.7rem;cursor:pointer">Ships: OFF</button>
         </div>
         <div style="display:flex;gap:4px;margin:4px 0;flex-wrap:wrap">
           <button id="debug-btn-inspector" class="debug-btn" style="flex:1;min-width:100px;padding:4px 8px;font-size:0.7rem;cursor:pointer;background:#644;border-color:#c88">🔍 Inspector</button>
@@ -146,6 +157,39 @@ export class DebugPanel {
       this.setFogVisibility(fogEnabled);
     });
 
+    // Supply chain toggle
+    const supplyBtn = this.container.querySelector('#debug-btn-supply') as HTMLButtonElement;
+    let supplyVisible = false;
+    supplyBtn.addEventListener('click', () => {
+      supplyVisible = !supplyVisible;
+      supplyBtn.textContent = `Supply: ${supplyVisible ? 'ON' : 'OFF'}`;
+      if (this.supplyChainRenderer) {
+        this.supplyChainRenderer.visible = supplyVisible;
+      }
+    });
+
+    // Land trade route toggle
+    const tradeBtn = this.container.querySelector('#debug-btn-trade') as HTMLButtonElement;
+    let tradeVisible = false;
+    tradeBtn.addEventListener('click', () => {
+      tradeVisible = !tradeVisible;
+      tradeBtn.textContent = `Trade: ${tradeVisible ? 'ON' : 'OFF'}`;
+      if (this.tradeRouteRenderer) {
+        this.tradeRouteRenderer.visible = tradeVisible;
+      }
+    });
+
+    // Maritime trade route toggle
+    const maritimeBtn = this.container.querySelector('#debug-btn-maritime') as HTMLButtonElement;
+    let maritimeVisible = false;
+    maritimeBtn.addEventListener('click', () => {
+      maritimeVisible = !maritimeVisible;
+      maritimeBtn.textContent = `Ships: ${maritimeVisible ? 'ON' : 'OFF'}`;
+      if (this.maritimeTradeRenderer) {
+        this.maritimeTradeRenderer.visible = maritimeVisible;
+      }
+    });
+
     // Babylon.js Inspector toggle
     const inspectorBtn = this.container.querySelector('#debug-btn-inspector') as HTMLButtonElement;
     inspectorBtn.addEventListener('click', () => {
@@ -182,9 +226,19 @@ export class DebugPanel {
     this.territoryOverlay = overlay;
   }
 
-  /** Set the supply chain renderer reference (kept for API compatibility). */
-  public setSupplyChainRenderer(_renderer: any): void {
-    // Supply chain toggling was migrated to the in-game menu; no-op here.
+  /** Set the supply chain renderer reference for debug toggling. */
+  public setSupplyChainRenderer(renderer: SupplyChainRenderer): void {
+    this.supplyChainRenderer = renderer;
+  }
+
+  /** Set the land trade route renderer reference for debug toggling. */
+  public setTradeRouteRenderer(renderer: TradeRouteRenderer): void {
+    this.tradeRouteRenderer = renderer;
+  }
+
+  /** Set the maritime trade route renderer reference for debug toggling. */
+  public setMaritimeTradeRenderer(renderer: MaritimeTradeRenderer): void {
+    this.maritimeTradeRenderer = renderer;
   }
 
   /** Set up mouse tracking for tile inspection */

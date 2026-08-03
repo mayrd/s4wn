@@ -61,6 +61,14 @@ export class Economy {
     this.maritimeTrade = new MaritimeTradeManager();
   }
 
+  /** Active nation manifest for per-nation building overrides (null = use hardcoded defaults) */
+  private nationManifest: any = null;
+
+  /** Set the active nation manifest to enable per-nation building overrides */
+  setNationManifest(manifest: any): void {
+    this.nationManifest = manifest;
+  }
+
   /** Apply starting resources from a nation manifest (e.g., assets/nations/romans/nation.json). */
   applyStartingResources(starting: Record<string, number>): void {
     // Map nation.json resource keys to internal ResourceType discriminants
@@ -137,8 +145,54 @@ export class Economy {
 
   // ── Building Management ──────────────────────────────────────────
 
+  /** Get building cost from nation.json overrides or fallback to hardcoded defaults */
+  private getBuildingCost(kind: BuildingType): CostItem[] {
+    // Try nation.json override first
+    if (this.nationManifest?.buildings?.overrides) {
+      const buildingName = this.buildingTypeToName(kind);
+      const override = this.nationManifest.buildings.overrides[buildingName];
+      if (override?.cost && Array.isArray(override.cost)) {
+        return override.cost.map((c: any) => ({
+          resource: c.resource as ResourceType,
+          amount: c.amount,
+        }));
+      }
+    }
+    // Fallback to hardcoded defaults
+    return buildCost(kind);
+  }
+
+  /** Convert BuildingType enum to building name string (matching nation.json keys) */
+  private buildingTypeToName(kind: BuildingType): string {
+    // Map BuildingType discriminants to nation.json building keys
+    const typeMap: Record<number, string> = {
+      0: 'castle', 1: 'sawmill', 2: 'stonecutter', 3: 'mine', 4: 'toolsmith',
+      5: 'weaponsmith', 7: 'bakery', 8: 'butcher', 9: 'mill', 10: 'farm',
+      11: 'fisherman', 12: 'woodcutter', 13: 'storehouse', 14: 'waterworks',
+      15: 'smelter', 16: 'barracks', 18: 'guard_tower', 19: 'fortress',
+      20: 'siege_workshop', 21: 'shipyard', 22: 'road_layer', 27: 'apiary',
+      28: 'mead_maker', 31: 'temple_of_bacchus', 32: 'colosseum',
+      33: 'sanctuary_of_minerva', 34: 'sanctuary_of_vulcan', 35: 'mead_hall',
+      36: 'sanctuary_of_odin', 37: 'sanctuary_of_thor', 38: 'sanctuary_of_freya',
+      39: 'runestone', 40: 'temple_of_chac', 41: 'agave_farm', 42: 'distillery',
+      43: 'sanctuary_of_kukulkan', 44: 'sanctuary_of_quetzalcoatl',
+      45: 'sanctuary_of_huitzilopochtli', 46: 'observatory', 47: 'oracle_of_apollo',
+      50: 'sanctuary_of_artemis', 51: 'sanctuary_of_poseidon', 52: 'sanctuary_of_apollo',
+      53: 'amphitheater', 54: 'dark_temple', 55: 'dark_garden', 56: 'mushroom_farm',
+      57: 'sanctuary_of_morbus', 58: 'sanctuary_of_pestilence', 59: 'dark_fortress',
+      60: 'demon_gate', 61: 'gold_mine', 62: 'coal_mine', 63: 'iron_ore_mine',
+      64: 'sulfur_mine', 65: 'gold_smelter', 66: 'iron_smelter', 67: 'slaughterhouse',
+      68: 'oil_press', 69: 'powder_mill', 70: 'weapon_foundry', 71: 'forester',
+      72: 'healer', 73: 'goat_ranch', 74: 'pig_ranch', 75: 'goose_ranch',
+      76: 'donkey_ranch', 77: 'trojan_farm', 78: 'marketplace', 79: 'landing_dock',
+      80: 'vineyard', 81: 'storage_yard', 82: 'small_residence', 83: 'medium_residence',
+      84: 'large_residence', 85: 'small_temple', 86: 'large_temple', 87: 'sheep_ranch',
+    };
+    return typeMap[kind as number] || `building_${kind}`;
+  }
+
   tryPlaceBuilding(kind: BuildingType, x: number, y: number, map: GameMap, ownerId: number): BuildingData | null {
-    const cost = buildCost(kind);
+    const cost = this.getBuildingCost(kind);
     if (!this.canAfford(cost)) return null;
 
     // Check if tile is buildable
@@ -303,7 +357,8 @@ export class Economy {
           // ConstructionManager handles this building's progress via digger/materials/builder phases
           continue;
         }
-        const bt = buildTime(building.kind);
+        // Get buildTime from nation.json or fallback to hardcoded
+        const bt = this.getBuildTime(building.kind);
         if (bt > 0) {
           building.constructionProgress += (1.0 / bt) * speedMult;
           if (building.constructionProgress >= 1.0) {
@@ -329,16 +384,18 @@ export class Economy {
       }
 
       // Production
-      const interval = productionInterval(building.kind);
+      // Get productionInterval from nation.json or fallback to hardcoded
+      const interval = this.getProductionInterval(building.kind);
       if (interval <= 0) continue;
-      if (requiresSettler(building.kind) && building.assignedSettlers.length === 0) continue;
+      // Get requiresSettler from nation.json or fallback to hardcoded
+      if (this.getRequiresSettler(building.kind) && building.assignedSettlers.length === 0) continue;
 
       building.productionCounter++;
       if (building.productionCounter >= interval) {
         building.productionCounter = 0;
 
-        // Check inputs
-        const inputs = buildingInputs(building.kind);
+        // Check inputs (from nation.json or hardcoded fallback)
+        const inputs = this.getBuildingInputs(building.kind);
         const canProduce = inputs.every(inp => {
           const disc = inp.resource as number;
           return building.inputBuffer[disc] >= inp.amount;
@@ -368,8 +425,8 @@ export class Economy {
             building.inputBuffer[disc] -= inp.amount;
           }
 
-          // Produce outputs
-          const outputs = buildingOutputs(building.kind);
+          // Produce outputs (from nation.json or hardcoded fallback)
+          const outputs = this.getBuildingOutputs(building.kind);
           for (const out of outputs) {
             const disc = out.resource as number;
             building.outputBuffer[disc] += out.amount;
@@ -471,6 +528,75 @@ export class Economy {
     const monumentCount = this.buildings.filter(b => buildingCategory(b.kind) === BuildingCategory.Unique).length;
 
     this.combatStrength = Math.floor(goldBars / 10) + monumentCount * 2;
+  }
+
+  // ── Nation.json Override Helpers ──────────────────────────────────
+
+  /** Get buildTime from nation.json overrides or fallback to hardcoded defaults */
+  private getBuildTime(kind: BuildingType): number {
+    if (this.nationManifest?.buildings?.overrides) {
+      const buildingName = this.buildingTypeToName(kind);
+      const override = this.nationManifest.buildings.overrides[buildingName];
+      if (override?.buildTime !== undefined) {
+        return override.buildTime;
+      }
+    }
+    return buildTime(kind);
+  }
+
+  /** Get productionInterval from nation.json overrides or fallback to hardcoded defaults */
+  private getProductionInterval(kind: BuildingType): number {
+    if (this.nationManifest?.buildings?.overrides) {
+      const buildingName = this.buildingTypeToName(kind);
+      const override = this.nationManifest.buildings.overrides[buildingName];
+      if (override?.productionInterval !== undefined) {
+        return override.productionInterval;
+      }
+    }
+    return productionInterval(kind);
+  }
+
+  /** Get requiresSettler from nation.json overrides or fallback to hardcoded defaults */
+  private getRequiresSettler(kind: BuildingType): boolean {
+    if (this.nationManifest?.buildings?.overrides) {
+      const buildingName = this.buildingTypeToName(kind);
+      const override = this.nationManifest.buildings.overrides[buildingName];
+      if (override?.maxSettlers !== undefined) {
+        // If maxSettlers is 0, building doesn't require settlers
+        return override.maxSettlers > 0;
+      }
+    }
+    return requiresSettler(kind);
+  }
+
+  /** Get building inputs from nation.json overrides or fallback to hardcoded defaults */
+  private getBuildingInputs(kind: BuildingType): ProdIO[] {
+    if (this.nationManifest?.buildings?.overrides) {
+      const buildingName = this.buildingTypeToName(kind);
+      const override = this.nationManifest.buildings.overrides[buildingName];
+      if (override?.inputs && Array.isArray(override.inputs)) {
+        return override.inputs.map((inp: any) => ({
+          resource: inp.resource as ResourceType,
+          amount: inp.amount,
+        }));
+      }
+    }
+    return buildingInputs(kind);
+  }
+
+  /** Get building outputs from nation.json overrides or fallback to hardcoded defaults */
+  private getBuildingOutputs(kind: BuildingType): ProdIO[] {
+    if (this.nationManifest?.buildings?.overrides) {
+      const buildingName = this.buildingTypeToName(kind);
+      const override = this.nationManifest.buildings.overrides[buildingName];
+      if (override?.outputs && Array.isArray(override.outputs)) {
+        return override.outputs.map((out: any) => ({
+          resource: out.resource as ResourceType,
+          amount: out.amount,
+        }));
+      }
+    }
+    return buildingOutputs(kind);
   }
 
   /* ── Save / Load ─────────────────────────────────────────── */
