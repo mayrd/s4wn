@@ -5,7 +5,7 @@
  * Fully migrated from engine/src/economy.rs
  */
 
-import { BuildingType, ResourceType, RESOURCE_COUNT, buildCost, buildingInputs, buildingOutputs, productionInterval, requiresSettler, buildTime, maxHp, maxSettlers, CostItem, garrisonCapacity, buildingCategory, BuildingCategory } from '../economy/types';
+import { BuildingType, ResourceType, RESOURCE_COUNT, buildCost, buildingInputs, buildingOutputs, productionInterval, requiresSettler, buildTime, maxHp, maxSettlers, CostItem, garrisonCapacity, buildingCategory, BuildingCategory, ProdIO } from '../economy/types';
 import { Map as GameMap } from './Map';
 import { LogisticsManager } from './Logistics';
 import { TradeRouteManager } from './TradeRouteManager';

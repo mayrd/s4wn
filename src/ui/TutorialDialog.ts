@@ -92,7 +92,7 @@ export class TutorialDialog {
    * @param selector - CSS selector for the element to highlight
    * @param arrowSide - optional side for arrow pointer ('top', 'bottom', 'left', 'right')
    */
-  public highlightElement(selector: string, arrowSide?: 'top' | 'bottom' | 'left' | 'right'): void {
+  public showHighlight(selector: string, arrowSide?: 'top' | 'bottom' | 'left' | 'right'): void {
     if (!this.highlightElement || !this.arrowElement) return;
 
     const target = this.document.querySelector(selector) as HTMLElement | null;

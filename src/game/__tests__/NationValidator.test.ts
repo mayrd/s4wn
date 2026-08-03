@@ -31,7 +31,7 @@ function mockManifest(overrides: Partial<NationManifest> = {}): NationManifest {
       special:   { kind: 'medic', displayName: { en: 'Medic' }, description: { en: 'Heals.' },
         model: '', texture: '', animations: '', icon: '', stats: { hp: 45, speed: 2.5, healRate: 3, healRange: 3 } },
     },
-    buildings: { overrides: {} },
+    buildings: { categories: [], overrides: {} },
     balancing: {
       buildSpeedMultiplier: 1, unitTrainSpeedMultiplier: 1, resourceGatherMultiplier: 1,
       combatDamageMultiplier: 1, territoryExpansionRate: 1, populationGrowthRate: 1,

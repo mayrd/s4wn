@@ -158,7 +158,6 @@ export class BuildingPlacement {
    private selectedBuilding: BuildingType | null = null;
    private pointerAttached: boolean = false;
   private activeCategory: string = 'basic';
-  private cachedCategories: BuildingCategory[] = [];
 
   /** Ghost preview position (tile coords the cursor is hovering over). */
   private _ghostX: number = -1;
