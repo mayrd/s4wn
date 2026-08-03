@@ -115,6 +115,7 @@ export class NationValidator {
       if (typeof visuals.uiTheme !== 'string') {
         report.warnings.push({ path: 'visuals.uiTheme', message: 'uiTheme should be a string ("stone", "wood", "gold", "dark").' });
       }
+      this.validateDecorations(visuals.decorations, report);
     }
 
     // ---- 6. version ----
@@ -315,6 +316,35 @@ export class NationValidator {
     }
   }
 
+  /** Validate `visuals.decorations` — nation-specific decorative props. */
+  private static validateDecorations(decorations: unknown, r: ValidationReport): void {
+    if (decorations === undefined) return; // Optional
+    if (typeof decorations !== 'object' || decorations === null) {
+      r.valid = false;
+      r.errors.push({ path: 'visuals.decorations', message: 'Must be an object.' });
+      return;
+    }
+    const deco = decorations as Record<string, unknown>;
+
+    // borderPost
+    const bp = deco.borderPost as Record<string, unknown> | undefined;
+    if (bp !== undefined) {
+      if (typeof bp !== 'object' || bp === null) {
+        r.valid = false;
+        r.errors.push({ path: 'visuals.decorations.borderPost', message: 'Must be an object.' });
+      } else {
+        if (typeof bp.model !== 'string' || bp.model.length === 0) {
+          r.valid = false;
+          r.errors.push({ path: 'visuals.decorations.borderPost.model', message: 'Must be a non-empty string path.' });
+        }
+        if (bp.material !== undefined && typeof bp.material !== 'string') {
+          r.valid = false;
+          r.errors.push({ path: 'visuals.decorations.borderPost.material', message: 'Must be a string path.' });
+        }
+      }
+    }
+  }
+
   /**
    * Validate a nation pack on disk. Checks that the folder exists, nation.json
    * is present and valid, all referenced asset files exist, and required
@@ -402,6 +432,13 @@ export class NationValidator {
       if (m.visuals.emblem) paths.push(`${packDir}/${m.visuals.emblem}`);
       if (m.visuals.flag) paths.push(`${packDir}/${m.visuals.flag}`);
       if (m.visuals.loadingBg) paths.push(`${packDir}/${m.visuals.loadingBg}`);
+
+      // Decorations (border posts, etc.)
+      const bp = m.visuals.decorations?.borderPost;
+      if (bp) {
+        if (bp.model) paths.push(`${packDir}/${bp.model}`);
+        if (bp.material) paths.push(`${packDir}/${bp.material}`);
+      }
 
       // Check each path (deduplicate)
       const uniquePaths = [...new Set(paths)];

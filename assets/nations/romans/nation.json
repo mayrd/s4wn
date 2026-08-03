@@ -23,7 +23,13 @@
       "magicColor": [0.8, 0.2, 0.2],
       "constructionSpark": [1.0, 0.8, 0.2]
     },
-    "terrainModifiers": {}
+    "terrainModifiers": {},
+    "decorations": {
+      "borderPost": {
+        "model": "models/decorations/borderpost.obj",
+        "material": "models/decorations/borderpost.mtl"
+      }
+    }
   },
   "economy": {
     "livestock": {

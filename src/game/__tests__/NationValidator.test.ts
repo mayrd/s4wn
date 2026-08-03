@@ -306,4 +306,321 @@ describe('NationValidator.validateManifest', () => {
     expect(formatted).toContain('❌');
     expect(formatted).toContain('BAD!');
   });
+
+  // ── Description validation ──
+
+  test('rejects description without english entry', () => {
+    const m = mockManifest();
+    (m as any).description = { de: 'Test' };
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'description')).toBe(true);
+  });
+
+  test('rejects non-object description', () => {
+    const m = mockManifest();
+    (m as any).description = 'JustString';
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+  });
+
+  // ── visuals.secondary validation ──
+
+  test.each(['rgb(0,0,255)', '#ggg', 'blue', '#12345', ''])(
+    'rejects invalid secondary color "%s"', (color) => {
+      const m = mockManifest();
+      m.visuals.secondary = color;
+      const r = NationValidator.validateManifest(m);
+      expect(r.valid).toBe(false);
+      expect(r.errors.some(e => e.path === 'visuals.secondary')).toBe(true);
+    }
+  );
+
+  test.each(['#3366cc', '#00FF00', '#ffcc66'])('accepts valid hex secondary color "%s"', (color) => {
+    const m = mockManifest();
+    m.visuals.secondary = color;
+    assertValid(NationValidator.validateManifest(m));
+  });
+
+  // ── visuals.particles validation ──
+
+  test('rejects particles missing dustColor', () => {
+    const m = mockManifest();
+    delete (m.visuals.particles as any).dustColor;
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'visuals.particles.dustColor')).toBe(true);
+  });
+
+  test('rejects particles with non-array magicColor', () => {
+    const m = mockManifest();
+    (m.visuals.particles as any).magicColor = 'red';
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'visuals.particles.magicColor')).toBe(true);
+  });
+
+  test('rejects particles with wrong-length constructionSpark', () => {
+    const m = mockManifest();
+    (m.visuals.particles as any).constructionSpark = [1, 2];
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'visuals.particles.constructionSpark')).toBe(true);
+  });
+
+  // ── Unit stats validation ──
+
+  test('rejects worker without hp stat', () => {
+    const m = mockManifest();
+    delete (m.units.worker.stats as any).hp;
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'units.worker.stats.hp')).toBe(true);
+  });
+
+  test('rejects soldier without attack stat', () => {
+    const m = mockManifest();
+    delete (m.units.soldier.stats as any).attack;
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'units.soldier.stats.attack')).toBe(true);
+  });
+
+  test('rejects archer without range stat', () => {
+    const m = mockManifest();
+    delete (m.units.archer.stats as any).range;
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'units.archer.stats.range')).toBe(true);
+  });
+
+  test('rejects settler without carryCapacity stat', () => {
+    const m = mockManifest();
+    delete (m.units.settler.stats as any).carryCapacity;
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'units.settler.stats.carryCapacity')).toBe(true);
+  });
+
+  test('rejects worker with zero hp', () => {
+    const m = mockManifest();
+    m.units.worker.stats.hp = 0;
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+  });
+
+  // ── Building overrides validation ──
+
+  test('rejects building override missing category', () => {
+    const m = mockManifest();
+    m.buildings.overrides = {
+      castle: { model: 'models/castle.obj', texture: 'textures/castle.png', icon: 'icons/castle.png' },
+    };
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path.startsWith('buildings.overrides.castle'))).toBe(true);
+  });
+
+  test('rejects building override missing model', () => {
+    const m = mockManifest();
+    m.buildings.overrides = {
+      castle: { category: 'military', texture: 'textures/castle.png', icon: 'icons/castle.png' },
+    };
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+  });
+
+  test('rejects building override with non-array cost', () => {
+    const m = mockManifest();
+    m.buildings.overrides = {
+      castle: {
+        category: 'military', model: 'models/castle.obj', texture: 'textures/castle.png',
+        icon: 'icons/castle.png', cost: 'not-an-array' as any,
+      },
+    };
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+  });
+
+  test('rejects building override cost item missing resource', () => {
+    const m = mockManifest();
+    m.buildings.overrides = {
+      castle: {
+        category: 'military', model: 'models/castle.obj', texture: 'textures/castle.png',
+        icon: 'icons/castle.png', cost: [{ amount: 5 } as any],
+      },
+    };
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+  });
+
+  test('accepts building override with all required fields', () => {
+    const m = mockManifest();
+    m.buildings.overrides = {
+      castle: {
+        category: 'military', model: 'models/castle.obj', texture: 'textures/castle.png',
+        icon: 'icons/castle.png', animations: 'animations/generic.json',
+        cost: [{ resource: 'planks', amount: 8 }], inputs: [], outputs: [],
+        productionInterval: 0, buildTime: 0, requiredTool: null,
+        garrisonCapacity: 6, maxHp: 500, maxSettlers: 3,
+      },
+    };
+    assertValid(NationValidator.validateManifest(m));
+  });
+
+  // ── Buildings.categories validation ──
+
+  test('rejects categories entry missing id', () => {
+    const m = mockManifest();
+    m.buildings.categories = [{ label: 'Basic', buildings: [] } as any];
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'buildings.categories[0].id')).toBe(true);
+  });
+
+  test('rejects categories entry missing label', () => {
+    const m = mockManifest();
+    m.buildings.categories = [{ id: 'basic', buildings: [] } as any];
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+  });
+
+  test('rejects categories entry with non-array buildings', () => {
+    const m = mockManifest();
+    m.buildings.categories = [{ id: 'basic', label: 'Basic', buildings: 'not-array' as any }];
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+  });
+
+  test('accepts valid categories', () => {
+    const m = mockManifest();
+    m.buildings.categories = [
+      { id: 'basic', label: 'Basic Economy', buildings: ['forester', 'woodcutter'] },
+    ];
+    assertValid(NationValidator.validateManifest(m));
+  });
+
+  // ── Starting resources non-negative validation ──
+
+  test('rejects negative starting resource', () => {
+    const m = mockManifest();
+    m.economy.startingResources.wood = -5;
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'economy.startingResources.wood')).toBe(true);
+  });
+
+  // ── Resource bonuses positive validation ──
+
+  test('rejects zero resource bonus', () => {
+    const m = mockManifest();
+    m.economy.resourceBonuses.wood = 0;
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'economy.resourceBonuses.wood')).toBe(true);
+  });
+
+  test('rejects negative resource bonus', () => {
+    const m = mockManifest();
+    m.economy.resourceBonuses.stone = -0.5;
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+  });
+
+  // ── Economy building reference validation (warnings) ──
+
+  test('warns when livestock building not in overrides', () => {
+    const m = mockManifest();
+    m.economy.livestock.building = 'nonexistent_ranch';
+    const r = NationValidator.validateManifest(m);
+    expect(r.warnings.some(w => w.path === 'economy.livestock.building')).toBe(true);
+  });
+
+  test('warns when divine building not in overrides', () => {
+    const m = mockManifest();
+    m.economy.divine.building = 'nonexistent_crop_farm';
+    const r = NationValidator.validateManifest(m);
+    expect(r.warnings.some(w => w.path === 'economy.divine.building')).toBe(true);
+  });
+
+  test('warns when specialResources craftedAt not in overrides', () => {
+    const m = mockManifest();
+    m.specialResources = {
+      gunpowder: {
+        displayName: { en: 'Gunpowder' }, craftedAt: 'nonexistent_building',
+        inputs: { sulfur: 2 }, outputs: { gunpowder: 1 }, icon: '',
+      },
+    };
+    const r = NationValidator.validateManifest(m);
+    expect(r.warnings.some(w => w.path === 'specialResources.gunpowder.craftedAt')).toBe(true);
+  });
+
+  // ── visuals.decorations validation ──
+
+  test('accepts valid decorations with borderPost', () => {
+    const m = mockManifest();
+    m.visuals.decorations = {
+      borderPost: { model: 'models/decorations/borderpost.obj', material: 'models/decorations/borderpost.mtl' },
+    };
+    assertValid(NationValidator.validateManifest(m));
+  });
+
+  test('accepts decorations without borderPost (optional)', () => {
+    const m = mockManifest();
+    m.visuals.decorations = {};
+    assertValid(NationValidator.validateManifest(m));
+  });
+
+  test('rejects decorations that is not an object', () => {
+    const m = mockManifest();
+    (m.visuals as any).decorations = 'not-an-object';
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'visuals.decorations')).toBe(true);
+  });
+
+  test('rejects borderPost missing model', () => {
+    const m = mockManifest();
+    m.visuals.decorations = { borderPost: { material: 'models/decorations/borderpost.mtl' } as any };
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'visuals.decorations.borderPost.model')).toBe(true);
+  });
+
+  test('rejects borderPost with empty model', () => {
+    const m = mockManifest();
+    m.visuals.decorations = { borderPost: { model: '' } };
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'visuals.decorations.borderPost.model')).toBe(true);
+  });
+
+  test('rejects borderPost with non-string material', () => {
+    const m = mockManifest();
+    m.visuals.decorations = { borderPost: { model: 'models/decorations/borderpost.obj', material: 42 as any } };
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'visuals.decorations.borderPost.material')).toBe(true);
+  });
+
+  test('rejects borderPost that is not an object', () => {
+    const m = mockManifest();
+    (m.visuals as any).decorations = { borderPost: 'nope' };
+    const r = NationValidator.validateManifest(m);
+    expect(r.valid).toBe(false);
+    expect(r.errors.some(e => e.path === 'visuals.decorations.borderPost')).toBe(true);
+  });
+
+  // ── validateAllNations static method ──
+
+  test('validateAllNations returns reports for multiple manifests', () => {
+    const manifests: Record<string, NationManifest> = {
+      romans: mockManifest({ id: 'romans' }),
+      bad: mockManifest({ id: 'BAD!' } as any),
+    };
+    const reports = NationValidator.validateAllNations(manifests);
+    expect(reports).toHaveLength(2);
+    expect(reports.find(r => r.nationId === 'romans')?.valid).toBe(true);
+    expect(reports.find(r => r.nationId === 'BAD!')?.valid).toBe(false);
+  });
 });

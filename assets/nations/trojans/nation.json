@@ -22,6 +22,12 @@
     },
     "terrainModifiers": {
       "warmHue": 3
+    },
+    "decorations": {
+      "borderPost": {
+        "model": "models/decorations/borderpost.obj",
+        "material": "models/decorations/borderpost.mtl"
+      }
     }
   },
   "economy": {

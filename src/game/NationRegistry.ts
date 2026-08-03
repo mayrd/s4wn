@@ -38,6 +38,19 @@ export interface NationVisuals {
     constructionSpark: [number, number, number];
   };
   terrainModifiers: Record<string, number>;
+  /** Nation-specific decorative props (border posts, monuments, etc.). */
+  decorations?: NationDecorations;
+}
+
+/** Nation-specific decorative props referenced by `visuals.decorations`. */
+export interface NationDecorations {
+  /** Border post model placed by Pioneers at territory boundaries. */
+  borderPost?: {
+    /** Path to the OBJ/GLB model, relative to the nation pack root. */
+    model: string;
+    /** Path to the MTL material (OBJ only), relative to the nation pack root. */
+    material?: string;
+  };
 }
 
 export interface NationEconomy {

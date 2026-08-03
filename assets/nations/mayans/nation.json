@@ -23,6 +23,12 @@
     "terrainModifiers": {
       "grassHue": 5,
       "desertSaturation": 1.1
+    },
+    "decorations": {
+      "borderPost": {
+        "model": "models/decorations/borderpost.obj",
+        "material": "models/decorations/borderpost.mtl"
+      }
     }
   },
   "economy": {

@@ -17,7 +17,7 @@ import {
   buildingInputs, buildingOutputs, requiredTool, requiresSettler,
   resourceName, buildingName, ResourceType, RESOURCE_COUNT,
 } from '../../economy/types';
-import { borderPostModelName, borderPostColor, borderPostNationName } from '../../game/BorderPost';
+import { borderPostModelName, borderPostModelPath, borderPostColor, borderPostNationName } from '../../game/BorderPost';
 
 export interface ExplorerObject {
   id: string;
@@ -434,20 +434,21 @@ export class ObjectExplorer {
         const name = borderPostNationName(nationId);
         const color = borderPostColor(nationId);
         const model = borderPostModelName(nationId);
+        const modelPath = borderPostModelPath(nationId);
         borderPostEntries.push({
           id: `deco-borderpost-${nationId}`,
           type: 'borderpost',
           name: `${name} Border Post (${count})`,
           _promptKey: `borderpost_${model.replace('borderpost_', '')}`,
           _chain: {
-            mesh: `assets/models/${model}.obj`,
+            mesh: modelPath,
             texture: `MTL→Kd→${color}`,
             animation: 'static pennant'
           },
           properties: {
             nation: name,
             color: color,
-            model: `${model}.obj`,
+            model: modelPath,
             placed: count,
           }
         } as ExplorerObject);
@@ -458,20 +459,21 @@ export class ObjectExplorer {
         const name = borderPostNationName(nId);
         const color = borderPostColor(nId);
         const model = borderPostModelName(nId);
+        const modelPath = borderPostModelPath(nId);
         borderPostEntries.push({
           id: `deco-borderpost-${nId}`,
           type: 'borderpost',
           name: `${name} Border Post`,
           _promptKey: `borderpost_${model.replace('borderpost_', '')}`,
           _chain: {
-            mesh: `assets/models/${model}.obj`,
+            mesh: modelPath,
             texture: `MTL→Kd→${color}`,
             animation: 'static pennant'
           },
           properties: {
             nation: name,
             color: color,
-            model: `${model}.obj`,
+            model: modelPath,
             placed: 0,
           }
         } as ExplorerObject);

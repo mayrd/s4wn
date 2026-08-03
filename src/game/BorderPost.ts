@@ -4,11 +4,12 @@
  * Border posts are placed by Pioneer settlers at territorial boundaries.
  * Each nation has a distinct color-coded post with a pennant flag.
  *
- * Model: assets/models/borderpost_{nation}.obj
+ * Model: assets/nations/{nation}/models/decorations/borderpost.obj
  * Nation colors: Roman #CC3333, Viking #3366CC, Mayan #33CC33, Trojan #CC9933, Dark #9933CC
  */
 
 import { NationType } from './Nation';
+import { NationRegistry } from './NationRegistry';
 
 export interface BorderPostData {
   id: number;
@@ -18,7 +19,7 @@ export interface BorderPostData {
   placedBy?: number | null; // Pioneer unit ID that placed it
 }
 
-/** OBJ model filename stem for each nation */
+/** Legacy OBJ model filename stem for each nation (backward compat). */
 export function borderPostModelName(nationId: number): string {
   const names: Record<number, string> = {
     [NationType.Romans]: 'borderpost_roman',
@@ -28,6 +29,22 @@ export function borderPostModelName(nationId: number): string {
     [NationType.DarkTribe]: 'borderpost_dark',
   };
   return names[nationId] ?? 'borderpost_roman';
+}
+
+/**
+ * Resolve the border post model path for a nation from its `nation.json`
+ * `visuals.decorations.borderPost.model` entry. Falls back to the legacy
+ * `assets/models/borderpost_{nation}.obj` path if the nation pack has no
+ * decoration override or is not registered.
+ */
+export function borderPostModelPath(nationId: number): string {
+  const rn = NationRegistry.instance.getByNumber(nationId);
+  const bp = rn?.manifest.visuals.decorations?.borderPost;
+  if (bp?.model) {
+    return `/nations/${rn!.info.id}/${bp.model}`;
+  }
+  // Legacy fallback
+  return `/models/${borderPostModelName(nationId)}.obj`;
 }
 
 /** Nation color hex for UI display */

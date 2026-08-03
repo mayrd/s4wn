@@ -22,6 +22,12 @@
     },
     "terrainModifiers": {
       "snowOpacity": 1.1
+    },
+    "decorations": {
+      "borderPost": {
+        "model": "models/decorations/borderpost.obj",
+        "material": "models/decorations/borderpost.mtl"
+      }
     }
   },
   "economy": {

@@ -23,6 +23,12 @@
     "terrainModifiers": {
       "grassOpacity": 0.6,
       "desaturation": 0.4
+    },
+    "decorations": {
+      "borderPost": {
+        "model": "models/decorations/borderpost.obj",
+        "material": "models/decorations/borderpost.mtl"
+      }
     }
   },
   "economy": {
