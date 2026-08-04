@@ -13,9 +13,8 @@
 import { GameLoop } from '../../game/GameLoop';
 import { Terrain } from '../../game/types';
 import {
-  BuildingType, BUILDING_NAMES, buildCost, buildTime, productionInterval,
-  buildingInputs, buildingOutputs, requiredTool, requiresSettler,
-  resourceName, buildingName, ResourceType, RESOURCE_COUNT,
+  BuildingType, buildTime,
+  resourceName, ResourceType, RESOURCE_COUNT,
 } from '../../economy/types';
 import { borderPostModelName, borderPostModelPath, borderPostColor, borderPostNationName } from '../../game/BorderPost';
 
@@ -26,7 +25,7 @@ export interface ExplorerObject {
   properties: Record<string, any>;
 }
 
-type CatalogTab = 'terrain' | 'buildings' | 'units' | 'resources' | 'decorations' | 'nations' | 'misc';
+type CatalogTab = 'terrain' | 'resources' | 'decorations' | 'nations' | 'misc';
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -88,7 +87,7 @@ function resolveTextureUrl(texture: string): string | null {
   // Try common asset directories (Vite publicDir: 'assets' serves these at root)
   const candidates = [
     `/textures/${fname}`,
-    `/images/${fname}`,
+    `/ui/${fname}`,
     `/models/${fname}`,
   ];
   // Return the first candidate — the browser will 404 if it's wrong,
@@ -182,7 +181,7 @@ export class ObjectExplorer {
   // ── Build DOM ────────────────────────────────────────────────────
 
   private build(): void {
-    const tabs: CatalogTab[] = ['terrain','buildings','units','resources','decorations','nations','misc'];
+    const tabs: CatalogTab[] = ['terrain','resources','decorations','nations','misc'];
     // "Live" toggle only shown when connected to a GameLoop
     const liveToggle = this.gameLoop ? '<label class="explorer-autorefresh-toggle" title="Auto-refresh live data every tick"><input type="checkbox" id="explorer-autorefresh" checked /> Live</label>' : '';
      this.container.innerHTML = `<div class="explorer-container">
@@ -262,8 +261,8 @@ export class ObjectExplorer {
   }
   private loadCatalog(): void {
     switch (this.activeTab) {
-      case 'terrain': this.loadTerrain(); break; case 'buildings': this.loadBuildings(); break;
-      case 'units': this.loadUnits(); break; case 'resources': this.loadResources(); break;
+      case 'terrain': this.loadTerrain(); break;
+      case 'resources': this.loadResources(); break;
       case 'decorations': this.loadDecorations(); break;
       case 'nations': this.loadNations(); break;
       case 'misc': this.loadMisc(); break;
@@ -289,68 +288,6 @@ export class ObjectExplorer {
       },
       properties: { description:t.desc, buildable:t.buildable, movementCost:t.movementCost, splatColor:`rgb(${t.splatRgb})` }
     }));
-  }
-
-  private loadBuildings(): void {
-    const placed = this.gameLoop?.economy.getCompleteBuildings() ?? [];
-    if (placed.length > 0) {
-      const counts = new Map<string, { count: number; instances: any[] }>();
-      for (const b of placed) {
-        const nm = buildingName(b.kind);
-        const e = counts.get(nm) || { count: 0, instances: [] };
-        e.count++; e.instances.push(b); counts.set(nm, e);
-      }
-      this.objects = [...counts.entries()].map(([nm, d]) => {
-        const idx = BUILDING_NAMES.indexOf(nm);
-        const kind = (idx >= 0 ? idx : 0) as BuildingType;
-        const interval = productionInterval(kind);
-        const tex = cardToTexKey(nm);
-        return {
-          id: `building-${nm}`, type: 'building', name: `${nm} (${d.count})`,
-          _kind: kind, _instances: d.instances, _texKey: tex, _promptKey: tex,
-          _chain: { mesh:`assets/models/${nm.toLowerCase()}.obj`, texture:`MTL→map_Kd→${tex}.png`, animation:`${buildTime(kind)}t constr + ${interval > 0 ? interval+'t prod' : 'none'}` },
-          properties: { kind:nm, cost:fmtCost(buildCost(kind)), buildTime:`${buildTime(kind)}t`,
-            produces: interval > 0 ? `${fmtCost(buildingOutputs(kind))}/${interval}t` : 'none',
-            consumes: fmtCost(buildingInputs(kind)), tool:requiredTool(kind)?.toString()??'none',
-            needsSettler: requiresSettler(kind), placed: d.count }
-        };
-      });
-    } else {
-      this.objects = BUILDING_NAMES.filter(Boolean).map(nm => {
-        const idx = BUILDING_NAMES.indexOf(nm); const kind = (idx>=0?idx:0) as BuildingType;
-        const interval = productionInterval(kind); const tex = cardToTexKey(nm);
-        return {
-          id: `building-${nm}`, type: 'building', name: nm,
-          _kind: kind, _instances: [], _texKey: tex, _promptKey: tex,
-          _chain: { mesh:`assets/models/${nm.toLowerCase()}.obj`, texture:`MTL→map_Kd→${tex}.png`, animation:`${buildTime(kind)}t constr + ${interval>0?interval+'t prod':'none'}` },
-          properties: { kind:nm, cost:fmtCost(buildCost(kind)), buildTime:`${buildTime(kind)}t`,
-            produces:interval>0?`${fmtCost(buildingOutputs(kind))}/${interval}t`:'none',
-            consumes:fmtCost(buildingInputs(kind)), tool:requiredTool(kind)?.toString()??'none',
-            needsSettler:requiresSettler(kind), placed:0 }
-        };
-      }).sort((a,b)=>a.name.localeCompare(b.name));
-    }
-  }
-
-  private loadUnits(): void {
-    const alive = this.gameLoop?.unitManager.getAliveUnits() ?? [];
-    const defs = [
-      { n:'Settler', hp:50,a:1,sp:1.5,si:8, idle:'Standing, slight sway', walk:'Walk 1.5 — A*', work:'Hammer (build) + carry (haul)' },
-      { n:'Swordsman', hp:100,a:15,sp:1.0,si:6, idle:'At attention, shield fwd', walk:'March 1.0 — A*', work:'Slash/parry combat (CombatAI)' },
-      { n:'Bowman', hp:75,a:12,sp:1.2,si:10, idle:'Bow lowered, scanning', walk:'Jog 1.2 — A*', work:'Draw→aim→release at range' },
-      { n:'Worker', hp:40,a:1,sp:1.0,si:5, idle:'At building entrance', walk:'Walk 1.0 — to workplace', work:'Tool anim per bldg type' },
-      { n:'Pioneer', hp:40,a:1,sp:1.0,si:5, idle:'Standing w/shovel', walk:'Walk 1.0 — to border', work:'Digging loop, expand territory' },
-    ];
-    this.objects = defs.map(u => {
-      const inst = alive.filter((x:any) => x.kind?.toString() === u.n);
-      const k = `unit_${u.n.toLowerCase()}`;
-      return {
-        id: `unit-${u.n}`, type: 'unit', name: `${u.n} (${inst.length})`,
-        _instances: inst, _texKey: k, _promptKey: k,
-        _chain: { mesh:'Humanoid OBJ — head/torso/arms/legs, UV-unwrapped', texture:`${k}.png → PROMPTS.md §Unit ${u.n}`, animation:`${u.idle} | ${u.walk} | ${u.work}` },
-        properties: { hp:u.hp, atk:u.a, speed:u.sp, sight:u.si, alive: inst.length }
-      };
-    });
   }
 
   /**
@@ -497,11 +434,13 @@ export class ObjectExplorer {
     const nationNames: Record<string,string> = {
       romans:'Romans', vikings:'Vikings', mayans:'Mayans', trojans:'Trojans', dark:'Dark Tribe'
     };
-    this.objects = nationIds.map(id => {
-      const overrides = Object.keys(this.buildingOverridesForNation(id));
-      const units = ['worker','soldier','archer','settler','special'];
+    const results: ExplorerObject[] = [];
+    for (const id of nationIds) {
       const nationLabel = nationNames[id] || id;
-      return {
+      const overrides = Object.keys(this.buildingOverridesForNation(id));
+      const unitKeys = ['worker','soldier','archer','settler','special'];
+      // Nation header entry
+      results.push({
         id: `nation-${id}`, type: 'nation', name: `${nationLabel} (${overrides.length} buildings)`,
         _nationId: id,
         _chain: {
@@ -513,11 +452,39 @@ export class ObjectExplorer {
           id,
           name: nationLabel,
           buildingOverrides: overrides.length,
-          unitTypes: units.length,
+          unitTypes: unitKeys.length,
           assetsRoot: `assets/nations/${id}/`
         }
-      } as ExplorerObject;
-    });
+      } as ExplorerObject);
+      // Clickable building entries
+      for (const b of overrides) {
+        const tex = cardToTexKey(b);
+        results.push({
+          id: `nation-${id}-building-${b}`, type: 'building', name: `${b}`,
+          _nationId: id, _texKey: tex, _promptKey: tex,
+          _chain: {
+            mesh: `assets/nations/${id}/models/buildings/${b}.glb`,
+            texture: `assets/nations/${id}/textures/buildings/${tex}.png`,
+            animation: `assets/nations/${id}/animations/buildings/${b}.json`
+          },
+          properties: { nation: nationLabel, kind: b, assetsRoot: `assets/nations/${id}/` }
+        } as ExplorerObject);
+      }
+      // Clickable unit entries
+      for (const u of unitKeys) {
+        results.push({
+          id: `nation-${id}-unit-${u}`, type: 'unit', name: `${u}`,
+          _nationId: id, _promptKey: `unit_${u}`,
+          _chain: {
+            mesh: `assets/nations/${id}/models/units/${u}.glb`,
+            texture: `assets/nations/${id}/textures/units/${u}.png`,
+            animation: `assets/nations/${id}/animations/units/${u}.json`
+          },
+          properties: { nation: nationLabel, kind: u, assetsRoot: `assets/nations/${id}/` }
+        } as ExplorerObject);
+      }
+    }
+    this.objects = results;
   }
 
   private buildingOverridesForNation(nationId: string): Record<string, any> {
@@ -534,8 +501,8 @@ export class ObjectExplorer {
 
   private loadMisc(): void {
     this.objects = [
-      { id:'m-splash',type:'ui',name:'Splash',_promptKey:'splash',_instances:[],_chain:{mesh:'CSS bg-image',texture:'/images/splash.png',animation:'Fade 0.3s'},properties:{file:'splash.png',format:'4K responsive center-safe'}},
-      { id:'m-favicon',type:'ui',name:'Favicon',_promptKey:'',_instances:[],_chain:{mesh:'<link rel=icon>',texture:'/images/favicon-256.png',animation:'none'},properties:{file:'favicon-256.png',format:'256×256'}},
+      { id:'m-splash',type:'ui',name:'Splash',_promptKey:'splash',_instances:[],_chain:{mesh:'CSS bg-image',texture:'/ui/splash.png',animation:'Fade 0.3s'},properties:{file:'splash.png',format:'4K responsive center-safe'}},
+      { id:'m-favicon',type:'ui',name:'Favicon',_promptKey:'',_instances:[],_chain:{mesh:'<link rel=icon>',texture:'/ui/favicon-256.png',animation:'none'},properties:{file:'favicon-256.png',format:'256×256'}},
       { id:'m-audio',type:'audio',name:'Sound FX',_promptKey:'',_instances:[],_chain:{mesh:'Web Audio API',texture:'Oscillator+Gain nodes',animation:'Envelope attack/sustain/release'},properties:{source:'SoundManager.ts',sounds:'select,place,error,tick,win,lose (6 tones)'}},
       { id:'m-anim1',type:'anim',name:'Splash→Menu',_promptKey:'',_instances:[],_chain:{mesh:'.ui-screen div',texture:'CSS opacity',animation:'3s fade-out (UIManager.ts)'},properties:{type:'CSS Transition',duration:'3s'}},
       { id:'m-anim2',type:'anim',name:'Btn Hover',_promptKey:'',_instances:[],_chain:{mesh:'.menu-button',texture:'CSS transform+color',animation:'0.2s scale+color shift'},properties:{type:'CSS Transition',duration:'0.2s'}},

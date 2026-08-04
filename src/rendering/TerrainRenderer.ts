@@ -123,7 +123,7 @@ export class TerrainRenderer {
     const atlasH = map.height * cell;
     this.progressCallback?.('Loading terrain textures...', 10);
     try {
-      console.log(`🗺️ Building terrain atlas (${atlasW}×${atlasH}, cell=${cell}px) from /textures/...`);
+      console.log(`🗺️ Building terrain atlas (${atlasW}×${atlasH}, cell=${cell}px) from /terrain/...`);
       const names = [
         'terrain_grass',
         'terrain_forest',
@@ -140,7 +140,7 @@ export class TerrainRenderer {
       for (let i = 0; i < names.length; i++) {
         const n = names[i];
         try {
-          const img = await this.loadImage(`/textures/${n}.png`);
+          const img = await this.loadImage(`/terrain/${n}.png`);
           images.push(img);
         } catch {
           // Use a 1×1 placeholder canvas as fallback

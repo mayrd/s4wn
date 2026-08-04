@@ -172,7 +172,7 @@ export class UIManager {
         </div>
         <div class="build-bar-content">
           <div class="menu-actions-row">
-            <img class="menu-logo" src="/images/logo-1024.png" alt="S4WN" />
+            <img class="menu-logo" src="/ui/logo-1024.png" alt="S4WN" />
             <button class="menu-action-btn" id="btn-tutorial">🎓 Start Tutorial</button>
             <button class="menu-action-btn" id="btn-new-game">⚔️ Start New Game</button>
             <button class="menu-action-btn" id="btn-load-game">📂 Load Game</button>
