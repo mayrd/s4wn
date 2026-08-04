@@ -641,6 +641,25 @@ body.menu-collapsed .hud-container {
 }
 .explorer-section-body .prop-key { color: #5d4037; }
 .explorer-section-body .prop-val { color: #3e2723; }
+.explorer-section-body .explorer-link-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 2px 0;
+  padding: 3px 8px;
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: #3e2723;
+  background: linear-gradient(rgba(141, 110, 99, 0.18), rgba(141, 110, 99, 0.18));
+  border: 1px solid rgba(141, 110, 99, 0.4);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.explorer-section-body .explorer-link-row:hover {
+  background: linear-gradient(rgba(255, 171, 64, 0.25), rgba(255, 171, 64, 0.25));
+  border-color: var(--gold);
+}
+
 
 
 /* ── P13: Search, Asset Chain, Instance Cards, Collapse ─────── */

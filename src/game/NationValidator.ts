@@ -38,6 +38,14 @@ export interface ValidationReport {
 
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
+/** Stats a unit type is required to define (beyond the shared `hp`). */
+const REQUIRED_UNIT_STATS: Record<string, string[]> = {
+  worker: [],
+  soldier: ['attack'],
+  archer: ['range'],
+  settler: ['carryCapacity'],
+};
+
 /** Allowed top-level keys in a nation manifest. Unknown keys are warnings, not errors. */
 const TOP_LEVEL_KEYS = new Set([
   'version', 'id', 'name', 'description', 'visuals', 'economy',
@@ -102,6 +110,14 @@ export class NationValidator {
       report.errors.push({ path: 'name', message: '"name" must be an object with at least an "en" entry.' });
     }
 
+    // ---- 4b. description validation (optional key, but must have "en" when present) ----
+    if (m.description !== undefined) {
+      if (typeof m.description !== 'object' || !m.description || typeof (m.description as Record<string, unknown>).en !== 'string') {
+        report.valid = false;
+        report.errors.push({ path: 'description', message: '"description" must be an object with at least an "en" entry.' });
+      }
+    }
+
     // ---- 5. visuals ----
     const visuals = m.visuals as Record<string, unknown> | undefined;
     if (visuals) {
@@ -109,6 +125,11 @@ export class NationValidator {
         report.valid = false;
         report.errors.push({ path: 'visuals.color', message: `Must be a #rrggbb hex string. Got: "${visuals.color}".` });
       }
+      if (visuals.secondary !== undefined && (typeof visuals.secondary !== 'string' || !HEX_COLOR_RE.test(visuals.secondary))) {
+        report.valid = false;
+        report.errors.push({ path: 'visuals.secondary', message: `Must be a #rrggbb hex string. Got: "${visuals.secondary}".` });
+      }
+      this.validateParticles(visuals.particles as Record<string, unknown> | undefined, report);
       if (typeof visuals.emoji !== 'string' || visuals.emoji.length === 0) {
         report.warnings.push({ path: 'visuals.emoji', message: 'Emoji is recommended but empty.' });
       }
@@ -166,7 +187,51 @@ export class NationValidator {
       this.validateAI(ai, report);
     }
 
+    // ---- 14. Economy / special-resource building-reference warnings ----
+    const buildOverrides = (m.buildings as Record<string, unknown> | undefined)?.overrides as Record<string, unknown> | undefined;
+    const hasOverride = (k: unknown): boolean =>
+      typeof k === 'string' && !!buildOverrides && Object.prototype.hasOwnProperty.call(buildOverrides, k);
+    if (economy) {
+      const livestock = economy.livestock as Record<string, unknown> | undefined;
+      if (livestock && typeof livestock.building === 'string' && !hasOverride(livestock.building)) {
+        report.warnings.push({ path: 'economy.livestock.building', message: 'livestock building not present in buildings.overrides.' });
+      }
+      const divine = economy.divine as Record<string, unknown> | undefined;
+      if (divine && typeof divine.building === 'string' && !hasOverride(divine.building)) {
+        report.warnings.push({ path: 'economy.divine.building', message: 'divine building not present in buildings.overrides.' });
+      }
+    }
+    if (sr) {
+      for (const [k2, item] of Object.entries(sr)) {
+        const craftedAt = (item as Record<string, unknown> | undefined)?.craftedAt;
+        if (typeof craftedAt === 'string' && !hasOverride(craftedAt)) {
+          report.warnings.push({ path: `specialResources.${k2}.craftedAt`, message: 'craftedAt building not present in buildings.overrides.' });
+        }
+      }
+    }
+
     return report;
+  }
+
+  /** Validate multiple manifests and return one report per nation. */
+  static validateAllNations(manifests: Record<string, NationManifest>): ValidationReport[] {
+    return Object.values(manifests).map((m) => this.validateManifest(m));
+  }
+
+  private static validateParticles(p: Record<string, unknown> | undefined, r: ValidationReport): void {
+    if (p === undefined) return; // optional
+    if (p.dustColor === undefined) {
+      r.valid = false;
+      r.errors.push({ path: 'visuals.particles.dustColor', message: '"dustColor" is required for particles.' });
+    }
+    if (!Array.isArray(p.magicColor)) {
+      r.valid = false;
+      r.errors.push({ path: 'visuals.particles.magicColor', message: '"magicColor" must be an array [r,g,b].' });
+    }
+    if (!Array.isArray(p.constructionSpark) || p.constructionSpark.length !== 3) {
+      r.valid = false;
+      r.errors.push({ path: 'visuals.particles.constructionSpark', message: '"constructionSpark" must be an array of length 3.' });
+    }
   }
 
   private static validateEconomy(eco: Record<string, unknown>, r: ValidationReport): void {
@@ -195,6 +260,18 @@ export class NationValidator {
         if (typeof starting[res] !== 'number') {
           r.valid = false;
           r.errors.push({ path: `economy.startingResources.${res}`, message: `Must be a number.` });
+        } else if (starting[res] < 0) {
+          r.valid = false;
+          r.errors.push({ path: `economy.startingResources.${res}`, message: `Must be non-negative.` });
+        }
+      }
+    }
+    const bonuses = eco.resourceBonuses as Record<string, number> | undefined;
+    if (bonuses) {
+      for (const [res, v] of Object.entries(bonuses)) {
+        if (typeof v !== 'number' || v <= 0) {
+          r.valid = false;
+          r.errors.push({ path: `economy.resourceBonuses.${res}`, message: `Must be a positive number.` });
         }
       }
     }
@@ -215,8 +292,22 @@ export class NationValidator {
         }
       }
       const stats = u.stats as Record<string, number> | undefined;
-      if (stats && typeof stats.hp !== 'number') {
-        r.warnings.push({ path: `units.${key}.stats.hp`, message: 'HP should be a number.' });
+      if (!stats) {
+        r.valid = false;
+        r.errors.push({ path: `units.${key}.stats`, message: `Unit "${key}" must define a "stats" object.` });
+        continue;
+      }
+      // Shared HP requirement: every unit needs a positive HP.
+      if (typeof stats.hp !== 'number' || stats.hp <= 0) {
+        r.valid = false;
+        r.errors.push({ path: `units.${key}.stats.hp`, message: 'HP must be a positive number.' });
+      }
+      // Nation/unit-type specific required stats (attack, range, carryCapacity...).
+      for (const required of REQUIRED_UNIT_STATS[key] ?? []) {
+        if (typeof stats[required] !== 'number') {
+          r.valid = false;
+          r.errors.push({ path: `units.${key}.stats.${required}`, message: `Missing required stat "${required}".` });
+        }
       }
     }
     // Special unit
@@ -233,15 +324,65 @@ export class NationValidator {
   }
 
   private static validateBuildings(b: Record<string, unknown>, r: ValidationReport): void {
-    const overrides = b.overrides as Record<string, Record<string, string>> | undefined;
+    // ── categories ──
+    const categories = b.categories;
+    if (categories !== undefined) {
+      if (!Array.isArray(categories)) {
+        r.valid = false;
+        r.errors.push({ path: 'buildings.categories', message: '"categories" must be an array.' });
+      } else {
+        (categories as Array<Record<string, unknown>>).forEach((cat, i) => {
+          if (!cat || typeof cat !== 'object') {
+            r.valid = false;
+            r.errors.push({ path: `buildings.categories[${i}]`, message: 'Category must be an object.' });
+            return;
+          }
+          if (typeof cat.id !== 'string' || (cat.id as string).length === 0) {
+            r.valid = false;
+            r.errors.push({ path: `buildings.categories[${i}].id`, message: 'Category missing "id".' });
+          }
+          if (typeof cat.label !== 'string' || (cat.label as string).length === 0) {
+            r.valid = false;
+            r.errors.push({ path: `buildings.categories[${i}].label`, message: 'Category missing "label".' });
+          }
+          if (!Array.isArray(cat.buildings)) {
+            r.valid = false;
+            r.errors.push({ path: `buildings.categories[${i}].buildings`, message: '"buildings" must be an array.' });
+          }
+        });
+      }
+    }
+
+    // ── overrides ──
+    const overrides = b.overrides as Record<string, Record<string, unknown>> | undefined;
     if (!overrides || typeof overrides !== 'object') {
       r.warnings.push({ path: 'buildings.overrides', message: 'No building overrides defined — generic fallbacks will be used.' });
       return;
     }
     for (const [key, override] of Object.entries(overrides)) {
       if (override && typeof override === 'object') {
-        for (const sub of ['model', 'texture', 'icon', 'animations']) {
-          const val = (override as Record<string, string>)[sub];
+        const o = override as Record<string, unknown>;
+        if (typeof o.category !== 'string' || (o.category as string).length === 0) {
+          r.valid = false;
+          r.errors.push({ path: `buildings.overrides.${key}.category`, message: 'Building override must have a "category".' });
+        }
+        if (typeof o.model !== 'string' || (o.model as string).length === 0) {
+          r.valid = false;
+          r.errors.push({ path: `buildings.overrides.${key}.model`, message: 'Building override must have a "model".' });
+        }
+        if (o.cost !== undefined && !Array.isArray(o.cost)) {
+          r.valid = false;
+          r.errors.push({ path: `buildings.overrides.${key}.cost`, message: '"cost" must be an array of {resource, amount}.' });
+        } else if (Array.isArray(o.cost)) {
+          (o.cost as Array<Record<string, unknown>>).forEach((item, i) => {
+            if (!item || typeof item !== 'object' || typeof item.resource !== 'string') {
+              r.valid = false;
+              r.errors.push({ path: `buildings.overrides.${key}.cost[${i}].resource`, message: 'Cost item missing "resource".' });
+            }
+          });
+        }
+        for (const sub of ['texture', 'icon', 'animations']) {
+          const val = o[sub];
           if (val !== undefined && typeof val !== 'string') {
             r.warnings.push({ path: `buildings.overrides.${key}.${sub}`, message: 'Should be a string path.' });
           }

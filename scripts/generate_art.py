@@ -11,7 +11,7 @@ def get_key():
 
 KEY = get_key()
 MODEL = "gemini-2.5-flash-image"
-OUT = "/opt/data/projects/s4wn/assets/images"
+OUT = "/opt/data/projects/s4wn/assets/ui"
 os.makedirs(OUT, exist_ok=True)
 
 PROMPTS = [

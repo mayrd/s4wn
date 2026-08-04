@@ -17,6 +17,7 @@ import {
   resourceName, ResourceType, RESOURCE_COUNT,
 } from '../../economy/types';
 import { borderPostModelName, borderPostModelPath, borderPostColor, borderPostNationName } from '../../game/BorderPost';
+import { NationRegistry } from '../../game/NationRegistry';
 
 export interface ExplorerObject {
   id: string;
@@ -28,11 +29,6 @@ export interface ExplorerObject {
 type CatalogTab = 'terrain' | 'resources' | 'decorations' | 'nations' | 'misc';
 
 // ── Helpers ──────────────────────────────────────────────────────────
-
-function fmtCost(items: Array<{ resource: any; amount: number }>): string {
-  if (items.length === 0) return 'none';
-  return items.map(i => `${resourceName(i.resource)}\u00d7${i.amount}`).join(', ');
-}
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -86,6 +82,8 @@ function resolveTextureUrl(texture: string): string | null {
   const fname = fnameM[1];
   // Try common asset directories (Vite publicDir: 'assets' serves these at root)
   const candidates = [
+    `/terrain/${fname}`,
+    `/decorations/${fname}`,
     `/textures/${fname}`,
     `/ui/${fname}`,
     `/models/${fname}`,
@@ -283,7 +281,7 @@ export class ObjectExplorer {
       _promptKey: `terrain_${t.terrain.toString().toLowerCase()}`,
       _chain: {
         mesh: 'Ground Plane — CreateGround 100×100, 4 verts (TerrainRenderer.ts)',
-        texture: `assets/textures/${texMap[t.terrain.toString()] ?? 'terrain_grass.png'}`,
+        texture: `assets/terrain/${texMap[t.terrain.toString()] ?? 'terrain_grass.png'}`,
         animation: `Water UV scroll loop (WaterPlane.ts) — ${t.terrain === Terrain.Water || t.terrain === Terrain.DeepWater ? 'enabled' : 'N/A'}`,
       },
       properties: { description:t.desc, buildable:t.buildable, movementCost:t.movementCost, splatColor:`rgb(${t.splatRgb})` }
@@ -431,17 +429,16 @@ export class ObjectExplorer {
 
   private loadNations(): void {
     const nationIds = ['romans','vikings','mayans','trojans','dark'];
-    const nationNames: Record<string,string> = {
-      romans:'Romans', vikings:'Vikings', mayans:'Mayans', trojans:'Trojans', dark:'Dark Tribe'
-    };
     const results: ExplorerObject[] = [];
     for (const id of nationIds) {
-      const nationLabel = nationNames[id] || id;
-      const overrides = Object.keys(this.buildingOverridesForNation(id));
-      const unitKeys = ['worker','soldier','archer','settler','special'];
+      const nationLabel = this.nationLabel(id);
+      const buildingKeys = this.buildingKeysForNation(id);
+      const unitKeys = this.unitKeysForNation(id);
+      const rn = NationRegistry.instance.get(id);
+
       // Nation header entry
       results.push({
-        id: `nation-${id}`, type: 'nation', name: `${nationLabel} (${overrides.length} buildings)`,
+        id: `nation-${id}`, type: 'nation', name: `${nationLabel} (${buildingKeys.length} buildings)`,
         _nationId: id,
         _chain: {
           mesh: `assets/nations/${id}/models/...`,
@@ -451,40 +448,81 @@ export class ObjectExplorer {
         properties: {
           id,
           name: nationLabel,
-          buildingOverrides: overrides.length,
+          buildingOverrides: buildingKeys.length,
           unitTypes: unitKeys.length,
           assetsRoot: `assets/nations/${id}/`
         }
       } as ExplorerObject);
-      // Clickable building entries
-      for (const b of overrides) {
+
+      // Clickable building entries — nation-specific, resolved from the loaded manifest
+      for (const b of buildingKeys) {
         const tex = cardToTexKey(b);
+        const bOverride = (rn?.manifest?.buildings?.overrides as any)?.[b];
         results.push({
           id: `nation-${id}-building-${b}`, type: 'building', name: `${b}`,
           _nationId: id, _texKey: tex, _promptKey: tex,
           _chain: {
-            mesh: `assets/nations/${id}/models/buildings/${b}.glb`,
-            texture: `assets/nations/${id}/textures/buildings/${tex}.png`,
-            animation: `assets/nations/${id}/animations/buildings/${b}.json`
+            mesh: bOverride?.model ? `/nations/${id}/${bOverride.model}` : `assets/nations/${id}/models/buildings/${b}.glb`,
+            texture: bOverride?.texture ? `/nations/${id}/${bOverride.texture}` : `assets/nations/${id}/textures/buildings/${tex}.png`,
+            animation: bOverride?.animations ? `/nations/${id}/${bOverride.animations}` : `assets/nations/${id}/animations/buildings/${b}.json`
           },
           properties: { nation: nationLabel, kind: b, assetsRoot: `assets/nations/${id}/` }
         } as ExplorerObject);
       }
-      // Clickable unit entries
+
+      // Clickable unit entries — nation-specific, resolved from the loaded manifest
       for (const u of unitKeys) {
+        const uDef = (rn?.manifest?.units as any)?.[u];
         results.push({
           id: `nation-${id}-unit-${u}`, type: 'unit', name: `${u}`,
           _nationId: id, _promptKey: `unit_${u}`,
           _chain: {
-            mesh: `assets/nations/${id}/models/units/${u}.glb`,
-            texture: `assets/nations/${id}/textures/units/${u}.png`,
-            animation: `assets/nations/${id}/animations/units/${u}.json`
+            mesh: uDef?.model ? `/nations/${id}/${uDef.model}` : `assets/nations/${id}/models/units/${u}.glb`,
+            texture: uDef?.texture ? `/nations/${id}/${uDef.texture}` : `assets/nations/${id}/textures/units/${u}.png`,
+            animation: uDef?.animations ? `/nations/${id}/${uDef.animations}` : `assets/nations/${id}/animations/units/${u}.json`
           },
           properties: { nation: nationLabel, kind: u, assetsRoot: `assets/nations/${id}/` }
         } as ExplorerObject);
       }
     }
     this.objects = results;
+  }
+
+  /** Display name for a nation, resolved from the registry when available. */
+  private nationLabel(id: string): string {
+    const rn = NationRegistry.instance.get(id);
+    if (rn?.info?.name) return rn.info.name;
+    const names: Record<string, string> = {
+      romans: 'Romans', vikings: 'Vikings', mayans: 'Mayans', trojans: 'Trojans', dark: 'Dark Tribe'
+    };
+    return names[id] ?? id;
+  }
+
+  /**
+   * Nation-specific building keys. Uses the actual loaded `nation.json` manifest
+   * (categories + overrides) when the nation is registered; otherwise falls back
+   * to the legacy static list so standalone mode is never empty.
+   */
+  private buildingKeysForNation(nationId: string): string[] {
+    const rn = NationRegistry.instance.get(nationId);
+    if (rn?.manifest?.buildings) {
+      const fromCategories: string[] = [];
+      for (const cat of rn.manifest.buildings.categories || []) {
+        if (cat && Array.isArray(cat.buildings)) fromCategories.push(...cat.buildings);
+      }
+      const overrides = Object.keys(rn.manifest.buildings.overrides || {});
+      return Array.from(new Set([...fromCategories, ...overrides]));
+    }
+    return Object.keys(this.buildingOverridesForNation(nationId));
+  }
+
+  /** Nation-specific unit keys, from the loaded manifest when available. */
+  private unitKeysForNation(nationId: string): string[] {
+    const rn = NationRegistry.instance.get(nationId);
+    if (rn?.manifest?.units) {
+      return Object.keys(rn.manifest.units as any);
+    }
+    return ['worker', 'soldier', 'archer', 'settler', 'special'];
   }
 
   private buildingOverridesForNation(nationId: string): Record<string, any> {
@@ -547,16 +585,18 @@ export class ObjectExplorer {
      // Nation asset listing
      let nationAssetsHtml = '';
      if (nationId && obj.type === 'nation') {
-       const bOverrides = Object.keys(this.buildingOverridesForNation(nationId));
-       const unitKeys = ['worker','soldier','archer','settler','special'];
-       const rows = (items: string[], label: string) => items.map(it =>
-         `<div class="explorer-prop-row"><span class="prop-key">${label}:</span><span class="prop-val">${it}</span></div>`
+       const bOverrides = this.buildingKeysForNation(nationId);
+       const unitKeys = this.unitKeysForNation(nationId);
+       const rows = (items: string[], kind: 'building' | 'unit') => items.map(it =>
+         `<button class="explorer-link-row" data-explorer-go="nation-${nationId}-${kind}-${it}">🔍 ${esc(it)}</button>`
        ).join('');
        nationAssetsHtml = `
          <div class="explorer-section">
-           <div class="explorer-section-title">🧩 Assets</div>
+           <div class="explorer-section-title">🧩 Assets — click a building/unit to inspect</div>
            <div class="explorer-section-body">
+             <div class="explorer-prop-row"><span class="prop-key">Units</span></div>
              ${rows(unitKeys, 'unit')}
+             <div class="explorer-prop-row" style="margin-top:6px"><span class="prop-key">Buildings</span></div>
              ${rows(bOverrides, 'building')}
              <div class="explorer-prop-row"><span class="prop-key">textures:</span><span class="prop-val">assets/nations/${nationId}/textures/{buildings,units}/</span></div>
              <div class="explorer-prop-row"><span class="prop-key">models:</span><span class="prop-val">assets/nations/${nationId}/models/{buildings,units,decorations}/</span></div>
@@ -649,7 +689,18 @@ export class ObjectExplorer {
        <div class="explorer-detail-item" style="opacity:0.6">${obj.type} · ${obj.id}</div>
        ${parts.join('\n')}`;
 
-     // On mobile, switch from list to detail view
-     if (this.isMobile) this.showDetailView();
-   }
+      // Issue #97: nation asset rows link to the actual building/unit catalog objects.
+      this.detailsEl.querySelectorAll<HTMLElement>('[data-explorer-go]').forEach(el =>
+        el.addEventListener('click', () => this.goToObject(el.dataset.explorerGo!)));
+
+
+      // On mobile, switch from list to detail view
+      if (this.isMobile) this.showDetailView();
+    }
+
+    /** Select & inspect a catalog object referenced from the nation detail view. */
+    private goToObject(id: string): void {
+      const obj = this.objects.find(o => o.id === id);
+      if (obj) this.showDetails(obj);
+    }
 }

@@ -367,55 +367,14 @@ def main():
         default=str(default_assets),
         help=f"Output assets directory (default: {default_assets})"
     )
-    parser.add_argument(
-        "--with-tiles",
-        action="store_true",
-        help="Also generate simple procedural 64x64 terrain tile files"
-    )
     args = parser.parse_args()
 
     assets_dir = Path(args.out_dir)
     print(f"Generating procedural sprites into: {assets_dir}")
 
-    # Ensure target subdirectories exist
-    for sub in ["buildings", "units", "ui", "tiles"]:
-        if sub == "tiles" and not args.with_tiles:
-            continue
-        (assets_dir / sub).mkdir(parents=True, exist_ok=True)
-
-    # Terrain tiles (if requested)
-    tiles = {
-        "grass": gen_grass_tile,
-        "water": gen_water_tile,
-        "desert": gen_desert_tile,
-        "snow": gen_snow_tile,
-        "forest": gen_forest_tile,
-        "mountain": gen_mountain_tile,
-        "deepwater": gen_deepwater_tile,
-        "swamp": gen_swamp_tile,
-    }
-    if args.with_tiles:
-        for name, gen in tiles.items():
-            png = gen()
-            path = assets_dir / "tiles" / f"{name}.png"
-            path.write_bytes(png)
-            print(f"  tiles/{name}.png ({len(png)} bytes)")
-
-    # Building sprites
-    buildings = ["headquarters", "farm", "sawmill", "lumberjack", "warehouse"]
-    for name in buildings:
-        png = gen_building_sprite(name)
-        path = assets_dir / "buildings" / f"{name}.png"
-        path.write_bytes(png)
-        print(f"  buildings/{name}.png ({len(png)} bytes)")
-
-    # Unit sprites
-    units = ["worker", "soldier", "archer"]
-    for name in units:
-        png = gen_unit_sprite(name)
-        path = assets_dir / "units" / f"{name}.png"
-        path.write_bytes(png)
-        print(f"  units/{name}.png ({len(png)} bytes)")
+    # Issue #97: generic tiles/, buildings/ and units/ are no longer generated —
+    # only nation-specific assets live under assets/nations/{id}/ plus shared UI.
+    (assets_dir / "ui").mkdir(parents=True, exist_ok=True)
 
     # UI elements
     png = gen_ui_panel()
@@ -431,9 +390,6 @@ def main():
     # Generate a manifest
     manifest = {
         "version": "0.1.0",
-        "tiles": list(tiles.keys()) if args.with_tiles else ["grass", "water", "desert", "snow", "forest", "mountain", "deepwater", "swamp"],
-        "buildings": buildings,
-        "units": units,
         "ui": ["panel", "button"],
     }
     import json

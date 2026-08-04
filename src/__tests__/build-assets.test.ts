@@ -14,9 +14,9 @@ const DIST = join(ROOT, 'dist');
 const ASSETS = join(ROOT, 'assets');
 
 const REQUIRED_ASSETS = [
-  'images/splash.png', 'images/logo-1024.png', 'images/favicon-256.png',
-  'textures/terrain_grass.png', 'textures/terrain_forest.png', 'textures/terrain_desert.png',
-  'textures/terrain_mountain.png', 'textures/terrain_snow.png', 'textures/terrain_water.png', 'textures/terrain_swamp.png',
+  'ui/splash.png', 'ui/logo-1024.png', 'ui/favicon-256.png',
+  'terrain/terrain_grass.png', 'terrain/terrain_forest.png', 'terrain/terrain_desert.png',
+  'terrain/terrain_mountain.png', 'terrain/terrain_snow.png', 'terrain/terrain_water.png', 'terrain/terrain_swamp.png',
   'textures/building_stone.png',
   'nations/romans/nation.json',
   'nations/vikings/nation.json',
