@@ -68,6 +68,7 @@ export class InGameMenu {
     this.gameLoop = gameLoop;
     this.scene = scene;
     this.buildingPlacement = buildingPlacement;
+     this.playerNation = this.gameLoop.playerNation;
     
     this.container = document.getElementById('ui-overlay') || document.body;
 
@@ -196,7 +197,7 @@ export class InGameMenu {
 
     if (this.activeMainTab === 'construction') {
           // Building categories as subtabs
-          const categories = getBuildingCategories();
+          const categories = getBuildingCategories(this.playerNation);
           const catTabsHtml = categories.map(cat => {
             const active = cat.id === this.constructionSubTab ? 'active' : '';
             return `<button class="build-subtab-btn ${active}" data-construction-subtab="${cat.id}">${cat.label}</button>`;
