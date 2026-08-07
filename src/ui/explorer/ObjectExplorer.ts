@@ -428,7 +428,7 @@ export class ObjectExplorer {
   }
 
   private loadNations(): void {
-    const nationIds = ['romans','vikings','mayans','trojans','dark'];
+    const nationIds = NationRegistry.instance.list().map(n => n.info.id);
     const results: ExplorerObject[] = [];
     for (const id of nationIds) {
       const nationLabel = this.nationLabel(id);
