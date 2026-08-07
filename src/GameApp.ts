@@ -115,8 +115,12 @@ export class GameApp {
   private initEngine(canvas: HTMLCanvasElement): void {
     this.engine = new Engine(canvas, true);
     this.scene = new Scene(this.engine);
+<<<<<<< Updated upstream
     // Sky blue background
     this.scene.clearColor = new Color4(0.5, 0.7, 0.9, 1.0);
+=======
+    this.scene.clearColor = new Color4(0.5, 0.7, 1.0, 0.0);
+>>>>>>> Stashed changes
   }
 
   private initSystems(): void {
@@ -321,6 +325,7 @@ export class GameApp {
     // Building loading happens in background - non-critical for initial render
     this.loadBuildings(buildingData);
 
+<<<<<<< Updated upstream
     // Step 6: Map editor
     this.ui.updateProgress('Finalizing...', 85);
 
@@ -366,6 +371,12 @@ export class GameApp {
       }
     }
     console.log('🏰 Building loaded');
+=======
+    this.particleSystem = new ParticleSystem(this.scene);
+
+    // Initialize UI after rendering systems are ready
+    new UIManager(this.gameLoop, this.scene, this.terrainRenderer);
+>>>>>>> Stashed changes
   }
 
   private initCamera(): void {
@@ -614,6 +625,7 @@ export class GameApp {
       this.tutorialManager.start();
     }
   }
+<<<<<<< Updated upstream
 
   /**
    * Handle the 'building-placed' event from BuildingPlacement UI.
@@ -885,4 +897,6 @@ export class GameApp {
     this.engine.dispose();
     soundManager.dispose();
   }
+=======
+>>>>>>> Stashed changes
 }

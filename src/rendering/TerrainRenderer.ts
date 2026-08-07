@@ -30,9 +30,21 @@ const ELEV_SCALE = 0.6;
 export class TerrainRenderer {
   private scene: Scene;
   private map: GameMap;
+<<<<<<< Updated upstream
   private terrainMesh: Mesh | null = null;
   private splattingEnabled: boolean = true;
   private _savedDiffuseColor: Color3 | null = null;
+=======
+  private width: number;
+  private height: number;
+  private mesh: any | null = null;
+  private heightMap!: RawTexture;
+  private splatMap!: RawTexture;
+  private visibilityMap!: RawTexture;
+  private heightData!: Uint8Array;
+  private splatData!: Uint8ClampedArray;
+  private visData!: Uint8ClampedArray;
+>>>>>>> Stashed changes
 
   constructor(scene: Scene, map: GameMap) {
     this.scene = scene;
@@ -109,6 +121,7 @@ export class TerrainRenderer {
   /**
    * Set a progress callback to receive loading updates.
    */
+<<<<<<< Updated upstream
   setProgressCallback(cb: (msg: string, percent: number) => void): void {
     this.progressCallback = cb;
   }
@@ -163,6 +176,29 @@ export class TerrainRenderer {
       // Opaque base so uncovered edges never turn transparent.
       ctx.fillStyle = '#3c8c38';
       ctx.fillRect(0, 0, atlasW, atlasH);
+=======
+  createTerrain(): void {
+    // 1. Generate Heightmap
+    this.heightMap = this.generateHeightMap();
+    
+    // 2. Create Terrain Mesh from Heightmap
+    // We use CreateGroundFromHeightMap for easier height integration
+    this.mesh = MeshBuilder.CreateGroundFromHeightMap(
+      'terrain',
+      this.heightMap as any,
+      {
+        width: this.width,
+        height: this.height,
+        subdivisions: this.width - 1,
+        minHeight: 0,
+        maxHeight: 10, // Adjust based on expected elevation
+      },
+      this.scene
+    );
+
+    // 3. Generate Splatmap
+    this.splatMap = this.generateSplatMap();
+>>>>>>> Stashed changes
 
       // First pass: draw all terrain textures
       for (let ty = 0; ty < map.height; ty++) {
@@ -380,6 +416,7 @@ export class TerrainRenderer {
       i.crossOrigin = 'anonymous';
       i.src = s;
     });
+<<<<<<< Updated upstream
   }
 
   /** Toggle splatting on/off - when off, shows flat colored terrain */
@@ -416,5 +453,163 @@ export class TerrainRenderer {
 
   getMesh() {
     return this.terrainMesh;
+=======
+    
+    material.setTexture('diffuseSampler', this.splatMap);
+    
+    // Implement Fog of War using a visibility texture and custom shader blending
+    this.visibilityMap = this.generateVisibilityMap();
+    material.setTexture('visibilitySampler', this.visibilityMap);
+    
+    this.mesh.material = material;
+
+    // Set position to origin
+    this.mesh.position = new Vector3(0, 0, 0);
+  }
+
+  /**
+   * Updates the terrain mesh and textures to reflect map changes.
+   */
+  public updateTerrain(): void {
+    // 1. Update textures
+    this.heightMap = this.generateHeightMap();
+    this.splatMap = this.generateSplatMap();
+    this.visibilityMap = this.generateVisibilityMap();
+
+    this.heightMap.update(this.heightData);
+    this.splatMap.update(this.splatData);
+    this.visibilityMap.update(this.visData);
+
+    // 2. Recreate mesh to apply new heightmap
+    // For a 100x100 map, this is acceptable for a prototype editor.
+    if (this.mesh) {
+      const oldMaterial = this.mesh.material;
+      this.mesh.dispose();
+      
+      this.mesh = MeshBuilder.CreateGroundFromHeightMap(
+        'terrain',
+        this.heightMap as any,
+        {
+          width: this.width,
+          height: this.height,
+          subdivisions: this.width - 1,
+          minHeight: 0,
+          maxHeight: 10,
+        },
+        this.scene
+      );
+      this.mesh.material = oldMaterial;
+      this.mesh.position = new Vector3(0, 0, 0);
+    }
+  }
+
+  private generateHeightMap(): RawTexture {
+    const size = 256; // Resolution of the heightmap texture
+    this.heightData = new Uint8Array(size * size);
+
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        // Map texture coordinates to map coordinates
+        const mapX = Math.floor((x / size) * this.width);
+        const mapY = Math.floor((y / size) * this.height);
+        
+        const tile = this.map.get(mapX, mapY);
+        const elevation = tile ? tile.elevation : 0;
+        
+        // Scale elevation to 0-255
+        this.heightData[y * size + x] = Math.min(255, Math.max(0, elevation * 25.5));
+      }
+    }
+
+    return new RawTexture(this.heightData, size, size, 0, this.scene, false);
+  }
+
+  private generateVisibilityMap(): RawTexture {
+    const size = 256;
+    this.visData = new Uint8ClampedArray(size * size * 4);
+
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const mapX = Math.floor((x / size) * this.width);
+        const mapY = Math.floor((y / size) * this.height);
+        
+        const vis = this.map.getVisibility(mapX, mapY);
+        const index = (y * size + x) * 4;
+        
+        const val = Math.floor(vis * 255);
+        this.visData[index] = val;
+        this.visData[index + 1] = val;
+        this.visData[index + 2] = val;
+        this.visData[index + 3] = 255;
+      }
+    }
+
+    return new RawTexture(this.visData, size, size, 0, this.scene, false);
+  }
+
+  private generateSplatMap(): RawTexture {
+    const size = 256;
+    this.splatData = new Uint8ClampedArray(size * size * 4);
+
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const mapX = Math.floor((x / size) * this.width);
+        const mapY = Math.floor((y / size) * this.height);
+        
+        const tile = this.map.get(mapX, mapY);
+        const terrain = tile ? tile.terrain : Terrain.Grass;
+
+        const index = (y * size + x) * 4;
+        
+        // Assign colors based on terrain type for the splatmap
+        // In a real implementation, these would be weights in RGBA channels
+        switch (terrain) {
+          case Terrain.Grass:
+            this.splatData[index] = 50;     // R
+            this.splatData[index + 1] = 200; // G
+            this.splatData[index + 2] = 50;  // B
+            break;
+          case Terrain.Forest:
+            this.splatData[index] = 20;
+            this.splatData[index + 1] = 100;
+            this.splatData[index + 2] = 20;
+            break;
+          case Terrain.Desert:
+            this.splatData[index] = 200;
+            this.splatData[index + 1] = 200;
+            this.splatData[index + 2] = 100;
+            break;
+          case Terrain.Mountain:
+            this.splatData[index] = 100;
+            this.splatData[index + 1] = 100;
+            this.splatData[index + 2] = 100;
+            break;
+          case Terrain.Snow:
+            this.splatData[index] = 255;
+            this.splatData[index + 1] = 255;
+            this.splatData[index + 2] = 255;
+            break;
+          case Terrain.Water:
+          case Terrain.DeepWater:
+            this.splatData[index] = 0;
+            this.splatData[index + 1] = 0;
+            this.splatData[index + 2] = 255;
+            break;
+          case Terrain.Swamp:
+            this.splatData[index] = 50;
+            this.splatData[index + 1] = 50;
+            this.splatData[index + 2] = 0;
+            break;
+          default:
+            this.splatData[index] = 128;
+            this.splatData[index + 1] = 128;
+            this.splatData[index + 2] = 128;
+        }
+        this.splatData[index + 3] = 255; // Alpha
+      }
+    }
+
+    return new RawTexture(this.splatData, size, size, 0, this.scene, false);
+>>>>>>> Stashed changes
   }
 }
