@@ -25,8 +25,8 @@
     },
     "decorations": {
       "borderPost": {
-        "model": "models/decorations/borderpost.obj",
-        "material": "models/decorations/borderpost.mtl"
+        "model": "models/nations/trojan/borderpost.obj",
+        "material": "models/nations/trojan/borderpost.mtl"
       }
     }
   },
