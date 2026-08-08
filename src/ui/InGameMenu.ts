@@ -68,7 +68,6 @@ export class InGameMenu {
     this.gameLoop = gameLoop;
     this.scene = scene;
     this.buildingPlacement = buildingPlacement;
-     this.playerNation = this.gameLoop.playerNation;
     
     this.container = document.getElementById('ui-overlay') || document.body;
 
