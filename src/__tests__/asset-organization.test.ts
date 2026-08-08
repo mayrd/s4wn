@@ -23,8 +23,7 @@ describe('Asset Organization Tests', () => {
       const uiPath = join(ASSETS, 'ui');
       expect(existsSync(uiPath)).toBe(true);
       uiRequiredAssets.forEach(asset => {
-        expect(existsSync(join(uiPath, asset))).toBe(true,
-          `Missing UI asset: ${asset} in assets/ui/`);
+        expect(existsSync(join(uiPath, asset))).toBe(true);
       });
     });
   });
@@ -40,8 +39,7 @@ describe('Asset Organization Tests', () => {
       const terrainPath = join(ASSETS, 'terrain');
       expect(existsSync(terrainPath)).toBe(true);
       terrainRequiredAssets.forEach(asset => {
-        expect(existsSync(join(terrainPath, asset))).toBe(true,
-          `Missing terrain asset: ${asset}`);
+        expect(existsSync(join(terrainPath, asset))).toBe(true);
       });
     });
   });
@@ -55,11 +53,9 @@ describe('Asset Organization Tests', () => {
       const decorationsPath = join(ASSETS, 'decorations');
       expect(existsSync(decorationsPath)).toBe(true);
       decorationRequiredAssets.forEach(asset => {
-        expect(existsSync(join(decorationsPath, asset))).toBe(true,
-          `Missing decoration: ${asset}`);
+        expect(existsSync(join(decorationsPath, asset))).toBe(true);
         const mtlPath = join(decorationsPath, asset.replace('.obj', '.mtl'));
-        expect(existsSync(mtlPath)).toBe(true,
-          `Missing MTL: ${asset.replace('.obj', '.mtl')}`);
+        expect(existsSync(mtlPath)).toBe(true);
       });
     });
   });
@@ -75,8 +71,7 @@ describe('Asset Organization Tests', () => {
       const texturesPath = join(ASSETS, 'textures');
       expect(existsSync(texturesPath)).toBe(true);
       sharedTextures.forEach(asset => {
-        expect(existsSync(join(texturesPath, asset))).toBe(true,
-          `Missing texture: ${asset}`);
+        expect(existsSync(join(texturesPath, asset))).toBe(true);
       });
     });
   });
@@ -87,8 +82,7 @@ describe('Asset Organization Tests', () => {
     it('should have nation.json manifest files for each nation', () => {
       nations.forEach(nation => {
         const manifestPath = join(ASSETS, 'nations', nation, 'nation.json');
-        expect(existsSync(manifestPath)).toBe(true,
-          `Missing nation.json for nation: ${nation}`);
+        expect(existsSync(manifestPath)).toBe(true);
       });
     });
   });
@@ -108,8 +102,7 @@ describe('Asset Organization Tests', () => {
         
         expectedNestedFolders.forEach(folder => {
           const folderPath = join(nationPath, folder);
-          expect(existsSync(folderPath)).toBe(true,
-            `Missing nested folder: ${folder} for nation: ${nation}`);
+          expect(existsSync(folderPath)).toBe(true);
         });
       });
     });

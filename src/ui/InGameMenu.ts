@@ -47,6 +47,8 @@ export class InGameMenu {
    private selectedBuildingKind: BuildingType | null = null; // Track selected building for UI highlighting
   private isCollapsed: boolean = false;
 
+private playerNation: number = 0;
+
   // Touch / Context state
 
   // Renderers for Debug toggling
@@ -54,6 +56,7 @@ export class InGameMenu {
   private terrainRenderer: any = null;
   private territoryOverlay: any = null;
   private supplyChainRenderer: any = null;
+   private tradeRouteRenderer: any = null;
   private maritimeTradeRenderer: any = null;
   
   // Texture state for toggle
