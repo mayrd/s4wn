@@ -20,10 +20,9 @@ export class UIManager {
   private static instance: UIManager | null = null;
   private overlay: HTMLElement;
   private splashScreen!: HTMLElement;
-  private mainMenu!: HTMLElement;
-
   private nationSelection!: HTMLElement;
   public objectExplorer: ObjectExplorer;
+  private mainMenu!: HTMLElement;
   private gameLoop: GameLoop | null = null;
   private pendingMode: StartMode = 'new';
   /** Set when the user opens the Map Editor from the menu before a game is running. */

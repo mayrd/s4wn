@@ -97,6 +97,10 @@ export class InGameMenu {
     this.supplyChainRenderer = renderer;
   }
 
+  public setTradeRouteRenderer(renderer: any): void {
+    this.tradeRouteRenderer = renderer;
+  }
+
   /** Expose the embedded detail panel so GameApp can wire callbacks + selection. */
   public getEntityDetailPanel(): EntityDetailPanel | null {
     return this.detailPanel || null;
