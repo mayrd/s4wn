@@ -1,7 +1,7 @@
 // Module: ConfigInspector
 
 class ConfigInspector {
-  constructor(container: HTMLElement) {
+  constructor(_container: HTMLElement) {
     // Initialize JSON schema viewer
   }
 }

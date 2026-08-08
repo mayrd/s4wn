@@ -53,4 +53,5 @@ interface ProductionLink {
   throughput: number;
 }
 
-export { ProductionChainGraph, ProductionNode, ProductionLink };
+export { ProductionChainGraph };
+export type { ProductionNode, ProductionLink };
