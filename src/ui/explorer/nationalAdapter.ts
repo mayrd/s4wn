@@ -61,7 +61,7 @@ class NationAdapter {
         buildings: ["barracks", "fortress", "temple"],
         units: ["legionary", "cavalry", "infantry"],
         resources: ["gold", "stone", "iron"],
-        assets?: { textures: [], animations: [], models: [] }
+        assets: { textures: [], animations: [], models: [] }
       },
       mayans: {
         name: "Mayans",
@@ -70,7 +70,7 @@ class NationAdapter {
         buildings: ["pyramid", "observatory"],
         units: ["jaguar_warrior", "priest"],
         resources: ["cacao", "jade", "obsidian"],
-        assets?: { textures: [], animations: [], models: [] }
+        assets: { textures: [], animations: [], models: [] }
       },
       vikings: {
         name: "Vikings",
@@ -79,7 +79,7 @@ class NationAdapter {
         buildings: ["longhouse", "shipyard"],
         units: ["berserker", "shieldman"],
         resources: ["wool", "iron", "flint"],
-        assets?: { textures: [], animations: [], models: [] }
+        assets: { textures: [], animations: [], models: [] }
       },
       trojans: {
         name: "Trojans",
@@ -88,7 +88,7 @@ class NationAdapter {
         buildings: ["acropolis", "theater"],
         units: ["hoplite", "scout"],
         resources: ["gold", "pottery", "wheat"],
-        assets?: { textures: [], animations: [], models: [] }
+        assets: { textures: [], animations: [], models: [] }
       },
       dark: {
         name: "Dark Tribe",
@@ -97,7 +97,7 @@ class NationAdapter {
         buildings: ["cave_lair", "shrine"],
         units: ["shadow_walker", "dark_witch"],
         resources: ["shadow", "crystals", "blood"],
-        assets?: { textures: [], animations: [], models: [] }
+        assets: { textures: [], animations: [], models: [] }
       }
     };
     return configs[nation] || configs.romans;
