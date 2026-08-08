@@ -11,24 +11,17 @@
  */
 
 import { ObjectExplorer } from './explorer/ObjectExplorer';
-<<<<<<< Updated upstream
 import { SaveManager } from '../core/SaveManager';
 import { checkCapabilities, CapabilityResult } from '../core/CapabilityChecker';
 
 export type StartMode = 'new' | 'load' | 'tutorial';
-=======
-import { GameLoop } from '../game/GameLoop';
-import { MapEditor } from './editor/MapEditor';
-import { Scene } from '@babylonjs/core';
-import { TerrainRenderer } from '../rendering/TerrainRenderer';
->>>>>>> Stashed changes
 
 export class UIManager {
   private static instance: UIManager | null = null;
   private overlay: HTMLElement;
   private splashScreen!: HTMLElement;
   private mainMenu!: HTMLElement;
-<<<<<<< Updated upstream
+
   private nationSelection!: HTMLElement;
   public objectExplorer: ObjectExplorer;
   private gameLoop: GameLoop | null = null;
@@ -63,15 +56,6 @@ export class UIManager {
     if (this.gameLoop) {
       this.objectExplorer.connectGame(this.gameLoop);
     }
-=======
-  private objectExplorer: ObjectExplorer;
-  private mapEditor: MapEditor;
-
-  constructor(gameLoop: GameLoop, scene: Scene, terrainRenderer: TerrainRenderer) {
-    this.overlay = document.getElementById('ui-overlay')!;
-    this.objectExplorer = new ObjectExplorer(this, gameLoop);
-    this.mapEditor = new MapEditor(this, gameLoop, scene, terrainRenderer);
->>>>>>> Stashed changes
     this.init();
 
     // Listen for tutorial completion so we can route the player back to the
@@ -203,7 +187,6 @@ export class UIManager {
     this.overlay.appendChild(this.mainMenu);
 
     // Attach event listeners
-<<<<<<< Updated upstream
     this.mainMenu.querySelector('#btn-new-game')?.addEventListener('click', () => this.showNationSelection('new'));
     this.mainMenu.querySelector('#btn-tutorial')?.addEventListener('click', () => this.startGame('tutorial'));
     this.mainMenu.querySelector('#btn-load-game')?.addEventListener('click', () => this.loadGame());
@@ -216,14 +199,6 @@ export class UIManager {
       const loadBtn = this.mainMenu.querySelector('#btn-load-game') as HTMLButtonElement;
       if (loadBtn) loadBtn.disabled = true;
     }
-=======
-    this.mainMenu.querySelector('#btn-new-game')?.addEventListener('click', () => this.startGame());
-    this.mainMenu.querySelector('#btn-tutorial')?.addEventListener('click', () => alert('Tutorial coming soon!'));
-    this.mainMenu.querySelector('#btn-load-game')?.addEventListener('click', () => alert('Load game coming soon!'));
-    this.mainMenu.querySelector('#btn-explorer')?.addEventListener('click', () => this.objectExplorer.toggle());
-    this.mainMenu.querySelector('#btn-editor')?.addEventListener('click', () => this.mapEditor.toggle());
-    this.mainMenu.querySelector('#btn-multiplayer')?.addEventListener('click', () => alert('Multiplayer coming soon!'));
->>>>>>> Stashed changes
   }
 
   public showSplashScreen(): void {
