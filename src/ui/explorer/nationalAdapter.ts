@@ -1,4 +1,10 @@
 // Data Adapter for Dynamic Nation Loading
+//
+// All nation data is read from `nation.json` manifests registered in
+// `NationRegistry` (populated by `NationLoader` at startup). There is no
+// hardcoded built-in config — unknown nations simply produce no config.
+
+import { NationRegistry } from '../../game/NationRegistry';
 
 interface NationSpec {
   name: string;
@@ -29,7 +35,7 @@ interface NationConfig {
 
 class NationAdapter {
   private static instances: Map<string, NationAdapter> = new Map();
-  private config: NationConfig | null = null;
+  public config: NationConfig | null = null;
   private data: any = {};
 
   public static getInstance(nation: string): NationAdapter {
@@ -44,63 +50,39 @@ class NationAdapter {
   }
 
   private loadConfig(nation: string): void {
-    // Load from dynamic JSON configs, e.g., `assets/nations/romans.json`
-    const configPath = `/assets/nations/${nation}.json`;
-    // Fallback to built-in manifests
-    const builtinConfig = this.getBuiltinConfig(nation);
-    this.config = builtinConfig;
-  }
+    // All data comes from the nation.json manifest registered in NationRegistry.
+    const registered = NationRegistry.instance.get(nation);
+    if (!registered?.manifest) {
+      this.config = null;
+      return;
+    }
 
-  private getBuiltinConfig(nation: string): NationConfig {
-    // Built-in fallback for known nations
-    const configs: Record<string, NationConfig> = {
-      romans: {
-        name: "Romans",
-        namespace: "roman",
-        category: "civilization",
-        buildings: ["barracks", "fortress", "temple"],
-        units: ["legionary", "cavalry", "infantry"],
-        resources: ["gold", "stone", "iron"],
-        assets: { textures: [], animations: [], models: [] }
-      },
-      mayans: {
-        name: "Mayans",
-        namespace: "mayan",
-        category: "civilization",
-        buildings: ["pyramid", "observatory"],
-        units: ["jaguar_warrior", "priest"],
-        resources: ["cacao", "jade", "obsidian"],
-        assets: { textures: [], animations: [], models: [] }
-      },
-      vikings: {
-        name: "Vikings",
-        namespace: "viking",
-        category: "civilization",
-        buildings: ["longhouse", "shipyard"],
-        units: ["berserker", "shieldman"],
-        resources: ["wool", "iron", "flint"],
-        assets: { textures: [], animations: [], models: [] }
-      },
-      trojans: {
-        name: "Trojans",
-        namespace: "trojan",
-        category: "civilization",
-        buildings: ["acropolis", "theater"],
-        units: ["hoplite", "scout"],
-        resources: ["gold", "pottery", "wheat"],
-        assets: { textures: [], animations: [], models: [] }
-      },
-      dark: {
-        name: "Dark Tribe",
-        namespace: "dark",
-        category: "civilization",
-        buildings: ["cave_lair", "shrine"],
-        units: ["shadow_walker", "dark_witch"],
-        resources: ["shadow", "crystals", "blood"],
-        assets: { textures: [], animations: [], models: [] }
+    const manifest = registered.manifest;
+
+    // Flatten building keys from `buildings.categories[].buildings`.
+    const buildings: string[] = [];
+    for (const cat of manifest.buildings?.categories ?? []) {
+      for (const b of cat.buildings ?? []) {
+        if (!buildings.includes(b)) buildings.push(b);
       }
+    }
+
+    // Unit keys: worker / soldier / archer / settler / special.
+    const units: string[] = manifest.units ? Object.keys(manifest.units) : [];
+
+    // Nation-specific resources: economy.startingResources keys.
+    const resources: string[] = manifest.economy?.startingResources
+      ? Object.keys(manifest.economy.startingResources)
+      : [];
+
+    this.config = {
+      namespace: manifest.id,
+      name: manifest.name?.en ?? manifest.id,
+      category: 'civilization',
+      buildings,
+      units,
+      resources,
     };
-    return configs[nation] || configs.romans;
   }
 
   public getData(): any {

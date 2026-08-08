@@ -333,7 +333,6 @@ export class GameApp {
     this.inGameMenu.setTerrainRenderer(this.terrainRenderer);
     this.inGameMenu.setTerritoryOverlay(this.territoryOverlay);
     this.inGameMenu.setSupplyChainRenderer(this.supplyChainRenderer);
-    this.inGameMenu.setTradeRouteRenderer(this.tradeRouteRenderer);
     this.inGameMenu.setMaritimeTradeRenderer(this.maritimeTradeRenderer);
 
     // Expose in-game menu for console access (debug tab)

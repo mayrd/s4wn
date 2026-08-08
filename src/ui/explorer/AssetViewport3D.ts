@@ -1,14 +1,12 @@
 // Module: AssetViewport3D
  
  // Babylon.js 3D viewport for asset preview and control
- import { Scene, ArcRotateCamera, Vector3, HemisphericLight, MeshBuilder, StandardMaterial, Color3, Engine, AnimationGroup } from '@babylonjs/core';
+ import { Scene, ArcRotateCamera, Vector3, HemisphericLight, MeshBuilder, StandardMaterial, Color3, Engine } from '@babylonjs/core';
  
  class AssetViewport3D {
    private static instance: AssetViewport3D | null = null;
    private scene!: Scene;
    private activeCamera!: ArcRotateCamera;
-   private _selectedEntity: string = "";
-   private _animationGroup: AnimationGroup | null = null;
  
    private constructor() {}
  

@@ -56,7 +56,6 @@ private playerNation: number = 0;
   private terrainRenderer: any = null;
   private territoryOverlay: any = null;
   private supplyChainRenderer: any = null;
-   private tradeRouteRenderer: any = null;
   private maritimeTradeRenderer: any = null;
   
   // Texture state for toggle
@@ -97,10 +96,6 @@ private playerNation: number = 0;
 
   public setSupplyChainRenderer(renderer: any): void {
     this.supplyChainRenderer = renderer;
-  }
-
-  public setTradeRouteRenderer(renderer: any): void {
-    this.tradeRouteRenderer = renderer;
   }
 
   /** Expose the embedded detail panel so GameApp can wire callbacks + selection. */
