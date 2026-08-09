@@ -1417,5 +1417,24 @@
     "expansionism": 0.8,
     "economyFocus": 0.8,
     "preferredUnits": ["blowgunner", "archer"]
+  },
+  "assetGeneration": {
+    "theme": "mesoamerican",
+    "colorPalette": {
+      "primary": "#33cc33",
+      "secondary": "#66ff66",
+      "accent": "#ccaa33"
+    },
+    "geminiPrompts": {
+      "unit": "Maya blowgunner in jade green tunic with elaborate headdress, carrying blowgun. Intricate floral motifs. 1024x1024 transparent background, isometric view.",
+      "building": "Mayan temple with pink sandstone walls, carved stucco facades, stepped terraces, hanging vines. Golden sunset lighting. 1024x1024 seamless texture, top-down view.",
+      "decoration": "Mayan border post with carved stone column, jade green flowers, blue-tiled arch. Intricate mural patterns. 1024x1024 transparent background, isometric view."
+    },
+    "outputPaths": {
+      "textures": "assets/nations/mayans/textures",
+      "models": "assets/nations/mayans/models",
+      "icons": "assets/nations/mayans/icons",
+      "animations": "assets/nations/mayans/animations"
+    }
   }
 }

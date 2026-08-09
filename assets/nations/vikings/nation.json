@@ -1409,5 +1409,24 @@
     "expansionism": 0.6,
     "economyFocus": 0.4,
     "preferredUnits": ["axe_warrior", "soldier"]
+  },
+  "assetGeneration": {
+    "theme": "nordic_viking",
+    "colorPalette": {
+      "primary": "#3366cc",
+      "secondary": "#6699ff",
+      "accent": "#e8d5b7"
+    },
+    "geminiPrompts": {
+      "unit": "Viking warrior in blue-grey tunic with leather armor, fur cloak, horned helmet or bareheaded with braided hair. Battle-axe or shield. Rugged, weather-beaten Nordic appearance. 1024x1024 transparent background, isometric view.",
+      "building": "Viking longhouse with pine shingle roof, timber frame walls, carved wooden dragon heads on roof peaks. Earthy tones with blue-grey accents, rough-hewn stone foundation. 1024x1024 seamless texture, top-down view.",
+      "decoration": "Viking border post with tall wooden totem pole, carved with knotwork patterns, blue-painted shield mounted on post. Rune stones at base. 1024x1024 transparent background, isometric view."
+    },
+    "outputPaths": {
+      "textures": "assets/nations/vikings/textures",
+      "models": "assets/nations/vikings/models",
+      "icons": "assets/nations/vikings/icons",
+      "animations": "assets/nations/vikings/animations"
+    }
   }
 }

@@ -1410,5 +1410,24 @@
     "expansionism": 0.3,
     "economyFocus": 0.3,
     "preferredUnits": ["dark_mage", "soldier"]
+  },
+  "assetGeneration": {
+    "theme": "dark_fantasy",
+    "colorPalette": {
+      "primary": "#9933cc",
+      "secondary": "#cc66ff",
+      "accent": "#330033"
+    },
+    "geminiPrompts": {
+      "unit": "Dark mage in flowing black robes with glowing purple runes, pale ghostly skin, holding a crackling dark energy staff. 1024x1024 transparent background, isometric view.",
+      "building": "Dark fortress built from obsidian black stone with purple crystal accents, jagged spires, smoke rising from torches. Eerie, foreboding atmosphere. 1024x1024 seamless texture, top-down view.",
+      "decoration": "Dark border post made of twisted black wood with pulsing violet crystals, jagged spikes. Ethereal mist surrounding base. 1024x1024 transparent background, isometric view."
+    },
+    "outputPaths": {
+      "textures": "assets/nations/dark/textures",
+      "models": "assets/nations/dark/models",
+      "icons": "assets/nations/dark/icons",
+      "animations": "assets/nations/dark/animations"
+    }
   }
 }

@@ -1443,5 +1443,24 @@
       "soldier",
       "archer"
     ]
+  },
+  "assetGeneration": {
+    "theme": "medieval_european",
+    "colorPalette": {
+      "primary": "#cc3333",
+      "secondary": "#ff6644",
+      "accent": "#ffd700"
+    },
+    "geminiPrompts": {
+      "unit": "Roman settler worker in red tunic with lorica segmentata armor, leather sandals, carrying tools. Weathered but disciplined appearance. Roman military aesthetic. 1024x1024 transparent background, isometric view.",
+      "building": "Roman stone building with red clay tile roof, marble columns, red banners with gold eagle emblems. Impressive engineering, arched windows, sturdy timber framing. 1024x1024 seamless texture, top-down view.",
+      "decoration": "Roman border post with tall stone column, red banner with SPQR eagle, laurel wreath decorations. Marble base, weathered stone texture. 1024x1024 transparent background, isometric view."
+    },
+    "outputPaths": {
+      "textures": "assets/nations/romans/textures",
+      "models": "assets/nations/romans/models",
+      "icons": "assets/nations/romans/icons",
+      "animations": "assets/nations/romans/animations"
+    }
   }
 }

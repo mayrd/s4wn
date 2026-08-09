@@ -1415,5 +1415,24 @@
     "expansionism": 0.5,
     "economyFocus": 0.6,
     "preferredUnits": ["backpack_catapult", "soldier"]
+  },
+  "assetGeneration": {
+    "theme": "ancient_greek",
+    "colorPalette": {
+      "primary": "#cc9933",
+      "secondary": "#ffcc66",
+      "accent": "#993333"
+    },
+    "geminiPrompts": {
+      "unit": "Trojan backpack catapult operator in golden armor, wearing shoulder pectorals, carrying heavy sling. Stoic, proud Greek-Trojan demeanor. 1024x1024 transparent background, isometric view.",
+      "building": "Trojan fortress with golden stone walls, sun-baked clay roof, olive groves at the base. Warm terracotta tones, marble columns. 1024x1024 seamless texture, top-down view.",
+      "decoration": "Trojan border post with bronze plaques, lion head engravings, golden banner. Sun god symbol. 1024x1024 transparent background, isometric view."
+    },
+    "outputPaths": {
+      "textures": "assets/nations/trojans/textures",
+      "models": "assets/nations/trojans/models",
+      "icons": "assets/nations/trojans/icons",
+      "animations": "assets/nations/trojans/animations"
+    }
   }
 }

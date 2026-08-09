@@ -129,6 +129,20 @@ def main():
         help="Run Gemini API terrain textures generator in dry-run mode (print prompts only)"
     )
 
+    # 'nation' subcommand for nation-specific assets
+    nation_parser = subparsers.add_parser("nation", help="Generate nation-specific assets")
+    nation_parser.add_argument(
+        "--id",
+        type=str,
+        required=True,
+        help="Nation ID to generate assets for (e.g., romans, vikings)"
+    )
+    nation_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show prompts without generating files"
+    )
+
     # Individual generators as subcommands
     for name, gen in GENERATORS.items():
         sub_parser = subparsers.add_parser(name, help=gen["description"])
@@ -211,6 +225,26 @@ def main():
         if not res:
             sys.exit(1)
 
+    elif args.command == "nation":
+        # Run the nation-specific asset generator
+        script_path = GENERATORS_DIR / "generate_nation_assets.py"
+        if not script_path.exists():
+            print(f"Error: Generator script not found: {script_path}")
+            sys.exit(1)
+
+        cmd = [sys.executable, str(script_path), "--nation", args.id]
+        if args.dry_run:
+            cmd.append("--dry-run")
+
+        print(f"\n[+] Running generator: nation ({args.id})...")
+        print(f"    Script: {script_path.relative_to(PROJECT_ROOT)}")
+
+        try:
+            result = subprocess.run(cmd, check=True)
+            print("[OK] nation generator completed successfully")
+        except subprocess.CalledProcessError as e:
+            print(f"[FAIL] nation generator failed with exit code {e.returncode}")
+            sys.exit(1)
 
 if __name__ == "__main__":
     main()
