@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 # Paths
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 ASSETS_ROOT = PROJECT_ROOT / "assets"
 NATIONS_DIR = ASSETS_ROOT / "nations"
 GENERATORS_DIR = PROJECT_ROOT / "scripts" / "generators"
@@ -288,4 +288,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-    return anim_files
