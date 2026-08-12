@@ -82,8 +82,8 @@ function resolveTextureUrl(texture: string): string | null {
   const fname = fnameM[1];
   // Try common asset directories (Vite publicDir: 'assets' serves these at root)
   const candidates = [
-    `/terrain/${fname}`,
-    `/decorations/${fname}`,
+        `/terrain/${fname}`,
+    `/decorations/models/${fname}`,
     `/textures/${fname}`,
     `/ui/${fname}`,
     `/models/${fname}`,

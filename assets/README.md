@@ -34,9 +34,10 @@ assets/
 │   │   └── animations/
 │   │       └── buildings/ · units/
 │
-├── decorations/               # Environment decoration models (flat OBJ/MTL)
-│   │                          # boat, bridge, bush, cactus, deposits, flowers,
-│   │                          # rock, ruins, tree_*, flags, road, terrain tiles …
+├── decorations/               # Environment decoration models
+│   ├── models/                # Flat OBJ/MTL: trees, rocks, deposits, bridges
+│   ├── textures/              # (Future) decoration texture overrides
+│   └── animations/            # (Future) decoration animation clips
 ├── terrain/                   # Terrain tiles / heightmaps / textures
 ├── textures/                  # Global/shared textures (UI, particles, deco …)
 ├── ui/                        # Brand/UI images (splash, logo, favicon, icons)
@@ -67,22 +68,3 @@ Each nation gets a tinted/restyled version of the base unit/building textures:
 - **Dark Tribe**: Purple/black, obsidian buildings, dark magic motifs
 
 Generate nation variants with Gemini using `assets/nations/{nation}/textures/`.
-
-## 3D Model Sources
-
-| Source | License | Format | Notes |
-|--------|---------|--------|-------|
-| **Kenney.nl** | CC0 | glTF, OBJ, FBX | Gold standard for free game assets. Fantasy Town Kit, Castle Kit |
-| **Kay Lousberg** (KayKit) | Paid (~$13-20/pack) | FBX, OBJ | High-quality low-poly medieval packs. Medieval Hexagon Pack (200+ assets) |
-| **itch.io** | Mixed (free/paid) | Various | Search: "low-poly village building OBJ free" |
-| **Gemini Image Gen** | Generated | PNG | For textures only, not 3D models |
-
-**Priority downloads:**
-1. Kenney Fantasy Town Kit (CC0) → `assets/models/kenney_fantasy_town/`
-2. Kenney Castle Kit (CC0) → `assets/models/kenney_castle/`
-3. KayKit Medieval Hexagon Pack (if purchased) → `assets/models/`
-
-To make a kit's buildings visible in-game, add them per-nation under
-`assets/nations/{nation}/models/buildings/` and reference them from that pack's
-`nation.json`.
-

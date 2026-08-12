@@ -46,13 +46,21 @@ describe('Asset Organization Tests', () => {
     });
   });
 
-  describe('Decoration Assets', () => {
-        const decorationRequiredAssets = [
+    describe('Decoration Assets', () => {
+    const decorationRequiredAssets = [
       'bush.obj', 'cactus.obj', 'rock.obj', 'flag.obj'
     ];
 
-    it('should have decoration OBJ/MTL files in assets/decorations/', () => {
+    it('should have decoration subfolders (models/, textures/, animations/) in assets/decorations/', () => {
       const decorationsPath = join(ASSETS, 'decorations');
+      expect(existsSync(decorationsPath)).toBe(true);
+      ['models', 'textures', 'animations'].forEach(sub => {
+        expect(existsSync(join(decorationsPath, sub))).toBe(true);
+      });
+    });
+
+    it('should have decoration OBJ/MTL files in assets/decorations/models/', () => {
+      const decorationsPath = join(ASSETS, 'decorations', 'models');
       expect(existsSync(decorationsPath)).toBe(true);
       decorationRequiredAssets.forEach(asset => {
         expect(existsSync(join(decorationsPath, asset))).toBe(true);
