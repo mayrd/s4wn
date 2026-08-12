@@ -6,6 +6,8 @@
 > `"texture": "textures/buildings/building_timber.png"`). The `nations/` folder below is
 > the source of truth for building/unit visuals; the flat `assets/models/*.obj` files are
 > procedural **base/fallback** meshes, not a generic per-category building library.
+>
+> (For the detailed per-model / per-texture catalog, see [`MODEL_LISTING.md`](MODEL_LISTING.md) in this folder.)
 
 ```
 assets/
@@ -44,7 +46,7 @@ assets/
 
 ## Buildings Are Nation-Specific
 
-In the nation pack system (**`plans/nation_pack_system_plan.md`**, parsed by
+In the nation pack system (**[`plans/nation_pack_system_plan.md`](../plans/nation_pack_system_plan.md)**, parsed by
 `NationLoader`/`NationRegistry`/`NationValidator`), each nation's `nation.json` maps
 building and unit keys to their own model/texture/icon paths, e.g.:
 
