@@ -121,6 +121,7 @@ function cardToTexKey(name: string): string {
 }
 
 // ── ObjectExplorer ───────────────────────────────────────────────────
+import { AssetManager } from '@babylonjs/core'};
 
 export class ObjectExplorer {
   private container: HTMLElement;
@@ -702,5 +703,27 @@ export class ObjectExplorer {
     private goToObject(id: string): void {
       const obj = this.objects.find(o => o.id === id);
       if (obj) this.showDetails(obj);
+  } // End of goToObject method
+
+  // ── AssetManager Integration ──────────────────────────────────────────────
+  private assetManager?: AssetManager;
+
+  public async initializeAssetManager(): Promise<void> {
+    this.assetManager = new AssetManager();
+    this.assetManager.onAssetReady.add(this.handleAssetReady);
+    this.assetManager.onAssetDisposed.add(this.handleAssetDisposed);
+  }
+
+  private handleAssetReady = (asset: any) => {
+    // Update Object Explorer to reflect newly loaded asset
+    this.updateAssetState(asset);
+  };
+
+  private handleAssetDisposed = (asset: any) => {
+    // Remove disposed asset from Object Explorer
+    this.removeAssetFromCatalog(asset);
+  };
+
+  // ── End of ObjectExplorer class ──────────────────────────────────────────
     }
 }
