@@ -81,7 +81,7 @@ jest.mock('@babylonjs/core', () => {
 
 jest.mock('@babylonjs/loaders', () => ({}), { virtual: true });
 
-import { BuildingMesh } from '../BuildingMesh';
+import { BuildingMesh, buildingModelSearchPaths } from '../BuildingMesh';
 import { NationType } from '../../game/Nation';
 
 describe('BuildingMesh', () => {
@@ -213,4 +213,28 @@ describe('BuildingMesh', () => {
       expect(flagCloth.parent).toBe(root);
     });
   });
+
+describe('buildingModelSearchPaths (nation-specific models first)', () => {
+  it('puts the nation GLB, then nation OBJ, before shared fallbacks', () => {
+    const paths = buildingModelSearchPaths('Bakery', 'romans');
+    expect(paths[0]).toEqual({ dir: '/nations/romans/models/buildings/', name: 'bakery.glb' });
+    expect(paths[1]).toEqual({ dir: '/nations/romans/models/buildings/', name: 'bakery.obj' });
+    expect(paths[2]).toEqual({ dir: '/models/poly_pizza/', name: 'bakery.glb' });
+    expect(paths[3]).toEqual({ dir: '/models/', name: 'bakery.obj' });
+  });
+
+  it('skips nation paths when no nationId is given (no nation registered)', () => {
+    const paths = buildingModelSearchPaths('castle');
+    expect(paths).toEqual([
+      { dir: '/models/poly_pizza/', name: 'castle.glb' },
+      { dir: '/models/', name: 'castle.obj' },
+    ]);
+  });
+
+  it('snake_cases CamelCase and display-name building kinds for the file stem', () => {
+    const re = buildingModelSearchPaths('GuardTower', 'vikings').map((p) => p.name);
+    expect(re).toEqual(['guard_tower.glb', 'guard_tower.obj', 'guard_tower.glb', 'guard_tower.obj']);
+  });
+});
+
 });

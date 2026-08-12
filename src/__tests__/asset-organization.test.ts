@@ -16,7 +16,9 @@ describe('Asset Organization Tests', () => {
     const uiRequiredAssets = [
       'splash.png', 'logo-1024.png', 'favicon-256.png',
       'favicon-16x16.png', 'favicon-32x32.png', 'icon-192x192.png',
-      'icon-512x512.png', 'apple-touch-icon.png', 'manifest.json'
+      'icon-512x512.png',       'apple-touch-icon.png', 'manifest.json',
+      // UI panel/button textures live with the UI assets (moved from assets/textures/).
+      'ui_panel.png', 'ui_button.png'
     ];
 
     it('should have all required UI assets in assets/ui/', () => {
@@ -61,10 +63,10 @@ describe('Asset Organization Tests', () => {
   });
 
   describe('Shared Textures', () => {
-    const sharedTextures = [
+        const sharedTextures = [
       'building_stone.png', 'building_thatch.png', 'building_timber.png',
-      'icon_weapons.png', 'icon_food.png', 'icon_wood.png', 'icon_gold.png',
-      'ui_panel.png', 'ui_button.png'
+      'building_marble.png', 'icon_weapons.png', 'icon_food.png',
+      'icon_wood.png', 'icon_gold.png'
     ];
 
     it('should have shared textures in assets/textures/', () => {
@@ -104,6 +106,18 @@ describe('Asset Organization Tests', () => {
           const folderPath = join(nationPath, folder);
           expect(existsSync(folderPath)).toBe(true);
         });
+      });
+    });
+
+    it('should have self-contained building models in each nation pack (not shared)', () => {
+      nations.forEach(nation => {
+        const buildingsDir = join(ASSETS, 'nations', nation, 'models', 'buildings');
+        // A core building mesh must live inside THIS nation pack.
+        expect(existsSync(join(buildingsDir, 'castle.obj'))).toBe(true);
+        expect(existsSync(join(buildingsDir, 'castle.mtl'))).toBe(true);
+        expect(existsSync(join(buildingsDir, 'bakery.obj'))).toBe(true);
+        // And it must NOT be shared anymore at the old assets/models root.
+        expect(existsSync(join(ASSETS, 'models', 'castle.obj'))).toBe(false);
       });
     });
   });

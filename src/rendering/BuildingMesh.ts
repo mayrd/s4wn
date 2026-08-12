@@ -100,6 +100,35 @@ function kindToObjName(kind: string): string {
   return aliases[snake] ?? snake;
 }
 
+/** A single model load attempt: directory + filename to try. */
+export interface ModelCandidate {
+  dir: string;
+  name: string;
+}
+
+/**
+ * Ordered list of model locations to try for a building, in priority order:
+ *   1. nation-specific GLB  → /nations/{id}/models/buildings/{kind}.glb
+ *   2. nation-specific OBJ  → /nations/{id}/models/buildings/{kind}.obj
+ *   3. shared CC0 GLB       → /models/poly_pizza/{kind}.glb
+ *   4. shared base OBJ      → /models/{kind}.obj (fallback)
+ *
+ * Building models are nation-specific (each nation pack is self-contained),
+ * so the nation path is tried first; the shared paths remain as a fallback.
+ * Returns an empty-obviously-ordered array; callers try each in order.
+ */
+export function buildingModelSearchPaths(kind: string, nationId?: string): ModelCandidate[] {
+  const objName = kindToObjName(kind);
+  const paths: ModelCandidate[] = [];
+  if (nationId) {
+    paths.push({ dir: `/nations/${nationId}/models/buildings/`, name: `${objName}.glb` });
+    paths.push({ dir: `/nations/${nationId}/models/buildings/`, name: `${objName}.obj` });
+  }
+  paths.push({ dir: '/models/poly_pizza/', name: `${objName}.glb` });
+  paths.push({ dir: '/models/', name: `${objName}.obj` });
+  return paths;
+}
+
 export class BuildingMesh {
   private scene: Scene;
   
@@ -111,8 +140,8 @@ export class BuildingMesh {
   }
 
 /**
-  * Create a building model. Tries GLB first (from poly_pizza), then OBJ, 
-  * falls back to procedural primitive.
+  * Create a building model. Tries nation-specific models first, then shared
+  * CC0 GLB, then shared OBJ, and falls back to a procedural primitive.
   * Optionally applies nation-specific tint and decorative flag.
   */
   async createBuilding(
@@ -127,29 +156,29 @@ export class BuildingMesh {
   ): Promise<any> {
     let root: any = null;
 
-    // Try loading GLB model from /models/poly_pizza/ first (higher quality CC0 models)
-    try {
-      const objName = kindToObjName(kind);
-      const result = await SceneLoader.ImportMeshAsync('', '/models/poly_pizza/', `${objName}.glb`, this.scene);
-      root = result.meshes[0];
-      root.position.set(x, 0, y);
-      if (material) {
-        result.meshes.forEach((m: any) => (m.material = material));
-      }
-    } catch (_glbError) {
-      // Try loading OBJ model from /models/ (Vite publicDir: assets serves at root)
+    // Resolve the current nation's pack id (if any) so we prefer its models.
+    const rn = nation !== undefined ? NationRegistry.instance.getByNumber(nation) : undefined;
+    const nationId = rn?.info.id;
+    const candidates = buildingModelSearchPaths(kind, nationId);
+
+    // Try each candidate in priority order until one loads.
+    for (const candidate of candidates) {
       try {
-        const objName = kindToObjName(kind);
-        const result = await SceneLoader.ImportMeshAsync('', '/models/', `${objName}.obj`, this.scene);
+        const result = await SceneLoader.ImportMeshAsync('', candidate.dir, candidate.name, this.scene);
         root = result.meshes[0];
         root.position.set(x, 0, y);
         if (material) {
           result.meshes.forEach((m: any) => (m.material = material));
         }
+        break;
       } catch (_error) {
-        // OBJ not found — fall back to procedural primitive
-        root = this.createProceduralBuilding(kind, x, y, material);
+        // Candidate not found — try the next one.
       }
+    }
+
+    // No model file found — fall back to a procedural primitive.
+    if (!root) {
+      root = this.createProceduralBuilding(kind, x, y, material);
     }
 
     // Apply nation-specific tint and decorative flag

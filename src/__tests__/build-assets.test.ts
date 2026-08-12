@@ -22,7 +22,7 @@ const REQUIRED_ASSETS = [
   'nations/vikings/nation.json',
   'nations/mayans/nation.json',
   'nations/trojans/nation.json',
-  'models/castle.obj', 'models/castle.mtl',
+  'nations/romans/models/buildings/castle.obj', 'nations/romans/models/buildings/castle.mtl',
 ];
 
 describe('Vite build assets', () => {
