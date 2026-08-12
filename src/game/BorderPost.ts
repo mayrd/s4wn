@@ -4,7 +4,7 @@
  * Border posts are placed by Pioneer settlers at territorial boundaries.
  * Each nation has a distinct color-coded post with a pennant flag.
  *
-  * Model: assets/models/nations/{nation}/borderpost.obj
+  * Model: assets/nations/{nation}/models/decorations/borderpost.obj
  * Nation colors: Roman #CC3333, Viking #3366CC, Mayan #33CC33, Trojan #CC9933, Dark #9933CC
  */
 

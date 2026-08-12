@@ -222,10 +222,10 @@ Status: P2 · Babylon.js Edition · Phase 2 in progress.
 - [x] Update CI/CD pipeline (Playwright UI tests, snapshot enforcement, artifact upload)
 
 ##### Phase 7 — 3D Assets & Visual Themes 🚧
- - [ ] Download CC0 3D models (Kenney Fantasy Town Kit, Castle Kit) → `assets/models/buildings/`
- - [ ] Generate nation-specific unit variants (Roman, Viking, Mayan, Trojan, Dark) → `assets/models/nations/`
+ - [ ] Download CC0 3D models (Kenney Fantasy Town Kit, Castle Kit) → `assets/models/kenney_fantasy_town/`, `assets/models/kenney_castle/`
+ - [ ] Generate nation-specific unit variants (Roman, Viking, Mayan, Trojan, Dark) → `assets/nations/{nation}/models/`
  - [ ] Create nation-specific textures via Gemini (tinted uniforms, building materials per nation)
- - [ ] Add decoration models: trees, rocks, plants, props → `assets/models/decorations/`
+ - [ ] Add decoration models: trees, rocks, plants, props → `assets/decorations/`
  - [ ] Texture the existing OBJ buildings (44 building types already modeled)
  - [ ] Implement nation pack system → [`plans/nation_pack_system_plan.md`](plans/nation_pack_system_plan.md)
  - [ ] Implement theme system: S4 Classic, Siedler 3 Retro, Dark Fantasy, Winter

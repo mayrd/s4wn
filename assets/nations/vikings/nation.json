@@ -25,8 +25,8 @@
     },
     "decorations": {
       "borderPost": {
-        "model": "models/nations/viking/borderpost.obj",
-        "material": "models/nations/viking/borderpost.mtl"
+        "model": "models/decorations/borderpost.obj",
+        "material": "models/decorations/borderpost.mtl"
       }
     }
   },

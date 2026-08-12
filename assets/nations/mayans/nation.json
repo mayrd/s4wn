@@ -26,8 +26,8 @@
     },
     "decorations": {
       "borderPost": {
-        "model": "models/nations/mayan/borderpost.obj",
-        "material": "models/nations/mayan/borderpost.mtl"
+        "model": "models/decorations/borderpost.obj",
+        "material": "models/decorations/borderpost.mtl"
       }
     }
   },

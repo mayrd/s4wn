@@ -26,8 +26,8 @@
     "terrainModifiers": {},
     "decorations": {
       "borderPost": {
-        "model": "models/nations/roman/borderpost.obj",
-        "material": "models/nations/roman/borderpost.mtl"
+        "model": "models/decorations/borderpost.obj",
+        "material": "models/decorations/borderpost.mtl"
       }
     }
   },
