@@ -13,7 +13,10 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ui": "playwright test -c tests/playwright.config.ts",
-    "generate": "python scripts/generate.py"
+    "generate": "python scripts/generate.py",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test",
+    "check:full": "npm run check && npm run test:ui"
   },
   "repository": {
     "type": "git",

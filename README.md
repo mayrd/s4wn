@@ -13,6 +13,8 @@ This project follows **strict TDD discipline**. Every feature begins with a fail
 ### Quick Start (Testing)
 ```bash
 npm install          # Install dependencies
+npm run check        # UNIFIED gate: type-check + unit tests (before any commit)
+npm run check:full   # UNIFIED gate + Playwright UI/visual regression
 npm test             # Run unit tests (Jest) - must be green before any commit
 npm run test:ui      # Run visual regression tests (Playwright)
 ./tests/run_tests.sh # Run full pipeline (Typecheck + UI tests)

@@ -60,7 +60,60 @@ Auto-HTTPS via Let's Encrypt. Multi-arch Docker (amd64 + arm64).
 | Jest | Unit Testing |
 | Playwright | UI/E2E Testing |
 
-## 3. Test-Driven Development
+## 3. Architecture Overview
+
+High-level system structure, data flow, and module responsibilities live in **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** (including a Mermaid diagram). Read it after this file when onboarding.
+
+In one paragraph: a lightweight **UIManager** drives the splash / main-menu / nation-select screens and, on `game-start`, dynamically imports the heavy **GameApp** (Babylon.js `Engine`/`Scene`/`ArcRotateCamera`). **GameApp** wires pure game-logic modules (**GameLoop → Economy · UnitManager · WorkerAI · CombatAI · TerritoryManager · Logistics · TradeRouteManager · MaritimeTradeManager**) to rendering modules (**TerrainRenderer, WaterPlane, UnitRenderer, BuildingMesh, TerritoryOverlay, SupplyChainRenderer, ResourceItemRenderer**, …) and UI overlays (**HUD, InGameMenu, DebugPanel, BuildingPlacement, ObjectExplorer**). The render loop calls `gameLoop.tick()`; tick subscribers (UI, explorer, renderers) refresh via the `onTick` subscription. Assets are served from `assets/` (Vite publicDir); nation packs in `assets/nations/*/manifest.json` are parsed by **NationLoader / NationRegistry / NationValidator**. Persistence uses **SaveManager** (localStorage); audio uses **SoundManager** (Web Audio API).
+
+## 4. Code Style Constraints & Conventions
+
+- **Strict TypeScript** — `strict` mode is on in `tsconfig.json`: no implicit `any`, and `noUnusedLocals` / `noUnusedParameters` / `noImplicitReturns` are enforced. `npx tsc --noEmit` must be clean before any commit. (Note: this is the repo's de-facto "lint" gate — no ESLint config is present.)
+- **Small files (< 300 LOC)** — prefer single-responsibility modules under `src/game`, `src/rendering`, `src/ui/*`. New code should not grow past this threshold; split cohesion, don't pile onto monolithic files (see refactor recommendations below).
+- **Functional modularity** — keep pure/deterministic logic (economy, pathfinding, AI, validation) **free of Babylon.js imports** so it is unit-testable without a 3D engine; wrapping side-effect code lives in `src/rendering`, DOM code in `src/ui`.
+- **Typed domain models** — use `enum`/`interface`/`type` for domain data; keep shared types central (e.g. `src/economy/types.ts`). Avoid raw `any` where a union or interface fits.
+- **Naming** — PascalCase class + file names (`GameLoop.ts`), camelCase members, ALL_CAPS constants. Tests are colocated in `__tests__/` next to source (or in `src/__tests__/`).
+- **No dead code** — remove unused exports/files rather than leaving them (see session P54).
+- **Docs** — update the **Session Log** (§11) at the end of every session with 3–5 next steps.
+
+## 5. Build / Verify / Test Commands (Exact)
+
+```bash
+npm install                 # install dependencies (CI uses npm ci)
+
+# --- verification (run before any commit / push) ---
+npm run check               # UNIFIED gate: type-check + fast unit tests
+npm run check:full          # UNIFIED + Playwright UI build & visual regression
+npm run typecheck           # npx tsc --noEmit (strict type-check)
+npm test                    # Jest unit tests (must be green before commit)
+npm run test:ui             # Playwright visual regression / UI tests
+npx playwright install      # (once) install Chromium for UI tests
+
+# --- build / run ---
+npm run build               # Vite production build → dist/
+npm run dev                 # Vite dev server (port 3000)
+npm run preview             # serve built dist/ on :8776 for UI tests
+./tests/run_tests.sh        # legacy full pipeline (typecheck + build + UI tests)
+npm run generate            # regenerate procedural assets (Python)
+
+# --- asset validation (Python) ---
+python3 scripts/validate_config.py
+python3 scripts/validate_test_maps.py assets/maps/test
+```
+
+`npm run check` is the fast, deterministic gate for daily AI work: `tsc --noEmit` + Jest. `npm run check:full` additionally builds the app and runs the Playwright suite (requires a preview server + installed Chromium). Linting is delegated to the strict TypeScript compiler; see refactor recommendations if you want to add ESLint later.
+
+## 6. Strict Boundaries & Guardrails
+
+- **`BASE.md`** — **NEVER modify.** It is the authoritative source for buildings, resources, settlers, and production chains; all game data MUST match it (enforced by the `NATIONBASECompleteness` tests).
+- **No original Siedler 4 assets** — never extract or commit original S4 sprites / textures / sounds / music. Every item in `assets/` is generated from scratch; only standard web formats (PNG, WebP, OGG, JSON, glTF/GLB, OBJ/MTL) are allowed.
+- **Gitignored artifacts** — `node_modules/`, `dist/`, `test-results/`, `playwright-report/`, `.venv/`, `.cline/` are build/test output; do not commit.
+- **Generated assets** — `assets/` is largely procedurally generated. Regenerate via `npm run generate` and commit the outputs; do not hand-edit generated binaries/textures unless intended.
+- **Push gate (TDD)** — no push until `npm run check` is green and acceptance criteria are covered. If the environment cannot run tests, flag it and halt the push (never push unverified code).
+- **Visual baselines** — `tests/ui/__snapshots__/` are committed; update them intentionally with `PLAYWRIGHT_UPDATE_SNAPSHOTS=1`, never to mask a real regression.
+- **Small atomic changes** — one task per run, tests after every change, per the Session Protocol (§1).
+
+## 7. Test-Driven Development
 
 ### Philosophy
 Every feature begins with a failing test. Tests drive implementation, not documentation. The test suite is the source of truth for expected behavior.
@@ -91,7 +144,7 @@ Every feature begins with a failing test. Tests drive implementation, not docume
 - To update: `PLAYWRIGHT_UPDATE_SNAPSHOTS=1 npx playwright test tests/ui/visual.spec.ts`
 - Thresholds: 0.1 (static UI), 0.15 (animated/live content)
 
-## 4. Implementation Plan
+## 8. Implementation Plan
 
 Status: P2 · Babylon.js Edition · Phase 2 in progress.
 
@@ -221,7 +274,7 @@ Theme switching at runtime via `GameConfig.theme`. Each theme overrides the base
 | `particle.rs` | `src/game/particles/ParticleSystem.ts` | Effect types |
 | `shaders.rs` | `src/rendering/pipelines/*.ts` | GLSL → Babylon.js shaders |
 
-## 5. Object Explorer
+## 9. Object Explorer
 
 ### Architecture
 The Object Explorer is a **standalone debugging tool** that can be instantiated without a full game context. It shows:
@@ -249,7 +302,7 @@ explorer.show(); // Shows catalog only
 - **Resource Icons**: Color-coded badges with low-storage warnings (≥90% capacity)
 - **Tabs**: terrain | buildings | units | resources | decorations | misc
 
-## 6. Debug Panel
+## 10. Debug Panel
 
 ### Features
 - Real-time FPS, game time, unit/building counts
@@ -273,7 +326,7 @@ The inspector provides:
 - Performance profiler
 - Real-time property editing
 
-## 7. Session Log
+## 11. Session Log
 
 | Session | Date | Summary |
 |---------|------|---------|
