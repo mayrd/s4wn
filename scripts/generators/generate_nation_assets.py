@@ -60,7 +60,14 @@ def validate_nation_config(nation_dir: Path) -> dict:
             )
 
     return config
-OUTPUT_DIR = ASSETS_ROOT / "generated"
+
+
+def resolve_output_dir(path_str: str) -> Path:
+    """Resolve a nation.json outputPath (relative to project root) to an absolute Path."""
+    p = Path(path_str)
+    return p if p.is_absolute() else PROJECT_ROOT / p
+
+
 def build_nation_prompt(config: dict) -> dict:
     """Build a structured prompt dictionary from the nation config."""
     return {
@@ -147,7 +154,9 @@ def generate_animations(prompt: str, output_dir: Path, nation_id: str) -> list[s
             json.dump({"frames": 30, "duration": 100, "states": []}, f)
         anim_files.append(str(filepath))
 
-def generate_nation_assets(nation_id: str, dry_run: bool = False) -> dict:
+    return anim_files
+
+def generate_nation_assets(nation_id: str, dry_run: bool = False, output_dir: str | None = None) -> dict:
     """Generate all assets for a single nation."""
     nation_dir = NATIONS_DIR / nation_id
 
@@ -163,7 +172,20 @@ def generate_nation_assets(nation_id: str, dry_run: bool = False) -> dict:
         prompts = build_nation_prompt(config)
         output_paths = config["assetGeneration"]["outputPaths"]
 
-        out_dir = OUTPUT_DIR / nation_id
+        # Write into the nation's declared outputPaths (assets/nations/{nation}/...).
+        # An explicit --output-dir override replaces them all for CLI flexibility.
+        if output_dir:
+            base = Path(output_dir)
+            texture_dir = base / "textures"
+            model_dir = base / "models"
+            icon_dir = base / "icons"
+            anim_dir = base / "animations"
+        else:
+            texture_dir = resolve_output_dir(output_paths["textures"])
+            model_dir = resolve_output_dir(output_paths["models"])
+            icon_dir = resolve_output_dir(output_paths["icons"])
+            anim_dir = resolve_output_dir(output_paths["animations"])
+        out_dir = NATIONS_DIR / nation_id
 
         result = {
             "nation_id": nation_id,
@@ -178,22 +200,22 @@ def generate_nation_assets(nation_id: str, dry_run: bool = False) -> dict:
             result["notes"] = "Dry run mode - no files written"
 
         texture_files = generate_textures(
-            prompts["unit"], out_dir / "textures", nation_id
+            prompts["unit"], texture_dir, nation_id
         )
         result["generated"]["textures"] = texture_files
 
         model_files = generate_models(
-            prompts["building"], out_dir / "models", nation_id
+            prompts["building"], model_dir, nation_id
         )
         result["generated"]["models"] = model_files
 
         icon_files = generate_icons(
-            prompts["decoration"], out_dir / "icons", nation_id
+            prompts["decoration"], icon_dir, nation_id
         )
         result["generated"]["icons"] = icon_files
 
         anim_files = generate_animations(
-            prompts["building"], out_dir / "animations", nation_id
+            prompts["building"], anim_dir, nation_id
         )
         result["generated"]["animations"] = anim_files
 
@@ -252,8 +274,8 @@ def main():
     parser.add_argument(
         "--output-dir",
         type=str,
-        default=str(OUTPUT_DIR),
-        help="Output directory for generated assets (default: assets/generated)",
+        default=None,
+        help="Override output directory (default: outputPaths from each nation.json)",
     )
 
     args = parser.parse_args()
@@ -263,7 +285,7 @@ def main():
     print("=" * 60)
 
     if args.nation:
-        result = generate_nation_assets(args.nation, dry_run=args.dry_run)
+        result = generate_nation_assets(args.nation, dry_run=args.dry_run, output_dir=args.output_dir)
         print(json.dumps(result, indent=2, default=str))
         return 0 if result["status"] == "success" else 1
 
@@ -273,7 +295,7 @@ def main():
         results = []
         for nation_id in sorted(nations):
             print(f"\n[INFO] Generating assets for nation: {nation_id}")
-            result = generate_nation_assets(nation_id, dry_run=args.dry_run)
+            result = generate_nation_assets(nation_id, dry_run=args.dry_run, output_dir=args.output_dir)
             results.append(result)
 
         success_count = sum(1 for r in results if r["status"] == "success")
