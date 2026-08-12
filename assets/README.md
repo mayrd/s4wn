@@ -11,38 +11,163 @@
 
 ```
 assets/
-├── models/                      # 3D meshes (NO nation-specific assets live here)
-│   ├── *.obj                    # Base/procedural meshes: buildings, units, terrain tiles
-│   │                            # (shared fallback meshes — see note above)
-│   ├── kenney_fantasy_town/     # CC0 Fantasy Town Kit (flattened library)
-│   ├── kenney_castle/           # CC0 Castle Kit (flattened library)
-│   └── poly_pizza/              # CC0 glTF models (castle, house, donkey, windmill, …)
-│
-├── nations/                     # Nation packs — the source of truth for building visuals
-│   ├── romans/                  #   (also: vikings/, mayans/, trojans/, dark/)
-│   │   ├── nation.json          # Manifest: per-building model/texture/icon overrides
-│   │   ├── models/
-│   │   │   ├── buildings/       # {buildingKey}.glb/.obj — per building, per nation
-│   │   │   ├── units/           # {unitKey}.glb/.obj
-│   │   │   └── decorations/     # borderpost.obj/.mtl — nation-pennant territory post
-│   │   ├── textures/
-│   │   │   ├── buildings/       # building_*.png (timber, stone, marble, thatch, adobe, …)
-│   │   │   └── units/
-│   │   ├── icons/
-│   │   │   ├── buildings/
-│   │   │   └── resources/       # icon_*.png
-│   │   └── animations/
-│   │       └── buildings/ · units/
-│
 ├── decorations/               # Environment decoration models
 │   ├── models/                # Flat OBJ/MTL: trees, rocks, deposits, bridges
 │   ├── textures/              # (Future) decoration texture overrides
 │   └── animations/            # (Future) decoration animation clips
+├── maps/                      # Map files (sample-island.map.json, test/)
+│   ├── test/                  # Test maps
+│   │   ├── test_continents_128x128.map
+│   │   ├── test_island_32x32.map
+│   │   └── test_rivervalley_64x64.map
+│   └── README.md
 ├── terrain/                   # Terrain tiles / heightmaps / textures
+│   ├── terrain_desert.png
+│   ├── terrain_forest.png
+│   ├── terrain_grass.png
+│   ├── terrain_mountain.png
+│   ├── terrain_snow.png
+│   ├── terrain_swamp.png
+│   └── terrain_water.png
 ├── textures/                  # Global/shared textures (UI, particles, deco …)
+│   ├── building_marble.png
+│   ├── building_stone.png
+│   ├── building_thatch.png
+│   ├── building_timber.png
+│   ├── deco_bushes.png
+│   ├── deco_flowers.png
+│   ├── deco_grass.png
+│   ├── deco_rocks.png
+│   ├── icon_beer.png
+│   ├── icon_coal.png
+│   ├── icon_food.png
+│   ├── icon_gold.png
+│   ├── icon_iron.png
+│   ├── icon_planks.png
+│   ├── icon_stone.png
+│   ├── icon_sulfur.png
+│   ├── icon_tools.png
+│   ├── icon_weapons.png
+│   ├── icon_wood.png
+│   ├── particle_smoke.png
+│   ├── particle_spark.png
+│   ├── PROMPTS.md
+│   └── README.md
 ├── ui/                        # Brand/UI images (splash, logo, favicon, icons)
+│   ├── apple-touch-icon.png
+│   ├── favicon-16x16.png
+│   ├── favicon-256.png
+│   ├── favicon-32x32.png
+│   ├── favicon.ico
+│   ├── icon-192x192.png
+│   ├── icon-512x512.png
+│   ├── logo-1024.png
+│   ├── manifest.json
+│   ├── PROMPTS.md
+│   ├── README.md
+│   ├── splash.png
+│   ├── ui_button_hover.png
+│   ├── ui_button.png
+│   ├── ui_button_pressed.png
+│   ├── ui_corner.png
+│   ├── ui_divider.png
+│   ├── ui_frame.png
+│   ├── ui_header.png
+│   ├── ui_medals.png
+│   ├── ui_menu_bg.png
+│   ├── ui_panel.png
+│   ├── ui_progress_bg.png
+│   ├── ui_progress_fill.png
+│   ├── ui_separator_decor.png
+│   └── ui_tab_ornament.png
 ├── animations/                # Animation data (JSON)
-└── maps/                      # Map files (sample-island.map.json, test/)
+│   └── README.md
+└── nations/                   # Nation packs — the source of truth for building visuals
+    ├── dark/                  #   (also: vikings/, mayans/, trojans/)
+    │   ├── nation.json          # Manifest: per-building model/texture/icon overrides
+    │   ├── models/
+    │   │   ├── buildings/       # {buildingKey}.glb/.obj — per building, per nation
+    │   │   ├── units/           # {unitKey}.glb/.obj
+    │   │   └── decorations/     # borderpost.obj/.mtl — nation-pennant territory post
+    │   ├── textures/
+    │   │   ├── buildings/       # building_*.png (timber, stone, marble, thatch, adobe, …)
+    │   │   ├── shared/
+    │   │   └── units/
+    │   ├── icons/
+    │   │   ├── buildings/
+    │   │   ├── resources/       # icon_*.png
+    │   │   └── ui/
+    │   └── animations/
+    │       ├── buildings/
+    │       └── units/
+    ├── romans/
+    │   ├── nation.json
+    │   ├── models/
+    │   │   ├── buildings/
+    │   │   ├── units/
+    │   │   └── decorations/
+    │   ├── textures/
+    │   │   ├── buildings/
+    │   │   ├── shared/
+    │   │   └── units/
+    │   ├── icons/
+    │   │   ├── buildings/
+    │   │   ├── resources/
+    │   │   └── ui/
+    │   └── animations/
+    │       ├── buildings/
+    │       └── units/
+    ├── mayans/
+    │   ├── nation.json
+    │   ├── models/
+    │   │   ├── buildings/
+    │   │   ├── units/
+    │   │   └── decorations/
+    │   ├── textures/
+    │   │   ├── buildings/
+    │   │   ├── shared/
+    │   │   └── units/
+    │   ├── icons/
+    │   │   ├── buildings/
+    │   │   ├── resources/
+    │   │   └── ui/
+    │   └── animations/
+    │       ├── buildings/
+    │       └── units/
+    ├── trojans/
+    │   ├── nation.json
+    │   ├── models/
+    │   │   ├── buildings/
+    │   │   ├── units/
+    │   │   └── decorations/
+    │   ├── textures/
+    │   │   ├── buildings/
+    │   │   ├── shared/
+    │   │   └── units/
+    │   ├── icons/
+    │   │   ├── buildings/
+    │   │   ├── resources/
+    │   │   └── ui/
+    │   └── animations/
+    │       ├── buildings/
+    │       └── units/
+    └── vikings/
+        ├── nation.json
+        ├── models/
+        │   ├── buildings/
+        │   ├── units/
+        │   └── decorations/
+        ├── textures/
+        │   ├── buildings/
+        │   ├── shared/
+        │   └── units/
+        ├── icons/
+        │   ├── buildings/
+        │   ├── resources/
+        │   └── ui/
+        └── animations/
+            ├── buildings/
+            └── units/
 ```
 
 ## Buildings Are Nation-Specific
