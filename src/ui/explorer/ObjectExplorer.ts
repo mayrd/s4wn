@@ -121,7 +121,7 @@ function cardToTexKey(name: string): string {
 }
 
 // ── ObjectExplorer ───────────────────────────────────────────────────
-import { AssetManager } from '@babylonjs/core'};
+import { AssetsManager } from '@babylonjs/core';
 
 export class ObjectExplorer {
   private container: HTMLElement;
@@ -716,6 +716,25 @@ export class ObjectExplorer {
 
   private handleAssetReady = (asset: any) => {
     // Update Object Explorer to reflect newly loaded asset
+public updateAssetState(asset: any) {
+  // Update Object Explorer to reflect newly loaded asset
+  // Implement actual logic here
+  this.listEl.innerHTML += `<div>Asset ${asset.id} ready</div>`;
+}
+public removeAssetFromCatalog(asset: any) {
+  // Remove asset from catalog display
+  this.listEl.innerHTML = this.listEl.innerHTML.replace(`<div>Asset ${asset.id}</div>`, '');
+}
+
+updateAssetState(asset: any) {
+  // Update Object Explorer to reflect newly loaded asset
+  // Implement actual logic here
+  this.listEl.innerHTML += `<div>Asset ${asset.id} ready</div>`;
+}
+removeAssetFromCatalog(asset: any) {
+  // Remove asset from catalog display
+  this.listEl.innerHTML = this.listEl.innerHTML.replace(`<div>Asset ${asset.id}</div>`, '');
+}
     this.updateAssetState(asset);
   };
 
@@ -726,4 +745,3 @@ export class ObjectExplorer {
 
   // ── End of ObjectExplorer class ──────────────────────────────────────────
     }
-}
