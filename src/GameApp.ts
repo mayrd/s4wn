@@ -166,6 +166,9 @@ export class GameApp {
     // UI manager (no engine dependency) used for save handling + splash screen.
     // ObjectExplorer is already created by UIManager in standalone mode.
     this.ui = new UIManager(this.gameLoop);
+    // Enable the Object Explorer's Babylon 3D asset viewer now that a live
+    // engine/scene is available in-game.
+    this.ui.objectExplorer.connectViewer();
     this.tooltip = new EntityInfoTooltip();
     this.detailPanel = new EntityDetailPanel();
     this.detailPanel.setGameApp(this);

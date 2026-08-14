@@ -18,6 +18,12 @@ import {
 } from '../../economy/types';
 import { borderPostModelName, borderPostModelPath, borderPostColor, borderPostNationName } from '../../game/BorderPost';
 import { NationRegistry } from '../../game/NationRegistry';
+import { isLoadableAssetPath } from './assetPaths';
+import type { AssetChainInput } from './assetPaths';
+// AssetViewer is loaded lazily (dynamic import) so importing the explorer never
+// pulls in the heavy Babylon engine module — consistent with the lazy-loading
+// architecture and keeps tests engine-free.
+import type { AssetViewer } from './AssetViewer';
 
 export interface ExplorerObject {
   id: string;
@@ -121,8 +127,6 @@ function cardToTexKey(name: string): string {
 }
 
 // ── ObjectExplorer ───────────────────────────────────────────────────
-import { AssetsManager } from '@babylonjs/core';
-
 export class ObjectExplorer {
   private container: HTMLElement;
   private listEl!: HTMLElement;
@@ -138,6 +142,9 @@ export class ObjectExplorer {
   /** Auto-refresh toggle — when enabled, update() re-renders the currently open detail every tick. */
   private autoRefresh = true;
   private autoRefreshCallback: (() => void) | null = null;
+  /** Lazily-created Babylon 3D viewer (only when connected in-game). */
+  private assetViewer: AssetViewer | null = null;
+  private viewerAvailable = false;
 
   constructor() {
     this.gameLoop = null;
@@ -175,6 +182,26 @@ export class ObjectExplorer {
     // Subscribe to game ticks for auto-refresh
     this.autoRefreshCallback = () => this.update();
     this.gameLoop?.onTick(this.autoRefreshCallback);
+  }
+
+  /**
+   * Enable the in-game 3D asset viewer. Called once a live Babylon engine is
+   * available (i.e. a game has started). Each asset with a real model file
+   * then gains an "Open in 3D Viewer" action. The Babylon viewer module is
+   * dynamically imported so the explorer itself stays engine-free until used.
+   */
+  public async connectViewer(): Promise<void> {
+    this.viewerAvailable = true;
+    if (!this.assetViewer) {
+      const mod = await import('./AssetViewer');
+      this.assetViewer = new mod.AssetViewer();
+    }
+  }
+
+  /** Open the currently selected asset's model/texture/animation in the 3D viewer. */
+  private openInViewer(chain: AssetChainInput): void {
+    if (!this.assetViewer || !this.viewerAvailable) return;
+    this.assetViewer.open(chain).catch((err) => console.error('AssetViewer open failed:', err));
   }
 
   // ── Build DOM ────────────────────────────────────────────────────
@@ -672,6 +699,15 @@ export class ObjectExplorer {
          <div class="explorer-chain-arrow">↓</div>
          <div class="explorer-chain-node"><span>Animation</span>${esc(chain.animation)}</div>
        </div></div></div>`);
+// ── 3D preview — open the real model via Babylon's asset loader ──
+        if (this.viewerAvailable && isLoadableAssetPath(chain.mesh)) {
+          parts.push(`<div class="explorer-section">
+            <div class="explorer-section-title">🧊 3D Preview</div>
+            <div class="explorer-section-body">
+              <button class="explorer-open-viewer" data-explorer-viewer title="Load this model in a dedicated Babylon preview canvas">▶ Open in 3D Viewer</button>
+            </div>
+          </div>`);
+        }
      }
 
      if (promptTxt) parts.push(`<div class="explorer-section explorer-section-prompt">
@@ -694,6 +730,18 @@ export class ObjectExplorer {
       this.detailsEl.querySelectorAll<HTMLElement>('[data-explorer-go]').forEach(el =>
         el.addEventListener('click', () => this.goToObject(el.dataset.explorerGo!)));
 
+      // Open the asset's model/texture/animation in the dedicated Babylon viewer.
+      const viewerBtn = this.detailsEl.querySelector<HTMLElement>('[data-explorer-viewer]');
+      if (viewerBtn && chain) {
+        viewerBtn.addEventListener('click', () =>
+          this.openInViewer({
+            mesh: chain.mesh,
+            texture: chain.texture,
+            animation: chain.animation,
+          })
+        );
+      }
+
 
       // On mobile, switch from list to detail view
       if (this.isMobile) this.showDetailView();
@@ -704,33 +752,6 @@ export class ObjectExplorer {
       const obj = this.objects.find(o => o.id === id);
       if (obj) this.showDetails(obj);
   } // End of goToObject method
-
-  // ── AssetManager Integration ──────────────────────────────────────────────
-  private assetManager?: AssetsManager;
-
-  public async initializeAssetManager(): Promise<void> {
-    this.assetManager = new AssetsManager();
-  }
-
-  private handleAssetReady = (asset: any) => {
-    // Update Object Explorer to reflect newly loaded asset
-    this.updateAssetState(asset);
-  }
-
-  public updateAssetState(asset: any): void {
-    // Update Object Explorer to reflect newly loaded asset
-    this.listEl.innerHTML += `<div>Asset ${asset.id} ready</div>`;
-  }
-
-  public removeAssetFromCatalog(asset: any): void {
-    // Remove asset from catalog display
-    this.listEl.innerHTML = this.listEl.innerHTML.replace(`<div>Asset ${asset.id}</div>`, "");
-  }
-
-  private handleAssetDisposed = (asset: any) => {
-    // Remove disposed asset from Object Explorer
-    this.removeAssetFromCatalog(asset);
-  };
 
   // End of ObjectExplorer class
 }

@@ -89,6 +89,7 @@ jest.mock('../../ui/UIManager', () => ({
     setObjectExplorer: jest.fn(),
     updateProgress: jest.fn(),
     onGameReady: jest.fn(),
+    objectExplorer: { connectViewer: jest.fn() },
   })),
 }));
 

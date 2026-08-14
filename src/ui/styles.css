@@ -1717,3 +1717,73 @@ body.menu-collapsed .speed-toggle-btn,
   font-weight: normal;
   text-shadow: 0 1px 1px #000;
 }
+/* ── Asset 3D Viewer (Object Explorer) ─────────────────────────── */
+.explorer-open-viewer {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  font-family: Georgia, serif;
+  color: #fff;
+  background: linear-gradient(#4a6b3f, #34502b);
+  border: 2px solid #1f3318;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+.explorer-open-viewer:hover {
+  filter: brightness(1.15);
+}
+
+/* Full-screen modal that hosts the dedicated Babylon preview canvas. */
+.asset-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: none;
+  flex-direction: column;
+  background: #16161a;
+  border: 2px solid var(--s4-stone-border, #5e5c5a);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+}
+.asset-viewer.open {
+  display: flex;
+}
+.asset-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: linear-gradient(#2a2a30, #1c1c22);
+  color: #fff;
+  font-family: Georgia, serif;
+  border-bottom: 1px solid #444;
+}
+.asset-viewer-title {
+  font-weight: 600;
+}
+.asset-viewer-close {
+  background: transparent;
+  border: none;
+  color: #ffd9a0;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.asset-viewer-close:hover {
+  color: #ff6b6b;
+}
+.asset-viewer-canvas {
+  flex: 1;
+  width: 100%;
+  display: block;
+  touch-action: none;
+}
+.asset-viewer-status {
+  padding: 6px 12px;
+  color: #bdbdbd;
+  font-family: Georgia, serif;
+  font-size: 0.85rem;
+  background: #1c1c22;
+  border-top: 1px solid #333;
+}
