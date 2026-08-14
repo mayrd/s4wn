@@ -706,42 +706,31 @@ export class ObjectExplorer {
   } // End of goToObject method
 
   // ── AssetManager Integration ──────────────────────────────────────────────
-  private assetManager?: AssetManager;
+  private assetManager?: AssetsManager;
 
   public async initializeAssetManager(): Promise<void> {
-    this.assetManager = new AssetManager();
-    this.assetManager.onAssetReady.add(this.handleAssetReady);
-    this.assetManager.onAssetDisposed.add(this.handleAssetDisposed);
+    this.assetManager = new AssetsManager();
   }
 
   private handleAssetReady = (asset: any) => {
     // Update Object Explorer to reflect newly loaded asset
-public updateAssetState(asset: any) {
-  // Update Object Explorer to reflect newly loaded asset
-  // Implement actual logic here
-  this.listEl.innerHTML += `<div>Asset ${asset.id} ready</div>`;
-}
-public removeAssetFromCatalog(asset: any) {
-  // Remove asset from catalog display
-  this.listEl.innerHTML = this.listEl.innerHTML.replace(`<div>Asset ${asset.id}</div>`, '');
-}
-
-updateAssetState(asset: any) {
-  // Update Object Explorer to reflect newly loaded asset
-  // Implement actual logic here
-  this.listEl.innerHTML += `<div>Asset ${asset.id} ready</div>`;
-}
-removeAssetFromCatalog(asset: any) {
-  // Remove asset from catalog display
-  this.listEl.innerHTML = this.listEl.innerHTML.replace(`<div>Asset ${asset.id}</div>`, '');
-}
     this.updateAssetState(asset);
-  };
+  }
+
+  public updateAssetState(asset: any): void {
+    // Update Object Explorer to reflect newly loaded asset
+    this.listEl.innerHTML += `<div>Asset ${asset.id} ready</div>`;
+  }
+
+  public removeAssetFromCatalog(asset: any): void {
+    // Remove asset from catalog display
+    this.listEl.innerHTML = this.listEl.innerHTML.replace(`<div>Asset ${asset.id}</div>`, "");
+  }
 
   private handleAssetDisposed = (asset: any) => {
     // Remove disposed asset from Object Explorer
     this.removeAssetFromCatalog(asset);
   };
 
-  // ── End of ObjectExplorer class ──────────────────────────────────────────
-    }
+  // End of ObjectExplorer class
+}
